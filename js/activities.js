@@ -85,14 +85,24 @@ export function openCSVDetailsModal(id) {
     const titleEl = document.getElementById('modal-act-title');
     const dateEl = document.getElementById('modal-act-date');
     if (titleEl) titleEl.textContent = act.name || 'Trainingseinheit';
-    if (dateEl) {\n        const start = act.startTime ? new Date(act.startTime) : null;\n        const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';\n        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : act.garminFitImported ? 'FIT-Import' : 'Quelle nicht ausgewiesen';\n        dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');\n    }
+    if (dateEl) {
+        const start = act.startTime ? new Date(act.startTime) : null;
+        const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
+        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : act.garminFitImported ? 'FIT-Import' : 'Quelle nicht ausgewiesen';
+        dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');
+    }
     const badge = document.getElementById('modal-act-type-badge');
     if (badge) {
         const sports = { Kayaking: 'K1', C1: 'C1', C2: 'C2', PaddleErgo: 'Paddelergometer', Run: 'Laufen', Ride: 'Radfahren', Swim: 'Schwimmen', WeightTraining: 'Krafttraining' };
         const categories = { ga: 'GA', interval: 'Intervalle', race: 'Wettkampf', reg: 'Regeneration', strength: 'Kraft', tech: 'Technik' };
-        badge.textContent = [sports[act.type] || act.type || 'Aktivität', act.raceFormat ? String(act.raceFormat).toUpperCase() : '', act.waterType || '', categories[act.category] || ''].filter(Boolean).join(' · ');\n        const sportColor = getSportsCatalog()[act.type]?.color || '#38bdf8';\n        badge.style.setProperty('--activity-sport-color', sportColor);\n        badge.style.borderColor = sportColor + '88';\n        badge.style.color = sportColor;
+        badge.textContent = [sports[act.type] || act.type || 'Aktivität', act.raceFormat ? String(act.raceFormat).toUpperCase() : '', act.waterType || '', categories[act.category] || ''].filter(Boolean).join(' · ');
+        const sportColor = getSportsCatalog()[act.type]?.color || '#38bdf8';
+        badge.style.setProperty('--activity-sport-color', sportColor);
+        badge.style.borderColor = sportColor + '88';
+        badge.style.color = sportColor;
     }
-    const analysisActivity = act.garminTelemetry ? { ...act, telemetry: act.garminTelemetry } : act;\n    state.activityTelemetryMetric = null;
+    const analysisActivity = act.garminTelemetry ? { ...act, telemetry: act.garminTelemetry } : act;
+    state.activityTelemetryMetric = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
