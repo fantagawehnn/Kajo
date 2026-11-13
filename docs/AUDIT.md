@@ -125,3 +125,35 @@ Das Athletenprofil wurde auf eine kompakte Übersicht mit direkt auswählbaren B
 Eine tatsächliche Profilfortschrittsanzeige basiert auf dem Verhältnis ausgefüllter zu verfügbaren Profilfeldern. Sie ist keine Leistungs- oder Trainingskennzahl. Es werden keine Fortschrittsringe für nicht messbare Ziele erzeugt.
 
 Die Theme-Auswahl bietet System, Hell und Dunkel und speichert die Präferenz lokal auf dem Gerät. Die UI-Änderungen greifen nicht in Trainingsberechnungen, Garmin-Synchronisierung oder Supabase-Tabellen ein. Die Umsetzung ist bis zum Abschluss der CI- und visuellen Endabnahme als Feature-Branch-Änderung zu verstehen.
+
+
+## 12. Aktivitätsdetailansicht – technischer Stand auf Branch v2
+
+### Vorhandene Datenpfade
+- Die Detailansicht wird in js/activities.js über openCSVDetailsModal aufgebaut.
+- Die zentrale Aktivitätstelemetrie wird in js/charts.js dargestellt.
+- Der manuelle FIT-Import erfolgt in js/import.js über fit-file-parser mit speedUnit: km/h und lengthUnit: km.
+- Im manuellen FIT-Import werden vorhandene Record-Felder für Herzfrequenz, Geschwindigkeit, Leistung, Kadenz, Höhe, Distanz und GPS-Koordinaten übernommen. Fehlende Felder werden nicht ergänzt.
+- FIT-Runden werden mit ihrem vorhandenen Trigger als manuell, automatisch oder nicht zugeordnet klassifiziert. Zeitbereiche werden nur gespeichert, wenn Startzeit und Dauer tatsächlich vorliegen.
+- Bereits gespeicherte Garmin-FIT-Diagnosedaten (garminFitData.recordFields und messageGroups) bleiben verfügbar; die Detailansicht nutzt diese nur, wenn sie im Aktivitätsdatensatz tatsächlich vorhanden sind.
+
+### UI- und Interaktionsstand
+- Ein zentraler Diagrammbereich bietet ausschließlich Messreihen mit mindestens zwei gültigen Werten an.
+- Die Messgrößen werden einzeln umgeschaltet. Es gibt kein zweites FIT-Zeitreihendiagramm.
+- Bei gültiger, monotoner Zeitreihe wird die Achse als Zeit seit Start geführt. Andernfalls werden vorhandene Uhrzeitlabels oder ein Messpunktindex verwendet und der Datenstatus als eingeschränkt gekennzeichnet.
+- Tooltips zeigen Messwert und Einheit. Zeitlich zugeordnete FIT-Runden können angewählt werden und markieren ihren Zeitraum im zentralen Diagramm.
+- Eine Leaflet-Streckenkarte wird nur gerendert, wenn mindestens zwei gültige GPS-Koordinatenpaare gespeichert sind und die Kartenbibliothek verfügbar ist. Ohne GPS-Daten bleibt der Kartenbereich verborgen.
+- Kanu-Aktivitäten können um einen manuell dokumentierten Gewässertyp (Flachwasser/Wildwasser) ergänzt werden.
+- Die Sportartenfarbe für Aktivitätskopf und Kennzahlen wird aus getSportsCatalog() bezogen; Datenverfügbarkeit wird neutral und nicht als positiver Trainingsstatus eingefärbt.
+- Die Detailansicht besitzt explizite Light-Theme-Overrides für data-theme="light".
+
+### Belastung und Vergleiche
+- Garmin Training Load, KAJO HF-Zonen-Load und sRPE-Load werden getrennt angezeigt. Ein Edwards-TRIMP-Wert erscheint nur, wenn ein entsprechendes Feld im Aktivitätsdatensatz explizit vorhanden ist. Die UI erzeugt kein separates Edwards-TRIMP-Feld.
+- Vergleichskandidaten werden konservativ gefiltert: gleiche Sportart, Trainingskategorie, Rennformat und auf 0,01 km gleiche Distanz. Bei Kanu kommen gleiche gespeicherte Strecke, dokumentierter Gewässertyp, Pegel und Abfluss hinzu. Fehlen erforderliche Angaben, wird kein Kanuvergleich angeboten.
+- Die Dauer und Geschwindigkeit werden als Ergebniswerte verglichen; die Dauer ist kein Ausschlusskriterium. Nicht gespeicherte Wind-, Wetter- oder Linienwahlbedingungen werden nicht angenommen.
+- Der Vergleich ist aktuell eine kompakte Gegenüberstellung, kein synchronisiertes Mehrfach-Zeitreihendiagramm.
+
+### Offene Abnahme
+- Die Browserprüfung mit realen Garmin-Aktivitäten, FIT-Dateien mit und ohne GPS, mobilen Geräten sowie Dark/Light Mode steht aus.
+- Die Verfügbarkeit und Einheit der einzelnen Garmin-FIT-Felder muss anhand realer importierter Datensätze geprüft werden. Die bloße Existenz einer FIT-Datei gilt nicht als Nachweis für eine gespeicherte Zeitreihe.
+- Die Aktivitätsdetailänderungen verändern keine zentralen Trainingsberechnungsformeln oder Supabase-Tabellen.
