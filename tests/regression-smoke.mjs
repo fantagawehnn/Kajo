@@ -50,17 +50,17 @@ assert.equal(state.races[0].prio, 'E');
 assert.equal(state.races[0].name, 'Alter Trainingswettkampf');
 assert.equal(state.races[1].prio, 'C');
 
-// Legacy sleep migration keeps original values and separates identifiable units.
-store.set('endurance_checkins', JSON.stringify({
+// Legacy global data is intentionally not imported into a user account automatically.
+// It must remain untouched until the user explicitly assigns it to an account.
+const legacyCheckins = JSON.stringify({
     '2026-11-10': { sleep: 7.4, weight: 65 },
     '2026-11-09': { sleep: 4, soreness: 2 },
     '2026-11-08': { sleep: 5 }
-}));
+});
+store.set('endurance_checkins', legacyCheckins);
 storage.loadStateFromStorage();
-assert.equal(state.dailyCheckins['2026-11-10'].sleepDuration, 7.4);
-assert.equal(state.dailyCheckins['2026-11-09'].sleepQuality, 4);
-assert.equal(state.dailyCheckins['2026-11-08'].sleepLegacyAmbiguous, true);
-assert.equal(state.dailyCheckins['2026-11-08'].sleep, 5); // source value retained
+assert.deepEqual(state.dailyCheckins, {});
+assert.equal(store.get('endurance_checkins'), legacyCheckins);
 
 // Wellness merge preserves manual values and does not replace fields absent from API.
 state.rawActivities = [];
