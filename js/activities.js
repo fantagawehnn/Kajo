@@ -576,9 +576,10 @@ function renderOptionalActivityViews(act) {
             const isFastestManual = lap.kind === 'manual' && speed !== null && fastestManual !== null && Math.abs(speed - fastestManual) < 0.0001;
             const speedTone = isFastestManual ? 'text-emerald-300' : 'text-slate-400';
             const canFocus = Number.isFinite(Number(lap.startTimeSeconds)) && Number.isFinite(Number(lap.endTimeSeconds));
-            const tag = canFocus ? 'button type="button" onclick="focusActivityLap(' + (index - 1) + ')" aria-label="Abschnitt im Zeitverlauf markieren" class="w-full text-left"' : 'div';
-            const closeTag = canFocus ? 'button' : 'div';
-            return '<' + tag + ' class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2"><div><div class="text-slate-200">' + label + '</div><div class="text-[10px] text-slate-500">' + kind + '</div></div><div class="text-right ' + speedTone + '">' + details + '</div></' + closeTag + '>';
+            const row = '<div><div class="text-slate-200">' + label + '</div><div class="text-[10px] text-slate-500">' + kind + '</div></div><div class="text-right ' + speedTone + '">' + details + '</div>';
+            return canFocus
+                ? '<button type="button" onclick="focusActivityLap(' + (index - 1) + ')" aria-label="Abschnitt im Zeitverlauf markieren" class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left">' + row + '</button>'
+                : '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2">' + row + '</div>';
         }).join('');
         const comparisonNote = manualSpeeds.length >= 2
             ? `<div class="text-[10px] text-slate-400 mt-2">Schnellster manuell markierter Abschnitt: ${fastestManual.toLocaleString('de-DE', { maximumFractionDigits: 2 })} km/h. Nur manuell markierte FIT-Runden mit eindeutiger Dauer- und Distanzangabe werden verglichen.</div>`
