@@ -250,3 +250,15 @@ assert.ok(html.includes('id="activity-strength-analysis-panel"'), 'strength deta
 
 assert.ok(charts.includes('paceSecondsPerKm') && charts.includes('paceSecondsPer100m'), 'pace series are offered only when unit-specific pace streams exist');
 assert.ok(activities.includes("' min/100 m'"), 'swim pace uses a 100-metre unit rather than min/km');
+
+const overviewModule = readFileSync('js/analysis-overview.js', 'utf8');
+assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
+assert.ok(html.includes('id="analysis-overview-domains"'), 'overview presents all four analysis domains');
+assert.ok(['load','recovery','performance','health'].every(id => html.includes("switchTab('analysis-" + id + "')")), 'overview domain cards open their detail pages');
+assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has one shared trend chart');
+assert.ok(overviewModule.includes("['complete', 'confirmed-rest'].includes(day.dataStatus)"), 'load trend excludes unknown and incomplete days');
+assert.ok(overviewModule.includes('spanGaps: false'), 'overview trend preserves missing data gaps');
+assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
+assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
+assert.ok(charts.includes('window.kajoRenderAnalysisOverview?.()'), 'shared timeframe refreshes the overview trend');
+assert.ok(css.includes('.kajo-analysis-domain-grid'), 'overview uses responsive compact domain cards');
