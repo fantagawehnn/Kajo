@@ -141,17 +141,26 @@ export function renderDashboardNextRace(){
   const date=document.getElementById('dashboard-next-race-date');
   const rank=document.getElementById('dashboard-next-race-rank');
   const daysEl=document.getElementById('home-next-race-days');
+  const homeCard=document.getElementById('home-next-race-card');
+  const homeLocation=document.getElementById('home-next-race-location');
+  const homeSport=document.getElementById('home-next-race-sport');
   const homeName=document.getElementById('home-next-race-name');
   const homeDate=document.getElementById('home-next-race-date');
   const homeRank=document.getElementById('home-next-race-rank');
   const today=localTodayKey();
   const next=[...(Array.isArray(state.races)?state.races:[])].filter(r=>r?.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0];
   if(!next){
+    if(homeCard) homeCard.disabled = true;
+    if(homeLocation) homeLocation.textContent = '';
+    if(homeSport) homeSport.textContent = '';
     [name,homeName].filter(Boolean).forEach(el=>el.textContent='Kein Wettkampf geplant');
     [date,homeDate,daysEl].filter(Boolean).forEach(el=>el.textContent='');
     [rank,homeRank].filter(Boolean).forEach(el=>el.classList.add('hidden'));
     return;
   }
+  if(homeCard) homeCard.disabled = false;
+  if(homeLocation) homeLocation.textContent = next.location || '';
+  if(homeSport) homeSport.textContent = next.sport || '';
   const rankMeta={A:['A · WM/EM','bg-rose-500 text-slate-950'],B:['B · World Cup','bg-amber-400 text-slate-950'],C:['C · PEU Cup','bg-sky-500 text-slate-950'],D:['D · DM / Quali','bg-emerald-400 text-slate-950'],E:['E · Sonstige','bg-slate-400 text-slate-950']};
   const badge=rankMeta[next.prio]||rankMeta.C;
   const days=Math.round((new Date(next.date+'T12:00:00')-new Date(today+'T12:00:00'))/86400000);
@@ -380,6 +389,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Load' : '';
         return '<button type="button" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
     }).join('');
+    plannedList?.querySelectorAll('[data-sport-type]').forEach(el => { el.style.borderLeft = '3px solid ' + (sportsCatalog[el.dataset.sportType]?.color || '#64748b'); });
 
     const emptyDay = document.getElementById('home-training-empty');
     if (emptyDay) emptyDay.classList.toggle('hidden', dayActivities.length + dayPlanned.length > 0);
@@ -390,9 +400,11 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     if (completedList) completedList.innerHTML = dayActivities.map(act => {
         const id = encodeURIComponent(String(act.id)).replace(/'/g,'%27');
         const duration = validNumber(act.duration) ? Number(act.duration) + ' min' : 'Dauer nicht erfasst';
+        const sport = sportsCatalog[act.type]?.label || act.type || 'Training';
         const load = validNumber(act.tss) ? ' · ' + Number(act.tss).toFixed(0) + ' Load' : '';
-        return '<button type="button" onclick="openCSVDetailsModal(\'' + id + '\')" class="home-session-card is-complete home-session-button"><span class="home-session-state">ABSOLVIERT</span><div><strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong><small>' + duration + load + '</small></div><i data-lucide="chevron-right"></i></button>';
+        return '<button type="button" data-sport-type="' + escapeHtml(act.type || '') + '" onclick="openCSVDetailsModal(\'' + id + '\')" class="home-session-card is-complete home-session-button"><span class="home-session-state">ABSOLVIERT</span><div><strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + load + '</small></div><i data-lucide="chevron-right"></i></button>';
     }).join('');
+    completedList?.querySelectorAll('[data-sport-type]').forEach(el => { el.style.borderLeft = '3px solid ' + (sportsCatalog[el.dataset.sportType]?.color || '#64748b'); });
 
     const dayHeading = document.getElementById('home-daily-date-label');
     if (dayHeading) dayHeading.textContent = selectedDate === localTodayKey() ? 'HEUTE' : selectedDate < localTodayKey() ? 'RÜCKBLICK' : 'VORSCHAU';
@@ -561,7 +573,7 @@ export function renderHomeTrainingWeek() {
         track.setAttribute('role','button'); track.setAttribute('tabindex','0');
         track.setAttribute('aria-label', dayNames[index] + ' öffnen');
         track.addEventListener('click', () => selectDay(null));
-        track.addEventListener('keydown', event => { if(event.key === 'Enter' || event.key === ' '){event.preventDefault();selectDay(null);} });
+        track.addEventListener('keydown', event => { if(event.target === track && (event.key === 'Enter' || event.key === ' ')){event.preventDefault();selectDay(null);} });
         const stack = document.createElement('span'); stack.className = 'kajo-week-bar-stack';
         const grouped = new Map();
         dayItems.forEach(item => grouped.set(item.type || 'Other',(grouped.get(item.type || 'Other') || 0)+minutes(item)));
