@@ -3904,3 +3904,235 @@ html.theme-light #race-detail-modal section{background:#fff!important;border-col
 html[data-theme="light"] #race-detail-modal h2,
 body[data-theme="light"] #race-detail-modal h2,
 html.theme-light #race-detail-modal h2{color:#172033!important}
+
+
+/* ============================================================
+   KAJO V2 design tokens and athlete profile refinement.
+   Shared semantic colors are independent from sport colors.
+   ============================================================ */
+:root {
+  --kajo-bg:#0B0F14;
+  --kajo-surface:#111820;
+  --kajo-surface-raised:#17212C;
+  --kajo-surface-subtle:#1C2835;
+  --kajo-border:#293644;
+  --kajo-text:#F4F7FA;
+  --kajo-text-secondary:#A9B5C2;
+  --kajo-muted:#7D8A98;
+  --kajo-disabled:#66717D;
+  --kajo-brand:#D32F2F;
+  --kajo-status-good:#39C98A;
+  --kajo-status-attention:#F2B84B;
+  --kajo-status-critical:#F16B6B;
+  --kajo-status-info:#6DA8F7;
+  --kajo-radius:14px;
+  color-scheme:dark;
+}
+html[data-theme="light"] {
+  --kajo-bg:#F4F7FA;
+  --kajo-surface:#FFFFFF;
+  --kajo-surface-raised:#EEF2F7;
+  --kajo-surface-subtle:#E6EDF4;
+  --kajo-border:#D8E0EA;
+  --kajo-text:#172033;
+  --kajo-text-secondary:#475569;
+  --kajo-muted:#64748B;
+  --kajo-disabled:#94A3B8;
+  --kajo-status-good:#16865B;
+  --kajo-status-attention:#9A6500;
+  --kajo-status-critical:#C43D3D;
+  --kajo-status-info:#2768B8;
+  color-scheme:light;
+}
+html[data-theme="light"] body {
+  background:var(--kajo-bg)!important;
+  color:var(--kajo-text)!important;
+}
+html[data-theme="light"] #app-navigation,
+html[data-theme="light"] #settings-modal > div,
+html[data-theme="light"] #auth-screen > div,
+html[data-theme="light"] .kajo-settings-shell,
+html[data-theme="light"] .kajo-profile-hero,
+html[data-theme="light"] .kajo-profile-detail-card,
+html[data-theme="light"] .kajo-profile-overview,
+html[data-theme="light"] .kajo-profile-goal {
+  background:var(--kajo-surface)!important;
+  border-color:var(--kajo-border)!important;
+  color:var(--kajo-text)!important;
+}
+html[data-theme="light"] #app-main .bg-slate-950,
+html[data-theme="light"] #app-main .bg-slate-900,
+html[data-theme="light"] #app-main .bg-slate-800,
+html[data-theme="light"] #settings-modal .bg-slate-950,
+html[data-theme="light"] #settings-modal .bg-slate-900 {
+  background-color:var(--kajo-surface-raised)!important;
+}
+html[data-theme="light"] #app-main .border-slate-800,
+html[data-theme="light"] #app-main .border-slate-700,
+html[data-theme="light"] #settings-modal .border-slate-800,
+html[data-theme="light"] #settings-modal .border-slate-700 {
+  border-color:var(--kajo-border)!important;
+}
+html[data-theme="light"] #app-main .text-white:not(button),
+html[data-theme="light"] #app-main .text-slate-100,
+html[data-theme="light"] #app-main .text-slate-200,
+html[data-theme="light"] #app-main .text-slate-300,
+html[data-theme="light"] #settings-modal .text-white:not(button),
+html[data-theme="light"] #settings-modal .text-slate-100,
+html[data-theme="light"] #settings-modal .text-slate-200,
+html[data-theme="light"] #settings-modal .text-slate-300 {
+  color:var(--kajo-text)!important;
+}
+html[data-theme="light"] #app-main .text-slate-400,
+html[data-theme="light"] #app-main .text-slate-500,
+html[data-theme="light"] #settings-modal .text-slate-400,
+html[data-theme="light"] #settings-modal .text-slate-500 {
+  color:var(--kajo-muted)!important;
+}
+html[data-theme="light"] #app-main input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+html[data-theme="light"] #app-main select,
+html[data-theme="light"] #app-main textarea,
+html[data-theme="light"] #settings-modal input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+html[data-theme="light"] #settings-modal select,
+html[data-theme="light"] #settings-modal textarea {
+  background:var(--kajo-surface)!important;
+  color:var(--kajo-text)!important;
+  border-color:var(--kajo-border)!important;
+}
+html[data-theme="light"] .kajo-nav-item,
+html[data-theme="light"] .kajo-mobile-nav-item,
+html[data-theme="light"] .kajo-subnav-item { color:var(--kajo-text-secondary); }
+html[data-theme="light"] .kajo-nav-item.is-active,
+html[data-theme="light"] .kajo-mobile-nav-item.is-active,
+html[data-theme="light"] .kajo-subnav-item.is-active { color:var(--kajo-brand); }
+html[data-theme="light"] .kajo-profile-identity-text h1,
+html[data-theme="light"] .kajo-profile-identity-text h2,
+html[data-theme="light"] .kajo-profile-overview-heading h2,
+html[data-theme="light"] .kajo-profile-section-title h2,
+html[data-theme="light"] .kajo-profile-value dd,
+html[data-theme="light"] .kajo-profile-goal strong { color:var(--kajo-text)!important; }
+html[data-theme="light"] .kajo-profile-identity-text p,
+html[data-theme="light"] .kajo-profile-section-title p,
+html[data-theme="light"] .kajo-profile-value dt,
+html[data-theme="light"] .kajo-profile-nav-copy small { color:var(--kajo-muted)!important; }
+html[data-theme="light"] .kajo-profile-nav-row { background:var(--kajo-surface); border-color:var(--kajo-border); color:var(--kajo-text); }
+html[data-theme="light"] .kajo-profile-section-icon { background:color-mix(in srgb,var(--kajo-status-info) 12%,transparent); color:var(--kajo-status-info); }
+html[data-theme="light"] .kajo-profile-detail-top .kajo-profile-back { background:var(--kajo-surface); border-color:var(--kajo-border); color:var(--kajo-text-secondary); }
+
+/* Compact athlete profile overview */
+#view-profile:not(.hidden) { max-width:980px; padding-bottom:32px; }
+.kajo-profile-hero { padding:18px 20px; border:1px solid var(--kajo-border); border-radius:16px; background:var(--kajo-surface); box-shadow:none; }
+.kajo-profile-identity { display:flex; align-items:center; gap:13px; margin:0; min-width:0; }
+.kajo-profile-avatar { width:48px; height:48px; border-radius:50%; background:var(--kajo-surface-subtle); border:1px solid var(--kajo-border); color:var(--kajo-text); font-size:15px; }
+.kajo-profile-identity-text { min-width:0; flex:1; }
+.kajo-profile-identity-text h1 { margin:2px 0 0; color:var(--kajo-text); font-size:18px; line-height:1.2; font-weight:800; }
+.kajo-profile-identity-text>span { margin-top:5px; padding:2px 7px; background:color-mix(in srgb,var(--kajo-brand) 10%,transparent); border-color:color-mix(in srgb,var(--kajo-brand) 25%,transparent); color:var(--kajo-brand); }
+.kajo-profile-eyebrow { color:var(--kajo-muted); font-size:9px; font-weight:800; letter-spacing:.12em; }
+.kajo-profile-completion { --profile-progress:0%; width:58px; height:58px; flex:0 0 58px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--kajo-status-info) var(--profile-progress),var(--kajo-surface-subtle) 0); }
+.kajo-profile-completion:before { content:""; position:absolute; width:48px; height:48px; border-radius:50%; background:var(--kajo-surface); }
+.kajo-profile-completion>div { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; line-height:1.05; }
+.kajo-profile-completion strong { color:var(--kajo-text); font-size:12px; font-variant-numeric:tabular-nums; }
+.kajo-profile-completion small { color:var(--kajo-muted); font-size:8px; margin-top:2px; }
+.kajo-profile-facts { display:flex; flex-wrap:wrap; gap:7px 18px; margin-top:14px; padding-top:12px; border-top:1px solid var(--kajo-border); }
+.kajo-profile-facts>div { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.kajo-profile-facts span { color:var(--kajo-muted); font-size:9px; }
+.kajo-profile-facts strong { color:var(--kajo-text-secondary); font-size:11px; font-weight:700; overflow-wrap:anywhere; }
+.kajo-profile-facts>p { color:var(--kajo-muted); font-size:10px; }
+.kajo-profile-goal { margin-top:10px; padding:11px 14px; border:1px solid var(--kajo-border); border-left:3px solid var(--kajo-brand); border-radius:11px; background:var(--kajo-surface); }
+.kajo-profile-goal strong { display:block; margin-top:3px; color:var(--kajo-text); font-size:12px; line-height:1.45; font-weight:650; }
+.kajo-profile-overview { margin-top:12px; padding:14px 16px; border:1px solid var(--kajo-border); border-radius:14px; background:var(--kajo-surface); }
+.kajo-profile-overview-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
+.kajo-profile-overview-heading h2 { margin-top:2px; color:var(--kajo-text); font-size:14px; font-weight:800; }
+.kajo-profile-overview-heading>span { color:var(--kajo-muted); font-size:9px; }
+.kajo-profile-nav-list { display:flex; flex-direction:column; }
+.kajo-profile-nav-row { width:100%; min-height:58px; display:flex; align-items:center; gap:10px; padding:8px 4px; text-align:left; border:0; border-bottom:1px solid var(--kajo-border); background:transparent; color:var(--kajo-text); cursor:pointer; }
+.kajo-profile-nav-row:last-child { border-bottom:0; }
+.kajo-profile-nav-row:hover,.kajo-profile-nav-row:focus-visible { background:var(--kajo-surface-raised); outline:none; border-radius:8px; }
+.kajo-profile-section-icon { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; border-radius:9px; background:color-mix(in srgb,var(--kajo-status-info) 12%,transparent); color:var(--kajo-status-info); }
+.kajo-profile-section-icon svg { width:16px; height:16px; }
+.kajo-profile-nav-copy { display:flex; flex:1; flex-direction:column; gap:2px; min-width:0; }
+.kajo-profile-nav-copy strong { color:var(--kajo-text); font-size:11px; font-weight:750; }
+.kajo-profile-nav-copy small { color:var(--kajo-muted); font-size:9px; line-height:1.3; }
+.kajo-profile-nav-count { color:var(--kajo-muted); font-size:9px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.kajo-profile-row-indicator { color:var(--kajo-muted); display:grid; place-items:center; }
+.kajo-profile-row-indicator svg { width:15px; height:15px; }
+.kajo-profile-detail-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.kajo-profile-detail-label { color:var(--kajo-muted); font-size:9px; font-weight:800; letter-spacing:.12em; }
+.kajo-profile-back { padding:7px 10px; border:1px solid var(--kajo-border); border-radius:9px; background:var(--kajo-surface); color:var(--kajo-text-secondary); font-size:10px; }
+.kajo-profile-detail-card { padding:16px; border:1px solid var(--kajo-border); border-radius:14px; background:var(--kajo-surface); }
+.kajo-profile-card-head { margin-bottom:12px; }
+.kajo-profile-section-title h2 { color:var(--kajo-text); font-size:13px; }
+.kajo-profile-section-title p { color:var(--kajo-muted); font-size:9px; }
+.kajo-profile-edit { padding:6px 8px; border-color:var(--kajo-border); background:var(--kajo-surface-raised); color:var(--kajo-text-secondary); font-size:9px; }
+.kajo-profile-values { gap:10px 18px; }
+.kajo-profile-value dt { color:var(--kajo-muted); font-size:9px; }
+.kajo-profile-value dd { color:var(--kajo-text); font-size:11px; line-height:1.5; }
+.kajo-profile-value dd.is-empty { color:var(--kajo-disabled); }
+.kajo-profile-empty { grid-column:1/-1; color:var(--kajo-muted); font-size:10px; }
+.kajo-profile-completeness { color:var(--kajo-muted); font-size:9px; }
+.kajo-profile-editor { border-color:var(--kajo-border); }
+.kajo-profile-field { color:var(--kajo-text-secondary); font-size:10px; }
+.kajo-profile-field input,.kajo-profile-field select,.kajo-profile-field textarea,.kajo-profile-check { border-color:var(--kajo-border); background:var(--kajo-bg); color:var(--kajo-text); }
+.kajo-profile-field input:focus,.kajo-profile-field select:focus,.kajo-profile-field textarea:focus { border-color:var(--kajo-status-info); box-shadow:0 0 0 3px color-mix(in srgb,var(--kajo-status-info) 15%,transparent); }
+.kajo-profile-check input { accent-color:var(--kajo-status-info); }
+.kajo-profile-save { background:var(--kajo-brand); }
+.kajo-profile-save:hover { background:#B92727; }
+.kajo-profile-footnote { color:var(--kajo-muted); }
+.kajo-profile-form-actions button { min-height:36px; }
+@media(max-width:640px) {
+  .kajo-profile-hero { padding:14px; }
+  .kajo-profile-identity { gap:9px; }
+  .kajo-profile-avatar { width:42px; height:42px; }
+  .kajo-profile-avatar-image { width:42px; height:42px; flex-basis:42px; }
+  .kajo-profile-completion { width:52px; height:52px; flex-basis:52px; }
+  .kajo-profile-completion:before { width:43px; height:43px; }
+  .kajo-profile-facts { gap:8px 12px; }
+  .kajo-profile-overview { padding:10px 12px; }
+  .kajo-profile-nav-row { min-height:56px; gap:8px; }
+  .kajo-profile-nav-copy small { max-width:50vw; }
+  .kajo-profile-detail-card { padding:13px; }
+  .kajo-profile-values { grid-template-columns:1fr 1fr; }
+}
+@media(max-width:380px) {
+  .kajo-profile-nav-copy small { display:none; }
+  .kajo-profile-nav-count { font-size:8px; }
+  .kajo-profile-values { grid-template-columns:1fr; }
+}
+
+.kajo-profile-completion { position:relative; }
+.kajo-profile-avatar-image { width:48px; height:48px; flex:0 0 48px; object-fit:cover; border-radius:50%; border:1px solid var(--kajo-border); }
+.kajo-profile-timeline { position:relative; display:flex; flex-direction:column; gap:9px; margin:2px 0; padding:0 0 0 13px; list-style:none; }
+.kajo-profile-timeline:before { content:""; position:absolute; top:5px; bottom:5px; left:3px; width:1px; background:var(--kajo-border); }
+.kajo-profile-timeline li { position:relative; color:var(--kajo-text); font-size:11px; line-height:1.45; }
+.kajo-profile-timeline li:before { content:""; position:absolute; left:-13px; top:4px; width:7px; height:7px; border-radius:50%; background:var(--kajo-status-info); box-shadow:0 0 0 3px var(--kajo-surface); }
+.kajo-profile-history-list { display:flex; flex-direction:column; gap:6px; margin:2px 0; padding-left:15px; color:var(--kajo-text); font-size:11px; line-height:1.45; }
+.kajo-profile-history-list li::marker { color:var(--kajo-status-info); }
+.kajo-profile-completion { background:conic-gradient(var(--kajo-status-info) var(--profile-progress),var(--kajo-surface-subtle) 0); }
+.kajo-analysis-hero-ring[data-status="good"] { --hero-ring-color:var(--kajo-status-good); }
+.kajo-analysis-hero-ring[data-status="attention"] { --hero-ring-color:var(--kajo-status-attention); }
+.kajo-analysis-hero-ring[data-status="critical"] { --hero-ring-color:var(--kajo-status-critical); }
+.kajo-analysis-hero-ring[data-status="neutral"] { --hero-ring-color:var(--kajo-status-info); }
+.kajo-settings-field select#kajo-theme-select { width:100%; margin-top:6px; min-height:40px; padding:9px 11px; border:1px solid var(--kajo-border); border-radius:9px; background:var(--kajo-bg); color:var(--kajo-text); font-size:12px; }
+html[data-theme="light"] .kajo-profile-detail-card .kajo-profile-edit,
+html[data-theme="light"] .kajo-profile-detail-card .kajo-profile-cancel { background:var(--kajo-surface-raised); color:var(--kajo-text-secondary); border-color:var(--kajo-border); }
+
+
+/* Dashboard status circles use the same four semantic states as analysis. */
+.kajo-home .kajo-health-circle[data-state="good"] { border-color:var(--kajo-status-good); color:var(--kajo-status-good); }
+.kajo-home .kajo-health-circle[data-state="mild"],
+.kajo-home .kajo-health-circle[data-state="moderate"],
+.kajo-home .kajo-health-circle[data-state="mid"] { border-color:var(--kajo-status-attention); color:var(--kajo-status-attention); }
+.kajo-home .kajo-health-circle[data-state="poor"],
+.kajo-home .kajo-health-circle[data-state="critical"] { border-color:var(--kajo-status-critical); color:var(--kajo-status-critical); }
+.kajo-home .kajo-health-circle[data-state="reference"],
+.kajo-home .kajo-health-circle[data-state="neutral"] { border-color:var(--kajo-status-info); color:var(--kajo-status-info); }
+.kajo-home .kajo-wearable-value[data-state="good"] { color:var(--kajo-status-good)!important; }
+.kajo-home .kajo-wearable-value[data-state="mild"],
+.kajo-home .kajo-wearable-value[data-state="moderate"],
+.kajo-home .kajo-wearable-value[data-state="mid"] { color:var(--kajo-status-attention)!important; }
+.kajo-home .kajo-wearable-value[data-state="poor"],
+.kajo-home .kajo-wearable-value[data-state="critical"] { color:var(--kajo-status-critical)!important; }
+.kajo-home .kajo-wearable-value[data-state="reference"],
+.kajo-home .kajo-wearable-value[data-state="neutral"] { color:var(--kajo-status-info)!important; }
+html[data-theme="light"] .kajo-ring:before { background:var(--kajo-surface); border-color:var(--kajo-border); }
+html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle); }
