@@ -85,3 +85,6 @@ assert.ok(dashboard.includes("segment.setAttribute('aria-label'"), 'sport segmen
 assert.ok(dashboard.includes('garminActivityId || item.externalId || item.id'), 'weekly chart deduplicates stable activity IDs');
 assert.ok(dashboard.includes('export function selectDashboardDate'), 'weekly day selection uses the non-editing dashboard day view');
 assert.ok(competitions.includes('openNextRaceDetail'), 'next race opens a dedicated detail view');
+
+assert.ok(homeMarkup.includes('home-next-race-location') && homeMarkup.includes('home-next-race-sport'), 'next race shows available location and discipline fields');
+assert.ok(dashboard.includes('data-sport-type'), 'today sessions use configured sport identity for their color accent');
