@@ -8,6 +8,7 @@ import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
+import { getGarminTelemetry } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 function getActivityZoneConfig(activity) {
     const saved = state.settings?.heartRateZones?.[activity.type];
