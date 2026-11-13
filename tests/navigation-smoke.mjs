@@ -162,3 +162,7 @@ assert.ok(!calendar.includes('getTrainingLoadData'), 'calendar reuses central da
 assert.ok(css.includes('.calendar-year-matrix') && css.includes('.calendar-day-load-time') && css.includes('.calendar-time-bar-row'), 'calendar uses compact shared visual components');
 assert.ok(css.includes('var(--color-surface') && css.includes('var(--color-background'), 'calendar styling follows shared theme tokens');
 assert.ok(css.includes('var(--kajo-status-good') && css.includes('var(--kajo-status-critical'), 'semantic status colors remain separate from sport colors');
+
+assert.ok(calendar.includes('function calendarActivitySourceLabel(activity)'), 'calendar exposes explicit activity source provenance');
+assert.ok(calendar.includes('Quelle nicht ausgewiesen'), 'unknown activity provenance is not silently presented as manual or imported');
+assert.ok(calendar.includes('calendar-week-source'), 'weekly activity entries expose their source');
