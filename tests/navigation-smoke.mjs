@@ -210,3 +210,7 @@ assert.ok(html.includes('leaflet@1.9.4'), 'activity route map uses a supported m
 
 assert.ok(html.includes('id="activity-water-type"'), 'canoe activity detail allows documented flatwater/wildwater context');
 assert.ok(activities.includes('if (!currentWaterType || !candidateWaterType || currentWaterType !== candidateWaterType) return false'), 'canoe comparisons require a known matching water type');
+
+assert.ok(activities.includes('export function focusActivityLap(index)'), 'timed native FIT laps can focus their matching chart interval');
+assert.ok(importer.includes('startTimeSeconds: lapStartSeconds'), 'FIT lap time ranges are retained for chart alignment');
+assert.ok(main.includes('focusActivityLap,'), 'lap focus action is exposed to activity detail controls');
