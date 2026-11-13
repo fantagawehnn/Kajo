@@ -123,40 +123,18 @@ function standardDeviation(values,avg){
   return Math.sqrt(values.reduce((sum,value)=>sum+Math.pow(value-avg,2),0)/values.length);
 }
 function updateRespirationRange(dateKey) {
-  const rangeEl=document.getElementById('wear-respiration-range');
-  if(!rangeEl)return;
-  const values=checkinValuesBetween(dateKey,'respiration',60,false);
-  if(values.length<14){rangeEl.textContent='Pers. Basis ab 14 Messungen';return;}
-  const avg=mean(values),sd=standardDeviation(values,avg);
-  rangeEl.textContent='Pers. Mittel '+avg.toFixed(1)+' ± '+sd.toFixed(1)+' /min';
+  const rangeEl = document.getElementById('wear-respiration-range');
+  if (rangeEl) rangeEl.textContent = 'Persönlicher Normalbereich noch nicht methodisch festgelegt';
 }
-function updateWearableRange(valueId,rangeId,value,key,dateKey,direction){
-  const valueEl=document.getElementById(valueId),rangeEl=document.getElementById(rangeId);
-  if(!valueEl||!rangeEl)return;
-  valueEl.classList.remove('text-emerald-400','text-amber-400','text-rose-400','text-white');
-  if(!validNumber(value)){valueEl.classList.add('text-white');rangeEl.textContent='norm. —';return;}
-  const baselineValues=checkinValuesBetween(dateKey,key,60,false);
-  if(baselineValues.length<14){
-    valueEl.classList.add('text-white');
-    rangeEl.textContent='norm. —';
-    return;
-  }
-  const baseline=mean(baselineValues);
-  const sd=standardDeviation(baselineValues,baseline);
-  const minimumChange={rhr:1,hrv:5,sleepDuration:0.25,sleepScore:5}[key]||0;
-  const swc=Math.max(sd*0.5,minimumChange);
-  const low=Math.max(0,baseline-swc),high=baseline+swc;
-  const decimals=key==='sleepDuration'?1:0;
-  rangeEl.textContent='norm. '+low.toFixed(decimals)+'–'+high.toFixed(decimals);
-  const recentValues=checkinValuesBetween(dateKey,key,6,true);
-  if(recentValues.length<3){
-    valueEl.classList.add('text-white');
-    return;
-  }
-  const rollingValue=mean(recentValues);
-  const deviation=Math.abs(rollingValue-baseline);
-  const color=deviation<=swc?'text-emerald-400':deviation<=2*swc?'text-amber-400':'text-rose-400';
-  valueEl.classList.add(color);
+function updateWearableRange(valueId, rangeId, value, key, dateKey, direction) {
+  const valueEl = document.getElementById(valueId);
+  const rangeEl = document.getElementById(rangeId);
+  if (!valueEl || !rangeEl) return;
+  valueEl.classList.remove('text-emerald-400', 'text-amber-400', 'text-rose-400', 'text-white');
+  valueEl.classList.add('text-white');
+  rangeEl.textContent = validNumber(value)
+    ? 'Persönlicher Normalbereich noch nicht methodisch festgelegt'
+    : 'Keine Messung vorhanden';
 }
 export function renderDashboardNextRace(){
   const name=document.getElementById('dashboard-next-race-name');
@@ -917,24 +895,9 @@ function historyRecommendation(key, value, dateKey) {
         if (value >= 60) return ['Mittlere Readiness', 'Die Signale sind nicht durchgehend günstig. Prüfe besonders Müdigkeit, Muskelkater, Schlaf und den geplanten Trainingsreiz.'];
         return ['Niedrige Readiness', 'Mehrere verfügbare Signale sprechen für erhöhte Beanspruchung. Erholung priorisieren und Belastung kritisch mit dem eigenen Befinden abgleichen.'];
     }
-    if (key === 'rhr' || key === 'hrv' || key === 'respiration') {
-        const prior = Object.entries(state.dailyCheckins)
-            .filter(([date, row]) => date < dateKey && date >= historyWindow('6m', dateKey).from)
-            .map(([, row]) => historyValue(row, key)).filter(v => v !== null);
-        if (prior.length < 14) return ['Persönliche Basis noch im Aufbau', 'Für eine individuelle Einordnung werden mindestens 14 frühere Messungen benötigt. Einzelwerte nicht überinterpretieren.'];
-        const avg = mean(prior), sd = standardDeviation(prior, avg);
-        const delta = value - avg;
-        const unusual = Math.abs(delta) > Math.max(sd * 0.5, key === 'rhr' ? 1 : key === 'hrv' ? 5 : 0.5);
-        if (!unusual) return ['Im persönlichen Bereich', 'Der heutige Wert liegt nahe deinem bisherigen persönlichen Mittelwert. Beobachte den Verlauf statt einzelne Messungen isoliert zu bewerten.'];
-        const higher = delta > 0;
-        const direction = key === 'hrv' ? (higher ? 'höher' : 'niedriger') : (higher ? 'höher' : 'niedriger');
-        return ['Abweichung vom persönlichen Mittel', 'Der heutige Wert liegt ' + direction + ' als dein bisheriger Mittelwert. Prüfe den Verlauf und weitere Erholungssignale; daraus allein folgt keine Diagnose.'];
+    if (key === 'rhr' || key === 'hrv' || key === 'respiration' || key === 'sleepDuration' || key === 'sleepScore') {
+        return ['Persönlicher Normalbereich noch nicht verfügbar', 'Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht verbindlich festgelegt. Der Messwert wird deshalb ohne pauschale oder vorläufige Normalbereichs-Einstufung dargestellt.'];
     }
-    if (key === 'sleepDuration') return value < 7
-        ? ['Kurze Schlafdauer', 'Die erfasste Schlafdauer liegt unter sieben Stunden. Achte auf ausreichende Schlafgelegenheit und bewerte zusätzlich die Schlafqualität.']
-        : value <= 9
-            ? ['Schlafdauer im Orientierungsbereich', 'Die Dauer liegt im bisher verwendeten Orientierungsbereich. Auch Schlafqualität und Erholungsgefühl berücksichtigen.']
-            : ['Längere Schlafdauer', 'Eine längere Schlafdauer kann individuellen Erholungsbedarf widerspiegeln. Prüfe, wie du dich fühlst und ob der Wert für dich üblich ist.'];
     if (key === 'weight') return ['Gewichtsverlauf', 'Betrachte Gewicht über mehrere Messungen und im individuellen Kontext. Einzelne Tagesveränderungen sind für sich genommen keine Trainings- oder Gesundheitsbewertung.'];
     if (key === 'sleepScore') return value < 80
         ? ['Sleep Score unter 80', 'Prüfe Schlafqualität, Schlafdauer und mögliche Störfaktoren. Der Score ist ein Wearable-Schätzwert.']
