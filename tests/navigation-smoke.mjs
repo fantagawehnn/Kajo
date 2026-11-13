@@ -10,6 +10,7 @@ const charts = readFileSync('js/charts.js', 'utf8');
 const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
+const competitions = readFileSync('js/competitions.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -83,4 +84,4 @@ assert.ok(dashboard.includes('kajo-week-segment'), 'weekly chart renders sport s
 assert.ok(dashboard.includes("segment.setAttribute('aria-label'"), 'sport segments are accessible interactive targets');
 assert.ok(dashboard.includes('garminActivityId || item.externalId || item.id'), 'weekly chart deduplicates stable activity IDs');
 assert.ok(dashboard.includes('export function selectDashboardDate'), 'weekly day selection uses the non-editing dashboard day view');
-assert.ok(comp.includes('openNextRaceDetail'), 'next race opens a dedicated detail view');
+assert.ok(competitions.includes('openNextRaceDetail'), 'next race opens a dedicated detail view');
