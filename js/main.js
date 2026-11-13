@@ -16,6 +16,7 @@ import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoRemin
 import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js';
+import { sanitizeGarminActivityTelemetry } from './data-source.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
@@ -281,11 +282,12 @@ async function loadGarminActivitiesFromCloud() {
             ambiguous++;
         }
     }
-    if (added || merged) {
+    const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
+    if (added || merged || sanitized) {
         saveDataToLocalStorage();
         initEngine();
     }
-    return { added, merged, ambiguous };
+    return { added, merged, ambiguous, sanitized };
 }
 
 
@@ -627,6 +629,53 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors };
 }
 
+function recordGarminActivityCoverageRange(startDate, endDate) {
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(startDate || '')
+        || !/^\\d{4}-\\d{2}-\\d{2}$/.test(endDate || '')
+        || startDate > endDate) return false;
+
+    // The current local day is still in progress and cannot confirm a rest day.
+    const today = getLocalCalendarDate();
+    if (endDate > today) return false;
+    const lastCompleteDate = new Date(today + 'T12:00:00');
+    lastCompleteDate.setDate(lastCompleteDate.getDate() - 1);
+    const cutoff = `${lastCompleteDate.getFullYear()}-${String(lastCompleteDate.getMonth() + 1).padStart(2, '0')}-${String(lastCompleteDate.getDate()).padStart(2, '0')}`;
+    const completeEndDate = endDate === today ? cutoff : endDate;
+    if (startDate > completeEndDate) return false;
+
+    const ranges = Array.isArray(state.settings?.garminActivityCoverageRanges)
+        ? state.settings.garminActivityCoverageRanges.filter(range =>
+            /^\\d{4}-\\d{2}-\\d{2}$/.test(range?.startDate || '')
+            && /^\\d{4}-\\d{2}-\\d{2}$/.test(range?.endDate || '')
+            && range.startDate <= range.endDate && range.status === 'complete')
+        : [];
+    ranges.push({
+        startDate, endDate: completeEndDate, status: 'complete',
+        source: 'garmin_activity_list', syncedAt: new Date().toISOString()
+    });
+    ranges.sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+    const merged = [];
+    for (const range of ranges) {
+        const last = merged[merged.length - 1];
+        const nextDayAfterLast = last
+            ? new Date(new Date(last.endDate + 'T00:00:00Z').getTime() + 86400000).toISOString().slice(0, 10)
+            : null;
+        if (last && range.startDate <= nextDayAfterLast) {
+            if (range.endDate > last.endDate) last.endDate = range.endDate;
+            if (range.syncedAt > last.syncedAt) last.syncedAt = range.syncedAt;
+        } else {
+            merged.push({ ...range });
+        }
+    }
+
+    state.settings = { ...(state.settings || {}), garminActivityCoverageRanges: merged };
+    if (saveDataToLocalStorage() === false) {
+        throw new Error('Der erfolgreiche Garmin-Aktivitätszeitraum konnte nicht lokal gespeichert werden.');
+    }
+    return true;
+}
+
 async function syncGarminSelectedRange() {
     const status = document.getElementById('garmin-connection-status');
     const button = document.getElementById('garmin-sync-range-button');
@@ -674,6 +723,10 @@ async function syncGarminSelectedRange() {
             if (sync.activitySync) {
                 activitySummary = sync.activitySync;
                 await loadGarminActivitiesFromCloud();
+                if (sync.activitySync.status === 'ok') {
+                    recordGarminActivityCoverageRange(startDate, endDate);
+                    initEngine();
+                }
             }
             remainingDays = Number(health.remainingDays ?? 0);
             const completedDays = Math.max(0, totalDays - remainingDays);
