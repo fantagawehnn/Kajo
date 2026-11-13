@@ -455,7 +455,6 @@ function renderActivityComparisons(activity) {
         if (candidate.type !== activity.type || (candidate.category || '') !== (activity.category || '')) return false;
         if ((candidate.raceFormat || '') !== (activity.raceFormat || '')) return false;
         const otherDistance = Number(candidate.distance);
-        const otherDuration = Number(candidate.duration);
         if (!(distance > 0 && otherDistance > 0 && Math.round(otherDistance * 100) === Math.round(distance * 100))) return false;
         if (isCanoe) {
             if (!activity.raceFormat) return false;
@@ -494,7 +493,7 @@ function renderActivityComparisons(activity) {
     }).join('');
     panel.classList.remove('hidden');
     panel.innerHTML = '<h4 class="text-xs font-bold text-white mb-2">Vergleichbare Aktivitäten</h4>'
-        + '<p class="text-[10px] text-slate-500 mb-2">Gleiche Sportart, Trainingskategorie und Rennformat sowie ähnliche Distanz und Dauer'
+        + '<p class="text-[10px] text-slate-500 mb-2">Gleiche Sportart, Trainingskategorie, Rennformat und auf 0,01 km gleiche Distanz'
         + (isCanoe ? ', identische Strecke, Gewässertyp, Pegel und Abfluss' : '') + '.</p>' + rows;
 }
 
