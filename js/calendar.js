@@ -297,14 +297,20 @@ export function renderYearView() {
             const date = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
             const hasTraining = (state.rawActivities || []).some(item => item.date === date) || (state.plannedActivities || []).some(item => item.date === date);
             const hasHealth = Boolean(state.healthLogs?.[date]);
+            const hasRace = (state.races || []).some(item => item.date === date);
+            const hasCycle = Boolean(periodCalendarMarker(date));
             const cell = document.createElement('button');
             cell.type = 'button';
             cell.className = 'h-6 rounded-md text-[10px] ' + (date === today ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-500/50' : hasTraining ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:bg-slate-800');
+            if (hasRace) cell.classList.add('border', 'border-rose-400/70');
+            if (hasHealth) cell.classList.add('ring-1', 'ring-amber-400/70');
+            if (hasCycle) cell.classList.add('underline', 'decoration-pink-400');
             cell.textContent = String(day);
-            cell.setAttribute('aria-label', date + (hasTraining ? ', Trainingseintrag' : '') + (hasHealth ? ', Gesundheitseintrag' : ''));
+            cell.setAttribute('aria-label', date + (hasTraining ? ', Trainingseintrag' : '') + (hasRace ? ', Wettkampf' : '') + (hasHealth ? ', Gesundheitsereignis' : '') + (hasCycle ? ', Zykluseintrag' : ''));
             cell.addEventListener('click', () => {
                 state.currentCalendarDate = new Date(year, month, day);
                 setCalendarFormat('day');
+                window.openDayEditor?.(date);
             });
             grid.appendChild(cell);
         }
