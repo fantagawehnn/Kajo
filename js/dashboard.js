@@ -889,6 +889,8 @@ export function inspectDay(dayObj) {
 // ------------------------------------------------------------
 const historyMetricDefinitions = {
     rhr: { label: 'Ruheherzfrequenz', short: 'RHF', unit: 'bpm', group: 'wearable', icon: 'heart-pulse', color: '#fb7185' },
+    bodyBattery: { label: 'Body Battery', short: 'Body Battery', unit: '', group: 'wearable', icon: 'battery-full', color: '#34d399' },
+    vo2max: { label: 'VO₂max', short: 'VO₂max', unit: 'ml/kg/min', group: 'wearable', icon: 'activity', color: '#f97316' },
     hrv: { label: 'Herzfrequenzvariabilität', short: 'HRV', unit: 'ms', group: 'wearable', icon: 'activity', color: '#38bdf8' },
     sleepScore: { label: 'Sleep Score', short: 'Sleep Score', unit: '/ 100', group: 'wearable', icon: 'moon-star', color: '#a78bfa' },
     sleepDuration: { label: 'Schlafdauer', short: 'Schlafdauer', unit: 'h', group: 'wearable', icon: 'bed-double', color: '#818cf8' },
@@ -902,6 +904,9 @@ const historyMetricDefinitions = {
 };
 const trainingMetricDefinitions = {
     fitness: { label: 'Fitness', short: 'Fitness (CTL)', unit: 'Load-Punkte', color: '#D32F2F', icon: 'trending-up' },
+    atl: { label: 'Akute Belastung (ATL)', short: 'ATL', unit: 'Load-Punkte', color: '#f97316', icon: 'activity' },
+    acwr: { label: 'Akut-chronisches Belastungsverhältnis (ACWR)', short: 'ACWR', unit: 'Verhältnis', color: '#f59e0b', icon: 'scale' },
+    tsb: { label: 'Trainingssaldo (TSB)', short: 'TSB', unit: 'Load-Punkte', color: '#38bdf8', icon: 'activity' },
     form: { label: 'Trainingssaldo', short: 'Trainingssaldo', unit: 'Modellwert', color: '#f59e0b', icon: 'activity' },
     readiness: { label: 'Readiness', short: 'Readiness', unit: '/ 100', color: '#34d399', icon: 'battery-full' }
 };
@@ -971,7 +976,7 @@ function historyRecommendation(key, value, dateKey) {
 }
 function historyDisplay(value, key) {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
-    const decimals = ['fitness', 'form', 'sleepDuration', 'respiration', 'weight'].includes(key) ? 1 : 0;
+    const decimals = ['fitness', 'atl', 'acwr', 'tsb', 'form', 'vo2max', 'sleepDuration', 'respiration', 'weight'].includes(key) ? 1 : 0;
     return Number(value).toLocaleString('de-DE', { maximumFractionDigits: decimals });
 }
 function relativeSrpEBalanceScore(value, dateKey) {
@@ -1126,7 +1131,11 @@ export function renderMetricHistory(kind) {
             }
             const day = timeline.get(date);
             if (!day) return null;
-            return key === 'fitness' ? day.ctl : (day.loadMode?.startsWith('garmin') ? day.formPct : day.tsb);
+            if (key === 'fitness') return day.ctl;
+            if (key === 'atl') return day.atl;
+            if (key === 'acwr') return day.acwr;
+            if (key === 'tsb') return day.tsb;
+            return day.loadMode?.startsWith('garmin') ? day.formPct : day.tsb;
         });
     }
     const today = historyTodayKey();
