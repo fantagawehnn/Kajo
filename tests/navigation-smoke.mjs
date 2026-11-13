@@ -267,7 +267,7 @@ assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain 
 assert.ok(overviewModule.includes("hasAvailability ? health.value : '—'"), 'health availability remains unavailable when no valid calculation exists');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
 assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
-assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(2'), 'four circles use a responsive two-by-two mobile layout');
+assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(4'), 'four circles remain in a compact horizontal row on mobile');
 
 assert.ok(html.includes('id="activity-data-quality"'), 'activity overview exposes a compact data quality and provenance summary');
 assert.ok(html.includes('id="activity-telemetry-point"'), 'activity chart provides a selected-point readout');
