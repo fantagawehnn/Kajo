@@ -219,4 +219,4 @@ assert.ok(charts.includes('activity-lap-highlight'), 'selected timed laps are hi
 assert.ok(charts.includes('state.activitySelectedLap'), 'chart highlight uses the selected lap time range');
 
 assert.ok(charts.includes("const complete = hasElapsedTime && validCount === selected.values.length"), 'activity telemetry distinguishes complete from limited data');
-assert.ok(activities.includes("'grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left'"), 'time-aligned laps are directly selectable without duplicate class attributes');
+assert.ok(activities.includes('grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left'), 'time-aligned laps are directly selectable without duplicate class attributes');
