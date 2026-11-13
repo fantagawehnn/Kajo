@@ -639,7 +639,7 @@ export function renderActivityTelemetryChart(act) {
         });
     }
     const selected = series.find(item => item.key === preferred);
-    const telem = act?.telemetry || act?.garminTelemetry || {};
+    const telem = getGarminTelemetry(act) || {};
     const times = Array.isArray(telem.time) ? telem.time : [];
     const labels = times.length === selected.values.length
         ? times.map(value => {
