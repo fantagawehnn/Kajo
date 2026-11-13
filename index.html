@@ -205,74 +205,9 @@
           <section class="space-y-3"><h2 class="text-sm font-bold text-white">Meine Strecken</h2><div id="training-routes-list" class="space-y-2"></div></section>
         </section>
 
-        <div id="view-health-data" class="hidden space-y-5">
-            <header class="space-y-1"><p class="kajo-eyebrow">GESUNDHEIT &amp; ERHOLUNG</p><h1 class="text-xl font-bold text-white">Gesundheitsstatistiken</h1><p class="text-xs text-slate-400">Wähle einen Gesundheitswert, um dessen Verlauf und Entwicklung anzusehen.</p></header>
-            <h2 class="text-sm font-semibold text-slate-300">Gesundheits-Unterbereiche</h2>
-            <nav id="health-metric-tabs" class="kajo-health-subareas" aria-label="Gesundheits-Unterbereiche">
-                <button type="button" data-history-metric="rhr" onclick="setHistoryMetric('health','rhr')" class="more-subnav-button">Ruheherzfrequenz</button>
-                <button type="button" data-history-metric="hrv" onclick="setHistoryMetric('health','hrv')" class="more-subnav-button">HRV</button>
-                <button type="button" data-history-metric="sleepScore" onclick="setHistoryMetric('health','sleepScore')" class="more-subnav-button">Sleep Score</button>
-                <button type="button" data-history-metric="sleepDuration" onclick="setHistoryMetric('health','sleepDuration')" class="more-subnav-button">Schlafdauer</button>
-                <button type="button" data-history-metric="respiration" onclick="setHistoryMetric('health','respiration')" class="more-subnav-button">Atemfrequenz</button>
-                <button type="button" data-history-metric="sleepQuality" onclick="setHistoryMetric('health','sleepQuality')" class="more-subnav-button">Schlafqualität</button>
-                <button type="button" data-history-metric="soreness" onclick="setHistoryMetric('health','soreness')" class="more-subnav-button">Muskelkater</button>
-                <button type="button" data-history-metric="fatigue" onclick="setHistoryMetric('health','fatigue')" class="more-subnav-button">Müdigkeit</button>
-                <button type="button" data-history-metric="motivation" onclick="setHistoryMetric('health','motivation')" class="more-subnav-button">Motivation</button>
-                <button type="button" data-history-metric="stress" onclick="setHistoryMetric('health','stress')" class="more-subnav-button">Stress</button>
-                <button type="button" data-history-metric="weight" onclick="setHistoryMetric('health','weight')" class="more-subnav-button">Körpergewicht</button>
-            </nav>
-            <div class="flex flex-wrap gap-2" aria-label="Zeitraum">
-                <button type="button" data-history-kind="health" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
-                <button type="button" data-history-kind="health" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
-                <button type="button" data-history-kind="health" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
-                <button type="button" data-history-kind="health" data-history-range="6m" onclick="setHistoryRange('6m')" class="more-subnav-button">6 Monate</button>
-                <button type="button" data-history-kind="health" data-history-range="1y" onclick="setHistoryRange('1y')" class="more-subnav-button">1 Jahr</button>
-                <button type="button" data-history-kind="health" data-history-range="custom" onclick="setHistoryRange('custom')" class="more-subnav-button">Individuell</button>
-            </div>
-            <div id="health-history-custom-range" class="hidden flex flex-wrap items-end gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
-                <label class="text-xs text-slate-400">Von <input type="date" id="health-history-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-                <label class="text-xs text-slate-400">Bis <input type="date" id="health-history-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-                <button type="button" onclick="applyHistoryCustomRange('health')" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Anwenden</button>
-            </div>
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
-                <div class="flex items-center gap-4">
-                    <div id="health-history-ring" class="metric-history-ring"><div><strong id="health-history-current">—</strong><span id="health-history-unit"></span></div></div>
-                    <div class="min-w-0"><h2 id="health-history-title" class="text-base font-bold text-white">Ruheherzfrequenz</h2><p id="health-history-status" class="text-sm font-semibold text-slate-200 mt-1">Heute nicht erfasst</p><p id="health-history-recommendation" class="text-xs text-slate-400 mt-1">—</p></div>
-                </div>
-                <div class="h-64 sm:h-80 relative"><canvas id="health-metric-chart"></canvas></div>
-                <p id="health-history-chart-note" class="text-[10px] text-slate-500"></p>
-            </section>
-        </div>
+        
 
-        <div id="view-training-analysis" class="hidden space-y-5">
-            <header class="space-y-1"><p class="kajo-eyebrow">PERFORMANCE &amp; BELASTUNG</p><h1 class="text-xl font-bold text-white">Trainingsanalyse</h1><p class="text-xs text-slate-400">Fitness, Trainingssaldo und Readiness im zeitlichen Verlauf.</p></header>
-            <nav id="training-metric-tabs" class="flex flex-wrap gap-2" aria-label="Trainingskennzahl">
-                <button type="button" data-history-metric="fitness" onclick="setHistoryMetric('training','fitness')" class="more-subnav-button">Fitness</button>
-                <button type="button" data-history-metric="form" onclick="setHistoryMetric('training','form')" class="more-subnav-button">Trainingssaldo</button>
-                <button type="button" data-history-metric="readiness" onclick="setHistoryMetric('training','readiness')" class="more-subnav-button">Readiness</button>
-            </nav>
-            <div class="flex flex-wrap gap-2" aria-label="Zeitraum">
-                <button type="button" data-history-kind="training" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
-                <button type="button" data-history-kind="training" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
-                <button type="button" data-history-kind="training" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
-                <button type="button" data-history-kind="training" data-history-range="6m" onclick="setHistoryRange('6m')" class="more-subnav-button">6 Monate</button>
-                <button type="button" data-history-kind="training" data-history-range="1y" onclick="setHistoryRange('1y')" class="more-subnav-button">1 Jahr</button>
-                <button type="button" data-history-kind="training" data-history-range="custom" onclick="setHistoryRange('custom')" class="more-subnav-button">Individuell</button>
-            </div>
-            <div id="training-history-custom-range" class="hidden flex flex-wrap items-end gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
-                <label class="text-xs text-slate-400">Von <input type="date" id="training-history-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-                <label class="text-xs text-slate-400">Bis <input type="date" id="training-history-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-                <button type="button" onclick="applyHistoryCustomRange('training')" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Anwenden</button>
-            </div>
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
-                <div class="flex flex-col items-center text-center gap-3">
-                    <div id="training-history-ring" class="metric-history-ring kajo-status-ring"><div><strong id="training-history-current">—</strong><span id="training-history-unit"></span></div></div>
-                    <div class="max-w-2xl"><h2 id="training-history-title" class="text-base font-bold text-white">Fitness</h2><p id="training-history-status" class="text-sm font-semibold text-slate-200 mt-1">Heute nicht erfasst</p><p id="training-history-recommendation" class="text-xs text-slate-400 mt-1">—</p></div>
-                </div>
-                <div class="h-64 sm:h-80 relative"><canvas id="training-metric-chart"></canvas></div>
-                <p id="training-history-chart-note" class="text-[10px] text-slate-500"></p>
-            </section>
-        </div>
+        
 
         
 
@@ -465,7 +400,36 @@
 <section id="analysis-competition-section" class="kajo-analysis-domain-panel">
                 <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WETTKAMPFPLANUNG</p><h2>Wettkampf</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
                 <div id="analysis-competition-insight"></div>
-            </section></div>
+            </section><div id="view-training-analysis" class="space-y-5">
+            <header class="space-y-1"><p class="kajo-eyebrow">PERFORMANCE &amp; BELASTUNG</p><h1 class="text-xl font-bold text-white">Trainingsanalyse</h1><p class="text-xs text-slate-400">Fitness, Trainingssaldo und Readiness im zeitlichen Verlauf.</p></header>
+            <nav id="training-metric-tabs" class="flex flex-wrap gap-2" aria-label="Trainingskennzahl">
+                <button type="button" data-history-metric="fitness" onclick="setHistoryMetric('training','fitness')" class="more-subnav-button">Fitness</button>
+                <button type="button" data-history-metric="form" onclick="setHistoryMetric('training','form')" class="more-subnav-button">Trainingssaldo</button>
+                <button type="button" data-history-metric="readiness" onclick="setHistoryMetric('training','readiness')" class="more-subnav-button">Readiness</button>
+            </nav>
+            <div class="flex flex-wrap gap-2" aria-label="Zeitraum">
+                <button type="button" data-history-kind="training" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
+                <button type="button" data-history-kind="training" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
+                <button type="button" data-history-kind="training" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
+                <button type="button" data-history-kind="training" data-history-range="6m" onclick="setHistoryRange('6m')" class="more-subnav-button">6 Monate</button>
+                <button type="button" data-history-kind="training" data-history-range="1y" onclick="setHistoryRange('1y')" class="more-subnav-button">1 Jahr</button>
+                <button type="button" data-history-kind="training" data-history-range="custom" onclick="setHistoryRange('custom')" class="more-subnav-button">Individuell</button>
+            </div>
+            <div id="training-history-custom-range" class="hidden flex flex-wrap items-end gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
+                <label class="text-xs text-slate-400">Von <input type="date" id="training-history-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
+                <label class="text-xs text-slate-400">Bis <input type="date" id="training-history-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
+                <button type="button" onclick="applyHistoryCustomRange('training')" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Anwenden</button>
+            </div>
+            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div class="flex flex-col items-center text-center gap-3">
+                    <div id="training-history-ring" class="metric-history-ring kajo-status-ring"><div><strong id="training-history-current">—</strong><span id="training-history-unit"></span></div></div>
+                    <div class="max-w-2xl"><h2 id="training-history-title" class="text-base font-bold text-white">Fitness</h2><p id="training-history-status" class="text-sm font-semibold text-slate-200 mt-1">Heute nicht erfasst</p><p id="training-history-recommendation" class="text-xs text-slate-400 mt-1">—</p></div>
+                </div>
+                <div class="h-64 sm:h-80 relative"><canvas id="training-metric-chart"></canvas></div>
+                <p id="training-history-chart-note" class="text-[10px] text-slate-500"></p>
+            </section>
+        </div>
+</div>
 
 
             
@@ -477,7 +441,45 @@
                 <div><h2 class="text-base font-bold text-white">Tägliche Trainings-Readiness</h2></div>
                 <div id="readiness-details" class="space-y-2"><p class="text-xs text-slate-500">Die Readiness wird berechnet, sobald genügend objektive und subjektive Daten vorliegen.</p></div>
                 <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-recovery-insight"></div></div>
-            </div></div>
+            </div><div id="view-health-data" class="space-y-5">
+            <header class="space-y-1"><p class="kajo-eyebrow">GESUNDHEIT &amp; ERHOLUNG</p><h1 class="text-xl font-bold text-white">Gesundheitsstatistiken</h1><p class="text-xs text-slate-400">Wähle einen Gesundheitswert, um dessen Verlauf und Entwicklung anzusehen.</p></header>
+            <h2 class="text-sm font-semibold text-slate-300">Gesundheits-Unterbereiche</h2>
+            <nav id="health-metric-tabs" class="kajo-health-subareas" aria-label="Gesundheits-Unterbereiche">
+                <button type="button" data-history-metric="rhr" onclick="setHistoryMetric('health','rhr')" class="more-subnav-button">Ruheherzfrequenz</button>
+                <button type="button" data-history-metric="hrv" onclick="setHistoryMetric('health','hrv')" class="more-subnav-button">HRV</button>
+                <button type="button" data-history-metric="sleepScore" onclick="setHistoryMetric('health','sleepScore')" class="more-subnav-button">Sleep Score</button>
+                <button type="button" data-history-metric="sleepDuration" onclick="setHistoryMetric('health','sleepDuration')" class="more-subnav-button">Schlafdauer</button>
+                <button type="button" data-history-metric="respiration" onclick="setHistoryMetric('health','respiration')" class="more-subnav-button">Atemfrequenz</button>
+                <button type="button" data-history-metric="sleepQuality" onclick="setHistoryMetric('health','sleepQuality')" class="more-subnav-button">Schlafqualität</button>
+                <button type="button" data-history-metric="soreness" onclick="setHistoryMetric('health','soreness')" class="more-subnav-button">Muskelkater</button>
+                <button type="button" data-history-metric="fatigue" onclick="setHistoryMetric('health','fatigue')" class="more-subnav-button">Müdigkeit</button>
+                <button type="button" data-history-metric="motivation" onclick="setHistoryMetric('health','motivation')" class="more-subnav-button">Motivation</button>
+                <button type="button" data-history-metric="stress" onclick="setHistoryMetric('health','stress')" class="more-subnav-button">Stress</button>
+                <button type="button" data-history-metric="weight" onclick="setHistoryMetric('health','weight')" class="more-subnav-button">Körpergewicht</button>
+            </nav>
+            <div class="flex flex-wrap gap-2" aria-label="Zeitraum">
+                <button type="button" data-history-kind="health" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
+                <button type="button" data-history-kind="health" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
+                <button type="button" data-history-kind="health" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
+                <button type="button" data-history-kind="health" data-history-range="6m" onclick="setHistoryRange('6m')" class="more-subnav-button">6 Monate</button>
+                <button type="button" data-history-kind="health" data-history-range="1y" onclick="setHistoryRange('1y')" class="more-subnav-button">1 Jahr</button>
+                <button type="button" data-history-kind="health" data-history-range="custom" onclick="setHistoryRange('custom')" class="more-subnav-button">Individuell</button>
+            </div>
+            <div id="health-history-custom-range" class="hidden flex flex-wrap items-end gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
+                <label class="text-xs text-slate-400">Von <input type="date" id="health-history-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
+                <label class="text-xs text-slate-400">Bis <input type="date" id="health-history-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
+                <button type="button" onclick="applyHistoryCustomRange('health')" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Anwenden</button>
+            </div>
+            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div class="flex items-center gap-4">
+                    <div id="health-history-ring" class="metric-history-ring"><div><strong id="health-history-current">—</strong><span id="health-history-unit"></span></div></div>
+                    <div class="min-w-0"><h2 id="health-history-title" class="text-base font-bold text-white">Ruheherzfrequenz</h2><p id="health-history-status" class="text-sm font-semibold text-slate-200 mt-1">Heute nicht erfasst</p><p id="health-history-recommendation" class="text-xs text-slate-400 mt-1">—</p></div>
+                </div>
+                <div class="h-64 sm:h-80 relative"><canvas id="health-metric-chart"></canvas></div>
+                <p id="health-history-chart-note" class="text-[10px] text-slate-500"></p>
+            </section>
+        </div>
+</div>
 
             <!-- MAIN LOAD GRAPH CONTAINER -->
             
