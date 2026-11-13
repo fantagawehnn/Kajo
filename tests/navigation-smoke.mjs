@@ -202,3 +202,8 @@ assert.ok(activities.includes('border-sky-800/50 bg-sky-950/20'), 'telemetry ava
 
 assert.ok(importer.includes("source:'fit',sources:['fit']"), 'manually imported FIT activities retain their file-import provenance');
 assert.ok(activities.includes("zoneLoad.zoneSource === 'maxhr-estimate'"), 'estimated HR-zone basis is explicitly identified in activity load details');
+
+assert.ok(activities.includes('function renderActivityRouteMap(activity)'), 'GPS map is only rendered from stored coordinate pairs');
+assert.ok(activities.includes('if (points.length < 2 || !globalThis.L)'), 'GPS map is hidden without valid points or map library');
+assert.ok(importer.includes("extractRecordSeries('position_lat', 'latitude')"), 'FIT import extracts GPS coordinates only when present');
+assert.ok(html.includes('leaflet@1.9.4'), 'activity route map uses a supported mapping library');
