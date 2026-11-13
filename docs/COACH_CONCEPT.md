@@ -159,7 +159,9 @@ Die Empfehlungen sollen sich an einem gepflegten Athletenprofil orientieren. Daz
 
 Nicht dokumentierte Informationen dürfen nicht als Tatsachen behandelt werden. Wenn ein persönlicher Kontext für die Empfehlung entscheidend ist und nicht vorliegt, muss der Coach nachfragen.
 
-## 8. Datennutzung und Datenumfang\n\n### 8.1 Vollständige, aber kontextbezogene Datennutzung
+## 8. Datennutzung und Datenumfang
+
+### 8.1 Vollständige, aber kontextbezogene Datennutzung
 
 Der Coach soll alle in KAJO tatsächlich verfügbaren und für die jeweilige Fragestellung relevanten Daten nutzen. „Alle verfügbaren Daten“ bedeutet ausdrücklich, dass keine relevante Datenkategorie oder vorhandene Historie ohne fachlichen Grund ignoriert werden darf. Es bedeutet nicht, dass jede Rohdatenzeile bei jeder Anfrage ungefiltert in den KI-Kontext geladen werden muss.
 
@@ -191,7 +193,7 @@ Zu berücksichtigen sind – soweit vorhanden, zugänglich, der Nutzerin zugeord
 - Der Coach darf nur auf Daten zugreifen, die der authentifizierten Nutzerin zugeordnet und durch die bestehenden Berechtigungen freigegeben sind.
 - Er darf keine Daten anderer Nutzerinnen oder Nutzer einbeziehen.
 
-## 10. Verhältnis zur bestehenden KAJO-Architektur
+## 9. Verhältnis zur bestehenden KAJO-Architektur
 
 Der Coach ist eine Interpretations- und Empfehlungsschicht oberhalb der vorhandenen Daten- und Berechnungsebene.
 
@@ -205,7 +207,7 @@ Er führt keine parallelen Berechnungen für bereits in KAJO vorhandene Kennzahl
 
 Die bestehende Architektur mit Supabase Auth, benutzerbezogenen Datenzugriffen und serverseitigen Garmin-Funktionen bleibt maßgeblich. Der Coach erhält ausschließlich die für die jeweilige Anfrage erforderlichen, authentifiziert zugeordneten Daten.
 
-## 9. Transparenz und Vertrauen
+## 10. Transparenz und Vertrauen
 
 Der Coach muss jederzeit nachvollziehbar machen:
 
@@ -218,7 +220,7 @@ Der Coach muss jederzeit nachvollziehbar machen:
 
 Er darf keine Daten, Testergebnisse, Trainingshistorien oder wissenschaftlichen Belege erfinden.
 
-## 10. Nicht-Ziele
+## 11. Nicht-Ziele
 
 Der KAJO-Coach ist zunächst ausdrücklich nicht:
 
@@ -229,7 +231,7 @@ Der KAJO-Coach ist zunächst ausdrücklich nicht:
 - ein System, das aus einzelnen Wearable-Werten verbindliche Trainingsverbote ableitet,
 - ein generischer Chatbot ohne Bezug zu den tatsächlichen KAJO-Daten.
 
-## 11. Erfolgskriterien
+## 12. Erfolgskriterien
 
 Der Coach ist fachlich erst dann als nutzbar zu bewerten, wenn:
 
