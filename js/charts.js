@@ -646,7 +646,7 @@ export function renderActivityTelemetryChart(act) {
     const pointReadout = document.getElementById('activity-telemetry-point');
     if (pointReadout) { pointReadout.hidden = true; pointReadout.textContent = ''; }
     const formatValue = value => (selected.key === 'pace' || selected.key === 'swimPace') && Number.isFinite(Number(value))
-        ? Math.floor(Number(value) / 60) + ':' + String(Math.round(Number(value) % 60)).padStart(2, '0')
+        ? Math.floor(Math.round(Number(value)) / 60) + ':' + String(Math.round(Number(value)) % 60).padStart(2, '0')
         : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
     const telem = act?.telemetry || act?.garminTelemetry || {};
     const times = Array.isArray(telem.time) ? telem.time : [];
@@ -728,7 +728,7 @@ export function renderActivityTelemetryChart(act) {
                     grid: { color: 'rgba(100,116,139,.12)' }, ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 8 } },
                 y: { title: { display: true, text: selected.key === 'pace' ? 'min/km' : selected.key === 'swimPace' ? 'min/100 m' : selected.unit, color: '#64748b', font: { size: 9 } },
                     ticks: { callback: value => (selected.key === 'pace' || selected.key === 'swimPace') ? formatValue(value) : value, color: '#94a3b8', font: { size: 9 } },
-                    grid: { color: 'rgba(100,116,139,.16)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
+                    grid: { color: 'rgba(100,116,139,.16)' } }
             }
         }
     });
