@@ -3687,10 +3687,10 @@ body > #daily-checkin-modal:not(.hidden) { z-index: 2147483646 !important; }
     border-top-color:var(--hero-ring-color); border-radius:50%;
     background:var(--kajo-bg); text-align:center;
 }
-.kajo-analysis-hero-ring[data-status="good"] { --hero-ring-color:#16a34a; }
-.kajo-analysis-hero-ring[data-status="attention"] { --hero-ring-color:#d97706; }
-.kajo-analysis-hero-ring[data-status="critical"] { --hero-ring-color:#dc2626; }
-.kajo-analysis-hero-ring[data-status="neutral"] { --hero-ring-color:var(--kajo-blue); }
+.kajo-analysis-hero-ring[data-status="good"] { --hero-ring-color:var(--kajo-status-good); }
+.kajo-analysis-hero-ring[data-status="attention"] { --hero-ring-color:var(--kajo-status-attention); }
+.kajo-analysis-hero-ring[data-status="critical"] { --hero-ring-color:var(--kajo-status-critical); }
+.kajo-analysis-hero-ring[data-status="neutral"] { --hero-ring-color:var(--kajo-status-info); }
 .kajo-analysis-hero-ring > div { display:flex; flex-direction:column; align-items:center; gap:.1rem; }
 .kajo-analysis-hero-ring strong { color:var(--kajo-text); font-size:1.65rem; line-height:1.05; font-weight:800; letter-spacing:-.04em; }
 .kajo-analysis-hero-ring span { color:var(--kajo-muted); font-size:.62rem; }
