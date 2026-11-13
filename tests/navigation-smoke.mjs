@@ -281,3 +281,9 @@ assert.ok(activities.includes('escape(getActivitySourceLabel(candidate))'), 'com
 assert.ok(activities.includes('container.innerHTML = metrics.map(metric => `<div><span>${metric.label}</span><div>${metric.value}</div></div>`'), 'activity metrics use compact neutral values rather than arbitrary metric status colors');
 
 assert.ok(activities.includes('lat.reduce((count, rawLat, index)'), 'activity data quality counts only valid GPS coordinate pairs');
+
+assert.ok(dataSource.includes('export function getActivityTelemetry(activity)'), 'activity telemetry accessor accepts explicitly identified FIT imports');
+assert.ok(dataSource.includes('activity?.source === \'fit\'') && dataSource.includes("activity.sources.includes('fit')"), 'only explicit FIT provenance enables imported FIT time series');
+assert.ok(dataSource.includes('if (!explicitFitSource) return null'), 'ambiguous legacy generic telemetry remains excluded');
+assert.ok(charts.includes('getActivityTelemetry(act)'), 'activity chart reads Garmin or explicitly sourced FIT telemetry');
+assert.ok(activities.includes('telemetry: getActivityTelemetry(act)'), 'activity detail passes the verified telemetry source to its modules');
