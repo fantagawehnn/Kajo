@@ -241,3 +241,8 @@ assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared anal
 assert.ok(trainingLoadView.includes("['complete', 'confirmed-rest'].includes(x.dataStatus)"), 'only complete or confirmed-rest days supply the current model value');
 assert.ok(trainingLoadView.includes('spanGaps: false'), 'unknown or incomplete days remain visible as chart gaps');
 assert.ok(!trainingLoadView.includes('monotony') && !trainingLoadView.includes('training strain'), 'unsupported load metrics are not fabricated');
+
+assert.ok(calculations.includes('export function calculateStrengthActivitySummary(exercises)'), 'strength volume calculation is centralized');
+assert.ok(calculations.includes('completeSets.length === sets.length'), 'strength volume is withheld when any set lacks data');
+assert.ok(activities.includes('function renderActivityStrengthAnalysis(activity)'), 'strength sessions have a dedicated read-only detail module');
+assert.ok(html.includes('id="activity-strength-analysis-panel"'), 'strength detail panel is part of the activity detail structure');
