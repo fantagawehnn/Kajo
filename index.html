@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=58">
+    <link rel="stylesheet" href="css/styles.css?v=59">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons CDN -->
@@ -212,78 +212,79 @@
 
         
 
-        <div id="view-dashboard" class="kajo-home space-y-5">
-  <h2 class="text-sm font-semibold text-slate-200">Dein Status</h2>
-  <div class="kajo-status-overview">
+        <div id="view-dashboard" class="kajo-home">
+  <header class="kajo-home-topbar">
+    <button type="button" class="kajo-home-brand" onclick="switchTab('today')" aria-label="KAJO Homescreen">
+      <img src="./branding/Herzschlag%20im%20Kajak-Wellenlogo.png?v=2" alt="KAJO">
+    </button>
+    <div class="kajo-home-header-actions">
+      <button type="button" class="kajo-home-icon-button" onclick="showSettingsModal()" aria-label="Benachrichtigungen und App-Mitteilungen" title="Benachrichtigungen"><i data-lucide="bell"></i></button>
+      <button type="button" class="kajo-home-icon-button" onclick="kajoOpenProfile(event)" aria-label="Profil öffnen" title="Profil"><i data-lucide="user-round"></i></button>
+    </div>
+  </header>
+
+  <section class="kajo-home-status" aria-labelledby="home-status-heading">
+    <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
-      <article class="kajo-ring-card metric-history-clickable" role="button" tabindex="0" onclick="switchTab('analysis-performance')" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('analysis-performance')" aria-label="Performance – Fitnessindikator CTL" title="Fitness (CTL): chronische Trainingsbelastung, kein direkter Leistungstest"><div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small id="home-fitness-change" class="kajo-fitness-change">→ —</small></div></div></article>
-      <article class="kajo-ring-card metric-history-clickable" role="button" tabindex="0" onclick="switchTab('analysis-recovery')" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('analysis-recovery')" aria-label="Recovery"><div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span><small class="kajo-fitness-change kajo-ring-change-placeholder" aria-hidden="true">&nbsp;</small></div></div></article>
-      <article class="kajo-ring-card metric-history-clickable" role="button" tabindex="0" onclick="switchTab('analysis-load')" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('analysis-load')" aria-label="Load – akute Trainingsbelastung ATL" title="ATL – akute Trainingsbelastung"><div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load · ATL</span><small class="kajo-fitness-change kajo-ring-change-placeholder" aria-hidden="true">&nbsp;</small></div></div></article>
+      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
+        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
+      </button>
+      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
+        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load</span><small>ATL</small></div></div>
+      </button>
+      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
+        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small>CTL · Fitnessmodell</small></div></div>
+      </button>
     </div>
-    <div class="kajo-day-selector">
-      <button id="dashboard-day-previous" type="button" onclick="changeDashboardDay(-1)" aria-label="Einen Tag zurück" title="Einen Tag zurück"><i data-lucide="chevron-left"></i></button>
-      <strong id="dashboard-selected-date">12.11.2026</strong>
-      <button id="dashboard-day-next" type="button" onclick="changeDashboardDay(1)" aria-label="Einen Tag vor" title="Einen Tag vor"><i data-lucide="chevron-right"></i></button>
-      <button id="dashboard-day-note" type="button" onclick="openDailyNote()" aria-label="Tagesnotiz schreiben" title="Tagesnotiz schreiben"><i data-lucide="notebook-pen" aria-hidden="true"></i></button>
-      <button id="dashboard-day-today" type="button" onclick="goToDashboardToday()" class="hidden">Heute</button>
-    </div>
-  </div>
-  <section class="kajo-panel" aria-labelledby="kajo-health-title">
-    <div class="kajo-panel-heading"><div><h2 id="kajo-health-title">Wearables &amp; Gesundheit</h2></div></div>
-    <div class="kajo-circle-grid">
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" role="button" tabindex="0" aria-label="Verlauf rhr" onclick="openHealthMetric('rhr')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></div><span>RHF · bpm</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" role="button" tabindex="0" aria-label="Verlauf hrv" onclick="openHealthMetric('hrv')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></div><span>HRV · ms</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-wear-score-ring" role="button" tabindex="0" aria-label="Verlauf sleepScore" onclick="openHealthMetric('sleepScore')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('sleepScore')"><strong id="home-wear-score" class="kajo-wearable-value">—</strong></div><span>Sleep Score</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-wear-duration-ring" role="button" tabindex="0" aria-label="Verlauf sleepDuration" onclick="openHealthMetric('sleepDuration')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('sleepDuration')"><strong id="home-wear-duration" class="kajo-wearable-value">—</strong></div><span>Schlafdauer</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-self-stress-ring" role="button" tabindex="0" aria-label="Verlauf stress" onclick="openHealthMetric('stress')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('stress')"><strong id="home-self-stress" class="kajo-wearable-value">—</strong></div><span>Stress</span></article>
-    </div>
-    <div class="kajo-panel-heading kajo-self-heading"><div><h2>Self-Monitoring</h2></div><button id="kajo-daily-checkin-button" type="button" title="Täglichen Check-in öffnen" aria-label="Täglichen Check-in öffnen" class="kajo-checkin-button" onclick="kajoOpenCheckin(event)">
-         <i data-lucide="clipboard-pen-line" aria-hidden="true"></i>
-         <span>Täglicher Check-in</span>
-       </button></div>
-    <div class="kajo-circle-grid">
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-self-sleep-ring" role="button" tabindex="0" aria-label="Verlauf sleepQuality" onclick="openHealthMetric('sleepQuality')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('sleepQuality')"><strong id="home-self-sleep" class="kajo-wearable-value">—</strong></div><span>Schlafqualität</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-self-soreness-ring" role="button" tabindex="0" aria-label="Verlauf soreness" onclick="openHealthMetric('soreness')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('soreness')"><strong id="home-self-soreness" class="kajo-wearable-value">—</strong></div><span>Muskelkater</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-self-fatigue-ring" role="button" tabindex="0" aria-label="Verlauf fatigue" onclick="openHealthMetric('fatigue')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('fatigue')"><strong id="home-self-fatigue" class="kajo-wearable-value">—</strong></div><span>Müdigkeit</span></article>
-      <article class="kajo-health-circle-item"><div class="kajo-health-circle metric-history-clickable" id="home-self-motivation-ring" role="button" tabindex="0" aria-label="Verlauf motivation" onclick="openHealthMetric('motivation')" onkeydown="if(event.key==='Enter'||event.key===' ')openHealthMetric('motivation')"><strong id="home-self-motivation" class="kajo-wearable-value">—</strong></div><span>Motivation</span></article>
-      
-    </div>
-    
+    <p id="dashboard-selected-date" class="kajo-home-date"></p>
   </section>
-  <section id="home-daily-overview" class="kajo-panel space-y-4" aria-labelledby="home-daily-overview-title">
-    <div class="kajo-panel-heading">
-      <div><h2 id="home-daily-overview-title">Training heute</h2></div>
-    </div>
-    <article class="home-recommendation-card">
-      <div class="flex items-center gap-2 text-rose-300"><i data-lucide="target" class="w-4 h-4"></i><span class="text-[10px] font-bold uppercase tracking-wider">Trainingsempfehlung</span></div>
-      <h3 id="home-training-recommendation" class="text-base font-bold text-white mt-2">Wird berechnet …</h3>
-      <p id="home-training-recommendation-detail" class="text-xs text-slate-300 mt-1">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</p>
-      <p id="home-training-recommendation-context" class="text-[10px] text-slate-500 mt-2"></p>
-    </article>
-    <section id="home-planned-section" class="hidden space-y-2" aria-labelledby="home-planned-title">
-      <div class="flex items-center justify-between"><h3 id="home-planned-title" class="text-sm font-semibold text-white">Heute geplant</h3><span class="text-[10px] text-sky-300">GEPLANT</span></div>
-      <div id="home-planned-list" class="space-y-2"></div>
+
+  <section id="home-daily-overview" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
+    <div class="kajo-home-section-heading"><h2 id="home-daily-overview-title">Training heute</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span></div>
+    <section id="home-planned-section" class="hidden kajo-home-session-group" aria-labelledby="home-planned-title">
+      <div class="kajo-home-subheading"><h3 id="home-planned-title">Geplant</h3><span>PLANUNG</span></div>
+      <div id="home-planned-list" class="home-today-list"></div>
     </section>
-    <section id="home-completed-section" class="hidden space-y-2" aria-labelledby="home-completed-title">
-      <div class="flex items-center justify-between"><h3 id="home-completed-title" class="text-sm font-semibold text-white">Bereits absolviert</h3><span class="text-[10px] text-emerald-300">ABGESCHLOSSEN</span></div>
-      <div id="home-completed-list" class="space-y-2"></div>
+    <section id="home-completed-section" class="hidden kajo-home-session-group" aria-labelledby="home-completed-title">
+      <div class="kajo-home-subheading"><h3 id="home-completed-title">Absolviert</h3><span>ABGESCHLOSSEN</span></div>
+      <div id="home-completed-list" class="home-today-list"></div>
     </section>
+    <p id="home-training-empty" class="kajo-empty hidden">Für heute sind keine Trainingseinheiten hinterlegt.</p>
   </section>
-  <section class="kajo-panel home-next-race-card metric-history-clickable" aria-labelledby="home-next-race-heading" role="button" tabindex="0" onclick="switchTab('training-planning')" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('training-planning')">
-    <div class="kajo-panel-heading">
-      <div class="flex items-center gap-2 text-rose-300"><i data-lucide="flag" class="w-4 h-4"></i><h2 id="home-next-race-heading" class="text-sm font-semibold text-white">Nächster Wettkampf</h2></div>
+
+  <button type="button" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
+    <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
+    <strong id="home-training-recommendation">Wird berechnet …</strong>
+    <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
+    <small id="home-training-recommendation-context"></small>
+  </button>
+
+  <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
+    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Wearable &amp; Gesundheitsdaten</h2></div>
+    <div class="kajo-circle-grid">
+      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
+      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
+      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-score-ring" aria-label="Sleep-Score-Detailansicht öffnen" onclick="openHealthMetric('sleepScore')"><strong id="home-wear-score" class="kajo-wearable-value">—</strong></button><span>Sleep</span></article>
+      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-duration-ring" aria-label="Schlafdauer-Detailansicht öffnen" onclick="openHealthMetric('sleepDuration')"><strong id="home-wear-duration" class="kajo-wearable-value">—</strong></button><span>Schlaf</span></article>
+      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-self-stress-ring" aria-label="Stress-Detailansicht öffnen" onclick="openHealthMetric('stress')"><strong id="home-self-stress" class="kajo-wearable-value">—</strong></button><span>Stress</span></article>
     </div>
-    <div class="flex items-end justify-between gap-3 mt-2">
-      <div class="min-w-0"><strong id="home-next-race-name" class="block text-sm text-white">Wird geladen …</strong><span id="home-next-race-date" class="text-[10px] text-slate-400"></span></div>
-      <div id="home-next-race-days" class="shrink-0 text-sm font-bold text-rose-300 tabular-nums"></div>
-    </div>
-    <span id="home-next-race-rank" class="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md"></span>
   </section>
-  <section id="home-training-week" class="kajo-panel space-y-3" aria-labelledby="home-training-week-title">
-    <div class="kajo-panel-heading"><h2 id="home-training-week-title" class="text-sm font-semibold text-white">Trainingswoche</h2><span id="home-week-range" class="text-[10px] text-slate-500"></span></div>
-    <p id="home-week-summary" class="text-xs text-slate-400"></p>
-    <div id="home-week-days" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
+
+  <button type="button" class="kajo-home-race metric-history-clickable" onclick="switchTab('training-planning')" aria-label="Wettkampfdetails öffnen">
+    <span class="kajo-home-section-heading"><strong>Nächster Wettkampf</strong><i data-lucide="flag" aria-hidden="true"></i></span>
+    <strong id="home-next-race-name">Kein Wettkampf geplant</strong>
+    <span id="home-next-race-date"></span>
+    <small id="home-next-race-days"></small>
+    <span id="home-next-race-rank" class="hidden"></span>
+  </button>
+
+  <section id="home-training-week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
+    <div class="kajo-home-section-heading"><h2 id="home-training-week-title">Trainingswoche</h2><span id="home-week-range" class="kajo-home-meta"></span></div>
+    <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsdauer pro Wochentag"></div>
+    <div id="home-week-legend" class="kajo-week-legend"></div>
+    <p id="home-week-summary" class="kajo-week-total"></p>
   </section>
+
   <div class="hidden" id="kpi-cards-grid">
     <span id="kpi-ctl">—</span><span id="kpi-atl">—</span><span id="kpi-tsb">—</span><span id="kpi-acwr">—</span>
     <span id="kpi-readiness">—</span><span id="kpi-readiness-status">Warte auf Check-in</span>
