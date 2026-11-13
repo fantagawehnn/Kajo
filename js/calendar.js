@@ -439,8 +439,9 @@ export function renderYearView() {
         activities.forEach(item => {
             const type = item.type || 'Workout';
             const format = item.raceFormat || '';
-            const key = type + '::' + format;
-            if (!bySport[key]) bySport[key] = { type, format, minutes: 0, count: 0, complete: true };
+            const source = calendarActivitySourceLabel(item);
+            const key = type + '::' + format + '::' + source;
+            if (!bySport[key]) bySport[key] = { type, format, source, minutes: 0, count: 0, complete: true };
             bySport[key].count++;
             if (item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0) bySport[key].minutes += Number(item.duration);
             else bySport[key].complete = false;
@@ -467,7 +468,8 @@ export function renderYearView() {
             const sport = catalog[data.type] || catalog.Workout;
             const width = week.totalMinutes > 0 ? Math.max(3, data.minutes / week.totalMinutes * 100) : 0;
             const label = sport.label + (data.format ? ' · ' + data.format : '');
-            return '<span class="calendar-year-sport-segment" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(label) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
+            const sourceClass = data.source === 'Manuell' ? 'is-source-manual' : data.source.includes('Intervals') ? 'is-source-intervals' : data.source.includes('Dateiimport') ? 'is-source-file' : data.source.includes('Garmin') ? 'is-source-garmin' : 'is-source-unknown';
+            return '<span class="calendar-year-sport-segment ' + sourceClass + '" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(label) + ' · ' + escapeHtml(data.source) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
         }).join('');
         const plannedSegments = Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
         const hours = !week.activities.length || (!week.durationComplete && week.totalMinutes === 0) ? '—' : (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h');
