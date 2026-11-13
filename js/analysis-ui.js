@@ -134,13 +134,13 @@ function renderHealthTimeline() {
           label: item => item.dataset.label + ': ' + (item.parsed.y ? 'dokumentiert' : 'kein Eintrag') } } },
       scales: {
         x: { stacked: true, grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 8 } },
-        y: { stacked: true, beginAtZero: true, max: 1, ticks: { display: false, stepSize: 1 }, grid: { color: 'rgba(148,163,184,.10)' } }
+        y: { stacked: true, beginAtZero: true, max: 2, ticks: { display: false, stepSize: 1 }, grid: { color: 'rgba(148,163,184,.10)' } }
       }
     }
   });
 }
 function renderHealth() {
-  const entries = Object.entries(state.healthLogs || {}).filter(([, item]) => item?.status === 'sick' || item?.status === 'injured');
+  const from = new Date(todayKey() + 'T12:00:00'); from.setDate(from.getDate() - 27);\n  const fromKey = from.getFullYear() + '-' + String(from.getMonth() + 1).padStart(2, '0') + '-' + String(from.getDate()).padStart(2, '0');\n  const entries = Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= fromKey && date <= todayKey() && (item?.status === 'sick' || item?.status === 'injured'));
   const sick = entries.filter(([, item]) => item.status === 'sick').length;
   const injured = entries.filter(([, item]) => item.status === 'injured').length;
   setHero('health', '—', '', 'Noch nicht berechenbar',
