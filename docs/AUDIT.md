@@ -88,8 +88,8 @@ Die technische Zuordnung und offenen manuellen Abnahmen stehen in [docs/NAVIGATI
 
 - GitHub-Actions-Workflow prüft JavaScript-Syntax, Navigation-Smoke-Tests und Regression-Smoke-Tests.
 - Die Tests wurden an die bestehende, bewusst geschützte benutzerbezogene Speicherung angepasst: globale Legacy-Daten werden nicht automatisch in einen Account importiert.
-- Die Regression-Smoke-Tests und Navigation-Smoke-Tests liefen im aktuellen V2-Branch erfolgreich durch (zuletzt Commit `9011c23d6f688bdc2e804d02f6b9c1f0a1291bc5`).
-- Der Pages-Build wird pro Commit separat geprüft.
+- Die Regression-Smoke-Tests und Navigation-Smoke-Tests liefen im aktuellen V2-Branch erfolgreich durch (zuletzt Commit `eb2c6f53d66898aa4d89d45bdca775b2d1be3bc1`).
+- Der Jekyll-/Pages-Build-Schritt war für Commit `c589bba8229e43c790aece8eac80c2336a612e1b` erfolgreich. Die anschließende Veröffentlichung scheiterte mit HTTP 404, weil GitHub Pages im Repository noch nicht aktiviert ist. Es wurde keine Veröffentlichung erzwungen.
 - Login, Garmin-Live-Sync, Datenqualität, Dark/Light Mode und mobile Darstellung sind noch nicht end-to-end abgenommen.
 
 ## 9. Sicherheits- und Änderungsgrenzen
