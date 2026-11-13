@@ -376,6 +376,10 @@ export function renderMonthView() {
 export function renderWeekView() {
     const sportCatalog=getSportsCatalog(),categoryColors=getTypeColorMap();
     const container = document.getElementById('cal-format-week');
+    if (!container) return;
+    container.classList.toggle('grid-cols-1', state.activeCalendarFormat === 'day');
+    container.classList.toggle('grid-cols-7', state.activeCalendarFormat !== 'day');
+    container.classList.toggle('min-w-[900px]', state.activeCalendarFormat !== 'day');
     container.innerHTML = '';
     
     const curr = new Date(state.currentCalendarDate);
