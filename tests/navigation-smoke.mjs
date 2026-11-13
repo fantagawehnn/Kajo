@@ -273,3 +273,5 @@ assert.ok(activities.includes("container.dataset.status = series.length ? (hasTi
 assert.ok(activities.includes('candidate.trainingPartner !== activity.trainingPartner'), 'C2 comparisons require the same documented partner');
 assert.ok(activities.includes('escape(getActivitySourceLabel(candidate))'), 'comparison entries retain their source provenance');
 assert.ok(activities.includes('metricsContainer.innerHTML = metrics.map(metric =>'), 'activity metrics use compact neutral values rather than arbitrary metric status colors');
+
+assert.ok(activities.includes('lat.reduce((count, rawLat, index)'), 'activity data quality counts only valid GPS coordinate pairs');
