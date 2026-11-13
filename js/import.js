@@ -771,7 +771,10 @@ export async function handleMultipleFileSelect(evt) {
                             ...(Number.isFinite(lapStartSeconds) && Number.isFinite(lapDuration) && lapDuration > 0 ? { startTimeSeconds: lapStartSeconds, endTimeSeconds: lapStartSeconds + lapDuration } : {}),
                             distance: Number.isFinite(lapDistanceKm) && lapDistanceKm > 0 ? lapDistanceKm * 1000 : null,
                             avgHr: Number(lap.avg_heart_rate) || null,
-                            maxHr: Number(lap.max_heart_rate) || null
+                            maxHr: Number(lap.max_heart_rate) || null,
+                            avgPower: Number(lap.avg_power) || null,
+                            maxPower: Number(lap.max_power) || null,
+                            avgCadence: Number(lap.avg_cadence) || null
                         };
                     });
                     return {id:`fit-${file.name}-${date}-${i}`,source:'fit',sources:['fit'],sourceId:null,startTime:new Date(start).toISOString(),date,name,type:inferSport(name,sportName),tss:Number.isFinite(Number(session.training_load))?Number(session.training_load):null,duration:durationSec>0?Math.round(durationSec/60):null,distance:dist,hr:Number(session.avg_heart_rate)||null,maxHr:Number(session.max_heart_rate)||null,category:inferCategory(name,sportName),laps:sessionLaps,telemetry:labels.length?{
