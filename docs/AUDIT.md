@@ -72,15 +72,27 @@ Die übernommene Anwendung nutzt ein großes HTML-Grundgerüst, Tailwind-Klassen
 
 Die V2-Übernahme ist deshalb eine funktionsfähige Ausgangsbasis, aber noch keine abgeschlossene Designsystem-Überarbeitung. Vorhandene Tokens und Komponenten müssen zunächst vollständig inventarisiert werden; Berechnungen und fachliche Inhalte dürfen bei der UI-Überarbeitung nicht verändert werden.
 
-## 7. Teststatus
+## 7. Navigation und Seitenstruktur
 
-- GitHub-Actions-Workflow für Regression-Smoke-Tests wurde ergänzt.
+Die verbindliche Fünf-Tab-Navigation ist in V2 umgesetzt: Heute, Kalender, Training, Analyse und Mehr. Auf Desktop und Smartphone sind die fünf Hauptbereiche getrennt erreichbar. Training besitzt die Unterbereiche Aktivitäten und Trainingsplanung; Analyse besitzt die Unterbereiche Training Load, Recovery, Performance und Health.
+
+Die Kalenderansichten Tag, Woche, Monat und Jahr sind verfügbar; die Woche ist Standard. Die Aktivitätsliste ist in den Trainingsbereich eingeordnet. Profil, Sporteinstellungen, Garmin-/Datenverwaltung und App-Einstellungen sind unter Mehr gruppiert.
+
+Die Heute-Seite enthält die vorhandenen Recovery-/Load-/Fitnessindikatoren, Wearable-Kennzahlen, Tagesplanung, den nächsten Wettkampf und eine interaktive Wochenübersicht. Die CTL-Anzeige ist als Fitnessindikator gekennzeichnet und nicht als direkter Leistungstest zu verstehen. Load nutzt den bestehenden ATL-Wert. Die Anzeige ändert keine Berechnungsformeln.
+
+Bei Tages- und Wochensummen werden Dauer und Load nur dann summiert, wenn die jeweiligen Werte für alle berücksichtigten Aktivitäten vorhanden sind. Fehlende Werte werden nicht als Nullwerte ausgegeben. Die Trainingsverfügbarkeit wird nicht berechnet, solange die erforderliche Datenbasis nicht vollständig nachgewiesen ist.
+
+Die technische Zuordnung und offenen manuellen Abnahmen stehen in [docs/NAVIGATION.md](NAVIGATION.md).
+
+## 8. Teststatus
+
+- GitHub-Actions-Workflow prüft JavaScript-Syntax, Navigation-Smoke-Tests und Regression-Smoke-Tests.
 - Die Tests wurden an die bestehende, bewusst geschützte benutzerbezogene Speicherung angepasst: globale Legacy-Daten werden nicht automatisch in einen Account importiert.
-- Die Regression-Smoke-Tests liefen auf Commit `4f5116fb78aa9feb78f2935ea699ef6a7a059ff1` erfolgreich durch.
+- Die Regression-Smoke-Tests und Navigation-Smoke-Tests liefen im aktuellen V2-Branch erfolgreich durch (zuletzt Commit `9011c23d6f688bdc2e804d02f6b9c1f0a1291bc5`).
 - Der Pages-Build wird pro Commit separat geprüft.
 - Login, Garmin-Live-Sync, Datenqualität, Dark/Light Mode und mobile Darstellung sind noch nicht end-to-end abgenommen.
 
-## 8. Sicherheits- und Änderungsgrenzen
+## 9. Sicherheits- und Änderungsgrenzen
 
 - Keine produktiven Supabase-Migrationen ohne gesonderte Prüfung und ausdrückliche Freigabe.
 - Keine Änderungen an Garmin-Credentials oder bestehenden Nutzerdaten im Rahmen der UI-Übernahme.
