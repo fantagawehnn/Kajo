@@ -4453,3 +4453,21 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 #csv-details-modal #activity-comparison-panel { order:15; }
 
 #csv-details-modal .activity-detail-metrics>div { border-left-color:var(--activity-sport-color,var(--color-border,#334155)); }
+
+#csv-details-modal #activity-route-map-panel { order:4; }
+#csv-details-modal .activity-route-map { width:100%; height:clamp(220px,32vw,340px); overflow:hidden; border-radius:9px; background:#111827; }
+#csv-details-modal .activity-route-map .leaflet-control-attribution { font-size:8px; }
+#csv-details-modal #activity-fit-data-panel { order:5; }
+#csv-details-modal #activity-intervals-panel { order:6; }
+#csv-details-modal #activity-elevation-panel { order:7; }
+#csv-details-modal .activity-stimulus-panel { order:8; }
+#csv-details-modal #activity-zone-panel { order:9; }
+#csv-details-modal #activity-rpe-panel { order:10; }
+#csv-details-modal #activity-benefit-profile { order:11; }
+#csv-details-modal #activity-recovery-panel { order:12; }
+#csv-details-modal #activity-efficiency-panel { order:13; }
+#csv-details-modal #activity-load-context-panel { order:14; }
+#csv-details-modal #activity-ai-panel { order:15; }
+#csv-details-modal #activity-comparison-panel { order:16; }
+#csv-details-modal #activity-edit-panel { order:1; }
+@media(max-width:640px) { #csv-details-modal .activity-route-map { height:240px; } }
