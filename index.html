@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=60">
+    <link rel="stylesheet" href="css/styles.css?v=61">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons CDN -->
@@ -218,7 +218,7 @@
       <img src="./branding/Herzschlag%20im%20Kajak-Wellenlogo.png?v=2" alt="KAJO">
     </button>
     <div class="kajo-home-header-actions">
-      <button type="button" class="kajo-home-icon-button" onclick="openSettingsModal()" aria-label="Benachrichtigungen und Erinnerungen öffnen" title="Benachrichtigungen & Erinnerungen"><i data-lucide="bell"></i></button>
+      <button type="button" class="kajo-home-icon-button" onclick="openSettingsModal()" aria-label="Push- und Erinnerungseinstellungen öffnen" title="Push & Erinnerungen"><i data-lucide="bell"></i></button>
       <button type="button" class="kajo-home-icon-button" onclick="kajoOpenProfile(event)" aria-label="Profil öffnen" title="Profil"><i data-lucide="user-round"></i></button>
     </div>
   </header>
@@ -270,10 +270,12 @@
     </div>
   </section>
 
-  <button type="button" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
+  <button type="button" id="home-next-race-card" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
     <span class="kajo-home-section-heading"><strong>Nächster Wettkampf</strong><i data-lucide="flag" aria-hidden="true"></i></span>
     <strong id="home-next-race-name">Kein Wettkampf geplant</strong>
     <span id="home-next-race-date"></span>
+    <span id="home-next-race-location" class="kajo-home-meta"></span>
+    <span id="home-next-race-sport" class="kajo-home-meta"></span>
     <small id="home-next-race-days"></small>
     <span id="home-next-race-rank" class="hidden"></span>
   </button>
