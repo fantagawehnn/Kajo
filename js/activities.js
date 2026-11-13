@@ -51,7 +51,7 @@ function renderActivityDataQuality(activity) {
         laps.length ? laps.length + ' Runden / Abschnitte' : null
     ].filter(Boolean);
     container.textContent = parts.join(' · ');
-    container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'unavailable';
+    container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'not-calculable';
 }
 
 function getActivityZoneConfig(activity) {
@@ -535,6 +535,7 @@ function renderActivityComparisons(activity) {
         if (!(distance > 0 && otherDistance > 0 && Math.round(otherDistance * 100) === Math.round(distance * 100))) return false;
         if (isCanoe) {
             if (!activity.raceFormat) return false;
+            if (activity.type === 'C2' && (!activity.trainingPartner || candidate.trainingPartner !== activity.trainingPartner)) return false;
             const otherRoutes = storedRouteIds(candidate);
             if (!routeIds.length || !otherRoutes.length || routeIds.join('|') !== otherRoutes.join('|')) return false;
             const otherWater = candidate.waterConditions || {};
@@ -554,7 +555,7 @@ function renderActivityComparisons(activity) {
     }).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0,3);
     if (!matches.length) {
         panel.classList.remove('hidden');
-        panel.innerHTML = '<p class="text-xs text-slate-500">Noch keine ausreichend vergleichbare Einheit vorhanden. Kanu-Vergleiche setzen gleiche Bootsklasse, Rennformat, Strecke, Gewässertyp, Pegel und Abfluss voraus; andere Sportarten gleiche Kategorie, Rennformat und Distanz.</p>';
+        panel.innerHTML = '<p class="text-xs text-slate-500">Noch keine ausreichend vergleichbare Einheit vorhanden. Kanu-Vergleiche setzen gleiche Bootsklasse, Rennformat, Strecke, Gewässertyp, Pegel und Abfluss voraus; C2 zusätzlich denselben dokumentierten Partner. Andere Sportarten benötigen gleiche Kategorie, Rennformat und Distanz.</p>';
         return;
     }
     const currentSpeed = Number(activity.avgSpeed ?? activity.averageSpeed);
@@ -565,7 +566,7 @@ function renderActivityComparisons(activity) {
         const durationDiff = duration > 0 && Number(candidate.duration) > 0 ? Number(candidate.duration) - duration : null;
         return '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-slate-800 py-2 text-xs">'
             + '<div><strong class="text-slate-200">' + escape(candidate.name || 'Training') + '</strong><div class="text-[10px] text-slate-500">'
-            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + Math.round(Number(candidate.duration)) + ' min'
+            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + Math.round(Number(candidate.duration)) + ' min · ' + escape(getActivitySourceLabel(candidate))
             + (candidate.distance ? ' · ' + formatKm(candidate.distance) + ' km' : '') + '</div></div>'
             + '<div class="text-right text-[10px] text-slate-400">'
             + (speedDiff !== null ? 'Geschwindigkeit: ' + (speedDiff > 0 ? '+' : '') + speedDiff.toFixed(1) + '%' : '')
