@@ -9,7 +9,7 @@ import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
 import { calculateStrengthActivitySummary } from './calculations.js';
-import { getGarminTelemetry } from './data-source.js';
+import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 function getActivitySourceLabel(activity) {
     const refs = activity?.sourceRefs || {};
@@ -77,7 +77,7 @@ function getActivityZoneConfig(activity) {
 // Einheitliche Zeit-in-HF-Zonen-Berechnung für Zonenübersicht und Reizprofil.
 // Ohne Zeitstempel wird die dokumentierte Dauer gleichmäßig auf alle Samples verteilt.
 function calculateActivityZoneTime(activity, zoneConfig = getActivityZoneConfig(activity)) {
-    const telemetry = getGarminTelemetry(activity);
+    const telemetry = getActivityTelemetry(activity);
     const hr = telemetry?.hr;
     const zones = zoneConfig.zones;
     if (!Array.isArray(hr) || hr.length < 2 || !Array.isArray(zones) || zones.length !== 4) return null;
@@ -158,7 +158,7 @@ export function openCSVDetailsModal(id) {
         badge.style.borderColor = sportColor + '88';
         badge.style.color = sportColor;
     }
-    const analysisActivity = { ...act, telemetry: getGarminTelemetry(act) };
+    const analysisActivity = { ...act, telemetry: getActivityTelemetry(act) };
     state.activityTelemetryMetric = null;
     state.activitySelectedLap = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
@@ -595,7 +595,7 @@ function renderOptionalActivityViews(act) {
         el.innerHTML = `<h4 class="text-xs font-bold text-white mb-2">${title}</h4>${body}`;
     };
     const safe = value => Number.isFinite(Number(value)) ? Number(value) : null;
-    const telemetry = getGarminTelemetry(act) || {};
+    const telemetry = getActivityTelemetry(act) || {};
     const hr = Array.isArray(telemetry.hr) ? telemetry.hr.map(safe) : [];
     const speed = Array.isArray(telemetry.speed) ? telemetry.speed.map(safe) : [];
     const times = Array.isArray(telemetry.time) ? telemetry.time : [];
