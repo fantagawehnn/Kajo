@@ -197,7 +197,7 @@ assert.ok(activities.includes("panel.classList.add('hidden'); panel.innerHTML = 
 
 assert.ok(activities.includes('const storedRouteIds = item =>'), 'comparison rendering reads stored route assignments without inferring or mutating them');
 
-assert.ok(activities.includes("container.style.setProperty('--activity-sport-color'"), 'activity metric accents use the configured sport color');
+assert.ok(activities.includes("metricsContainer.style.setProperty('--activity-sport-color'"), 'activity metric accents use the configured sport color');
 assert.ok(activities.includes("'border-sky-800/50 bg-sky-950/20"), 'telemetry availability uses neutral information color, not positive status color');
 
 assert.ok(importer.includes("source:'fit',sources:['fit']"), 'manually imported FIT activities retain their file-import provenance');
