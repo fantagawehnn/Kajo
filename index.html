@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=59">
+    <link rel="stylesheet" href="css/styles.css?v=60">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons CDN -->
@@ -218,7 +218,7 @@
       <img src="./branding/Herzschlag%20im%20Kajak-Wellenlogo.png?v=2" alt="KAJO">
     </button>
     <div class="kajo-home-header-actions">
-      <button type="button" class="kajo-home-icon-button" onclick="showSettingsModal()" aria-label="Benachrichtigungen und App-Mitteilungen" title="Benachrichtigungen"><i data-lucide="bell"></i></button>
+      <button type="button" class="kajo-home-icon-button" onclick="openSettingsModal()" aria-label="Benachrichtigungen und Erinnerungen öffnen" title="Benachrichtigungen & Erinnerungen"><i data-lucide="bell"></i></button>
       <button type="button" class="kajo-home-icon-button" onclick="kajoOpenProfile(event)" aria-label="Profil öffnen" title="Profil"><i data-lucide="user-round"></i></button>
     </div>
   </header>
@@ -270,7 +270,7 @@
     </div>
   </section>
 
-  <button type="button" class="kajo-home-race metric-history-clickable" onclick="switchTab('training-planning')" aria-label="Wettkampfdetails öffnen">
+  <button type="button" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
     <span class="kajo-home-section-heading"><strong>Nächster Wettkampf</strong><i data-lucide="flag" aria-hidden="true"></i></span>
     <strong id="home-next-race-name">Kein Wettkampf geplant</strong>
     <span id="home-next-race-date"></span>
@@ -291,6 +291,13 @@
     <span id="kpi-rec-short">Noch keine Empfehlung</span><span id="kpi-rec-sub">Warte auf auswertbare Trainingsdaten</span><span id="kpi-tsb-status">Wird berechnet</span>
     <span id="kpi-ctl-trend"></span><span id="kpi-atl-trend"></span>
   </div>
+</div>
+
+<div id="race-detail-modal" class="hidden fixed inset-0 z-[94] items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="race-detail-title">
+  <section class="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-5 space-y-4">
+    <div class="flex items-center justify-between gap-3"><h2 id="race-detail-title" class="text-lg font-bold text-white">Wettkampfdetails</h2><button type="button" onclick="closeRaceDetail()" aria-label="Wettkampfdetails schließen" class="text-slate-400 hover:text-white text-2xl">×</button></div>
+    <div id="race-detail-content" class="space-y-3"></div>
+  </section>
 </div>
 
 <div id="view-analyses" class="hidden space-y-6 kajo-analysis-view">
