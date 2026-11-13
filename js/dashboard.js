@@ -536,7 +536,7 @@ export function renderHomeTrainingWeek() {
     const validDuration = item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) >= 0;
     const durationsComplete = activities.every(validDuration);
     const minutes = item => validDuration(item) ? Number(item.duration) : null;
-    const dayTotals = dates.map(date => activities.filter(item => item.date === date && validDuration(item)).reduce((sum,item)=>sum+minutes(item),0));
+    const dayTotals = dates.map(date => activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item)).reduce((sum,item)=>sum+minutes(item),0));
     const maxMinutes = Math.max(60, ...dayTotals);
     const sportsUsed = [...new Set(activities.filter(validDuration).map(item => item.type || 'Other'))];
     const colorFor = type => catalog[type]?.color || catalog.Other?.color || '#64748b';
@@ -544,7 +544,7 @@ export function renderHomeTrainingWeek() {
     const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
     root.replaceChildren();
     dates.forEach((date,index) => {
-        const dayItems = activities.filter(item => item.date === date && validDuration(item));
+        const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item));
         const total = dayTotals[index];
         const dayButton = document.createElement('button');
         dayButton.type = 'button';
@@ -559,12 +559,13 @@ export function renderHomeTrainingWeek() {
         const grouped = new Map();
         dayItems.forEach(item => grouped.set(item.type || 'Other',(grouped.get(item.type || 'Other') || 0)+minutes(item)));
         [...grouped.entries()].forEach(([type,value]) => {
-            const segment = document.createElement('span');
+            const segment = document.createElement('button');
+            segment.type = 'button';
             segment.className = 'kajo-week-segment';
             segment.style.height = (value / maxMinutes * 100) + '%';
             segment.style.backgroundColor = colorFor(type);
             segment.title = labelFor(type) + ': ' + (value/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h';
-            segment.setAttribute('aria-label', segment.title);
+            segment.setAttribute('aria-label', labelFor(type) + ' am ' + date + ': Tagesdetails öffnen');
             segment.addEventListener('click', event => {
                 event.stopPropagation();
                 window.openDayEditor?.(date);
