@@ -7,6 +7,7 @@ const calendar = readFileSync('js/calendar.js', 'utf8');
 const state = readFileSync('js/state.js', 'utf8');
 const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
 const charts = readFileSync('js/charts.js', 'utf8');
+const dashboard = readFileSync('js/dashboard.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -39,6 +40,8 @@ assert.ok(html.includes('id="analysis-health-timeline"'), 'health availability/e
 assert.ok(analysisUI.includes('calculateReadiness()'), 'recovery reuses the existing readiness calculation');
 assert.ok(analysisUI.includes('CTL bleibt ein Belastungs-/Fitnessindikator'), 'CTL is not presented as direct performance');
 assert.ok(analysisUI.includes('statistische Methode für eine robuste, adaptive Baseline ist noch nicht festgelegt'), 'adaptive baseline is not fabricated');
+assert.ok(dashboard.includes('Persönlicher Normalbereich noch nicht methodisch festgelegt'), 'unapproved wearable ranges are not presented as personal norms');
+assert.ok(!dashboard.includes('Im persönlichen Bereich'), 'legacy personal-range classification is suppressed');
 assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe synchronizes detail history');
 
 console.log('KAJO navigation and analysis UI smoke tests passed.');
