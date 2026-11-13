@@ -185,12 +185,12 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         return value !== undefined && Number.isFinite(Number(value)) ? Number(value) : null;
     };
     const formatSpeed = value => value === null ? null : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' km/h';
-    const formatPace = value => {
+    const formatPace = (value, unit = 'km') => {
         if (value === null) return null;
         if (typeof value === 'string') return value;
         const seconds = Number(value);
         if (!Number.isFinite(seconds) || seconds <= 0) return null;
-        return Math.floor(seconds / 60) + ':' + String(Math.round(seconds % 60)).padStart(2, '0') + ' min/km';
+        return Math.floor(seconds / 60) + ':' + String(Math.round(seconds % 60)).padStart(2, '0') + (unit === '100m' ? ' min/100 m' : ' min/km');
     };
     add('Dauer', Number.isFinite(Number(act.duration)) && Number(act.duration) > 0 ? Math.round(Number(act.duration)) + ' min' : null);
     if (!isStrength && Number.isFinite(Number(act.distance)) && Number(act.distance) > 0) add('Distanz', formatKm(act.distance) + ' km');
@@ -212,17 +212,23 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         add('Schlagfrequenz', strokeRate !== null && strokeRate > 0 ? Math.round(strokeRate) + '/min' : null);
     } else if (type === 'Run') {
         add('Ø Pace', formatPace(firstNumber(act.avgPaceSecondsPerKm, act.averagePaceSecondsPerKm, act.avgPace, act.pace)));
+        const maxSpeed = firstNumber(act.maxSpeed, act.maximumSpeed);
         const cadence = firstNumber(act.cadence, act.avgCadence, act.runCadence);
+        add('Max. Geschwindigkeit', formatSpeed(maxSpeed));
         add('Schrittfrequenz', cadence !== null && cadence > 0 ? Math.round(cadence) + '/min' : null);
     } else if (type === 'Ride') {
         const speed = firstNumber(act.avgSpeed, act.averageSpeed, act.speed);
         const power = firstNumber(act.avgPower, act.averagePower, act.power);
+        const maxSpeed = firstNumber(act.maxSpeed, act.maximumSpeed);
+        const maxPower = firstNumber(act.maxPower, act.maximumPower);
         const cadence = firstNumber(act.cadence, act.avgCadence);
         add('Ø Geschwindigkeit', formatSpeed(speed));
+        add('Max. Geschwindigkeit', formatSpeed(maxSpeed));
         add('Ø Leistung', power !== null && power > 0 ? Math.round(power) + ' W' : null);
+        add('Max. Leistung', maxPower !== null && maxPower > 0 ? Math.round(maxPower) + ' W' : null);
         add('Trittfrequenz', cadence !== null && cadence > 0 ? Math.round(cadence) + '/min' : null);
     } else if (type === 'Swim') {
-        add('Ø Pace', formatPace(firstNumber(act.avgPaceSecondsPer100m, act.averagePaceSecondsPer100m, act.avgPace, act.pace)));
+        add('Ø Pace', formatPace(firstNumber(act.avgPaceSecondsPer100m, act.averagePaceSecondsPer100m), '100m'));
         const swolf = firstNumber(act.swolf, act.avgSwolf);
         add('SWOLF', swolf !== null && swolf > 0 ? Math.round(swolf) : null);
         const strokes = firstNumber(act.strokeRate, act.avgStrokeRate);
