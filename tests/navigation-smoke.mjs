@@ -196,3 +196,6 @@ assert.ok(activities.includes("['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']"
 assert.ok(activities.includes("panel.classList.add('hidden'); panel.innerHTML = ''; return;"), "activity detail contains panel.classList.add('hidden'); panel.innerHTML = ''; return;");
 
 assert.ok(activities.includes('const storedRouteIds = item =>'), 'comparison rendering reads stored route assignments without inferring or mutating them');
+
+assert.ok(activities.includes("container.style.setProperty('--activity-sport-color'"), 'activity metric accents use the configured sport color');
+assert.ok(activities.includes("'border-sky-800/50 bg-sky-950/20"), 'telemetry availability uses neutral information color, not positive status color');
