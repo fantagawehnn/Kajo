@@ -4471,3 +4471,23 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 #csv-details-modal #activity-comparison-panel { order:16; }
 #csv-details-modal #activity-edit-panel { order:1; }
 @media(max-width:640px) { #csv-details-modal .activity-route-map { height:240px; } }
+
+
+/* KAJO V2 – kompakte Training-Load-Unterseite. */
+.kajo-training-load-view{min-width:0}.kajo-training-load-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kajo-training-load-heading h2,.kajo-training-load-heading h3{color:var(--color-text-primary,#f4f7fa);font-size:15px;font-weight:800;margin-top:3px}
+.kajo-training-load-muted{color:var(--color-text-secondary,#a9b5c2);font-size:11px;line-height:1.5;margin-top:5px}.kajo-training-load-coverage{color:var(--color-text-muted,#7d8a98);font-size:10px;line-height:1.45;margin-top:8px}
+.kajo-training-load-panel,.kajo-training-load-rings{min-width:0;padding:12px;border:1px solid var(--color-border,#293644);border-radius:13px;background:var(--color-surface,#111820)}
+.kajo-training-load-rings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kajo-load-metric{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;padding:7px 3px;border:1px solid transparent;border-radius:10px;background:transparent;color:inherit;cursor:pointer}
+.kajo-load-metric:hover:not(:disabled),.kajo-load-metric:focus-visible{border-color:var(--color-border,#293644);background:var(--color-surface-raised,#17212c);outline:none}.kajo-load-metric:disabled{opacity:.42;cursor:not-allowed}
+.kajo-load-ring{display:flex;align-items:center;justify-content:center;width:clamp(68px,17vw,88px);aspect-ratio:1;border:5px solid var(--color-ring-track,#293644);border-radius:50%;background:var(--color-surface-raised,#17212c)}
+.kajo-load-ring strong{color:var(--color-text-primary,#f4f7fa);font-size:clamp(16px,4vw,21px);font-weight:850;font-variant-numeric:tabular-nums}.kajo-load-label{color:var(--color-text-primary,#f4f7fa);font-size:12px;font-weight:800}.kajo-load-metric small{color:var(--color-text-muted,#7d8a98);font-size:9px;text-align:center}
+.kajo-load-switch{display:flex;gap:5px;margin-top:10px}.kajo-load-switch button{min-width:52px;padding:6px 10px;border:1px solid var(--color-border,#293644);border-radius:7px;color:var(--color-text-secondary,#a9b5c2);background:var(--color-surface-subtle,#1c2835);font-size:10px;font-weight:700}
+.kajo-load-switch button.active{border-color:var(--kajo-red,#d64a4a);color:var(--color-text-primary,#f4f7fa);background:rgba(214,74,74,.13)}
+.kajo-training-load-chart-wrap{position:relative;width:100%;height:clamp(190px,32vw,270px);margin-top:10px}.kajo-training-load-method{color:var(--color-text-muted,#7d8a98);font-size:10px;line-height:1.5}
+#training-load-no-data{padding:14px;border:1px solid var(--color-border,#293644);border-radius:12px;background:var(--color-surface,#111820)}#training-load-no-data strong{color:var(--color-text-primary,#f4f7fa);font-size:12px}#training-load-no-data p{color:var(--color-text-secondary,#a9b5c2);font-size:11px;margin-top:5px}
+html[data-theme="light"] .kajo-training-load-panel,html[data-theme="light"] .kajo-training-load-rings,html[data-theme="light"] #training-load-no-data,html.theme-light .kajo-training-load-panel,html.theme-light .kajo-training-load-rings{background:#fff;border-color:#d8e0ea}
+html[data-theme="light"] .kajo-load-ring,html.theme-light .kajo-load-ring{background:#f3f6fa;border-color:#d8e0ea}
+html[data-theme="light"] .kajo-training-load-heading h2,html[data-theme="light"] .kajo-training-load-heading h3,html[data-theme="light"] .kajo-load-ring strong,html[data-theme="light"] .kajo-load-label,html.theme-light .kajo-load-ring strong,html.theme-light .kajo-load-label{color:#172033}
+@media(max-width:420px){.kajo-training-load-rings{gap:2px;padding:7px 4px}.kajo-load-ring{border-width:4px}}
