@@ -17,14 +17,14 @@ import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js';
-import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
+import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
 import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu } from './calendar.js?v=8';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker } from './charts.js';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=74';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js';
-import { addRace, deleteRace, renderRaces, toggleRaceModal } from './competitions.js';
+import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail } from './competitions.js';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js';
 import { sendAICoachMessage } from './coach.js';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js';
@@ -1821,6 +1821,8 @@ Object.assign(window, {
     closeBackupPreview,
     confirmBackupRestore,
     addRace,
+    openNextRaceDetail,
+    closeRaceDetail,
     saveTrainingRoute,
     saveTrainingWaterSection,
     renameTrainingWater,
@@ -1853,6 +1855,7 @@ Object.assign(window, {
     handleMultipleFileSelect,
     changeDashboardDay,
     goToDashboardToday,
+    selectDashboardDate,
     openDailyNote,
     closeDailyNote,
     saveDailyNote,
