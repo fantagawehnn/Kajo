@@ -3650,3 +3650,5 @@ body > #daily-checkin-modal:not(.hidden) { z-index: 2147483646 !important; }
   .kajo-subnav{margin-left:-2px;margin-right:-2px}
 }
 @media(min-width:768px){.kajo-mobile-nav{display:none!important}}
+
+.calendar-week-scroll{overscroll-behavior-x:contain;scrollbar-width:thin}
