@@ -4762,3 +4762,31 @@ html[data-theme="light"] .kajo-push-hint { background:#EDF1F5; border-color:#DCE
 html[data-theme="light"] .kajo-reminder-days span { background:#EDF1F5; border-color:#DCE3EA; color:#526170; }
 html[data-theme="light"] .kajo-reminder-days input:checked+span { background:rgba(39,104,184,.08); border-color:#2768B8; color:#17212B; }
 html[data-theme="light"] .kajo-reminder-item h4 { color:#17212B; }
+
+
+/* KAJO – Hybrid-Layout für „Mehr“: kompakte Gruppenliste plus echter Garmin-Status. */
+#view-more.kajo-more-view { display:flex; flex-direction:column; gap:1rem; }
+#view-more .kajo-more-header { display:flex; align-items:flex-end; justify-content:space-between; padding:.15rem 0 .1rem; }
+#view-more .kajo-more-header h1 { margin:0; color:var(--kajo-text,#fff); font-size:1.65rem; line-height:1.1; font-weight:800; letter-spacing:-.04em; }
+#view-more .kajo-more-header p { margin:.3rem 0 0; color:var(--kajo-muted,#9ca3af); font-size:.82rem; }
+#view-more .kajo-more-status { display:flex; align-items:center; justify-content:space-between; gap:.75rem; width:100%; min-height:4rem; padding:.75rem .9rem; border:1px solid var(--kajo-border,#263449); border-radius:14px; background:var(--kajo-surface,#0f1420); color:var(--kajo-text,#fff); text-align:left; }
+#view-more .kajo-more-status-main { display:flex; align-items:center; gap:.55rem; min-width:0; }
+#view-more .kajo-more-status-label { color:var(--kajo-muted,#9ca3af); font-size:.78rem; }
+#view-more .kajo-more-status-main strong { font-size:.8rem; font-weight:650; }
+#view-more .kajo-more-status-dot { width:.55rem; height:.55rem; flex:0 0 auto; border-radius:50%; background:#64748b; }
+#view-more .kajo-more-status-dot.is-connected { background:#22c55e; }
+#view-more .kajo-more-status-dot.is-error { background:#ef4444; }
+#view-more .kajo-more-status-action { display:flex; align-items:center; gap:.4rem; color:var(--kajo-muted,#9ca3af); font-size:.68rem; white-space:nowrap; }
+#view-more .kajo-more-status-action svg { width:1rem; height:1rem; }
+#view-more .kajo-more-group { display:grid; gap:.2rem; padding:0; overflow:hidden; border:1px solid var(--kajo-border,#263449); border-radius:14px; background:var(--kajo-surface,#0f1420); }
+#view-more .kajo-more-group>h2 { padding:.72rem .9rem .45rem; color:var(--kajo-muted,#9ca3af); font-size:.68rem; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+#view-more .kajo-area-list { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:0 !important; }
+#view-more .kajo-area-card { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:.8rem !important; width:100% !important; min-height:3.65rem !important; padding:.65rem .9rem !important; border:0 !important; border-top:1px solid var(--kajo-border,#263449) !important; border-radius:0 !important; background:transparent !important; color:var(--kajo-text,#fff) !important; text-align:left !important; box-shadow:none !important; }
+#view-more .kajo-area-card:hover,#view-more .kajo-area-card:focus-visible { background:rgba(148,163,184,.07) !important; outline:none; }
+#view-more .kajo-area-icon { display:grid !important; place-items:center !important; flex:0 0 2rem !important; width:2rem !important; height:2rem !important; border-radius:9px !important; color:var(--kajo-muted,#9ca3af) !important; background:rgba(148,163,184,.08) !important; }
+#view-more .kajo-area-icon svg { width:1.1rem !important; height:1.1rem !important; }
+#view-more .kajo-area-card strong { min-width:0; color:var(--kajo-text,#fff); font-size:.82rem; font-weight:600; line-height:1.35; }
+#view-more .kajo-area-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:.18rem; }
+#view-more .kajo-area-copy small { color:var(--kajo-muted,#9ca3af); font-size:.68rem; line-height:1.35; }
+@media(min-width:768px) { #view-more.kajo-more-view { max-width:820px; } }
+@media(max-width:420px) { #view-more .kajo-more-status-action span { display:none; } }
