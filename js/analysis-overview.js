@@ -73,6 +73,8 @@ function renderShortStatuses() {
     const mapped = labels[latestLoad.statusLabel];
     if (mapped && !['srpe', 'garmin-unavailable'].includes(latestLoad.loadMode)) [loadLabel, loadTone] = mapped;
     else if (latestLoad.statusLabel === 'Modellwert') loadLabel = 'Modellwert';
+    else if (latestLoad.statusLabel === 'Keine Load-Quelle') loadLabel = 'Keine Load-Quelle';
+    else if (latestLoad.statusLabel === 'Keine relative Basis') loadLabel = 'Keine Basis';
   } else if (latestLoad?.dataStatus === 'unknown' || latestLoad?.dataStatus === 'incomplete-activity-load') {
     loadLabel = 'Datenlücke';
   }
@@ -87,10 +89,11 @@ function renderShortStatuses() {
   }
   renderCircleStatus('recovery', recoveryLabel, recoveryTone);
 
-  renderCircleStatus('performance', latestCheckin('vo2max') ? 'Messwert' : 'Nicht erfasst', 'neutral');
+  renderCircleStatus('performance', latestCheckin('vo2max') ? 'Importwert · Quelle offen' : 'Nicht erfasst', 'neutral');
 
-  const healthEntries = Object.entries(state.healthLogs || {}).filter(([, item]) => item?.status === 'sick' || item?.status === 'injured');
-  renderCircleStatus('health', healthEntries.length ? 'Dokumentiert' : 'Keine Daten', 'neutral');
+  // Health availability is not yet calculated from matched planned and completed
+  // training time. Illness/injury log entries alone are not an availability score.
+  renderCircleStatus('health', 'Nicht berechenbar', 'neutral');
 }
 function currentRange() {
   const to = todayKey();
