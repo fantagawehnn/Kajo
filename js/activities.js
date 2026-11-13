@@ -7,7 +7,7 @@ import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
-import { getTrainingLoadData } from './training-load.js';
+import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
 import { populateActivityRouteSelect, getActivityRouteAssignments } from './routes.js';
 function getActivityZoneConfig(activity) {
     const saved = state.settings?.heartRateZones?.[activity.type];
@@ -318,12 +318,26 @@ function renderActivityTrainingInsights(act) {
     const category = categoryLabels[act.category] || 'Nicht zugeordnet';
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
-    const load = loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}`
-        : act.sRpeLoad != null && Number.isFinite(Number(act.sRpeLoad)) ? `${Number(act.sRpeLoad).toFixed(0)} sRPE` : '—';
-    stimulus.innerHTML = `<div class="grid grid-cols-2 gap-2">
-        <div class="rounded-lg bg-slate-900 p-3"><div class="text-[10px] text-slate-500">Kategorie</div><strong class="mt-1 block text-sm text-white">${category}</strong></div>
-        <div class="rounded-lg bg-slate-900 p-3"><div class="text-[10px] text-slate-500">Trainingsload</div><strong class="mt-1 block text-sm text-sky-300">${load}</strong></div>
-    </div><details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Zur Berechnung</summary><p class="mt-2">Der EA-HF-Zonen-Load basiert auf der Garmin-HF-Zeitreihe und den hinterlegten Zonen. Falls keine Sportzonen vorliegen, kann HFmax als Näherung dienen. Er ist nicht mit TSS gleichzusetzen.</p></details>`;
+    const load = loadItem ? loadItem.value.toFixed(1) + ' ' + loadData.unit : '—';
+    const loadLabel = loadData.mode === 'garmin-native' ? 'Garmin Training Load'
+        : loadData.mode === 'garmin-zone' ? 'KAJO HF-Zonen-Load'
+        : loadData.mode === 'srpe' ? 'sRPE-Load'
+        : loadData.mode === 'external-tss' ? 'Externes TSS' : 'Aktives Load-Modell';
+    const zoneLoad = calculateGarminZoneLoad(act, state.settings, state.profile);
+    const srpeData = getTrainingLoadData([act], { ...(state.settings || {}), trainingLoadSource: 'srpe' }, state.profile);
+    const srpeItem = srpeData.records[0];
+    const separateLoads = [
+        act.garminTrainingLoad != null && Number.isFinite(Number(act.garminTrainingLoad)) ? ['Garmin Training Load', Number(act.garminTrainingLoad).toFixed(1)] : null,
+        zoneLoad ? ['KAJO HF-Zonen-Load', zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,
+        srpeItem ? ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU'] : null,
+        act.edwardsTrimp != null && Number.isFinite(Number(act.edwardsTrimp)) ? ['Edwards TRIMP', Number(act.edwardsTrimp).toFixed(1)] : null
+    ].filter(Boolean);
+    const loadRows = separateLoads.map(([label, value]) => '<div class="flex justify-between gap-3 border-b border-slate-800 py-1.5 text-[10px]"><span class="text-slate-400">' + label + '</span><strong class="text-slate-200">' + value + '</strong></div>').join('');
+    stimulus.innerHTML = '<div class="grid grid-cols-2 gap-2">'
+        + '<div class="rounded-lg bg-slate-900 p-2"><div class="text-[10px] text-slate-500">Kategorie</div><strong class="mt-1 block text-sm text-white">' + category + '</strong></div>'
+        + '<div class="rounded-lg bg-slate-900 p-2"><div class="text-[10px] text-slate-500">' + loadLabel + '</div><strong class="mt-1 block text-sm text-sky-300">' + load + '</strong></div>'
+        + '</div>' + (loadRows ? '<div class="mt-2">' + loadRows + '</div>' : '')
+        + '<details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Methoden & Datenbasis</summary><p class="mt-2">Garmin Training Load, KAJO HF-Zonen-Load und sRPE-Load werden getrennt ausgewiesen und nicht addiert. Ein eigenständiges Edwards-TRIMP-Feld erscheint nur, wenn es im Aktivitätsdatensatz explizit gespeichert ist.</p></details>';
     renderTrainingBenefitProfile(act);
     const zoneTime = calculateActivityZoneTime(act);
     if (!zoneTime || !zoneTime.totalSeconds) { if (zonePanel) zonePanel.classList.add('hidden'); return; }
