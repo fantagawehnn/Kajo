@@ -88,9 +88,11 @@ export function openCSVDetailsModal(id) {
     if (dateEl) {
         const start = act.startTime ? new Date(act.startTime) : null;
         const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
-        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : act.garminFitImported ? 'FIT-Import' : 'Quelle nicht ausgewiesen';
+        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData || act.sources?.includes?.('garmin') ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null || act.sources?.includes?.('intervals') ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : act.garminFitImported ? 'FIT-Import' : 'Quelle nicht ausgewiesen';
         dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');
     }
+    const metricsContainer = document.getElementById('activity-sport-metrics');
+    if (metricsContainer) metricsContainer.style.setProperty('--activity-sport-color', getSportsCatalog()[act.type]?.color || '#38bdf8');
     const badge = document.getElementById('modal-act-type-badge');
     if (badge) {
         const sports = { Kayaking: 'K1', C1: 'C1', C2: 'C2', PaddleErgo: 'Paddelergometer', Run: 'Laufen', Ride: 'Radfahren', Swim: 'Schwimmen', WeightTraining: 'Krafttraining' };
@@ -153,8 +155,8 @@ function renderActivityHeartRateSeriesStatus(activity) {
     }, 0);
     const hasSeries = hr.length >= 2 && time.length === hr.length && validCount >= 2;
     container.className = hasSeries
-        ? 'rounded-xl border border-emerald-800/70 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-300'
-        : 'rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-400';
+        ? 'rounded-lg border border-sky-800/50 bg-sky-950/20 px-3 py-2 text-xs text-sky-300'
+        : 'rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-400';
     container.textContent = hasSeries
         ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte'
         : 'Keine HF-Zeitreihe vorhanden';
