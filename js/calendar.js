@@ -242,7 +242,7 @@ export function renderCalendar() {
     });
     document.getElementById('cal-format-day')?.classList.toggle('hidden', format !== 'day');
     document.getElementById('cal-format-month')?.classList.toggle('hidden', format !== 'month');
-    document.getElementById('cal-format-week')?.classList.toggle('hidden', format !== 'week');
+    document.getElementById('cal-format-week')?.classList.toggle('hidden', format !== 'week' && format !== 'day');
     document.getElementById('cal-format-year')?.classList.toggle('hidden', format !== 'year');
     document.getElementById('cal-format-list')?.classList.toggle('hidden', format !== 'activities');
     const isActivities = format === 'activities';
@@ -282,7 +282,7 @@ export function renderYearView() {
         card.appendChild(heading);
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-7 gap-1 text-center';
-        ['M','D','M','D','F','S','S'].forEach(label => {
+        ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(label => {
             const cell = document.createElement('span');
             cell.className = 'text-[9px] text-slate-500';
             cell.textContent = label;
