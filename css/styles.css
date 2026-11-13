@@ -4408,3 +4408,8 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 #view-calendar .calendar-week-source { color:var(--color-text-muted,#7d8a98); font-size:7px; line-height:1.2; overflow-wrap:anywhere; }
 
 #view-calendar .calendar-day-events { display:inline-flex; align-items:center; gap:5px; }
+
+#view-calendar .calendar-year-sport-segment.is-source-manual { border-bottom:2px dashed var(--color-text-primary,#f4f7fa); }
+#view-calendar .calendar-year-sport-segment.is-source-intervals { background-image:repeating-linear-gradient(135deg,transparent 0 2px,rgba(0,0,0,.28) 2px 3px); }
+#view-calendar .calendar-year-sport-segment.is-source-file { opacity:.72; }
+#view-calendar .calendar-year-sport-segment.is-source-unknown { opacity:.42; border:1px dotted currentColor; }
