@@ -614,6 +614,7 @@ export function applyCustomDateRange() {
     const to = document.getElementById('date-to')?.value;
     if (!from || !to || from > to) return;
     state.metricHistoryRange = 'custom';
+    state.activeTimeframe = 'custom';
     ['health', 'training'].forEach(kind => {
         const fromInput = document.getElementById(kind + '-history-from');
         const toInput = document.getElementById(kind + '-history-to');
