@@ -4180,10 +4180,10 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 #analysis-subpage-recovery > #view-health-data { order: 3; }
 #analysis-subpage-recovery > #recovery-analysis-metrics { order: 4; }
 #analysis-subpage-health > .kajo-analysis-hero { order: 1; }
-#analysis-subpage-health > .kajo-panel:nth-of-type(1) { order: 2; }
-#analysis-subpage-health > .kajo-panel:nth-of-type(2) { order: 3; }
+#analysis-subpage-health > #analysis-health-events-panel { order: 2; }
+#analysis-subpage-health > #analysis-health-timeline-panel { order: 3; }
 #analysis-subpage-health > #health-analysis-metrics { order: 4; }
-#analysis-subpage-health > .kajo-panel:nth-of-type(3) { order: 5; }
+#analysis-subpage-health > #analysis-health-availability-panel { order: 5; }
 #analysis-subpage-health > #analysis-health-section { order: 6; }
 #analysis-subpage-load > *, #analysis-subpage-recovery > *, #analysis-subpage-health > * {
     margin-top: 0 !important;
