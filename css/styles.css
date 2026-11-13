@@ -4166,6 +4166,29 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 }
 
 
+
+/* Keep each domain's main time-series before its compact supplementary metrics. */
+#analysis-subpage-load, #analysis-subpage-recovery, #analysis-subpage-health {
+    display: flex; flex-direction: column;
+}
+#analysis-subpage-load > .kajo-analysis-hero { order: 1; }
+#analysis-subpage-load > #analysis-load-section { order: 2; }
+#analysis-subpage-load > #load-analysis-metrics { order: 3; }
+#analysis-subpage-load > #load-analysis-sources { order: 4; }
+#analysis-subpage-recovery > .kajo-analysis-hero { order: 1; }
+#analysis-subpage-recovery > #analysis-regeneration-section { order: 2; }
+#analysis-subpage-recovery > #view-health-data { order: 3; }
+#analysis-subpage-recovery > #recovery-analysis-metrics { order: 4; }
+#analysis-subpage-health > .kajo-analysis-hero { order: 1; }
+#analysis-subpage-health > .kajo-panel:nth-of-type(1) { order: 2; }
+#analysis-subpage-health > .kajo-panel:nth-of-type(2) { order: 3; }
+#analysis-subpage-health > #health-analysis-metrics { order: 4; }
+#analysis-subpage-health > .kajo-panel:nth-of-type(3) { order: 5; }
+#analysis-subpage-health > #analysis-health-section { order: 6; }
+#analysis-subpage-load > *, #analysis-subpage-recovery > *, #analysis-subpage-health > * {
+    margin-top: 0 !important;
+}
+
 /* Analysis refinement: one centered, consistently sized hero metric across all four domains. */
 .kajo-analysis-view { gap: .85rem !important; }
 .kajo-analysis-header { align-items: flex-end; gap: .75rem; }
