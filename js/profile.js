@@ -196,6 +196,7 @@ function sectionMarkup(section, profile) {
 function renderProfileOverview(profile, progress) {
   const age = profileAge(profile.birthDate);
   const facts = [
+    ['Alter', age !== '–' ? age + ' Jahre' : null],
     ['Sportart', profile.sport],
     ['Hauptdisziplin', profile.discipline],
     ['Verein', profile.club],
@@ -205,19 +206,18 @@ function renderProfileOverview(profile, progress) {
   const seasonGoal = profile.mainGoal ? '<section class="kajo-profile-goal"><div><p class="kajo-profile-eyebrow">SAISONZIEL' + (profile.season ? ' · ' + escapeHtml(profile.season) : '') + '</p><strong>' + escapeHtml(profile.mainGoal).replace(/\n/g, '<br>') + '</strong></div></section>' : '';
   const rows = sections.map(section => {
     const item = sectionProgress(section, profile);
-    const percent = item.total ? Math.round(item.filled / item.total * 100) : 0;
     return '<button type="button" class="kajo-profile-nav-row" onclick="openAthleteProfileSection(\'' + section.id + '\')"><span class="kajo-profile-section-icon"><i data-lucide="' + section.icon + '"></i></span><span class="kajo-profile-nav-copy"><strong>' + section.title + '</strong><small>' + section.subtitle + '</small></span><span class="kajo-profile-nav-count">' + item.filled + '/' + item.total + '</span><span class="kajo-profile-row-indicator" aria-hidden="true"><i data-lucide="chevron-right"></i></span></button>';
   }).join('');
   const avatar = isSafeImageUrl(profile.photoUrl) ? '<img class="kajo-profile-avatar-image" src="' + escapeHtml(profile.photoUrl) + '" alt="Profilbild">' : '<div class="kajo-profile-avatar">' + escapeHtml(String(profile.name || 'Athlet').trim().split(/\s+/).slice(0,2).map(part => part[0] || '').join('').toUpperCase() || 'A') + '</div>';
   return '<header class="kajo-profile-hero"><div class="kajo-profile-identity">' + avatar +
     '<div class="kajo-profile-identity-text"><p class="kajo-profile-eyebrow">DEIN ATHLETENPROFIL</p><h1>' + escapeHtml(profile.name || 'Dein Profil') + '</h1><span>' + escapeHtml(displayValue({key:'level'}, profile.level) || 'Leistungsniveau offen') + '</span></div>' +
-    '<div class="kajo-profile-completion" style="--profile-progress:' + progress.percent + '%" role="img" aria-label="Profil zu ' + progress.percent + ' Prozent ausgefüllt"><div><strong>' + progress.percent + '%</strong><small>Profil</small></div></div></div>' +
+    '<div class="kajo-profile-completion" style="--profile-progress:' + progress.percent + '%" role="img" aria-label="Profil zu ' + progress.percent + ' Prozent ausgefüllt"><div><strong>' + progress.percent + '%</strong><small>Profil</small></div></div><button type="button" class="kajo-profile-back kajo-profile-overview-back" onclick="closeProfileModal()" aria-label="Profil schließen"><i data-lucide="arrow-left"></i></button></div>' +
     '<div class="kajo-profile-facts">' + (facts.length ? facts.map(([label,value]) => '<div><span>' + label + '</span><strong>' + escapeHtml(value) + '</strong></div>').join('') : '<p>Ergänze dein Sportprofil, um hier deine wichtigsten Angaben zu sehen.</p>') + '</div>' +
     '</header>' + seasonGoal + '<section class="kajo-profile-overview"><div class="kajo-profile-overview-heading"><div><p class="kajo-profile-eyebrow">PROFILBEREICHE</p><h2>Deine sportliche Basis</h2></div><span>' + sections.length + ' Bereiche</span></div><div class="kajo-profile-nav-list">' + rows + '</div></section>' +
     '<p class="kajo-profile-footnote">Dein Profil ist privat und nur deinem angemeldeten Konto zugeordnet. Nicht hinterlegte Werte werden von KAJO nicht geschätzt.</p>';
 }
 
-export function renderAthleteProfile(sectionId = null) {
+export function renderAthleteProfile(sectionId = activeProfileSection) {
   const root = document.getElementById('athlete-profile-content');
   if (!root) return;
   const profile = state.profile && typeof state.profile === 'object' ? state.profile : {};
@@ -249,7 +249,7 @@ export function openAthleteProfileSection(sectionId) {
 }
 
 export function closeAthleteProfileSection() {
-  renderAthleteProfile();
+  renderAthleteProfile(null);
   document.getElementById('view-profile')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 }
 
