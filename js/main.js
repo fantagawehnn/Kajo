@@ -95,7 +95,7 @@ function switchTab(requestedTab) {
         today: { parent: 'today', view: 'dashboard' },
         'dashboard-details': { parent: 'today', view: 'dashboard-details' },
         calendar: { parent: 'calendar', view: 'calendar' },
-        training: { parent: 'training', view: 'races', sub: 'planning' },
+        training: { parent: 'training', view: 'calendar', sub: 'activities' },
         'training-activities': { parent: 'training', view: 'calendar', sub: 'activities' },
         'training-planning': { parent: 'training', view: 'races', sub: 'planning' },
         races: { parent: 'training', view: 'races', sub: 'planning' },
