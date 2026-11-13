@@ -188,3 +188,9 @@ assert.ok(activities.includes("getSportsCatalog()[act.type]?.color"), 'activity 
 assert.ok(activities.includes('function renderActivityComparisons(activity)'), 'activity comparisons are gated by sport-specific comparability');
 assert.ok(activities.includes('identische Strecke und ähnliche dokumentierte Wasserbedingungen'), 'canoe comparisons require matching route and recorded water conditions');
 assert.ok(activities.includes('getActivityTelemetrySeries(act).length > 0'), 'telemetry chart remains visible for any supported measured series');
+
+assert.ok(activities.includes("function renderActivityComparisons(activity)"), "activity detail contains function renderActivityComparisons(activity)");
+assert.ok(activities.includes("getActivityTelemetrySeries(act).length > 0"), "activity detail contains getActivityTelemetrySeries(act).length > 0");
+assert.ok(activities.includes("calculateGarminZoneLoad(act, state.settings, state.profile)"), "activity detail contains calculateGarminZoneLoad(act, state.settings, state.profile)");
+assert.ok(activities.includes("['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']"), "activity detail contains ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']");
+assert.ok(activities.includes("panel.classList.add('hidden'); panel.innerHTML = ''; return;"), "activity detail contains panel.classList.add('hidden'); panel.innerHTML = ''; return;");
