@@ -4540,3 +4540,45 @@ html[data-theme="light"] #csv-details-modal textarea { background:var(--kajo-sur
 @media(max-width:640px){.kajo-analysis-circles{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 8px}.kajo-analysis-circle-item .kajo-analysis-hero-ring{flex-basis:100px;width:100px;height:100px}}
 @media(max-width:360px){.kajo-analysis-circle-item .kajo-analysis-hero-ring{flex-basis:88px;width:88px;height:88px}.kajo-analysis-circle-item .kajo-analysis-hero-ring strong{font-size:1.2rem}}
 html[data-theme="light"] .kajo-analysis-circle-item{color:var(--kajo-text)}
+
+
+/* KAJO V2 – compact hybrid activity detail, shared theme tokens */
+#csv-details-modal { background:var(--color-background,#0B0F14); color:var(--color-text-primary,#F4F7FA); }
+#csv-details-modal .activity-detail-shell { background:var(--color-background,#0B0F14); }
+#csv-details-modal .activity-detail-toolbar { background:var(--color-surface,#111820); border-color:var(--color-border,#293644); }
+#csv-details-modal .activity-detail-nav-button { background:var(--color-surface-raised,#17212C); border-color:var(--color-border,#293644); color:var(--color-text-primary,#F4F7FA); }
+#csv-details-modal .activity-detail-overview { padding:2px 0 10px; border-color:var(--color-border,#293644); }
+#csv-details-modal .activity-detail-section-heading { margin-bottom:8px; }
+#csv-details-modal .activity-detail-metrics { grid-template-columns:repeat(auto-fit,minmax(108px,1fr)); gap:0; border-top:1px solid var(--color-border,#293644); border-bottom:1px solid var(--color-border,#293644); }
+#csv-details-modal .activity-detail-metrics>div { padding:9px 10px; border:0; border-right:1px solid var(--color-border,#293644); border-radius:0; background:transparent; box-shadow:none; }
+#csv-details-modal .activity-detail-metrics>div:last-child { border-right:0; }
+#csv-details-modal .activity-detail-metrics>div span { color:var(--color-text-muted,#7D8A98); }
+#csv-details-modal .activity-detail-metrics>div div { color:var(--color-text-primary,#F4F7FA); font-size:clamp(14px,1.4vw,17px); }
+#csv-details-modal .activity-detail-panel { background:var(--color-surface,#111820); border-color:var(--color-border,#293644); border-radius:11px; }
+#csv-details-modal .activity-detail-section-heading h3,
+#csv-details-modal .activity-detail-dynamic-panel h4 { color:var(--color-text-primary,#F4F7FA); }
+#csv-details-modal .activity-data-quality { display:flex; flex-wrap:wrap; gap:4px 10px; padding:7px 2px 0; color:var(--color-text-muted,#7D8A98); font-size:9px; line-height:1.45; }
+#csv-details-modal .activity-data-quality[data-status="limited"] { color:var(--color-text-secondary,#A9B5C2); }
+#csv-details-modal .activity-data-quality[data-status="unavailable"] { color:var(--color-text-muted,#7D8A98); }
+#csv-details-modal .activity-detail-grid { grid-template-columns:minmax(0,1.55fr) minmax(260px,.9fr); gap:12px; }
+#csv-details-modal .activity-detail-primary,
+#csv-details-modal .activity-detail-sidebar { gap:10px; }
+#csv-details-modal .activity-detail-content { gap:12px; }
+#csv-details-modal .activity-telemetry-point { margin-top:8px; padding:7px 9px; border-left:2px solid var(--activity-sport-color,#38bdf8); background:var(--color-surface-subtle,#1C2835); color:var(--color-text-primary,#F4F7FA); font-size:10px; font-variant-numeric:tabular-nums; }
+#csv-details-modal .activity-telemetry-point[hidden] { display:none; }
+#csv-details-modal .activity-series-switch { background:var(--color-surface-subtle,#1C2835); border-color:var(--color-border,#293644); color:var(--color-text-secondary,#A9B5C2); }
+#csv-details-modal .activity-series-switch.is-active { border-color:var(--activity-sport-color,var(--kajo-red,#d64a4a)); background:var(--color-surface-raised,#17212C); color:var(--color-text-primary,#F4F7FA); }
+#csv-details-modal .activity-canoe-panel { background:var(--color-surface,#111820); border-color:var(--color-border,#293644); }
+#csv-details-modal .activity-canoe-subsection { background:var(--color-surface-subtle,#1C2835); }
+@media(max-width:760px) {
+  #csv-details-modal .activity-detail-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:640px) {
+  #csv-details-modal .activity-detail-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #csv-details-modal .activity-detail-metrics>div:nth-child(2n) { border-right:0; }
+  #csv-details-modal .activity-detail-metrics>div { border-bottom:1px solid var(--color-border,#293644); }
+  #csv-details-modal .activity-detail-metrics>div:nth-last-child(-n+2) { border-bottom:0; }
+  #csv-details-modal .activity-detail-panel { padding:10px 11px; }
+}
+[data-theme="light"] #csv-details-modal .activity-detail-toolbar-title h2,
+[data-theme="light"] #csv-details-modal .activity-detail-position { color:var(--color-text-primary,#17212B); }
