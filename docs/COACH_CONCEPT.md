@@ -1,6 +1,6 @@
 # KAJO V2 – Konzept des passiven KI-Coachs
 
-**Status:** Fachkonzept – Entwurf 1.3 (Saisonziele und Wettkampfprioritäten)  
+**Status:** Fachkonzept – Entwurf 1.4 (vollständige Nutzung verfügbarer Daten)  
 **Ziel-Repository:** `fantagawehnn/Kajo`  
 **Ziel-Branch:** `v2`  
 **Geltungsbereich:** KI-gestützte Trainingsanalyse und Trainingsempfehlungen  
@@ -10,7 +10,7 @@
 
 ## 1. Zielsetzung und Rolle
 
-Der KAJO-Coach wird zunächst individuell für die Nutzerin entwickelt. Sein sportlicher Schwerpunkt ist der Kanu-Wildwasserrennsport. Gleichzeitig berücksichtigt er weitere von ihr ausgeübte Sportarten und Trainingsformen. Er ist damit kein allgemeiner Coach für beliebige Nutzerprofile, sondern ein persönlicher Mehrsport-Coach, dessen Empfehlungen aus dem gesamten Trainingskontext abgeleitet werden. Er verbindet die in KAJO vorhandenen Trainings-, Leistungs-, Regenerations- und Gesundheitsinformationen zu nachvollziehbaren Einordnungen und konkreten Handlungsempfehlungen.
+Der KAJO-Coach wird zunächst individuell für die Nutzerin entwickelt. Sein sportlicher Schwerpunkt ist der Kanu-Wildwasserrennsport. Gleichzeitig berücksichtigt er weitere von ihr ausgeübte Sportarten und Trainingsformen. Er ist damit kein allgemeiner Coach für beliebige Nutzerprofile, sondern ein persönlicher Mehrsport-Coach, dessen Empfehlungen aus dem gesamten Trainingskontext abgeleitet werden. Er nutzt grundsätzlich alle in KAJO tatsächlich verfügbaren und für die jeweilige Fragestellung relevanten Daten aus Training, Leistung, Regeneration, Gesundheit, Athletenprofil und Wettkampfplanung. Dazu gehören – sofern vorhanden und freigegeben – aktuelle Werte ebenso wie die vollständige nutzbare Trainingshistorie und längerfristige Verläufe. Er soll nicht nur einzelne Kennzahlen oder den jüngsten Trainingstag betrachten.
 
 Der Coach soll insbesondere:
 
@@ -159,7 +159,39 @@ Die Empfehlungen sollen sich an einem gepflegten Athletenprofil orientieren. Daz
 
 Nicht dokumentierte Informationen dürfen nicht als Tatsachen behandelt werden. Wenn ein persönlicher Kontext für die Empfehlung entscheidend ist und nicht vorliegt, muss der Coach nachfragen.
 
-## 8. Verhältnis zur bestehenden KAJO-Architektur
+## 8. Datennutzung und Datenumfang\n\n### 8.1 Vollständige, aber kontextbezogene Datennutzung
+
+Der Coach soll alle in KAJO tatsächlich verfügbaren und für die jeweilige Fragestellung relevanten Daten nutzen. „Alle verfügbaren Daten“ bedeutet ausdrücklich, dass keine relevante Datenkategorie oder vorhandene Historie ohne fachlichen Grund ignoriert werden darf. Es bedeutet nicht, dass jede Rohdatenzeile bei jeder Anfrage ungefiltert in den KI-Kontext geladen werden muss.
+
+Zu berücksichtigen sind – soweit vorhanden, zugänglich, der Nutzerin zugeordnet und für die Analyse relevant:
+- Trainingsaktivitäten und Trainingshistorie einschließlich Dauer, Umfang, Intensität, Sportart und Einheitentyp,
+- Herzfrequenzdaten, Zeitreihen und Zoneninformationen,
+- getrennte Belastungskennzahlen und deren Zeitverläufe,
+- RPE und weitere manuelle Trainingsangaben,
+- Recovery-Daten wie HRV, Ruhepuls, Schlaf und Body Battery,
+- Leistungsdaten, Tests, VO₂max-Werte und deren jeweilige Messquelle,
+- Gesundheitskontext wie dokumentierte Krankheit, Verletzung und Trainingsausfall,
+- Athletenprofil, individuelle Zonen, Einschränkungen und Präferenzen,
+- Saisonziele, Saisonhöhepunkte und die vorhandene A–E-Wettkampfplanung,
+- geplante Einheiten und weitere Kontextinformationen, sofern sie in KAJO vorhanden sind.
+
+### 8.2 Historische und longitudinale Analyse
+
+- Der Coach soll nicht ausschließlich den letzten Tag oder die letzten Aktivitäten betrachten.
+- Für längerfristige Aussagen soll er die verfügbare Historie über geeignete Zeiträume heranziehen und kurz-, mittel- und langfristige Entwicklungen unterscheiden.
+- Der betrachtete Zeitraum muss zur Fragestellung passen. Bei einer Tagesempfehlung sind aktuelle Daten zentral, müssen aber bei Bedarf durch individuelle Baselines, längerfristige Belastungsverläufe, Saisonphase und Wettkampfnähe kontextualisiert werden.
+- Bei Saisonrückblicken oder Entwicklungsanalysen soll die gesamte verfügbare relevante Saison- bzw. Trainingshistorie genutzt werden, nicht nur ein willkürlich kurzer Ausschnitt.
+- Reichen Historie oder Datenabdeckung nicht aus, muss der Coach dies offenlegen und die Aussage entsprechend begrenzen.
+
+### 8.3 Kontextbezogene Auswahl und Datenminimierung
+
+- Vor jeder Antwort bestimmt der Coach, welche Datenbereiche für die konkrete Frage relevant sind.
+- Rohdaten und hochaufgelöste Zeitreihen werden nur dann herangezogen, wenn sie für die Fragestellung erforderlich sind; andernfalls werden geeignete KAJO-Aggregate und Trends genutzt.
+- Die Auswahl darf keine fachlich relevanten Daten ausblenden. Bei mehrdeutiger Relevanz ist die Unsicherheit offenzulegen oder gezielt nachzufragen.
+- Der Coach darf nur auf Daten zugreifen, die der authentifizierten Nutzerin zugeordnet und durch die bestehenden Berechtigungen freigegeben sind.
+- Er darf keine Daten anderer Nutzerinnen oder Nutzer einbeziehen.
+
+## 10. Verhältnis zur bestehenden KAJO-Architektur
 
 Der Coach ist eine Interpretations- und Empfehlungsschicht oberhalb der vorhandenen Daten- und Berechnungsebene.
 
