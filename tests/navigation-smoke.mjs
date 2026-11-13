@@ -224,3 +224,5 @@ assert.ok(activities.includes('grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs
 assert.ok(activities.includes('Math.round(otherDistance * 100) === Math.round(distance * 100)'), 'comparisons use the same recorded distance rather than arbitrary duration bands');
 assert.ok(activities.includes('levelA !== levelB'), 'canoe comparisons require identical documented water level');
 assert.ok(activities.includes('if (!activity.raceFormat) return false'), 'canoe comparison requires a known Classic or Sprint discipline');
+
+assert.ok(css.includes('html[data-theme="light"] #csv-details-modal .activity-detail-shell'), 'activity details provide explicit light-theme styling');
