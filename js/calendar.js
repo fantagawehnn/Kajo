@@ -206,7 +206,7 @@ function calendarActivityRow(activity, planned) {
         ? 'switchTab(\'training-planning\')'
         : 'openCSVDetailsModal(\'' + id + '\')';
     return '<button type="button" class="calendar-day-activity-row" style="--activity-color:' + color + '" onclick="' + action + '">' +
-        '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span>' +
+        '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label + (activity.raceFormat ? ' · ' + activity.raceFormat : '')) + '</span>' +
         '<strong>' + escapeHtml(activity.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
         '<small>' + [time, duration, planned ? 'Planung' : calendarActivitySourceLabel(activity)].filter(Boolean).map(escapeHtml).join(' · ') + '</small></span>' +
         '<span class="calendar-entry-status ' + (planned ? 'is-planned' : 'is-completed') + '">' + status + '</span></button>';
