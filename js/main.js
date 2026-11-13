@@ -436,6 +436,13 @@ function setGarminSyncIndicator(state, label) {
     text.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
     indicator.title = connected ? 'Garmin verbunden' : 'Garmin nicht verbunden';
     indicator.setAttribute('aria-label', 'Garmin-Status: ' + (connected ? 'Verbunden' : 'Nicht verbunden'));
+    const settingsStatus = document.getElementById('settings-garmin-status');
+    const settingsDot = document.getElementById('settings-garmin-status-dot');
+    if (settingsStatus) settingsStatus.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
+    if (settingsDot) {
+        settingsDot.classList.toggle('is-connected', connected);
+        settingsDot.classList.toggle('is-error', !connected);
+    }
 }
 
 function renderGarminSyncProgress(completedDays, totalDays) {
@@ -1239,7 +1246,19 @@ function closeProfileModal() {
 function showSettingsModal() {
     const modal = document.getElementById('settings-modal');
     if (!modal) { console.error('Einstellungsdialog fehlt.'); return; }
-    try { openSettingsModal(); renderKajoPushSettings(); } catch (error) { console.error('Einstellungen konnten nicht vorbereitet werden:', error); }
+    try {
+        openSettingsModal();
+        renderKajoPushSettings();
+        const currentGarminStatus = document.getElementById('garmin-sync-indicator-text')?.textContent?.trim();
+        const settingsStatus = document.getElementById('settings-garmin-status');
+        const settingsDot = document.getElementById('settings-garmin-status-dot');
+        if (settingsStatus && currentGarminStatus) settingsStatus.textContent = currentGarminStatus;
+        if (settingsDot && currentGarminStatus) {
+            const connected = currentGarminStatus.toLowerCase() === 'verbunden';
+            settingsDot.classList.toggle('is-connected', connected);
+            settingsDot.classList.toggle('is-error', !connected);
+        }
+    } catch (error) { console.error('Einstellungen konnten nicht vorbereitet werden:', error); }
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.style.display = 'flex';
