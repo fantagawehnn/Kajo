@@ -16,7 +16,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=68">
+    <link rel="stylesheet" href="css/styles.css?v=69">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons CDN -->
@@ -1237,6 +1239,8 @@
                     </section>
                 </div>
             </section>
+
+            <section id="activity-route-map-panel" class="hidden activity-detail-panel"></section>
 
             <div class="activity-detail-grid">
                 <div class="activity-detail-primary">
