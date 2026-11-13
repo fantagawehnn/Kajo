@@ -1,3 +1,5 @@
+import { getGarminTelemetry, isGarminActivity } from './data-source.js';
+
 /* Garmin-only training-load calculation.
  * Weighted HR-zone minutes: Z1=1 ... Z5=5 points per minute.
  * This is an Endurance AI index, not TSS and not Garmin's native Training Load.
@@ -6,12 +8,8 @@ export function calculateGarminZoneLoad(activity, settings, profile) {
     // FIT-Zeitreihen können bei älteren/zusammengeführten Datensätzen bereits
     // vorhanden sein, auch wenn das Import-Flag fehlt. Nur Garmin-Aktivitäten
     // auswerten; beliebige lokale/Intervals-Telemetrie bleibt ausgeschlossen.
-    const isGarminActivity = activity?.source === 'garmin'
-        || activity?.sourceRefs?.garminActivityId != null
-        || activity?.garminData?.activityId != null
-        || activity?.garminFitImported === true;
-    if (!isGarminActivity) return null;
-    const sourceTelemetry = activity.garminTelemetry || activity.telemetry;
+    if (!isGarminActivity(activity)) return null;
+    const sourceTelemetry = getGarminTelemetry(activity);
     const hr = sourceTelemetry?.hr, time = sourceTelemetry?.time;
     let zones = settings?.heartRateZones?.[activity.type];
     let zoneSource = 'sport-specific';
@@ -89,7 +87,8 @@ export function getTrainingLoadData(records, settings, profile) {
         if (selected.length) {
             const eligibleCount = list.filter(activity => activity?.date && (
                 activity.source === 'garmin' || activity.sourceRefs?.garminActivityId != null
-                || activity.garminData || activity.garminFitImported || activity.garminTrainingLoad != null
+                || activity.garminData || (Array.isArray(activity.sources) && activity.sources.includes('garmin'))
+                || activity.garminFitImported || activity.garminTrainingLoad != null
             )).length;
             return {
                 mode: useZone ? 'garmin-zone' : 'garmin-native',
@@ -106,7 +105,7 @@ export function getTrainingLoadData(records, settings, profile) {
         }
         return { mode: 'garmin-unavailable', unit: null, records: [] };
     }
-    const external = list.filter(activity => activity.date && activity.tss != null && Number.isFinite(Number(activity.tss)) && Number(activity.tss) >= 0)
-        .map(activity => ({ activity, value: Number(activity.tss) }));
-    return { mode: 'external-tss', unit: 'TSS', records: external };
+    // External TSS is not an approved source for KAJO training-load calculations.
+    // Without Garmin load or manual sRPE, the value is unavailable.
+    return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
 }
