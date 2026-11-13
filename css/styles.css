@@ -4451,3 +4451,5 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 }
 
 #csv-details-modal #activity-comparison-panel { order:15; }
+
+#csv-details-modal .activity-detail-metrics>div { border-left-color:var(--activity-sport-color,var(--color-border,#334155)); }
