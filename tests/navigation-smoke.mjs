@@ -111,3 +111,5 @@ assert.ok(styles.includes('--kajo-status-good:#39C98A') && styles.includes('--ka
 assert.ok(dashboard.includes('const STATUS_COLORS') && dashboard.includes('STATUS_COLORS.attention'), 'dashboard rings use the shared semantic status colors');
 assert.ok(!dashboard.includes("return '#a855f7'"), 'critical status no longer uses a separate purple status color');
 
+
+assert.ok(profile.includes('closeProfileModal()') && profile.includes('activeProfileSection'), 'profile keeps a return path and preserves the open section');
