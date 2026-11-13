@@ -1825,7 +1825,8 @@ if (supabase) {
 // bewusst an `window` gehängt. Neue onclick-Funktionen hier eintragen!
 // ------------------------------------------------------------
 Object.assign(window, {
-    focusActivityLap,\n    setActivityTelemetryMetric,
+    focusActivityLap,
+    setActivityTelemetryMetric,
     switchTab,
     openCoach,
     switchMoreTab,
