@@ -3757,3 +3757,5 @@ html[data-theme="light"] .kajo-analysis-hero-ring strong,
 html[data-theme="light"] .kajo-analysis-hero-copy h2,
 html[data-theme="light"] .kajo-analysis-metric strong { color:#172033 !important; }
 html[data-theme="light"] .kajo-analysis-baseline-note { color:#475569; }
+
+#analysis-subpage-performance #training-history-ring { display:none !important; }
