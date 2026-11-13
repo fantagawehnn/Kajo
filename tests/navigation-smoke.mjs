@@ -44,7 +44,7 @@ assert.ok(analysisUI.includes('Es wird kein künstlicher Recovery-Gesamtscore ge
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
 assert.ok(analysisUI.includes('CTL bleibt ein Belastungs-/Fitnessindikator'), 'CTL is not presented as direct performance');
-assert.ok(analysisUI.includes('Die Herkunft wird aktuell nicht getrennt gespeichert'), 'HRV source ambiguity is disclosed rather than fabricating a clean baseline');
+assert.ok(analysisUI.includes('Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt'), 'legacy HRV values remain unclassified');
 assert.ok(dashboard.includes('Persönlicher Normalbereich noch nicht methodisch festgelegt'), 'unapproved wearable ranges are not presented as personal norms');
 assert.ok(!dashboard.includes('Im persönlichen Bereich'), 'legacy personal-range classification is suppressed');
 assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe synchronizes detail history');
@@ -52,8 +52,10 @@ assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe sy
 assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV field is identified as RMSSD');
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
+assert.ok(importer.includes("source: 'intervals', metric: 'rmssd', unit: 'ms'"), 'Intervals HRV carries explicit RMSSD provenance');
 assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
-assert.ok(analysisUI.includes('Die Herkunft wird aktuell nicht getrennt gespeichert'), 'HRV source ambiguity is disclosed');
+assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
+assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
 console.log('KAJO navigation and analysis UI smoke tests passed.');
