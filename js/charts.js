@@ -651,6 +651,14 @@ export function renderActivityTelemetryChart(act) {
             : selected.values.map((_, index) => String(index + 1));
     const hasElapsedTime = times.length === selected.values.length
         && times.every(value => Number.isFinite(Number(value)));
+    const selectedLap = state.activitySelectedLap;
+    const highlightedIndexes = hasElapsedTime && selectedLap
+        ? times.reduce((indexes, value, index) => {
+            const seconds = Number(value);
+            if (seconds >= selectedLap.startTimeSeconds && seconds <= selectedLap.endTimeSeconds) indexes.push(index);
+            return indexes;
+        }, []) : [];
+    const highlightRange = highlightedIndexes.length ? [highlightedIndexes[0], highlightedIndexes[highlightedIndexes.length - 1]] : null;
     const status = document.getElementById('activity-hr-series-status');
     if (status) status.textContent = hasElapsedTime
         ? selected.values.filter(value => value !== null).length.toLocaleString('de-DE') + ' gültige Messpunkte · Zeit seit Start'
@@ -669,6 +677,19 @@ export function renderActivityTelemetryChart(act) {
             spanGaps: false,
             fill: false
         }] },
+        plugins: [{
+            id: 'activity-lap-highlight',
+            beforeDatasetsDraw(chart) {
+                if (!highlightRange || !chart.chartArea || !chart.scales?.x) return;
+                const left = chart.scales.x.getPixelForValue(highlightRange[0]);
+                const right = chart.scales.x.getPixelForValue(highlightRange[1]);
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.fillStyle = 'rgba(56,189,248,.13)';
+                ctx.fillRect(Math.min(left, right), chart.chartArea.top, Math.max(2, Math.abs(right - left)), chart.chartArea.bottom - chart.chartArea.top);
+                ctx.restore();
+            }
+        }],
         options: {
             responsive: true,
             maintainAspectRatio: false,
