@@ -60,7 +60,7 @@ Noch zu prüfen bzw. zu ergänzen sind:
 - klare Trennung von Garmin-Schätzungen und direkt gemessenen VO₂max-Werten,
 - eindeutige Herkunft und Einheit der importierten HRV-Werte,
 - Abgrenzung von RMSSD, SDNN und aggregierten Garmin-Werten,
-- persönliche HRV-Baseline und Trendberechnung: Intervals-Wellness bezeichnet `hrv` als RMSSD, während manuelle HRV-Eingaben denselben Check-in-Schlüssel nutzen. Die Herkunft ist im Check-in nicht getrennt gespeichert; `hrvSDNN` wird zwar diagnostisch gezählt, aber nicht übernommen. Eine quellenreine ln(RMSSD)-Baseline ist daher vor einer Klärung der Herkunft nicht zulässig,
+- persönliche HRV-Baseline und Trendberechnung: Neue Intervals-Wellnesswerte werden im Check-in unter `measurementSources.hrv` als `source: intervals`, `metric: rmssd`, `unit: ms` gekennzeichnet. Manuelle Eingaben werden als `source: manual`, `metric: unspecified`, `unit: ms` markiert. Historische Werte ohne diese Metadaten bleiben `unknown`; sie werden nicht rückwirkend klassifiziert. `hrvSDNN` wird weiterhin nur diagnostisch gezählt und nicht als Check-in-Messwert übernommen. Eine adaptive Baseline bleibt offen, bis Statistik, Mindestdatenbasis und Ausreißerbehandlung verbindlich festgelegt sind.
 - Datenvollständigkeit bei Schlaf- und Gesundheitsdaten,
 - Krankheitstage, Verletzungen und Trainingsverfügbarkeit als getrennte Health-Daten.
 
@@ -111,6 +111,6 @@ Die Analyse-Seiten besitzen nun eine einheitliche Hero-Kennzahl mit gleicher Kre
 - Health weist Trainingsverfügbarkeit weiterhin als nicht berechenbar aus, solange die erforderliche Datenverknüpfung fehlt. Dokumentierte Krankheit und Verletzung werden getrennt gezählt und über 28 Tage visualisiert.
 - Für Wearable-Detailverläufe wird transparent ausgewiesen, dass noch kein methodisch freigegebener adaptiver persönlicher Normalbereich hinterlegt ist.
 
-**Keine Änderung der bestehenden Berechnungsformeln oder Datenmodelle beabsichtigt.** Die adaptive Baseline wurde ausdrücklich nicht implementiert, weil Mindestdatenbasis, robuste Statistik, Ausreißerbehandlung und schrittweise Aktualisierung erst verbindlich festgelegt werden müssen.
+**Additive Provenienz-Erweiterung:** Das bestehende Check-in-Objekt erhält optional `measurementSources` als Metadatenfeld pro Messwert. Vorhandene Messwerte und Berechnungsformeln bleiben unverändert; historische HRV-Werte ohne Metadaten werden nicht verändert oder rückwirkend einer Quelle zugeordnet. Die adaptive Baseline wird weiterhin nicht implementiert, bis Mindestdatenbasis, robuste Statistik, Ausreißerbehandlung und schrittweise Aktualisierung verbindlich festgelegt sind.
 
 Die CSS-Komponenten enthalten Light-Theme-Variablen für `data-theme="light"` bzw. `theme-light`. Da im bestehenden Einstellungsmodul kein Theme-Schalter nachgewiesen wurde, ist die appweite Umschaltung auf Light Mode noch nicht abgenommen.
