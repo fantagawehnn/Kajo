@@ -9,7 +9,7 @@ import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
 import { calculateStrengthActivitySummary } from './calculations.js';
-import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
+import { getActivityTelemetry } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 function getActivitySourceLabel(activity) {
     const refs = activity?.sourceRefs || {};
@@ -31,7 +31,7 @@ function getActivitySourceLabel(activity) {
 function renderActivityDataQuality(activity) {
     const container = document.getElementById('activity-data-quality');
     if (!container) return;
-    const telemetry = getGarminTelemetry(activity) || {};
+    const telemetry = getActivityTelemetry(activity) || {};
     const series = getActivityTelemetrySeries(activity);
     const sampleCount = series.reduce((max, item) => Math.max(max, item.values.length), 0);
     const time = Array.isArray(telemetry.time) ? telemetry.time : [];
@@ -203,7 +203,7 @@ export function openCSVDetailsModal(id) {
 function renderActivityHeartRateSeriesStatus(activity) {
     const container = document.getElementById('activity-hr-series-status');
     if (!container) return;
-    const telemetry = getGarminTelemetry(activity);
+    const telemetry = getActivityTelemetry(activity);
     const hr = Array.isArray(telemetry?.hr) ? telemetry.hr : [];
     const time = Array.isArray(telemetry?.time) ? telemetry.time : [];
     const validCount = hr.reduce((count, value, index) => {
