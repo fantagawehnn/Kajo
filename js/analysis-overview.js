@@ -291,11 +291,16 @@ function renderActivityChart() {
 function renderDetailedAnalysis() {
   const root = document.getElementById('analysis-overview-detail-content');
   if (!root) return;
-  const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
-  const latest = [...timeline].reverse().find(day => day && day.date);
-  const hrv = latestCheckin('hrv');
-  const vo2 = latestCheckin('vo2max');
   const range = currentRange();
+  const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
+  const latest = [...timeline].reverse().find(day => day && day.date >= range.from && day.date <= range.to);
+  const checkins = Object.entries(state.dailyCheckins || {})
+    .filter(([date]) => date >= range.from && date <= range.to)
+    .sort(([a], [b]) => b.localeCompare(a));
+  const hrvRow = checkins.find(([, row]) => valid(row?.hrv));
+  const vo2Row = checkins.find(([, row]) => valid(row?.vo2max));
+  const hrv = hrvRow ? { date: hrvRow[0], value: Number(hrvRow[1].hrv) } : null;
+  const vo2 = vo2Row ? { date: vo2Row[0], value: Number(vo2Row[1].vo2max) } : null;
   const healthEntries = Object.entries(state.healthLogs || {})
     .filter(([date, item]) => date >= range.from && date <= range.to && ['sick', 'injured'].includes(item?.status));
   const parts = [];
