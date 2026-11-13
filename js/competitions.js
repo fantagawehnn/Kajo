@@ -118,6 +118,58 @@ function raceCard(title, race, today) {
         </article>`;
 }
 
+export function openNextRaceDetail() {
+    const today = toLocalDateString();
+    const next = [...(Array.isArray(state.races) ? state.races : [])]
+        .filter(race => race?.date >= today)
+        .sort((a,b) => String(a.date).localeCompare(String(b.date)))[0];
+    if (!next) return;
+    const root = document.getElementById('race-detail-content');
+    const modal = document.getElementById('race-detail-modal');
+    if (!root || !modal) return;
+    const priority = ['A','B','C','D','E'].includes(next.prio) ? next.prio : 'C';
+    const meta = getRacePriorityMeta(priority);
+    const days = Math.max(0, Math.ceil((parseLocalDate(next.date) - parseLocalDate(today)) / 86400000));
+    const details = [
+        ['Datum', formatDateDDMMYY(next.date)],
+        ['Ort', next.location || null],
+        ['Sport / Disziplin', next.sport || null],
+        ['Wettkampfkategorie', meta.title],
+        ['Ziel', next.target || null],
+        ['Strecke', next.routeId ? getRouteName(next.routeId) : null],
+        ['Countdown', days === 0 ? 'Heute' : days === 1 ? 'Morgen' : 'In ' + days + ' Tagen']
+    ].filter(([,value]) => value != null && value !== '');
+    const planned = (Array.isArray(state.plannedActivities) ? state.plannedActivities : []).filter(item => item.date === next.date);
+    root.replaceChildren();
+    const heading = document.createElement('div');
+    heading.className = 'rounded-xl border border-slate-700 bg-slate-950/70 p-3';
+    const name = document.createElement('h3'); name.className = 'text-base font-bold text-white'; name.textContent = next.name || 'Wettkampf';
+    const badge = document.createElement('span'); badge.className = 'inline-block mt-2 rounded-md px-2 py-1 text-[10px] font-bold bg-sky-500/15 text-sky-300'; badge.textContent = priority + ' · ' + meta.title;
+    heading.append(name,badge); root.appendChild(heading);
+    const list = document.createElement('dl'); list.className = 'grid grid-cols-2 gap-3';
+    details.forEach(([label,value]) => {
+        const cell = document.createElement('div'); cell.className = 'min-w-0';
+        const dt = document.createElement('dt'); dt.className = 'text-[10px] text-slate-500'; dt.textContent = label;
+        const dd = document.createElement('dd'); dd.className = 'text-xs text-slate-200 mt-1 break-words'; dd.textContent = value;
+        cell.append(dt,dd); list.appendChild(cell);
+    });
+    root.appendChild(list);
+    if (planned.length) {
+        const planHeading = document.createElement('h4'); planHeading.className = 'text-xs font-semibold text-white pt-2'; planHeading.textContent = 'Geplante Einheiten am Wettkampftag';
+        root.appendChild(planHeading);
+        planned.forEach(item => {
+            const row = document.createElement('p'); row.className = 'text-xs text-slate-300'; row.textContent = (item.name || 'Training') + ' · ' + (item.type || 'Sportart offen') + (item.duration != null ? ' · ' + item.duration + ' min' : '');
+            root.appendChild(row);
+        });
+    }
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+export function closeRaceDetail() {
+    const modal = document.getElementById('race-detail-modal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
 export function toggleRaceModal() { populateRaceRouteSelect(); document.getElementById('race-modal').classList.toggle('hidden'); }
 
 export function addRace() {
