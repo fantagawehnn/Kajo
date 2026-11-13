@@ -57,79 +57,127 @@ function openCoach() {
     switchTab('ai');
 }
 
-function switchTab(tab) {
-    const viewIds = ['dashboard', 'dashboard-details', 'analyses', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'ai', 'methods', 'data', 'health-data', 'training-analysis', 'routes', 'profile'];
-    const dashboardViews = ['dashboard'];
-    const trainingViews = ['races', 'strength'];
-    const areaChildViews = ['training', 'ai', 'health-data', 'training-analysis', 'nutrition', 'methods', 'upload', 'data', 'routes'];
-    const isAreaChild = areaChildViews.includes(tab);
-    if (tab !== 'health-data' && tab !== 'training-analysis') state.metricHistoryDate = null;
-    window.kajoCurrentTab = tab;
+function renderHealthAnalysis() {
+    const list = document.getElementById('health-event-list');
+    const count = document.getElementById('health-event-count');
+    const status = document.getElementById('health-availability-status');
+    if (!list) return;
+    const entries = Object.entries(state.healthLogs || {})
+        .filter(([, value]) => value && (value.status === 'sick' || value.status === 'injured'))
+        .sort(([a], [b]) => b.localeCompare(a));
+    if (count) count.textContent = entries.length ? String(entries.length) + ' dokumentierte Ereignisse' : 'Keine Einträge';
+    list.replaceChildren();
+    if (!entries.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-slate-500';
+        empty.textContent = 'Noch keine Krankheits- oder Verletzungsereignisse dokumentiert.';
+        list.appendChild(empty);
+    } else {
+        entries.forEach(([date, value]) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2';
+            const label = document.createElement('span');
+            label.className = 'text-sm text-slate-200';
+            label.textContent = value.status === 'sick' ? 'Krankheit' : 'Verletzung';
+            const detail = document.createElement('span');
+            detail.className = 'text-xs text-slate-400 text-right';
+            detail.textContent = [date, value.diagnosis].filter(Boolean).join(' · ');
+            row.append(label, detail);
+            list.appendChild(row);
+        });
+    }
+    if (status) status.textContent = 'Noch nicht berechenbar – eine vollständige Verknüpfung von Gesundheits- und Planungsdaten für den betrachteten Zeitraum ist nicht nachgewiesen.';
+}
 
-    const moreShell = document.getElementById('view-more');
-    if (moreShell) moreShell.classList.toggle('hidden', tab !== 'more');
+function switchTab(requestedTab) {
+    const route = {
+        dashboard: { parent: 'today', view: 'dashboard' },
+        today: { parent: 'today', view: 'dashboard' },
+        'dashboard-details': { parent: 'today', view: 'dashboard-details' },
+        calendar: { parent: 'calendar', view: 'calendar' },
+        training: { parent: 'training', view: 'races', sub: 'planning' },
+        'training-activities': { parent: 'training', view: 'calendar', sub: 'activities' },
+        'training-planning': { parent: 'training', view: 'races', sub: 'planning' },
+        races: { parent: 'training', view: 'races', sub: 'planning' },
+        strength: { parent: 'more', view: 'strength' },
+        analyses: { parent: 'analysis', view: 'analyses', sub: 'load' },
+        'analysis-load': { parent: 'analysis', view: 'analyses', sub: 'load' },
+        'analysis-recovery': { parent: 'analysis', view: 'health-data', sub: 'recovery' },
+        'health-data': { parent: 'analysis', view: 'health-data', sub: 'recovery' },
+        'analysis-performance': { parent: 'analysis', view: 'training-analysis', sub: 'performance' },
+        'training-analysis': { parent: 'analysis', view: 'training-analysis', sub: 'performance' },
+        'analysis-health': { parent: 'analysis', view: 'health-analysis', sub: 'health' },
+        more: { parent: 'more', view: 'more' },
+        profile: { parent: 'more', view: 'profile' },
+        data: { parent: 'more', view: 'data' },
+        upload: { parent: 'more', view: 'upload' },
+        methods: { parent: 'more', view: 'methods' },
+        routes: { parent: 'more', view: 'routes' },
+        nutrition: { parent: 'more', view: 'nutrition' },
+        ai: { parent: 'more', view: 'ai' }
+    };
+    const destination = route[requestedTab] || { parent: 'more', view: 'more' };
+    const { parent, view, sub } = destination;
+    window.kajoCurrentTab = requestedTab;
+    if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
+    const viewIds = ['more', 'routes', 'health-data', 'training-analysis', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'ai', 'profile', 'health-analysis'];
     viewIds.forEach(id => {
-        const view = document.getElementById(`view-${id}`);
-        if (!view) return;
-        const visible = tab === 'dashboard' ? dashboardViews.includes(id)
-            : tab === 'training' ? trainingViews.includes(id)
-            : id === tab;
-        view.classList.toggle('hidden', !visible);
+        const el = document.getElementById('view-' + id);
+        if (el) el.classList.toggle('hidden', id !== view);
     });
 
-    ['dashboard', 'calendar', 'analyses', 'areas'].forEach(id => {
-        const btn = document.getElementById(id === 'areas' ? 'nav-areas' : `nav-${id}`);
-        if (!btn) return;
-        const active = id === 'areas'
-            ? tab === 'more' || isAreaChild || tab === 'training'
-            : id === tab;
-        btn.className = active
-            ? 'px-3 py-2 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1.5 whitespace-nowrap'
-            : 'px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 whitespace-nowrap';
-        btn.setAttribute('aria-current', active ? 'page' : 'false');
+    document.getElementById('training-subnav')?.classList.toggle('hidden', parent !== 'training');
+    document.getElementById('analysis-subnav')?.classList.toggle('hidden', parent !== 'analysis');
+    document.getElementById('area-back-link')?.classList.toggle('hidden', parent !== 'more' || view === 'more');
+
+    ['today', 'calendar', 'training', 'analysis', 'more'].forEach(id => {
+        const active = parent === id;
+        ['nav-' + id, 'mobile-nav-' + id].forEach(buttonId => {
+            const button = document.getElementById(buttonId);
+            if (!button) return;
+            button.classList.toggle('is-active', active);
+            if (active) button.setAttribute('aria-current', 'page');
+            else button.removeAttribute('aria-current');
+        });
+    });
+    ['activities', 'planning'].forEach(id => {
+        const button = document.getElementById('training-subnav-' + id);
+        if (button) button.classList.toggle('is-active', sub === id);
+    });
+    ['load', 'recovery', 'performance', 'health'].forEach(id => {
+        const button = document.getElementById('analysis-subnav-' + id);
+        if (button) button.classList.toggle('is-active', sub === id);
     });
 
-    const backLink = document.getElementById('area-back-link');
-    if (backLink) backLink.classList.toggle('hidden', !isAreaChild);
-
-    const coachContext = document.getElementById('coach-context-hint');
-    if (coachContext && tab === 'ai') {
-        const labels = {
-            dashboard: 'deiner Tagesübersicht',
-            calendar: 'deinem Trainingskalender',
-            analyses: 'deiner Leistungsanalyse',
-            training: 'deinen Wettkämpfen und Kraftleistungen',
-            'health-data': 'Gesundheit und Regeneration',
-            'training-analysis': 'deiner Trainingsanalyse',
-            nutrition: 'deiner Ernährung',
-            methods: 'Methodik und Datenqualität',
-            upload: 'deinen importierten Aktivitäten',
-            data: 'deinen Datenverbindungen'
-        };
-        const context = window.kajoCoachContext || 'dashboard';
-        coachContext.textContent = 'Kontext: ' + (labels[context] || 'deinem Training');
+    const calendarView = document.getElementById('view-calendar');
+    if (calendarView) {
+        const activityMode = parent === 'training' && sub === 'activities';
+        calendarView.classList.toggle('kajo-training-activity-mode', activityMode);
+        if (activityMode) setCalendarFormat('activities');
+        else if (parent === 'calendar' && state.activeCalendarFormat === 'activities') setCalendarFormat('week');
     }
 
     const coachFab = document.getElementById('coach-fab');
-    if (coachFab) coachFab.classList.toggle('hidden', tab === 'ai');
-
-    if (tab === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); refreshSportAnalytics(); renderAnalysisInsights(); }
-    if (tab === 'training') {
-        renderPlannedWorkouts();
-        renderRaces();
-        renderStrengthView();
+    if (coachFab) coachFab.classList.toggle('hidden', requestedTab === 'ai');
+    const coachContext = document.getElementById('coach-context-hint');
+    if (coachContext && requestedTab === 'ai') {
+        const labels = { dashboard: 'deiner Tagesübersicht', calendar: 'deinem Trainingskalender', races: 'deiner Trainingsplanung', analyses: 'deiner Leistungsanalyse', 'health-data': 'deiner Regeneration', 'training-analysis': 'deiner Performance', 'analysis-health': 'deinen Health-Daten', data: 'deinen Datenverbindungen' };
+        coachContext.textContent = 'Kontext: ' + (labels[window.kajoCoachContext] || 'deinem Training');
     }
-    if (tab === 'planned') renderPlannedWorkouts();
-    if (tab === 'strength') renderStrengthView();
-    if (tab === 'nutrition') renderNutritionView();
-    if (tab === 'upload') renderImportHistory();
-    if (tab === 'health-data') renderMetricHistory('health');
-    if (tab === 'training-analysis') renderMetricHistory('training');
-    if (tab === 'routes') renderRoutesView();
-    if (tab === 'profile') renderAthleteProfile();
-}
 
+    if (view === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); refreshSportAnalytics(); renderAnalysisInsights(); }
+    if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
+    if (view === 'strength') renderStrengthView();
+    if (view === 'nutrition') renderNutritionView();
+    if (view === 'upload') renderImportHistory();
+    if (view === 'health-data') renderMetricHistory('health');
+    if (view === 'training-analysis') renderMetricHistory('training');
+    if (view === 'routes') renderRoutesView();
+    if (view === 'profile') renderAthleteProfile();
+    if (view === 'health-analysis') renderHealthAnalysis();
+    if (parent === 'calendar' || (parent === 'training' && sub === 'activities')) renderCalendar();
+}
 function switchMoreTab(tab) {
     switchTab(tab);
 }
