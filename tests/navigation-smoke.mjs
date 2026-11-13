@@ -291,3 +291,8 @@ assert.ok(activities.includes('telemetry: getActivityTelemetry(act)'), 'activity
 
 assert.ok(activities.includes('getActivityTelemetry(activity)'), 'activity detail uses provenance-gated telemetry for FIT and Garmin streams');
 assert.ok(activities.includes('FIT-Datei-Runden'), 'activity laps identify their FIT-file origin');
+
+assert.ok(charts.includes('export function focusActivityTelemetryPoint(index)'), 'GPS route points can focus a corresponding telemetry datapoint');
+assert.ok(activities.includes('canLinkRouteToChart'), 'GPS-to-chart interaction is enabled only for aligned time and metric arrays');
+assert.ok(importer.includes('avgPower: Number(lap.avg_power) || null'), 'FIT lap power is preserved only when supplied by the file');
+assert.ok(activities.includes("avgCadence !== null ? 'Ø ' + Math.round(avgCadence) + '/min' : null"), 'lap cadence is displayed only when available');
