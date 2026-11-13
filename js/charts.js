@@ -619,6 +619,7 @@ export function renderActivityTelemetryChart(act) {
     const controls = document.getElementById('activity-telemetry-switch');
     if (!canvas || !panel) return;
     const series = getActivityTelemetrySeries(act);
+    panel.style.setProperty('--activity-sport-color', getSportsCatalog()[act?.type]?.color || '#38bdf8');
     if (state.telemetryChartInstance) {
         state.telemetryChartInstance.destroy();
         state.telemetryChartInstance = null;
