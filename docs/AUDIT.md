@@ -1,0 +1,89 @@
+# KAJO V2 – Technischer Bestandsaudit
+
+Stand: 13.11.2026  
+Referenzcode: `fantagawehnn/Endurance-AI`, Branch `main`  
+V2-Ziel: `fantagawehnn/Kajo`, Branch `v2`
+
+## 1. Übernommene technische Basis
+
+Die modularisierte Browser-App wurde als Ausgangsbasis in das KAJO-V2-Repository übernommen. Dazu gehören das HTML-Grundgerüst, CSS, PWA-Dateien, das KAJO-Branding sowie die vorhandenen JavaScript-Fachmodule für Authentifizierung, Dashboard, Kalender, Aktivitäten, Import, Belastung, Recovery/Health, Wettkämpfe, Planung, Krafttraining, Routen, Ernährung, Profil und Einstellungen.
+
+Die öffentliche Supabase-Konfiguration verweist weiterhin auf das bestehende Projekt. Die App verwendet Supabase Auth; die User-ID wird aus der authentifizierten Sitzung abgeleitet. Die vorhandene Garmin-Edge-Function und die bestehenden Tabellen bleiben im bisherigen Supabase-Projekt. V2 hat keine neue Datenbankmigration ausgeführt und keine produktiven Tabellen oder Secrets verändert.
+
+## 2. Garmin und Identität
+
+- Der vorhandene Garmin-Zugriff erfolgt serverseitig über die Edge Function `garmin-personal`.
+- Die Funktion leitet bei normalen Nutzeranfragen die Identität aus dem Supabase-Bearer-Token ab.
+- Bestehende Garmin-Credentials sind benutzerbezogen gespeichert und serverseitig verschlüsselt.
+- Die bestehende Edge Function wird nicht in den Browser verlagert und ihre Secrets werden nicht in das Repository übernommen.
+- Die Wiederverwendung derselben User-ID ist die Voraussetzung dafür, dass bestehende Verknüpfungen und Daten demselben Account zugeordnet bleiben.
+
+**Noch nicht abgenommen:** Ein echter Login mit dem bestehenden Account und ein Live-Test der Garmin-Synchronisierung in der V2-Oberfläche stehen aus.
+
+## 3. FIT-Import
+
+Im vorhandenen `js/import.js` ist ein FIT-Parser eingebunden. Der Parser liest Sessions, Records und Laps aus und extrahiert unter anderem:
+
+- Session-Datum, Dauer und Distanz,
+- durchschnittliche und maximale Herzfrequenz,
+- Herzfrequenz-, Geschwindigkeits- und Zeitreihen,
+- Rundeninformationen.
+
+**Auditbefund:** Der aus FIT erzeugte Aktivitätsdatensatz erhält aktuell `tss` aus `session.training_load` und eine Telemetrie-Struktur mit `labels`, `hr`, `speed` und `time`. Der erzeugte Datensatz setzt an dieser Stelle jedoch nicht eindeutig `source: 'garmin'`, `garminTrainingLoad` oder `garminFitImported`.
+
+Das muss vor einer fachlichen Nutzung geklärt werden: FIT-Aktivitäten könnten dadurch in der Belastungslogik nicht zuverlässig als Garmin-Datensätze erkannt werden. Die FIT-Zeitreihe ist vorhanden, ihre Zuordnung zur internen Datenherkunft ist aber nicht eindeutig genug.
+
+## 4. Belastungsberechnung
+
+Vorhanden sind drei unterschiedliche Pfade:
+
+1. sRPE: Dauer in Minuten × subjektive Belastung.
+2. Herzfrequenzzonen: gewichtete Zeit in fünf Zonen (Faktor 1 bis 5); die Implementierung bezeichnet das Ergebnis als `EA-HF-Punkte`.
+3. Native Garmin Load: wird über `garminTrainingLoad` erkannt.
+
+**Wichtige Abweichungen bzw. offene Entscheidungen:**
+
+- Der Code wählt bei vorhandenen Garmin-Datensätzen automatisch zwischen nativem Garmin Load und dem eigenen HF-Zonen-Modell – abhängig davon, welches Modell mehr berechenbare Aktivitäten liefert. Diese automatische Methodenwahl muss gegen die verbindliche Vorgabe geprüft werden, dass Garmin Training Load, KAJO-HF-Zonen-Load/Edwards TRIMP und sRPE getrennte Kennzahlen bleiben.
+- Das sRPE-Modell akzeptiert derzeit ganzzahlige RPE-Werte von 1 bis 10. Das Berechnungsdokument definiert die Skala als 0 bis 10. Die Skala muss vor einer Anpassung eindeutig festgelegt und durch Tests abgesichert werden.
+- Für HF-Zonen werden sportartspezifische Grenzen verwendet, wenn vorhanden. Fehlen diese, erzeugt der Code ersatzweise Grenzen aus Prozentwerten der maximalen Herzfrequenz. Das Berechnungsdokument bevorzugt individuelle Schwellenzonen.
+- Die Intensitätsverteilung nach drei Schwellenzonen ist als eigene Kennzahl von der fünfstufigen gewichteten HF-Zonenbelastung zu trennen.
+- Die Performance-Timeline verwendet eine tägliche EWMA-Logik mit 42 Tagen für CTL und 7 Tagen für ATL. Tage ohne berechenbare Belastung erhalten aktuell im Zeitverlauf den Wert 0. Das darf nur als Ruhetag gelten, wenn die Tagesdaten vollständig genug sind; andernfalls ist der Datenstatus eingeschränkt bzw. nicht berechenbar auszuweisen.
+
+**Folgerung:** Die bestehenden Berechnungen werden zunächst nicht verändert. Zuerst werden Methoden, Quellenfelder, Zeitreihenabdeckung und UI-Bezeichnungen in einem eigenen Berechnungs-Audit abgeglichen.
+
+## 5. Recovery, Performance und Health
+
+Der bestehende Importpfad enthält Felder für HRV, Ruhepuls, Schlafdauer/-score/-qualität, Atemfrequenz, Gewicht und VO₂max.
+
+Noch zu prüfen bzw. zu ergänzen sind:
+
+- klare Trennung von Garmin-Schätzungen und direkt gemessenen VO₂max-Werten,
+- eindeutige Herkunft und Einheit der importierten HRV-Werte,
+- Abgrenzung von RMSSD, SDNN und aggregierten Garmin-Werten,
+- persönliche HRV-Baseline und Trendberechnung,
+- Datenvollständigkeit bei Schlaf- und Gesundheitsdaten,
+- Krankheitstage, Verletzungen und Trainingsverfügbarkeit als getrennte Health-Daten.
+
+KAJO leitet keine medizinischen Diagnosen ab.
+
+## 6. UI-/UX-Bestand
+
+Die übernommene Anwendung nutzt ein großes HTML-Grundgerüst, Tailwind-Klassen und eine umfangreiche Stylesheet-Datei. Die verbindlichen Designrichtlinien verlangen ein gemeinsames, kompaktes System mit konsistenten Ringen, Farben, Abständen, Icons und Interaktionsmustern.
+
+Die V2-Übernahme ist deshalb eine funktionsfähige Ausgangsbasis, aber noch keine abgeschlossene Designsystem-Überarbeitung. Vorhandene Tokens und Komponenten müssen zunächst vollständig inventarisiert werden; Berechnungen und fachliche Inhalte dürfen bei der UI-Überarbeitung nicht verändert werden.
+
+## 7. Teststatus
+
+- GitHub-Actions-Workflow für Regression-Smoke-Tests wurde ergänzt.
+- Die Tests wurden an die bestehende, bewusst geschützte benutzerbezogene Speicherung angepasst: globale Legacy-Daten werden nicht automatisch in einen Account importiert.
+- Die Regression-Smoke-Tests liefen auf Commit `4f5116fb78aa9feb78f2935ea699ef6a7a059ff1` erfolgreich durch.
+- Der Pages-Build wird pro Commit separat geprüft.
+- Login, Garmin-Live-Sync, Datenqualität, Dark/Light Mode und mobile Darstellung sind noch nicht end-to-end abgenommen.
+
+## 8. Sicherheits- und Änderungsgrenzen
+
+- Keine produktiven Supabase-Migrationen ohne gesonderte Prüfung und ausdrückliche Freigabe.
+- Keine Änderungen an Garmin-Credentials oder bestehenden Nutzerdaten im Rahmen der UI-Übernahme.
+- Keine privilegierten Secrets im Frontend oder Git-Repository.
+- Keine automatische Übernahme globaler Legacy-Daten in einen Account.
+- Keine Änderung einer Berechnung allein aus gestalterischen Gründen.
