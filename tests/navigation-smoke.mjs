@@ -27,6 +27,14 @@ assert.ok(html.includes('class="kajo-mobile-logo"'), 'mobile global top bar cont
 assert.ok(html.includes('class="kajo-desktop-header-actions"'), 'desktop global top bar contains notification and profile actions');
 assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does not duplicate the global brand and account actions');
 
+for (const domain of ['load', 'recovery', 'performance', 'health']) {
+  assert.ok(html.includes('id="analysis-subpage-' + domain + '"'), domain + ' analysis detail page exists');
+  assert.ok(html.includes('id="' + domain + '-hero-ring"'), domain + ' uses the shared hero metric ring');
+}
+assert.ok(css.includes('one centered, consistently sized hero metric'), 'analysis pages share the centered hero layout');
+assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar'), 'adaptive personal baseline is not fabricated without an agreed method and data basis');
+
+
 assert.doesNotMatch(html, /id="btn-fmt-activities"/);
 
 for (const id of ['training-subnav', 'analysis-subnav']) assert.ok(html.includes('id="' + id + '"'));
