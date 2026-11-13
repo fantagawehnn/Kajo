@@ -262,3 +262,14 @@ assert.ok(overviewModule.includes("hasAvailability ? health.value : '—'"), 'he
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
 assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
 assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(2'), 'four circles use a responsive two-by-two mobile layout');
+
+assert.ok(html.includes('id="activity-data-quality"'), 'activity overview exposes a compact data quality and provenance summary');
+assert.ok(html.includes('id="activity-telemetry-point"'), 'activity chart provides a selected-point readout');
+assert.ok(charts.includes('pointReadout.textContent = timeLabel'), 'activity chart selection reports the exact time and value');
+assert.ok(charts.includes("selected.key === 'pace' ? 'min/km'") && charts.includes("selected.key === 'swimPace' ? 'min/100 m'"), 'pace charts use sport-appropriate display units');
+assert.ok(charts.includes("getSportsCatalog()[act?.type]?.color"), 'telemetry series use the configured activity sport color');
+assert.ok(activities.includes('function renderActivityDataQuality(activity)'), 'activity details expose provenance and data completeness');
+assert.ok(activities.includes("container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'not-calculable'"), 'activity data quality distinguishes complete, limited and not calculable');
+assert.ok(activities.includes('candidate.trainingPartner !== activity.trainingPartner'), 'C2 comparisons require the same documented partner');
+assert.ok(activities.includes('escape(getActivitySourceLabel(candidate))'), 'comparison entries retain their source provenance');
+assert.ok(activities.includes('metricsContainer.innerHTML = metrics.map(metric =>'), 'activity metrics use compact neutral values rather than arbitrary metric status colors');
