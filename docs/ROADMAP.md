@@ -4,14 +4,14 @@
 - [x] Repository Kajo identifiziert; Branch `v2` angelegt.
 - [x] Bisherige Anwendung Endurance-AI als Referenz identifiziert.
 - [x] Vorhandene Supabase-Authentifizierung und Garmin-Edge-Function im Code lokalisiert.
-- [ ] Vollständigen Dateibaum und aktuelle Modulstruktur inventarisieren.
+- [x] Vollständigen Dateibaum und aktuelle Modulstruktur inventarisieren; modularisierte Browser-App nach V2 übernommen.
 - [ ] Garmin-Request-Verträge, Tabellen, RLS und Edge-Function-Secrets dokumentieren.
-- [ ] Prüfen, welche Berechnungen und Module bereits zentral implementiert sind.
+- [x] Bestehende Berechnungs- und Fachmodule inventarisiert; Abweichungen und offene Punkte in `docs/AUDIT.md` dokumentiert.
 
 ## Phase 1 – Übernahme der stabilen Basis
-- [ ] V2-Anwendungsgerüst aufsetzen.
-- [ ] Supabase-Client und Authentifizierung mit derselben User-ID integrieren.
-- [ ] Bestehende Garmin-Integration über dieselbe Edge Function anbinden.
+- [x] V2-Anwendungsgerüst aus dem modularisierten Referenzstand übernommen.
+- [x] Supabase-Client und Authentifizierungslogik mit bestehender Projektkonfiguration übernommen; Live-Login-Test bleibt offen.
+- [x] Bestehende Garmin-Frontendintegration und Funktionsaufrufe übernommen; Live-Sync-Test bleibt offen.
 - [ ] Benutzerwechsel, Ladezustände und Fehlerzustände absichern.
 - [ ] Keine produktiven Datenbankänderungen vornehmen.
 
@@ -45,7 +45,7 @@
 - [ ] Bestehende Garmin-Daten werden korrekt gelesen und nicht dupliziert.
 - [ ] Berechnungen mit definierten Testfällen prüfen.
 - [ ] Desktop- und Mobilansichten prüfen.
-- [ ] Build, Tests und Deployment prüfen.
+- [ ] GitHub-Actions-Smoke-Test und Pages-Build für den aktuellen Commit erfolgreich prüfen; Live-Funktionstests bleiben offen.
 - [ ] Erst nach erfolgreicher Abnahme V2 als vollständige App freigeben.
 
 ## Abnahmekriterien
