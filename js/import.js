@@ -719,8 +719,22 @@ export async function handleMultipleFileSelect(evt) {
                         return timestamp >= sessionStartMs && (sessionEndMs == null || timestamp <= sessionEndMs);
                     });
                     const labels = sessionRecords.map(r=>new Date(r.timestamp).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
-                    const hrs = sessionRecords.map(r=>Number(r.heart_rate)||null);
-                    const speeds = sessionRecords.map(r=>Number(r.speed)||null);
+                    const extractRecordSeries = (...keys) => {
+                        const key = keys.find(candidate => sessionRecords.some(record =>
+                            record[candidate] !== null && record[candidate] !== undefined && record[candidate] !== ''
+                            && Number.isFinite(Number(record[candidate]))
+                        ));
+                        return key ? sessionRecords.map(record =>
+                            record[key] === null || record[key] === undefined || record[key] === ''
+                                || !Number.isFinite(Number(record[key])) ? null : Number(record[key])
+                        ) : null;
+                    };
+                    const hrs = extractRecordSeries('heart_rate');
+                    const speeds = extractRecordSeries('enhanced_speed', 'speed');
+                    const powers = extractRecordSeries('power');
+                    const cadences = extractRecordSeries('cadence');
+                    const altitudes = extractRecordSeries('enhanced_altitude', 'altitude');
+                    const distances = extractRecordSeries('distance');
                     // Tatsächliche verstrichene Sekunden seit Sessionbeginn; dieselbe Record-Reihenfolge wie HR und Geschwindigkeit.
                     const times = sessionRecords.map(r => (new Date(r.timestamp).getTime() - sessionStartMs) / 1000);
                     const dist = session.total_distance!=null?Number(session.total_distance):null; // FitParser ist oben auf km konfiguriert.
@@ -748,7 +762,16 @@ export async function handleMultipleFileSelect(evt) {
                             maxHr: Number(lap.max_heart_rate) || null
                         };
                     });
-                    return {id:`fit-${file.name}-${date}-${i}`,sourceId:null,startTime:new Date(start).toISOString(),date,name,type:inferSport(name,sportName),tss:Number.isFinite(Number(session.training_load))?Number(session.training_load):null,duration:durationSec>0?Math.round(durationSec/60):null,distance:dist,hr:Number(session.avg_heart_rate)||null,maxHr:Number(session.max_heart_rate)||null,category:inferCategory(name,sportName),laps:sessionLaps,telemetry:labels.length?{labels,hr:hrs,speed:speeds,time:times.every(Number.isFinite)?times:null}:null};
+                    return {id:`fit-${file.name}-${date}-${i}`,sourceId:null,startTime:new Date(start).toISOString(),date,name,type:inferSport(name,sportName),tss:Number.isFinite(Number(session.training_load))?Number(session.training_load):null,duration:durationSec>0?Math.round(durationSec/60):null,distance:dist,hr:Number(session.avg_heart_rate)||null,maxHr:Number(session.max_heart_rate)||null,category:inferCategory(name,sportName),laps:sessionLaps,telemetry:labels.length?{
+                        labels,
+                        ...(hrs && hrs.filter(value => value !== null).length >= 2 ? { hr: hrs } : {}),
+                        ...(speeds && speeds.filter(value => value !== null).length >= 2 ? { speed: speeds } : {}),
+                        ...(powers && powers.filter(value => value !== null).length >= 2 ? { power: powers } : {}),
+                        ...(cadences && cadences.filter(value => value !== null).length >= 2 ? { cadence: cadences } : {}),
+                        ...(altitudes && altitudes.filter(value => value !== null).length >= 2 ? { altitude: altitudes } : {}),
+                        ...(distances && distances.filter(value => value !== null).length >= 2 ? { distance: distances } : {}),
+                        time: times.every(Number.isFinite) ? times : null
+                    }:null};
                 }).filter(Boolean);
             } else throw new Error('Format nicht unterstützt.');
 
