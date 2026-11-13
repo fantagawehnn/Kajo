@@ -1,7 +1,7 @@
 /* ============================================================
  * calculations.js – Trainingsbelastung und Belastungstrends
- * Garmin-Daten haben Vorrang; externe TSS-Werte werden niemals mit
- * Garmin-eigenen oder Endurance-AI-Load-Punkten vermischt.
+ * Fehlende Tage werden nur innerhalb erfolgreich synchronisierter
+ * Garmin-Aktivitätszeiträume als Ruhetage interpretiert.
  * ============================================================ */
 import { getTrainingLoadData } from './training-load.js';
 
@@ -11,57 +11,115 @@ function activityDateKey(value) {
     return match ? match[1] : '';
 }
 
+function validCoverageRanges(settings) {
+    return (Array.isArray(settings?.garminActivityCoverageRanges)
+        ? settings.garminActivityCoverageRanges : [])
+        .filter(range => /^\d{4}-\d{2}-\d{2}$/.test(range?.startDate || '')
+            && /^\d{4}-\d{2}-\d{2}$/.test(range?.endDate || '')
+            && range.startDate <= range.endDate
+            && range.status === 'complete');
+}
+
+function isDateCovered(date, ranges) {
+    return ranges.some(range => date >= range.startDate && date <= range.endDate);
+}
+
 export function computePerformanceTimeline(records, settings, profile) {
-    if (!records || records.length === 0) return [];
-    const loadData = getTrainingLoadData(records, settings, profile);
-    if (!loadData.records.length) return [];
-    const valid = loadData.records.filter(item => item.activity.date);
-    if (!valid.length) return [];
-    // Start the timeline at the earliest dated activity, not only at the first
-    // activity with calculable load. This keeps earlier activities visible in
-    // the load-coverage denominator even when their load cannot be calculated.
-    const dates = records
-        .map(activity => activityDateKey(activity?.date))
-        .filter(Boolean)
-        .map(dateKey => new Date(`${dateKey}T12:00:00`))
-        .filter(date => Number.isFinite(date.getTime()))
-        .sort((a,b)=>a-b);
-    if (!dates.length) return [];
-    const start = new Date(dates[0]), end = new Date();
+    const list = Array.isArray(records) ? records : [];
+    const loadData = getTrainingLoadData(list, settings, profile);
+
+    // A confirmed activity-list range is meaningful even when no activity
+    // has a calculable load (or the range contains only rest days). Do not
+    // return early: covered days without activities must still become 0,
+    // while days with activities but no load remain unknown.
+    const ranges = validCoverageRanges(settings);
+    if (!ranges.length) return [];
+
+    const startKeys = ranges.map(range => range.startDate).sort();
+    const start = new Date(startKeys[0] + 'T12:00:00');
+    const end = new Date();
+    end.setHours(12, 0, 0, 0);
+    if (!Number.isFinite(start.getTime())) return [];
+
     const dailyLoad = {};
     const activityCountByDate = {};
     const loadActivityCountByDate = {};
-    records.forEach(activity => {
+
+    list.forEach(activity => {
         const date = activityDateKey(activity?.date);
-        if (date) activityCountByDate[date] = (activityCountByDate[date] || 0) + 1;
+        if (!date) return;
+        // Every recorded activity prevents a false confirmed-rest day.
+        // In Garmin mode, non-Garmin activities have no eligible measured load
+        // and therefore make the day incomplete instead of silently disappearing.
+        activityCountByDate[date] = (activityCountByDate[date] || 0) + 1;
     });
-    valid.forEach(item => {
-        const date = activityDateKey(item.activity.date);
+
+    loadData.records.forEach(item => {
+        const date = activityDateKey(item.activity?.date);
         if (!date) return;
         dailyLoad[date] = (dailyLoad[date] || 0) + item.value;
         loadActivityCountByDate[date] = (loadActivityCountByDate[date] || 0) + 1;
     });
-    let ctl = 0, atl = 0;
+
+    let ctl = 0, atl = 0, modelActive = false, segmentDays = 0;
     const kCtl = 1 - Math.exp(-1 / 42), kAtl = 1 - Math.exp(-1 / 7);
     const timeline = [];
-    let elapsedDays = 0;
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        const load = dailyLoad[dateStr] || 0;
-        // Update CTL/ATL first, then derive all same-day values from
-        // the same end-of-day state.
-        ctl += (load - ctl) * kCtl;
-        atl += (load - atl) * kAtl;
+        const covered = isDateCovered(dateStr, ranges);
+        const activityCount = activityCountByDate[dateStr] || 0;
+        const loadedCount = loadActivityCountByDate[dateStr] || 0;
+        let dayLoad = null;
+        let dayStatus = 'unknown';
+
+        if (covered && activityCount === 0) {
+            // Only a successfully synchronized activity-list range proves a rest day.
+            dayLoad = 0;
+            dayStatus = 'confirmed-rest';
+        } else if (covered && activityCount > 0 && loadedCount === activityCount) {
+            dayLoad = dailyLoad[dateStr] || 0;
+            dayStatus = 'complete';
+        } else if (covered && activityCount > 0) {
+            dayStatus = 'incomplete-activity-load';
+        }
+
+        if (dayLoad === null) {
+            // A gap breaks the EWMA chain. Do not carry a falsely precise CTL/ATL
+            // through days whose total load is unknown.
+            ctl = 0;
+            atl = 0;
+            modelActive = false;
+            segmentDays = 0;
+            timeline.push({
+                date: dateStr, load: null, tss: null, activityCount, loadActivityCount: loadedCount,
+                loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
+                dataStatus: dayStatus, ctl: null, atl: null, tsb: null, formPct: null, acwr: null,
+                statusLabel: 'Nicht berechenbar', isProvisional: true
+            });
+            continue;
+        }
+
+        if (!modelActive) {
+            ctl = 0;
+            atl = 0;
+            modelActive = true;
+            segmentDays = 0;
+        }
+        ctl += (dayLoad - ctl) * kCtl;
+        atl += (dayLoad - atl) * kAtl;
+        segmentDays++;
+
         const ctlDisplay = Number(ctl.toFixed(1));
         const atlDisplay = Number(atl.toFixed(1));
         const form = ctlDisplay - atlDisplay;
         const formPct = ctlDisplay > 0 ? form / ctlDisplay * 100 : null;
-        const ratio = elapsedDays >= 42 && ctl > 0 ? atl / ctl : null;
-        let statusLabel = loadData.mode === 'srpe' ? 'Modellwert' : 'Ausgeglichen';
-        const isGarmin = loadData.mode.startsWith('garmin');
+        const ratio = segmentDays >= 42 && ctl > 0 ? atl / ctl : null;
+        const isGarmin = loadData.mode === 'garmin-native' || loadData.mode === 'garmin-zone';
+        let statusLabel = loadData.mode === 'srpe' ? 'Modellwert'
+            : loadData.mode === 'garmin-unavailable' ? 'Keine Load-Quelle' : 'Ausgeglichen';
         const statusValue = isGarmin ? formPct : form;
-        const isProvisional = elapsedDays < 126;
-        if (loadData.mode !== 'srpe') {
+        if (loadData.mode !== 'srpe' && loadData.mode !== 'garmin-unavailable') {
             if (isGarmin && formPct === null) statusLabel = 'Keine relative Basis';
             else if (statusValue < (isGarmin ? -25 : -30)) statusLabel = 'Hohe Ermüdung';
             else if (statusValue < -10) statusLabel = 'Belastung';
@@ -69,16 +127,16 @@ export function computePerformanceTimeline(records, settings, profile) {
             else if (statusValue <= (isGarmin ? 20 : 25)) statusLabel = 'Frisch';
             else statusLabel = 'Tapering';
         }
+
         timeline.push({
-            date: dateStr, tss: Number(load.toFixed(1)), load: Number(load.toFixed(1)),
-            activityCount: activityCountByDate[dateStr] || 0,
-            loadActivityCount: loadActivityCountByDate[dateStr] || 0,
+            date: dateStr, tss: Number(dayLoad.toFixed(1)), load: Number(dayLoad.toFixed(1)),
+            activityCount, loadActivityCount: loadedCount,
             loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
-            ctl: ctlDisplay, atl: atlDisplay,
+            dataStatus: dayStatus, ctl: ctlDisplay, atl: atlDisplay,
             tsb: Number(form.toFixed(1)), formPct: formPct === null ? null : Number(formPct.toFixed(1)),
-            acwr: ratio === null ? null : Number(ratio.toFixed(2)), statusLabel, isProvisional
+            acwr: ratio === null ? null : Number(ratio.toFixed(2)), statusLabel,
+            isProvisional: segmentDays < 126
         });
-        elapsedDays++;
     }
     return timeline;
 }
