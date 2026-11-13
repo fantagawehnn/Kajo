@@ -19,7 +19,7 @@ import { computePerformanceTimeline } from './calculations.js';
 import { sanitizeGarminActivityTelemetry } from './data-source.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js';
-import { renderAnalysisOverview } from './analysis-overview.js';
+import { renderAnalysisOverview, setAnalysisOverviewMetric } from './analysis-overview.js';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric } from './training-load-view.js';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
 import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, openCalendarDay, openCalendarWeek, openCalendarTrainingCreate, openCalendarRaceCreate } from './calendar.js?v=9';
@@ -192,6 +192,8 @@ function switchTab(requestedTab) {
 
     if (view === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); refreshSportAnalytics(); renderAnalysisInsights(); }
     if (view === 'analyses') { renderAnalysisPageUI(sub || 'overview'); if (sub === 'recovery') renderMetricHistory('health'); if (sub === 'performance') renderMetricHistory('training'); }
+    const overviewContent = document.getElementById('analysis-overview-content');
+    if (overviewContent) overviewContent.classList.toggle('hidden', view !== 'analyses' || sub !== 'overview');
     if (view === 'analyses' && sub === 'overview') renderAnalysisOverview();
     if (view === 'analyses' && sub === 'load') renderTrainingLoadView();
     if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
@@ -1838,6 +1840,7 @@ Object.assign(window, {
     setTrainingLoadChartMetric,
     kajoRenderTrainingLoadView: renderTrainingLoadView,
     renderAnalysisOverview,
+    setAnalysisOverviewMetric,
     kajoRenderAnalysisOverview: renderAnalysisOverview,
     setHistoryMetric,
     setHistoryRange,
