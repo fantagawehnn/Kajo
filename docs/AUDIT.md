@@ -113,4 +113,15 @@ Die Analyse-Seiten besitzen nun eine einheitliche Hero-Kennzahl mit gleicher Kre
 
 **Additive Provenienz-Erweiterung:** Das bestehende Check-in-Objekt erhält optional `measurementSources` als Metadatenfeld pro Messwert. Vorhandene Messwerte und Berechnungsformeln bleiben unverändert; historische HRV-Werte ohne Metadaten werden nicht verändert oder rückwirkend einer Quelle zugeordnet. Die adaptive Baseline wird weiterhin nicht implementiert, bis Mindestdatenbasis, robuste Statistik, Ausreißerbehandlung und schrittweise Aktualisierung verbindlich festgelegt sind.
 
-Die CSS-Komponenten enthalten Light-Theme-Variablen für `data-theme="light"` bzw. `theme-light`. Da im bestehenden Einstellungsmodul kein Theme-Schalter nachgewiesen wurde, ist die appweite Umschaltung auf Light Mode noch nicht abgenommen.
+Die CSS-Komponenten enthalten Light-Theme-Variablen für `data-theme="light"`. Auf dem Feature-Branch `kajo-v2-athlete-profile-design` wurde zusätzlich eine persistente Theme-Auswahl (System, Hell, Dunkel) in den Einstellungen ergänzt. Die appweite visuelle Endabnahme aller Module und realer Geräte steht weiterhin aus.
+
+
+## 11. KAJO-Designsystem und Athletenprofil – additive Umsetzung auf Feature-Branch
+
+Auf Branch `kajo-v2-athlete-profile-design` wurden die Design-Tokens für Hintergrund, Oberflächen, Text, Rahmen, Brand und semantische Statusfarben zentral in `css/styles.css` ergänzt. Die Statusfarben sind in Dark und Light Mode getrennt definiert; Sportartenfarben bleiben davon unabhängig und werden weiterhin aus der zentralen Sportartenkonfiguration bezogen.
+
+Das Athletenprofil wurde auf eine kompakte Übersicht mit direkt auswählbaren Bereichen umgestellt. Ergänzt wurden strukturierte Felder für Land, Profilbild-URL, Wettkampfformate, Stärken/Entwicklungsfelder, Titel, Wettkampfgeschichte, persönliche Bestleistungen und sportlichen Werdegang. Die bestehenden Profilwerte bleiben im bisherigen Profilobjekt gespeichert; es wurde keine Datenbankmigration vorgenommen. Das Profilbild akzeptiert ausschließlich HTTP(S)-URLs und bleibt optional. Die Karrierehistorie wird als vertikale Timeline, Ergebnis- und Rekordlisten werden kompakt dargestellt.
+
+Eine tatsächliche Profilfortschrittsanzeige basiert auf dem Verhältnis ausgefüllter zu verfügbaren Profilfeldern. Sie ist keine Leistungs- oder Trainingskennzahl. Es werden keine Fortschrittsringe für nicht messbare Ziele erzeugt.
+
+Die Theme-Auswahl bietet System, Hell und Dunkel und speichert die Präferenz lokal auf dem Gerät. Die UI-Änderungen greifen nicht in Trainingsberechnungen, Garmin-Synchronisierung oder Supabase-Tabellen ein. Die Umsetzung ist bis zum Abschluss der CI- und visuellen Endabnahme als Feature-Branch-Änderung zu verstehen.
