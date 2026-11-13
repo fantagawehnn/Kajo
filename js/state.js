@@ -39,6 +39,7 @@ export const state = {
     selectedDashboardDate: null,
     activeTimeframe: '3m',
     activeCalendarFormat: 'week',
+    selectedCalendarDay: null,
     calendarDisplayMode: null,
     currentCalendarDate: new Date(),
     selectedActivityForModal: null
