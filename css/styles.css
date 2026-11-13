@@ -4813,3 +4813,82 @@ html[data-theme="light"] .kajo-reminder-item h4 { color:#17212B; }
 #settings-modal .kajo-settings-footer.hidden { display:none !important; }
 @media(min-width:760px) { #settings-modal .kajo-settings-overview { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:600px) { #settings-modal .kajo-settings-overview { gap:9px; } #settings-modal .kajo-settings-overview-group { padding:10px; } }
+
+
+/* Einstellungen als App-Ansicht zwischen Kopf- und Hauptnavigation. */
+#settings-modal {
+  position:fixed !important;
+  inset:4rem 0 0 !important;
+  z-index:80 !important;
+  display:block;
+  padding:0 !important;
+  overflow:hidden;
+  background:var(--kajo-bg) !important;
+  backdrop-filter:none !important;
+}
+#settings-modal.hidden { display:none !important; }
+#settings-modal > div.kajo-settings-shell {
+  width:100%;
+  height:100%;
+  max-height:none;
+  max-width:none;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:14px clamp(12px,2vw,24px) 22px;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+#settings-modal .kajo-settings-header {
+  position:sticky;
+  top:-14px;
+  z-index:2;
+  margin:-14px calc(clamp(12px,2vw,24px) * -1) 14px;
+  padding:12px clamp(12px,2vw,24px);
+  background:var(--kajo-bg);
+  border-bottom:1px solid var(--kajo-border);
+}
+#settings-modal .kajo-settings-header h2 { font-size:1rem; }
+#settings-modal .kajo-settings-header .kajo-settings-eyebrow,
+#settings-modal .kajo-settings-header p:last-child { display:none; }
+#settings-modal .kajo-settings-mark { width:30px; height:30px; }
+#settings-modal .kajo-settings-mark svg { width:16px; height:16px; }
+#settings-modal .kajo-settings-close { width:30px; height:30px; font-size:18px; }
+#settings-modal .kajo-settings-content { display:grid; }
+#settings-modal .kajo-settings-content.hidden { display:none !important; }
+#settings-modal .kajo-settings-menu.hidden,
+#settings-modal .kajo-settings-overview.hidden { display:none !important; }
+#settings-modal .kajo-settings-back {
+  display:grid;
+  place-items:center;
+  width:32px;
+  min-width:32px;
+  height:32px;
+  min-height:32px;
+  padding:0;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--kajo-text);
+}
+#settings-modal .kajo-settings-back:hover,
+#settings-modal .kajo-settings-back:focus-visible {
+  background:var(--kajo-surface);
+  outline:2px solid var(--kajo-status-info);
+  outline-offset:1px;
+}
+#settings-modal .kajo-settings-back svg { width:18px; height:18px; }
+@media(max-width:767px) {
+  #settings-modal {
+    inset:calc(3.65rem + env(safe-area-inset-top)) 0 calc(4.7rem + env(safe-area-inset-bottom)) !important;
+  }
+  #settings-modal > div.kajo-settings-shell {
+    padding:10px 12px 16px;
+  }
+  #settings-modal .kajo-settings-header {
+    top:-10px;
+    margin:-10px -12px 12px;
+    padding:9px 12px;
+  }
+}
+html[data-theme="light"] #settings-modal { background:var(--kajo-bg) !important; }
