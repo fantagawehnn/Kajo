@@ -12,6 +12,7 @@ const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
 const charts = readFileSync('js/charts.js', 'utf8');
 const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
+const dataSource = readFileSync('js/data-source.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
 const competitions = readFileSync('js/competitions.js', 'utf8');
 
@@ -287,3 +288,6 @@ assert.ok(dataSource.includes('activity?.source === \'fit\'') && dataSource.incl
 assert.ok(dataSource.includes('if (!explicitFitSource) return null'), 'ambiguous legacy generic telemetry remains excluded');
 assert.ok(charts.includes('getActivityTelemetry(act)'), 'activity chart reads Garmin or explicitly sourced FIT telemetry');
 assert.ok(activities.includes('telemetry: getActivityTelemetry(act)'), 'activity detail passes the verified telemetry source to its modules');
+
+assert.ok(activities.includes('getActivityTelemetry(activity)'), 'activity detail uses provenance-gated telemetry for FIT and Garmin streams');
+assert.ok(activities.includes('FIT-Datei-Runden'), 'activity laps identify their FIT-file origin');
