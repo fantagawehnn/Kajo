@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync('index.html', 'utf8');\nconst activities = readFileSync('js/activities.js', 'utf8');
+const html = readFileSync('index.html', 'utf8');
+const activities = readFileSync('js/activities.js', 'utf8');
 const css = readFileSync('css/styles.css', 'utf8');
 const main = readFileSync('js/main.js', 'utf8');
 const calendar = readFileSync('js/calendar.js', 'utf8');
