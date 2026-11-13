@@ -338,7 +338,8 @@ export function renderMonthView() {
         const dayPlans = state.plannedActivities.filter(p => p.date === dateStr);
         const dayRaces = state.races.filter(r => r.date === dateStr);
         const dayHealth = state.healthLogs[dateStr];
-        const dayLoad = Math.round(dayActs.reduce((sum,a)=>sum+(Number(a.tss)||0),0));
+        const dayLoadComplete = dayActs.length > 0 && dayActs.every(act => act.tss != null && Number.isFinite(Number(act.tss)));
+        const dayLoad = dayLoadComplete ? Math.round(dayActs.reduce((sum,a)=>sum+Number(a.tss),0)) : null;
 
         const activityMarkers = dayActs.map(act => {
             const mode = calendarDisplayMode();
@@ -358,7 +359,7 @@ export function renderMonthView() {
         const illnessMarker = dayHealth?.status === 'sick' ? '<span class="calendar-month-illness-marker" title="Krankheit" aria-label="Krankheit"></span>' : '';
         const injuryMarker = dayHealth?.status === 'injured' ? '<span class="calendar-month-injury-marker" title="Verletzung" aria-label="Verletzung"></span>' : '';
         const cycleMarker = periodCalendarMarker(dateStr);
-        const loadMarkup = dayLoad > 0 ? '<div class="calendar-month-load" title="Trainingsload">'+dayLoad+' Load</div>' : '';
+        const loadMarkup = dayLoad !== null ? '<div class="calendar-month-load" title="Trainingsload">'+dayLoad+' Load</div>' : '';
         const borderClass = isToday ? 'is-today' : '';
 
         grid.insertAdjacentHTML('beforeend', `
@@ -413,9 +414,14 @@ export function renderWeekView() {
         if (checkin.respiration != null) healthHeaderHtml += `<span class="text-[11px] text-cyan-300">AF ${Number(checkin.respiration).toFixed(1)}</span> `;
         const readiness=calculateReadiness(dateStr);
         if(readiness.score!==null){const tone=readiness.score>=80?'text-green-300':readiness.score>=60?'text-yellow-300':readiness.score>=40?'text-orange-300':readiness.score>=20?'text-red-300':'text-purple-300';healthHeaderHtml += `<span class="text-[11px] ${tone}">Ready ${readiness.score}</span> `;}
-        const dayTrainingMinutes = Math.round(dayActs.reduce((sum, act) => sum + (Number(act.duration) || 0), 0));
-        const dayTrainingLoad = Math.round(dayActs.reduce((sum, act) => sum + (Number(act.tss) || 0), 0));
-        if (dayActs.length) healthHeaderHtml += `<span class="text-[11px] text-sky-300">${dayTrainingMinutes} min · ${dayTrainingLoad} Load</span> `;
+        const durationsComplete = dayActs.length > 0 && dayActs.every(act => act.duration != null && Number.isFinite(Number(act.duration)));
+        const loadsComplete = dayActs.length > 0 && dayActs.every(act => act.tss != null && Number.isFinite(Number(act.tss)));
+        const dayTrainingMinutes = durationsComplete ? Math.round(dayActs.reduce((sum, act) => sum + Number(act.duration), 0)) : null;
+        const dayTrainingLoad = loadsComplete ? Math.round(dayActs.reduce((sum, act) => sum + Number(act.tss), 0)) : null;
+        const dayTotals = [];
+        if (dayTrainingMinutes !== null) dayTotals.push(dayTrainingMinutes + ' min');
+        if (dayTrainingLoad !== null) dayTotals.push(dayTrainingLoad + ' Load');
+        if (dayTotals.length) healthHeaderHtml += `<span class="text-[11px] text-sky-300">${dayTotals.join(' · ')}</span> `;
         if (health) healthHeaderHtml += health.status === 'sick' ? `<div class="text-[10px] text-orange-300 font-bold">Krankheit · ${escapeHtml(health.diagnosis || 'Infekt')}</div>` : `<div class="text-[10px] text-amber-300 font-bold">Verletzung · ${escapeHtml(health.diagnosis || 'Verletzung')}</div>`;
 
         let actsHtml = '';
