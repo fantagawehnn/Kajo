@@ -322,6 +322,7 @@ export function navigateCalendarPeriod(dir) {
     } else if (state.activeCalendarFormat === 'year') {
         state.currentCalendarDate.setFullYear(state.currentCalendarDate.getFullYear() + dir);
     } else {
+        if (state.activeCalendarFormat === 'month') state.currentCalendarDate.setDate(1);
         state.currentCalendarDate.setMonth(state.currentCalendarDate.getMonth() + dir);
     }
     if (state.activeCalendarFormat === 'month' || state.activeCalendarFormat === 'year') state.selectedCalendarDay = null;
@@ -479,7 +480,7 @@ export function renderYearView() {
             (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured"></i>' : '');
         return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')"><span class="calendar-year-week-bar">' + segments + '</span><span class="calendar-year-planned-bar">' + plannedSegments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
     }).join('');
-    const legendTypes = [...new Set(weeks.flatMap(week => Object.values(week.bySport).map(item => item.type)))];
+    const legendTypes = [...new Set(weeks.flatMap(week => [...Object.values(week.bySport).map(item => item.type), ...Object.keys(week.plannedBySport)]))];
     const legend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
     document.getElementById('calendar-period-title').textContent = String(year);
     container.innerHTML = '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '">' +
