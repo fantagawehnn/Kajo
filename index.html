@@ -426,7 +426,7 @@
                 <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WETTKAMPFPLANUNG</p><h2>Wettkampf</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
                 <div id="analysis-competition-insight"></div>
             </section><div id="view-training-analysis" class="space-y-5">
-            <header class="space-y-1"><p class="kajo-eyebrow">PERFORMANCE &amp; BELASTUNG</p><h1 class="text-xl font-bold text-white">Trainingsanalyse</h1><p class="text-xs text-slate-400">Belastungsbasierte Fitnessentwicklung (CTL) und Trainingssaldo; keine direkte Leistungsdiagnostik.</p></header>
+            <header class="kajo-analysis-history-header"><p class="kajo-analysis-eyebrow">BELASTUNGSBASIERTE FITNESSENTWICKLUNG</p><h2>Fitnessverlauf</h2><p>CTL und Trainingssaldo zeigen die Entwicklung der modellierten Trainingsbelastung. Sie ersetzen keine direkte Leistungsdiagnostik.</p></header>
             <nav id="training-metric-tabs" class="flex flex-wrap gap-2" aria-label="Trainingskennzahl">
                 <button type="button" data-history-metric="fitness" onclick="setHistoryMetric('training','fitness')" class="more-subnav-button">Fitness</button>
                 <button type="button" data-history-metric="form" onclick="setHistoryMetric('training','form')" class="more-subnav-button">Trainingssaldo</button>
@@ -478,8 +478,8 @@
                 <div id="readiness-details" class="space-y-2"><p class="text-xs text-slate-500">Die Readiness wird berechnet, sobald genügend objektive und subjektive Daten vorliegen.</p></div>
                 <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-recovery-insight"></div></div>
             </div><div id="view-health-data" class="space-y-5">
-            <header class="space-y-1"><p class="kajo-eyebrow">GESUNDHEIT &amp; ERHOLUNG</p><h1 class="text-xl font-bold text-white">Gesundheitsstatistiken</h1><p class="text-xs text-slate-400">Wähle einen Gesundheitswert, um dessen Verlauf und Entwicklung anzusehen.</p></header>
-            <h2 class="text-sm font-semibold text-slate-300">Gesundheits-Unterbereiche</h2>
+            <header class="kajo-analysis-history-header"><p class="kajo-analysis-eyebrow">WEARABLES &amp; CHECK-IN</p><h2>Messwertverläufe</h2><p>Wähle einen einzelnen Messwert, um dessen zeitlichen Verlauf anzusehen. Unterschiedliche Messmethoden werden nicht ungeprüft zusammengeführt.</p></header>
+            <h3 class="text-xs font-semibold text-slate-400">Messwert auswählen</h3>
             <nav id="health-metric-tabs" class="kajo-health-subareas" aria-label="Gesundheits-Unterbereiche">
                 <button type="button" data-history-metric="rhr" onclick="setHistoryMetric('health','rhr')" class="more-subnav-button">Ruheherzfrequenz</button>
                 <button type="button" data-history-metric="hrv" onclick="setHistoryMetric('health','hrv')" class="more-subnav-button">HRV</button>
