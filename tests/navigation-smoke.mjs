@@ -68,3 +68,16 @@ assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
 console.log('KAJO navigation and analysis UI smoke tests passed.');
+
+
+// Home dashboard structure and stacked weekly sport-duration chart.
+const homeStart = html.indexOf('<div id="view-dashboard"');
+const homeEnd = html.indexOf('<div id="view-analyses"', homeStart);
+const homeMarkup = html.slice(homeStart, homeEnd);
+for (const id of ['home-readiness-ring','home-form-ring','home-fitness-ring','home-wear-rhr-ring','home-wear-hrv-ring','home-wear-score-ring','home-wear-duration-ring','home-self-stress-ring','home-week-days','home-week-legend','home-week-summary']) {
+  assert.ok(homeMarkup.includes('id="' + id + '"'), 'home contains ' + id);
+}
+assert.ok(homeMarkup.indexOf('home-readiness-ring') < homeMarkup.indexOf('home-form-ring') && homeMarkup.indexOf('home-form-ring') < homeMarkup.indexOf('home-fitness-ring'), 'status order is Recovery, Load, Performance');
+assert.ok(homeMarkup.includes('home-week-chart'), 'weekly chart uses compact vertical bars');
+assert.ok(dashboard.includes('kajo-week-segment'), 'weekly chart renders sport segments');
+assert.ok(dashboard.includes('garminActivityId || item.externalId || item.id'), 'weekly chart deduplicates stable activity IDs');
