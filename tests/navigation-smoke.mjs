@@ -214,3 +214,6 @@ assert.ok(activities.includes('if (!currentWaterType || !candidateWaterType || c
 assert.ok(activities.includes('export function focusActivityLap(index)'), 'timed native FIT laps can focus their matching chart interval');
 assert.ok(importer.includes('startTimeSeconds: lapStartSeconds'), 'FIT lap time ranges are retained for chart alignment');
 assert.ok(main.includes('focusActivityLap,'), 'lap focus action is exposed to activity detail controls');
+
+assert.ok(charts.includes('activity-lap-highlight'), 'selected timed laps are highlighted on the shared time-series chart');
+assert.ok(charts.includes('state.activitySelectedLap'), 'chart highlight uses the selected lap time range');
