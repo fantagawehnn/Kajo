@@ -535,6 +535,112 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     if (formValueEl) formValueEl.style.color = '#f8fafc';
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
 }
+export function renderHomeTrainingWeek() {
+    const root = document.getElementById('home-week-days');
+    const range = document.getElementById('home-week-range');
+    const summary = document.getElementById('home-week-summary');
+    if (!root) return;
+    const today = new Date();
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const offset = (monday.getDay() + 6) % 7;
+    monday.setDate(monday.getDate() - offset);
+    const dates = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + index);
+        return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    });
+    const end = new Date(monday);
+    end.setDate(monday.getDate() + 6);
+    const dateLabel = date => date.slice(8,10) + '.' + date.slice(5,7) + '.';
+    if (range) range.textContent = dateLabel(dates[0]) + ' – ' + dateLabel(dates[6]);
+    const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
+    const plans = Array.isArray(state.plannedActivities) ? state.plannedActivities : [];
+    const weekActivities = activities.filter(item => dates.includes(item.date));
+    const weekPlans = plans.filter(item => dates.includes(item.date));
+    const allDurationsAvailable = weekActivities.length > 0 && weekActivities.every(item => item.duration != null && Number.isFinite(Number(item.duration)));
+    const totalMinutes = allDurationsAvailable ? weekActivities.reduce((sum, item) => sum + Number(item.duration), 0) : null;
+    const summaryParts = [];
+    if (totalMinutes !== null) summaryParts.push((totalMinutes / 60).toFixed(1) + ' h absolviert');
+    else if (weekActivities.length) summaryParts.push('Umfang unvollständig');
+    else summaryParts.push('Keine abgeschlossenen Einheiten erfasst');
+    if (weekPlans.length) summaryParts.push(weekPlans.length + ' geplant');
+    if (summary) summary.textContent = summaryParts.join(' · ');
+    const sports = getSportsCatalog();
+    root.replaceChildren();
+    const weekday = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    dates.forEach((date, index) => {
+        const dayActivities = weekActivities.filter(item => item.date === date);
+        const dayPlans = weekPlans.filter(item => item.date === date);
+        const day = new Date(date + 'T12:00:00');
+        const health = state.healthLogs?.[date];
+        const raceItems = (Array.isArray(state.races) ? state.races : []).filter(item => item.date === date);
+        const card = document.createElement('section');
+        card.className = 'rounded-xl border border-slate-800 bg-slate-950/70 p-2 min-w-0';
+        if (date === localTodayKey()) card.classList.add('ring-1', 'ring-cyan-500/50');
+        const head = document.createElement('button');
+        head.type = 'button';
+        head.className = 'flex w-full items-center justify-between gap-1 text-left mb-2';
+        head.setAttribute('aria-label', 'Tagesdetails ' + date);
+        const headLabel = document.createElement('span');
+        headLabel.className = 'text-[11px] font-semibold text-slate-200';
+        headLabel.textContent = weekday[index] + ' ' + day.getDate() + '.' + String(day.getMonth() + 1).padStart(2, '0');
+        const count = document.createElement('span');
+        count.className = 'text-[9px] text-slate-500';
+        const itemCount = dayActivities.length + dayPlans.length;
+        count.textContent = itemCount ? String(itemCount) + ' Einh.' : '';
+        head.append(headLabel, count);
+        head.addEventListener('click', () => window.openDayEditor?.(date));
+        card.appendChild(head);
+        const entries = [
+            ...dayActivities.map(item => ({ item, planned: false })),
+            ...dayPlans.map(item => ({ item, planned: true }))
+        ];
+        entries.forEach(({ item, planned }) => {
+            const sport = sports[item.type] || sports.Workout || {};
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'flex w-full items-start gap-1.5 rounded-md px-1.5 py-1 text-left mb-1 hover:bg-slate-800/80';
+            button.style.borderLeft = '3px solid ' + (sport.color || '#64748b');
+            const textWrap = document.createElement('span');
+            textWrap.className = 'min-w-0 flex-1';
+            const name = document.createElement('span');
+            name.className = 'block text-[10px] leading-tight text-slate-200 break-words';
+            name.textContent = item.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit');
+            const meta = document.createElement('span');
+            meta.className = 'block text-[9px] text-slate-500';
+            const details = [sport.label || item.type || 'Training', planned ? 'geplant' : 'absolviert'];
+            if (item.duration != null && Number.isFinite(Number(item.duration))) details.push(Math.round(Number(item.duration)) + ' min');
+            meta.textContent = details.join(' · ');
+            textWrap.append(name, meta);
+            button.appendChild(textWrap);
+            button.addEventListener('click', () => {
+                if (planned) window.openDayEditor?.(date);
+                else window.openCSVDetailsModal?.(encodeURIComponent(String(item.id)).replace(/'/g, '%27'));
+            });
+            card.appendChild(button);
+        });
+        if (!entries.length) {
+            const empty = document.createElement('p');
+            empty.className = 'text-[9px] text-slate-600 py-1';
+            empty.textContent = 'Keine Einträge';
+            card.appendChild(empty);
+        }
+        if (raceItems.length) {
+            const event = document.createElement('p');
+            event.className = 'text-[9px] text-amber-300 mt-1';
+            event.textContent = 'Wettkampf';
+            card.appendChild(event);
+        }
+        if (health?.status === 'sick' || health?.status === 'injured') {
+            const event = document.createElement('p');
+            event.className = 'text-[9px] text-orange-300 mt-1';
+            event.textContent = health.status === 'sick' ? 'Krankheit' : 'Verletzung';
+            card.appendChild(event);
+        }
+        root.appendChild(card);
+    });
+}
+
 let selectedDashboardDate = localTodayKey();
 let dashboardDateWasManuallyChanged = false;
 
