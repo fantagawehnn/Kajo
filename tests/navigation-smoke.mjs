@@ -93,3 +93,21 @@ assert.ok(main.includes("document.body.classList.toggle('kajo-home-active', view
 assert.ok(dashboard.includes("year: 'numeric'"), 'home date includes the current year');
 
 assert.ok(!dashboard.includes('latestFormDay'), 'home rendering does not reference an undefined load timeline variable');
+
+
+
+const profile = readFileSync('js/profile.js', 'utf8');
+const theme = readFileSync('js/theme.js', 'utf8');
+const styles = readFileSync('css/styles.css', 'utf8');
+assert.ok(profile.includes("id: 'achievements'") && profile.includes("id: 'career'"), 'athlete profile includes achievements and career sections');
+assert.ok(profile.includes("key: 'personalRecords'") && profile.includes("key: 'competitionHistory'"), 'athlete profile stores competition history and personal records');
+assert.ok(profile.includes('kajo-profile-timeline'), 'career history uses a timeline presentation');
+assert.ok(profile.includes('isSafeImageUrl'), 'profile image URLs are restricted to HTTP(S)');
+assert.ok(theme.includes("const THEMES = ['system', 'dark', 'light']"), 'theme preference supports system, dark and light');
+assert.ok(theme.includes('localStorage.setItem(THEME_KEY, selected)'), 'theme preference persists on this device');
+assert.ok(html.includes('id="kajo-theme-select"'), 'theme preference is reachable in settings');
+assert.ok(main.includes('initializeKajoTheme()'), 'theme preference is initialized by the app');
+assert.ok(styles.includes('--kajo-status-good:#39C98A') && styles.includes('--kajo-status-critical:#F16B6B'), 'semantic status tokens are centrally defined');
+assert.ok(dashboard.includes('const STATUS_COLORS') && dashboard.includes('STATUS_COLORS.attention'), 'dashboard rings use the shared semantic status colors');
+assert.ok(!dashboard.includes("return '#a855f7'"), 'critical status no longer uses a separate purple status color');
+
