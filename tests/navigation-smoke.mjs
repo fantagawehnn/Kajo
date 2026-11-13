@@ -39,6 +39,10 @@ for (const id of ['load-hero-ring', 'recovery-hero-ring', 'performance-hero-ring
 assert.ok(html.includes('id="analysis-shared-period"'), 'shared analysis period container exists');
 assert.ok(html.includes('id="health-history-baseline-note"'), 'wearable baseline limitation is disclosed');
 assert.ok(html.includes('id="analysis-health-timeline"'), 'health availability/event timeline exists');
+assert.ok(html.includes('id="health-timeline-selection"'), 'health timeline has an accessible selected-day detail');
+assert.ok(analysisUI.includes('onClick: (_event, elements) =>'), 'health timeline supports selecting a day');
+assert.ok(analysisUI.includes('Kein Krankheits- oder Verletzungseintrag dokumentiert'), 'missing health entries are not interpreted as healthy days');
+assert.ok(analysisUI.includes("weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'"), 'selected health day displays its full date');
 assert.ok(analysisUI.includes("latestCheckin('hrv')"), 'recovery uses a raw HRV measurement rather than a composite score');
 assert.ok(analysisUI.includes('Es wird kein künstlicher Recovery-Gesamtscore gebildet'), 'recovery does not add a synthetic overall score');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
