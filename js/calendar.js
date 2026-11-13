@@ -538,12 +538,18 @@ export function renderListView() {
         const isStrength = act.type === 'WeightTraining' || act.category === 'strength';
         const telemetryHr = Array.isArray(act.telemetry?.hr) ? act.telemetry.hr.map(Number).filter(v => Number.isFinite(v) && v > 0) : [];
         const maxHr = Number(act.maxHr) > 0 ? Math.round(Number(act.maxHr)) : (telemetryHr.length ? Math.round(Math.max(...telemetryHr)) : null);
-        const hrHtml = (act.hr != null || maxHr != null) ? '<div class="text-slate-400">HF Ø ' + (act.hr != null ? Math.round(Number(act.hr)) + ' bpm' : '—') + ' · max. ' + (maxHr != null ? maxHr + ' bpm' : '—') + '</div>' : '';
-        const distanceHtml = isStrength ? '' : ' · ' + (act.distance == null ? '—' : formatKm(act.distance)) + ' km';
+        const hrValues = [];
+        if (act.hr != null && Number.isFinite(Number(act.hr))) hrValues.push('Ø ' + Math.round(Number(act.hr)) + ' bpm');
+        if (maxHr != null) hrValues.push('max. ' + maxHr + ' bpm');
+        const hrHtml = hrValues.length ? '<div class="text-slate-400">HF ' + hrValues.join(' · ') + '</div>' : '';
+        const distanceHtml = !isStrength && act.distance != null && Number.isFinite(Number(act.distance)) ? ' · ' + formatKm(act.distance) + ' km' : '';
+        const loadHtml = act.tss != null && Number.isFinite(Number(act.tss)) ? '<strong>' + Math.round(Number(act.tss)) + ' Load</strong>' : '';
+        const durationHtml = act.duration != null && Number.isFinite(Number(act.duration)) ? '<span>' + Math.round(Number(act.duration)) + ' min' + distanceHtml + '</span>' : (distanceHtml ? '<span>' + distanceHtml.slice(3) + '</span>' : '');
+        const metricsHtml = [loadHtml, durationHtml, hrHtml].filter(Boolean).join('');
         const id = encodeURIComponent(String(act.id)).replace(/'/g, '%27');
         return '<button type="button" onclick="openCSVDetailsModal(\'' + id + '\')" class="activity-list-row" style="--activity-color:' + activityColor + '">' +
             '<span class="activity-list-dot"></span><span class="activity-list-main"><span class="activity-list-date">' + formatDateDDMMYY(act.date) + ' · ' + escapeHtml(sportCatalog[act.type]?.label || act.type || 'Training') + '</span>' +
-            '<strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong></span><span class="activity-list-metrics"><strong>' + (Number(act.tss) || 0) + ' Load</strong><span>' + (act.duration || '—') + ' min' + distanceHtml + '</span>' + hrHtml + '</span></button>';
+            '<strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong></span><span class="activity-list-metrics">' + metricsHtml + '</span></button>';
     }).join('');
     globalThis.lucide?.createIcons?.();
 }
