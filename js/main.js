@@ -1,0 +1,1936 @@
+/* ============================================================
+ * main.js – EINSTIEGSPUNKT der Anwendung (wird in index.html per
+ *           <script type="module" src="js/main.js"> geladen)
+ *
+ * Aufgaben:
+ *   1. Module laden
+ *   2. Gespeicherte Daten aus dem localStorage lesen
+ *   3. Navigation (switchTab) und Gesamt-Aktualisierung (initEngine)
+ *   4. Inline-Handler-Bridge für onclick="..."-Attribute im HTML
+ * ============================================================ */
+
+import { state, setRefreshHandler } from './state.js';
+import { renderAthleteProfile, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=1';
+import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
+import { supabase } from './supabase-client.js';
+import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { computePerformanceTimeline } from './calculations.js';
+import { renderAnalysisInsights } from './analysis-insights.js';
+import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, changeDashboardDay, goToDashboardToday, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
+import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu } from './calendar.js?v=8';
+import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker } from './charts.js';
+import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js';
+import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=74';
+import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js';
+import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js';
+import { addRace, deleteRace, renderRaces, toggleRaceModal } from './competitions.js';
+import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js';
+import { sendAICoachMessage } from './coach.js';
+import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js';
+import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection } from './routes.js';
+import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js';
+
+// Externe UI-Bibliotheken dürfen die Kontoaktivierung nicht blockieren.
+// Insbesondere kann das optionale Lucide-CDN vorübergehend nicht erreichbar sein.
+try {
+    globalThis.lucide?.createIcons?.();
+} catch (error) {
+    console.warn('Lucide-Icons konnten nicht initialisiert werden:', error);
+}
+
+try {
+    initializeImportDropZone();
+} catch (error) {
+    console.error('Der Dateiimport konnte nicht initialisiert werden:', error);
+}
+
+// Persönliche Daten werden erst nach erfolgreicher Authentifizierung geladen.
+// Die bisherigen globalen Legacy-Schlüssel werden beim Start nicht gelesen.
+
+// ------------------------------------------------------------
+// Navigation
+// ------------------------------------------------------------
+function openCoach() {
+    const current = window.kajoCurrentTab || 'dashboard';
+    window.kajoCoachContext = current === 'ai' ? (window.kajoCoachContext || 'dashboard') : current;
+    switchTab('ai');
+}
+
+function switchTab(tab) {
+    const viewIds = ['dashboard', 'dashboard-details', 'analyses', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'ai', 'methods', 'data', 'health-data', 'training-analysis', 'routes', 'profile'];
+    const dashboardViews = ['dashboard'];
+    const trainingViews = ['races', 'strength'];
+    const areaChildViews = ['training', 'ai', 'health-data', 'training-analysis', 'nutrition', 'methods', 'upload', 'data', 'routes'];
+    const isAreaChild = areaChildViews.includes(tab);
+    if (tab !== 'health-data' && tab !== 'training-analysis') state.metricHistoryDate = null;
+    window.kajoCurrentTab = tab;
+
+    const moreShell = document.getElementById('view-more');
+    if (moreShell) moreShell.classList.toggle('hidden', tab !== 'more');
+
+    viewIds.forEach(id => {
+        const view = document.getElementById(`view-${id}`);
+        if (!view) return;
+        const visible = tab === 'dashboard' ? dashboardViews.includes(id)
+            : tab === 'training' ? trainingViews.includes(id)
+            : id === tab;
+        view.classList.toggle('hidden', !visible);
+    });
+
+    ['dashboard', 'calendar', 'analyses', 'areas'].forEach(id => {
+        const btn = document.getElementById(id === 'areas' ? 'nav-areas' : `nav-${id}`);
+        if (!btn) return;
+        const active = id === 'areas'
+            ? tab === 'more' || isAreaChild || tab === 'training'
+            : id === tab;
+        btn.className = active
+            ? 'px-3 py-2 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1.5 whitespace-nowrap'
+            : 'px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 whitespace-nowrap';
+        btn.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+
+    const backLink = document.getElementById('area-back-link');
+    if (backLink) backLink.classList.toggle('hidden', !isAreaChild);
+
+    const coachContext = document.getElementById('coach-context-hint');
+    if (coachContext && tab === 'ai') {
+        const labels = {
+            dashboard: 'deiner Tagesübersicht',
+            calendar: 'deinem Trainingskalender',
+            analyses: 'deiner Leistungsanalyse',
+            training: 'deinen Wettkämpfen und Kraftleistungen',
+            'health-data': 'Gesundheit und Regeneration',
+            'training-analysis': 'deiner Trainingsanalyse',
+            nutrition: 'deiner Ernährung',
+            methods: 'Methodik und Datenqualität',
+            upload: 'deinen importierten Aktivitäten',
+            data: 'deinen Datenverbindungen'
+        };
+        const context = window.kajoCoachContext || 'dashboard';
+        coachContext.textContent = 'Kontext: ' + (labels[context] || 'deinem Training');
+    }
+
+    const coachFab = document.getElementById('coach-fab');
+    if (coachFab) coachFab.classList.toggle('hidden', tab === 'ai');
+
+    if (tab === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); refreshSportAnalytics(); renderAnalysisInsights(); }
+    if (tab === 'training') {
+        renderPlannedWorkouts();
+        renderRaces();
+        renderStrengthView();
+    }
+    if (tab === 'planned') renderPlannedWorkouts();
+    if (tab === 'strength') renderStrengthView();
+    if (tab === 'nutrition') renderNutritionView();
+    if (tab === 'upload') renderImportHistory();
+    if (tab === 'health-data') renderMetricHistory('health');
+    if (tab === 'training-analysis') renderMetricHistory('training');
+    if (tab === 'routes') renderRoutesView();
+    if (tab === 'profile') renderAthleteProfile();
+}
+
+function switchMoreTab(tab) {
+    switchTab(tab);
+}
+
+// ------------------------------------------------------------
+// Gesamt-Aktualisierung der Oberfläche (im Original: initEngine)
+// ------------------------------------------------------------
+function refreshSportAnalytics() { renderSportDistribution(state.rawActivities); renderHeartRateZoneDistribution(state.rawActivities); renderCanoeTrainingHours(state.rawActivities); }
+
+function openGarminConnectionModal() {
+    const modal = document.getElementById('garmin-connection-modal');
+    modal?.classList.remove('hidden');
+    modal?.classList.add('flex');
+    const keyInput = document.getElementById('garmin-api-key');
+    if (keyInput) keyInput.value = '';
+    const endInput = document.getElementById('garmin-preview-end-date');
+    const startInput = document.getElementById('garmin-preview-start-date');
+    const today = new Date();
+    const iso = date => {
+        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+    };
+    if (endInput && !endInput.value) endInput.value = iso(today);
+    if (startInput && !startInput.value) {
+        const yearAgo = new Date(today);
+        yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+        startInput.value = iso(yearAgo);
+    }
+    refreshGarminConnectionStatus();
+    loadGarminSyncHistory();
+}
+
+function closeGarminConnectionModal() {
+    const modal = document.getElementById('garmin-connection-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+    const keyInput = document.getElementById('garmin-api-key');
+    if (keyInput) keyInput.value = '';
+}
+
+async function callGarminFunction(body) {
+    if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich zuerst an.');
+    const { data, error } = await supabase.functions.invoke('garmin-personal', { body });
+    if (error) {
+        let detail = '';
+        const response = error.context;
+        if (response && typeof response.clone === 'function') {
+            try {
+                const payload = await response.clone().json();
+                detail = payload?.error || payload?.message || '';
+            } catch (_) {
+                try {
+                    detail = (await response.clone().text()).slice(0, 500);
+                } catch (_) {}
+            }
+        }
+        throw new Error(detail || error.message || 'Die Garmin-Serverfunktion konnte nicht erreicht werden.');
+    }
+    if (!data?.ok) throw new Error(data?.error || 'Die Garmin-Anfrage ist fehlgeschlagen.');
+    return data;
+}
+
+async function loadGarminActivitiesFromCloud() {
+    const { data, error } = await supabase.from('garmin_activities')
+        .select('garmin_activity_id, activity')
+        .order('start_time', { ascending: true });
+    if (error) throw error;
+    let added = 0, merged = 0, ambiguous = 0;
+    for (const row of data || []) {
+        const candidate = garminCandidateFromPreview(row.activity);
+        if (!candidate) continue;
+        const matches = findGarminDuplicates(candidate);
+        if (matches.length === 1) {
+            mergeGarminActivity(matches[0], candidate);
+            merged++;
+        } else if (matches.length === 0) {
+            state.rawActivities.push(candidate);
+            added++;
+        } else {
+            ambiguous++;
+        }
+    }
+    if (added || merged) {
+        saveDataToLocalStorage();
+        initEngine();
+    }
+    return { added, merged, ambiguous };
+}
+
+
+function findGarminNumber(payload, aliases) {
+    const wanted = new Set(aliases.map(key => key.toLowerCase()));
+    const visited = new Set();
+    function walk(value) {
+        if (!value || typeof value !== 'object' || visited.has(value)) return null;
+        visited.add(value);
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const found = walk(item);
+                if (found !== null) return found;
+            }
+            return null;
+        }
+        for (const [key, raw] of Object.entries(value)) {
+            if (wanted.has(key.toLowerCase()) && raw !== null && raw !== '' && Number.isFinite(Number(raw))) {
+                return Number(raw);
+            }
+        }
+        for (const raw of Object.values(value)) {
+            const found = walk(raw);
+            if (found !== null) return found;
+        }
+        return null;
+    }
+    return walk(payload);
+}
+
+function findGarminSleepScore(payload) {
+    const direct = findGarminNumber(payload, ['overallSleepScore', 'sleepScore', 'overallScore']);
+    if (direct !== null) return direct;
+    const visited = new Set();
+    function walk(value) {
+        if (!value || typeof value !== 'object' || visited.has(value)) return null;
+        visited.add(value);
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const found = walk(item);
+                if (found !== null) return found;
+            }
+            return null;
+        }
+        for (const [key, child] of Object.entries(value)) {
+            if (key.toLowerCase() === 'overall' && child && typeof child === 'object' &&
+                child.value !== undefined && Number.isFinite(Number(child.value))) return Number(child.value);
+        }
+        for (const child of Object.values(value)) {
+            const found = walk(child);
+            if (found !== null) return found;
+        }
+        return null;
+    }
+    return walk(payload);
+}
+
+async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
+    if (!appUserReady || !activeAppUserId) return { days: 0, values: 0 };
+    const rows = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await supabase.from('garmin_health_records')
+            .select('data_type, record_date, payload')
+            .gte('record_date', startDate)
+            .lte('record_date', endDate)
+            .order('record_date', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+    }
+
+    const byDate = new Map();
+    for (const row of rows) {
+        if (!byDate.has(row.record_date)) byDate.set(row.record_date, {});
+        byDate.get(row.record_date)[row.data_type] = row.payload;
+    }
+
+    let importedValues = 0;
+    let changedDays = 0;
+    for (const [date, records] of byDate) {
+        const existing = state.dailyCheckins[date] || {};
+        const updates = {};
+        const hrvPayload = records.hrv_daily ?? records.hrv_detail;
+        const heartPayload = records.heart_rate ?? records.daily_summary;
+        const sleepPayload = records.sleep_detail ?? records.sleep_summaries;
+        const summaryPayload = records.daily_summary;
+
+        const candidates = {
+            hrv: findGarminNumber(hrvPayload, ['lastNightAvg', 'lastNightAverage', 'averageHrv', 'avgHrv', 'hrv']),
+            rhr: findGarminNumber(heartPayload, ['restingHeartRate', 'restingHr', 'restingHR']),
+            sleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
+            sleepScore: findGarminSleepScore(sleepPayload),
+            respiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
+            weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg'])
+        };
+        if (candidates.rhr === null) {
+            candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
+        }
+        if (candidates.respiration === null) {
+            candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue']);
+        }
+        if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
+
+        for (const [key, value] of Object.entries(candidates)) {
+            if (value === null || !Number.isFinite(value)) continue;
+            if (key === 'hrv' && value <= 0) continue;
+            if (key === 'rhr' && (value <= 0 || value > 250)) continue;
+            if (key === 'sleepDuration' && (value <= 0 || value > 24)) continue;
+            if (key === 'sleepScore' && (value < 0 || value > 100)) continue;
+            if (key === 'respiration' && (value < 4 || value > 60)) continue;
+            if (key === 'weight' && (value <= 0 || value > 400)) continue;
+            // Bestehende Check-in-Werte haben Vorrang: manuelle Einträge werden nie überschrieben.
+            if (existing[key] !== null && existing[key] !== undefined && existing[key] !== '') continue;
+            updates[key] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+        }
+        const keys = Object.keys(updates);
+        if (!keys.length) continue;
+        state.dailyCheckins[date] = { ...existing, ...updates };
+        importedValues += keys.length;
+        changedDays++;
+    }
+
+    if (importedValues > 0) {
+        saveDataToLocalStorage();
+        initEngine();
+    }
+    return { days: changedDays, values: importedValues };
+}
+
+function setGarminSyncIndicator(state, label) {
+    const indicator = document.getElementById('garmin-sync-indicator');
+    const dot = document.getElementById('garmin-sync-indicator-dot');
+    const text = document.getElementById('garmin-sync-indicator-text');
+    if (!indicator || !dot || !text) return;
+    const connected = state !== 'error';
+    dot.className = 'inline-block h-2.5 w-2.5 rounded-full ' + (connected ? 'bg-emerald-400' : 'bg-rose-500');
+    text.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
+    indicator.title = connected ? 'Garmin verbunden' : 'Garmin nicht verbunden';
+    indicator.setAttribute('aria-label', 'Garmin-Status: ' + (connected ? 'Verbunden' : 'Nicht verbunden'));
+}
+
+function renderGarminSyncProgress(completedDays, totalDays) {
+    const status = document.getElementById('garmin-connection-status');
+    if (!status) return;
+    const total = Math.max(1, Number(totalDays) || 1);
+    const completed = Math.max(0, Math.min(total, Number(completedDays) || 0));
+    const percent = Math.round(completed / total * 100);
+    status.innerHTML = `
+        <div class="mb-2 text-xs font-medium text-slate-200" id="garmin-sync-progress-message"></div>
+        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-label="Garmin-Synchronisierung" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+            <div id="garmin-sync-progress-bar" class="h-full rounded-full bg-cyan-400 transition-all duration-500" style="width:${percent}%"></div>
+        </div>`;
+    status.setAttribute('aria-busy', 'true');
+    status.querySelector('#garmin-sync-progress-message').textContent =
+        'Synchronisierung läuft – Tag ' + completed + '/' + total;
+}
+
+async function loadGarminSyncHistory() {
+    const container = document.getElementById('garmin-sync-history');
+    if (!container) return;
+    if (!appUserReady || !activeAppUserId) {
+        container.textContent = 'Bitte anmelden, um die Synchronisierungshistorie zu sehen.';
+        return;
+    }
+    container.textContent = 'Synchronisierungshistorie wird geladen …';
+    try {
+        const healthRows = [];
+        const pageSize = 1000;
+        for (let offset = 0; ; offset += pageSize) {
+            const { data, error } = await supabase.from('garmin_health_records')
+                .select('data_type,record_date')
+                .order('record_date', { ascending: true })
+                .range(offset, offset + pageSize - 1);
+            if (error) throw error;
+            healthRows.push(...(data || []));
+            if (!data || data.length < pageSize) break;
+        }
+
+        const groups = new Map();
+        for (const row of healthRows) {
+            const type = String(row.data_type || 'other');
+            const date = String(row.record_date || '').slice(0, 10);
+            if (!groups.has(type)) groups.set(type, { count: 0, first: date, last: date });
+            const group = groups.get(type);
+            group.count++;
+            if (date && (!group.first || date < group.first)) group.first = date;
+            if (date && (!group.last || date > group.last)) group.last = date;
+        }
+
+        const { data: activityRows, error: activityError } = await supabase.from('garmin_activities')
+            .select('start_time')
+            .order('start_time', { ascending: true });
+        if (activityError) throw activityError;
+        const activityDates = (activityRows || []).map(row => String(row.start_time || '').slice(0, 10)).filter(Boolean);
+        if (activityDates.length) {
+            groups.set('activities', {
+                count: activityDates.length,
+                first: activityDates[0],
+                last: activityDates[activityDates.length - 1]
+            });
+        }
+
+        if (!groups.size) {
+            container.textContent = 'Noch keine Garmin-Daten gespeichert.';
+            return;
+        }
+        const labels = {
+            activities: 'Aktivitäten',
+            daily_summary: 'Tagesübersicht',
+            heart_rate: 'Herzfrequenz',
+            hrv_daily: 'HRV – Tageswerte',
+            hrv_detail: 'HRV – Details',
+            sleep_detail: 'Schlafdetails',
+            sleep_summaries: 'Schlafübersichten',
+            stress: 'Stress',
+            steps: 'Schritte',
+            body_battery: 'Body Battery',
+            spo2: 'Sauerstoffsättigung',
+            weight: 'Körpergewicht',
+            hydration: 'Flüssigkeit',
+            respiration: 'Atemfrequenz',
+            menstrual_cycle_summary: 'Zyklusübersicht',
+            menstrual_cycle_day_view: 'Zyklustagesdaten',
+            fitness_age: 'Fitnessalter',
+            wellness_activity: 'Wellness-Aktivität',
+            nutrition: 'Ernährung'
+        };
+        const rows = [...groups.entries()].sort((a, b) => {
+            if (a[0] === 'activities') return -1;
+            if (b[0] === 'activities') return 1;
+            return a[0].localeCompare(b[0]);
+        });
+        container.innerHTML = `
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[11px]">
+              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2 pr-2 font-medium">Datenfeld</th><th class="py-2 px-2 text-right font-medium">Anzahl</th><th class="py-2 pl-2 text-right font-medium">Zeitraum</th></tr></thead>
+              <tbody>${rows.map(([type, item]) => `
+                <tr class="border-b border-slate-800/70 last:border-0">
+                  <td class="py-2 pr-2 text-slate-200">${String(labels[type] || type.replaceAll('_', ' ')).replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[char])}</td>
+                  <td class="py-2 px-2 text-right tabular-nums text-white">${item.count.toLocaleString('de-DE')}</td>
+                  <td class="py-2 pl-2 text-right whitespace-nowrap text-slate-400">${item.first || '–'} – ${item.last || '–'}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
+    } catch (error) {
+        container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
+    }
+}
+
+function applyGarminFitDetail(activity, detail) {
+    if (!activity || !detail?.telemetry) return;
+    activity.telemetry = mergeTelemetryData(activity.telemetry, detail.telemetry).value;
+    // Garmin-eigene FIT-Daten werden bei einem Parser-Upgrade vollständig neu geschrieben,
+    // damit ältere, unvollständige Zeitreihen nicht mit abweichenden Array-Längen blockieren.
+    activity.garminTelemetry = Number(activity.garminFitParserVersion || 0) < 3
+        ? detail.telemetry
+        : mergeTelemetryData(activity.garminTelemetry, detail.telemetry).value;
+    activity.garminFitData = {
+        recordCount: detail.recordCount || 0,
+        recordFields: detail.recordFields || {},
+        recordFieldCounts: detail.recordFieldCounts || {},
+        messageGroups: detail.messageGroups || {},
+        lapCount: detail.lapCount || 0,
+        setCount: detail.setCount || 0,
+        workoutStepCount: detail.workoutStepCount || 0,
+        importedAt: new Date().toISOString()
+    };
+    activity.garminFitImported = true;
+    activity.garminFitParserVersion = 3;
+    const session = detail.session;
+    if (!session) return;
+    const durationSec = Number(session.total_timer_time ?? session.total_elapsed_time);
+    const distanceKm = Number(session.total_distance);
+    const avg = Number(session.avg_heart_rate), max = Number(session.max_heart_rate);
+    const nativeLoad = Number(session.training_load);
+    const aerobicEffect = Number(session.aerobic_training_effect);
+    const anaerobicEffect = Number(session.anaerobic_training_effect);
+    if ((!Number.isFinite(Number(activity.duration)) || Number(activity.duration) <= 0) && Number.isFinite(durationSec) && durationSec > 0) activity.duration = Math.round(durationSec / 60);
+    if ((!Number.isFinite(Number(activity.distance)) || Number(activity.distance) <= 0) && Number.isFinite(distanceKm) && distanceKm > 0) activity.distance = distanceKm;
+    if ((!Number.isFinite(Number(activity.hr)) || Number(activity.hr) <= 0) && Number.isFinite(avg) && avg > 0) activity.hr = Math.round(avg);
+    if ((!Number.isFinite(Number(activity.maxHr)) || Number(activity.maxHr) <= 0) && Number.isFinite(max) && max > 0) activity.maxHr = Math.round(max);
+    if ((activity.garminTrainingLoad == null || !Number.isFinite(Number(activity.garminTrainingLoad)) || Number(activity.garminTrainingLoad) < 0) && Number.isFinite(nativeLoad) && nativeLoad >= 0) activity.garminTrainingLoad = nativeLoad;
+    if ((activity.aerobicTrainingEffect == null || !Number.isFinite(Number(activity.aerobicTrainingEffect)) || Number(activity.aerobicTrainingEffect) < 0) && Number.isFinite(aerobicEffect) && aerobicEffect >= 0) activity.aerobicTrainingEffect = aerobicEffect;
+    if ((activity.anaerobicTrainingEffect == null || !Number.isFinite(Number(activity.anaerobicTrainingEffect)) || Number(activity.anaerobicTrainingEffect) < 0) && Number.isFinite(anaerobicEffect) && anaerobicEffect >= 0) activity.anaerobicTrainingEffect = anaerobicEffect;
+}
+
+async function syncMissingGarminTelemetry(startDate, endDate, status) {
+    const pending = state.rawActivities.filter(activity => {
+        const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
+        const date = String(activity.date || '').slice(0, 10);
+        return id != null && /^\d+$/.test(String(id)) && date >= startDate && date <= endDate
+            && Number(activity.garminFitParserVersion || 0) < 3;
+    });
+    let imported = 0, failed = 0, withHr = 0, withSpeed = 0, withCadence = 0;
+    let laps = 0, sets = 0, workoutSteps = 0, recordFields = 0;
+    const errors = [];
+    for (let index = 0; index < pending.length; index++) {
+        const activity = pending[index];
+        const id = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId);
+        const message = status?.querySelector('#garmin-sync-progress-message');
+        if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen: ' + (index + 1) + '/' + pending.length;
+        try {
+            let detail;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    detail = await downloadGarminFitTelemetry(id);
+                    break;
+                } catch (error) {
+                    if (attempt > 0 || !/HTTP 429|rate.?limit/i.test(error?.message || '')) throw error;
+                    if (message) message.textContent = 'Garmin begrenzt den FIT-Abruf. Aktivität ' + (index + 1) + '/' + pending.length + ' wird nach 30 Sekunden erneut versucht …';
+                    await new Promise(resolve => setTimeout(resolve, 30000));
+                }
+            }
+            applyGarminFitDetail(activity, detail);
+            if (Number(detail.hrCount) >= 2) withHr++;
+            if (Number(detail.speedCount) >= 2) withSpeed++;
+            if (Number(detail.cadenceCount) >= 2) withCadence++;
+            laps += Number(detail.lapCount || 0);
+            sets += Number(detail.setCount || 0);
+            workoutSteps += Number(detail.workoutStepCount || 0);
+            recordFields += Object.keys(detail.recordFieldCounts || {}).length;
+            imported++;
+        } catch (error) {
+            failed++;
+            errors.push(id + ': ' + (error?.message || 'FIT-Abruf fehlgeschlagen'));
+            console.warn('Garmin-Zeitreihen konnten nicht importiert werden:', id, error);
+        }
+        if ((index + 1) % 5 === 0 || index === pending.length - 1) {
+            if (saveDataToLocalStorage() === false) throw new Error('Garmin-Zeitreihen konnten nicht im lokalen Datenspeicher gesichert werden.');
+        }
+        // Sequential requests with a short gap reduce the risk of triggering Garmin rate limits.
+        if (index < pending.length - 1) await new Promise(resolve => setTimeout(resolve, 600));
+    }
+    if (imported > 0) initEngine();
+    return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors };
+}
+
+async function syncGarminSelectedRange() {
+    const status = document.getElementById('garmin-connection-status');
+    const button = document.getElementById('garmin-sync-range-button');
+    const startDate = document.getElementById('garmin-preview-start-date')?.value;
+    const endDate = document.getElementById('garmin-preview-end-date')?.value;
+    if (!status || !button) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (!startDate || !endDate || startDate > endDate || endDate > today) {
+        status.textContent = 'Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'Synchronisierung läuft …';
+    const totalDays = Math.max(1, Math.round((new Date(endDate + 'T00:00:00Z') - new Date(startDate + 'T00:00:00Z')) / 86400000) + 1);
+    setGarminSyncIndicator('syncing', 'Synchronisierung läuft');
+    renderGarminSyncProgress(0, totalDays);
+    let includeActivities = true;
+    let remainingDays = null;
+    let activitySummary = null;
+    let healthImportSummary = { days: 0, values: 0 };
+    let batch = 0;
+    let consecutiveRateLimits = 0;
+    try {
+        while (remainingDays !== 0) {
+            if (batch >= 1000) throw new Error('Sicherheitsgrenze für automatische Teilabrufe erreicht. Der gespeicherte Fortschritt bleibt erhalten.');
+            let response;
+            try {
+                response = await callGarminFunction({
+                    action: 'sync-range', startDate, endDate, includeActivities,
+                    onlyMissingDays: true
+                });
+            } catch (error) {
+                if (!/HTTP 429|rate.?limit/i.test(error?.message || '') || consecutiveRateLimits >= 8) throw error;
+                consecutiveRateLimits++;
+                const waitSeconds = 30 + Math.min(30, (consecutiveRateLimits - 1) * 5);
+                const message = status.querySelector('#garmin-sync-progress-message');
+                if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatischer neuer Versuch in ' + waitSeconds + ' Sekunden …';
+                await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                batch++;
+                continue;
+            }
+            includeActivities = false;
+            const sync = response.sync || {};
+            const health = sync.healthSync || {};
+            if (sync.activitySync) {
+                activitySummary = sync.activitySync;
+                await loadGarminActivitiesFromCloud();
+            }
+            remainingDays = Number(health.remainingDays ?? 0);
+            const completedDays = Math.max(0, totalDays - remainingDays);
+            renderGarminSyncProgress(completedDays, totalDays);
+
+            if (health.rateLimited || health.status === 'rate_limited') {
+                consecutiveRateLimits++;
+                if (consecutiveRateLimits > 8) throw new Error('Garmin hat auch nach mehreren automatischen Warte- und Wiederholungsversuchen keine weiteren Abrufe zugelassen.');
+                const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + Math.min(30, (consecutiveRateLimits - 1) * 5);
+                const message = status.querySelector('#garmin-sync-progress-message');
+                if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden (' + completedDays + '/' + totalDays + ' Tage verarbeitet).';
+                await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                batch++;
+                continue;
+            }
+            consecutiveRateLimits = 0;
+            if (health.status === 'partial' || Number(health.failed || 0) > 0) {
+                const first = (health.results || []).flatMap(day => day.results || [])
+                    .find(item => item.status === 'error' || item.status === 'rate_limited');
+                throw new Error('Teilimport pausiert: ' + (first?.error || first?.dataType || 'Ein Garmin-Endpunkt konnte nicht vollständig abgerufen werden') + '. Der gespeicherte Fortschritt bleibt erhalten; ein erneuter Start kann fortsetzen.');
+            }
+            if (remainingDays > 0 && Number(health.processedDays || 0) === 0) {
+                throw new Error('Der Garmin-Import hat keinen Fortschritt erzielt. Der gespeicherte Fortschritt bleibt erhalten.');
+            }
+            batch++;
+        }
+
+        healthImportSummary = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
+        const message = status.querySelector('#garmin-sync-progress-message');
+        if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
+        const telemetrySummary = await syncMissingGarminTelemetry(startDate, endDate, status);
+        status.removeAttribute('aria-busy');
+        const activitiesText = activitySummary
+            ? (activitySummary.stored || 0) + ' Aktivitäten gespeichert'
+            : 'Aktivitäten bereits in einem vorherigen Teilabruf verarbeitet';
+        const telemetryText = 'FIT-Daten: ' + telemetrySummary.imported + '/' + telemetrySummary.total + ' Aktivitäten; HF in ' + telemetrySummary.withHr + ', Geschwindigkeit in ' + telemetrySummary.withSpeed + ', Kadenz/Schlagfrequenz in ' + telemetrySummary.withCadence + '; ' + telemetrySummary.laps + ' Runden, ' + telemetrySummary.sets + ' Kraft-Sätze, ' + telemetrySummary.workoutSteps + ' Trainingsschritte und ' + telemetrySummary.recordFields + ' Messfeldtypen erfasst' +
+            (telemetrySummary.failed ? ', ' + telemetrySummary.failed + ' fehlgeschlagen' : '');
+        status.textContent = 'Synchronisierung abgeschlossen: ' + totalDays + '/' + totalDays + ' Tage. ' +
+            activitiesText + '. ' + telemetryText + '. Garmin-Gesundheitswerte in Check-ins übernommen: ' +
+            healthImportSummary.values + ' Werte an ' + healthImportSummary.days +
+            ' Tagen. Vorhandene Check-in-Werte blieben unverändert.' +
+            (telemetrySummary.errors.length ? ' Erste FIT-Fehler: ' + telemetrySummary.errors.slice(0, 3).join(' | ') : '');
+        button.textContent = 'Daten synchronisieren';
+        await refreshGarminConnectionStatus();
+        await loadGarminSyncHistory();
+    } catch (error) {
+        status.removeAttribute('aria-busy');
+        status.textContent = 'Synchronisierung pausiert: ' + (error?.message || 'Unbekannter Fehler') +
+            ' Der bereits erreichte Fortschritt bleibt gespeichert. Du kannst denselben Zeitraum erneut starten.';
+        setGarminSyncIndicator('current', 'Verbunden');
+        await loadGarminSyncHistory();
+    } finally {
+        button.disabled = false;
+        if (button.textContent === 'Synchronisierung läuft …') button.textContent = 'Erneut versuchen';
+    }
+}
+
+async function refreshGarminConnectionStatus() {
+    const status = document.getElementById('garmin-connection-status');
+    if (status) status.textContent = 'Verbindungsstatus wird geprüft …';
+    try {
+        const result = await callGarminFunction({ action: 'status' });
+        const connected = result.connection?.status === 'connected';
+        const apiEntry = document.getElementById('garmin-api-entry');
+        const disconnectButton = document.getElementById('garmin-disconnect-button');
+        if (apiEntry) apiEntry.classList.toggle('hidden', connected);
+        if (disconnectButton) disconnectButton.classList.toggle('hidden', !connected);
+        if (connected) {
+            setGarminSyncIndicator('current', 'Verbunden');
+            if (status) status.textContent = 'Verbunden';
+        } else {
+            setGarminSyncIndicator('error', 'Nicht verbunden');
+            if (status) status.textContent = 'Nicht verbunden';
+        }
+    } catch (error) {
+        setGarminSyncIndicator('error', 'Nicht verbunden');
+        if (status) status.textContent = 'Verbindungsstatus konnte nicht geprüft werden.';
+    }
+}
+
+async function connectGarmin() {
+    const input = document.getElementById('garmin-api-key');
+    const status = document.getElementById('garmin-connection-status');
+    const apiKey = input?.value?.trim();
+    if (!apiKey) {
+        if (status) status.textContent = 'Bitte füge deinen persönlichen Garmin API-Schlüssel ein.';
+        return;
+    }
+    if (status) status.textContent = 'Garmin-Schlüssel wird geprüft und sicher gespeichert …';
+    try {
+        await callGarminFunction({ action: 'connect', apiKey });
+        if (input) input.value = '';
+        await refreshGarminConnectionStatus();
+    } catch (error) {
+        if (status) status.textContent = 'Verbindung fehlgeschlagen: ' + error.message;
+    }
+}
+
+let latestGarminPreviewActivities = [];
+function garminCandidateFromPreview(a) {
+    const id = a?.activityId == null ? '' : String(a.activityId), raw = String(a?.startTimeLocal ?? ''), date = raw.slice(0, 10);
+    if (!id || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) return null;
+    const d = new Date(a.startTimeGMT || raw), secs = Number(a.duration), metres = Number(a.distance), avg = Number(a.averageHR), max = Number(a.maxHR);
+    const name = String(a.activityName || 'Garmin-Aktivität'), rawType = String(a.activityType || '');
+    const nativeLoad = Number(a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad);
+    return { id: 'garmin-' + id, sourceId: 'garmin:' + id, source: 'garmin', sourceRefs: { garminActivityId: id },
+        startTime: Number.isFinite(d.getTime()) ? d.toISOString() : raw, date, name, type: inferSport(name, rawType), tss: null,
+        garminTrainingLoad: Number.isFinite(nativeLoad) && nativeLoad >= 0 ? nativeLoad : null,
+        aerobicTrainingEffect: a.aerobicTrainingEffect != null && Number.isFinite(Number(a.aerobicTrainingEffect)) ? Number(a.aerobicTrainingEffect) : null,
+        anaerobicTrainingEffect: a.anaerobicTrainingEffect != null && Number.isFinite(Number(a.anaerobicTrainingEffect)) ? Number(a.anaerobicTrainingEffect) : null,
+        duration: Number.isFinite(secs) && secs > 0 ? Math.round(secs / 60) : null,
+        distance: Number.isFinite(metres) && metres > 0 ? metres / 1000 : null,
+        hr: Number.isFinite(avg) && avg > 0 ? Math.round(avg) : null, maxHr: Number.isFinite(max) && max > 0 ? Math.round(max) : null,
+        category: inferCategory(name, rawType), telemetry: null,
+        garminData: { activityId: id, activityName: name, activityType: rawType, startTimeLocal: raw, startTimeGMT: a.startTimeGMT || null,
+            durationSeconds: Number.isFinite(secs) && secs > 0 ? secs : null, distanceMeters: Number.isFinite(metres) && metres > 0 ? metres : null,
+            averageHR: Number.isFinite(avg) && avg > 0 ? avg : null, maxHR: Number.isFinite(max) && max > 0 ? max : null } };
+}
+function findGarminDuplicates(c) {
+    if (!c) return [];
+    return state.rawActivities.filter(e => {
+        if (e.sourceId != null && String(e.sourceId) === c.sourceId) return true;
+        if (String(e.id) === c.id) return true;
+        const priorGarminId = e.sourceRefs?.garminActivityId ?? e.garminData?.activityId;
+        // Zwei unterschiedliche Garmin-IDs kennzeichnen unterschiedliche Aktivitäten.
+        if (priorGarminId != null) return String(priorGarminId) === String(c.sourceRefs?.garminActivityId);
+        if (!c.startTime || !e.startTime || c.date !== e.date) return false;
+        const x = new Date(c.startTime).getTime(), y = new Date(e.startTime).getTime();
+        if (!Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x - y) > 120000) return false;
+        if (c.type && e.type && c.type !== e.type) return false;
+        const durationComparable = c.duration != null && e.duration != null
+            && Number.isFinite(Number(c.duration)) && Number.isFinite(Number(e.duration));
+        const distanceComparable = c.distance != null && e.distance != null
+            && Number.isFinite(Number(c.distance)) && Number.isFinite(Number(e.distance));
+        if (!durationComparable && !distanceComparable) return false;
+        if (durationComparable && Math.abs(Number(c.duration) - Number(e.duration)) > 3) return false;
+        if (distanceComparable) {
+            const distanceToleranceKm = Math.max(0.1, Math.max(Number(c.distance), Number(e.distance)) * 0.03);
+            if (Math.abs(Number(c.distance) - Number(e.distance)) > distanceToleranceKm) return false;
+        }
+        return true;
+    });
+}
+function findGarminDuplicate(c) { return findGarminDuplicates(c)[0] || null; }
+function mergeTelemetryData(current, incoming) {
+    if (!incoming || typeof incoming !== 'object') return { value: current, changed: false };
+    if (!current || typeof current !== 'object') return { value: incoming, changed: true };
+    let changed = false;
+    for (const [key, next] of Object.entries(incoming)) {
+        const prior = current[key];
+        if (prior == null || (Array.isArray(prior) && prior.length === 0)) {
+            if (next != null) { current[key] = next; changed = true; }
+        } else if (Array.isArray(prior) && Array.isArray(next) && prior.length === next.length) {
+            const merged = prior.map((value, index) => {
+                if (value == null && next[index] != null) { changed = true; return next[index]; }
+                return value;
+            });
+            if (changed) current[key] = merged;
+        }
+    }
+    return { value: current, changed };
+}
+function mergeMissingObject(current, incoming) {
+    const result = { ...(current && typeof current === 'object' ? current : {}) };
+    let changed = false;
+    for (const [key, next] of Object.entries(incoming || {})) {
+        if (next == null || next === '') continue;
+        const prior = result[key];
+        const missing = prior == null || prior === '' || (Array.isArray(prior) && prior.length === 0);
+        if (missing) { result[key] = next; changed = true; }
+    }
+    return { value: result, changed };
+}
+function mergeGarminActivity(existing, incoming) {
+    if (!existing || !incoming) return false;
+    let changed = false;
+    const protectedKeys = new Set(['id','sourceId','source','sources','sourceRefs','garminData','garminFitImported','garminTelemetry','telemetry']);
+    for (const [key, next] of Object.entries(incoming)) {
+        if (protectedKeys.has(key) || next == null || next === '') continue;
+        const current = existing[key];
+        const missing = current == null || current === '' || (typeof current === 'number' && !Number.isFinite(current))
+            || (Array.isArray(current) && current.length === 0);
+        if (missing) { existing[key] = next; changed = true; }
+    }
+    const refs = mergeMissingObject(existing.sourceRefs, incoming.sourceRefs);
+    existing.sourceRefs = refs.value;
+    if (refs.changed) changed = true;
+    const garmin = mergeMissingObject(existing.garminData, incoming.garminData);
+    existing.garminData = garmin.value;
+    if (garmin.changed) changed = true;
+    const priorSources = Array.isArray(existing.sources) ? existing.sources : [];
+    const nextSources = Array.from(new Set([...priorSources, existing.source || 'local', 'garmin']));
+    if (nextSources.length !== priorSources.length) { existing.sources = nextSources; changed = true; }
+    if (!existing.source) { existing.source = 'garmin'; changed = true; }
+    if (incoming.garminTelemetry) {
+        const merged = mergeTelemetryData(existing.garminTelemetry, incoming.garminTelemetry);
+        existing.garminTelemetry = merged.value;
+        if (merged.changed) changed = true;
+        existing.garminFitImported = true;
+    }
+    if (incoming.telemetry) {
+        const merged = mergeTelemetryData(existing.telemetry, incoming.telemetry);
+        existing.telemetry = merged.value;
+        if (merged.changed) changed = true;
+    }
+    return changed;
+}
+function selectAllGarminActivities(){document.querySelectorAll('#garmin-activity-preview [data-garmin-activity-id]:not(:disabled)').forEach(e=>{e.checked=true;});}
+async function downloadGarminFitTelemetry(activityId) {
+    if (!window.JSZip || typeof FitParser !== 'function') throw new Error('FIT-Parser oder ZIP-Bibliothek ist nicht verfügbar.');
+    const result = await callGarminFunction({ action: 'download-fit', activityId: String(activityId) });
+    const binary = atob(result.zipBase64 || '');
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const zip = await JSZip.loadAsync(bytes);
+    const fitFile = Object.values(zip.files).find(file => !file.dir && /\.fit$/i.test(file.name));
+    if (!fitFile) throw new Error('In der Garmin-Datei wurde keine FIT-Datei gefunden.');
+    const buffer = await fitFile.async('arraybuffer');
+    const parser = new FitParser({ force: true, speedUnit: 'km/h', lengthUnit: 'km', elapsedRecordField: true, mode: 'both' });
+    const fit = await new Promise((resolve, reject) => parser.parse(buffer, (err, data) => err ? reject(err) : resolve(data)));
+    const records = Array.isArray(fit.records) ? fit.records : [];
+    const parsedMessages = fit.messages && typeof fit.messages === 'object' ? fit.messages : {};
+    const valid = records.filter(r => r.timestamp && Number.isFinite(new Date(r.timestamp).getTime()));
+    const structuredGroups = ['laps', 'sessions', 'activity', 'events', 'sets', 'workouts', 'workout_steps'];
+    const hasStructuredData = structuredGroups.some(key => Array.isArray(fit[key]) ? fit[key].length > 0 : Boolean(fit[key]));
+    if (valid.length < 2 && !hasStructuredData) throw new Error('Die FIT-Datei enthält weder ausreichende Messpunkte noch strukturierte Runden-/Trainingsdaten.');
+    const numberOrNull = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))
+        ? Number(value) : null;
+    const first = valid.length ? new Date(valid[0].timestamp).getTime() : null;
+    const telemetry = {
+        hr: [], time: [], speed: [], distance: [], altitude: [], power: [], cadence: [],
+        temperature: [], verticalSpeed: [], strokeCount: [], cycles: [],
+        groundContactTime: [], groundContactBalance: [], verticalOscillation: [],
+        stepLength: [], verticalRatio: [], respirationRate: [], coreTemperature: [],
+        muscleOxygen: [], gpsAccuracy: [], grade: []
+    };
+    const recordFieldNames = new Set();
+    valid.forEach(r => Object.keys(r).forEach(key => { if (key !== 'timestamp') recordFieldNames.add(key); }));
+    const recordFields = {};
+    const recordFieldCounts = {};
+    for (const key of recordFieldNames) {
+        const values = valid.map(record => record[key] ?? null);
+        const count = values.filter(value => value !== null && value !== undefined).length;
+        if (count) {
+            recordFields[key] = values;
+            recordFieldCounts[key] = count;
+        }
+    }
+    valid.forEach(r => {
+        const hr = numberOrNull(r.heart_rate);
+        const speed = numberOrNull(r.speed ?? r.enhanced_speed);
+        telemetry.hr.push(hr !== null && hr >= 30 && hr <= 250 ? hr : null);
+        telemetry.time.push((new Date(r.timestamp).getTime() - first) / 1000);
+        telemetry.speed.push(speed !== null && speed >= 0 ? speed : null);
+        telemetry.distance.push(numberOrNull(r.distance ?? r.cumulative_distance));
+        telemetry.altitude.push(numberOrNull(r.enhanced_altitude ?? r.altitude));
+        telemetry.power.push(numberOrNull(r.power));
+        telemetry.cadence.push(numberOrNull(r.cadence));
+        telemetry.temperature.push(numberOrNull(r.temperature));
+        telemetry.verticalSpeed.push(numberOrNull(r.vertical_speed));
+        telemetry.strokeCount.push(numberOrNull(r.stroke_count));
+        telemetry.cycles.push(numberOrNull(r.cycles ?? r.total_cycles));
+        telemetry.groundContactTime.push(numberOrNull(r.stance_time));
+        telemetry.groundContactBalance.push(numberOrNull(r.stance_time_balance));
+        telemetry.verticalOscillation.push(numberOrNull(r.vertical_oscillation));
+        telemetry.stepLength.push(numberOrNull(r.step_length));
+        telemetry.verticalRatio.push(numberOrNull(r.vertical_ratio));
+        telemetry.respirationRate.push(numberOrNull(r.respiration_rate));
+        telemetry.coreTemperature.push(numberOrNull(r.core_temperature));
+        telemetry.muscleOxygen.push(numberOrNull(r.muscle_oxygen_saturation));
+        telemetry.gpsAccuracy.push(numberOrNull(r.gps_accuracy));
+        telemetry.grade.push(numberOrNull(r.grade));
+    });
+    const hrCount = telemetry.hr.filter(value => value !== null).length;
+    const speedCount = telemetry.speed.filter(value => value !== null).length;
+    const cadenceCount = telemetry.cadence.filter(value => value !== null).length;
+    const session = Array.isArray(fit.sessions) ? fit.sessions[0] : null;
+    const messageGroups = {};
+    for (const [key, value] of Object.entries(fit)) {
+        if (['records', 'activity', 'messages'].includes(key) || value == null) continue;
+        if (Array.isArray(value) || (typeof value === 'object' && value !== null)) messageGroups[key] = value;
+    }
+    // Einige FIT-Parser liefern Nachrichten nicht als Root-Arrays, sondern gruppiert unter messages.
+    for (const [key, value] of Object.entries(parsedMessages)) {
+        if (value == null || key === 'record') continue;
+        if (Array.isArray(value) || (typeof value === 'object' && value !== null)) messageGroups[key] = value;
+    }
+    const laps = Array.isArray(fit.laps) ? fit.laps : (Array.isArray(parsedMessages.lap) ? parsedMessages.lap : []);
+    const sets = Array.isArray(fit.sets) ? fit.sets : (Array.isArray(parsedMessages.set) ? parsedMessages.set : []);
+    const workoutSteps = Array.isArray(fit.workout_steps) ? fit.workout_steps
+        : (Array.isArray(parsedMessages.workout_step) ? parsedMessages.workout_step : []);
+    messageGroups.structured = { laps, sets, workoutSteps };
+    return {
+        telemetry, session, hrCount, speedCount, cadenceCount,
+        recordFields, recordFieldCounts, recordCount: valid.length,
+        messageGroups, lapCount: laps.length, setCount: sets.length,
+        workoutStepCount: workoutSteps.length
+    };
+}
+
+async function importSelectedGarminActivities() {
+    const status = document.getElementById('garmin-connection-status');
+    const inputs = Array.from(document.querySelectorAll('#garmin-activity-preview [data-garmin-activity-id]:checked'));
+    const ids = inputs.map(e => e.getAttribute('data-garmin-activity-id'));
+    if (!ids.length) { status.textContent = 'Bitte wähle mindestens eine Aktivität aus.'; return; }
+    const selected = latestGarminPreviewActivities.filter(a => ids.includes(String(a.activityId)));
+    const operations = selected.map(a => garminCandidateFromPreview(a)).filter(Boolean).map(candidate => ({ candidate, matches: findGarminDuplicates(candidate) }));
+    const fresh = operations.filter(x => !x.matches.length), matched = operations.filter(x => x.matches.length);
+    if (!operations.length) { status.textContent = 'Keine gültigen Aktivitäten zum Übernehmen gefunden.'; return; }
+    const cleanupCount = matched.reduce((sum, x) => sum + Math.max(0, x.matches.length - 1), 0);
+    if (!confirm(fresh.length + ' neue Aktivität(en), ' + matched.length + ' vorhandene Aktivität(en) abgleichen und ' + cleanupCount + ' Doppelanlagen zusammenführen. Für ausgewählte Einheiten werden zusätzlich FIT-Dateien mit HF-Zeitreihen abgerufen. Fehlende Informationen werden ergänzt; vorhandene Werte bleiben erhalten. Fortfahren?')) return;
+    const snapshot = JSON.parse(JSON.stringify(state.rawActivities));
+    let merged = 0, consolidated = 0, fitImported = 0, fitFailed = 0;
+    for (const item of operations) {
+        status.textContent = 'Garmin-FIT-Daten werden geladen: ' + (fitImported + fitFailed + 1) + ' von ' + operations.length + ' …';
+        try {
+            const detail = await downloadGarminFitTelemetry(item.candidate.sourceRefs.garminActivityId);
+            applyGarminFitDetail(item.candidate, detail);
+            fitImported++;
+        } catch (error) {
+            fitFailed++;
+            console.warn('Garmin FIT-Datei konnte nicht verarbeitet werden:', item.candidate.sourceRefs.garminActivityId, error);
+        }
+    }
+    for (const item of matched) {
+        const ordered = [...item.matches].sort((a, b) => {
+            const score = x => (Array.isArray(x.telemetry?.hr) ? 100 : 0) + (x.tss != null ? 20 : 0) + (x.sRpeLoad != null ? 10 : 0) + (x.source && x.source !== 'garmin' ? 5 : 0);
+            return score(b) - score(a);
+        });
+        const canonical = ordered[0];
+        for (const duplicate of ordered.slice(1)) {
+            mergeGarminActivity(canonical, duplicate);
+            state.rawActivities = state.rawActivities.filter(x => x !== duplicate);
+            consolidated++;
+        }
+        if (mergeGarminActivity(canonical, item.candidate)) merged++;
+    }
+    state.rawActivities.push(...fresh.map(x => x.candidate));
+    const saved = saveDataToLocalStorage();
+    if (saved === false) {
+        state.rawActivities = snapshot;
+        status.textContent = 'Abgleich abgebrochen: Für dieses Konto ist kein aktiver Datenspeicher verfügbar. Es wurden keine Änderungen gespeichert.';
+        return;
+    }
+    initEngine();
+    inputs.forEach(e => { e.disabled = true; e.checked = false; const cell = e.closest('td'); if (cell) cell.innerHTML = '<span class="text-[10px] text-emerald-400">Abgeglichen</span>'; });
+    status.textContent = 'Garmin-Abgleich: ' + fresh.length + ' neu, ' + matched.length + ' zugeordnet, ' + consolidated + ' Doppelanlagen zusammengeführt. FIT-Zeitreihen: ' + fitImported + ' geladen, ' + fitFailed + ' nicht verfügbar. Vorhandene Werte wurden nicht überschrieben.';
+}
+
+function escapeGarminPreview(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+}
+
+async function previewGarminActivities() {
+    const status = document.getElementById('garmin-connection-status');
+    const panel = document.getElementById('garmin-activity-preview');
+    const startDate = document.getElementById('garmin-preview-start-date')?.value || undefined;
+    const endDate = document.getElementById('garmin-preview-end-date')?.value || undefined;
+    if (panel) {
+        panel.classList.add('hidden');
+        panel.innerHTML = '';
+    }
+    status.textContent = 'Garmin-Aktivitäten werden sicher abgerufen …';
+    try {
+        const result = await callGarminFunction({ action: 'preview-activities', startDate, endDate });
+        const preview = result.preview;
+        if (!preview || !Array.isArray(preview.activities)) throw new Error('Die Garmin-Vorschau enthält keine gültige Aktivitätsliste.');
+        latestGarminPreviewActivities = preview.activities;
+        const rows = preview.activities.map(activity => {
+            const candidate=garminCandidateFromPreview(activity), duplicate=Boolean(findGarminDuplicate(candidate));
+            const importCell=candidate?'<input type="checkbox" data-garmin-activity-id="'+escapeGarminPreview(activity.activityId)+'" aria-label="Aktivität zum Datenabgleich auswählen" class="accent-sky-500">'+(duplicate?'<span class="block text-[9px] text-emerald-400">Abgleich</span>':''):'<span class="text-[10px] text-amber-300">Prüfen</span>';
+            const date = activity.startTimeLocal ? new Date(activity.startTimeLocal).toLocaleString('de-DE') : 'Zeitpunkt unbekannt';
+            const duration = Number(activity.duration);
+            const durationText = Number.isFinite(duration) && duration > 0 ? Math.round(duration / 60) + ' min' : '–';
+            const distance = Number(activity.distance);
+            const distanceText = Number.isFinite(distance) && distance > 0
+                ? (distance >= 1000 ? (distance / 1000).toFixed(2) + ' km' : distance.toFixed(0) + ' m')
+                : '–';
+            return `<tr class="border-t border-slate-800">
+                <td class="px-2 py-2">${importCell}</td>
+                <td class="px-2 py-2 text-slate-300">${escapeGarminPreview(date)}</td>
+                <td class="px-2 py-2 text-slate-200">${escapeGarminPreview(activity.activityName)}</td>
+                <td class="px-2 py-2 text-slate-400">${escapeGarminPreview(activity.activityType || '–')}</td>
+                <td class="px-2 py-2 text-right text-slate-300">${durationText}</td>
+                <td class="px-2 py-2 text-right text-slate-300">${distanceText}</td>
+            </tr>`;
+        }).join('');
+        if (panel) {
+            panel.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <strong class="text-sm text-white">${preview.count} Aktivitäten gefunden</strong>
+                    <span class="text-[10px] text-slate-500">${escapeGarminPreview(preview.startDate)} bis ${escapeGarminPreview(preview.endDate)}</span>
+                </div>
+                <div class="overflow-x-auto max-h-72 rounded-lg border border-slate-800">
+                    <table class="w-full text-left text-[11px]">
+                        <thead class="sticky top-0 bg-slate-800 text-slate-400"><tr>
+                            <th class="px-2 py-2">Import</th><th class="px-2 py-2">Start</th><th class="px-2 py-2">Aktivität</th><th class="px-2 py-2">Sport</th>
+                            <th class="px-2 py-2 text-right">Dauer</th><th class="px-2 py-2 text-right">Distanz</th>
+                        </tr></thead>
+                        <tbody>${rows || '<tr><td colspan="6" class="p-3 text-slate-500">Keine Aktivitäten im Zeitraum gefunden.</td></tr>'}</tbody>
+                    </table>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-3"><button type="button" onclick="selectAllGarminActivities()" class="rounded-lg border border-slate-700 px-3 py-2 text-[11px] text-slate-300">Alle Aktivitäten zum Abgleich auswählen</button><button type="button" onclick="importSelectedGarminActivities()" class="rounded-lg bg-sky-600 px-3 py-2 text-[11px] font-semibold text-white">Ausgewählte Aktivitäten übernehmen</button></div>
+                ${preview.hasMore ? '<p class="mt-2 text-[10px] text-amber-300">Es werden zunächst die ersten 100 Aktivitäten angezeigt. Die vollständige Seitennavigation folgt im nächsten Schritt.</p>' : ''}
+                <p class="mt-2 text-[10px] text-amber-300">Dies ist nur eine Vorschau. Es wurden noch keine Daten in dein Trainingstagebuch übernommen.</p>`;
+            panel.classList.remove('hidden');
+        }
+        status.textContent = 'Garmin-Datenabruf erfolgreich. Bitte prüfe die Vorschau.';
+    } catch (error) {
+        status.textContent = 'Garmin-Abruf fehlgeschlagen: ' + error.message;
+    }
+}
+
+async function disconnectGarmin() {
+    const status = document.getElementById('garmin-connection-status');
+    if (!confirm('Möchtest du die Garmin-Verbindung für dieses Konto wirklich trennen?')) return;
+    status.textContent = 'Verbindung wird getrennt …';
+    try {
+        await callGarminFunction({ action: 'disconnect' });
+        const input = document.getElementById('garmin-api-key');
+        if (input) input.value = '';
+        const apiEntry = document.getElementById('garmin-api-entry');
+        const disconnectButton = document.getElementById('garmin-disconnect-button');
+        if (apiEntry) apiEntry.classList.remove('hidden');
+        if (disconnectButton) disconnectButton.classList.add('hidden');
+        await refreshGarminConnectionStatus();
+    } catch (error) {
+        status.textContent = 'Trennen fehlgeschlagen: ' + error.message;
+    }
+}
+
+
+
+function runInitStep(label, callback) {
+    try {
+        return callback();
+    } catch (error) {
+        console.error('[KAJO] Initialisierungsschritt fehlgeschlagen: ' + label, error);
+        return undefined;
+    }
+}
+
+function initEngine() {
+    runInitStep('Check-in-Formular', () => loadCheckinInputs());
+
+    const timeline = runInitStep('Trainingsbelastung berechnen', () =>
+        computePerformanceTimeline(state.rawActivities, state.settings, state.profile)
+    );
+    state.dailyTimeline = Array.isArray(timeline) ? timeline : [];
+
+    // Jeder Bereich wird unabhängig aufgebaut. Ein Fehler in einem Diagramm
+    // oder einer Analyse darf Home, Kalender oder Navigation nicht blockieren.
+    runInitStep('Belastungs-KPIs', () => renderSummaryKPICards(state.dailyTimeline));
+    runInitStep('Readiness', () => renderReadinessDashboard());
+    runInitStep('Nächster Wettkampf', () => renderDashboardNextRace());
+    runInitStep('Belastungsdiagramm', () => renderMainLoadChart(state.dailyTimeline, state.activeTimeframe));
+    runInitStep('Analysebereiche', () => renderAnalysisInsights());
+    runInitStep('Sportverteilung', () => renderSportDistribution(state.rawActivities));
+    runInitStep('Herzfrequenzzonen', () => renderHeartRateZoneDistribution(state.rawActivities));
+    runInitStep('Trainingsnarrativ', () => generateAutomatedNarrative(state.dailyTimeline));
+    runInitStep('Kalender', () => renderCalendar());
+    runInitStep('Wettkämpfe', () => renderRaces());
+    runInitStep('Trainingsplanung', () => renderPlannedWorkouts());
+    runInitStep('Krafttraining', () => renderStrengthView());
+    runInitStep('Home-Tagesübersicht', () => renderSelectedDashboardDay());
+}
+
+// Alle Module lösen nach Datenänderungen refreshAll() aus → initEngine()
+setRefreshHandler(initEngine);
+
+function toggleMoreMenu() {
+    const menu = document.getElementById('more-menu');
+    const button = document.getElementById('more-menu-button');
+    if (!menu) return;
+    const willOpen = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', !willOpen);
+    if (button) button.setAttribute('aria-expanded', String(willOpen));
+}
+function closeMoreMenu() {
+    const menu = document.getElementById('more-menu');
+    const button = document.getElementById('more-menu-button');
+    if (menu) menu.classList.add('hidden');
+    if (button) button.setAttribute('aria-expanded', 'false');
+}
+function openMoreTab(tab) {
+    closeMoreMenu();
+    switchTab(tab);
+}
+let previousProfileTab = 'dashboard';
+function openProfileModal() {
+    const current = window.kajoCurrentTab || 'dashboard';
+    if (current !== 'profile') previousProfileTab = current;
+    switchTab('profile');
+}
+function closeProfileModal() {
+    const destination = previousProfileTab && previousProfileTab !== 'profile' ? previousProfileTab : 'dashboard';
+    switchTab(destination);
+}
+function showSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) { console.error('Einstellungsdialog fehlt.'); return; }
+    try { openSettingsModal(); renderKajoPushSettings(); } catch (error) { console.error('Einstellungen konnten nicht vorbereitet werden:', error); }
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('kajo-modal-open');
+}
+function hideSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('kajo-modal-open');
+}
+function updateProfileCycleVisibility() {
+    const gender = document.getElementById('profile-gender')?.value;
+    const section = document.getElementById('profile-cycle-settings');
+    if (section) section.classList.toggle('hidden', gender !== 'female');
+    if (gender !== 'female') {
+        const toggle = document.getElementById('profile-cycle-tracking');
+        if (toggle) toggle.checked = false;
+    }
+}
+function loadProfileForm() {
+    const p = state.profile || {};
+    const fields = {
+        'profile-name': 'name', 'profile-birthdate': 'birthDate',
+        'profile-gender': 'gender',
+        'profile-height': 'heightCm', 'profile-weight': 'weightKg',
+        'profile-sport': 'sport', 'profile-discipline': 'discipline',
+        'profile-level': 'level', 'profile-max-hr': 'maxHr',
+        'profile-threshold-hr': 'thresholdHr'
+    };
+    Object.entries(fields).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = p[key] ?? '';
+    });
+    const cycleToggle = document.getElementById('profile-cycle-tracking');
+    if (cycleToggle) cycleToggle.checked = p.cycleTrackingEnabled === true;
+    updateProfileCycleVisibility();
+    const message = document.getElementById('profile-message');
+    if (message) message.textContent = '';
+}
+async function saveUserProfile() {
+    const read = id => document.getElementById(id)?.value?.trim() ?? '';
+    const numberOrNull = id => read(id) === '' ? null : Number(read(id));
+    const birthDate = read('profile-birthdate');
+    if (birthDate && new Date(birthDate + 'T12:00:00') > new Date()) {
+        document.getElementById('profile-message').textContent = 'Das Geburtsdatum darf nicht in der Zukunft liegen.';
+        return;
+    }
+    const gender = read('profile-gender');
+    if (!['female', 'male'].includes(gender)) {
+        document.getElementById('profile-message').textContent = 'Bitte wähle weiblich oder männlich aus.';
+        return;
+    }
+    const profile = {
+        name: read('profile-name'), birthDate, gender,
+        cycleTrackingEnabled: gender === 'female' && document.getElementById('profile-cycle-tracking')?.checked === true,
+        heightCm: numberOrNull('profile-height'), weightKg: numberOrNull('profile-weight'),
+        sport: read('profile-sport'), discipline: read('profile-discipline'),
+        level: read('profile-level'), maxHr: numberOrNull('profile-max-hr'),
+        thresholdHr: numberOrNull('profile-threshold-hr')
+    };
+    if (profile.maxHr !== null && profile.thresholdHr !== null && profile.thresholdHr > profile.maxHr) {
+        document.getElementById('profile-message').textContent = 'Die Schwellenherzfrequenz kann nicht über der maximalen Herzfrequenz liegen.';
+        return;
+    }
+    state.profile = profile;
+    saveDataToLocalStorage();
+    const message = document.getElementById('profile-message');
+    if (supabase) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+            message.textContent = 'Lokal gespeichert; Anmeldung konnte nicht geprüft werden. Bitte später erneut versuchen.';
+            return;
+        }
+        const userId = sessionData?.session?.user?.id;
+        if (userId) {
+            const { error } = await supabase
+                .from('user_profiles')
+                .upsert({ user_id: userId, profile, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+            if (error) {
+                console.error('Supabase-Profil-Synchronisierung fehlgeschlagen:', error);
+                message.textContent = 'Lokal gespeichert, aber Cloud-Synchronisierung fehlgeschlagen: ' + error.message;
+                return;
+            }
+            message.textContent = 'Profil lokal und in deinem Benutzerkonto gespeichert.';
+        } else {
+            message.textContent = 'Profil lokal gespeichert. Für die Cloud-Synchronisierung bitte anmelden.';
+            return;
+        }
+    } else {
+        message.textContent = 'Profil wurde lokal gespeichert. Supabase ist nicht verfügbar.';
+        return;
+    }
+    setTimeout(closeProfileModal, 900);
+}
+
+
+/* ------------------------------------------------------------
+ * Benutzerprofil mit dem angemeldeten Supabase-Konto abgleichen.
+ * Ein vorhandenes Cloud-Profil hat Vorrang vor dem lokalen Cache.
+ * Fehlt ein Cloud-Profil, bleiben lokale Angaben erhalten; sie
+ * werden erst nach erneutem Speichern explizit hochgeladen.
+ * ------------------------------------------------------------ */
+let activeProfileUserId = null;
+let activeAppUserId = null;
+let activationSequence = 0;
+let activationPromise = null;
+let appUserReady = false;
+// Das Modul wird als ES-Modul erst nach dem Parsen des HTML ausgeführt.
+ // Deshalb reicht "interactive" bereits aus; auf window.load zu warten kann
+ // die Kontoaktivierung unnötig blockieren (z. B. bei langsam ladenden Assets).
+const domReady = document.readyState === 'loading'
+    ? new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))
+    : Promise.resolve();
+
+async function loadCloudProfile(session) {
+    const userId = session?.user?.id;
+    if (!userId || !supabase || activeProfileUserId === userId) return;
+
+    const { data, error } = await supabase
+        .from('user_profiles')
+        .select('profile')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Cloud-Profil konnte nicht geladen werden:', error);
+        return;
+    }
+    if (activeAppUserId !== userId) return;
+
+    activeProfileUserId = userId;
+    if (!data?.profile || typeof data.profile !== 'object' || Array.isArray(data.profile)) return;
+
+    const localProfile = state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)
+        ? state.profile
+        : {};
+    const localHasProfile = Object.keys(localProfile).length > 0;
+    const profilesMatch = JSON.stringify(localProfile) === JSON.stringify(data.profile);
+
+    // Never replace an existing local profile silently with a cloud copy.
+    // Cloud data is adopted only when the local profile is still empty.
+    if (localHasProfile) {
+        if (!profilesMatch) {
+            const indicator = document.getElementById('sync-status-indicator');
+            if (indicator) {
+                indicator.textContent = 'Lokales und Cloud-Profil unterscheiden sich. Lokale Daten wurden geschützt; ein Abgleich ist noch nicht erfolgt.';
+            }
+            console.warn('Lokales und Cloud-Profil unterscheiden sich. Automatische Übernahme wurde zum Schutz lokaler Daten übersprungen.');
+        }
+        return;
+    }
+
+    state.profile = data.profile;
+    saveDataToLocalStorage();
+    loadProfileForm();
+    initEngine();
+}
+
+let cloudInitialTransferState = 'unknown';
+let cloudInitialTransferBusy = false;
+
+// Versionsgeschützte automatische Cloud-Synchronisierung.
+// Lokale Änderungen werden gebündelt; bei Versionskonflikten wird nicht überschrieben.
+let cloudSyncVersion = 0;
+let cloudSyncUserId = null;
+let cloudSyncTimer = null;
+let cloudSyncInFlight = false;
+let cloudSyncPending = false;
+let cloudSyncBlocked = false;
+// Änderungen, die während der Kontoaktivierung gespeichert werden, werden
+// vorgemerkt und nach dem Ereignis endurance:user-ready erneut synchronisiert.
+let cloudSyncAwaitingReadyUserId = null;
+
+function setCloudSyncStatus(message) {
+    const indicator = document.getElementById('cloud-sync-status');
+    if (indicator) indicator.textContent = message;
+}
+
+function scheduleCloudSync(userId) {
+    if (!appUserReady) {
+        if (userId && userId === activeAppUserId) {
+            cloudSyncAwaitingReadyUserId = userId;
+        }
+        setCloudSyncStatus('Änderung vorgemerkt – Synchronisierung startet nach Abschluss der Kontoaktivierung.');
+        console.info('Cloud-Synchronisierung vorgemerkt, bis das Benutzerkonto bereit ist.');
+        return;
+    }
+    if (!userId) {
+        setCloudSyncStatus('Synchronisierung nicht gestartet: Benutzer-ID fehlt.');
+        console.warn('Cloud-Synchronisierung übersprungen: Ereignis enthält keine userId.');
+        return;
+    }
+    if (userId !== activeAppUserId || userId !== cloudSyncUserId) {
+        setCloudSyncStatus('Synchronisierung gestoppt: angemeldetes Konto stimmt nicht überein.');
+        console.warn('Cloud-Synchronisierung wegen abweichender Benutzer-ID übersprungen.', {
+            eventUserId: userId,
+            activeAppUserId,
+            cloudSyncUserId
+        });
+        return;
+    }
+    if (cloudSyncBlocked) {
+        setCloudSyncStatus('Synchronisierung angehalten: zuerst muss ein Cloud-Konflikt geklärt werden.');
+        return;
+    }
+    if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(() => {
+        cloudSyncTimer = null;
+        void flushCloudSync();
+    }, 900);
+}
+
+async function flushCloudSync() {
+    if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return;
+    if (cloudSyncInFlight) {
+        cloudSyncPending = true;
+        return;
+    }
+
+    const userId = activeAppUserId;
+    cloudSyncInFlight = true;
+    cloudSyncPending = false;
+    setCloudSyncStatus('Cloud-Speicherung läuft …');
+
+    try {
+        // JSON-Kopie friert den zu übertragenden Stand ein, auch wenn während
+        // des Netzwerkrufs weitere Änderungen vorgenommen werden.
+        const snapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const result = await saveCloudSnapshot(snapshot, cloudSyncVersion, userId);
+        if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
+
+        if (!result.saved) {
+            cloudSyncBlocked = true;
+            cloudInitialTransferState = 'exists';
+            setCloudSyncStatus('Synchronisationskonflikt – Cloud-Daten sind geschützt; es wurde nichts überschrieben.');
+            setCloudTransferMessage('Ein anderer Speicherstand wurde zwischenzeitlich geändert. Die automatische Synchronisierung wurde angehalten, damit keine Daten überschrieben werden.');
+            console.warn('Cloud-Synchronisierung wegen Versionskonflikt angehalten.', result);
+            return;
+        }
+
+        cloudSyncVersion = result.currentVersion;
+        setCloudSyncStatus('In Cloud gespeichert (Version ' + cloudSyncVersion + ')');
+        if (cloudInitialTransferState === 'empty') {
+            cloudInitialTransferState = 'exists';
+            setCloudTransferMessage('Deine Daten wurden automatisch erstmals in der Cloud gespeichert (Version ' + cloudSyncVersion + ').');
+        }
+    } catch (error) {
+        if (activeAppUserId === userId) {
+            setCloudSyncStatus('Cloud-Speicherung fehlgeschlagen – lokale Daten bleiben erhalten.');
+            console.error('Automatische Cloud-Synchronisierung fehlgeschlagen:', error);
+        }
+    } finally {
+        cloudSyncInFlight = false;
+        if (cloudSyncPending && !cloudSyncBlocked && activeAppUserId === cloudSyncUserId) {
+            cloudSyncPending = false;
+            scheduleCloudSync(cloudSyncUserId);
+        }
+    }
+}
+
+window.addEventListener('endurance:data-saved', event => {
+    scheduleCloudSync(event.detail?.userId || null);
+});
+
+window.addEventListener('endurance:user-ready', event => {
+    const userId = event.detail?.userId || null;
+    if (!userId || userId !== activeAppUserId || cloudSyncAwaitingReadyUserId !== userId) return;
+    cloudSyncAwaitingReadyUserId = null;
+    scheduleCloudSync(userId);
+});
+
+function setCloudTransferMessage(message, showButton = false) {
+    const transferMessage = document.getElementById('cloud-transfer-message');
+    const button = document.getElementById('cloud-sync-initial-button');
+    if (transferMessage) transferMessage.textContent = message;
+    if (button) button.classList.toggle('hidden', !showButton);
+}
+
+function openCloudSyncModal() {
+    const modal = document.getElementById('cloud-sync-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeCloudSyncModal() {
+    const modal = document.getElementById('cloud-sync-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function refreshCloudInitialTransferState(userId = activeAppUserId) {
+    if (!supabase || !userId || userId !== activeAppUserId) return;
+    cloudInitialTransferState = 'checking';
+    setCloudTransferMessage('Prüfe, ob für dieses Konto bereits ein zentraler Cloud-Datensatz existiert …');
+    try {
+        const cloud = await fetchCloudSnapshot();
+        if (userId !== activeAppUserId) return;
+        if (cloud.userId !== userId) throw new Error('Das angemeldete Konto hat sich während der Prüfung geändert.');
+        if (cloud.data !== null) {
+            cloudInitialTransferState = 'exists';
+            setCloudTransferMessage('Für dieses Konto existiert bereits ein Cloud-Datensatz. Ein Erstupload wird deshalb nicht angeboten und vorhandene Daten werden nicht überschrieben.');
+        } else {
+            cloudInitialTransferState = 'empty';
+            setCloudTransferMessage('Für dieses Konto wurde noch kein zentraler Datensatz gefunden. Deine lokalen Daten bleiben unverändert, bis du den Erstupload ausdrücklich bestätigst.', true);
+        }
+    } catch (error) {
+        cloudInitialTransferState = 'error';
+        setCloudTransferMessage('Cloud-Status konnte nicht geprüft werden. Es wurde nichts übertragen. ' + error.message);
+    }
+}
+
+function openCloudInitialTransferConfirmation() {
+    if (!appUserReady || cloudInitialTransferState !== 'empty' || cloudInitialTransferBusy) return;
+    const snapshot = getUserDataSnapshot();
+    const bytes = new TextEncoder().encode(JSON.stringify(snapshot)).length;
+    const sizeMb = (bytes / (1024 * 1024)).toFixed(2);
+    const activityCount = Array.isArray(snapshot.activities) ? snapshot.activities.length : 0;
+    const plannedCount = Array.isArray(snapshot.planned) ? snapshot.planned.length : 0;
+    const raceCount = Array.isArray(snapshot.races) ? snapshot.races.length : 0;
+    const details = document.getElementById('cloud-sync-confirm-details');
+    if (details) details.textContent = activityCount + ' Aktivitäten, ' + plannedCount + ' geplante Einheiten und ' + raceCount + ' Wettkämpfe; insgesamt ca. ' + sizeMb + ' MB JSON-Daten. Enthalten sind alle zehn App-Datenbereiche einschließlich vorhandener Aktivitäts-Messreihen. Originale FIT-Dateien sowie separate Garmin-Detail- und Gesundheitsdatensätze werden nicht erneut hochgeladen.';
+    const modal = document.getElementById('cloud-sync-confirm-modal');
+    modal?.classList.remove('hidden');
+    modal?.classList.add('flex');
+}
+
+function closeCloudInitialTransferConfirmation() {
+    const modal = document.getElementById('cloud-sync-confirm-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+}
+
+async function performCloudInitialTransfer() {
+    if (!appUserReady || !activeAppUserId || cloudInitialTransferState !== 'empty' || cloudInitialTransferBusy) return;
+    cloudInitialTransferBusy = true;
+    const button = document.getElementById('cloud-sync-confirm-button');
+    if (button) button.disabled = true;
+    setCloudTransferMessage('Cloud-Datenbestand wird nochmals geprüft. Es wurde noch nichts übertragen …');
+    try {
+        const userId = activeAppUserId;
+        const existing = await fetchCloudSnapshot();
+        if (userId !== activeAppUserId || existing.userId !== userId) throw new Error('Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.');
+        if (existing.data !== null || existing.version !== 0) {
+            cloudInitialTransferState = 'exists';
+            closeCloudInitialTransferConfirmation();
+            setCloudTransferMessage('Der Cloud-Datensatz ist inzwischen vorhanden. Zur Sicherheit wurde kein Upload ausgeführt.');
+            return;
+        }
+        const result = await saveCloudSnapshot(getUserDataSnapshot(), 0, userId);
+        if (!result.saved) {
+            cloudInitialTransferState = 'exists';
+            closeCloudInitialTransferConfirmation();
+            setCloudTransferMessage('Der Erstupload wurde wegen eines Versionskonflikts abgebrochen. Es wurden keine vorhandenen Cloud-Daten überschrieben.');
+            return;
+        }
+        cloudInitialTransferState = 'uploaded';
+        cloudSyncUserId = userId;
+        cloudSyncVersion = result.currentVersion;
+        cloudSyncBlocked = false;
+        closeCloudInitialTransferConfirmation();
+        setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). Die lokalen Daten und die separaten Garmin-Speicher wurden nicht gelöscht oder verändert.');
+    } catch (error) {
+        cloudInitialTransferState = 'error';
+        setCloudTransferMessage('Erstübertragung fehlgeschlagen. Der Cloud-Status wird zur Sicherheit erneut geprüft. ' + error.message);
+        if (activeAppUserId) await refreshCloudInitialTransferState(activeAppUserId);
+    } finally {
+        cloudInitialTransferBusy = false;
+        if (button) button.disabled = false;
+    }
+}
+
+let garminDailySyncInFlight = new Set();
+let garminDailySyncCompleted = new Set();
+
+function getLocalCalendarDate(date = new Date()) {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+}
+
+async function syncGarminTodayOnOpen(userId) {
+    if (!userId || !appUserReady || activeAppUserId !== userId) return;
+    const date = getLocalCalendarDate();
+    const runKey = userId + ':' + date;
+    if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(runKey)) return;
+    garminDailySyncInFlight.add(runKey);
+
+    try {
+        const connection = await callGarminFunction({ action: 'status' });
+        if (activeAppUserId !== userId || !appUserReady) return;
+        if (connection.connection?.status !== 'connected') return;
+
+        setGarminSyncIndicator('syncing', 'Tagesabgleich läuft');
+        let response = null;
+        let health = null;
+        for (let attempt = 0; attempt < 4; attempt++) {
+            try {
+                response = await callGarminFunction({ action: 'sync-today', date });
+            } catch (syncError) {
+                const rateLimited = /HTTP 429|rate.?limit/i.test(syncError?.message || '');
+                if (!rateLimited || attempt === 3) throw syncError;
+                const waitSeconds = 30 + attempt * 15;
+                console.info('KAJO: Garmin-Aktivitätsabruf wartet wegen API-Limit', waitSeconds, 'Sekunden.');
+                await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                if (activeAppUserId !== userId || !appUserReady) return;
+                continue;
+            }
+            health = response.sync?.healthSync || null;
+            const limited = health?.rateLimited || health?.status === 'rate_limited';
+            if (!limited) break;
+            if (attempt === 3) throw new Error('Garmin hat den Tagesabruf trotz mehrerer Versuche begrenzt.');
+            const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + attempt * 15;
+            console.info('KAJO: Garmin-Tagesabgleich wartet wegen API-Limit', waitSeconds, 'Sekunden.');
+            await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+            if (activeAppUserId !== userId || !appUserReady) return;
+        }
+
+        if (activeAppUserId !== userId || !appUserReady) return;
+        await loadGarminActivitiesFromCloud();
+        if (activeAppUserId !== userId || !appUserReady) return;
+        await loadGarminHealthRecordsIntoCheckins(date, date);
+
+        try {
+            await syncMissingGarminTelemetry(date, date, null);
+        } catch (telemetryError) {
+            console.warn('KAJO: FIT-Zeitreihen des heutigen Tages konnten nicht vollständig ergänzt werden:', telemetryError);
+        }
+
+        if (activeAppUserId !== userId || !appUserReady) return;
+        if (health?.status === 'partial' || Number(health?.failed || 0) > 0) {
+            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Endpunkte können beim nächsten Öffnen erneut abgerufen werden.', health);
+        } else {
+            garminDailySyncCompleted.add(runKey);
+            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health);
+        }
+        setGarminSyncIndicator('current', 'Verbunden');
+    } catch (error) {
+        console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
+        if (activeAppUserId === userId && appUserReady) setGarminSyncIndicator('current', 'Verbunden');
+    } finally {
+        garminDailySyncInFlight.delete(runKey);
+    }
+}
+
+function withActivationTimeout(promise, label, timeoutMs = 30000) {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(label + ' dauert zu lange. Bitte lade die Seite neu und versuche es erneut.')), timeoutMs);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
+async function handleAuthSession(session) {
+    const userId = session?.user?.id || null;
+    if (userId && activeAppUserId === userId && (appUserReady || activationPromise)) return;
+    const sequence = ++activationSequence;
+
+    if (!userId) {
+        activeAppUserId = null;
+        activeProfileUserId = null;
+        activationPromise = null;
+        appUserReady = false;
+        if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = null;
+        cloudSyncUserId = null;
+        cloudSyncVersion = 0;
+        cloudSyncPending = false;
+        cloudSyncBlocked = false;
+        cloudSyncAwaitingReadyUserId = null;
+        // Ein noch laufender Request darf seinen Status selbst abschließen.
+        deactivateUserStorage();
+        return;
+    }
+
+    // Ausstehende Änderungen des vorherigen Kontos dürfen nicht in das neue Konto laufen.
+    if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = null;
+    cloudSyncUserId = null;
+    cloudSyncVersion = 0;
+    cloudSyncPending = false;
+    cloudSyncBlocked = false;
+    cloudSyncAwaitingReadyUserId = null;
+
+    // Bei einem Accountwechsel zuerst den vorherigen Zustand aus dem Speicher
+    // entfernen. Legacy-Daten werden weder gelesen noch automatisch übernommen.
+    appUserReady = false;
+    activeAppUserId = userId;
+    activeProfileUserId = null;
+    deactivateUserStorage();
+
+    activationPromise = (async () => {
+        try {
+            await withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000);
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+
+            // Ein vorhandener zentraler Datensatz ist die maßgebliche Datenquelle.
+            // Der lokale, kontogebundene Speicher dient danach nur als Cache.
+            const cloudSnapshot = await withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000);
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            if (cloudSnapshot.userId !== userId) {
+                throw new Error('Das angemeldete Konto stimmt nicht mit dem geladenen Cloud-Datensatz überein.');
+            }
+            cloudSyncUserId = userId;
+            cloudSyncVersion = cloudSnapshot.version;
+            cloudSyncBlocked = false;
+            cloudSyncPending = false;
+            if (cloudSnapshot.data !== null) {
+                applyCloudDataSnapshot(cloudSnapshot.data);
+                const indicator = document.getElementById('sync-status-indicator');
+                if (indicator) indicator.textContent = 'Cloud-Daten geladen (Version ' + cloudSnapshot.version + ')';
+            }
+
+            try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
+            catch (garminLoadError) { console.warn('Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', garminLoadError); }
+
+            await domReady;
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+
+            // Die Anmeldung und das Laden der Kontodaten sind abgeschlossen.
+            // Die App wird jetzt sichtbar gemacht, bevor die aufwendige Erst-
+            // darstellung startet. So bleibt die Anmeldeseite nicht stehen,
+            // während Dashboard und Diagramme initial gerendert werden.
+            appUserReady = true;
+            window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+            try {
+                initializeSettings();
+                initEngine();
+                // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
+                // und hält den App-Start dadurch nicht auf.
+                void syncGarminTodayOnOpen(userId);
+                initializeNutritionReminders();
+            } catch (renderError) {
+                console.error('Die App-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
+                window.dispatchEvent(new CustomEvent('endurance:user-init-error', {
+                    detail: { message: renderError?.message || 'Fehler beim Aufbau der App-Oberfläche.' }
+                }));
+            }
+
+            await refreshCloudInitialTransferState(userId);
+            await loadCloudProfile(session);
+        } catch (error) {
+            console.error('Benutzerdaten konnten nicht sicher geladen werden:', error);
+            if (sequence === activationSequence) {
+                appUserReady = false;
+                deactivateUserStorage();
+                activeAppUserId = null;
+                window.dispatchEvent(new CustomEvent('endurance:user-load-error', {
+                    detail: { message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.' }
+                }));
+            }
+        } finally {
+            if (sequence === activationSequence) activationPromise = null;
+        }
+    })();
+    await activationPromise;
+}
+
+if (supabase) {
+    supabase.auth.onAuthStateChange((_event, session) => {
+        // Keine asynchronen Supabase-Aufrufe direkt im Auth-Callback starten.
+        setTimeout(() => handleAuthSession(session), 0);
+    });
+
+    supabase.auth.getSession().then(({ data, error }) => {
+        if (error) {
+            console.error('Anmeldestatus konnte nicht geprüft werden:', error);
+            return;
+        }
+        handleAuthSession(data?.session || null);
+    });
+} else {
+    deactivateUserStorage();
+}
+
+// ------------------------------------------------------------
+// Inline-Handler-Bridge
+// Das HTML (und die per Template-String erzeugten Karten) ruft Funktionen
+// per onclick="name(...)" auf. Das funktioniert nur mit globalen Funktionen.
+// ES-Module sind nicht global – darum werden genau diese Funktionen hier
+// bewusst an `window` gehängt. Neue onclick-Funktionen hier eintragen!
+// ------------------------------------------------------------
+Object.assign(window, {
+    switchTab,
+    openCoach,
+    switchMoreTab,
+    setHistoryMetric,
+    setHistoryRange,
+    applyHistoryCustomRange,
+    openHealthMetric,
+    openTrainingMetric,
+    openCloudInitialTransferConfirmation,
+    openCloudSyncModal,
+    closeCloudSyncModal,
+    closeCloudInitialTransferConfirmation,
+    performCloudInitialTransfer,
+    openGarminConnectionModal,
+    closeGarminConnectionModal,
+    connectGarmin,
+    previewGarminActivities,
+    syncGarminSelectedRange,
+    loadGarminSyncHistory,
+    selectAllGarminActivities,
+    importSelectedGarminActivities,
+    disconnectGarmin,
+    toggleMoreMenu,
+    closeMoreMenu,
+    openMoreTab,
+    openProfileModal,
+    openSettingsModal: showSettingsModal,
+    kajoSettingsJump: (id) => {
+        const target = document.getElementById(id);
+        if (target instanceof HTMLDetailsElement) target.open = true;
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+    renderKajoPushSettings,
+    enableKajoPush,
+    sendKajoPushTest,
+    saveKajoReminder,
+    deleteKajoReminder,
+    editKajoReminder,
+    resetKajoReminderForm,
+    toggleKajoReminder,
+    disableKajoPush,
+    closeSettingsModal: hideSettingsModal,
+    addCustomSport,
+    addCustomCategory,
+    saveSettings,
+    previewHeartRateZones,
+    closeProfileModal,
+    editAthleteProfileSection,
+    cancelAthleteProfileEdit,
+    saveAthleteProfileSection,
+    restoreDatabaseBackup,
+    closeBackupPreview,
+    confirmBackupRestore,
+    addRace,
+    saveTrainingRoute,
+    saveTrainingWaterSection,
+    renameTrainingWater,
+    deleteTrainingWater,
+    renameTrainingSection,
+    deleteTrainingSection,
+    editTrainingRoute,
+    deleteTrainingRoute,
+    resetTrainingRouteForm,
+    setActivityRoute,
+    setActivityRouteAssignment,
+    setActivityRouteRuns,
+    saveActivityWaterConditions,
+    saveActivityTrainingPartner,
+    toggleActivityCanoeFields,
+    applyCustomDateRange,
+    applyCanoeDateRange,
+    resetCanoeDateRange,
+    closeCSVDetailsModal,
+    closeHealthLogModal,
+    closeDayEditor,
+    closeIntervalsSyncModal,
+    closePlannedWorkoutModal,
+    closeStrengthModal,
+    deletePlannedWorkout,
+    deleteRace,
+    deleteSelectedActivity,
+    deleteStrengthLog,
+    exportDatabaseBackup,
+    handleMultipleFileSelect,
+    changeDashboardDay,
+    goToDashboardToday,
+    openDailyNote,
+    closeDailyNote,
+    saveDailyNote,
+    navigateCalendarPeriod,
+    setCalendarFormat,
+    setCalendarDisplayMode,
+    toggleActivitySportFilter,
+    setActivitySportFilter,
+    clearActivitySportFilter,
+    toggleCalendarAddMenu,
+    closeCalendarAddMenu,
+    openCSVDetailsModal,
+    openHealthLogForDate,
+    openDailyCheckinModal,
+    closeDailyCheckinModal,
+    discardDailyCheckin,
+    openDayEditor,
+    openHealthLogModal,
+    openIntervalsSyncModal,
+    openPlannedWorkoutModal,
+    openStrengthModal,
+    performIntervalsLiveSync,
+    saveCheckin,
+    saveDayEditor,
+    saveManualSportCorrection,
+    addActivityStrengthSet,
+    removeActivityStrengthSet,
+    toggleActivityStrengthSection,
+    toggleActivityEdit,
+    updateActivityRPE,
+    savePlannedWorkout,
+    saveRetroactiveHealthLog,
+    saveStrengthWorkout,
+    sendAICoachMessage,
+    setTimeframe,
+    toggleCustomDatePicker,
+    toggleRaceModal,
+    toggleCheckinOptionalFields,
+    toggleCycleFields,
+    toggleDayCycleFields,
+    updateCheckin,
+    refreshSportAnalytics,
+    openSupplementModal,
+    closeSupplementModal,
+    saveSupplement,
+    deleteSupplement,
+    toggleSupplementTaken,
+    enableNutritionNotifications,
+    switchMoreTab,
+});
+
+// Profil- und Check-in-Buttons verwenden die unabhängigen Direktaktionen aus ui-actions.js.
+
+// Die Initialisierung erfolgt ausschließlich nach erfolgreicher Anmeldung.
+
+
+let pendingBackupFile = null;
+let pendingBackupPreview = null;
+
+async function restoreDatabaseBackup(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+        const preview = await inspectDatabaseBackup(file);
+        pendingBackupFile = file;
+        pendingBackupPreview = preview;
+        const labels = [
+            ['activities', 'Trainingsaktivitäten'], ['planned', 'Geplante Trainingseinheiten'],
+            ['checkins', 'Tägliche Check-ins'], ['health', 'Gesundheitseinträge'],
+            ['races', 'Wettkämpfe'], ['strength', 'Krafttraining'],
+            ['strengthPBs', 'Kraft-Bestleistungen'], ['supplements', 'Ernährung & Supplements'],
+            ['profile', 'Athletenprofil'], ['settings', 'App-Einstellungen']
+        ];
+        const count = key => key === 'profile' ? (preview.hasProfile ? 'Vorhanden' : 'Nicht enthalten')
+            : key === 'settings' ? (preview.hasSettings ? 'Vorhanden' : 'Nicht enthalten')
+            : String(preview.counts[key] ?? 0) + ' Einträge';
+        const available = labels.filter(([key]) => Object.prototype.hasOwnProperty.call(preview.counts, key)
+            ? preview.counts[key] > 0
+            : key === 'profile' ? preview.hasProfile : preview.hasSettings);
+        const details = [
+            `Backup-Version: ${preview.version}`,
+            `Dateigröße: ${preview.fileSizeBytes != null ? (preview.fileSizeBytes / 1024).toFixed(1) + ' KB' : 'nicht verfügbar'}`,
+            preview.exportedAt ? `Exportiert am: ${new Date(preview.exportedAt).toLocaleString('de-DE')}` : 'Exportdatum: nicht angegeben',
+            '',
+            `Aktivitäten: ${preview.activityDateRange ? preview.activityDateRange.from + ' bis ' + preview.activityDateRange.to : 'kein Zeitraum ermittelbar'}`,
+            `Check-ins: ${preview.checkinDateRange ? preview.checkinDateRange.from + ' bis ' + preview.checkinDateRange.to : 'kein Zeitraum ermittelbar'}`,
+            `Gesundheitsdaten: ${preview.healthDateRange ? preview.healthDateRange.from + ' bis ' + preview.healthDateRange.to : 'kein Zeitraum ermittelbar'}`,
+            `Wettkämpfe: ${preview.raceDateRange ? preview.raceDateRange.from + ' bis ' + preview.raceDateRange.to : 'kein Zeitraum ermittelbar'}`
+        ];
+        const content = document.getElementById('backup-preview-content');
+        const selection = document.getElementById('backup-import-categories');
+        if (!content || !selection) throw new Error('Die Backup-Vorschau kann nicht geöffnet werden.');
+        content.textContent = details.join('\\n');
+        selection.innerHTML = available.length ? available.map(([key, label]) => {
+            return `<label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-200"><input type="checkbox" data-backup-category="${key}" checked class="accent-sky-500"><span class="flex-1">${label}</span><span class="text-xs text-slate-400">${count(key)}</span></label>`;
+        }).join('') : '<p class="text-xs text-amber-300">Es wurden keine Datenbereiche mit importierbaren Einträgen gefunden.</p>';
+        document.getElementById('backup-preview-modal')?.classList.remove('hidden');
+        document.getElementById('backup-preview-modal')?.classList.add('flex');
+    } catch (error) {
+        console.error(error);
+        alert(`Backup konnte nicht geprüft werden: ${error.message}`);
+        pendingBackupFile = null;
+        pendingBackupPreview = null;
+    } finally {
+        event.target.value = '';
+    }
+}
+function closeBackupPreview() {
+    pendingBackupFile = null;
+    pendingBackupPreview = null;
+    const modal = document.getElementById('backup-preview-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+}
+
+async function confirmBackupRestore() {
+    if (!pendingBackupFile || !pendingBackupPreview) {
+        alert('Bitte wähle zuerst eine Backup-Datei aus und prüfe die Vorschau.');
+        return;
+    }
+    const categories = Array.from(document.querySelectorAll('[data-backup-category]:checked'))
+        .map(input => input.getAttribute('data-backup-category'));
+    if (!categories.length) {
+        alert('Bitte wähle mindestens einen Datenbereich aus.');
+        return;
+    }
+    const labels = {
+        activities: 'Trainingsaktivitäten', planned: 'geplante Einheiten', checkins: 'Check-ins',
+        health: 'Gesundheitseinträge', races: 'Wettkämpfe', strength: 'Krafttraining',
+        strengthPBs: 'Kraft-Bestleistungen', supplements: 'Ernährung & Supplements',
+        profile: 'Athletenprofil', settings: 'App-Einstellungen'
+    };
+    const selectedNames = categories.map(key => labels[key] || key).join(', ');
+    const confirmed = confirm(
+        `Die folgenden Datenbereiche werden aus dem Backup übernommen und ersetzen jeweils die vorhandenen lokalen Daten in diesen Bereichen:\\n\\n${selectedNames}\\n\\nNicht ausgewählte Bereiche bleiben unverändert. Die Cloud-Synchronisierung wird dadurch nicht gestartet. Möchtest du fortfahren?`
+    );
+    if (!confirmed) return;
+    try {
+        const result = await importDatabaseBackup(pendingBackupFile, { confirmed: true, categories });
+        if (result) {
+            closeBackupPreview();
+            initEngine();
+            alert(`Backup erfolgreich importiert. Übernommen: ${result.importedCategories.map(key => labels[key] || key).join(', ')}. Nicht ausgewählte Datenbereiche wurden nicht verändert.`);
+        }
+    } catch (error) {
+        console.error(error);
+        alert(`Backup konnte nicht wiederhergestellt werden: ${error.message}`);
+    }
+}

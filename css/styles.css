@@ -1,0 +1,3622 @@
+/* Einheitliche Check-in-Skalen: farbiger Fortschritt bis zum Reglerpunkt. */
+.checkin-range {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background: transparent;
+    outline: none;
+}
+.checkin-range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(to right,
+        var(--range-fill-color, #0ea5e9) 0,
+        var(--range-fill-color, #0ea5e9) var(--range-progress, 0%),
+        #475569 var(--range-progress, 0%),
+        #475569 100%);
+}
+.checkin-range::-moz-range-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: #475569;
+}
+.checkin-range::-moz-range-progress {
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--range-fill-color, #0ea5e9);
+}
+.checkin-range::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: var(--range-fill-color, #0ea5e9);
+    border: 2px solid #f8fafc;
+    cursor: pointer;
+}
+.checkin-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--range-fill-color, #0ea5e9);
+    border: 2px solid #f8fafc;
+    cursor: pointer;
+}
+
+.calendar-day-card { cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+.calendar-day-card:hover { border-color: rgb(56 189 248 / .75); background-color: rgb(15 23 42 / .95); }
+
+
+/* Mobile navigation: compact icon-only primary tabs; secondary areas stay in "Mehr". */
+/* Responsive navigation update: deployed with the current application build. */
+@media (max-width: 640px) {
+    #app-navigation > div {
+        padding-left: .35rem;
+        padding-right: .35rem;
+    }
+    #app-navigation > div > div {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: center;
+        gap: .1rem !important;
+        height: 3.65rem;
+    }
+    #app-navigation #nav-dashboard,
+    #app-navigation #nav-calendar,
+    #app-navigation #nav-analyses,
+    #app-navigation #nav-areas {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        height: 3.35rem;
+        min-height: 3.35rem;
+        padding: .35rem .1rem;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .22rem;
+        border-radius: 12px;
+        font-size: .61rem;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    #app-navigation #nav-dashboard span,
+    #app-navigation #nav-calendar span,
+    #app-navigation #nav-analyses span,
+    #app-navigation #nav-areas span { display: inline; }
+    #app-navigation #nav-dashboard i,
+    #app-navigation #nav-calendar i,
+    #app-navigation #nav-analyses i,
+    #app-navigation #nav-areas i,
+    #app-navigation #nav-dashboard svg,
+    #app-navigation #nav-calendar svg,
+    #app-navigation #nav-analyses svg,
+    #app-navigation #nav-areas svg {
+        display: block;
+        width: 1.15rem;
+        height: 1.15rem;
+    }
+    #app-navigation #garmin-sync-indicator { display: none !important; }
+    #auth-userbar { padding: .5rem .75rem; }
+    #auth-user-email { display: none; }
+    #auth-logout {
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #auth-logout .mobile-nav-label { display: none; }
+}
+
+/* Mobile-first area navigation and globally available contextual Coach. */
+.kajo-area-list { display:grid; grid-template-columns:1fr; gap:.7rem; }
+.kajo-area-card {
+    display:flex; align-items:center; gap:.9rem; width:100%; min-height:5.1rem;
+    padding:.9rem 1rem; text-align:left; border:1px solid rgb(51 65 85);
+    border-radius:15px; background:rgb(15 23 42 / .72); color:#fff;
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.kajo-area-card:hover { border-color:rgb(6 182 212 / .55); background:rgb(30 41 59 / .8); }
+.kajo-area-card:active { transform:scale(.99); }
+.kajo-area-icon { display:flex; flex:0 0 2.65rem; width:2.65rem; height:2.65rem; align-items:center; justify-content:center; border-radius:12px; color:#67e8f9; background:rgb(6 182 212 / .12); }
+.kajo-area-icon svg { width:1.25rem; height:1.25rem; }
+.kajo-area-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:.22rem; }
+.kajo-area-copy strong { font-size:.86rem; font-weight:700; }
+.kajo-area-copy small { color:#9ca3af; font-size:.7rem; line-height:1.4; }
+.kajo-area-chevron { width:1rem; height:1rem; color:#778397; flex:0 0 auto; }
+.kajo-back-link { display:inline-flex; align-items:center; gap:.45rem; min-height:2.25rem; color:#aab5c5; font-size:.75rem; font-weight:650; }
+.kajo-back-link svg { width:1rem; height:1rem; }
+.kajo-coach-fab {
+    position:fixed; z-index:75; right:1.25rem; bottom:1.25rem; display:inline-flex; align-items:center; gap:.55rem;
+    min-height:3rem; padding:.75rem 1rem; border:1px solid rgb(255 255 255 / .12); border-radius:999px;
+    background:#0891b2; color:#fff; font-size:.78rem; font-weight:750; box-shadow:0 10px 28px rgb(0 0 0 / .35);
+    transition:transform .15s ease, filter .15s ease;
+}
+.kajo-coach-fab:hover { filter:brightness(1.08); transform:translateY(-2px); }
+.kajo-coach-fab svg { width:1.1rem; height:1.1rem; }
+@media (max-width:640px) {
+    .kajo-coach-fab { right:.85rem; bottom:calc(5.25rem + env(safe-area-inset-bottom)); min-height:2.8rem; padding:.7rem .9rem; }
+    #app-main { padding-bottom:calc(6.3rem + env(safe-area-inset-bottom)); }
+}
+
+/* Einheitliche Unter-Navigation im Bereich „Mehr“. */
+.more-subnav-button {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 2.5rem;
+    padding: .55rem .8rem;
+    border: 1px solid rgb(51 65 85);
+    border-radius: .75rem;
+    color: rgb(148 163 184);
+    background: rgb(15 23 42 / .55);
+    font-size: .75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.more-subnav-button:hover {
+    color: white;
+    background: rgb(30 41 59);
+}
+.more-subnav-button.active {
+    color: rgb(103 232 249);
+    background: rgb(8 145 178 / .13);
+    border-color: rgb(8 145 178 / .45);
+}
+.more-subnav-button i,
+.more-subnav-button svg {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+}
+#app-main {
+    overflow: visible;
+    min-height: calc(100dvh - 5rem);
+}
+#view-ai > div {
+    height: auto !important;
+}
+#chat-messages {
+    overflow: visible !important;
+    max-height: none !important;
+}
+@media (max-width: 640px) {
+    #view-more nav[aria-label="Mehr-Unterbereiche"] {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .more-subnav-button {
+        justify-content: flex-start;
+        min-width: 0;
+        white-space: normal;
+        text-align: left;
+        padding: .65rem .7rem;
+    }
+    .more-subnav-button:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
+
+/* ============================================================
+   KAJO Endurance AI – Brand- und UI-Farbkonzept v2.0
+   ============================================================ */
+:root {
+    color-scheme: dark;
+    --kajo-bg: #05080E;
+    --kajo-surface: #0F1420;
+    --kajo-red: #D32F2F;
+    --kajo-blue: #1E88E5;
+    --kajo-white: #FFFFFF;
+    --kajo-muted: #9CA3AF;
+}
+html, body { background-color: var(--kajo-bg) !important; color: var(--kajo-white); }
+body { color: var(--kajo-white); }
+#app-navigation, #auth-screen > div, #cloud-sync-panel, #backup-preview-modal > div {
+    background-color: var(--kajo-surface) !important;
+}
+#app-navigation { border-color: #202A3A !important; }
+/* Primäre Aktionen erhalten das Signalrot des KAJO-Logos. */
+button.bg-cyan-600, button[class~="bg-cyan-600"] { background-color: var(--kajo-red) !important; }
+button[class~="hover:bg-cyan-500"]:hover { background-color: #E53935 !important; }
+/* Sekundäre Informationen verwenden das festgelegte Muted Gray. */
+.text-slate-400 { color: var(--kajo-muted) !important; }
+input, select, textarea { color-scheme: dark; }
+
+
+/* ============================================================
+   KAJO PERFORMANCE LAB – Mobile-first visual refresh
+   Presentation layer only; existing application logic unchanged.
+   ============================================================ */
+:root {
+    color-scheme: dark;
+    --kajo-bg: #05080E;
+    --kajo-surface: #0F1420;
+    --kajo-surface-raised: #171F2D;
+    --kajo-border: #202A3A;
+    --kajo-red: #D32F2F;
+    --kajo-red-soft: rgb(211 47 47 / .13);
+    --kajo-blue: #1E88E5;
+    --kajo-text: #FFFFFF;
+    --kajo-muted: #9CA3AF;
+    --kajo-radius: 16px;
+}
+html, body { background: var(--kajo-bg) !important; color: var(--kajo-text); }
+body {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: -.01em;
+    -webkit-tap-highlight-color: transparent;
+}
+button, input, select, textarea { font: inherit; }
+button { touch-action: manipulation; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--kajo-blue);
+    outline-offset: 2px;
+}
+#app-main { max-width: 1120px; padding-top: 1.15rem; }
+#app-navigation, #auth-screen > div, #cloud-sync-panel, #backup-preview-modal > div {
+    background: var(--kajo-surface) !important;
+}
+#app-navigation { border-color: var(--kajo-border) !important; }
+#app-navigation button,
+#app-main button,
+#auth-screen button { min-height: 40px; }
+#app-main .bg-slate-900,
+#app-main .bg-slate-950,
+#app-main .bg-slate-900\/70 {
+    border-color: var(--kajo-border);
+}
+#app-main .rounded-2xl { border-radius: var(--kajo-radius); }
+#app-main .rounded-xl { border-radius: 12px; }
+#app-main .border-slate-800 { border-color: var(--kajo-border) !important; }
+#app-main .bg-slate-900 { background-color: var(--kajo-surface) !important; }
+#app-main .bg-slate-950 { background-color: #090E17 !important; }
+#app-main .bg-slate-800 { background-color: #202A3A !important; }
+#app-main button.bg-cyan-600,
+#app-main button.bg-sky-600,
+#auth-screen button.bg-cyan-600 {
+    background: var(--kajo-red) !important;
+    border-color: var(--kajo-red) !important;
+    color: #fff !important;
+}
+#app-main button.bg-cyan-600:hover,
+#app-main button.bg-sky-600:hover,
+#auth-screen button.bg-cyan-600:hover { background: #E53935 !important; }
+#app-navigation button[class*="bg-sky-500/10"],
+#app-navigation button[class*="bg-cyan-500/10"] {
+    background: var(--kajo-red-soft) !important;
+    color: #FF7777 !important;
+    border-color: rgb(211 47 47 / .38) !important;
+}
+#app-main input, #app-main select, #app-main textarea,
+#auth-screen input {
+    border-color: #344154;
+    border-radius: 10px;
+}
+#app-main input:focus, #app-main select:focus, #app-main textarea:focus,
+#auth-screen input:focus {
+    border-color: var(--kajo-blue);
+    box-shadow: 0 0 0 3px rgb(30 136 229 / .13);
+}
+.kajo-dashboard-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .35rem 0 .75rem;
+}
+.kajo-dashboard-header h1 {
+    margin: .2rem 0 .35rem;
+    color: #fff;
+    font-size: clamp(1.55rem, 5vw, 2.1rem);
+    line-height: 1.08;
+    font-weight: 800;
+    letter-spacing: -.045em;
+}
+.kajo-dashboard-header p:not(.kajo-eyebrow) {
+    margin: 0;
+    color: var(--kajo-muted);
+    font-size: .82rem;
+}
+.kajo-eyebrow {
+    margin: 0;
+    color: #E57373;
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+}
+.kajo-live-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    flex: 0 0 auto;
+    color: #9CA3AF;
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+}
+.kajo-live-mark span {
+    width: .42rem; height: .42rem; border-radius: 50%;
+    background: var(--kajo-red);
+    box-shadow: 0 0 0 4px var(--kajo-red-soft);
+}
+#kpi-cards-grid > div {
+    min-height: 112px;
+    padding: .9rem !important;
+    background: linear-gradient(145deg, #121A27, #0D131E) !important;
+    border: 1px solid var(--kajo-border) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 8px 24px rgb(0 0 0 / .12);
+}
+#kpi-cards-grid > div > div:nth-child(2) {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.05em;
+}
+#next-race-card, #day-inspector-box,
+#view-dashboard-details > div > div,
+#view-analyses section {
+    border-color: var(--kajo-border) !important;
+}
+.more-subnav-button.active {
+    color: #FF7777;
+    background: var(--kajo-red-soft);
+    border-color: rgb(211 47 47 / .42);
+}
+.calendar-day-card:hover {
+    border-color: rgb(211 47 47 / .65);
+    background-color: #121A27;
+}
+@media (max-width: 640px) {
+    body { padding-bottom: calc(5.35rem + env(safe-area-inset-bottom)); }
+    #app-main {
+        width: 100%;
+        padding: .85rem .75rem calc(1.5rem + env(safe-area-inset-bottom));
+        min-height: 100dvh;
+    }
+    #app-navigation:not(.hidden) {
+        position: fixed !important;
+        inset: auto 0 0 0 !important;
+        top: auto !important;
+        z-index: 80;
+        width: 100%;
+        padding-bottom: env(safe-area-inset-bottom);
+        border-top: 1px solid #263142 !important;
+        border-bottom: 0 !important;
+        background: rgb(10 15 24 / .96) !important;
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 -10px 32px rgb(0 0 0 / .28);
+    }
+    #app-navigation > div {
+        max-width: none;
+        padding: .35rem .35rem 0;
+    }
+    #app-navigation > div > div {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: center;
+        justify-content: stretch;
+        gap: .1rem !important;
+        height: 3.65rem !important;
+    }
+    #app-navigation > div > div > div:first-child,
+    #app-navigation #garmin-sync-indicator {
+        display: none !important;
+    }
+    #app-navigation > div > div > div:nth-child(2) { display: contents !important; }
+    #app-navigation #nav-dashboard,
+    #app-navigation #nav-calendar,
+    #app-navigation #nav-analyses,
+    #app-navigation #nav-areas {
+        display: flex !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 3.35rem !important;
+        min-height: 3.35rem !important;
+        padding: .35rem .1rem !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .22rem !important;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: transparent;
+        color: #8E99A9;
+        font-size: .61rem;
+        font-weight: 650;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    #app-navigation #nav-dashboard span,
+    #app-navigation #nav-calendar span,
+    #app-navigation #nav-analyses span,
+    #app-navigation #nav-areas span { display: inline !important; }
+    #app-navigation #nav-dashboard i,
+    #app-navigation #nav-calendar i,
+    #app-navigation #nav-analyses i,
+    #app-navigation #nav-areas i,
+    #app-navigation #nav-dashboard svg,
+    #app-navigation #nav-calendar svg,
+    #app-navigation #nav-analyses svg,
+    #app-navigation #nav-areas svg {
+        display: block;
+        width: 1.15rem;
+        height: 1.15rem;
+    }
+    #app-navigation #nav-dashboard[class*="bg-sky-500/10"],
+    #app-navigation #nav-calendar[class*="bg-sky-500/10"],
+    #app-navigation #nav-analyses[class*="bg-sky-500/10"],
+    #app-navigation #nav-areas[class*="bg-sky-500/10"] {
+        color: #FF7777 !important;
+        background: var(--kajo-red-soft) !important;
+        border-color: rgb(211 47 47 / .32) !important;
+    }
+
+    #auth-userbar { padding: .35rem .75rem; }
+    #auth-user-email { display: none; }
+    #auth-logout {
+        width: 2.5rem; height: 2.5rem; min-height: 2.5rem;
+        padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    }
+    #auth-logout .mobile-nav-label { display: none; }
+    .kajo-dashboard-header { align-items: flex-start; }
+    .kajo-live-mark { margin-top: .35rem; font-size: .52rem; }
+    #kpi-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+    #kpi-cards-grid > div { min-height: 106px; padding: .75rem !important; }
+    #kpi-cards-grid > div > div:nth-child(2) { font-size: 1.65rem; }
+    #view-dashboard, #view-analyses, #view-calendar, #view-training,
+    #view-dashboard-details { gap: 1rem; }
+    #next-race-card { align-items: flex-start; padding: .85rem; }
+    #view-dashboard-details .grid.grid-cols-5 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    #view-more nav[aria-label="Mehr-Unterbereiche"] {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: .5rem;
+    }
+    .more-subnav-button {
+        min-height: 2.85rem;
+        padding: .65rem .7rem;
+        border-radius: 12px;
+    }
+    #view-more nav[aria-label="Mehr-Unterbereiche"] .more-subnav-button:last-child {
+        grid-column: 1 / -1;
+    }
+    #app-main .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+    #app-main canvas { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+
+/* ============================================================
+   KAJO – Screen-by-screen finish: Training, Analysis, Coach, More
+   CSS-only refinement. Existing IDs, event handlers and data flow
+   intentionally remain untouched.
+   ============================================================ */
+#view-calendar > .bg-slate-900:first-child,
+#view-strength > .bg-slate-900:first-child {
+    background: linear-gradient(145deg, #121A27, #0D131E) !important;
+    border-color: var(--kajo-border) !important;
+}
+#view-calendar h2, #view-analyses h2,
+#view-races h2, #view-strength h2,
+#view-nutrition h2, #view-upload h2,
+#view-methods h2, #view-data h2,
+#view-ai h2, #view-ai h3 {
+    letter-spacing: -.025em;
+}
+#view-calendar > .bg-slate-900:nth-child(2) {
+    align-items: flex-start;
+    background: #0D131E !important;
+}
+#calendar-period-title {
+    font-size: clamp(.9rem, 3.5vw, 1.05rem);
+    letter-spacing: -.02em;
+}
+#calendar-display-toggle {
+    border-color: #344154 !important;
+    background: #080D15 !important;
+    min-height: 40px;
+}
+#calendar-display-thumb { background: var(--kajo-red) !important; }
+#calendar-legend {
+    width: 100%;
+    padding-top: .25rem;
+}
+#calendar-legend > span {
+    display: inline-flex;
+    align-items: center;
+    padding: .3rem .5rem;
+    border-radius: 999px;
+    background: #171F2D;
+    font-size: .65rem;
+}
+#cal-format-month > div:first-child {
+    color: #8793A5;
+    font-size: .68rem;
+    letter-spacing: .04em;
+}
+#month-grid-cells { gap: .35rem !important; }
+.calendar-day-card {
+    min-width: 0;
+    min-height: 5.2rem;
+    padding: .45rem !important;
+    border: 1px solid #202A3A !important;
+    border-radius: 12px !important;
+    background: #0F1420 !important;
+    transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+}
+.calendar-day-card:active { transform: scale(.985); }
+#cal-format-week > *,
+#cal-format-list > * {
+    border: 1px solid var(--kajo-border);
+    border-radius: 14px;
+}
+#view-analyses .bg-slate-950,
+#view-analyses section,
+#view-races .bg-slate-900,
+#view-strength .bg-slate-900,
+#view-nutrition section,
+#view-upload section,
+#view-methods section,
+#view-data article,
+#view-ai > div {
+    border-color: var(--kajo-border) !important;
+}
+#view-analyses .h-64,
+#view-analyses .h-56,
+#view-races .h-64 {
+    position: relative;
+    min-height: 190px;
+}
+#view-analyses canvas,
+#view-races canvas {
+    max-width: 100%;
+}
+#view-data article {
+    background: linear-gradient(145deg, #121A27, #0D131E) !important;
+    border-radius: 15px !important;
+    padding: 1.1rem !important;
+}
+#view-data article > div:first-child { color: #E57373; }
+#view-ai > div {
+    overflow: hidden;
+    background: #0F1420 !important;
+    box-shadow: 0 16px 44px rgb(0 0 0 / .16);
+}
+#view-ai > div > div:first-child {
+    background: #121A27 !important;
+}
+#chat-messages > div {
+    border-radius: 14px;
+    line-height: 1.65;
+}
+#view-ai > div > div:last-child {
+    align-items: center;
+}
+#chat-input { min-height: 46px; }
+#view-more header { padding: .25rem 0 .5rem; }
+#view-more header h1 {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -.04em;
+}
+#view-more nav[aria-label="Mehr-Unterbereiche"] {
+    border-color: var(--kajo-border) !important;
+}
+#view-more nav[aria-label="Mehr-Unterbereiche"] .more-subnav-button {
+    border-color: #293548;
+    background: #0F1420;
+    color: #AAB4C2;
+    border-radius: 11px;
+}
+#view-more nav[aria-label="Mehr-Unterbereiche"] .more-subnav-button.active {
+    color: #FF8585;
+    background: var(--kajo-red-soft);
+    border-color: rgb(211 47 47 / .42);
+}
+#view-more nav[aria-label="Mehr-Unterbereiche"] .more-subnav-button i,
+#view-more nav[aria-label="Mehr-Unterbereiche"] .more-subnav-button svg {
+    color: inherit;
+}
+#view-dashboard-details .bg-slate-950 {
+    background: #090E17 !important;
+}
+#view-dashboard-details .bg-slate-900 {
+    background: #0F1420 !important;
+}
+#view-dashboard-details h3,
+#view-dashboard-details h4 {
+    letter-spacing: -.015em;
+}
+#app-main .overflow-x-auto,
+#app-main [class*="overflow-x-auto"] {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+}
+#app-main table { border-collapse: separate; border-spacing: 0; }
+#app-main th {
+    color: #AAB4C2;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .035em;
+}
+#app-main td { font-variant-numeric: tabular-nums; }
+#app-main .fixed.inset-0 > div,
+#app-main .fixed.inset-0 > section {
+    border-color: #344154 !important;
+    box-shadow: 0 24px 70px rgb(0 0 0 / .42);
+}
+#app-main label {
+    line-height: 1.5;
+}
+#app-main input[type="checkbox"],
+#app-main input[type="radio"] { accent-color: var(--kajo-red); }
+#app-main input[type="range"] { accent-color: var(--kajo-red); }
+
+@media (max-width: 640px) {
+    #view-calendar { gap: .85rem !important; }
+    #view-calendar > .bg-slate-900:first-child {
+        padding: 1rem !important;
+        gap: .85rem !important;
+    }
+    #view-calendar > .bg-slate-900:first-child > div:first-child h2 {
+        font-size: 1rem;
+        line-height: 1.35;
+    }
+    #view-calendar > .bg-slate-900:first-child > div:last-child {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        gap: .45rem;
+    }
+    #view-calendar > .bg-slate-900:first-child > div:last-child > * {
+        min-width: 0;
+    }
+    #view-calendar > .bg-slate-900:first-child > div:last-child > button {
+        justify-content: center;
+        min-height: 44px;
+        padding: .55rem .4rem;
+        font-size: .68rem;
+    }
+    #view-calendar > .bg-slate-900:nth-child(2) {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .8rem;
+        padding: .85rem !important;
+    }
+    #view-calendar > .bg-slate-900:nth-child(2) > div:first-child {
+        width: 100%;
+        justify-content: space-between;
+    }
+    #view-calendar > .bg-slate-900:nth-child(2) > div:nth-child(2) {
+        width: 100%;
+        justify-content: space-between;
+    }
+    #calendar-display-toggle { width: 174px; }
+    #calendar-legend { gap: .35rem .4rem; }
+    #month-grid-cells { gap: .22rem !important; }
+    .calendar-day-card {
+        min-height: 4.25rem;
+        padding: .28rem !important;
+        border-radius: 9px !important;
+        font-size: .65rem;
+    }
+    #cal-format-month > div:first-child { gap: .1rem !important; }
+    #cal-format-week { gap: .55rem !important; }
+    #view-analyses > div,
+    #view-analyses section { min-width: 0; }
+    #view-analyses .flex.flex-wrap.items-center.gap-1.bg-slate-950 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+    }
+    #view-analyses .flex.flex-wrap.items-center.gap-1.bg-slate-950 button {
+        min-width: 0;
+        padding: .55rem .25rem;
+        font-size: .65rem;
+    }
+    #view-analyses .h-64,
+    #view-analyses .h-56,
+    #view-races .h-64 { min-height: 210px; }
+    #view-analyses .grid.grid-cols-2 { grid-template-columns: 1fr; }
+    #view-races .bg-slate-900,
+    #view-strength > .bg-slate-900:first-child {
+        padding: 1rem !important;
+    }
+    #view-strength > .bg-slate-900:first-child {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    #view-strength > .bg-slate-900:first-child button { width: 100%; }
+    #view-data article { padding: .95rem !important; }
+    #view-ai > div { border-radius: 15px !important; }
+    #view-ai > div > div:first-child { align-items: flex-start; gap: .6rem; }
+    #view-ai > div > div:first-child > span { display: none; }
+    #chat-messages { padding: .85rem !important; }
+    #view-ai > div > div:last-child {
+        padding: .65rem !important;
+        gap: .45rem;
+    }
+    #chat-input { min-width: 0; font-size: .75rem; }
+    #view-dashboard-details .grid.grid-cols-2,
+    #view-dashboard-details .grid.grid-cols-3 { gap: .5rem; }
+    #view-dashboard-details .grid.grid-cols-5 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    #app-main .fixed.inset-0 > div,
+    #app-main .fixed.inset-0 > section {
+        max-height: calc(100dvh - 1rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+}
+@media (min-width: 641px) {
+    #app-navigation #nav-dashboard,
+    #app-navigation #nav-calendar,
+    #app-navigation #nav-analyses,
+    #app-navigation #nav-areas,
+     {
+        min-height: 42px;
+        padding-inline: .9rem;
+    }
+}
+
+
+/* Mobile brand and account access: separate from the fixed bottom navigation. */
+.kajo-mobile-header { display: none; }
+@media (max-width: 640px) {
+    .kajo-mobile-header {
+        display: flex;
+        position: fixed;
+        inset: 0 0 auto 0;
+        z-index: 81;
+        height: calc(3.65rem + env(safe-area-inset-top));
+        padding: calc(.45rem + env(safe-area-inset-top)) 1rem .45rem;
+        align-items: center;
+        gap: .65rem;
+        background: rgb(10 15 24 / .97);
+        border-bottom: 1px solid #263142;
+        box-shadow: 0 8px 24px rgb(0 0 0 / .2);
+    }
+    .kajo-mobile-header .kajo-mobile-logo {
+        display: block !important;
+        flex: 0 0 7.5rem !important;
+        width: 7.5rem !important;
+        min-width: 7.5rem !important;
+        max-width: 7.5rem !important;
+        height: 2.7rem !important;
+        min-height: 2.7rem !important;
+        max-height: 2.7rem !important;
+        object-fit: contain !important;
+    }
+    #app-navigation > div:not(.kajo-mobile-header) > div > div:first-child img {
+        width: 2.35rem !important;
+        height: 2.35rem !important;
+        max-width: 2.35rem !important;
+        object-fit: contain !important;
+    }
+    .kajo-mobile-wordmark {
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+    }
+    .kajo-mobile-header .kajo-mobile-account {
+        display: inline-flex !important;
+        flex: 0 0 2.55rem !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        width: 2.55rem !important;
+        min-width: 2.55rem !important;
+        max-width: 2.55rem !important;
+        height: 2.55rem !important;
+        min-height: 2.55rem !important;
+        max-height: 2.55rem !important;
+        border: 1px solid #344154;
+        border-radius: 12px;
+        background: #171F2D;
+        color: #E5E7EB;
+    }
+    .kajo-mobile-header .kajo-mobile-account i,
+    .kajo-mobile-header .kajo-mobile-account svg {
+        display: block !important;
+        flex: 0 0 1.2rem !important;
+        width: 1.2rem !important;
+        min-width: 1.2rem !important;
+        max-width: 1.2rem !important;
+        height: 1.2rem !important;
+        min-height: 1.2rem !important;
+        max-height: 1.2rem !important;
+    }
+    #app-main { padding-top: calc(4.1rem + env(safe-area-inset-top)); }
+    #app-navigation { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+
+/* Mobile account control: keep the profile icon compact in the header. */
+@media (max-width: 640px) {
+    #app-navigation .kajo-mobile-header button.kajo-mobile-account {
+        box-sizing: border-box !important;
+        display: inline-flex !important;
+        position: relative !important;
+        flex: 0 0 2.55rem !important;
+        width: 2.55rem !important;
+        min-width: 2.55rem !important;
+        max-width: 2.55rem !important;
+        height: 2.55rem !important;
+        min-height: 2.55rem !important;
+        max-height: 2.55rem !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+    }
+    #app-navigation .kajo-mobile-header button.kajo-mobile-account > i,
+    #app-navigation .kajo-mobile-header button.kajo-mobile-account > svg,
+    #app-navigation .kajo-mobile-header button.kajo-mobile-account svg {
+        box-sizing: border-box !important;
+        display: block !important;
+        flex: 0 0 1.2rem !important;
+        width: 1.2rem !important;
+        min-width: 1.2rem !important;
+        max-width: 1.2rem !important;
+        height: 1.2rem !important;
+        min-height: 1.2rem !important;
+        max-height: 1.2rem !important;
+        margin: 0 !important;
+    }
+}
+
+
+/* Keep the mobile brand/account bar fixed to the viewport top,
+   independent of the bottom navigation container. */
+.kajo-mobile-header { display: none; }
+@media (max-width: 640px) {
+    body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header {
+        display: flex !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        left: 0 !important;
+        inset: 0 0 auto 0 !important;
+        z-index: 1000 !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        height: calc(3.65rem + env(safe-area-inset-top)) !important;
+        padding: calc(.45rem + env(safe-area-inset-top)) 1rem .45rem !important;
+        align-items: center !important;
+        gap: .65rem !important;
+        background: rgb(10 15 24 / .97) !important;
+        border-bottom: 1px solid #263142 !important;
+        box-shadow: 0 8px 24px rgb(0 0 0 / .2) !important;
+    }
+    body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header .kajo-mobile-logo {
+        display: block !important;
+        flex: 0 0 2.35rem !important;
+        width: 2.35rem !important;
+        min-width: 2.35rem !important;
+        max-width: 2.35rem !important;
+        height: 2.35rem !important;
+        min-height: 2.35rem !important;
+        max-height: 2.35rem !important;
+        object-fit: contain !important;
+    }
+    body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header .kajo-mobile-wordmark {
+        color: #fff !important;
+        font-size: 1rem !important;
+        font-weight: 850 !important;
+        letter-spacing: .08em !important;
+    }
+    body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header button.kajo-mobile-account {
+        box-sizing: border-box !important;
+        display: inline-flex !important;
+        position: relative !important;
+        flex: 0 0 2.55rem !important;
+        width: 2.55rem !important;
+        min-width: 2.55rem !important;
+        max-width: 2.55rem !important;
+        height: 2.55rem !important;
+        min-height: 2.55rem !important;
+        max-height: 2.55rem !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        border: 1px solid #344154 !important;
+        border-radius: 12px !important;
+        background: #171F2D !important;
+        color: #E5E7EB !important;
+    }
+    body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header .kajo-mobile-account svg,
+    body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header .kajo-mobile-account i {
+        display: block !important;
+        flex: 0 0 1.2rem !important;
+        width: 1.2rem !important;
+        min-width: 1.2rem !important;
+        max-width: 1.2rem !important;
+        height: 1.2rem !important;
+        min-height: 1.2rem !important;
+        max-height: 1.2rem !important;
+        margin: 0 !important;
+    }
+    #app-main { padding-top: calc(4.1rem + env(safe-area-inset-top)) !important; }
+}
+
+
+/* FINAL FIX: mobile KAJO header is an independent viewport-level top bar. */
+.kajo-mobile-header { display: none !important; }
+@media screen and (max-width: 640px) {
+  body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: 0 !important;
+    inset: 0 0 auto 0 !important;
+    width: 100% !important;
+    height: calc(3.65rem + env(safe-area-inset-top)) !important;
+    margin: 0 !important;
+    z-index: 2147483000 !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    padding: calc(.45rem + env(safe-area-inset-top)) 1rem .45rem !important;
+    background: #0A0F18 !important;
+    border-bottom: 1px solid #263142 !important;
+  }
+  #app-main {
+    padding-top: calc(4.1rem + env(safe-area-inset-top)) !important;
+  }
+}
+
+
+/* KAJO brand refresh: use the complete horizontal heartbeat/kayak logo. */
+.kajo-mobile-logo {
+    width: 8.5rem !important;
+    min-width: 8.5rem !important;
+    max-width: 8.5rem !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 2.8rem !important;
+    object-fit: contain !important;
+}
+.kajo-mobile-wordmark { display: none !important; }
+@media (max-width: 640px) {
+    .kajo-mobile-header .kajo-mobile-logo {
+        flex: 0 1 8.5rem !important;
+        width: 8.5rem !important;
+        min-width: 0 !important;
+        max-width: 8.5rem !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: 2.65rem !important;
+    }
+    #app-navigation > div:not(.kajo-mobile-header) > div > div:first-child img {
+        width: 10rem !important;
+        height: auto !important;
+        max-width: 10rem !important;
+        max-height: 2.8rem !important;
+    }
+}
+
+
+/* Mobile dashboard refinement based on the uploaded device screenshot. */
+@media screen and (max-width: 640px) {
+    #view-dashboard > .kajo-dashboard-header {
+        margin-top: -1.5rem;
+        align-items: flex-start;
+        gap: .55rem;
+        padding-top: 0;
+        padding-bottom: .35rem;
+    }
+    #view-dashboard .kajo-dashboard-header h1 {
+        font-size: 1.65rem;
+        line-height: 1.12;
+    }
+    #view-dashboard .kajo-dashboard-header p:not(.kajo-eyebrow) {
+        max-width: 19rem;
+        font-size: .78rem;
+        line-height: 1.4;
+    }
+    #view-dashboard .kajo-eyebrow {
+        font-size: .56rem;
+        letter-spacing: .13em;
+    }
+    #view-dashboard .kajo-live-mark {
+        margin-top: .15rem;
+        font-size: .48rem;
+        white-space: nowrap;
+    }
+    #view-dashboard #kpi-cards-grid {
+        gap: .5rem;
+    }
+    #view-dashboard #kpi-cards-grid > div {
+        min-height: 98px;
+        padding: .65rem !important;
+        border-radius: 12px !important;
+    }
+    #view-dashboard #kpi-cards-grid > div > span:first-child {
+        font-size: .68rem;
+        line-height: 1.25;
+    }
+    #view-dashboard #kpi-cards-grid > div > div:nth-child(2) {
+        font-size: 1.45rem;
+        line-height: 1.15;
+    }
+    #view-dashboard #kpi-cards-grid > div > div:nth-child(3) {
+        font-size: .58rem;
+        line-height: 1.35;
+    }
+}
+
+
+/* KAJO mobile calendar: tighten vertical rhythm and make dense views readable. */
+@media screen and (max-width: 640px) {
+    #view-calendar {
+        margin-top: -1.5rem;
+    }
+
+    /* Month cells: give the activity name the available width. */
+    #view-calendar .calendar-activity {
+        padding: .22rem .25rem !important;
+        border-radius: 7px !important;
+    }
+    #view-calendar .calendar-activity > div {
+        justify-content: flex-start;
+        min-width: 0;
+    }
+    #view-calendar .calendar-activity > div > span:first-child {
+        min-width: 0;
+        font-size: .58rem;
+        line-height: 1.2;
+    }
+    #view-calendar .calendar-activity > div > span:last-child {
+        display: none;
+    }
+
+    /* Week view: cards should follow their content, not reserve desktop height. */
+    #cal-format-week .calendar-day-card {
+        min-height: 0 !important;
+        padding: .85rem !important;
+        gap: .65rem !important;
+    }
+    #cal-format-week .calendar-day-card > div:nth-child(2) {
+        flex: 0 1 auto !important;
+    }
+    #cal-format-week .calendar-day-card > div:nth-child(2) > .text-center {
+        padding: .35rem 0 !important;
+    }
+}
+
+
+/* Keep all three calendar view switches visible on narrow screens. */
+@media screen and (max-width: 640px) {
+    #view-calendar > .bg-slate-900:first-child > div:last-child {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: stretch;
+    }
+    #view-calendar > .bg-slate-900:first-child > div:last-child > div:first-child {
+        grid-column: 1 / -1;
+        display: flex;
+        width: 100%;
+        min-width: 0;
+    }
+    #view-calendar #btn-fmt-month,
+    #view-calendar #btn-fmt-week,
+    #view-calendar #btn-fmt-list {
+        flex: 1 1 0;
+        justify-content: center;
+        min-width: 0;
+        white-space: nowrap;
+        padding: .6rem .25rem !important;
+        font-size: .72rem;
+    }
+    #view-calendar > .bg-slate-900:first-child > div:last-child > button {
+        width: 100%;
+    }
+}
+
+
+/* ============================================================
+   KAJO DASHBOARD – focused visual redesign
+   Presentation only: KPI IDs, data bindings and interactions stay intact.
+   ============================================================ */
+#view-dashboard {
+    gap: 1.35rem !important;
+}
+#view-dashboard .kajo-dashboard-header {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 168px;
+    align-items: flex-end;
+    padding: 1.55rem 1.6rem !important;
+    border: 1px solid #263449;
+    border-radius: 22px;
+    background:
+      radial-gradient(ellipse at 88% 8%, rgb(30 136 229 / .18), transparent 38%),
+      radial-gradient(ellipse at 4% 100%, rgb(211 47 47 / .13), transparent 42%),
+      linear-gradient(130deg, #141D2B 0%, #0B111B 72%);
+    box-shadow: 0 18px 42px rgb(0 0 0 / .18);
+}
+#view-dashboard .kajo-dashboard-header::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 230px;
+    height: 230px;
+    right: -72px;
+    bottom: -145px;
+    border: 1px solid rgb(255 255 255 / .07);
+    border-radius: 50%;
+    box-shadow: 0 0 0 22px rgb(255 255 255 / .018), 0 0 0 46px rgb(255 255 255 / .014);
+}
+#view-dashboard .kajo-dashboard-header h1 {
+    margin-top: .55rem;
+    font-size: clamp(1.8rem, 5vw, 2.55rem);
+    letter-spacing: -.055em;
+}
+#view-dashboard .kajo-dashboard-header p:not(.kajo-eyebrow) {
+    max-width: 34rem;
+    margin-top: .55rem;
+    font-size: .88rem;
+    line-height: 1.55;
+}
+#view-dashboard .kajo-eyebrow {
+    color: #FF8585;
+    font-size: .64rem;
+    letter-spacing: .19em;
+}
+#view-dashboard .kajo-live-mark {
+    padding: .55rem .75rem;
+    border: 1px solid rgb(148 163 184 / .17);
+    border-radius: 999px;
+    background: rgb(5 8 14 / .38);
+    color: #C1CAD6;
+    font-size: .58rem;
+}
+#kpi-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .75rem !important;
+}
+#kpi-cards-grid > div {
+    position: relative;
+    min-height: 126px;
+    padding: 1rem 1.05rem !important;
+    border-radius: 17px !important;
+    background: linear-gradient(155deg, #151E2C 0%, #0D1420 82%) !important;
+    box-shadow: 0 10px 26px rgb(0 0 0 / .13);
+    transition: transform .18s ease, border-color .18s ease;
+}
+#kpi-cards-grid > div:hover {
+    transform: translateY(-2px);
+    border-color: #40516A !important;
+}
+#kpi-cards-grid > div > span {
+    color: #AAB6C6 !important;
+    font-size: .72rem !important;
+    letter-spacing: .015em;
+}
+#kpi-cards-grid > div > div:nth-child(2) {
+    min-height: 2.35rem;
+    display: flex;
+    align-items: center;
+    margin-top: .55rem !important;
+    font-size: clamp(1.65rem, 3vw, 2.1rem) !important;
+    line-height: 1;
+    font-weight: 800;
+}
+#kpi-cards-grid > div > div:nth-child(3) {
+    min-height: 1.1rem;
+    margin-top: .45rem !important;
+    color: #8794A6 !important;
+    font-size: .64rem !important;
+    line-height: 1.35;
+}
+#kpi-cards-grid > div > div:last-child {
+    height: 3px !important;
+    opacity: .9;
+}
+#kpi-cards-grid > div:last-child {
+    background:
+      radial-gradient(ellipse at 100% 0%, rgb(211 47 47 / .14), transparent 65%),
+      linear-gradient(145deg, #151E2C, #0D1420) !important;
+}
+#kpi-cards-grid > div:last-child > span {
+    color: #FF9292 !important;
+}
+#kpi-rec-short {
+    font-size: 1rem !important;
+    line-height: 1.25 !important;
+}
+#next-race-card {
+    min-height: 82px;
+    padding: 1rem 1.2rem !important;
+    border-radius: 17px !important;
+    background:
+      radial-gradient(ellipse at 100% 50%, rgb(30 136 229 / .12), transparent 48%),
+      linear-gradient(110deg, #141D2B, #0D1420) !important;
+    box-shadow: 0 10px 26px rgb(0 0 0 / .12);
+}
+#next-race-card > div:first-child > div:first-child {
+    margin-bottom: .35rem;
+}
+#next-race-card [id="dashboard-next-race-name"] {
+    font-size: .95rem !important;
+    letter-spacing: -.015em;
+}
+#next-race-card [id="dashboard-next-race-date"] {
+    padding: .5rem .65rem;
+    border: 1px solid rgb(30 136 229 / .25);
+    border-radius: 10px;
+    background: rgb(30 136 229 / .09);
+    color: #83C5FF !important;
+}
+#view-dashboard > .bg-slate-900:last-child {
+    padding: 1.15rem 1.2rem !important;
+    border: 1px solid #263449 !important;
+    border-radius: 18px !important;
+    background: linear-gradient(145deg, #141D2B, #0D1420) !important;
+    box-shadow: 0 10px 26px rgb(0 0 0 / .12);
+}
+#view-dashboard > .bg-slate-900:last-child h2 {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    font-size: .9rem !important;
+    letter-spacing: -.02em;
+}
+#view-dashboard > .bg-slate-900:last-child h2::before {
+    content: "";
+    width: 4px;
+    height: 1.1rem;
+    border-radius: 99px;
+    background: var(--kajo-red);
+}
+#readiness-details {
+    padding: .85rem .95rem;
+    border: 1px solid rgb(148 163 184 / .12);
+    border-radius: 12px;
+    background: rgb(5 8 14 / .28);
+}
+@media (max-width: 640px) {
+    #view-dashboard { gap: 1rem !important; }
+    #view-dashboard .kajo-dashboard-header {
+        min-height: 150px;
+        padding: 1.15rem 1.05rem !important;
+        border-radius: 18px;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-start;
+        gap: .8rem;
+    }
+    #view-dashboard .kajo-dashboard-header h1 {
+        font-size: clamp(1.65rem, 7vw, 2.05rem);
+    }
+    #view-dashboard .kajo-dashboard-header p:not(.kajo-eyebrow) {
+        max-width: 19rem;
+        font-size: .78rem;
+    }
+    #view-dashboard .kajo-live-mark {
+        align-self: flex-start;
+        margin-top: 0;
+    }
+    #kpi-cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .55rem !important;
+    }
+    #kpi-cards-grid > div {
+        min-height: 112px;
+        padding: .8rem !important;
+        border-radius: 15px !important;
+    }
+    #kpi-cards-grid > div > div:nth-child(2) {
+        min-height: 2rem;
+        font-size: 1.65rem !important;
+    }
+    #kpi-cards-grid > div > div:nth-child(3) {
+        font-size: .59rem !important;
+    }
+    #next-race-card {
+        min-height: 76px;
+        padding: .85rem !important;
+        gap: .55rem;
+    }
+    #next-race-card [id="dashboard-next-race-name"] {
+        font-size: .83rem !important;
+    }
+    #next-race-card [id="dashboard-next-race-date"] {
+        font-size: .68rem !important;
+        padding: .4rem .5rem;
+    }
+    #view-dashboard > .bg-slate-900:last-child {
+        padding: 1rem !important;
+        border-radius: 16px !important;
+    }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+    #kpi-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
+/* ============================================================
+   KAJO HOME – Tagesorientiertes Performance-Dashboard
+   Präsentationsschicht; vorhandene Trainings- und Messdaten bleiben unverändert.
+   ============================================================ */
+#view-dashboard .kajo-dashboard-header {
+    min-height: 132px;
+    align-items: center;
+    padding: 1.35rem 1.55rem !important;
+}
+#view-dashboard .kajo-dashboard-header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.35rem);
+    margin-top: .3rem;
+}
+#view-dashboard .kajo-dashboard-header p:not(.kajo-eyebrow) {
+    margin-top: .35rem;
+    color: #AAB6C6;
+}
+#view-dashboard .kajo-live-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    cursor: pointer;
+}
+.home-panel {
+    padding: 1.15rem 1.25rem;
+    border: 1px solid #263449;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #141D2B 0%, #0D1420 88%);
+    box-shadow: 0 10px 26px rgb(0 0 0 / .12);
+}
+.home-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .9rem;
+}
+.home-section-heading h2 {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    color: #F8FAFC;
+    font-size: 1rem;
+    font-weight: 750;
+    letter-spacing: -.02em;
+}
+.home-kicker {
+    margin-bottom: .2rem;
+    color: #FF8585;
+    font-size: .58rem;
+    font-weight: 750;
+    letter-spacing: .16em;
+}
+.home-status-pill, .home-muted-label {
+    color: #AAB6C6;
+    font-size: .66rem;
+    white-space: nowrap;
+}
+.home-status-pill {
+    padding: .38rem .65rem;
+    border: 1px solid #344154;
+    border-radius: 999px;
+    background: #101927;
+}
+.home-today-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .65rem; }
+.home-session-card {
+    display: grid;
+    grid-template-columns: auto minmax(0,1fr) auto;
+    align-items: center;
+    gap: .7rem;
+    min-width: 0;
+    padding: .85rem;
+    border: 1px solid #2A394D;
+    border-radius: 13px;
+    background: rgb(5 8 14 / .32);
+}
+.home-session-card > div { min-width: 0; }
+.home-session-card strong { display:block; overflow:hidden; color:#F8FAFC; font-size:.82rem; text-overflow:ellipsis; white-space:nowrap; }
+.home-session-card small { display:block; margin-top:.2rem; color:#94A3B8; font-size:.66rem; }
+.home-session-card > i, .home-session-card > svg { width:1rem; height:1rem; color:#94A3B8; }
+.home-session-card.is-complete { border-color: rgb(16 185 129 / .28); }
+.home-session-card.is-complete .home-session-state { color:#6EE7B7; }
+.home-session-card.is-planned { border-color: rgb(56 189 248 / .25); }
+.home-session-card.is-planned .home-session-state { color:#7DD3FC; }
+.home-session-state { font-size:.54rem; font-weight:800; letter-spacing:.07em; }
+.home-empty-state { grid-column:1/-1; padding:.85rem; border:1px dashed #344154; border-radius:12px; color:#94A3B8; font-size:.75rem; }
+.home-week-grid, .home-recovery-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; }
+.home-summary-tile {
+    min-width:0;
+    padding:.85rem;
+    border:1px solid rgb(148 163 184 / .13);
+    border-radius:13px;
+    background:rgb(5 8 14 / .3);
+}
+.home-summary-tile span { display:block; color:#94A3B8; font-size:.66rem; }
+.home-summary-tile strong { display:block; margin-top:.3rem; color:#F8FAFC; font-size:1.35rem; font-weight:800; letter-spacing:-.035em; }
+.home-summary-tile small { display:block; margin-top:.18rem; color:#718096; font-size:.6rem; }
+.home-supporting-note { margin-top:.7rem; color:#8492A6; font-size:.66rem; line-height:1.5; }
+.home-insight-panel { border-color:rgb(211 47 47 / .25); background:radial-gradient(ellipse at 100% 0%,rgb(211 47 47 / .1),transparent 48%),linear-gradient(145deg,#141D2B,#0D1420); }
+.home-insight-main { color:#F8FAFC; font-size:.95rem; font-weight:700; line-height:1.4; }
+#kpi-cards-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+#kpi-cards-grid > div { min-height:112px; }
+@media (max-width: 640px) {
+    #view-dashboard .kajo-dashboard-header { min-height:120px; padding:1rem !important; }
+    .home-panel { padding:.95rem; border-radius:15px; }
+    .home-section-heading h2 { font-size:.9rem; }
+    .home-today-list { grid-template-columns:1fr; }
+    .home-session-card { padding:.72rem; }
+    .home-week-grid, .home-recovery-grid { gap:.45rem; }
+    .home-summary-tile { padding:.65rem; }
+    .home-summary-tile strong { font-size:1.12rem; }
+    .home-summary-tile span { font-size:.6rem; }
+    .home-summary-tile small { font-size:.55rem; }
+    #kpi-cards-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+/* The home overview surfaces four headline metrics; ATL and the recommendation
+   remain available to the existing model and are surfaced contextually. */
+#kpi-cards-grid > div:nth-child(2),
+#kpi-cards-grid > div:nth-child(6) { display: none !important; }
+
+
+/* Align the home screen with the approved KAJO dashboard wireframe:
+   today's session, four headline metrics, then one concise insight. */
+#kpi-cards-grid { display: none !important; }
+.home-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: .65rem;
+}
+.home-metric-grid .home-summary-tile { min-height: 78px; }
+.home-metric-grid .home-summary-tile strong { font-size: 1.45rem; }
+.home-metrics-panel { padding: .85rem; }
+@media (min-width: 900px) {
+    .home-metric-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
+
+
+/* KAJO App Home – eigenständiges Design, gilt ausschließlich innerhalb app/. */
+.kajo-home{max-width:1100px;margin-inline:auto;color:#e8eef8}
+.kajo-home-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px 2px 4px}
+.kajo-home-header h1{font-size:clamp(1.8rem,4vw,2.55rem);font-weight:800;letter-spacing:-.045em;color:#f8fafc;margin:.25rem 0}
+.kajo-home-header p:last-child{color:#94a3b8;font-size:.86rem}
+.kajo-eyebrow,.kajo-kicker{font-size:.65rem;letter-spacing:.16em;font-weight:800;color:#60a5fa}
+.kajo-live-mark{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #26364d;border-radius:12px;color:#b9c9dd;font-size:.68rem;font-weight:700}
+.kajo-live-mark svg{width:16px;height:16px}
+.kajo-panel{background:linear-gradient(145deg,#101a2a,#0b1320 72%);border:1px solid #1e3047;border-radius:20px;padding:clamp(16px,3vw,24px);box-shadow:0 14px 38px #00000020}
+.kajo-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.kajo-panel-heading h2{font-size:1.08rem;font-weight:750;color:#f1f5f9;margin-top:3px}
+.kajo-subtle,.kajo-footnote{font-size:.72rem;color:#8293aa}
+.kajo-readiness-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.kajo-ring-card{display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center;min-width:0}
+.kajo-ring-card>p{font-size:.7rem;color:#9aabc0}
+.kajo-ring{--ring-value:0%;--ring-color:#38bdf8;width:clamp(104px,15vw,146px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ring-color) var(--ring-value),#26364b 0);position:relative}
+.kajo-ring:before{content:"";position:absolute;inset:8px;border-radius:50%;background:#101a29;border:1px solid #26364b}
+.kajo-ring>div{z-index:1;display:flex;flex-direction:column;align-items:center}
+.kajo-ring strong{font-size:clamp(1.35rem,3vw,2rem);font-weight:850;color:#f8fafc;font-variant-numeric:tabular-nums}
+.kajo-ring span{font-size:.66rem;color:#9aabc0}
+.kajo-footnote{margin-top:16px;line-height:1.55}
+.kajo-icon-chip{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#132d43;color:#60a5fa}
+.kajo-icon-chip svg{width:18px;height:18px}
+.kajo-recommendation{font-size:1rem;line-height:1.55;font-weight:700;color:#e8f2ff}
+.kajo-status-pill{font-size:.65rem;color:#a5b4c7;background:#1a2a3e;border:1px solid #2a405a;border-radius:999px;padding:6px 10px;white-space:nowrap}
+.home-today-list{display:grid;gap:9px}
+.home-session-card{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid #24374e;border-radius:13px;background:#0b1523}
+.home-session-card>div{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.home-session-card strong{font-size:.84rem;color:#e8eef8}
+.home-session-card small{font-size:.7rem;color:#91a3ba}
+.home-session-card>i{color:#60a5fa;width:18px}
+.home-session-state{font-size:.58rem;letter-spacing:.08em;font-weight:800;color:#60a5fa;min-width:92px}
+.home-session-card.is-complete .home-session-state,.home-session-card.is-complete>i{color:#34d399}
+.kajo-empty{font-size:.78rem;color:#8293aa;padding:8px 0}
+.kajo-health-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kajo-health-grid article{display:flex;flex-direction:column;gap:5px;padding:13px;border-radius:13px;background:#0b1523;border:1px solid #22354b;min-width:0}
+.kajo-health-grid article span,.kajo-health-grid article small{font-size:.67rem;color:#91a3ba}
+.kajo-health-grid article strong{font-size:1.3rem;font-weight:800;color:#f1f5f9;font-variant-numeric:tabular-nums}
+@media(max-width:640px){.kajo-readiness-grid{gap:5px}.kajo-ring{width:min(27vw,112px)}.kajo-ring:before{inset:6px}.kajo-ring-card>p{font-size:.62rem}.kajo-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-session-state{min-width:78px;font-size:.53rem}.kajo-subtle{display:none}}
+
+
+/* Robust card surfaces and top-bar controls for KAJO v15 */
+.kajo-home .kajo-panel{display:block!important;min-height:120px;background:#101a2a!important;border:1px solid #263b55!important;border-radius:18px!important;padding:20px!important;box-shadow:0 12px 30px rgba(0,0,0,.22)!important}
+.kajo-home .kajo-readiness-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:center}
+.kajo-home .kajo-ring{display:grid!important;min-width:100px;min-height:100px;border:1px solid #31445d}
+.kajo-home .kajo-health-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.kajo-home .kajo-health-grid article{min-height:94px}
+.kajo-home .home-today-list{display:grid!important;gap:10px}
+.kajo-home .home-session-card{display:flex!important;min-height:62px}
+.kajo-home .kajo-recommendation{display:block;min-height:42px;padding:14px 16px;background:#0b1523;border:1px solid #263b55;border-radius:13px}
+.kajo-mobile-garmin{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:1px solid #263b55;background:#101a2a;color:#a9bdd4}
+.kajo-mobile-garmin svg{width:18px;height:18px}
+.kajo-mobile-header{display:flex;align-items:center;gap:9px}
+.kajo-mobile-header .kajo-mobile-logo{margin-right:auto}
+#app-navigation #garmin-sync-indicator-desktop{margin-left:auto}
+@media(max-width:640px){.kajo-home .kajo-panel{padding:15px!important}.kajo-home .kajo-ring{min-width:0;min-height:0;width:min(27vw,112px)}.kajo-home .kajo-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* Dashboard tiles match the existing KAJO website: dark slate surfaces with restrained red accents. */
+.kajo-home .kajo-panel{
+  background:linear-gradient(145deg,#141D2B 0%,#0D1420 88%)!important;
+  border:1px solid #263449!important;
+  border-radius:18px!important;
+  box-shadow:0 10px 26px rgb(0 0 0 / .12)!important;
+  padding:1.15rem 1.25rem!important;
+}
+.kajo-home .kajo-status-panel{
+  background:linear-gradient(145deg,#141D2B 0%,#0D1420 88%)!important;
+  border-color:#263449!important;
+  border-top:2px solid #D32F2F!important;
+}
+.kajo-home .kajo-recommendation-panel{
+  border-color:rgb(211 47 47 / .25)!important;
+  border-left:1px solid rgb(211 47 47 / .25)!important;
+  background:radial-gradient(ellipse at 100% 0%,rgb(211 47 47 / .1),transparent 48%),linear-gradient(145deg,#141D2B,#0D1420)!important;
+}
+.kajo-home .kajo-kicker{color:#94a3b8}
+.kajo-home .kajo-status-pill{color:#AAB6C6;border:1px solid #344154;background:#101927}
+.kajo-home .kajo-ring{border-color:#344154}
+.kajo-home .kajo-ring:before{background:#101927;border-color:#263449}
+.kajo-home .kajo-circle-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.65rem;margin:8px 0 22px}
+.kajo-home .kajo-health-circle-item{display:flex;min-width:0;align-items:center;flex-direction:column;gap:6px;text-align:center}
+.kajo-home .kajo-health-circle-item .kajo-health-circle{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgb(5 8 14 / .3);border:2px solid #344154;color:#aab6c6}
+.kajo-home .kajo-health-circle svg{width:21px;height:21px}
+.kajo-home .kajo-health-circle[data-state="wearable"]{border-color:#D32F2F;color:#FF8585}
+.kajo-home .kajo-health-circle[data-state="good"]{border-color:#16a34a;color:#4ade80}
+.kajo-home .kajo-health-circle[data-state="mild"]{border-color:#ca8a04;color:#eab308}
+.kajo-home .kajo-health-circle[data-state="moderate"]{border-color:#ea580c;color:#f97316}
+.kajo-home .kajo-health-circle[data-state="poor"]{border-color:#dc2626;color:#ef4444}
+.kajo-home .kajo-health-circle[data-state="critical"]{border-color:#9333ea;color:#c084fc}
+.kajo-home .kajo-health-circle[data-state="mid"]{border-color:#d97706;color:#fbbf24}
+.kajo-home .kajo-health-circle-item strong{font-size:.88rem;font-weight:800;color:#f8fafc;font-variant-numeric:tabular-nums}
+.kajo-home .kajo-health-circle-item>span{font-size:.65rem;color:#94A3B8;line-height:1.3}
+.kajo-home .kajo-self-heading{margin-top:4px;padding-top:17px;border-top:1px solid #263449}
+.kajo-home .kajo-checkin-button{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:10px;background:#101927;border:1px solid #D32F2F;color:#FF8585;font-size:.68rem;font-weight:750;white-space:nowrap}
+.kajo-home .kajo-checkin-button svg{width:15px;height:15px}
+@media(max-width:650px){
+ .kajo-home .kajo-panel{padding:.95rem!important;border-radius:15px!important}
+ .kajo-home .kajo-circle-grid{gap:8px;grid-template-columns:repeat(5,minmax(0,1fr))}
+ .kajo-home .kajo-health-circle-item .kajo-health-circle{width:43px;height:43px;border-width:2px}
+ .kajo-home .kajo-health-circle svg{width:17px;height:17px}
+ .kajo-home .kajo-health-circle-item strong{font-size:.72rem}
+ .kajo-home .kajo-health-circle-item>span{font-size:.56rem}
+ .kajo-home .kajo-readiness-grid{gap:5px}
+ .kajo-home .kajo-ring{width:min(27vw,108px)}
+ .kajo-home .kajo-ring-card>p{font-size:.6rem}
+ .kajo-home .kajo-checkin-button{padding:7px 8px;font-size:.59rem}
+}
+@media(max-width:380px){
+ .kajo-home .kajo-circle-grid{gap:4px}
+ .kajo-home .kajo-health-circle-item .kajo-health-circle{width:37px;height:37px}
+ .kajo-home .kajo-health-circle-item>span{font-size:.5rem}
+}
+
+/* Dashboard: zentraler Tageswechsel neben dem Trainingszustand */
+.kajo-home .kajo-status-heading{align-items:center;gap:12px;flex-wrap:wrap}
+.kajo-home .kajo-day-selector{display:flex;align-items:center;justify-content:center;gap:8px}
+.kajo-home .kajo-day-selector strong{min-width:112px;text-align:center;color:#f8fafc;font-size:.82rem;font-variant-numeric:tabular-nums}
+.kajo-home .kajo-day-selector button{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;border:1px solid #D32F2F;background:#101927;color:#FF8585}
+.kajo-home .kajo-day-selector button:disabled{opacity:.35;cursor:not-allowed}
+.kajo-home .kajo-day-selector button svg{width:17px;height:17px}
+@media(max-width:520px){.kajo-home .kajo-status-heading{align-items:flex-start}.kajo-home .kajo-day-selector{width:100%;justify-content:flex-start}.kajo-home .kajo-day-selector strong{min-width:130px}}
+
+@media(min-width:651px){
+ .kajo-home .kajo-status-heading{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+ .kajo-home .kajo-status-heading>div:first-child{grid-column:1}
+ .kajo-home .kajo-day-selector{grid-column:2;justify-self:center}
+}
+
+/* Self-Monitoring Check-in as an independent modal window */
+body.kajo-modal-open{overflow:hidden}
+#view-dashboard-details:not(.hidden){position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,15,.82);backdrop-filter:blur(7px);overflow-y:auto}
+#view-dashboard-details #daily-checkin-panel{width:min(100%,620px);max-height:calc(100vh - 32px);overflow-y:auto;margin:auto;background:#101827;border:1px solid rgba(211,47,47,.45);box-shadow:0 24px 80px rgba(0,0,0,.55)}
+#view-dashboard-details .grid{width:100%}
+@media(max-width:600px){#view-dashboard-details:not(.hidden){align-items:flex-end;padding:8px}#view-dashboard-details #daily-checkin-panel{max-height:calc(100dvh - 16px);border-radius:18px 18px 10px 10px}}
+
+/* Dedicated Self-Monitoring dialog, independent from dashboard tab navigation */
+body.kajo-modal-open{overflow:hidden}
+#daily-checkin-modal:not(.hidden){position:fixed;inset:0;z-index:2000;display:block}
+#daily-checkin-modal .daily-checkin-backdrop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,15,.84);backdrop-filter:blur(8px);overflow-y:auto}
+#daily-checkin-modal #daily-checkin-modal-content{width:min(100%,620px);max-height:calc(100dvh - 32px);overflow-y:auto;margin:auto}
+#daily-checkin-modal #daily-checkin-panel{width:100%;max-height:none;overflow:visible;margin:0;background:#101827;border:1px solid rgba(211,47,47,.5);box-shadow:0 24px 80px rgba(0,0,0,.6)}
+@media(max-width:600px){#daily-checkin-modal .daily-checkin-backdrop{align-items:flex-end;padding:8px}#daily-checkin-modal #daily-checkin-modal-content{max-height:calc(100dvh - 16px)}#daily-checkin-modal #daily-checkin-panel{border-radius:18px 18px 10px 10px}}
+
+/* Dashboard visual refinement: clean date controls, tighter top spacing and unified red tiles */
+.kajo-home .kajo-day-selector button{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  color:#fff!important;
+  border-radius:50%!important;
+}
+.kajo-home .kajo-day-selector button:hover:not(:disabled){
+  background:rgba(255,255,255,.10)!important;
+}
+.kajo-home .kajo-day-selector button:focus-visible{
+  outline:2px solid rgba(255,255,255,.65)!important;
+  outline-offset:2px!important;
+}
+.kajo-home .kajo-day-selector #dashboard-day-today{
+  border:0!important;
+  background:transparent!important;
+  color:#fff!important;
+}
+#app-main:has(#view-dashboard:not(.hidden)){
+  padding-top:0!important;
+}
+@media(max-width:640px){
+  #app-main:has(#view-dashboard:not(.hidden)){
+    padding-top:calc(3.65rem + env(safe-area-inset-top))!important;
+  }
+}
+
+/* Check-in bleibt offen, bis gespeichert wird; drei optionale Checkboxen in einer Zeile. */
+#daily-checkin-modal .daily-checkin-backdrop{cursor:default}
+#daily-checkin-modal-content #daily-checkin-panel{cursor:default}
+#daily-checkin-panel .checkin-optional-toggles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:center}
+#daily-checkin-panel .checkin-optional-toggles label{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:11px;min-width:0}
+
+
+/* KAJO Dashboard: Überschriften im hellroten Akzentstil. */
+.kajo-home .kajo-panel-heading h2{
+  color:#FF8585!important;
+  font-weight:800;
+  letter-spacing:-.02em;
+}
+
+
+/* Trainingszustand ohne Panel: einzelne Ringe direkt auf dem Dashboard-Hintergrund. */
+.kajo-home .kajo-status-overview{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  padding:8px 0 12px;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+.kajo-home .kajo-status-overview .kajo-readiness-grid{
+  width:100%;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(12px,3vw,28px);
+  align-items:center;
+  justify-items:center;
+}
+.kajo-home .kajo-status-overview .kajo-ring-card{width:100%}
+.kajo-home .kajo-status-overview .kajo-day-selector{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:34px;
+}
+.kajo-home .kajo-status-overview .kajo-day-selector strong{
+  min-width:112px;
+  text-align:center;
+  color:#f8fafc;
+  font-size:.82rem;
+  font-variant-numeric:tabular-nums;
+}
+.kajo-home .kajo-status-overview .kajo-day-selector button{
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  border:0!important;
+  border-radius:50%;
+  background:transparent!important;
+  color:#fff!important;
+}
+.kajo-home .kajo-status-overview .kajo-day-selector button:hover:not(:disabled){
+  background:rgba(255,255,255,.10)!important;
+}
+.kajo-home .kajo-status-overview .kajo-day-selector button:disabled{opacity:.35;cursor:not-allowed}
+.kajo-home .kajo-status-overview .kajo-day-selector button svg{width:18px;height:18px}
+@media(max-width:520px){
+  .kajo-home .kajo-status-overview{gap:10px}
+  .kajo-home .kajo-status-overview .kajo-readiness-grid{gap:4px}
+}
+
+
+/* KAJO: Überschriften leichter und ruhiger setzen, Akzentfarbe bleibt erhalten. */
+.kajo-home .kajo-panel-heading h2,
+.kajo-home .home-section-heading h2 {
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+.kajo-home .kajo-home-header h1 {
+  font-weight: 600 !important;
+  letter-spacing: -.025em !important;
+}
+
+
+/* KAJO Dashboard – mobile Feinschliff nach Referenz-Screenshot */
+.kajo-home {
+  width: 100%;
+}
+.kajo-home .kajo-status-overview {
+  gap: 10px;
+  padding: 2px 0 8px;
+}
+.kajo-home .kajo-status-overview .kajo-readiness-grid {
+  gap: clamp(8px, 2.2vw, 20px);
+}
+.kajo-home .kajo-status-overview .kajo-ring {
+  width: clamp(96px, 24vw, 138px);
+  border: 1px solid #344154;
+  box-shadow: inset 0 0 0 5px rgba(52,65,84,.10);
+}
+.kajo-home .kajo-status-overview .kajo-ring:before {
+  inset: 7px;
+}
+.kajo-home .kajo-status-overview .kajo-ring strong {
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  font-weight: 700;
+}
+.kajo-home .kajo-status-overview .kajo-ring span {
+  margin-top: 3px;
+  font-size: clamp(.68rem, 2.5vw, .82rem);
+}
+.kajo-home .kajo-status-overview .kajo-day-selector {
+  gap: 14px;
+  min-height: 38px;
+}
+.kajo-home .kajo-status-overview .kajo-day-selector strong {
+  min-width: 116px;
+  font-size: .95rem;
+  font-weight: 650;
+}
+.kajo-home .kajo-panel {
+  padding: clamp(16px, 3.5vw, 24px) !important;
+  border-radius: 20px !important;
+}
+.kajo-home .kajo-panel-heading {
+  margin-bottom: 18px;
+}
+.kajo-home .kajo-panel-heading h2 {
+  font-size: 1.08rem;
+  line-height: 1.25;
+}
+.kajo-home .kajo-circle-grid {
+  gap: clamp(5px, 1.8vw, 12px);
+  margin: 10px 0 20px;
+}
+.kajo-home .kajo-health-circle-item {
+  gap: 7px;
+}
+.kajo-home .kajo-health-circle-item .kajo-health-circle {
+  width: clamp(40px, 11vw, 58px);
+  height: clamp(40px, 11vw, 58px);
+  border-width: 2px;
+  background: rgba(5,8,14,.24);
+}
+.kajo-home .kajo-health-circle svg {
+  width: clamp(17px, 4.5vw, 21px);
+  height: clamp(17px, 4.5vw, 21px);
+}
+.kajo-home .kajo-health-circle-item strong {
+  font-size: clamp(.72rem, 2.6vw, .88rem);
+  font-weight: 700;
+}
+.kajo-home .kajo-health-circle-item > span {
+  max-width: 100%;
+  font-size: clamp(.54rem, 2vw, .68rem);
+  line-height: 1.25;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.kajo-home .kajo-self-heading {
+  margin-top: 8px;
+  padding-top: 18px;
+  margin-bottom: 18px;
+}
+.kajo-home .kajo-checkin-button {
+  min-height: 42px;
+  padding: 9px 12px;
+  font-size: .7rem;
+  transition: background .18s ease, border-color .18s ease;
+}
+.kajo-home .kajo-checkin-button:hover {
+  background: rgba(211,47,47,.12);
+  border-color: #FF8585;
+}
+@media (max-width: 640px) {
+  #app-main:has(#view-dashboard:not(.hidden)) {
+    padding-top: calc(3.65rem + env(safe-area-inset-top)) !important;
+  }
+  #view-dashboard.kajo-home {
+    gap: 14px;
+  }
+  .kajo-home .kajo-status-overview {
+    gap: 8px;
+    padding-top: 0;
+    padding-bottom: 4px;
+  }
+  .kajo-home .kajo-status-overview .kajo-readiness-grid {
+    gap: 4px;
+  }
+  .kajo-home .kajo-status-overview .kajo-ring {
+    width: min(25vw, 112px);
+  }
+  .kajo-home .kajo-status-overview .kajo-ring:before {
+    inset: 6px;
+  }
+  .kajo-home .kajo-status-overview .kajo-day-selector {
+    gap: 12px;
+  }
+  .kajo-home .kajo-status-overview .kajo-day-selector strong {
+    min-width: 108px;
+    font-size: .9rem;
+  }
+  .kajo-home .kajo-panel {
+    padding: 16px 14px !important;
+    border-radius: 18px !important;
+  }
+  .kajo-home .kajo-panel-heading {
+    margin-bottom: 16px;
+  }
+  .kajo-home .kajo-circle-grid {
+    gap: 5px;
+    margin-top: 8px;
+    margin-bottom: 18px;
+  }
+  .kajo-home .kajo-health-circle-item .kajo-health-circle {
+    width: min(11vw, 48px);
+    height: min(11vw, 48px);
+  }
+  .kajo-home .kajo-health-circle-item > span {
+    min-height: 2.4em;
+  }
+  .kajo-home .kajo-self-heading {
+    padding-top: 16px;
+    gap: 8px;
+  }
+  .kajo-home .kajo-checkin-button {
+    padding: 8px 9px;
+    min-height: 40px;
+    font-size: .62rem;
+  }
+}
+@media (max-width: 380px) {
+  .kajo-home .kajo-status-overview .kajo-ring {
+    width: 24vw;
+  }
+  .kajo-home .kajo-health-circle-item > span {
+    font-size: .51rem;
+  }
+  .kajo-home .kajo-checkin-button span {
+    max-width: 104px;
+    white-space: normal;
+    line-height: 1.15;
+  }
+}
+
+
+/* KAJO Kalender – konsistentes Dark-Slate-Layout mit hellroten Akzenten */
+#view-calendar {
+  --cal-accent: #FF8585;
+  --cal-line: #263449;
+  --cal-surface: #101a2a;
+  --cal-muted: #94a3b8;
+  gap: 18px;
+}
+#view-calendar > .bg-slate-900 {
+  background: linear-gradient(145deg,#141d2b 0%,#0d1420 88%) !important;
+  border-color: var(--cal-line) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,.12);
+}
+#view-calendar h2,
+#view-calendar h3 {
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+#view-calendar h2 i {
+  color: var(--cal-accent) !important;
+}
+#view-calendar button {
+  transition: background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease;
+}
+#view-calendar button:focus-visible,
+#view-calendar [role="button"]:focus-visible {
+  outline: 2px solid rgba(255,133,133,.8);
+  outline-offset: 2px;
+}
+#view-calendar #btn-fmt-month,
+#view-calendar #btn-fmt-week,
+#view-calendar #btn-fmt-list {
+  min-height: 36px;
+  border-radius: 9px;
+}
+#view-calendar #btn-fmt-month:not(.bg-cyan-600),
+#view-calendar #btn-fmt-week:not(.bg-cyan-600),
+#view-calendar #btn-fmt-list:not(.bg-cyan-600) {
+  color: #aab6c6;
+}
+#view-calendar #btn-fmt-month.bg-cyan-600,
+#view-calendar #btn-fmt-week.bg-cyan-600,
+#view-calendar #btn-fmt-list.bg-cyan-600 {
+  background: rgba(211,47,47,.18) !important;
+  border: 1px solid rgba(255,133,133,.38);
+  color: var(--cal-accent) !important;
+}
+#view-calendar #calendar-period-title {
+  min-width: 150px;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+#view-calendar #calendar-period-title + button,
+#view-calendar button[onclick^="navigateCalendarPeriod"] {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #e2e8f0 !important;
+  border-radius: 50% !important;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+}
+#view-calendar button[onclick^="navigateCalendarPeriod"]:hover {
+  background: rgba(255,255,255,.08) !important;
+}
+#view-calendar #calendar-display-toggle {
+  border-color: #344154 !important;
+  background: #0b1220 !important;
+}
+#view-calendar #calendar-display-thumb {
+  background: #9f343d !important;
+}
+#view-calendar #calendar-legend {
+  gap: 8px 14px;
+  line-height: 1.5;
+}
+#view-calendar #calendar-legend > span {
+  white-space: nowrap;
+}
+#view-calendar #cal-format-month > .grid:first-child {
+  color: #9aa8bb;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+#view-calendar #month-grid-cells {
+  gap: 7px;
+}
+#view-calendar .calendar-day-card {
+  min-width: 0;
+  border-radius: 13px !important;
+  border-color: #263449 !important;
+  background: linear-gradient(155deg,#121c2b,#0d1420) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,.10);
+  transition: border-color .16s ease,background .16s ease,transform .16s ease;
+}
+#view-calendar .calendar-day-card:hover {
+  border-color: rgba(255,133,133,.55) !important;
+  background: #151f2e !important;
+}
+#view-calendar .calendar-day-card.border-sky-400,
+#view-calendar .calendar-day-card.border-sky-500 {
+  border: 1px solid rgba(255,133,133,.75) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,133,133,.10),0 0 0 2px rgba(255,133,133,.07);
+}
+#view-calendar .calendar-activity {
+  border-radius: 8px !important;
+  background-image: linear-gradient(110deg,rgba(255,255,255,.035),transparent) !important;
+}
+#view-calendar #cal-format-week .calendar-day-card {
+  min-height: 360px;
+  padding: 13px !important;
+  gap: 12px;
+}
+#view-calendar #cal-format-week .calendar-day-card > div:first-child {
+  border-color: #263449 !important;
+}
+#view-calendar #cal-format-week .calendar-day-card > div:first-child > div:first-child span {
+  font-size: .72rem;
+}
+#view-calendar #cal-format-week .calendar-day-card .bg-slate-950 {
+  background: #0b1220 !important;
+  border-radius: 13px !important;
+}
+#view-calendar #cal-format-list > [role="button"] {
+  background: linear-gradient(145deg,#141d2b,#0d1420) !important;
+  border-color: #263449 !important;
+  border-radius: 14px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 5px 16px rgba(0,0,0,.10);
+}
+#view-calendar #cal-format-list > [role="button"]:hover {
+  border-color: rgba(255,133,133,.55) !important;
+}
+@media (min-width: 768px) {
+  #view-calendar #cal-format-week {
+    grid-template-columns: repeat(7,minmax(0,1fr));
+    gap: 9px;
+  }
+  #view-calendar #cal-format-week .calendar-day-card {
+    min-width: 0;
+    padding: 10px !important;
+  }
+}
+@media (max-width: 767px) {
+  #view-calendar {
+    gap: 14px;
+  }
+  #view-calendar > .bg-slate-900:first-child {
+    padding: 16px !important;
+    gap: 14px;
+  }
+  #view-calendar > .bg-slate-900:first-child > div:first-child p {
+    line-height: 1.45;
+    max-width: 34rem;
+  }
+  #view-calendar > .bg-slate-900:first-child > div:last-child {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  #view-calendar > .bg-slate-900:first-child > div:last-child > div {
+    grid-column: 1 / -1;
+    width: max-content;
+    max-width: 100%;
+  }
+  #view-calendar > .bg-slate-900:first-child > div:last-child > button {
+    justify-content: center;
+    min-height: 42px;
+    padding: 9px 10px;
+    font-size: .68rem;
+  }
+  #view-calendar #next-race-card {
+    padding: 13px 15px !important;
+  }
+  #view-calendar #next-race-card #dashboard-next-race-name {
+    font-size: .86rem;
+  }
+  #view-calendar > .bg-slate-900:has(#calendar-period-title) {
+    align-items: stretch;
+    gap: 13px;
+    padding: 13px !important;
+  }
+  #view-calendar > .bg-slate-900:has(#calendar-period-title) > div:first-child {
+    justify-content: space-between;
+    width: 100%;
+  }
+  #view-calendar > .bg-slate-900:has(#calendar-period-title) > div:nth-child(2) {
+    justify-content: space-between;
+    width: 100%;
+  }
+  #view-calendar #calendar-legend {
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid #263449;
+    font-size: .62rem;
+  }
+  #view-calendar #month-grid-cells {
+    gap: 4px;
+  }
+  #view-calendar #cal-format-month > .grid:first-child {
+    padding: 3px 0;
+    font-size: .58rem;
+  }
+  #view-calendar .calendar-day-card {
+    min-height: 82px !important;
+    padding: 5px 4px !important;
+    border-radius: 9px !important;
+    overflow: hidden;
+  }
+  #view-calendar .calendar-day-card > div:first-child > div:first-child {
+    margin-bottom: 3px !important;
+  }
+  #view-calendar .calendar-day-card > div:first-child > div:first-child > span:first-child {
+    font-size: .65rem !important;
+    padding: 2px 4px !important;
+  }
+  #view-calendar .calendar-day-card .text-\\[9px\\] {
+    font-size: .48rem !important;
+  }
+  #view-calendar .calendar-day-card .calendar-activity {
+    padding: 3px !important;
+    margin-bottom: 3px !important;
+    border-radius: 5px !important;
+  }
+  #view-calendar .calendar-day-card .calendar-activity .text-\\[10px\\] {
+    font-size: .48rem !important;
+  }
+  #view-calendar #cal-format-week {
+    grid-template-columns: minmax(0,1fr);
+    gap: 9px;
+  }
+  #view-calendar #cal-format-week .calendar-day-card {
+    min-height: 0;
+    padding: 12px !important;
+    gap: 10px;
+  }
+  #view-calendar #cal-format-week .calendar-day-card > div:first-child {
+    padding-bottom: 9px;
+  }
+  #view-calendar #cal-format-week .calendar-day-card > div:first-child > div:last-child {
+    gap: 5px 9px;
+  }
+  #view-calendar #cal-format-list {
+    gap: 9px;
+  }
+  #view-calendar #cal-format-list > [role="button"] {
+    padding: 12px !important;
+    gap: 10px;
+  }
+}
+@media (max-width: 380px) {
+  #view-calendar > .bg-slate-900:first-child > div:last-child {
+    grid-template-columns: 1fr;
+  }
+  #view-calendar > .bg-slate-900:first-child > div:last-child > div {
+    grid-column: auto;
+  }
+  #view-calendar #calendar-period-title {
+    min-width: 0;
+    font-size: .9rem;
+  }
+  #view-calendar #calendar-display-toggle {
+    width: 174px;
+  }
+  #view-calendar .calendar-day-card {
+    min-height: 74px !important;
+  }
+}
+
+
+/* Monatsansicht: keine Gesundheitsmetriken, nur kompakte Trainingsmarker */
+#view-calendar #cal-format-month .calendar-month-day {
+  min-height: 108px !important;
+  padding: 8px 7px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 9px;
+  background: linear-gradient(155deg,#121c2b,#0d1420) !important;
+  border: 1px solid #263449 !important;
+  border-radius: 11px !important;
+  overflow: hidden;
+}
+#view-calendar #cal-format-month .calendar-month-day.is-today {
+  border: 1px solid rgba(255,133,133,.82) !important;
+  background: linear-gradient(155deg,rgba(211,47,47,.12),#0d1420 78%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,133,133,.12);
+}
+#view-calendar #cal-format-month .calendar-day-empty {
+  min-height: 108px;
+  background: rgba(10,16,26,.38);
+  border: 1px solid rgba(38,52,73,.48);
+}
+#view-calendar .calendar-month-day-number {
+  color: #cbd5e1;
+  font-size: .76rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+#view-calendar .calendar-month-day.is-today .calendar-month-day-number {
+  color: #FF8585;
+}
+#view-calendar .calendar-month-markers {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-height: 8px;
+}
+#view-calendar .calendar-month-activity-marker {
+  display: block;
+  width: 100%;
+  height: 6px;
+  min-height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--activity-color);
+  opacity: .95;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset;
+}
+#view-calendar .calendar-month-activity-marker:hover {
+  height: 8px;
+  filter: brightness(1.18);
+}
+#view-calendar .calendar-month-planned-marker,
+#view-calendar .calendar-month-race-marker {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+}
+#view-calendar .calendar-month-planned-marker {
+  background: #60a5fa;
+  opacity: .85;
+}
+#view-calendar .calendar-month-race-marker {
+  background: #fb7185;
+}
+#view-calendar .calendar-month-activity-count {
+  margin-top: auto;
+  color: #8492a6;
+  font-size: .55rem;
+  line-height: 1.1;
+}
+@media (max-width: 767px) {
+  #view-calendar #cal-format-month .calendar-month-day,
+  #view-calendar #cal-format-month .calendar-day-empty {
+    min-height: 64px !important;
+  }
+  #view-calendar #cal-format-month .calendar-month-day {
+    padding: 6px 4px !important;
+    gap: 7px;
+    border-radius: 8px !important;
+  }
+  #view-calendar .calendar-month-day-number {
+    font-size: .68rem;
+  }
+  #view-calendar .calendar-month-markers {
+    gap: 3px;
+  }
+  #view-calendar .calendar-month-activity-marker {
+    height: 5px;
+    min-height: 5px;
+  }
+  #view-calendar .calendar-month-planned-marker,
+  #view-calendar .calendar-month-race-marker {
+    height: 3px;
+  }
+  #view-calendar .calendar-month-activity-count {
+    font-size: .48rem;
+  }
+}
+
+
+/* KAJO calendar structure: month header, view selector, contextual add menu and footer */
+#view-calendar .calendar-topbar{background:linear-gradient(145deg,#141d2b,#0d1420);border-color:#263449}
+#view-calendar .calendar-nav-arrow{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;color:#e2e8f0;background:transparent}
+#view-calendar .calendar-nav-arrow:hover{background:rgba(255,255,255,.08)}
+#view-calendar .calendar-nav-arrow svg{width:19px;height:19px}
+#view-calendar .calendar-view-button{min-height:38px;border-radius:9px;color:#9aa8bb;font-size:.78rem;font-weight:600}
+#view-calendar .calendar-view-button.active{background:rgba(211,47,47,.2);border:1px solid rgba(255,133,133,.38);color:#FF8585}
+#view-calendar .calendar-add-button{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#a9343c;color:#fff;box-shadow:0 5px 14px rgba(169,52,60,.22)}
+#view-calendar .calendar-add-button:hover{background:#c4444d}
+#view-calendar .calendar-add-button svg{width:21px;height:21px}
+#view-calendar .calendar-add-menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 10px;border-radius:8px;text-align:left;color:#e2e8f0;font-size:.78rem}
+#view-calendar .calendar-add-menu-item:hover{background:#202c3d}
+#view-calendar .calendar-add-menu-item svg{width:16px;height:16px;color:#FF8585}
+#view-calendar .calendar-footer{background:linear-gradient(145deg,#141d2b,#0d1420);border-color:#263449}
+#view-calendar .calendar-month-day-head{display:flex;align-items:center;justify-content:space-between;gap:2px;min-width:0}
+#view-calendar .calendar-month-load{font-size:.52rem;line-height:1;color:#9eabbc;white-space:nowrap;font-variant-numeric:tabular-nums}
+#view-calendar .calendar-month-day-number i{margin-left:2px;vertical-align:middle}
+#view-calendar .calendar-month-illness-marker,#view-calendar .calendar-month-injury-marker{display:block;width:100%;height:4px;border-radius:999px}
+#view-calendar .calendar-month-illness-marker{background:#f97316}
+#view-calendar .calendar-month-injury-marker{background:#fbbf24}
+@media(max-width:767px){
+ #view-calendar .calendar-topbar{padding:12px!important}
+ #view-calendar .calendar-view-button{font-size:.72rem;min-height:36px}
+ #view-calendar .calendar-month-load{font-size:.43rem}
+ #view-calendar .calendar-month-day-head{gap:1px}
+}
+
+
+/* KAJO Kalender – kompaktere Bedienleiste und besser lesbare Monatsübersicht */
+#view-calendar .calendar-topbar{
+  padding:18px 20px !important;
+  gap:12px !important;
+}
+#view-calendar .calendar-topbar > div:first-child{
+  min-height:38px;
+}
+#view-calendar .calendar-topbar > div:nth-child(2){
+  display:flex !important;
+  align-items:center;
+  gap:10px;
+  width:100%;
+}
+#view-calendar .calendar-topbar .calendar-view-switch{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  flex:1 1 auto;
+  min-width:0;
+}
+#view-calendar .calendar-add-button{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  border-radius:11px;
+}
+#view-calendar #calendar-legend{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  gap:7px !important;
+}
+#view-calendar #calendar-legend > span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  padding:6px 8px;
+  border:1px solid rgba(52,65,84,.42);
+  border-radius:9px;
+  background:rgba(8,14,23,.28);
+  white-space:normal;
+  line-height:1.25;
+}
+#view-calendar .calendar-footer{
+  padding:15px !important;
+}
+#view-calendar .calendar-month-day-head{
+  min-height:15px;
+}
+#view-calendar .calendar-month-load{
+  font-size:.48rem;
+  opacity:.9;
+}
+@media(max-width:767px){
+  #view-calendar .calendar-topbar{
+    padding:13px !important;
+    gap:10px !important;
+  }
+  #view-calendar .calendar-topbar > div:nth-child(2){
+    display:flex !important;
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
+  }
+  #view-calendar .calendar-topbar .calendar-view-switch{
+    flex:1 1 auto;
+    width:auto;
+  }
+  #view-calendar .calendar-add-button{
+    width:38px;
+    height:38px;
+    flex-basis:38px;
+  }
+  #view-calendar .calendar-view-button{
+    min-height:36px;
+    padding-left:4px;
+    padding-right:4px;
+    font-size:.7rem;
+  }
+  #view-calendar #calendar-legend{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px !important;
+    padding-top:9px;
+    font-size:.66rem;
+  }
+  #view-calendar #calendar-legend > span{
+    padding:5px 6px;
+    font-size:.62rem;
+  }
+  #view-calendar .calendar-footer{
+    padding:12px !important;
+    gap:10px !important;
+  }
+  #view-calendar .calendar-footer > div:last-child{
+    padding-top:10px;
+  }
+  #view-calendar #calendar-display-toggle{
+    width:174px;
+    height:36px;
+  }
+  #view-calendar .calendar-month-day-head{
+    align-items:flex-start;
+  }
+  #view-calendar .calendar-month-load{
+    font-size:.4rem;
+  }
+}
+@media(max-width:360px){
+  #view-calendar #calendar-legend{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #view-calendar #calendar-display-toggle{
+    width:158px;
+    font-size:10px;
+  }
+}
+
+
+/* KAJO – responsive QA: Dialoge, Einstellungen, Navigation und Inhaltsbreiten */
+html, body { max-width:100%; overflow-x:clip; }
+#app-main, #app-main > section, #app-main > div,
+#view-dashboard, #view-analyses, #view-calendar, #view-races,
+#view-strength, #view-nutrition, #view-upload, #view-ai,
+#view-methods, #view-data, #view-more {
+  min-width:0; max-width:100%;
+}
+#app-main canvas, #app-main img, #app-main svg { max-width:100%; }
+#app-main table { max-width:100%; }
+#app-main .overflow-x-auto { max-width:100%; overscroll-behavior-x:contain; }
+#app-main button { touch-action:manipulation; }
+#app-main input, #app-main select, #app-main textarea { min-width:0; max-width:100%; }
+#backup-preview-modal, #cloud-sync-modal, #cloud-sync-confirm-modal,
+#csv-details-modal, #health-modal, #planned-workout-modal,
+#supplement-modal, #settings-modal, #profile-modal {
+  overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+}
+#backup-preview-modal > div, #cloud-sync-modal > section,
+#cloud-sync-confirm-modal > div, #csv-details-modal > div,
+#health-modal > div, #planned-workout-modal > div,
+#supplement-modal > div, #settings-modal > div, #profile-modal > div {
+  max-height:calc(100dvh - 2rem); overflow-y:auto; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; min-width:0;
+}
+#csv-details-modal > div { width:min(100%,64rem); }
+#health-modal > div { width:min(100%,32rem); }
+#planned-workout-modal > div { width:min(100%,36rem); }
+#supplement-modal > div { width:min(100%,32rem); }
+#settings-modal > div { width:min(100%,48rem); }
+#profile-modal > div { width:min(100%,40rem); }
+#backup-preview-modal > div { width:min(100%,40rem); }
+#cloud-sync-confirm-modal > div { width:min(100%,32rem); }
+#cloud-sync-modal > section { width:min(100%,28rem); }
+#csv-details-modal .flex.justify-end, #health-modal .flex.justify-end,
+#planned-workout-modal .flex.justify-end, #supplement-modal .flex.justify-end,
+#settings-modal .flex.justify-end, #profile-modal .flex.justify-end { flex-wrap:wrap; }
+#settings-sports-list [data-sport-row], #settings-categories-list [data-category-row] { min-width:0; }
+#settings-sports-list [data-sport-row] input, #settings-sports-list [data-sport-row] select { min-width:0; }
+@media (min-width:641px) and (max-width:900px) {
+  #app-navigation > div { padding-inline:.55rem; }
+  #app-navigation > div > div { gap:.25rem !important; }
+  #app-navigation > div > div > div:first-child img { width:6.5rem !important; max-width:6.5rem !important; }
+  #app-navigation #nav-dashboard, #app-navigation #nav-calendar,
+  #app-navigation #nav-analyses, #app-navigation #nav-areas,
+   {
+    min-width:2.65rem; width:2.65rem; height:2.65rem; padding:0;
+    justify-content:center; gap:0;
+  }
+  #app-navigation #nav-dashboard span, #app-navigation #nav-calendar span,
+  #app-navigation #nav-analyses span, #app-navigation #nav-areas span,
+   span { display:none; }
+  #app-navigation #garmin-sync-indicator { padding-inline:.45rem; }
+  #app-navigation #garmin-sync-indicator-text { display:none; }
+}
+@media (max-width:640px) {
+  #app-main { overflow-x:clip; }
+  #backup-preview-modal, #cloud-sync-modal, #cloud-sync-confirm-modal,
+  #csv-details-modal, #health-modal, #planned-workout-modal,
+  #supplement-modal, #settings-modal, #profile-modal {
+    align-items:flex-start !important;
+    padding:calc(.55rem + env(safe-area-inset-top)) .65rem calc(.65rem + env(safe-area-inset-bottom)) !important;
+  }
+  #backup-preview-modal > div, #cloud-sync-modal > section,
+  #cloud-sync-confirm-modal > div, #csv-details-modal > div,
+  #health-modal > div, #planned-workout-modal > div,
+  #supplement-modal > div, #settings-modal > div, #profile-modal > div {
+    max-height:calc(100dvh - 1.2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin-block:auto; padding:1rem !important; border-radius:15px !important;
+  }
+  #settings-sports-list [data-sport-row] {
+    grid-template-columns:22px minmax(0,1fr) auto !important; gap:.45rem !important; padding:.55rem !important;
+  }
+  #settings-sports-list [data-sport-row] > div { grid-column:2 / 4; width:100%; }
+  #settings-sports-list [data-sport-row] > span { display:none; }
+  #settings-categories-list [data-category-row] {
+    grid-template-columns:minmax(0,1fr) 48px auto !important; gap:.45rem !important;
+  }
+  #settings-modal details > summary { align-items:flex-start; }
+  #health-modal .grid.grid-cols-2, #supplement-modal .grid.grid-cols-2 {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #health-modal input, #health-modal select, #planned-workout-modal input,
+  #planned-workout-modal select, #supplement-modal input,
+  #supplement-modal select, #supplement-modal textarea { font-size:16px; }
+  #view-more nav[aria-label="Mehr-Unterbereiche"] { gap:.45rem; }
+  .more-subnav-button { min-height:44px; }
+  #view-calendar .calendar-view-button, #view-calendar .calendar-add-button,
+  #view-calendar #calendar-display-toggle { min-height:40px; }
+}
+@media (max-width:380px) {
+  #settings-zones-list .grid.grid-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #settings-sports-list [data-sport-row] { grid-template-columns:20px minmax(0,1fr) auto !important; }
+  #view-more nav[aria-label="Mehr-Unterbereiche"] { grid-template-columns:minmax(0,1fr); }
+  #view-more nav[aria-label="Mehr-Unterbereiche"] .more-subnav-button:last-child { grid-column:auto; }
+  #app-main { padding-inline:.6rem; }
+}
+
+
+/* KAJO calendar footer: compact two-column legend below the color switch */
+#view-calendar .calendar-legend-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:12px;
+  row-gap:5px;
+  width:100%;
+  padding-top:7px;
+  border-top:1px solid rgba(51,65,85,.55);
+}
+#view-calendar .calendar-legend-grid > span {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:10px;
+  line-height:1.25;
+}
+#view-calendar .calendar-legend-grid > span > span:first-child {
+  width:8px !important;
+  height:8px !important;
+  flex:0 0 8px;
+}
+@media(max-width:380px){
+  #view-calendar .calendar-legend-grid{column-gap:8px;row-gap:4px;}
+  #view-calendar .calendar-legend-grid > span{font-size:9px;gap:5px;}
+}
+
+
+/* KAJO calendar: inline wrapping legend and icon-only view selector */
+#view-calendar .calendar-legend-grid {
+  display:flex !important;
+  flex-wrap:wrap !important;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px 12px !important;
+  width:100%;
+  padding-top:7px;
+  border-top:1px solid rgba(51,65,85,.55);
+}
+#view-calendar .calendar-legend-grid > span {
+  display:inline-flex !important;
+  flex:0 0 auto;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  white-space:nowrap;
+  font-size:10px;
+  line-height:1.25;
+}
+#view-calendar .calendar-legend-grid > span > span:first-child {
+  width:8px !important;
+  height:8px !important;
+  flex:0 0 8px;
+}
+#view-calendar .calendar-view-switch { min-width:0; }
+#view-calendar .calendar-view-button {
+  display:grid;
+  place-items:center;
+  min-width:0;
+  min-height:38px;
+  padding:5px;
+  cursor:pointer;
+}
+#view-calendar .calendar-view-button svg { width:18px; height:18px; }
+#view-calendar .calendar-view-button:focus-visible {
+  outline:2px solid #FF8585;
+  outline-offset:2px;
+}
+@media(max-width:380px){
+  #view-calendar .calendar-legend-grid { column-gap:9px !important; row-gap:4px !important; }
+  #view-calendar .calendar-legend-grid > span { font-size:9px; }
+}
+
+
+/* KAJO layout correction: keep content and profile dialogs below the fixed mobile brand bar. */
+@media (max-width:640px) {
+  #app-main { padding-top:calc(5.1rem + env(safe-area-inset-top)) !important; }
+  #profile-modal, #settings-modal, #intervals-sync-modal {
+    z-index:2147483001 !important;
+    align-items:flex-start !important;
+    padding:calc(4.2rem + env(safe-area-inset-top)) .65rem calc(.65rem + env(safe-area-inset-bottom)) !important;
+  }
+  #profile-modal > div, #settings-modal > div {
+    max-height:calc(100dvh - 4.8rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin-block:0 auto !important;
+  }
+}
+/* Intervals: one touch-scrollable content area; action buttons remain reachable. */
+#intervals-sync-modal { overflow:hidden; overscroll-behavior:contain; }
+#intervals-sync-modal .intervals-sync-dialog {
+  display:flex; flex-direction:column; min-height:0;
+  max-height:calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow:hidden; overscroll-behavior:contain;
+}
+#intervals-sync-modal .intervals-sync-scroll {
+  min-height:0; overflow-y:auto; overflow-x:hidden;
+  flex:1 1 auto; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  padding-right:2px;
+}
+#intervals-sync-modal .intervals-sync-actions { flex:0 0 auto; }
+@media (max-width:640px) {
+  #intervals-sync-modal { padding:calc(.6rem + env(safe-area-inset-top)) .65rem calc(.6rem + env(safe-area-inset-bottom)) !important; }
+  #intervals-sync-modal .intervals-sync-dialog {
+    max-height:calc(100dvh - 1.2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding:1rem !important;
+  }
+}
+
+
+/* Persistent Intervals import progress when its dialog is dismissed. */
+.icu-sync-floating-status {
+  position:fixed; z-index:2147483002; right:1rem; bottom:calc(1rem + env(safe-area-inset-bottom));
+  display:flex; align-items:center; gap:.65rem; width:min(24rem,calc(100vw - 2rem));
+  padding:.8rem .9rem; border:1px solid #334155; border-radius:14px;
+  background:rgba(15,23,42,.97); color:#e2e8f0; box-shadow:0 12px 36px rgba(0,0,0,.38);
+  font-size:.75rem; line-height:1.4;
+}
+.icu-sync-floating-status[hidden] { display:none; }
+.icu-sync-floating-status [data-sync-message] { flex:1; min-width:0; overflow-wrap:anywhere; }
+.icu-sync-floating-status button { flex:0 0 auto; color:#94a3b8; font-size:1.25rem; line-height:1; padding:.1rem .25rem; }
+.icu-sync-indicator { width:.55rem; height:.55rem; flex:0 0 .55rem; border-radius:50%; background:#38bdf8; box-shadow:0 0 0 4px rgba(56,189,248,.12); }
+.icu-sync-floating-status[data-state="finished"] .icu-sync-indicator { background:#34d399; box-shadow:0 0 0 4px rgba(52,211,153,.12); }
+@media(max-width:640px) { .icu-sync-floating-status { right:.65rem; bottom:calc(5.2rem + env(safe-area-inset-bottom)); } }
+
+
+/* KAJO calendar: legend is one compact, left-aligned row; scroll only when needed. */
+#view-calendar #calendar-legend {
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  justify-content:flex-start !important;
+  align-items:center;
+  gap:0 10px !important;
+  overflow-x:auto;
+  overflow-y:hidden;
+  white-space:nowrap;
+  scrollbar-width:thin;
+}
+#view-calendar #calendar-legend > span {
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:max-content !important;
+  margin:0 !important;
+}
+#view-calendar #calendar-legend > span > span:first-child { flex:0 0 8px; }
+
+/* Activity list and multi-select sport filter */
+#view-calendar .activity-list-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
+  border:1px solid #263449;
+  border-radius:13px;
+  background:linear-gradient(145deg,#141d2b,#0d1420);
+}
+#view-calendar .activity-filter-button {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:40px;
+  padding:8px 12px;
+  border:1px solid #344154;
+  border-radius:10px;
+  background:#0b1220;
+  color:#dbe4f0;
+  font-size:12px;
+  font-weight:600;
+}
+#view-calendar .activity-filter-button svg { width:15px;height:15px; }
+#view-calendar .activity-filter-button.is-filtered { border-color:#ff8585;color:#ffb0b0; }
+#view-calendar .activity-filter-panel {
+  position:absolute;
+  z-index:45;
+  top:calc(100% + 8px);
+  right:0;
+  width:min(280px,calc(100vw - 36px));
+  max-height:min(360px,60dvh);
+  overflow-y:auto;
+  padding:12px;
+  border:1px solid #344154;
+  border-radius:13px;
+  background:#101827;
+  box-shadow:0 16px 40px rgba(0,0,0,.42);
+}
+#view-calendar .activity-filter-option {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:34px;
+  color:#cbd5e1;
+  font-size:12px;
+  cursor:pointer;
+}
+#view-calendar .activity-filter-option input { accent-color:#ff8585;width:15px;height:15px; }
+#view-calendar .activity-list-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  padding:13px 14px;
+  border:1px solid #263449;
+  border-left:3px solid var(--activity-color,#64748b);
+  border-radius:12px;
+  background:linear-gradient(145deg,#141d2b,#0d1420);
+  text-align:left;
+  cursor:pointer;
+}
+#view-calendar .activity-list-row:hover { border-color:var(--activity-color,#64748b); }
+#view-calendar .activity-list-dot { width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:var(--activity-color,#64748b); }
+#view-calendar .activity-list-main { display:flex;flex:1 1 auto;flex-direction:column;gap:4px;min-width:0; }
+#view-calendar .activity-list-date { color:#9aa8bb;font-size:10px; }
+#view-calendar .activity-list-main strong { color:#f8fafc;font-size:13px;overflow-wrap:anywhere; }
+#view-calendar .activity-list-metrics { display:flex;flex:0 0 auto;flex-direction:column;gap:3px;text-align:right;font-family:ui-monospace,monospace;font-size:10px;color:#9aa8bb; }
+#view-calendar .activity-list-metrics strong { color:#ff9a9a;font-size:11px; }
+@media(max-width:520px) {
+  #view-calendar .activity-list-toolbar { align-items:flex-start; }
+  #view-calendar .activity-filter-button { padding:8px 9px; }
+  #view-calendar .activity-list-row { gap:8px;padding:11px 9px; }
+  #view-calendar .activity-list-metrics { font-size:9px; }
+}
+
+
+/* Equal-width calendar view controls */
+#view-calendar .calendar-view-switch {
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  width:100%;
+  min-width:0;
+}
+#view-calendar .calendar-view-switch > .calendar-view-button {
+  display:grid;
+  width:100% !important;
+  min-width:0 !important;
+  flex:initial !important;
+  justify-self:stretch;
+  box-sizing:border-box;
+}
+
+
+/* KAJO activity details: a native-feeling, full-viewport app surface. */
+#csv-details-modal { padding:0 !important; background:#080d16 !important; backdrop-filter:none !important; }
+#csv-details-modal .activity-detail-shell {
+  background:radial-gradient(ellipse at 50% 0%,rgba(35,48,68,.42),transparent 55%),#080d16;
+  padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+}
+#csv-details-modal .activity-detail-toolbar {
+  background:rgba(8,13,22,.96); border-color:#202b3c; min-height:64px;
+  padding-left:max(1rem,env(safe-area-inset-left)); padding-right:max(1rem,env(safe-area-inset-right));
+}
+#csv-details-modal .activity-detail-nav-button {
+  width:40px;height:40px;display:grid;place-items:center;border:1px solid #29364a;border-radius:13px;
+  background:#111a28;color:#dbe5f2;transition:background .15s,border-color .15s;
+}
+#csv-details-modal .activity-detail-nav-button:hover:not(:disabled) { background:#1b293b;border-color:#d64a4a;color:#fff; }
+#csv-details-modal .activity-detail-nav-button:disabled { opacity:.25;cursor:not-allowed; }
+#csv-details-modal .activity-detail-nav-button svg { width:18px;height:18px; }
+body.activity-detail-open { overflow:hidden; }
+@media(max-width:640px) {
+  #csv-details-modal .activity-detail-toolbar { min-height:58px; }
+  #csv-details-modal .activity-detail-content { padding-left:12px;padding-right:12px; }
+}
+
+
+/* Clickable dashboard metrics and focused history detail screens. */
+.metric-history-clickable { cursor:pointer; transition:transform .16s ease, border-color .16s ease, filter .16s ease; }
+.metric-history-clickable:hover { transform:translateY(-2px); filter:brightness(1.12); }
+.metric-history-clickable:focus-visible { outline:2px solid var(--kajo-red); outline-offset:4px; }
+.kajo-health-circle.metric-history-clickable { border-radius:50%; }
+.kajo-ring-card.metric-history-clickable { border-radius:16px; }
+.metric-history-ring {
+  --metric-ring-color:#38bdf8;
+  width:104px;height:104px;flex:0 0 104px;border-radius:50%;
+  display:grid;place-items:center;
+  background:conic-gradient(var(--metric-ring-color) 0deg 270deg,#263244 270deg 360deg);
+  box-shadow:0 0 0 1px rgb(255 255 255 / .04),0 8px 24px rgb(0 0 0 / .18);
+}
+.metric-history-ring > div {
+  width:84px;height:84px;border-radius:50%;background:#0b111c;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+}
+.metric-history-ring strong { color:#fff;font-size:1.55rem;line-height:1;font-weight:800;font-variant-numeric:tabular-nums; }
+.metric-history-ring span { color:#94a3b8;font-size:.65rem; }
+.metric-history-ring.is-empty { background:conic-gradient(#334155 0deg 360deg); }
+#health-metric-tabs .more-subnav-button,
+#training-metric-tabs .more-subnav-button { font-size:.68rem; }
+@media(max-width:640px) {
+  .metric-history-ring { width:88px;height:88px;flex-basis:88px; }
+  .metric-history-ring > div { width:72px;height:72px; }
+  .metric-history-ring strong { font-size:1.25rem; }
+}
+
+/* KAJO: native-feeling scrolling without visible browser scrollbars. */
+html, body, #app-main, #csv-details-modal, #csv-details-modal .activity-detail-shell,
+#backup-preview-modal, #cloud-sync-modal, #health-modal, #planned-workout-modal,
+#settings-modal, #profile-modal, #intervals-sync-modal, .activity-filter-panel {
+  scrollbar-width:none !important; -ms-overflow-style:none !important;
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar, #app-main::-webkit-scrollbar,
+#csv-details-modal::-webkit-scrollbar, #csv-details-modal .activity-detail-shell::-webkit-scrollbar,
+#backup-preview-modal::-webkit-scrollbar, #cloud-sync-modal::-webkit-scrollbar,
+#health-modal::-webkit-scrollbar, #planned-workout-modal::-webkit-scrollbar,
+#settings-modal::-webkit-scrollbar, #profile-modal::-webkit-scrollbar,
+#intervals-sync-modal::-webkit-scrollbar, .activity-filter-panel::-webkit-scrollbar {
+  display:none !important; width:0 !important; height:0 !important;
+}
+/* Activity details occupy the complete app viewport. */
+#csv-details-modal {
+  position:fixed !important; inset:0 !important; width:100vw !important; height:100dvh !important;
+  max-width:none !important; max-height:none !important; padding:0 !important;
+  margin:0 !important; overflow:hidden !important; align-items:stretch !important;
+}
+#csv-details-modal > .activity-detail-shell {
+  width:100% !important; max-width:none !important; height:100% !important;
+  max-height:none !important; min-height:100% !important; margin:0 !important;
+  overflow-y:auto !important; overflow-x:hidden !important; border-radius:0 !important;
+}
+.home-session-button { width:100%; text-align:left; cursor:pointer; color:inherit; }
+.home-session-button:hover { border-color:#d64a4a !important; }
+.home-recommendation-card, .home-next-race-card {
+  padding:14px 16px; border:1px solid rgba(71,85,105,.48); border-radius:14px;
+  background:linear-gradient(145deg,rgba(24,34,49,.92),rgba(10,16,26,.92));
+}
+.home-recommendation-card, .home-next-race-card { border-left:3px solid #d64a4a; }
+
+/* Hide scroll tracks on every scrollable surface while preserving scrolling. */
+*, *::before, *::after { scrollbar-width:none !important; -ms-overflow-style:none !important; }
+*::-webkit-scrollbar {
+  display:none !important; width:0 !important; height:0 !important;
+}
+
+/* KAJO native modal sheets: stay inside the app viewport and below safe areas. */
+body.kajo-modal-open { overflow:hidden !important; }
+#garmin-connection-modal, #settings-modal, #profile-modal {
+  position:fixed !important; inset:0 !important; z-index:2147483100 !important;
+  width:100vw !important; height:100dvh !important; max-height:100dvh !important;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) !important;
+  overflow:hidden !important; align-items:stretch !important; justify-content:center !important;
+}
+#garmin-connection-modal.hidden, #settings-modal.hidden, #profile-modal.hidden { display:none !important; }
+.kajo-modal-sheet {
+  display:flex; flex-direction:column; width:min(100%,42rem); height:100%;
+  max-height:100%; margin:0 auto; min-height:0; overflow:hidden;
+  background:linear-gradient(155deg,#111b2a 0%,#0b111b 100%);
+  border-left:1px solid rgba(71,85,105,.4); border-right:1px solid rgba(71,85,105,.4);
+}
+.kajo-modal-header {
+  position:relative; z-index:2; flex:0 0 auto; display:flex; align-items:center;
+  justify-content:space-between; gap:1rem; padding:1rem 1rem .85rem;
+  padding-top:max(1rem,env(safe-area-inset-top));
+  border-bottom:1px solid rgba(71,85,105,.42); background:rgba(15,23,42,.97);
+}
+.kajo-modal-icon { display:grid; place-items:center; width:2.5rem; height:2.5rem; flex:0 0 auto; border-radius:.85rem; color:#f87171; background:rgba(220,38,38,.12); border:1px solid rgba(248,113,113,.18); }
+.kajo-modal-close { display:grid; place-items:center; width:2.5rem; height:2.5rem; flex:0 0 auto; border-radius:.85rem; color:#cbd5e1; background:#1e293b; border:1px solid #334155; }
+.kajo-modal-close:hover { color:#fff; background:#334155; }
+.kajo-modal-content { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:1rem; }
+#settings-modal > div, #profile-modal > div {
+  width:min(100%,48rem) !important; max-width:48rem !important;
+  max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+  margin:0 auto !important; overflow-y:auto !important; overscroll-behavior:contain;
+  border-radius:1.1rem !important;
+}
+#settings-modal > div > div:first-child, #profile-modal > div > div:first-child {
+  position:sticky; top:-1.25rem; z-index:4; padding:.65rem 0;
+  background:#0f172a; border-bottom:1px solid rgba(71,85,105,.5);
+}
+#settings-modal > div > div:first-child button, #profile-modal > div > div:first-child button {
+  width:2.5rem; height:2.5rem; display:grid; place-items:center; border-radius:.75rem; background:#1e293b;
+}
+@media (max-width:640px) {
+  #settings-modal, #profile-modal { padding:env(safe-area-inset-top) .5rem env(safe-area-inset-bottom) !important; }
+  #settings-modal > div, #profile-modal > div { width:100% !important; max-height:100% !important; padding:1rem !important; border-radius:1rem !important; }
+}
+
+
+/* KAJO Bereiche: klare, kontrastreiche Navigationsbalken ohne Beschreibungstexte. */
+#view-more .kajo-area-list {
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+}
+#view-more .kajo-area-card {
+  display:flex !important; align-items:center !important; justify-content:flex-start !important;
+  gap:14px !important; width:100% !important; min-height:68px !important;
+  padding:12px 16px !important; border:1px solid rgba(148,163,184,.22) !important;
+  border-left:4px solid #d64a4a !important; border-radius:14px !important;
+  background:linear-gradient(100deg,rgba(30,41,59,.98),rgba(15,23,42,.96)) !important;
+  color:#f8fafc !important; text-align:left !important;
+  box-shadow:0 5px 16px rgba(0,0,0,.18) !important;
+}
+#view-more .kajo-area-card:hover,
+#view-more .kajo-area-card:focus-visible {
+  border-color:rgba(248,113,113,.65) !important; border-left-color:#f87171 !important;
+  background:linear-gradient(100deg,rgba(51,65,85,.98),rgba(30,41,59,.98)) !important;
+  outline:none;
+}
+#view-more .kajo-area-icon {
+  display:grid !important; place-items:center !important; flex:0 0 40px !important;
+  width:40px !important; height:40px !important; border-radius:11px !important;
+  color:#fca5a5 !important; background:rgba(214,74,74,.14) !important;
+}
+#view-more .kajo-area-icon svg { width:21px !important; height:21px !important; }
+#view-more .kajo-area-card strong {
+  display:block !important; flex:1 1 auto !important; min-width:0 !important;
+  color:#f8fafc !important; font-size:14px !important; line-height:1.3 !important;
+  font-weight:700 !important;
+}
+@media(min-width:700px) {
+  #view-more .kajo-area-list { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+
+
+/* Gesundheitsstatistiken: einzelne Messwerte als klar erkennbare Unterbereiche */
+#health-metric-tabs.kajo-health-subareas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+}
+#health-metric-tabs.kajo-health-subareas .more-subnav-button {
+    min-height: 3.2rem;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: normal;
+    padding: .75rem .85rem;
+    border-radius: 12px;
+    background: #101827;
+    border: 1px solid #263448;
+}
+#health-metric-tabs.kajo-health-subareas .more-subnav-button.active {
+    background: rgb(211 47 47 / .13);
+    border-color: rgb(211 47 47 / .55);
+    color: #FCA5A5;
+}
+@media (min-width: 700px) {
+    #health-metric-tabs.kajo-health-subareas {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+
+/* v0.64: modal roots are promoted to body by ui-actions.js and cover every app layer. */
+body > #profile-modal:not(.hidden),
+body > #daily-checkin-modal:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+body > #profile-modal:not(.hidden) { z-index: 2147483647 !important; }
+body > #daily-checkin-modal:not(.hidden) { z-index: 2147483646 !important; }
+
+
+/* KAJO v0.65 – einheitliche, gut erkennbare Aktionsbuttons in Profil und Check-in */
+.kajo-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding-top: 14px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(71, 85, 105, .45);
+}
+.kajo-modal-actions-end { justify-content: flex-end; }
+.kajo-modal-actions-equal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.kajo-modal-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 17px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kajo-modal-button svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.kajo-modal-button:active { transform: translateY(1px) scale(.985); }
+.kajo-modal-button:focus-visible,
+.kajo-modal-icon-button:focus-visible {
+  outline: 3px solid rgba(34, 211, 238, .65);
+  outline-offset: 3px;
+}
+.kajo-modal-button-primary {
+  color: #f8fafc;
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  border-color: rgba(103, 232, 249, .3);
+  box-shadow: 0 7px 18px rgba(8, 145, 178, .2), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.kajo-modal-button-primary:hover { background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 9px 22px rgba(8,145,178,.28); }
+.kajo-modal-button-secondary {
+  color: #cbd5e1;
+  background: #1e293b;
+  border-color: #475569;
+}
+.kajo-modal-button-secondary:hover { color: #fff; background: #334155; border-color: #64748b; }
+.kajo-modal-button-danger {
+  color: #fecdd3;
+  background: rgba(76, 5, 25, .48);
+  border-color: rgba(190, 24, 93, .45);
+}
+.kajo-modal-button-danger:hover { color: #fff1f2; background: rgba(136, 19, 55, .72); border-color: rgba(244, 63, 94, .65); }
+.kajo-modal-button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+.kajo-modal-icon-button {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, .85);
+  border: 1px solid rgba(71, 85, 105, .8);
+  border-radius: 12px;
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease;
+}
+.kajo-modal-icon-button:hover { color: #fff; background: #334155; border-color: #64748b; }
+.kajo-modal-icon-button svg { width: 19px; height: 19px; }
+@media (max-width: 480px) {
+  .kajo-modal-actions { gap: 8px; }
+  .kajo-modal-actions-equal { grid-template-columns: 1fr 1fr; }
+  .kajo-modal-button { min-height: 48px; padding: 0 10px; gap: 6px; font-size: 11px; }
+  .kajo-modal-button svg { width: 15px; height: 15px; }
+}
+
+
+/* KAJO: signed training-balance ring. Zero is at 12 o'clock;
+   negative values extend counter-clockwise on the left, positive clockwise on the right. */
+.metric-history-ring.is-signed-balance.is-negative {
+  background: conic-gradient(from 180deg,
+    #263244 0deg calc(180deg - var(--metric-ring-arc, 0deg)),
+    var(--metric-ring-color) calc(180deg - var(--metric-ring-arc, 0deg)) 180deg,
+    #263244 180deg 360deg);
+}
+.metric-history-ring.is-signed-balance.is-positive {
+  background: conic-gradient(from 0deg,
+    var(--metric-ring-color) 0deg var(--metric-ring-arc, 0deg),
+    #263244 var(--metric-ring-arc, 0deg) 360deg);
+}
+
+
+/* Wearable values use the athlete's personal baseline; neutral means insufficient history. */
+.kajo-home .kajo-wearable-value[data-state="good"]{color:#4ade80!important}
+.kajo-home .kajo-wearable-value[data-state="mild"]{color:#fbbf24!important}
+.kajo-home .kajo-wearable-value[data-state="poor"]{color:#f87171!important}
+.kajo-home .kajo-wearable-value[data-state="neutral"]{color:#aab6c6!important}
+
+
+/* Bottom navigation contains only the four primary destinations.
+   Account and connection controls remain available in the top area. */
+@media (max-width: 640px) {
+  #app-navigation #garmin-sync-indicator,
+  #app-navigation #kajo-desktop-profile-button,
+  #app-navigation .kajo-version-tag {
+    display: none !important;
+  }
+}
+
+
+/* Daily wellbeing note: a discreet writing action beside the dashboard date. */
+.kajo-home .kajo-day-selector #dashboard-day-note{
+  color:#cbd5e1!important;background:transparent!important;
+  border:0!important;outline:0!important;box-shadow:none!important;border-radius:10px!important
+}
+.kajo-home .kajo-day-selector #dashboard-day-note:hover{color:#f8fafc!important;background:rgba(148,163,184,.10)!important}
+.kajo-home .kajo-day-selector #dashboard-day-note.has-note{color:#86efac!important}
+#daily-note-modal.hidden{display:none!important}
+#daily-note-modal:not(.hidden){position:fixed;inset:0;z-index:2100;display:block!important}
+#daily-note-modal .daily-note-backdrop{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(2,6,15,.84);backdrop-filter:blur(8px);overflow-y:auto
+}
+#daily-note-modal .daily-note-panel{
+  width:min(100%,520px);margin:auto;padding:22px;border-radius:18px;
+  background:#101827;border:1px solid #334155;box-shadow:0 24px 80px rgba(0,0,0,.6)
+}
+.daily-note-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.daily-note-eyebrow{font-size:9px;font-weight:800;letter-spacing:.14em;color:#FF8585}
+.daily-note-heading h2{margin-top:5px;font-size:19px;font-weight:800;color:#f8fafc}
+.daily-note-date{margin-top:4px;font-size:12px;color:#94a3b8}
+.daily-note-close{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:#cbd5e1;background:#1e293b}
+.daily-note-close svg{width:17px;height:17px}
+#daily-note-text{
+  display:block;width:100%;min-height:138px;resize:vertical;padding:13px 14px;
+  border:1px solid #334155;border-radius:12px;background:#0b1220;color:#f8fafc;
+  font:inherit;font-size:14px;line-height:1.55;outline:none
+}
+#daily-note-text:focus{border-color:#64748b;box-shadow:0 0 0 3px rgba(148,163,184,.10)}
+#daily-note-text::placeholder{color:#64748b}
+.daily-note-hint{margin-top:9px;color:#94a3b8;font-size:11px;line-height:1.45}
+.daily-note-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.daily-note-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 14px;border-radius:10px;font-size:12px;font-weight:700}
+.daily-note-cancel{color:#cbd5e1;background:#1e293b}
+.daily-note-save{color:#fff;background:#334155}
+.daily-note-save svg{width:15px;height:15px}
+@media(max-width:600px){
+  #daily-note-modal .daily-note-backdrop{align-items:flex-end;padding:8px}
+  #daily-note-modal .daily-note-panel{padding:19px;border-radius:18px 18px 10px 10px}
+}
+
+/* KAJO – datenbasierte Analysebereiche */
+.kajo-analysis-view { min-width:0; }
+.kajo-analysis-header,.kajo-analysis-section-heading,.kajo-insight-heading {
+    display:flex; align-items:center; justify-content:space-between; gap:.8rem;
+}
+.kajo-analysis-header { padding:.2rem 0; }
+.kajo-analysis-eyebrow { color:#FF8585; font-size:.58rem; font-weight:800; letter-spacing:.14em; }
+.kajo-analysis-period,.kajo-analysis-context {
+    color:#94A3B8; font-size:.62rem; background:#0B1220; border:1px solid #263448;
+    border-radius:999px; padding:.35rem .65rem; white-space:nowrap;
+}
+.kajo-analysis-overview,.kajo-analysis-panel,.kajo-analysis-domain-panel,.kajo-insight-block {
+    background:#111A27; border:1px solid #263448; border-radius:16px; padding:1rem; min-width:0;
+}
+.kajo-analysis-section-heading h2,.kajo-insight-heading h2 { color:#F8FAFC; font-size:1rem; font-weight:800; }
+.kajo-analysis-shortcuts { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.6rem; }
+.kajo-analysis-shortcut {
+    display:flex; align-items:center; gap:.55rem; min-width:0; padding:.75rem;
+    background:#111A27; border:1px solid #263448; border-radius:12px; text-decoration:none;
+    transition:background .15s ease,border-color .15s ease,transform .15s ease;
+}
+.kajo-analysis-shortcut:hover { border-color:#B52B35; background:#151E2C; transform:translateY(-1px); }
+.kajo-analysis-shortcut > span:nth-child(2) { display:flex; flex:1; flex-direction:column; min-width:0; gap:.18rem; }
+.kajo-analysis-shortcut strong { color:#F8FAFC; font-size:.68rem; line-height:1.25; }
+.kajo-analysis-shortcut small { color:#8794A6; font-size:.55rem; line-height:1.35; }
+.kajo-analysis-shortcut > svg { width:13px; height:13px; flex:0 0 13px; color:#8794A6; }
+.kajo-analysis-shortcut .shortcut-icon {
+    display:flex; align-items:center; justify-content:center; width:30px; height:30px; flex:0 0 30px;
+    border:1px solid rgb(181 43 53 / .25); border-radius:9px; background:rgb(181 43 53 / .09); color:#FF8585;
+}
+.kajo-analysis-shortcut .shortcut-icon svg { width:15px; height:15px; }
+.kajo-insight-block { margin-top:.8rem; background:#101827; }
+.kajo-insight-title { color:#E2E8F0; font-size:.75rem; font-weight:750; margin-bottom:.7rem; }
+.kajo-insight-tag {
+    color:#FF9A9A; background:rgb(181 43 53 / .10); border:1px solid rgb(181 43 53 / .25);
+    border-radius:999px; padding:.3rem .55rem; font-size:.58rem; white-space:nowrap;
+}
+.kajo-insight-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:.55rem; }
+.kajo-insight-metric {
+    display:flex; flex-direction:column; gap:.25rem; min-width:0; padding:.7rem;
+    background:#0B1220; border:1px solid #263448; border-radius:11px;
+}
+.kajo-insight-metric span { color:#8794A6; font-size:.62rem; line-height:1.35; }
+.kajo-insight-metric strong { color:#F8FAFC; font-size:1.05rem; font-weight:800; overflow-wrap:anywhere; }
+.kajo-insight-metric small { color:#64748B; font-size:.56rem; line-height:1.35; }
+.kajo-insight-note { color:#94A3B8; font-size:.66rem; line-height:1.55; margin-top:.7rem; }
+.kajo-insight-list { display:flex; flex-direction:column; gap:.4rem; margin-top:.7rem; }
+.kajo-insight-list li {
+    display:flex; flex-direction:column; gap:.15rem; padding:.55rem .65rem;
+    background:#0B1220; border:1px solid #263448; border-radius:9px; color:#E2E8F0; font-size:.68rem;
+}
+.kajo-insight-list li small { color:#8794A6; font-size:.59rem; }
+.kajo-insight-subtitle { color:#CBD5E1; font-size:.68rem; font-weight:750; margin-top:.8rem; }
+@media (max-width:900px) { .kajo-analysis-shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:640px) {
+    .kajo-analysis-overview,.kajo-analysis-panel,.kajo-analysis-domain-panel { padding:.8rem; }
+    .kajo-analysis-header,.kajo-insight-heading { align-items:flex-start; }
+    .kajo-analysis-shortcuts { grid-template-columns:1fr; gap:.45rem; }
+    .kajo-analysis-shortcut { padding:.7rem; }
+    .kajo-analysis-shortcut small { font-size:.6rem; }
+    .kajo-insight-tag { font-size:.52rem; }
+    .kajo-insight-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+
+/* KAJO athlete profile: full-page overview with focused section editing. */
+#view-profile:not(.hidden){max-width:1120px;margin-inline:auto;padding-bottom:28px}
+.kajo-profile-hero{padding:clamp(18px,3vw,30px);border:1px solid #263548;border-radius:22px;background:linear-gradient(135deg,rgba(15,35,52,.98),rgba(15,23,42,.98) 62%,rgba(8,47,73,.7));box-shadow:0 16px 42px rgba(0,0,0,.18)}
+.kajo-profile-hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.kajo-profile-hero h1{font-size:clamp(23px,3vw,30px);font-weight:800;color:#f8fafc;letter-spacing:-.03em;margin-top:5px}
+.kajo-profile-hero-top>div>p:last-child{font-size:12px;color:#9aa9bb;margin-top:5px;max-width:560px;line-height:1.5}
+.kajo-profile-back{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;padding:9px 12px;border:1px solid #405168;border-radius:11px;color:#cbd5e1;background:rgba(15,23,42,.65);font-size:12px;font-weight:700}
+.kajo-profile-back:hover{color:#fff;background:#263548}
+.kajo-profile-back svg{width:15px;height:15px}
+.kajo-profile-identity{display:flex;align-items:center;gap:15px;margin-top:24px}
+.kajo-profile-avatar{width:58px;height:58px;display:grid;place-items:center;flex:0 0 auto;border-radius:18px;background:linear-gradient(145deg,#155e75,#164e63);border:1px solid rgba(103,232,249,.3);color:#cffafe;font-size:19px;font-weight:800}
+.kajo-profile-identity-text h2{font-size:18px;font-weight:800;color:#f8fafc}
+.kajo-profile-identity-text p{font-size:12px;color:#cbd5e1;margin-top:3px}
+.kajo-profile-identity-text>span{display:inline-block;margin-top:7px;padding:4px 8px;border:1px solid rgba(103,232,249,.2);border-radius:7px;background:rgba(8,145,178,.12);color:#a5f3fc;font-size:10px;font-weight:700}
+.kajo-profile-quickstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:22px}
+.kajo-profile-quickstats>div{display:flex;flex-direction:column;gap:3px;padding:11px 13px;border:1px solid rgba(100,116,139,.23);border-radius:12px;background:rgba(2,6,23,.28)}
+.kajo-profile-quickstats span{font-size:10px;color:#94a3b8}
+.kajo-profile-quickstats strong{font-size:21px;line-height:1.1;color:#f8fafc;font-variant-numeric:tabular-nums}
+.kajo-profile-quickstats small{font-size:10px;color:#7f8da1}
+.kajo-profile-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px;align-items:start}
+.kajo-profile-card{min-width:0;padding:17px;border:1px solid #273548;border-radius:17px;background:rgba(15,23,42,.88);box-shadow:0 8px 22px rgba(0,0,0,.10)}
+.kajo-profile-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.kajo-profile-section-title{display:flex;align-items:center;gap:10px;min-width:0}
+.kajo-profile-section-icon{width:37px;height:37px;display:grid;place-items:center;flex:0 0 auto;border-radius:11px;background:rgba(8,145,178,.13);color:#67e8f9}
+.kajo-profile-section-icon svg{width:18px;height:18px}
+.kajo-profile-section-title h2{font-size:13px;font-weight:800;color:#f1f5f9}
+.kajo-profile-section-title p{font-size:10px;color:#8190a4;margin-top:2px;line-height:1.35}
+.kajo-profile-edit{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid #34445a;border-radius:9px;background:#172235;color:#cbd5e1;font-size:10px;font-weight:700;white-space:nowrap}
+.kajo-profile-edit:hover{background:#243449;color:#fff}
+.kajo-profile-edit svg{width:13px;height:13px}
+.kajo-profile-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 15px}
+.kajo-profile-value{min-width:0}
+.kajo-profile-value dt{font-size:10px;color:#8190a4;margin-bottom:4px}
+.kajo-profile-value dd{font-size:12px;line-height:1.5;color:#e2e8f0;overflow-wrap:anywhere}
+.kajo-profile-value dd.is-empty{color:#64748b;font-style:italic}
+.kajo-profile-completeness{margin-top:14px;padding-top:10px;border-top:1px solid rgba(71,85,105,.35);font-size:9px;color:#718096;text-align:right}
+.kajo-profile-editor{padding-top:12px;border-top:1px solid #29384c}
+.kajo-profile-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kajo-profile-field{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:10px;color:#aab7c8}
+.kajo-profile-field.is-wide{grid-column:1/-1}
+.kajo-profile-field input,.kajo-profile-field select,.kajo-profile-field textarea{width:100%;min-width:0;padding:10px 11px;border:1px solid #35445a;border-radius:10px;background:#080f1c;color:#f1f5f9;font:inherit;font-size:12px;outline:none}
+.kajo-profile-field textarea{resize:vertical;min-height:78px;line-height:1.5}
+.kajo-profile-field input:focus,.kajo-profile-field select:focus,.kajo-profile-field textarea:focus{border-color:#0e9bb8;box-shadow:0 0 0 3px rgba(6,182,212,.10)}
+.kajo-profile-field input::placeholder,.kajo-profile-field textarea::placeholder{color:#5d6b7e}
+.kajo-profile-check{display:flex;align-items:flex-start;gap:9px;grid-column:1/-1;padding:10px 12px;border:1px solid #35445a;border-radius:10px;background:#080f1c;color:#dbe5f0;font-size:11px;line-height:1.45}
+.kajo-profile-check input{margin-top:2px;accent-color:#06b6d4}
+.kajo-profile-form-message{min-height:16px;margin-top:9px;color:#fbbf24;font-size:10px}
+.kajo-profile-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.kajo-profile-form-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:37px;padding:0 12px;border-radius:9px;font-size:11px;font-weight:700}
+.kajo-profile-cancel{border:1px solid #39485c;background:#1e293b;color:#cbd5e1}
+.kajo-profile-save{background:#087e98;color:white}
+.kajo-profile-save:hover{background:#0891b2}
+.kajo-profile-save svg{width:14px;height:14px}
+.kajo-profile-footnote{margin-top:14px;color:#718096;font-size:10px;line-height:1.55}
+@media(max-width:760px){.kajo-profile-section-grid{grid-template-columns:1fr}.kajo-profile-card{padding:15px}}
+@media(max-width:480px){.kajo-profile-hero-top{gap:8px}.kajo-profile-back{padding:8px}.kajo-profile-back span{display:none}.kajo-profile-quickstats{gap:6px}.kajo-profile-quickstats>div{padding:10px}.kajo-profile-values{gap:11px}.kajo-profile-form-grid{grid-template-columns:1fr}.kajo-profile-field.is-wide{grid-column:auto}.kajo-profile-card-head{align-items:flex-start}.kajo-profile-edit{padding:7px}.kajo-profile-form-actions button{flex:1}}
+
+
+/* KAJO settings – app-like, calm hierarchy and mobile-first navigation. */
+#settings-modal > div{width:min(100%,920px);max-height:min(94vh,980px);padding:clamp(16px,2.4vw,26px);background:#0d1624;border-color:#29394d;border-radius:24px;box-shadow:0 28px 90px rgba(0,0,0,.58)}
+.kajo-settings-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:18px;border-bottom:1px solid #263548}
+.kajo-settings-mark{width:44px;height:44px;display:grid;place-items:center;flex:0 0 auto;border:1px solid rgba(255,133,133,.25);border-radius:14px;background:rgba(181,43,53,.12);color:#ff8585}
+.kajo-settings-mark svg{width:21px;height:21px}
+.kajo-settings-eyebrow{font-size:9px;font-weight:850;letter-spacing:.16em;color:#ff8585}
+.kajo-settings-close{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border:1px solid #33445a;border-radius:12px;background:#172235;color:#cbd5e1;font-size:24px}
+.kajo-settings-nav{display:flex;gap:7px;overflow-x:auto;padding:14px 0;scrollbar-width:thin}
+.kajo-settings-nav button{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;padding:9px 12px;border:1px solid #2c3d52;border-radius:11px;background:#111d2c;color:#aab8ca;font-size:11px;font-weight:700;white-space:nowrap}
+.kajo-settings-nav button:hover{border-color:#a83c46;background:#211b27;color:#fff}
+.kajo-settings-nav svg{width:14px;height:14px}
+.kajo-settings-card{scroll-margin-top:12px;padding:18px;border:1px solid #29394d;border-radius:17px;background:linear-gradient(145deg,#111d2c,#0d1725);margin-top:12px}
+.kajo-settings-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.kajo-settings-section-head h3{font-size:15px;font-weight:800;color:#f8fafc}
+.kajo-settings-section-head p{margin-top:4px;font-size:11px;line-height:1.5;color:#91a0b4;max-width:640px}
+.kajo-settings-section-icon{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:rgba(181,43,53,.12);border:1px solid rgba(181,43,53,.24);color:#ff8585}
+.kajo-settings-section-icon svg{width:18px;height:18px}
+.kajo-push-status{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #34445a;border-radius:12px;background:#0a1320;color:#cbd5e1;font-size:11px;line-height:1.45}
+.kajo-push-status-dot{width:9px;height:9px;flex:0 0 auto;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.1)}
+.kajo-push-status.is-ready .kajo-push-status-dot{background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.1)}
+.kajo-push-status.is-error .kajo-push-status-dot{background:#fb7185;box-shadow:0 0 0 4px rgba(251,113,133,.1)}
+.kajo-settings-primary,.kajo-settings-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:11px;font-size:11px;font-weight:750;transition:background .16s,border-color .16s,transform .16s}
+.kajo-settings-primary{background:linear-gradient(135deg,#b52b35,#8f202a);border:1px solid rgba(255,133,133,.25);color:white;box-shadow:0 6px 18px rgba(181,43,53,.16)}
+.kajo-settings-primary:hover{background:linear-gradient(135deg,#d13a45,#a32631)}
+.kajo-settings-secondary{background:#1b293a;border:1px solid #3a4b61;color:#d5deea}
+.kajo-settings-secondary:hover{background:#26374b;color:white}
+.kajo-settings-primary svg,.kajo-settings-secondary svg{width:15px;height:15px}
+.kajo-push-hint{display:flex;align-items:flex-start;gap:9px;padding:11px 12px;border:1px solid rgba(96,165,250,.18);border-radius:11px;background:rgba(30,64,110,.14);color:#9fb4ce}
+.kajo-push-hint svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:#7db6ed}
+.kajo-push-hint p{font-size:10px;line-height:1.55}
+.kajo-settings-divider{height:1px;background:#29394d;margin:2px 0}
+.kajo-reminder-form{display:grid;gap:12px;padding:14px;border:1px solid #29394d;border-radius:14px;background:#0b1421}
+.kajo-settings-field{display:flex;flex-direction:column;gap:6px;color:#aab8ca;font-size:10px;font-weight:650;min-width:0}
+.kajo-settings-field input,.kajo-settings-field textarea,.kajo-settings-field select{width:100%;min-width:0;padding:10px 11px;border:1px solid #35465c;border-radius:10px;background:#111d2b;color:#f8fafc;font:inherit;font-size:12px;outline:none}
+.kajo-settings-field input:focus,.kajo-settings-field textarea:focus,.kajo-settings-field select:focus{border-color:#b94a53;box-shadow:0 0 0 3px rgba(181,43,53,.12)}
+.kajo-settings-field textarea{resize:vertical;line-height:1.45}
+.kajo-settings-field small{font-size:9px;color:#718096;font-weight:400}
+.kajo-reminder-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kajo-reminder-days{display:flex;flex-wrap:wrap;gap:6px}
+.kajo-reminder-days label{cursor:pointer}
+.kajo-reminder-days input{position:absolute;opacity:0;pointer-events:none}
+.kajo-reminder-days span{display:grid;place-items:center;min-width:37px;height:33px;padding:0 8px;border:1px solid #35465c;border-radius:9px;background:#111d2b;color:#9aa9bc;font-size:10px;font-weight:750}
+.kajo-reminder-days input:checked+span{border-color:#b94a53;background:rgba(181,43,53,.18);color:#ffd6d8}
+.kajo-reminders-list{display:grid;gap:8px}
+.kajo-reminder-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #29394d;border-radius:12px;background:#0b1421}
+.kajo-reminder-item-main{min-width:0;display:flex;align-items:flex-start;gap:10px}
+.kajo-reminder-item-icon{width:33px;height:33px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:rgba(181,43,53,.12);color:#ff8585}
+.kajo-reminder-item-icon svg{width:15px;height:15px}
+.kajo-reminder-item h4{font-size:11px;font-weight:800;color:#f1f5f9}
+.kajo-reminder-item p{margin-top:3px;font-size:10px;line-height:1.4;color:#8796aa;overflow-wrap:anywhere}
+.kajo-reminder-item time{display:block;margin-top:4px;font-size:11px;font-weight:800;color:#ff9b9f;font-variant-numeric:tabular-nums}
+.kajo-reminder-actions{display:flex;gap:5px;flex:0 0 auto}
+.kajo-reminder-actions button{width:32px;height:32px;display:grid;place-items:center;border:1px solid #34445a;border-radius:9px;background:#172235;color:#aebdce}
+.kajo-reminder-actions button:hover{color:#fff;background:#29394d}
+.kajo-reminder-actions svg{width:14px;height:14px}
+.kajo-settings-footnote{font-size:9px;color:#6f7f93}
+#settings-modal .kajo-settings-card details summary{color:#e2e8f0}
+#settings-modal .kajo-settings-card input[type="checkbox"]{accent-color:#b52b35}
+@media(max-width:600px){#settings-modal{padding:0!important}#settings-modal>div{width:100%;max-height:100dvh;height:100dvh;border-radius:0;border-left:0;border-right:0;padding:16px 13px 22px}.kajo-settings-header{padding-bottom:14px}.kajo-settings-nav{margin-inline:-2px;padding:12px 0}.kajo-settings-card{padding:14px;margin-top:10px}.kajo-reminder-options{grid-template-columns:1fr}.kajo-reminder-item{align-items:flex-start}.kajo-reminder-actions button{width:30px;height:30px}}
+
+.kajo-reminder-item.is-paused{opacity:.62}.kajo-reminder-item.is-paused .kajo-reminder-item-icon{filter:grayscale(1)}
+
+
+/* KAJO activity detail redesign: clear hierarchy, fewer nested cards, responsive analysis layout. */
+#csv-details-modal .activity-detail-shell{background:radial-gradient(ellipse at 50% -10%,rgba(35,48,68,.48),transparent 48%),#080d16;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+#csv-details-modal .activity-detail-toolbar{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:1fr minmax(0,2fr) 1fr;align-items:center;gap:12px;min-height:76px;padding:10px max(20px,env(safe-area-inset-left));background:rgba(8,13,22,.96);border-bottom:1px solid #263348;backdrop-filter:blur(16px)}
+.activity-detail-toolbar-left,.activity-detail-stepper{display:flex;align-items:center;gap:8px;min-width:0}
+.activity-detail-stepper{gap:5px}
+.activity-detail-position{min-width:36px;text-align:center;color:#8190a4;font-size:10px;font-variant-numeric:tabular-nums}
+.activity-detail-toolbar-title{text-align:center;min-width:0}
+.activity-detail-toolbar-title h2{margin-top:3px;color:#f8fafc;font-size:clamp(15px,2vw,20px);font-weight:800;line-height:1.2;overflow-wrap:anywhere}
+.activity-detail-toolbar-title p{margin-top:3px;color:#8493a8;font-size:11px;font-variant-numeric:tabular-nums}
+.activity-detail-type-badge{display:inline-flex;padding:3px 8px;border:1px solid rgba(214,74,74,.35);border-radius:6px;background:rgba(214,74,74,.10);color:#fda4af;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+#csv-details-modal .activity-detail-toolbar>.activity-detail-nav-button{justify-self:end}
+#csv-details-modal .activity-detail-nav-button{width:38px;height:38px;display:grid;place-items:center;border:1px solid #29364a;border-radius:11px;background:#111a28;color:#dbe5f2}
+#csv-details-modal .activity-detail-nav-button:hover:not(:disabled){background:#1b293b;border-color:#d64a4a;color:#fff}
+#csv-details-modal .activity-detail-nav-button:disabled{opacity:.25;cursor:not-allowed}
+#csv-details-modal .activity-detail-content{width:min(1440px,100%);margin:0 auto;padding:24px clamp(14px,3vw,38px) 52px;display:flex;flex-direction:column;gap:18px}
+.activity-detail-overview{padding:4px 0 18px;border-bottom:1px solid rgba(71,85,105,.42)}
+.activity-detail-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.activity-detail-section-heading h3{margin-top:3px;color:#f1f5f9;font-size:14px;font-weight:800;letter-spacing:-.01em}
+.activity-detail-kicker{color:#77869a;font-size:9px;font-weight:800;letter-spacing:.13em}
+.activity-detail-muted{color:#6f7e92;font-size:10px}
+.activity-detail-context-tag{padding:4px 8px;border-radius:6px;background:rgba(8,145,178,.12);color:#8ce5f3;font-size:9px;font-weight:800;white-space:nowrap}
+.activity-detail-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px}
+.activity-detail-metrics>div{min-width:0;padding:12px 13px;border:1px solid rgba(71,85,105,.4);border-radius:11px;background:linear-gradient(145deg,rgba(20,31,47,.88),rgba(10,17,28,.9))}
+.activity-detail-metrics>div span{display:block;color:#8493a8;font-size:10px}
+.activity-detail-metrics>div div{margin-top:4px;color:#f8fafc;font-size:clamp(15px,1.6vw,19px);font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.activity-detail-panel{min-width:0;padding:16px;border:1px solid rgba(71,85,105,.4);border-radius:14px;background:rgba(14,22,35,.88)}
+.activity-detail-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.9fr);align-items:start;gap:16px}
+.activity-detail-primary,.activity-detail-sidebar{display:flex;flex-direction:column;gap:14px;min-width:0}
+.activity-detail-sidebar{position:relative}
+.activity-detail-data-status{margin:0 0 12px;padding:8px 10px;border-radius:8px;background:rgba(30,41,59,.55);color:#94a3b8;font-size:10px}
+.activity-telemetry-chart-wrap{position:relative;width:100%;height:clamp(220px,30vw,340px)}
+.activity-detail-dynamic-panel h4{margin-bottom:9px;color:#e2e8f0;font-size:12px;font-weight:800}
+.activity-detail-dynamic-panel p{line-height:1.55}
+.activity-detail-dynamic-panel:empty{display:none}
+.activity-rpe-panel input[type=range]{width:100%;margin:15px 0 8px;accent-color:#d64a4a}
+.activity-rpe-value{color:#fda4af;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.activity-rpe-scale{display:flex;justify-content:space-between;color:#8190a4;font-size:9px}
+.activity-detail-help{margin-top:9px;color:#78879b;font-size:10px;line-height:1.5}
+.activity-zone-breakdown{display:flex;flex-direction:column;gap:8px}
+.activity-canoe-panel{border-color:rgba(8,145,178,.35);background:linear-gradient(145deg,rgba(10,31,43,.82),rgba(12,20,32,.95))}
+.activity-canoe-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px}
+.activity-canoe-subsection{min-width:0;padding:13px;border-radius:11px;background:rgba(3,10,19,.42)}
+.activity-detail-subheading{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
+.activity-detail-subheading>svg{width:17px;height:17px;flex:0 0 auto;color:#67d9e8;margin-top:1px}
+.activity-detail-subheading h4{color:#e6f4f7;font-size:12px;font-weight:800}
+.activity-detail-subheading p{margin-top:3px;color:#8193a6;font-size:10px;line-height:1.45}
+.activity-c2-partner-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,1.2fr);align-items:center;gap:12px;margin-bottom:14px;padding:11px 13px;border:1px solid rgba(8,145,178,.28);border-radius:10px;background:rgba(8,145,178,.07)}
+.activity-c2-partner-field label{color:#b9eaf0;font-size:11px;font-weight:800}
+.activity-c2-partner-field p{margin-top:3px;color:#71869a;font-size:9px}
+.activity-c2-partner-field input,.activity-detail-field input,.activity-detail-field select,.activity-edit-grid input,.activity-edit-grid select{width:100%;min-width:0;padding:9px 10px;border:1px solid #34445a;border-radius:8px;background:#080f1c;color:#f1f5f9;font:inherit;font-size:11px;outline:none}
+.activity-c2-partner-field input:focus,.activity-detail-field input:focus,.activity-detail-field select:focus,.activity-edit-grid input:focus,.activity-edit-grid select:focus{border-color:#0e9bb8;box-shadow:0 0 0 3px rgba(6,182,212,.1)}
+.activity-detail-field{display:flex;flex-direction:column;gap:6px;min-width:0;color:#9aabc0;font-size:10px;font-weight:600}
+.activity-water-grid{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:10px}
+.activity-water-discharge-field,.activity-water-note-field{grid-column:1/-1}
+.activity-detail-input-with-unit{display:flex;align-items:center;gap:8px}
+.activity-detail-input-with-unit input{flex:1;min-width:0}
+.activity-detail-input-with-unit span{color:#8293a8;font-size:10px}
+.activity-detail-save-status{margin-top:9px;color:#7890a2;font-size:9px;line-height:1.45}
+.activity-route-list>div{border-color:rgba(71,85,105,.3)!important}
+.activity-route-list label{font-size:10px!important;line-height:1.45}
+.activity-edit-panel{border-color:rgba(214,74,74,.3)}
+.activity-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.activity-edit-wide{grid-column:1/-1}
+.activity-detail-field small{color:#718096;font-size:9px;font-weight:400;line-height:1.4}
+.activity-strength-editor{grid-column:1/-1;padding:13px;border:1px solid rgba(71,85,105,.45);border-radius:11px;background:rgba(2,6,14,.4)}
+.activity-strength-editor h4{color:#e2e8f0;font-size:12px;font-weight:800}
+.activity-strength-editor p{margin:3px 0 10px;color:#8190a4;font-size:10px}
+.activity-strength-inputs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.activity-primary-button,.activity-danger-button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border-radius:9px;font-size:11px;font-weight:800}
+.activity-primary-button{background:#087e98;color:#fff}
+.activity-primary-button:hover{background:#0891b2}
+.activity-danger-button{border:1px solid rgba(190,24,93,.4);background:rgba(76,5,25,.35);color:#fda4af}
+.activity-edit-actions{display:flex;justify-content:flex-end;gap:9px}
+.activity-edit-actions .activity-primary-button{flex:1}
+@media(max-width:900px){.activity-detail-grid{grid-template-columns:1fr}.activity-detail-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.activity-detail-sidebar>.activity-detail-panel{min-width:0}}
+@media(max-width:640px){#csv-details-modal .activity-detail-toolbar{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;min-height:64px;padding-left:10px;padding-right:10px}.activity-detail-toolbar-left{gap:5px}.activity-detail-toolbar-left>.activity-detail-nav-button{width:34px;height:34px}.activity-detail-stepper .activity-detail-nav-button{width:30px;height:30px}.activity-detail-position{min-width:25px;font-size:9px}.activity-detail-toolbar-title h2{font-size:14px}.activity-detail-toolbar-title p{font-size:10px}#csv-details-modal .activity-detail-content{padding:16px 12px 36px;gap:14px}.activity-detail-panel{padding:13px;border-radius:12px}.activity-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.activity-detail-metrics>div{padding:10px}.activity-detail-grid{gap:12px}.activity-detail-sidebar{grid-template-columns:1fr}.activity-canoe-grid{grid-template-columns:1fr;gap:10px}.activity-c2-partner-field{grid-template-columns:1fr;gap:7px}.activity-edit-grid{grid-template-columns:1fr}.activity-edit-wide{grid-column:auto}.activity-strength-inputs{grid-template-columns:1fr}.activity-edit-actions{flex-direction:column}.activity-water-grid{grid-template-columns:minmax(0,1fr) 82px}}
+
+
+/* KAJO activity details: keep the top toolbar clear of the viewport edge. */
+#csv-details-modal > .activity-detail-shell {
+  padding-top: max(12px, env(safe-area-inset-top)) !important;
+}
+
+
+/* KAJO settings IA refresh – six clear groups, responsive and touch-friendly. */
+.kajo-settings-shell{width:min(100%,1080px);max-height:min(94vh,1040px);padding:clamp(16px,2.2vw,26px);overflow-y:auto;background:#0d1624;border:1px solid #29394d;border-radius:24px;box-shadow:0 28px 90px rgba(0,0,0,.58)}
+.kajo-settings-nav{position:sticky;top:-1px;z-index:5;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:14px 0;background:linear-gradient(#0d1624 82%,rgba(13,22,36,0))}
+.kajo-settings-nav button{min-width:0;justify-content:flex-start;min-height:42px;padding:9px 12px;border:1px solid #2c3d52;border-radius:12px;background:#111d2c;color:#aab8ca;font-size:11px;font-weight:750;text-align:left;white-space:normal}
+.kajo-settings-nav button:hover,.kajo-settings-nav button:focus-visible{border-color:#b94b55;background:#211b27;color:#fff;outline:none}
+.kajo-settings-nav button svg{width:16px;height:16px;flex:0 0 auto;color:#ff8585}
+.kajo-settings-content{display:grid;gap:26px}
+.kajo-settings-group{scroll-margin-top:90px;min-width:0}
+.kajo-settings-group-heading{display:flex;align-items:center;gap:13px;margin:4px 0 12px}
+.kajo-settings-group-heading h3{font-size:18px;font-weight:850;letter-spacing:-.02em;color:#f8fafc}
+.kajo-settings-group-heading p:not(.kajo-settings-eyebrow){margin-top:3px;color:#91a0b4;font-size:11px;line-height:1.5}
+.kajo-settings-group-icon{width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto;border:1px solid rgba(255,133,133,.22);border-radius:14px;background:rgba(181,43,53,.12);color:#ff8585}
+.kajo-settings-group-icon svg{width:20px;height:20px}
+.kajo-settings-group>.kajo-settings-card,.kajo-settings-group>details.kajo-settings-card{margin-top:10px}
+.kajo-settings-link-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kajo-settings-link-card{display:flex;align-items:center;justify-content:space-between;gap:14px;min-width:0;margin:0}
+.kajo-settings-link-copy{display:grid;gap:5px;min-width:0}
+.kajo-settings-link-copy strong{font-size:12px;color:#f1f5f9}
+.kajo-settings-link-copy span{font-size:10px;line-height:1.5;color:#91a0b4}
+.kajo-settings-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:24px;padding-top:16px;border-top:1px solid #263548}
+@media(max-width:700px){.kajo-settings-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.kajo-settings-nav button{font-size:10px;padding:9px}.kajo-settings-link-grid{grid-template-columns:1fr}.kajo-settings-link-card{align-items:flex-start;flex-direction:column}.kajo-settings-link-card button{width:100%}.kajo-settings-group-heading h3{font-size:16px}.kajo-settings-shell{border-radius:18px}}
+@media(min-width:701px){.kajo-settings-nav{grid-template-columns:repeat(6,minmax(0,1fr))}.kajo-settings-nav button{justify-content:center;flex-direction:column;gap:5px;text-align:center;min-height:64px}.kajo-settings-nav button span{font-size:10px}}
+
+
+/* Activity UX: short labels, quick section navigation and compact first view. */
+#csv-details-modal .activity-quick-nav{position:sticky;top:76px;z-index:19;display:flex;gap:7px;overflow-x:auto;padding:9px max(20px,env(safe-area-inset-left));background:rgba(8,13,22,.94);border-bottom:1px solid rgba(38,51,72,.8);backdrop-filter:blur(14px);scrollbar-width:none}
+#csv-details-modal .activity-quick-nav::-webkit-scrollbar{display:none}
+.activity-quick-nav button{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;min-height:34px;padding:0 12px;border:1px solid #29364a;border-radius:9px;background:#111a28;color:#aab8ca;font-size:10px;font-weight:750;white-space:nowrap}
+.activity-quick-nav button svg{width:14px;height:14px}
+.activity-quick-nav button:hover,.activity-quick-nav button:focus-visible,.activity-quick-nav button.is-active{border-color:rgba(214,74,74,.55);background:rgba(214,74,74,.12);color:#fff;outline:none}
+#csv-details-modal .activity-detail-content{padding-top:17px;gap:13px}
+.activity-detail-overview{padding:0 0 13px}
+.activity-detail-section-heading{margin-bottom:9px}
+.activity-detail-panel{padding:14px}
+.activity-canoe-subsection{padding:11px}
+.activity-detail-subheading{margin-bottom:8px}
+.activity-detail-subheading p{display:none}
+.activity-detail-help{margin-top:5px}
+.activity-detail-data-status{margin-bottom:8px}
+.activity-telemetry-chart-wrap{height:clamp(190px,26vw,300px)}
+.activity-detail-overview,.activity-detail-panel,.activity-canoe-panel{scroll-margin-top:142px}
+@media(max-width:640px){
+ #csv-details-modal .activity-quick-nav{top:64px;padding:7px 10px;gap:6px}
+ .activity-quick-nav button{min-height:32px;padding:0 10px;font-size:9px}
+ #csv-details-modal .activity-detail-content{padding-top:12px;gap:11px}
+ .activity-detail-panel{padding:11px}
+ .activity-telemetry-chart-wrap{height:210px}
+ .activity-detail-overview,.activity-detail-panel,.activity-canoe-panel{scroll-margin-top:112px}
+}
+
+
+/* Activity detail: metric-led first view and compact cards. */
+#csv-details-modal .activity-detail-content{padding-top:12px;gap:12px}
+#csv-details-modal .activity-detail-overview{padding:0 0 8px}
+#csv-details-modal .activity-detail-section-heading h3{font-size:12px}
+#csv-details-modal .activity-detail-metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#csv-details-modal .activity-detail-metrics>div{padding:14px 12px;min-height:76px;display:flex;flex-direction:column;justify-content:center}
+#csv-details-modal .activity-detail-metrics>div span{font-size:10px;line-height:1.25}
+#csv-details-modal .activity-detail-metrics>div div{font-size:clamp(16px,2vw,22px);line-height:1.15}
+#csv-details-modal .activity-detail-panel{padding:13px}
+#csv-details-modal .activity-detail-panel details{line-height:1.45}
+#csv-details-modal .activity-detail-panel details summary{color:#8193a6}
+#csv-details-modal .activity-detail-panel p{line-height:1.4}
+@media(max-width:700px){
+ #csv-details-modal .activity-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ #csv-details-modal .activity-detail-metrics>div{min-height:68px;padding:10px}
+ #csv-details-modal .activity-detail-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+
+/* Dashboard health rings share the same status colors as metric history. */
+.kajo-home .kajo-health-circle[data-state="reference"]{border-color:#60a5fa;color:#60a5fa}
+.kajo-home .kajo-wearable-value[data-state="moderate"]{color:#f97316!important}
+.kajo-home .kajo-wearable-value[data-state="critical"]{color:#c084fc!important}
+.kajo-home .kajo-wearable-value[data-state="reference"]{color:#60a5fa!important}
+
+
+/* Fitness trend: compact directional cue below the dashboard ring. */
+.kajo-home .kajo-fitness-change{display:block;min-height:1em;margin-top:1px;font-size:.65rem;font-weight:750;line-height:1.25;font-variant-numeric:tabular-nums}
+
+
+/* Shared visual system for the three dashboard status rings and their detail view. */
+.kajo-home .kajo-ring,
+.metric-history-ring.kajo-status-ring{
+  --ring-value:0%;
+  --ring-color:#60a5fa;
+  width:clamp(88px,24vw,112px);
+  height:auto;
+  aspect-ratio:1;
+  flex:0 0 auto;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  position:relative;
+  background:conic-gradient(var(--ring-color) 0deg var(--ring-value),#26364b var(--ring-value) 360deg) !important;
+  box-shadow:inset 0 0 0 5px rgba(52,65,84,.10);
+}
+.kajo-home .kajo-ring:before{inset:7px}
+.metric-history-ring.kajo-status-ring > div{
+  width:calc(100% - 14px);
+  height:calc(100% - 14px);
+  border-radius:50%;
+  background:#101927;
+  border:1px solid #263449;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+}
+.kajo-home .kajo-ring strong,
+.metric-history-ring.kajo-status-ring strong{
+  color:#f8fafc;
+  font-size:clamp(1.25rem,4.5vw,1.65rem);
+  line-height:1;
+  font-weight:750;
+  font-variant-numeric:tabular-nums;
+}
+.kajo-home .kajo-ring span,
+.metric-history-ring.kajo-status-ring span{
+  margin-top:3px;
+  color:#9aabc0;
+  font-size:.66rem;
+  line-height:1.15;
+}
+.metric-history-ring.kajo-status-ring.is-empty{
+  background:conic-gradient(#334155 0deg 360deg);
+}
+
+
+/* Keep the three home-ring labels on the same baseline; fitness delta sits inside its ring. */
+.kajo-home .kajo-ring > div{
+  width:calc(100% - 14px);
+  height:calc(100% - 14px);
+  border-radius:50%;
+  background:#101927;
+  border:1px solid #263449;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+}
+.kajo-home .kajo-ring span{
+  display:block;
+  min-height:12px;
+  margin:2px 0 0;
+  line-height:12px;
+  white-space:nowrap;
+}
+.kajo-home .kajo-fitness-change{
+  display:block;
+  min-height:12px;
+  height:12px;
+  margin:0;
+  font-size:.62rem;
+  font-weight:750;
+  line-height:12px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.kajo-home .kajo-ring-change-placeholder{visibility:hidden}
+
+.kajo-home .kajo-ring.is-empty,
+.metric-history-ring.kajo-status-ring.is-empty{background:conic-gradient(#334155 0deg 360deg)!important}
+
+
+/* KAJO Home: Messwerte statt Symbole direkt im Wearable-/Self-Monitoring-Kreis. */
+.kajo-home .kajo-health-circle-item .kajo-health-circle .kajo-wearable-value {
+  display:block;
+  margin:0;
+  padding:0 2px;
+  color:#f8fafc;
+  font-size:clamp(.56rem,2vw,.78rem);
+  font-weight:800;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  text-align:center;
+}
+@media (max-width:380px) {
+  .kajo-home .kajo-health-circle-item .kajo-health-circle .kajo-wearable-value {
+    font-size:.52rem;
+  }
+}

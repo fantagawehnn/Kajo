@@ -1,0 +1,32 @@
+{
+  "id": "./",
+  "name": "KAJO",
+  "short_name": "KAJO",
+  "description": "KAJO – deine Performance-Plattform für Kanu-Wildwasserrennsport.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05080E",
+  "theme_color": "#05080E",
+  "orientation": "any",
+  "categories": [
+    "sports",
+    "health",
+    "fitness"
+  ],
+  "icons": [
+    {
+      "src": "./icons/kajo-icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/kajo-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

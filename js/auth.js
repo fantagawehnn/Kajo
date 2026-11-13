@@ -1,0 +1,139 @@
+import { supabase } from './supabase-client.js';
+
+const authScreen = document.getElementById('auth-screen');
+const appNavigation = document.getElementById('app-navigation');
+const appMain = document.getElementById('app-main');
+const userBar = document.getElementById('auth-userbar');
+const userEmail = document.getElementById('auth-user-email');
+const form = document.getElementById('auth-form');
+const emailInput = document.getElementById('auth-email');
+const passwordInput = document.getElementById('auth-password');
+const submitButton = document.getElementById('auth-submit');
+const modeToggle = document.getElementById('auth-mode-toggle');
+const resetButton = document.getElementById('auth-reset');
+const message = document.getElementById('auth-message');
+const logoutButton = document.getElementById('auth-logout');
+
+let isSignUp = false;
+let currentAuthUserId = null;
+let readyUserId = null;
+
+function withAuthTimeout(promise, label, timeoutMs = 20000) {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(label + ' dauert zu lange. Bitte prüfe deine Internetverbindung und versuche es erneut.')), timeoutMs);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
+function setMessage(text, isError = false) {
+    message.textContent = text;
+    message.className = `text-xs min-h-10 ${isError ? 'text-rose-300' : 'text-emerald-300'}`;
+}
+
+function showApp(session) {
+    const signedIn = Boolean(session?.user);
+    currentAuthUserId = session?.user?.id || null;
+    if (!signedIn) readyUserId = null;
+    const ready = signedIn && readyUserId === currentAuthUserId;
+    authScreen.classList.toggle('hidden', ready);
+    appNavigation.classList.toggle('hidden', !ready);
+    appMain.classList.toggle('hidden', !ready);
+    userBar.classList.toggle('hidden', !ready);
+    if (signedIn) {
+        userEmail.textContent = session.user.email || 'Angemeldet';
+        if (!ready) setMessage('Deine persönlichen Daten werden sicher geladen …');
+    }
+}
+
+window.addEventListener('endurance:user-load-error', (event) => {
+    const detail = event.detail || {};
+    setMessage('Deine Kontodaten konnten nicht geladen werden: ' + (detail.message || 'Unbekannter Fehler') + ' Bitte lade die Seite neu. Deine gespeicherten Daten wurden nicht gelöscht.', true);
+});
+
+window.addEventListener('endurance:user-ready', (event) => {
+    const userId = event.detail?.userId;
+    if (!userId || userId !== currentAuthUserId) return;
+    readyUserId = userId;
+    showApp({ user: { id: userId, email: userEmail.textContent } });
+});
+
+function setMode(signUp) {
+    isSignUp = signUp;
+    submitButton.textContent = signUp ? 'Account erstellen' : 'Anmelden';
+    modeToggle.textContent = signUp ? 'Zurück zur Anmeldung' : 'Neuen Account erstellen';
+    passwordInput.autocomplete = signUp ? 'new-password' : 'current-password';
+    resetButton.classList.toggle('hidden', signUp);
+    setMessage(signUp
+        ? 'Erstelle hier später auch einen separaten Coach-Zugang. Coach-Rechte werden unabhängig davon durch dich vergeben.'
+        : '');
+}
+
+if (!supabase) {
+    showApp(null);
+    setMessage('Die Supabase-Verbindung ist noch nicht konfiguriert. Bitte trage Project URL und anon/public key in js/supabase-config.js ein. Verwende niemals den service_role-Schlüssel.', true);
+} else {
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Bitte warten …';
+        try {
+            if (isSignUp) {
+                const { data, error } = await withAuthTimeout(supabase.auth.signUp({
+                    email, password,
+                    options: { emailRedirectTo: window.location.href.split('#')[0] }
+                }), 'Die Registrierung', 20000);
+                if (error) throw error;
+                if (data.session) {
+                    setMessage('Account erstellt und angemeldet.');
+                } else {
+                    setMessage('Registrierung gestartet. Bitte bestätige deine E-Mail-Adresse über den zugesandten Link und melde dich anschließend an.');
+                    setMode(false);
+                }
+            } else {
+                const { error } = await withAuthTimeout(supabase.auth.signInWithPassword({ email, password }), 'Die Anmeldung', 20000);
+                if (error) throw error;
+            }
+        } catch (error) {
+            setMessage(error.message || 'Anmeldung fehlgeschlagen.', true);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = isSignUp ? 'Account erstellen' : 'Anmelden';
+        }
+    });
+
+    modeToggle.addEventListener('click', () => setMode(!isSignUp));
+
+    resetButton.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        if (!email) {
+            setMessage('Bitte gib zuerst deine E-Mail-Adresse ein.', true);
+            emailInput.focus();
+            return;
+        }
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.href.split('#')[0]
+            });
+            if (error) throw error;
+            setMessage('Wenn ein Account zu dieser Adresse existiert, wurde eine E-Mail zum Zurücksetzen des Passworts versendet.');
+        } catch (error) {
+            setMessage(error.message || 'Passwort-Reset konnte nicht gestartet werden.', true);
+        }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+        logoutButton.disabled = true;
+        const { error } = await supabase.auth.signOut();
+        logoutButton.disabled = false;
+        if (error) setMessage(error.message || 'Abmeldung fehlgeschlagen.', true);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => showApp(session));
+    supabase.auth.getSession().then(({ data, error }) => {
+        if (error) setMessage(error.message, true);
+        showApp(data?.session || null);
+    });
+}
