@@ -44,7 +44,7 @@ assert.ok(analysisUI.includes('Es wird kein künstlicher Recovery-Gesamtscore ge
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
 assert.ok(analysisUI.includes('CTL bleibt ein Belastungs-/Fitnessindikator'), 'CTL is not presented as direct performance');
-assert.ok(analysisUI.includes('statistische Methode für eine robuste, adaptive Baseline ist noch nicht festgelegt'), 'adaptive baseline is not fabricated');
+assert.ok(analysisUI.includes('Die Herkunft wird aktuell nicht getrennt gespeichert'), 'HRV source ambiguity is disclosed rather than fabricating a clean baseline');
 assert.ok(dashboard.includes('Persönlicher Normalbereich noch nicht methodisch festgelegt'), 'unapproved wearable ranges are not presented as personal norms');
 assert.ok(!dashboard.includes('Im persönlichen Bereich'), 'legacy personal-range classification is suppressed');
 assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe synchronizes detail history');
