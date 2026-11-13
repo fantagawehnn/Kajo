@@ -216,6 +216,11 @@
     --kajo-blue: #1E88E5;
     --kajo-white: #FFFFFF;
     --kajo-muted: #9CA3AF;
+    --kajo-page: #05080E;
+    --kajo-text: #E8EEF8;
+    --kajo-border: #263449;
+    --kajo-ring-track: #263449;
+    --kajo-bar-track: #1B2738;
 }
 html, body { background-color: var(--kajo-bg) !important; color: var(--kajo-white); }
 body { color: var(--kajo-white); }
@@ -3739,6 +3744,7 @@ body[data-theme="light"], html.theme-light, html.theme-light body {
     color-scheme:light;
     --kajo-bg:#f3f6fa; --kajo-surface:#ffffff; --kajo-surface-raised:#eef2f7;
     --kajo-border:#d8e0ea; --kajo-text:#172033; --kajo-muted:#64748b;
+    --kajo-page:#f3f6fa; --kajo-ring-track:#d8e0ea; --kajo-bar-track:#e5ebf3;
 }
 html[data-theme="light"] body, body[data-theme="light"], html.theme-light body {
     background:var(--kajo-bg) !important; color:var(--kajo-text) !important;
@@ -3891,3 +3897,10 @@ body.kajo-home-active .kajo-mobile-header{display:none!important}
 body.kajo-home-active #app-navigation .kajo-desktop-brand{display:none!important}
 .kajo-home-race:disabled{opacity:.72;cursor:default}
 .kajo-home-race:disabled:hover{border-color:var(--kajo-border,#263449)}
+
+html[data-theme="light"] #race-detail-modal section,
+body[data-theme="light"] #race-detail-modal section,
+html.theme-light #race-detail-modal section{background:#fff!important;border-color:#d8e0ea!important}
+html[data-theme="light"] #race-detail-modal h2,
+body[data-theme="light"] #race-detail-modal h2,
+html.theme-light #race-detail-modal h2{color:#172033!important}
