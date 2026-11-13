@@ -81,6 +81,7 @@ globalThis.fetch = async url => url.includes('/activities')
 const importer = await import('../js/import.js');
 document.getElementById('icu-athlete-id').value = 'test-athlete';
 document.getElementById('icu-api-key').value = 'test-key';
+document.getElementById('icu-load-wellness').checked = true;
 await importer.performIntervalsLiveSync();
 assert.equal(state.dailyCheckins['2026-11-10'].sleepQuality, 5);
 assert.equal(state.dailyCheckins['2026-11-10'].sleepDuration, 8);
@@ -104,6 +105,9 @@ globalThis.fetch = async url => url.includes('/activities')
             { type: 'heartrate', data: [120, 130, 140] }
         ] }
         : { ok: true, json: async () => [] };
+document.getElementById('icu-load-wellness').checked = false;
+document.getElementById('icu-load-activities').checked = true;
+document.getElementById('icu-load-streams').checked = true;
 await importer.performIntervalsLiveSync();
 const streamed = state.rawActivities.find(a => a.id === 'streamed-activity');
 assert.deepEqual(streamed.telemetry.hr, [120, 130, 140]);
