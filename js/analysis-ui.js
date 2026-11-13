@@ -3,7 +3,6 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
-import { calculateReadiness } from './dashboard.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -78,26 +77,26 @@ function renderLoad() {
 }
 function renderRecovery() {
   if (!state.healthHistoryMetric) state.healthHistoryMetric = 'hrv';
-  const readiness = calculateReadiness();
-  const today = todayKey();
-  const current = state.dailyCheckins?.[today] || {};
-  const score = readiness.score;
-  setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
-    score === null ? 'Noch nicht ausreichend erfasst' : 'Bestehende Readiness',
-    score === null ? readiness.dataQuality : 'Bestehendes KAJO-Modell · ' + readiness.dataQuality + '. Kein medizinischer Messwert.', 'neutral');
+  const hrv = latestCheckin('hrv');
+  setHero('recovery', hrv ? fmt(hrv.value, 1) : '—', hrv ? 'ms' : '',
+    hrv ? 'HRV · letzter Messwert' : 'HRV heute nicht erfasst',
+    hrv ? 'Messung vom ' + dateLabel(hrv.date) + ' · einzelner Erholungsmarker, ohne persönliche Normalbereichs-Einstufung.' :
+      'Kein HRV-Messwert vorhanden. Es wird kein künstlicher Recovery-Gesamtscore gebildet.', 'neutral');
   const entries = [
-    ['HRV', current.hrv, 'ms', 'hrv'],
-    ['Ruhepuls', current.rhr, 'bpm', 'rhr'],
-    ['Schlafdauer', current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null), 'h', 'sleepDuration'],
-    ['Sleep Score', current.sleepScore, '/ 100', 'sleepScore'],
-    ['Body Battery', current.bodyBattery, '', 'bodyBattery'],
-    ['Stress', current.stress, '/ 10', 'stress'],
-    ['Müdigkeit', current.fatigue, '/ 10', 'fatigue'],
-    ['Muskelkater', current.soreness, '/ 10', 'soreness']
+    ['HRV', 'hrv', 'ms'],
+    ['Ruhepuls', 'rhr', 'bpm'],
+    ['Schlafdauer', 'sleepDuration', 'h'],
+    ['Sleep Score', 'sleepScore', '/ 100'],
+    ['Body Battery', 'bodyBattery', ''],
+    ['Stress', 'stress', '/ 10'],
+    ['Müdigkeit', 'fatigue', '/ 10'],
+    ['Muskelkater', 'soreness', '/ 10']
   ];
-  renderMetrics('recovery-analysis-metrics', entries.map(([label, value, unit, key]) =>
-    metric(label, valid(value) ? fmt(value, key === 'sleepDuration' ? 1 : 0) + (unit ? ' ' + unit : '') : '—',
-      valid(value) ? 'Heute' : 'Heute nicht erfasst')));
+  renderMetrics('recovery-analysis-metrics', entries.map(([label, key, unit]) => {
+    const entry = latestCheckin(key);
+    return metric(label, entry ? fmt(entry.value, key === 'sleepDuration' ? 1 : 0) + (unit ? ' ' + unit : '') : '—',
+      entry ? dateLabel(entry.date) : 'Nicht erfasst');
+  }));
 }
 function renderPerformance() {
   const vo2 = latestCheckin('vo2max');
