@@ -360,30 +360,12 @@
                 <div><p class="kajo-analysis-eyebrow">KAJO · PERFORMANCE LAB</p><h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1><p class="text-xs sm:text-sm text-slate-400 mt-1">Belastung, Fitness, Regeneration, Gesundheit und Wettkampf im Zusammenhang betrachten.</p></div>
                 <span class="kajo-analysis-period" id="analysis-period-label">Letzte 90 Tage</span>
             </header>
-
-            <section class="kajo-analysis-overview" aria-label="Belastungsübersicht">
+<div id="analysis-subpage-load" class="space-y-4"><section class="kajo-analysis-overview" aria-label="Belastungsübersicht">
                 <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Belastung im Überblick</h2></div><span class="kajo-analysis-context">Letzter verfügbarer Tag</span></div>
                 <div id="analysis-overview-kpis"><p class="text-xs text-slate-500">Die Übersicht wird aus den vorhandenen Trainingsdaten erstellt.</p></div>
                 <div id="analysis-overview-note"></div>
             </section>
-
-            <nav class="kajo-analysis-shortcuts" aria-label="Analysebereiche">
-                <a href="#analysis-load-section" class="kajo-analysis-shortcut"><span class="shortcut-icon"><i data-lucide="activity"></i></span><span><strong>Belastung</strong><small>CTL, ATL, Trainingssaldo und Aktivitäten</small></span><i data-lucide="arrow-up-right"></i></a>
-                <a href="#analysis-fitness-section" class="kajo-analysis-shortcut"><span class="shortcut-icon"><i data-lucide="trending-up"></i></span><span><strong>Fitness</strong><small>Langfristige Belastungsentwicklung</small></span><i data-lucide="arrow-up-right"></i></a>
-                <a href="#analysis-regeneration-section" class="kajo-analysis-shortcut"><span class="shortcut-icon"><i data-lucide="heart-pulse"></i></span><span><strong>Regeneration</strong><small>Readiness und tägliche Check-ins</small></span><i data-lucide="arrow-up-right"></i></a>
-                <a href="#analysis-health-section" class="kajo-analysis-shortcut"><span class="shortcut-icon"><i data-lucide="shield-plus"></i></span><span><strong>Gesundheit</strong><small>Dokumentierte Krankheits- und Verletzungstage</small></span><i data-lucide="arrow-up-right"></i></a>
-                <a href="#analysis-competition-section" class="kajo-analysis-shortcut"><span class="shortcut-icon"><i data-lucide="trophy"></i></span><span><strong>Wettkampf</strong><small>Geplante und vergangene Termine</small></span><i data-lucide="arrow-up-right"></i></a>
-            </nav>
-
-            <!-- DAILY READINESS -->
-            <div id="analysis-regeneration-section" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3 kajo-analysis-panel">
-                <div><h2 class="text-base font-bold text-white">Tägliche Trainings-Readiness</h2></div>
-                <div id="readiness-details" class="space-y-2"><p class="text-xs text-slate-500">Die Readiness wird berechnet, sobald genügend objektive und subjektive Daten vorliegen.</p></div>
-                <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-recovery-insight"></div></div>
-            </div>
-
-            <!-- MAIN LOAD GRAPH CONTAINER -->
-            <div id="analysis-load-section" class="space-y-4 kajo-analysis-load-section">
+<div id="analysis-load-section" class="space-y-4 kajo-analysis-load-section">
                 
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -473,22 +455,39 @@
                 </div>
                     </div>
                 </details>
-            </div>
-
-            <section id="analysis-fitness-section" class="kajo-analysis-domain-panel">
+            </div></div>
+<div id="analysis-subpage-performance" class="hidden space-y-4"><section id="analysis-fitness-section" class="kajo-analysis-domain-panel">
                 <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">LANGFRISTIGE ENTWICKLUNG</p><h2>Fitness</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
                 <div id="analysis-fitness-insight"></div>
             </section>
-
-            <section id="analysis-health-section" class="kajo-analysis-domain-panel">
-                <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WOHLBEFINDEN</p><h2>Gesundheit</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
-                <div id="analysis-health-insight"></div>
-            </section>
-
-            <section id="analysis-competition-section" class="kajo-analysis-domain-panel">
+<section id="analysis-competition-section" class="kajo-analysis-domain-panel">
                 <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WETTKAMPFPLANUNG</p><h2>Wettkampf</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
                 <div id="analysis-competition-insight"></div>
-            </section>
+            </section></div>
+
+
+            
+
+            
+
+            <!-- DAILY READINESS -->
+            <div id="analysis-subpage-recovery" class="hidden space-y-4"><div id="analysis-regeneration-section" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3 kajo-analysis-panel">
+                <div><h2 class="text-base font-bold text-white">Tägliche Trainings-Readiness</h2></div>
+                <div id="readiness-details" class="space-y-2"><p class="text-xs text-slate-500">Die Readiness wird berechnet, sobald genügend objektive und subjektive Daten vorliegen.</p></div>
+                <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-recovery-insight"></div></div>
+            </div></div>
+
+            <!-- MAIN LOAD GRAPH CONTAINER -->
+            
+
+            
+
+            <div id="analysis-subpage-health" class="hidden space-y-4"><section id="analysis-health-section" class="kajo-analysis-domain-panel">
+                <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WOHLBEFINDEN</p><h2>Gesundheit</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
+                <div id="analysis-health-insight"></div>
+            </section></div>
+
+            
 
         </div>
 
