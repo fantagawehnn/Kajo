@@ -70,10 +70,12 @@ export function openCSVDetailsModal(id) {
     const waterUnit = document.getElementById('activity-water-level-unit');
     const waterDischarge = document.getElementById('activity-water-discharge');
     const waterNote = document.getElementById('activity-water-note');
+    const waterTypeInput = document.getElementById('activity-water-type');
     if (waterLevel) waterLevel.value = water.level ?? '';
     if (waterUnit) waterUnit.value = water.levelUnit === 'm' ? 'm' : 'cm';
     if (waterDischarge) waterDischarge.value = water.discharge ?? '';
     if (waterNote) waterNote.value = water.note || '';
+    if (waterTypeInput) waterTypeInput.value = water.type || act.waterType || '';
     const partnerInput = document.getElementById('activity-training-partner');
     if (partnerInput) partnerInput.value = act.trainingPartner || '';
     const editSport = document.getElementById('modal-edit-sport-select');
@@ -97,7 +99,7 @@ export function openCSVDetailsModal(id) {
     if (badge) {
         const sports = { Kayaking: 'K1', C1: 'C1', C2: 'C2', PaddleErgo: 'Paddelergometer', Run: 'Laufen', Ride: 'Radfahren', Swim: 'Schwimmen', WeightTraining: 'Krafttraining' };
         const categories = { ga: 'GA', interval: 'Intervalle', race: 'Wettkampf', reg: 'Regeneration', strength: 'Kraft', tech: 'Technik' };
-        badge.textContent = [sports[act.type] || act.type || 'Aktivität', act.raceFormat ? String(act.raceFormat).toUpperCase() : '', act.waterType || '', categories[act.category] || ''].filter(Boolean).join(' · ');
+        badge.textContent = [sports[act.type] || act.type || 'Aktivität', act.raceFormat ? String(act.raceFormat).toUpperCase() : '', act.waterConditions?.type === 'wildwater' ? 'Wildwasser' : act.waterConditions?.type === 'flatwater' ? 'Flachwasser' : act.waterType || '', categories[act.category] || ''].filter(Boolean).join(' · ');
         const sportColor = getSportsCatalog()[act.type]?.color || '#38bdf8';
         badge.style.setProperty('--activity-sport-color', sportColor);
         badge.style.borderColor = sportColor + '88';
@@ -454,7 +456,9 @@ function renderActivityComparisons(activity) {
             if ((dischargeA === null) !== (dischargeB === null)) return false;
             if (dischargeA !== null && (!Number.isFinite(dischargeA) || !Number.isFinite(dischargeB)
                 || Math.abs(dischargeA - dischargeB) > Math.max(.1, Math.abs(dischargeA) * .10))) return false;
-            if ((activity.waterType || '') !== (candidate.waterType || '')) return false;
+            const currentWaterType = water.type || activity.waterType || '';
+            const candidateWaterType = otherWater.type || candidate.waterType || '';
+            if (!currentWaterType || !candidateWaterType || currentWaterType !== candidateWaterType) return false;
         }
         return true;
     }).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0,3);
@@ -803,11 +807,14 @@ export function saveActivityWaterConditions() {
         return;
     }
     const note = (document.getElementById('activity-water-note')?.value || '').trim().slice(0, 200);
-    if (level === null && discharge === null && !note) delete act.waterConditions;
+    const waterTypeValue = document.getElementById('activity-water-type')?.value || '';
+    const waterType = ['flatwater', 'wildwater'].includes(waterTypeValue) ? waterTypeValue : null;
+    if (level === null && discharge === null && !note && !waterType) delete act.waterConditions;
     else act.waterConditions = {
         ...(level !== null ? { level, levelUnit: document.getElementById('activity-water-level-unit')?.value === 'm' ? 'm' : 'cm' } : {}),
         ...(discharge !== null ? { discharge } : {}),
-        ...(note ? { note } : {})
+        ...(note ? { note } : {}),
+        ...(waterType ? { type: waterType } : {})
     };
     saveDataToLocalStorage();
     renderActivityWaterConditionStatus(act);
@@ -820,6 +827,7 @@ function renderActivityWaterConditionStatus(act) {
     const values = [];
     if (water.level != null) values.push('Pegel: ' + water.level + ' ' + (water.levelUnit || 'cm'));
     if (water.discharge != null) values.push('Abfluss: ' + water.discharge + ' m³/s');
+    if (water.type) values.push(water.type === 'wildwater' ? 'Wildwasser' : 'Flachwasser');
     status.textContent = values.length ? 'Gespeichert · ' + values.join(' · ') : 'Keine Wasserbedingungen dokumentiert.';
 }
 
