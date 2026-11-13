@@ -173,3 +173,6 @@ assert.ok(calendar.includes("activity.raceFormat ? ' · ' + activity.raceFormat"
 assert.ok(calendar.includes('calendar-day-events'), 'selected day detail also shows recorded health and competition symbols');
 
 assert.ok(calendar.includes('data.source === \'Manuell\'') && calendar.includes('data.source.includes(\'Garmin\')'), 'year timeline separates activity source types while retaining sport colors');
+
+assert.ok(calendar.includes("if (state.activeCalendarFormat === 'month') state.currentCalendarDate.setDate(1)"), 'month navigation avoids day-of-month overflow');
+assert.ok(calendar.includes('...Object.keys(week.plannedBySport)'), 'year legend includes sports with planned sessions only');
