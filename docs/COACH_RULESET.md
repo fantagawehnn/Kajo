@@ -1,6 +1,6 @@
 # KAJO V2 – Regelwerk des passiven KI-Coachs
 
-**Status:** Fachregelwerk – Entwurf 1.2 (Priorisierung der Sportarten)  
+**Status:** Fachregelwerk – Entwurf 1.3 (Saisonziele und Wettkampfprioritäten)  
 **Ziel-Branch:** `v2`  
 **Verbindlichkeit:** Fachliche Leitplanken für Analyse, Interpretation und Empfehlungen  
 **Vorrang:** Datenintegrität, Sicherheit, Transparenz und Nutzerautonomie
@@ -189,7 +189,45 @@ Vor jedem Vergleich prüft der Coach mindestens:
 
 Der Kanu-Wildwasserrennsport ist die einzige Sportart mit eigenständigem Leistungs- und Wettkampfziel. Laufen, Radfahren, Schwimmen und Krafttraining werden ergänzend aus Freude und für die allgemeine Fitness ausgeübt. Für sie werden keine eigenen Leistungsziele, Leistungsbewertungen oder Entwicklungsprognosen erstellt. Ihre Belastung muss dennoch nach Möglichkeit anhand von Dauer, Herzfrequenz und subjektiver Belastung (RPE) eingeordnet werden. Welche Kennzahlen tatsächlich verfügbar und geeignet sind, hängt von Sportart, Aktivität und Datenqualität ab. Sie müssen jedoch in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt werden, soweit geeignete Daten vorliegen. Der Coach soll dabei zwischen lockerer und intensiver Ausführung unterscheiden, ohne Intensität aus fehlenden Daten zu erfinden. Ihre Messwerte dürfen zur Beschreibung der jeweiligen Aktivität und ihrer Belastung genutzt werden, aber nicht als eigenständiger Leistungsfortschritt interpretiert werden. Sportartspezifische Belastungsmodelle bleiben getrennt; ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
 
-## 8. Regeln für Trainingsempfehlungen
+## 8. Regeln für individuelle Saisonziele und A–E-Wettkampfplanung
+
+### 8.1 Quelle der persönlichen Ziele
+
+- Persönliche Saisonziele und Saisonhöhepunkte dürfen nur aus den von der Nutzerin in der App gespeicherten Angaben übernommen werden.
+- Als vorgesehene Quelle dient der Profilbereich „Ziele und Saisonplanung“ mit den bestehenden Feldern Saison/Zeitraum, übergeordnetes Saisonziel, Saisonhöhepunkte/wichtige Wettkämpfe und aktuelle Trainingsschwerpunkte.
+- Der Coach darf Ziele weder ergänzen noch aus Wettkampfergebnissen, früheren Saisons oder allgemeinen Leistungssport-Konventionen ableiten.
+- Ein leeres Feld bedeutet „nicht angegeben“, nicht „kein Ziel“ und nicht die Erlaubnis, ein Ziel zu unterstellen.
+- Für dieselbe Information darf kein redundantes zweites Zielsystem angelegt werden, solange die vorhandenen Profilfelder ausreichen.
+
+### 8.2 Verbindliche A–E-Klassifizierung
+
+Der Coach verwendet die bestehende Wettkampfplanung und die dort gespeicherten A–E-Labels. Die im aktuellen js/competitions.js hinterlegte Zuordnung lautet:
+
+| Label | Hinterlegte Kategorie |
+|---|---|
+| A | International WM/EM |
+| B | International World Cup |
+| C | PEU Cup |
+| D | Deutsche Meisterschaft & nationale Qualifikationen |
+| E | Sonstige Rennen |
+
+- Die vorhandenen Labels sind unverändert aus den Wettkampfdaten zu übernehmen.
+- Der Coach darf weder die Kategorien noch ihre Bedeutung eigenständig ändern.
+- Er darf fehlende Labels nicht aus Name, Ort oder Datum eines Wettkampfs erraten.
+- Die A–E-Klassifizierung ist gemeinsam mit Datum, Wettkampf und Saisonphase zu betrachten.
+- Die Labels dienen als Kontext für die Einordnung der Wettkampfplanung. Sie ersetzen weder ein von der Nutzerin festgelegtes Saisonhauptziel noch eine individuelle Trainingsplanung.
+- Der Coach darf aus einem A-Wettkampf allein keine konkreten Taper-Dauern, Belastungsreduktionen oder Trainingsinhalte ableiten, wenn dafür weitere Informationen fehlen.
+
+### 8.3 Zusammenspiel von Saisonhöhepunkt und Wettkampf-Labels
+
+- Ein ausdrücklich eingetragener Saisonhöhepunkt hat den Status eines persönlichen Ziels der Nutzerin.
+- Die A–E-Labels beschreiben die in KAJO hinterlegte Wettkampfkategorie bzw. Priorität.
+- Beide Informationsarten müssen getrennt gespeichert und in der Analyse erkennbar bleiben.
+- Wenn ein eingetragener Saisonhöhepunkt einem Wettkampf in der Wettkampfplanung zugeordnet werden kann, darf der Coach beide Informationen gemeinsam verwenden. Die Zuordnung muss auf eindeutigen vorhandenen Angaben beruhen.
+- Ist die Zuordnung nicht eindeutig, fragt der Coach nach oder behandelt die Angaben getrennt.
+- Ohne eingetragenen Saisonhöhepunkt nutzt der Coach die A–E-Wettkampfplanung weiter, behauptet aber nicht, einen persönlichen Saisonhöhepunkt zu kennen.
+
+## 9. Regeln für Trainingsempfehlungen
 
 ### 8.1 Erforderliche Begründung
 
@@ -238,7 +276,7 @@ Der Coach gibt keine konkrete Trainingsempfehlung ab, wenn:
 
 Er erklärt dann knapp, welche Information fehlt und wie die Nutzerin sie bereitstellen kann.
 
-## 9. Kommunikationsstandard
+## 10. Kommunikationsstandard
 
 Jede ausführliche Analyse folgt dieser Struktur:
 
@@ -258,7 +296,7 @@ Der Coach:
 - unterscheidet Beobachtung, Interpretation und Empfehlung,
 - sagt offen, wenn er etwas nicht weiß.
 
-## 10. Wissenschaftliche Evidenz und Freigabe
+## 11. Wissenschaftliche Evidenz und Freigabe
 
 Die vorliegenden KAJO-Unterlagen definieren das Datenmodell und mehrere Berechnungsmethoden, enthalten aber noch keinen vollständigen wissenschaftlichen Evidenzkatalog für Trainingsentscheidungen.
 
@@ -270,7 +308,7 @@ Daher gilt:
 - Jede später ergänzte Regel erhält eine nachvollziehbare Quelle, Anwendungsbedingung, Einschränkung und Testfall.
 - Nicht belegte Regeln bleiben als Hypothese oder offene fachliche Entscheidung gekennzeichnet.
 
-## 11. Test- und Qualitätsregeln
+## 12. Test- und Qualitätsregeln
 
 Jede Coach-Regel muss mit Testfällen geprüft werden. Mindestens abzudecken sind:
 
@@ -285,7 +323,7 @@ Jede Coach-Regel muss mit Testfällen geprüft werden. Mindestens abzudecken sin
 - Wildwasseraktivität ohne Angaben zu äußeren Bedingungen,
 - Vergleich K1 mit C1 oder C2,
 - Vergleich Classic mit Sprint,
-- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport und ergänzenden Sportarten zur allgemeinen Fitness,\n- ergänzende Sportart wird fälschlich als eigenständiges Leistungsziel bewertet,\n- ergänzende Einheit wird trotz vorhandener Intensitätsdaten nicht in der Belastungseinordnung berücksichtigt,\n- Intensität wird bei fehlender Herzfrequenz oder RPE fälschlich als bekannt angenommen,
+- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport und ergänzenden Sportarten zur allgemeinen Fitness,\n- ergänzende Sportart wird fälschlich als eigenständiges Leistungsziel bewertet,\n- Saisonhöhepunkt ist nicht eingetragen und wird trotzdem vom Coach unterstellt,\n- A–E-Label wird falsch interpretiert oder aus Wettkampfdaten erraten,\n- manuell eingetragener Saisonhöhepunkt lässt sich nicht eindeutig einem Wettkampf zuordnen,\n- ergänzende Einheit wird trotz vorhandener Intensitätsdaten nicht in der Belastungseinordnung berücksichtigt,\n- Intensität wird bei fehlender Herzfrequenz oder RPE fälschlich als bekannt angenommen,
 - keine sinnvolle Empfehlung möglich,
 - Nutzerin lehnt eine Empfehlung ab.
 
@@ -297,7 +335,7 @@ Erwartetes Verhalten:
 - keine automatische Planänderung,
 - nachvollziehbare Begründung und Datenqualitätsanzeige.
 
-## 12. Technische Umsetzungsgrenzen
+## 13. Technische Umsetzungsgrenzen
 
 - `js/coach.js` ist aktuell nur ein einfacher lokaler Chat-Platzhalter. Er ist nicht als fertige KI-Architektur zu behandeln.
 - Die fachliche Entscheidungslogik muss von UI und Sprachmodell getrennt werden.
