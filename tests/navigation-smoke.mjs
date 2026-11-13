@@ -226,3 +226,18 @@ assert.ok(activities.includes('levelA !== levelB'), 'canoe comparisons require i
 assert.ok(activities.includes('if (!activity.raceFormat) return false'), 'canoe comparison requires a known Classic or Sprint discipline');
 
 assert.ok(css.includes('html[data-theme="light"] #csv-details-modal .activity-detail-shell'), 'activity details provide explicit light-theme styling');
+
+
+const trainingLoadView = readFileSync('js/training-load-view.js', 'utf8');
+assert.ok(html.includes('id="training-load-overview"'), 'Training Load has a dedicated overview');
+assert.ok(html.includes('id="training-load-metric-detail"'), 'Training Load has a dedicated metric detail view');
+for (const metric of ['ctl', 'atl', 'tsb']) {
+  assert.ok(html.includes('data-training-load-metric="' + metric + '"'), 'Training Load metric is directly selectable: ' + metric);
+  assert.ok(trainingLoadView.includes(metric + ": ["), 'Training Load detail metadata exists: ' + metric);
+}
+assert.ok(main.includes("from './training-load-view.js'"), 'Training Load view module is wired into main navigation');
+assert.ok(main.includes('kajoRenderTrainingLoadView: renderTrainingLoadView'), 'Training Load view refresh is exposed to shared timeframe controls');
+assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared analysis timeframe refreshes the Training Load chart');
+assert.ok(trainingLoadView.includes("['complete', 'confirmed-rest'].includes(x.dataStatus)"), 'only complete or confirmed-rest days supply the current model value');
+assert.ok(trainingLoadView.includes('spanGaps: false'), 'unknown or incomplete days remain visible as chart gaps');
+assert.ok(!trainingLoadView.includes('monotony') && !trainingLoadView.includes('training strain'), 'unsupported load metrics are not fabricated');
