@@ -253,12 +253,12 @@ assert.ok(activities.includes("' min/100 m'"), 'swim pace uses a 100-metre unit 
 
 const overviewModule = readFileSync('js/analysis-overview.js', 'utf8');
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
-assert.ok(html.includes('id="analysis-overview-domains"'), 'overview presents all four analysis domains');
-assert.ok(['load','recovery','performance','health'].every(id => html.includes("switchTab('analysis-" + id + "')")), 'overview domain cards open their detail pages');
-assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has one shared trend chart');
-assert.ok(overviewModule.includes("['complete', 'confirmed-rest'].includes(day.dataStatus)"), 'load trend excludes unknown and incomplete days');
-assert.ok(overviewModule.includes('spanGaps: false'), 'overview trend preserves missing data gaps');
+assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview contains only the four agreed metric circles');
+assert.ok(['load','recovery','performance','health'].every(id => html.includes('id="overview-' + id + '-ring"')), 'overview renders load, recovery, fitness and health circles');
+assert.ok(['Belastung','Regeneration','Fitness','Gesundheit'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed German domain labels');
+assert.ok(!html.includes('analysis-overview-trend-chart') && !html.includes('analysis-overview-assessment'), 'overview excludes extra trend and assessment panels');
+assert.ok(overviewModule.includes('analysis-' + domain + '-hero-value'), 'overview reads the existing domain hero values');
+assert.ok(overviewModule.includes("setText('analysis-overview-health-value', '—')"), 'health availability remains unavailable when no valid calculation exists');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
 assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
-assert.ok(charts.includes('window.kajoRenderAnalysisOverview?.()'), 'shared timeframe refreshes the overview trend');
-assert.ok(css.includes('.kajo-analysis-domain-grid'), 'overview uses responsive compact domain cards');
+assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(2'), 'four circles use a responsive two-by-two mobile layout');
