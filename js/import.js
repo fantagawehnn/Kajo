@@ -446,7 +446,13 @@ export async function performIntervalsLiveSync() {
             if (Number.isFinite(sleepDuration) && sleepDuration > 0) incoming.sleepDuration = Number((sleepDuration / 3600).toFixed(1));
             if (Number.isFinite(weight) && weight > 0) incoming.weight = weight;
             if (Number.isFinite(rhr) && rhr > 0) incoming.rhr = rhr;
-            if (Number.isFinite(hrv) && hrv > 0) incoming.hrv = hrv;
+            if (Number.isFinite(hrv) && hrv > 0) {
+                incoming.hrv = hrv;
+                incoming.measurementSources = {
+                    ...(existing.measurementSources || {}),
+                    hrv: { source: 'intervals', metric: 'rmssd', unit: 'ms' }
+                };
+            }
             if (Number.isFinite(sleepScore) && sleepScore >= 0 && sleepScore <= 100) incoming.sleepScore = sleepScore;
             const respiration = Number(w.respiration);
             if (Number.isFinite(respiration) && respiration >= 4 && respiration <= 60) incoming.respiration = respiration;
