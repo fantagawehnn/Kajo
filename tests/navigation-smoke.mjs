@@ -169,3 +169,5 @@ assert.ok(calendar.includes('calendar-week-source'), 'weekly activity entries ex
 
 assert.ok(calendar.includes("const key = type + '::' + format"), 'year calendar keeps Classic and Sprint durations in separate series');
 assert.ok(calendar.includes("activity.raceFormat ? ' · ' + activity.raceFormat"), 'day details preserve the activity race format');
+
+assert.ok(calendar.includes('calendar-day-events'), 'selected day detail also shows recorded health and competition symbols');
