@@ -8,6 +8,7 @@ import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
+import { calculateStrengthActivitySummary } from './calculations.js';
 import { getGarminTelemetry } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 function getActivityZoneConfig(activity) {
@@ -141,6 +142,7 @@ export function openCSVDetailsModal(id) {
     try { renderActivityTrainingInsights(analysisActivity); } catch (error) { console.error('Trainingsanalyse konnte nicht gerendert werden:', error); }
     try { renderOptionalActivityViews(analysisActivity); } catch (error) { console.error('Zusatzansichten konnten nicht gerendert werden:', error); }
     try { renderActivityRouteMap(analysisActivity); } catch (error) { console.error('GPS-Strecke konnte nicht gerendert werden:', error); }
+    try { renderActivityStrengthAnalysis(act); } catch (error) { console.error('Kraftanalyse konnte nicht gerendert werden:', error); }
     try { renderActivityComparisons(act); } catch (error) { console.error('Aktivitätsvergleich konnte nicht gerendert werden:', error); }
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
 }
@@ -233,13 +235,9 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
     if (type === 'C2') add('Trainingspartner', act.trainingPartner || null, 'text-cyan-300');
     if (isStrength && Array.isArray(act.exercises) && act.exercises.length) {
         add('Übungen dokumentiert', String(act.exercises.length));
-        const sets = act.exercises.reduce((sum, exercise) => sum + (Array.isArray(exercise.sets) ? exercise.sets.length : 0), 0);
-        const volume = act.exercises.reduce((sum, exercise) => sum + (Array.isArray(exercise.sets) ? exercise.sets.reduce((subtotal, set) => {
-            const reps = Number(set.reps), weight = Number(set.weight);
-            return subtotal + (Number.isFinite(reps) && reps > 0 && Number.isFinite(weight) && weight >= 0 ? reps * weight : 0);
-        }, 0) : 0), 0);
-        add('Sätze dokumentiert', sets ? String(sets) : null);
-        add('Gesamtvolumen', sets ? volume.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg' : null, 'text-purple-300');
+        const strengthSummary = calculateStrengthActivitySummary(act.exercises);
+        add('Sätze dokumentiert', strengthSummary.setCount ? String(strengthSummary.setCount) : null);
+        add('Gesamtvolumen', strengthSummary.volumeComplete ? strengthSummary.volume.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg' : null, 'text-purple-300');
     }
     if (!metrics.length) {
         container.innerHTML = '<p class="col-span-full text-xs text-slate-500">Für diese Aktivität sind noch keine auswertbaren Kennzahlen hinterlegt.</p>';
@@ -438,6 +436,34 @@ export function focusActivityLap(index) {
     const chartActivity = activity.garminTelemetry ? { ...activity, telemetry: activity.garminTelemetry } : activity;
     renderActivityTelemetryChart(chartActivity);
     document.getElementById('activity-telemetry-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+
+function renderActivityStrengthAnalysis(activity) {
+    const panel = document.getElementById('activity-strength-analysis-panel');
+    if (!panel) return;
+    const exercises = Array.isArray(activity.exercises) ? activity.exercises : [];
+    if (activity.type !== 'WeightTraining' || !exercises.length) {
+        panel.classList.add('hidden');
+        panel.innerHTML = '';
+        return;
+    }
+    const summary = calculateStrengthActivitySummary(exercises);
+    const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const rows = exercises.map(exercise => {
+        const sets = Array.isArray(exercise.sets) ? exercise.sets : [];
+        const details = sets.map((set, index) => {
+            const reps = set?.reps != null && set.reps !== '' && Number.isInteger(Number(set.reps)) && Number(set.reps) > 0 ? Number(set.reps) : null;
+            const weight = set?.weight != null && set.weight !== '' && Number.isFinite(Number(set.weight)) && Number(set.weight) >= 0 ? Number(set.weight) : null;
+            return '<span class="activity-strength-set-chip">S' + (index + 1) + ' · ' + (reps === null ? '—' : reps + ' Wdh.') + ' · ' + (weight === null ? '—' : weight.toLocaleString('de-DE') + ' kg') + '</span>';
+        }).join('');
+        return '<div class="activity-strength-exercise-row"><strong>' + escape(exercise.name || 'Übung') + '</strong><div class="activity-strength-set-list">' + details + '</div></div>';
+    }).join('');
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="activity-detail-section-heading"><div><h3>Krafttraining</h3></div><span class="activity-detail-context-tag">' + summary.exerciseCount + ' Übungen · ' + summary.setCount + ' Sätze</span></div>'
+        + rows
+        + (summary.volumeComplete ? '<p class="activity-strength-volume">Gesamtvolumen · <strong>' + summary.volume.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg</strong></p>'
+            : '<p class="activity-strength-volume">Gesamtvolumen nicht berechenbar · bei mindestens einem Satz fehlen Gewicht oder Wiederholungen.</p>');
 }
 
 function renderActivityComparisons(activity) {
