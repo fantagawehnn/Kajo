@@ -90,7 +90,7 @@ export function openCSVDetailsModal(id) {
     if (dateEl) {
         const start = act.startTime ? new Date(act.startTime) : null;
         const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
-        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData || act.sources?.includes?.('garmin') ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null || act.sources?.includes?.('intervals') ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : ['fit', 'csv', 'file', 'import'].includes(act.source) || act.garminFitImported ? 'Dateiimport' : 'Quelle nicht ausgewiesen';
+        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData || act.sources?.includes?.('garmin') ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null || act.sources?.includes?.('intervals') ? 'Intervals.icu' : act.source === 'manual' || act.sources?.includes?.('manual') ? 'Manuell' : ['fit', 'csv', 'file', 'import'].includes(act.source) || act.garminFitImported ? 'Dateiimport' : 'Quelle nicht ausgewiesen';
         dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');
     }
     const metricsContainer = document.getElementById('activity-sport-metrics');
@@ -367,7 +367,7 @@ function renderActivityRouteMap(activity) {
     if (!panel) return;
     const telemetry = activity?.telemetry || activity?.garminTelemetry || {};
     const fields = activity?.garminFitData?.recordFields || {};
-    const latitudes = telemetry.latitude || telemetry.lat || fields.position_lat || fields.latitude;
+    const latitudes = telemetry.latitude || telemetry.lat || telemetry.position_lat || fields.position_lat || fields.latitude;
     const longitudes = telemetry.longitude || telemetry.lon || telemetry.position_long || fields.position_long || fields.longitude;
     const normalizeCoordinate = (value, limit) => {
         if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return null;
@@ -423,7 +423,18 @@ function renderActivityRouteMap(activity) {
         });
     }
     map.fitBounds(line.getBounds(), { padding: [18, 18] });
-    setTimeout(() => map.invalidateSize(), 80);
+    requestAnimationFrame(() => { if (state.activityRouteMap === map) map.invalidateSize(); });
+}
+
+
+export function focusActivityLap(index) {
+    const activity = state.selectedActivityForModal;
+    const lap = Array.isArray(activity?.laps) ? activity.laps[index] : null;
+    if (!lap || !Number.isFinite(Number(lap.startTimeSeconds)) || !Number.isFinite(Number(lap.endTimeSeconds))) return;
+    state.activitySelectedLap = { startTimeSeconds: Number(lap.startTimeSeconds), endTimeSeconds: Number(lap.endTimeSeconds) };
+    const chartActivity = activity.garminTelemetry ? { ...activity, telemetry: activity.garminTelemetry } : activity;
+    renderActivityTelemetryChart(chartActivity);
+    document.getElementById('activity-telemetry-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function renderActivityComparisons(activity) {
@@ -563,7 +574,10 @@ function renderOptionalActivityViews(act) {
             ].filter(Boolean).join(' · ');
             const isFastestManual = lap.kind === 'manual' && speed !== null && fastestManual !== null && Math.abs(speed - fastestManual) < 0.0001;
             const speedTone = isFastestManual ? 'text-emerald-300' : 'text-slate-400';
-            return `<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2"><div><div class="text-slate-200">${label}</div><div class="text-[10px] text-slate-500">${kind}</div></div><div class="text-right ${speedTone}">${details}</div></div>`;
+            const canFocus = Number.isFinite(Number(lap.startTimeSeconds)) && Number.isFinite(Number(lap.endTimeSeconds));
+            const tag = canFocus ? 'button type="button" onclick="focusActivityLap(' + (index - 1) + ')" aria-label="Abschnitt im Zeitverlauf markieren" class="w-full text-left"' : 'div';
+            const closeTag = canFocus ? 'button' : 'div';
+            return '<' + tag + ' class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2"><div><div class="text-slate-200">' + label + '</div><div class="text-[10px] text-slate-500">' + kind + '</div></div><div class="text-right ' + speedTone + '">' + details + '</div></' + closeTag + '>';
         }).join('');
         const comparisonNote = manualSpeeds.length >= 2
             ? `<div class="text-[10px] text-slate-400 mt-2">Schnellster manuell markierter Abschnitt: ${fastestManual.toLocaleString('de-DE', { maximumFractionDigits: 2 })} km/h. Nur manuell markierte FIT-Runden mit eindeutiger Dauer- und Distanzangabe werden verglichen.</div>`
@@ -832,6 +846,7 @@ function renderActivityWaterConditionStatus(act) {
 }
 
 export function closeCSVDetailsModal() {
+    state.activitySelectedLap = null;
     if (state.activityRouteMap) { state.activityRouteMap.remove(); state.activityRouteMap = null; }
     const modal = document.getElementById('csv-details-modal');
     if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
