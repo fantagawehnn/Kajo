@@ -99,3 +99,18 @@ Die technische Zuordnung und offenen manuellen Abnahmen stehen in [docs/NAVIGATI
 - Keine privilegierten Secrets im Frontend oder Git-Repository.
 - Keine automatische Übernahme globaler Legacy-Daten in einen Account.
 - Keine Änderung einer Berechnung allein aus gestalterischen Gründen.
+
+
+## 10. Analyse-Seiten – visuelle Verfeinerung
+
+Die Analyse-Seiten besitzen nun eine einheitliche Hero-Kennzahl mit gleicher Kreisgröße/-position, einen gemeinsamen Zeitraumfilter und kompakte Kennzahlenreihen. Die UI-Schicht `js/analysis-ui.js` liest bestehende Werte und berechnet keine neue Trainingslast oder Readiness.
+
+- Training Load zeigt ATL als kurzfristige Belastungsgröße; CTL, ATL, Saldo und ACWR werden ergänzend dargestellt.
+- Recovery verwendet die bestehende Readiness-Berechnung. Wearable- und subjektive Werte werden nur angezeigt, wenn sie vorhanden sind.
+- Performance zeigt VO₂max nur als importierten Wellnesswert, wenn vorhanden. Die Messart ist im bestehenden Datenfeld nicht ausreichend getrennt; daher wird keine direkte Leistungsdiagnostik behauptet. CTL bleibt als Belastungs-/Fitnessindikator gekennzeichnet.
+- Health weist Trainingsverfügbarkeit weiterhin als nicht berechenbar aus, solange die erforderliche Datenverknüpfung fehlt. Dokumentierte Krankheit und Verletzung werden getrennt gezählt und über 28 Tage visualisiert.
+- Für Wearable-Detailverläufe wird transparent ausgewiesen, dass noch kein methodisch freigegebener adaptiver persönlicher Normalbereich hinterlegt ist.
+
+**Keine Änderung der bestehenden Berechnungsformeln oder Datenmodelle beabsichtigt.** Die adaptive Baseline wurde ausdrücklich nicht implementiert, weil Mindestdatenbasis, robuste Statistik, Ausreißerbehandlung und schrittweise Aktualisierung erst verbindlich festgelegt werden müssen.
+
+Die CSS-Komponenten enthalten Light-Theme-Variablen für `data-theme="light"` bzw. `theme-light`. Da im bestehenden Einstellungsmodul kein Theme-Schalter nachgewiesen wurde, ist die appweite Umschaltung auf Light Mode noch nicht abgenommen.
