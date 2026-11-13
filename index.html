@@ -75,31 +75,21 @@
                     </div>
                 </div>
 
-                <!-- Hauptnavigation: vier Bereiche -->
-                <div class="flex items-center gap-1 min-w-0">
-                    <button type="button" title="Dashboard" aria-label="Dashboard" onclick="switchTab('dashboard')" id="nav-dashboard" class="px-3 py-2 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1.5 whitespace-nowrap">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Home</span>
-                    </button>
-                    <button type="button" title="Kalender" aria-label="Kalender" onclick="switchTab('calendar')" id="nav-calendar" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 whitespace-nowrap">
-                        <i data-lucide="calendar-days" class="w-4 h-4"></i><span>Kalender</span>
-                    </button>
-                    <button type="button" title="Analysen" aria-label="Analysen" onclick="switchTab('analyses')" id="nav-analyses" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 whitespace-nowrap">
-                        <i data-lucide="chart-no-axes-combined" class="w-4 h-4"></i><span>Analyse</span>
-                    </button>
-                </div>
-
-
-
-                <button type="button" title="Alle Bereiche" aria-label="Alle Bereiche" onclick="switchTab('more')" id="nav-areas" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-1.5 whitespace-nowrap">
-                    <i data-lucide="grid-2x2" class="w-4 h-4"></i><span>Bereiche</span>
-                </button>
-                <button id="garmin-sync-indicator" type="button" onclick="openGarminConnectionModal()" title="Garmin-Status prüfen" aria-label="Garmin-Status wird geprüft" class="flex items-center gap-1.5 rounded-lg border border-slate-800 px-2 py-2 text-[10px] text-slate-300 hover:bg-slate-800 whitespace-nowrap">
-                    <span id="garmin-sync-indicator-dot" class="inline-block h-2.5 w-2.5 rounded-full bg-rose-500" aria-hidden="true"></span>
-                    <span id="garmin-sync-indicator-text" class="hidden sm:inline">Nicht aktuell</span>
-                </button><span class="kajo-version-tag inline-flex items-center rounded-md border border-rose-500/30 bg-rose-950/40 px-1.5 py-1 text-[9px] font-semibold tracking-wide text-rose-300" aria-label="App-Version">v2.0</span>
-                <button id="kajo-desktop-profile-button" type="button" title="Benutzerprofil bearbeiten" aria-label="Benutzerprofil bearbeiten" onclick="kajoOpenProfile(event)" class="flex w-10 h-10 bg-cyan-950 border border-cyan-600/50 rounded-xl items-center justify-center text-cyan-300 hover:bg-cyan-900 kajo-account-button">
-                    <i data-lucide="user-round" class="w-5 h-5" aria-hidden="true"></i>
-                </button>
+                <nav class="kajo-primary-nav" aria-label="Hauptnavigation">
+                    <button type="button" id="nav-today" class="kajo-nav-item is-active" onclick="switchTab('today')" aria-current="page"><i data-lucide="house"></i><span>Heute</span></button>
+                    <button type="button" id="nav-calendar" class="kajo-nav-item" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i><span>Kalender</span></button>
+                    <button type="button" id="nav-training" class="kajo-nav-item" onclick="switchTab('training')"><i data-lucide="dumbbell"></i><span>Training</span></button>
+                    <button type="button" id="nav-analysis" class="kajo-nav-item" onclick="switchTab('analysis-load')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
+                    <button type="button" id="nav-more" class="kajo-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
+                </nav>
+        <nav class="kajo-mobile-nav" aria-label="Hauptnavigation mobil">
+            <button type="button" id="mobile-nav-today" class="kajo-mobile-nav-item is-active" onclick="switchTab('today')" aria-current="page"><i data-lucide="house"></i><span>Heute</span></button>
+            <button type="button" id="mobile-nav-calendar" class="kajo-mobile-nav-item" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i><span>Kalender</span></button>
+            <button type="button" id="mobile-nav-training" class="kajo-mobile-nav-item" onclick="switchTab('training')"><i data-lucide="dumbbell"></i><span>Training</span></button>
+            <button type="button" id="mobile-nav-analysis" class="kajo-mobile-nav-item" onclick="switchTab('analysis-load')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
+            <button type="button" id="mobile-nav-more" class="kajo-mobile-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
+        </nav>
+                <span class="kajo-version-tag" aria-label="App-Version">v2.0</span>
                     <input id="backup-import-input" type="file" accept="application/json,.json" class="hidden" onchange="restoreDatabaseBackup(event)"><div id="backup-preview-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[95] items-center justify-center p-4">
                         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-4">
                             <div class="flex items-center justify-between gap-3">
@@ -132,6 +122,16 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 hidden" id="app-main">
         <div id="area-back-link" class="hidden">
             <button type="button" onclick="switchTab('more')" class="kajo-back-link"><i data-lucide="arrow-left"></i><span>Alle Bereiche</span></button>
+        <nav id="training-subnav" class="kajo-subnav hidden" aria-label="Training-Unterbereiche">
+            <button type="button" id="training-subnav-activities" class="kajo-subnav-item is-active" onclick="switchTab('training-activities')"><i data-lucide="activity"></i><span>Aktivitäten</span></button>
+            <button type="button" id="training-subnav-planning" class="kajo-subnav-item" onclick="switchTab('training-planning')"><i data-lucide="calendar-check"></i><span>Trainingsplanung</span></button>
+        </nav>
+        <nav id="analysis-subnav" class="kajo-subnav hidden" aria-label="Analyse-Unterbereiche">
+            <button type="button" id="analysis-subnav-load" class="kajo-subnav-item is-active" onclick="switchTab('analysis-load')"><span>Training Load</span></button>
+            <button type="button" id="analysis-subnav-recovery" class="kajo-subnav-item" onclick="switchTab('analysis-recovery')"><span>Recovery</span></button>
+            <button type="button" id="analysis-subnav-performance" class="kajo-subnav-item" onclick="switchTab('analysis-performance')"><span>Performance</span></button>
+            <button type="button" id="analysis-subnav-health" class="kajo-subnav-item" onclick="switchTab('analysis-health')"><span>Health</span></button>
+        </nav>
         </div>
 
         <div id="cloud-sync-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[96] items-center justify-center p-4">
@@ -160,22 +160,25 @@
         <!-- ========================================== -->
         <!-- Bereichsauswahl: weitere Funktionen öffnen sich als eigenständige Ansichten. -->
         <section id="view-more" class="hidden space-y-4">
-            <h1 class="text-xl font-bold text-white">Bereiche</h1>
-            <div class="kajo-area-list" aria-label="App-Bereiche">
-                <button type="button" class="kajo-area-card" onclick="switchTab('training')"><span class="kajo-area-icon"><i data-lucide="trophy"></i></span><strong>Wettkämpfe &amp; Kraftleistungen</strong></button>
-                <button type="button" class="kajo-area-card" onclick="openProfileModal()"><span class="kajo-area-icon"><i data-lucide="user-round"></i></span><strong>Athletenprofil</strong></button>
-                <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="brain-circuit"></i></span><strong>KAJO Coach</strong></button>
-                <button type="button" class="kajo-area-card" onclick="switchTab('health-data')"><span class="kajo-area-icon"><i data-lucide="heart-pulse"></i></span><strong>Gesundheit &amp; Regeneration</strong></button>
-                <button type="button" class="kajo-area-card" onclick="switchTab('training-analysis')"><span class="kajo-area-icon"><i data-lucide="chart-no-axes-combined"></i></span><strong>Trainingsanalyse</strong></button>
-                <button type="button" class="kajo-area-card" onclick="switchTab('nutrition')"><span class="kajo-area-icon"><i data-lucide="utensils"></i></span><strong>Ernährung</strong></button>
-                <button type="button" class="kajo-area-card" onclick="switchTab('methods')"><span class="kajo-area-icon"><i data-lucide="book-open-check"></i></span><strong>Methodik &amp; Datenqualität</strong></button>
-
+            <header class="space-y-1"><h1 class="text-xl font-bold text-white">Mehr</h1><p class="text-xs text-slate-400">Profil, Sport, Daten und App-Einstellungen.</p></header>
+            <section class="kajo-more-group"><h2>Persönliches Profil</h2><div class="kajo-area-list">
+                <button type="button" class="kajo-area-card" onclick="switchTab('profile')"><span class="kajo-area-icon"><i data-lucide="user-round"></i></span><strong>Persönliche &amp; sportliche Daten</strong></button>
+            </div></section>
+            <section class="kajo-more-group"><h2>Sport &amp; Training</h2><div class="kajo-area-list">
+                <button type="button" class="kajo-area-card" onclick="switchTab('strength')"><span class="kajo-area-icon"><i data-lucide="trophy"></i></span><strong>Kraftleistungen</strong></button>
                 <button type="button" class="kajo-area-card" onclick="switchTab('routes')"><span class="kajo-area-icon"><i data-lucide="route"></i></span><strong>Trainings- &amp; Wettkampfstrecken</strong></button>
-                <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="database"></i></span><strong>Datenverwaltung</strong></button>
-            </div>
+                <button type="button" class="kajo-area-card" onclick="switchTab('nutrition')"><span class="kajo-area-icon"><i data-lucide="utensils"></i></span><strong>Ernährung</strong></button>
+            </div></section>
+            <section class="kajo-more-group"><h2>Datenverwaltung</h2><div class="kajo-area-list">
+                <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="database"></i></span><strong>Garmin, Datenquellen &amp; Synchronisierung</strong></button>
+                <button type="button" class="kajo-area-card" onclick="switchTab('upload')"><span class="kajo-area-icon"><i data-lucide="upload-cloud"></i></span><strong>Manueller Import</strong></button>
+                <button type="button" class="kajo-area-card" onclick="switchTab('methods')"><span class="kajo-area-icon"><i data-lucide="book-open-check"></i></span><strong>Datenqualität &amp; Berechnungsmethodik</strong></button>
+            </div></section>
+            <section class="kajo-more-group"><h2>App</h2><div class="kajo-area-list">
+                <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="settings"></i></span><strong>Darstellung, Benachrichtigungen &amp; Einstellungen</strong></button>
+                <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="brain-circuit"></i></span><strong>KAJO Coach &amp; KI-Einstellungen</strong></button>
+            </div></section>
         </section>
-
-
 
         <section id="view-routes" class="hidden space-y-5">
           <header class="space-y-1"><p class="kajo-eyebrow">STRECKENVERWALTUNG</p><h1 class="text-xl font-bold text-white">Flüsse, Abschnitte &amp; Strecken</h1><p class="text-xs text-slate-400">Verwalte zuerst deine Gewässer und Flussabschnitte. Anschließend ordnest du Trainings- und Wettkampfstrecken einem Abschnitt zu. Bestehende Strecken werden automatisch übernommen.</p></header>
@@ -271,7 +274,13 @@
             </section>
         </div>
 
-        <div id="view-dashboard" class="kajo-home space-y-5">
+        <div <section id="view-health-analysis" class="hidden space-y-4">
+            <header class="space-y-1"><p class="kajo-eyebrow">BELASTBARKEIT</p><h1 class="text-xl font-bold text-white">Health</h1><p class="text-xs text-slate-400">Krankheit, Verletzung und dokumentierte Trainingsausfälle.</p></header>
+            <section class="kajo-panel"><div class="kajo-panel-heading"><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div><div id="health-event-list" class="space-y-2"></div></section>
+            <section class="kajo-panel"><div class="kajo-panel-heading"><h2>Trainingsverfügbarkeit</h2><span class="text-xs text-slate-500">Datenstatus</span></div><p id="health-availability-status" class="text-sm text-slate-300">Noch nicht berechenbar.</p><p class="text-xs text-slate-500 mt-1">Eine Verfügbarkeitsquote wird nur ausgewiesen, wenn Gesundheits- und Planungsdaten für denselben Zeitraum ausreichend vollständig vorliegen.</p></section>
+        </section>
+
+        id="view-dashboard" class="kajo-home space-y-5">
   <div class="kajo-status-overview">
     <div class="kajo-readiness-grid">
       <article class="kajo-ring-card metric-history-clickable" role="button" tabindex="0" onclick="openTrainingMetric('fitness')" onkeydown="if(event.key==='Enter'||event.key===' ')openTrainingMetric('fitness')"><div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small id="home-fitness-change" class="kajo-fitness-change">→ —</small></div></div></article>
@@ -633,10 +642,11 @@
                     <button type="button" id="calendar-period-next" onclick="navigateCalendarPeriod(1)" aria-label="Nächster Zeitraum" class="calendar-nav-arrow"><i data-lucide="chevron-right"></i></button>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="calendar-view-switch flex-1 grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800" role="group" aria-label="Kalenderansicht">
-                        <button type="button" onclick="setCalendarFormat('month')" id="btn-fmt-month" class="calendar-view-button active" aria-label="Monatsansicht" title="Monat" aria-pressed="true"><i data-lucide="calendar-days" aria-hidden="true"></i></button>
-                        <button type="button" onclick="setCalendarFormat('week')" id="btn-fmt-week" class="calendar-view-button" aria-label="Wochenansicht" title="Woche" aria-pressed="false"><i data-lucide="calendar-range" aria-hidden="true"></i></button>
-                        <button type="button" onclick="setCalendarFormat('activities')" id="btn-fmt-activities" class="calendar-view-button" aria-label="Aktivitätenliste" title="Aktivitäten" aria-pressed="false"><i data-lucide="list-filter" aria-hidden="true"></i></button>
+                    <div class="calendar-view-switch flex-1 grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800" role="group" aria-label="Kalenderansicht">
+                        <button type="button" onclick="setCalendarFormat('day')" id="btn-fmt-day" class="calendar-view-button" aria-label="Tagesansicht" title="Tag" aria-pressed="false"><i data-lucide="calendar"></i></button>
+                        <button type="button" onclick="setCalendarFormat('week')" id="btn-fmt-week" class="calendar-view-button active" aria-label="Wochenansicht" title="Woche" aria-pressed="true"><i data-lucide="calendar-range"></i></button>
+                        <button type="button" onclick="setCalendarFormat('month')" id="btn-fmt-month" class="calendar-view-button" aria-label="Monatsansicht" title="Monat" aria-pressed="false"><i data-lucide="calendar-days"></i></button>
+                        <button type="button" onclick="setCalendarFormat('year')" id="btn-fmt-year" class="calendar-view-button" aria-label="Jahresansicht" title="Jahr" aria-pressed="false"><i data-lucide="calendar-range"></i></button>
                     </div>
                     <div class="relative">
                         <button type="button" id="calendar-add-button" aria-label="Eintrag hinzufügen" title="Eintrag hinzufügen" onclick="toggleCalendarAddMenu()" class="calendar-add-button"><i data-lucide="plus"></i></button>
@@ -651,6 +661,7 @@
 
             <div id="next-race-card" class="hidden"></div>
 
+            <div id="cal-format-year" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"></div>
             <div id="cal-format-month" class="space-y-2">
                 <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400 py-1">
                     <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
