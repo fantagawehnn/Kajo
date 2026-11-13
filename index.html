@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=67">
+    <link rel="stylesheet" href="css/styles.css?v=68">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons CDN -->
@@ -1242,7 +1242,7 @@
                 <div class="activity-detail-primary">
                     <section id="activity-telemetry-panel" class="activity-detail-panel activity-telemetry-panel">
                         <div class="activity-detail-section-heading"><div><h3>Verlauf</h3></div></div>
-                        <div id="activity-hr-series-status" class="activity-detail-data-status" aria-live="polite">Herzfrequenz-Zeitreihe wird geprüft …</div>
+                        <div id="activity-telemetry-switch" class="activity-series-switches" role="group" aria-label="Messgröße auswählen"></div><div id="activity-hr-series-status" class="activity-detail-data-status" aria-live="polite">Messreihen werden geprüft …</div>
                         <div class="activity-telemetry-chart-wrap"><canvas id="activityTelemetryChart"></canvas></div>
                     </section>
                     <section id="activity-fit-data-panel" class="hidden activity-detail-panel activity-detail-dynamic-panel"></section>
