@@ -4396,3 +4396,11 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
     #view-calendar .calendar-recovery-rings { gap:10px 12px; }
     #view-calendar .calendar-week-summary { gap:14px; }
 }
+
+#view-calendar .calendar-time-bars { display:flex; flex-direction:column; gap:5px; margin-top:5px; }
+#view-calendar .calendar-time-bar-row { display:grid; grid-template-columns:minmax(78px,auto) minmax(35px,1fr) auto; align-items:center; gap:6px; color:var(--color-text-muted,#7d8a98); font-size:8px; }
+#view-calendar .calendar-time-bar-row b { color:var(--color-text-secondary,#a9b5c2); font-size:8px; font-weight:600; white-space:nowrap; }
+#view-calendar .calendar-time-bar-track { display:block; height:5px; overflow:hidden; border-radius:5px; background:var(--color-surface-subtle,#1c2835); }
+#view-calendar .calendar-time-bar-track i { display:block; height:100%; border-radius:5px; background:var(--color-text-muted,#7d8a98); }
+#view-calendar .calendar-year-planned-bar { display:flex; gap:1px; min-height:3px; justify-content:center; }
+#view-calendar .calendar-year-planned-segment { width:4px; height:3px; border:1px solid; border-radius:1px; }
