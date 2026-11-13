@@ -4516,3 +4516,10 @@ html[data-theme="light"] #csv-details-modal .activity-detail-nav-button { backgr
 html[data-theme="light"] #csv-details-modal input,
 html[data-theme="light"] #csv-details-modal select,
 html[data-theme="light"] #csv-details-modal textarea { background:var(--kajo-surface,#fff)!important; color:var(--kajo-text,#172033)!important; border-color:var(--kajo-border,#d8e0ea)!important; }
+
+#csv-details-modal #activity-strength-analysis-panel { order:8; }
+#csv-details-modal .activity-strength-exercise-row { padding:8px 0; border-bottom:1px solid var(--kajo-border,rgba(71,85,105,.35)); }
+#csv-details-modal .activity-strength-exercise-row>strong { display:block; color:var(--kajo-text,#e2e8f0); font-size:11px; margin-bottom:5px; }
+#csv-details-modal .activity-strength-set-list { display:flex; flex-wrap:wrap; gap:5px; }
+#csv-details-modal .activity-strength-set-chip { padding:4px 7px; border-radius:6px; background:var(--kajo-surface-raised,#17212c); color:var(--kajo-text-secondary,#a9b5c2); font-size:9px; }
+#csv-details-modal .activity-strength-volume { margin-top:9px; color:var(--kajo-text-secondary,#a9b5c2); font-size:10px; }
