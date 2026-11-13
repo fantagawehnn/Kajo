@@ -33,6 +33,11 @@ for (const domain of ['load', 'recovery', 'performance', 'health']) {
   assert.ok(html.includes('id="' + domain + '-hero-ring"'), domain + ' uses the shared hero metric ring');
 }
 assert.ok(css.includes('one centered, consistently sized hero metric'), 'analysis pages share the centered hero layout');
+
+assert.ok(css.includes('#analysis-subpage-load > #analysis-load-section { order: 2; }'), 'training load trend precedes supporting metric rows');
+assert.ok(css.includes('#analysis-subpage-recovery > #view-health-data { order: 3; }'), 'recovery metric history precedes supporting metric rows');
+assert.ok(html.includes('id="analysis-health-timeline-panel"'), 'health timeline has a stable analysis section target');
+
 assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar'), 'adaptive personal baseline is not fabricated without an agreed method and data basis');
 
 
