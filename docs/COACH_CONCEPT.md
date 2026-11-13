@@ -1,6 +1,6 @@
 # KAJO V2 – Konzept des passiven KI-Coachs
 
-**Status:** Fachkonzept – Entwurf 1.0  
+**Status:** Fachkonzept – Entwurf 1.1 (individuelles Mehrsportprofil)  
 **Ziel-Repository:** `fantagawehnn/Kajo`  
 **Ziel-Branch:** `v2`  
 **Geltungsbereich:** KI-gestützte Trainingsanalyse und Trainingsempfehlungen  
@@ -10,7 +10,7 @@
 
 ## 1. Zielsetzung und Rolle
 
-Der KAJO-Coach ist ein persönlicher, sportwissenschaftlich orientierter Analyse- und Trainingsassistent für leistungsorientierte Ausdauersportlerinnen und -sportler. Er verbindet die in KAJO vorhandenen Trainings-, Leistungs-, Regenerations- und Gesundheitsinformationen zu nachvollziehbaren Einordnungen und konkreten Handlungsempfehlungen.
+Der KAJO-Coach wird zunächst individuell für die Nutzerin entwickelt. Sein sportlicher Schwerpunkt ist der Kanu-Wildwasserrennsport. Gleichzeitig berücksichtigt er weitere von ihr ausgeübte Sportarten und Trainingsformen. Er ist damit kein allgemeiner Coach für beliebige Nutzerprofile, sondern ein persönlicher Mehrsport-Coach, dessen Empfehlungen aus dem gesamten Trainingskontext abgeleitet werden. Er verbindet die in KAJO vorhandenen Trainings-, Leistungs-, Regenerations- und Gesundheitsinformationen zu nachvollziehbaren Einordnungen und konkreten Handlungsempfehlungen.
 
 Der Coach soll insbesondere:
 
@@ -149,7 +149,7 @@ Der Coach muss zwischen einem beobachteten Datenbefund, einer plausiblen Interpr
 
 Die Empfehlungen sollen sich an einem gepflegten Athletenprofil orientieren. Dazu können gehören:
 
-- Sportarten, Disziplinen und Trainingsschwerpunkte
+- primäre Sportart sowie ergänzende Sportarten und Trainingsformen\n- Disziplinen, Bootsklassen und Trainingsschwerpunkte im Kanusport\n- Funktion und Priorität der einzelnen Sportarten im Gesamttrainingsplan
 - Trainingsziele und Saisonplanung
 - individuelle Herzfrequenz- und Leistungszonen
 - Trainingshistorie und individuelle Normalbereiche
@@ -216,7 +216,7 @@ Der Coach ist fachlich erst dann als nutzbar zu bewerten, wenn:
 
 Die folgenden Punkte sind bewusst noch nicht festgelegt, weil die vorhandenen Unterlagen dafür keine ausreichende Vorgabe enthalten:
 
-1. Soll der Coach primär auf die eigene Athletin zugeschnitten starten oder von Beginn an generisch für verschiedene Sportarten und Nutzerprofile funktionieren?
+1. Welche weiteren Sportarten übt die Nutzerin aktuell regelmäßig aus, und welchen Stellenwert haben sie im Gesamttraining?
 2. Welche Trainingsziele und Saisonphasen sollen bei Empfehlungen verbindlich berücksichtigt werden?
 3. Welche Datenbasis ist für eine Tagesempfehlung mindestens erforderlich?
 4. Soll der Coach geplante Einheiten aktiv kommentieren oder nur auf ausdrückliche Frage analysieren?
