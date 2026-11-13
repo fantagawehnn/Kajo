@@ -726,6 +726,7 @@ export function setTimeframe(tf) {
     renderMainLoadChart(state.dailyTimeline, state.activeTimeframe);
     renderMetricHistory('health');
     renderMetricHistory('training');
+    window.kajoRenderTrainingLoadView?.();
 }
 
 export function toggleCustomDatePicker() { document.getElementById('custom-date-box')?.classList.toggle('hidden'); }
@@ -746,4 +747,5 @@ export function applyCustomDateRange() {
     renderMainLoadChart(state.dailyTimeline, 'custom');
     renderMetricHistory('health');
     renderMetricHistory('training');
+    window.kajoRenderTrainingLoadView?.();
 }
