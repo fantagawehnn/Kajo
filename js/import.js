@@ -762,7 +762,7 @@ export async function handleMultipleFileSelect(evt) {
                             maxHr: Number(lap.max_heart_rate) || null
                         };
                     });
-                    return {id:`fit-${file.name}-${date}-${i}`,sourceId:null,startTime:new Date(start).toISOString(),date,name,type:inferSport(name,sportName),tss:Number.isFinite(Number(session.training_load))?Number(session.training_load):null,duration:durationSec>0?Math.round(durationSec/60):null,distance:dist,hr:Number(session.avg_heart_rate)||null,maxHr:Number(session.max_heart_rate)||null,category:inferCategory(name,sportName),laps:sessionLaps,telemetry:labels.length?{
+                    return {id:`fit-${file.name}-${date}-${i}`,source:'fit',sources:['fit'],sourceId:null,startTime:new Date(start).toISOString(),date,name,type:inferSport(name,sportName),tss:Number.isFinite(Number(session.training_load))?Number(session.training_load):null,duration:durationSec>0?Math.round(durationSec/60):null,distance:dist,hr:Number(session.avg_heart_rate)||null,maxHr:Number(session.max_heart_rate)||null,category:inferCategory(name,sportName),laps:sessionLaps,telemetry:labels.length?{
                         labels,
                         ...(hrs && hrs.filter(value => value !== null).length >= 2 ? { hr: hrs } : {}),
                         ...(speeds && speeds.filter(value => value !== null).length >= 2 ? { speed: speeds } : {}),
