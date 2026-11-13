@@ -1,6 +1,6 @@
 # KAJO V2 – Regelwerk des passiven KI-Coachs
 
-**Status:** Fachregelwerk – Entwurf 1.0  
+**Status:** Fachregelwerk – Entwurf 1.1 (individuelles Mehrsportprofil)  
 **Ziel-Branch:** `v2`  
 **Verbindlichkeit:** Fachliche Leitplanken für Analyse, Interpretation und Empfehlungen  
 **Vorrang:** Datenintegrität, Sicherheit, Transparenz und Nutzerautonomie
@@ -163,7 +163,7 @@ Der Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen neuen Gesamt
 - Trainingsverfügbarkeit wird nur berechnet, wenn die erforderlichen Daten vollständig vorliegen.
 - ACWR oder andere Load-Verhältnisse dürfen nicht als individuelle Verletzungswahrscheinlichkeit ausgegeben werden.
 
-## 7. Sportartspezifische Vergleichsregeln
+## 7. Sportartspezifische und sportartenübergreifende Regeln
 
 Vor jedem Vergleich prüft der Coach mindestens:
 
@@ -285,7 +285,7 @@ Jede Coach-Regel muss mit Testfällen geprüft werden. Mindestens abzudecken sin
 - Wildwasseraktivität ohne Angaben zu äußeren Bedingungen,
 - Vergleich K1 mit C1 oder C2,
 - Vergleich Classic mit Sprint,
-- mehrere Trainingsformen am selben Tag,
+- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport, Ausdauerergänzung und Krafttraining,\n- Wechsel oder Änderung der Priorität einer Sportart,
 - keine sinnvolle Empfehlung möglich,
 - Nutzerin lehnt eine Empfehlung ab.
 
