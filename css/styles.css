@@ -4406,3 +4406,5 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 #view-calendar .calendar-year-planned-segment { width:4px; height:3px; border:1px solid; border-radius:1px; }
 
 #view-calendar .calendar-week-source { color:var(--color-text-muted,#7d8a98); font-size:7px; line-height:1.2; overflow-wrap:anywhere; }
+
+#view-calendar .calendar-day-events { display:inline-flex; align-items:center; gap:5px; }
