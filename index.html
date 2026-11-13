@@ -274,13 +274,13 @@
             </section>
         </div>
 
-        <div <section id="view-health-analysis" class="hidden space-y-4">
+        <section id="view-health-analysis" class="hidden space-y-4">
             <header class="space-y-1"><p class="kajo-eyebrow">BELASTBARKEIT</p><h1 class="text-xl font-bold text-white">Health</h1><p class="text-xs text-slate-400">Krankheit, Verletzung und dokumentierte Trainingsausfälle.</p></header>
             <section class="kajo-panel"><div class="kajo-panel-heading"><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div><div id="health-event-list" class="space-y-2"></div></section>
             <section class="kajo-panel"><div class="kajo-panel-heading"><h2>Trainingsverfügbarkeit</h2><span class="text-xs text-slate-500">Datenstatus</span></div><p id="health-availability-status" class="text-sm text-slate-300">Noch nicht berechenbar.</p><p class="text-xs text-slate-500 mt-1">Eine Verfügbarkeitsquote wird nur ausgewiesen, wenn Gesundheits- und Planungsdaten für denselben Zeitraum ausreichend vollständig vorliegen.</p></section>
         </section>
 
-        id="view-dashboard" class="kajo-home space-y-5">
+        <div id="view-dashboard" class="kajo-home space-y-5">
   <div class="kajo-status-overview">
     <div class="kajo-readiness-grid">
       <article class="kajo-ring-card metric-history-clickable" role="button" tabindex="0" onclick="openTrainingMetric('fitness')" onkeydown="if(event.key==='Enter'||event.key===' ')openTrainingMetric('fitness')"><div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small id="home-fitness-change" class="kajo-fitness-change">→ —</small></div></div></article>
@@ -978,8 +978,8 @@
                     <div class="flex items-center gap-2 text-cyan-400"><i data-lucide="sliders-horizontal" class="w-5 h-5"></i><h2 class="font-semibold text-white text-sm">Persönliche Konfiguration</h2></div>
                     <p class="text-xs text-slate-400">Sportarten, Trainingskategorien, Herzfrequenzzonen und Athletenprofil anpassen.</p>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="openSettingsModal()" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-200 text-xs"><i data-lucide="settings" class="inline w-3.5 h-3.5 mr-1"></i>Einstellungen</button>
-                        <button type="button" onclick="openProfileModal()" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-200 text-xs"><i data-lucide="user-round" class="inline w-3.5 h-3.5 mr-1"></i>Athletenprofil</button>
+                        
+                        
                     </div>
                 </article>
             </section>
