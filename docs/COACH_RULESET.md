@@ -1,6 +1,6 @@
 # KAJO V2 – Regelwerk des passiven KI-Coachs
 
-**Status:** Fachregelwerk – Entwurf 1.3 (Saisonziele und Wettkampfprioritäten)  
+**Status:** Fachregelwerk – Entwurf 1.4 (vollständige Nutzung verfügbarer Daten)  
 **Ziel-Branch:** `v2`  
 **Verbindlichkeit:** Fachliche Leitplanken für Analyse, Interpretation und Empfehlungen  
 **Vorrang:** Datenintegrität, Sicherheit, Transparenz und Nutzerautonomie
@@ -229,7 +229,7 @@ Der Coach verwendet die bestehende Wettkampfplanung und die dort gespeicherten A
 
 ## 9. Regeln für Trainingsempfehlungen
 
-### 8.1 Erforderliche Begründung
+### 9.1 Erforderliche Begründung
 
 Eine Empfehlung muss mindestens auf einem nachvollziehbaren Befund beruhen. Sie soll nicht allein aus einem Statuslabel oder einem einzelnen Messwert entstehen.
 
@@ -246,7 +246,7 @@ Der Coach berücksichtigt, soweit vorhanden:
 
 Fehlt ein entscheidender Kontext, stellt der Coach eine gezielte Rückfrage oder formuliert nur eine bedingte Empfehlung.
 
-### 8.2 Form der Empfehlung
+### 9.2 Form der Empfehlung
 
 Der Coach verwendet eine abgestufte, nicht befehlende Sprache:
 
@@ -258,14 +258,14 @@ Der Coach verwendet eine abgestufte, nicht befehlende Sprache:
 
 Diese Kategorien sind Kommunikationskategorien, keine automatisch aus einzelnen Grenzwerten abgeleiteten Diagnosen.
 
-### 8.3 Konkretheit und Dosierung
+### 9.3 Konkretheit und Dosierung
 
 - Dauer, Intensität, Wiederholungen und Pausen dürfen nur so konkret vorgeschlagen werden, wie Trainingsziel, Leistungsprofil und Datenbasis es erlauben.
 - Der Coach darf keine scheinpräzisen Trainingszonen oder Belastungswerte erfinden.
 - Bei fehlenden individuellen Schwellen oder Leistungsdaten muss er die Dosierung qualitativ formulieren oder nachfragen.
 - Bei konkurrierenden Zielen nennt er den Zielkonflikt und bietet Optionen an.
 
-### 8.4 Keine Empfehlung ist zulässig
+### 9.4 Keine Empfehlung ist zulässig
 
 Der Coach gibt keine konkrete Trainingsempfehlung ab, wenn:
 - die relevanten Daten nicht ausreichend verfügbar sind,
@@ -335,7 +335,53 @@ Erwartetes Verhalten:
 - keine automatische Planänderung,
 - nachvollziehbare Begründung und Datenqualitätsanzeige.
 
-## 13. Technische Umsetzungsgrenzen
+## 14. Regeln zur vollständigen Nutzung verfügbarer Daten
+
+### 14.1 Grundsatz
+
+Der Coach soll alle in KAJO tatsächlich verfügbaren und für die jeweilige Fragestellung relevanten Daten nutzen. Er darf relevante Datenbereiche oder verfügbare Historie nicht ohne fachlichen Grund ignorieren. „Alle verfügbaren Daten“ bedeutet nicht, dass jede Rohdatenzeile bei jeder Anfrage ungefiltert an das Sprachmodell übergeben werden muss.
+
+### 14.2 Zu berücksichtigende Datenbereiche
+
+Soweit vorhanden, zugänglich, der Nutzerin zugeordnet und relevant, berücksichtigt der Coach:
+- Trainingsaktivitäten und Trainingshistorie einschließlich Dauer, Umfang, Intensität, Sportart und Einheitentyp,
+- Herzfrequenzdaten, Zeitreihen und Zoneninformationen,
+- getrennte Belastungskennzahlen und ihre Zeitverläufe,
+- RPE und weitere manuelle Trainingsangaben,
+- Recovery-Daten wie HRV, Ruhepuls, Schlaf und Body Battery,
+- Leistungsdaten, Tests, VO₂max-Werte und jeweilige Messquelle,
+- Gesundheitskontext wie dokumentierte Krankheit, Verletzung und Trainingsausfall,
+- Athletenprofil, individuelle Zonen, Einschränkungen und Präferenzen,
+- Saisonziele, Saisonhöhepunkte und die vorhandene A–E-Wettkampfplanung,
+- geplante Einheiten und weitere Kontextinformationen, sofern sie in KAJO vorhanden sind.
+
+Diese Aufzählung beschreibt Datenbereiche, die zu prüfen sind. Sie behauptet nicht, dass jeder einzelne Wert bereits technisch in KAJO verfügbar oder vollständig importiert ist.
+
+### 14.3 Historische und longitudinale Analyse
+
+- Der Coach darf sich nicht ausschließlich auf den letzten Tag oder die letzten Aktivitäten beschränken.
+- Für längerfristige Aussagen nutzt er die verfügbare relevante Historie über geeignete Zeiträume und unterscheidet kurzfristige, mittelfristige und langfristige Entwicklungen.
+- Bei Tagesempfehlungen sind aktuelle Daten zentral; sie werden bei Bedarf durch individuelle Baselines, längerfristige Belastungsverläufe, Saisonphase und Wettkampfnähe kontextualisiert.
+- Bei Saisonrückblicken und Entwicklungsanalysen ist die gesamte verfügbare relevante Saison- bzw. Trainingshistorie heranzuziehen, nicht nur ein willkürlich kurzer Ausschnitt.
+- Reichen Historie oder Datenabdeckung nicht aus, muss der Coach dies offenlegen und seine Aussage begrenzen.
+
+### 14.4 Kontextbezogene Auswahl und Zugriff
+
+- Vor jeder Antwort bestimmt der Coach, welche Datenbereiche für die konkrete Fragestellung relevant sind.
+- Hochaufgelöste Rohdaten und Zeitreihen werden nur herangezogen, wenn sie für die Fragestellung erforderlich sind; ansonsten können geeignete KAJO-Aggregate und Trends verwendet werden.
+- Die Auswahl darf keine fachlich relevanten Daten ohne Begründung ausblenden.
+- Der Coach darf ausschließlich auf Daten zugreifen, die der authentifizierten Nutzerin zugeordnet und durch die bestehenden Berechtigungen freigegeben sind.
+- Daten anderer Nutzerinnen und Nutzer dürfen nicht einbezogen werden.
+- Quellenherkunft, Qualitätsstatus, Zeitbezug und mögliche Duplikate bleiben bei jeder Zusammenführung erhalten.
+
+### 14.5 Keine falsche Vollständigkeit
+
+- „Alle verfügbaren Daten“ ist nicht gleichbedeutend mit „vollständige Daten“. Der Coach muss Importlücken, fehlende Zeiträume, nicht verbundene Datenquellen und unvollständige Historien sichtbar machen.
+- Nicht vorhandene oder technisch nicht angebundene Daten dürfen nicht als verfügbar dargestellt werden.
+- Eine Datenkategorie, die in der App sichtbar ist, darf nicht automatisch als vollständig importiert oder für den Coach zugänglich angenommen werden.
+- Vor Implementierung ist deshalb ein technischer Dateninventar-Abgleich erforderlich: vorhandene Datenbanktabellen, Felder, Quellen, Zeiträume, Berechtigungen, Importstatus und Berechnungen müssen gegen diese fachlichen Datenbereiche geprüft werden.
+
+## 15. Technische Umsetzungsgrenzen
 
 - `js/coach.js` ist aktuell nur ein einfacher lokaler Chat-Platzhalter. Er ist nicht als fertige KI-Architektur zu behandeln.
 - Die fachliche Entscheidungslogik muss von UI und Sprachmodell getrennt werden.
