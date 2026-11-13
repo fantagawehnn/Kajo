@@ -25,10 +25,13 @@ const setHero = (domain, value, unit, status, note, stateName = 'neutral') => {
   const ring = document.getElementById(domain + '-hero-ring');
   if (ring) ring.dataset.status = stateName;
 };
-const metric = (label, value, detail = '') => `
-  <div class="kajo-analysis-metric">
-    <span>${label}</span><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}
-  </div>`;
+const metric = (label, value, detail = '', action = '') => action
+  ? `<button type="button" class="kajo-analysis-metric kajo-analysis-metric-link" onclick="${action}" aria-label="${label}: ${value}. Verlauf öffnen">
+      <span>${label}</span><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}<span class="kajo-analysis-metric-hint" aria-hidden="true">Verlauf ansehen ↗</span>
+    </button>`
+  : `<div class="kajo-analysis-metric">
+      <span>${label}</span><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}
+    </div>`;
 const renderMetrics = (id, items) => {
   const root = document.getElementById(id);
   if (root) root.innerHTML = items.join('');
@@ -61,9 +64,9 @@ function renderLoad() {
     ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—')
     : fmt(last.tsb);
   renderMetrics('load-analysis-metrics', [
-    metric('CTL', fmt(last.ctl), 'langfristige Belastung'),
+    metric('CTL', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
     metric('ATL', fmt(last.atl), 'kurzfristige Belastung'),
-    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance),
+    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance, '', "openTrainingMetric('form')"),
     metric('ACWR', fmt(last.acwr))
   ]);
   const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
@@ -94,8 +97,10 @@ function renderRecovery() {
   ];
   renderMetrics('recovery-analysis-metrics', entries.map(([label, key, unit]) => {
     const entry = latestCheckin(key);
+    const supported = {"hrv":"hrv","rhr":"rhr","sleepDuration":"sleepDuration","sleepScore":"sleepScore","stress":"stress","fatigue":"fatigue","soreness":"soreness"}[key];
     return metric(label, entry ? fmt(entry.value, key === 'sleepDuration' ? 1 : 0) + (unit ? ' ' + unit : '') : '—',
-      entry ? dateLabel(entry.date) : 'Nicht erfasst');
+      entry ? dateLabel(entry.date) : 'Nicht erfasst',
+      supported ? "openHealthMetric('" + supported + "')" : '');
   }));
 }
 function renderPerformance() {
