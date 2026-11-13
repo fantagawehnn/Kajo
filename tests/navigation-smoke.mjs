@@ -134,3 +134,31 @@ assert.ok(!dashboard.includes("return '#a855f7'"), 'critical status no longer us
 
 
 assert.ok(profile.includes('closeProfileModal()') && profile.includes('activeProfileSection'), 'profile keeps a return path and preserves the open section');
+
+
+// Calendar redesign: shared KAJO styling, four calendar modes and transparent data coverage.
+assert.ok(html.includes('id="cal-format-day"'), 'calendar has a dedicated day view');
+assert.ok(html.includes('id="calendar-week-summary"'), 'week view has aggregate load and time summary');
+assert.ok(html.includes('id="month-day-detail"'), 'month view has an inline day detail region below the grid');
+assert.ok(html.includes('openCalendarTrainingCreate()') && html.includes('openCalendarRaceCreate()'), 'calendar plus menu offers training and competition creation');
+assert.ok(!html.includes('id="calendar-display-toggle"'), 'calendar cannot switch sport colors to training-category colors');
+assert.ok(calendar.includes('export function openCalendarDay(date, keepMonth = false)'), 'month day selection can retain the month view');
+assert.ok(calendar.includes("state.activeCalendarFormat = 'month';") && calendar.includes('renderCalendarDayDetail(selectedDate, detail)'), 'month details render below the month grid without leaving it');
+assert.ok(calendar.includes("renderCalendarDayDetail(toLocalDateString(state.currentCalendarDate), 'cal-format-day')"), 'day view uses the same day-detail renderer');
+const dayDetailStart = calendar.indexOf('function renderCalendarDayDetail');
+const dayDetailEnd = calendar.indexOf('export function openCalendarDay', dayDetailStart);
+const dayDetail = calendar.slice(dayDetailStart, dayDetailEnd);
+assert.ok(dayDetail.indexOf('Trainingseinheiten') < dayDetail.indexOf('Training Load & Trainingszeit') && dayDetail.indexOf('Training Load & Trainingszeit') < dayDetail.indexOf('Recovery'), 'day detail order is training, load/time, recovery');
+assert.ok(calendar.includes('getSportsCatalog()'), 'calendar activity colors come from configured sport colors');
+assert.ok(calendar.includes('calendar-month-sport-marker is-planned') && calendar.includes('calendar-entry-status is-completed'), 'sport color is separate from planned/completed status');
+assert.ok(calendar.includes('calendarEventIcons(date)'), 'calendar shows distinct event symbols');
+assert.ok(calendar.includes('item?.cycle?.period === true'), 'calendar shows recorded menstruation days only');
+assert.ok(calendar.includes('calendar-year-week-cell') && calendar.includes('calendar-year-month-label') && calendar.includes('calendar-year-sport-segment'), 'year view is a month and calendar-week matrix with sport-specific bars');
+assert.ok(calendar.includes('calendar-year-planned-segment'), 'year view distinguishes planned sessions from completed training time');
+assert.ok(calendar.includes('calendar-week-day') && calendar.includes('calendar-week-activity'), 'week view is a seven-column training calendar grid');
+assert.ok(calendar.includes('Number(timeline.activityCount) === Number(timeline.loadActivityCount)'), 'daily training load is shown only with complete activity coverage');
+assert.ok(calendar.includes('data.durationComplete') && calendar.includes('priorCompleteDays'), 'training time comparison exposes incomplete duration coverage');
+assert.ok(!calendar.includes('getTrainingLoadData'), 'calendar reuses central daily timeline rather than recalculating load');
+assert.ok(css.includes('.calendar-year-matrix') && css.includes('.calendar-day-load-time') && css.includes('.calendar-time-bar-row'), 'calendar uses compact shared visual components');
+assert.ok(css.includes('var(--color-surface') && css.includes('var(--color-background'), 'calendar styling follows shared theme tokens');
+assert.ok(css.includes('var(--kajo-status-good') && css.includes('var(--kajo-status-critical'), 'semantic status colors remain separate from sport colors');
