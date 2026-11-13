@@ -8,7 +8,7 @@ import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData } from './training-load.js';
-import { populateActivityRouteSelect } from './routes.js';
+import { populateActivityRouteSelect, getActivityRouteAssignments } from './routes.js';
 function getActivityZoneConfig(activity) {
     const saved = state.settings?.heartRateZones?.[activity.type];
     const valid = values => Array.isArray(values) && values.length === 4
@@ -133,6 +133,7 @@ export function openCSVDetailsModal(id) {
     try { renderActivityTelemetryChart(analysisActivity); } catch (error) { console.error('Telemetrie konnte nicht gerendert werden:', error); }
     try { renderActivityTrainingInsights(analysisActivity); } catch (error) { console.error('Trainingsanalyse konnte nicht gerendert werden:', error); }
     try { renderOptionalActivityViews(analysisActivity); } catch (error) { console.error('Zusatzansichten konnten nicht gerendert werden:', error); }
+    try { renderActivityComparisons(act); } catch (error) { console.error('Aktivitätsvergleich konnte nicht gerendert werden:', error); }
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
 }
 
@@ -336,6 +337,62 @@ function renderActivityTrainingInsights(act) {
 }
 
 
+
+function renderActivityComparisons(activity) {
+    const panel = document.getElementById('activity-comparison-panel');
+    if (!panel) return;
+    const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const distance = Number(activity.distance);
+    const duration = Number(activity.duration);
+    const routeIds = getActivityRouteAssignments(activity).map(item => String(item.routeId)).sort();
+    const isCanoe = ['Kayaking', 'C1', 'C2'].includes(activity.type);
+    const water = activity.waterConditions || {};
+    const matches = (state.rawActivities || []).filter(candidate => {
+        if (!candidate || String(candidate.id) === String(activity.id)) return false;
+        if (candidate.type !== activity.type || (candidate.category || '') !== (activity.category || '')) return false;
+        if ((candidate.raceFormat || '') !== (activity.raceFormat || '')) return false;
+        const otherDistance = Number(candidate.distance);
+        const otherDuration = Number(candidate.duration);
+        if (!(distance > 0 && otherDistance > 0 && Math.abs(otherDistance - distance) / distance <= .10)) return false;
+        if (!(duration > 0 && otherDuration > 0 && Math.abs(otherDuration - duration) / duration <= .20)) return false;
+        if (isCanoe) {
+            const otherRoutes = getActivityRouteAssignments(candidate).map(item => String(item.routeId)).sort();
+            if (!routeIds.length || !otherRoutes.length || routeIds.join('|') !== otherRoutes.join('|')) return false;
+            const otherWater = candidate.waterConditions || {};
+            if (water.level == null || otherWater.level == null || (water.levelUnit || 'cm') !== (otherWater.levelUnit || 'cm')) return false;
+            const levelA = Number(water.level), levelB = Number(otherWater.level);
+            if (!Number.isFinite(levelA) || !Number.isFinite(levelB) || Math.abs(levelA - levelB) > Math.max(1, Math.abs(levelA) * .05)) return false;
+            const dischargeA = water.discharge == null ? null : Number(water.discharge);
+            const dischargeB = otherWater.discharge == null ? null : Number(otherWater.discharge);
+            if ((dischargeA === null) !== (dischargeB === null)) return false;
+            if (dischargeA !== null && (!Number.isFinite(dischargeA) || !Number.isFinite(dischargeB)
+                || Math.abs(dischargeA - dischargeB) > Math.max(.1, Math.abs(dischargeA) * .10))) return false;
+            if ((activity.waterType || '') !== (candidate.waterType || '')) return false;
+        }
+        return true;
+    }).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0,3);
+    if (!matches.length) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+    const currentSpeed = Number(activity.avgSpeed ?? activity.averageSpeed);
+    const rows = matches.map(candidate => {
+        const otherSpeed = Number(candidate.avgSpeed ?? candidate.averageSpeed);
+        const speedDiff = Number.isFinite(currentSpeed) && currentSpeed > 0 && Number.isFinite(otherSpeed)
+            ? ((currentSpeed - otherSpeed) / otherSpeed * 100) : null;
+        const durationDiff = duration > 0 && Number(candidate.duration) > 0 ? Number(candidate.duration) - duration : null;
+        return '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-slate-800 py-2 text-xs">'
+            + '<div><strong class="text-slate-200">' + escape(candidate.name || 'Training') + '</strong><div class="text-[10px] text-slate-500">'
+            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + Math.round(Number(candidate.duration)) + ' min'
+            + (candidate.distance ? ' · ' + formatKm(candidate.distance) + ' km' : '') + '</div></div>'
+            + '<div class="text-right text-[10px] text-slate-400">'
+            + (speedDiff !== null ? 'Geschwindigkeit: ' + (speedDiff > 0 ? '+' : '') + speedDiff.toFixed(1) + '%' : '')
+            + (durationDiff !== null ? (speedDiff !== null ? '<br>' : '') + 'Dauer: ' + (durationDiff > 0 ? '+' : '') + Math.round(durationDiff) + ' min' : '')
+            + '</div></div>';
+    }).join('');
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<h4 class="text-xs font-bold text-white mb-2">Vergleichbare Aktivitäten</h4>'
+        + '<p class="text-[10px] text-slate-500 mb-2">Gleiche Sportart, Trainingskategorie und Rennformat sowie ähnliche Distanz und Dauer'
+        + (isCanoe ? ', identische Strecke und ähnliche dokumentierte Wasserbedingungen' : '') + '.</p>' + rows;
+}
+
 function renderOptionalActivityViews(act) {
     const setPanel = (id, title, body) => {
         const el = document.getElementById(id);
@@ -350,7 +407,7 @@ function renderOptionalActivityViews(act) {
     const times = Array.isArray(act.telemetry?.time) ? act.telemetry.time : [];
     const validHr = hr.filter(v => v !== null && v >= 30 && v <= 250);
     const validSpeed = speed.filter(v => v !== null && v >= 0);
-    const hasIntensity = validHr.length >= 2 || validSpeed.length >= 2;
+    const hasIntensity = getActivityTelemetrySeries(act).length > 0;
     const chartPanel = document.getElementById('activity-telemetry-panel');
     if (chartPanel) chartPanel.classList.toggle('hidden', !hasIntensity);
 
@@ -424,7 +481,7 @@ function renderOptionalActivityViews(act) {
     } else setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', '');
 
     // Höhenprofil nur anzeigen, wenn ein Höhenverlauf oder Höhengewinn gespeichert ist.
-    const altitude = act.telemetry?.altitude || act.telemetry?.elevation;
+    const altitude = act.telemetry?.altitude || act.telemetry?.elevation || act.garminFitData?.recordFields?.altitude || act.garminFitData?.recordFields?.enhanced_altitude;
     const gain = safe(act.elevationGain ?? act.elevation_gain);
     if ((Array.isArray(altitude) && altitude.length >= 2) || gain !== null) {
         const validAlt = Array.isArray(altitude) ? altitude.map(safe).filter(v => v !== null) : [];
@@ -515,6 +572,8 @@ function renderGarminFitDataPanel(act) {
         return '<details class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2"><summary class="cursor-pointer text-xs text-slate-200">'+escape(label)+' '+(index+1)+'</summary><div class="mt-2">'+details+'</div></details>';
     }).join('')+'</div>' : '<p class="text-[10px] text-slate-500">Keine entsprechenden FIT-Datensätze in dieser Datei.</p>';
     const imported = Boolean(act.garminFitImported && Object.keys(fitData).length);
+    const hasFitDetails = Boolean(fitData.recordCount || Object.keys(fields).length || laps.length || sets.length || steps.length);
+    if (!hasFitDetails) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
     panel.classList.remove('hidden');
     panel.innerHTML = '<div class="flex flex-wrap items-start justify-between gap-2"><div><h4 class="text-xs font-bold text-cyan-300">Garmin FIT-Daten im Detail</h4><p class="text-[10px] text-slate-500 mt-1">'+(imported?'FIT-Datei ausgewertet':'Noch keine erweiterten FIT-Daten gespeichert')+(fitData.importedAt?' · Import '+escape(new Date(fitData.importedAt).toLocaleString('de-DE')):'')+'</p></div><span class="text-[10px] text-slate-500">'+Number(fitData.recordCount||0)+' Records</span></div>'
         +'<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">'+cardHtml+'</div>'
