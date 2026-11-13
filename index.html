@@ -1511,13 +1511,35 @@
     <div id="settings-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[120] flex items-start sm:items-center justify-center p-2 sm:p-4" aria-hidden="true">
       <div class="kajo-settings-shell w-full max-w-5xl max-h-[94vh] overflow-y-auto">
         <header class="kajo-settings-header"><div class="flex items-center gap-3 min-w-0"><div class="kajo-settings-mark"><i data-lucide="sliders-horizontal"></i></div><div class="min-w-0"><p class="kajo-settings-eyebrow">KAJO · DEIN TRAININGSBEGLEITER</p><h2 class="text-xl font-extrabold text-white">Einstellungen</h2><p class="text-xs text-slate-400 mt-1">Gestalte KAJO passend zu deinem Training und deinem Alltag.</p></div></div><button type="button" onclick="closeSettingsModal()" aria-label="Einstellungen schließen" class="kajo-settings-close">×</button></header>
-        <nav class="kajo-settings-nav" aria-label="Einstellungskategorien">
-          <button type="button" onclick="kajoSettingsJump('settings-notifications')"><i data-lucide="bell-ring"></i><span>Benachrichtigungen</span></button>
-          <button type="button" onclick="kajoSettingsJump('settings-profile')"><i data-lucide="user-round"></i><span>Persönliches Profil</span></button>
-          <button type="button" onclick="kajoSettingsJump('settings-training')"><i data-lucide="calendar-days"></i><span>Training &amp; Planung</span></button>
-          <button type="button" onclick="kajoSettingsJump('settings-zones')"><i data-lucide="heart-pulse"></i><span>Leistungsparameter</span></button>
-          <button type="button" onclick="kajoSettingsJump('settings-connections')"><i data-lucide="watch"></i><span>Verbindungen &amp; Daten</span></button>
-          <button type="button" onclick="kajoSettingsJump('settings-app')"><i data-lucide="shield-check"></i><span>App &amp; Datenschutz</span></button>
+        <section class="kajo-settings-status-strip" aria-label="Verbindungsstatus">
+          <div class="kajo-settings-status-main">
+            <span class="kajo-settings-status-indicator" id="settings-garmin-status-dot" aria-hidden="true"></span>
+            <div><span class="kajo-settings-status-label">Garmin-Verbindung</span><strong id="settings-garmin-status" aria-live="polite">Status wird geprüft</strong></div>
+          </div>
+          <button type="button" class="kajo-settings-status-action" onclick="closeSettingsModal(); openGarminConnectionModal()">Verbindung verwalten</button>
+        </section>
+        <nav class="kajo-settings-overview" aria-label="Einstellungsbereiche">
+          <section class="kajo-settings-overview-group">
+            <div class="kajo-settings-overview-heading"><span>01</span><h3>Persönliches Profil</h3></div>
+            <button type="button" class="kajo-settings-overview-row" onclick="closeSettingsModal(); openProfileModal()"><i data-lucide="user-round"></i><span><strong>Athletenprofil</strong><small>Persönliche Angaben, Körperdaten, Leistungsprofil und Ziele</small></span></button>
+          </section>
+          <section class="kajo-settings-overview-group">
+            <div class="kajo-settings-overview-heading"><span>02</span><h3>Sport &amp; Training</h3></div>
+            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsJump('settings-sports')"><i data-lucide="waves"></i><span><strong>Sportarten &amp; Farben</strong><small>Disziplinen aktivieren und Kennzeichnung verwalten</small></span></button>
+            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsJump('settings-categories')"><i data-lucide="list-checks"></i><span><strong>Trainingsbereiche</strong><small>Trainingslegenden und Belastungsquelle</small></span></button>
+            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsJump('settings-zones')"><i data-lucide="heart-pulse"></i><span><strong>Herzfrequenzzonen</strong><small>Individuelle Zonengrenzen und Referenzwerte</small></span></button>
+          </section>
+          <section class="kajo-settings-overview-group">
+            <div class="kajo-settings-overview-heading"><span>03</span><h3>Datenverwaltung</h3></div>
+            <button type="button" class="kajo-settings-overview-row" onclick="closeSettingsModal(); openGarminConnectionModal()"><i data-lucide="watch"></i><span><strong>Garmin &amp; Datenquellen</strong><small>Verbindungen und Synchronisierung</small></span></button>
+            <button type="button" class="kajo-settings-overview-row" onclick="closeSettingsModal(); switchMoreTab('data')"><i data-lucide="database"></i><span><strong>Datenimport &amp; Datenqualität</strong><small>Importierte Trainings- und Gesundheitsdaten</small></span></button>
+            <button type="button" class="kajo-settings-overview-row" onclick="exportDatabaseBackup()"><i data-lucide="download"></i><span><strong>Daten-Backup</strong><small>Persönliche KAJO-Daten exportieren</small></span></button>
+          </section>
+          <section class="kajo-settings-overview-group">
+            <div class="kajo-settings-overview-heading"><span>04</span><h3>App</h3></div>
+            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsJump('settings-app')"><i data-lucide="sliders-horizontal"></i><span><strong>Darstellung &amp; Datenschutz</strong><small>Theme und Kontoeinstellungen</small></span></button>
+            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsJump('settings-notifications')"><i data-lucide="bell"></i><span><strong>Benachrichtigungen</strong><small>Push und persönliche Erinnerungen</small></span></button>
+          </section>
         </nav>
         <div class="kajo-settings-content">
           <section id="settings-notifications-group" class="kajo-settings-group"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="bell-ring"></i></span><div><p class="kajo-settings-eyebrow">IMMER ZUM RICHTIGEN ZEITPUNKT</p><h3>Benachrichtigungen</h3><p>Erhalte persönliche Erinnerungen direkt auf dein Smartphone.</p></div></div><section id="settings-notifications" class="kajo-settings-card space-y-4">
