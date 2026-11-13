@@ -11,7 +11,7 @@ import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
-import { getGarminTelemetry } from './data-source.js';
+import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
 
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
@@ -573,7 +573,7 @@ const activitySeriesMeta = {
 };
 
 export function getActivityTelemetrySeries(act) {
-    const telem = getGarminTelemetry(act) || {};
+    const telem = getActivityTelemetry(act) || {};
     const fields = act?.garminFitData?.recordFields || {};
     const aliases = {
         hr: [telem.hr, fields.heart_rate],
