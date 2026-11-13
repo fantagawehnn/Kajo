@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync('index.html', 'utf8');
+const html = readFileSync('index.html', 'utf8');\nconst activities = readFileSync('js/activities.js', 'utf8');
 const css = readFileSync('css/styles.css', 'utf8');
 const main = readFileSync('js/main.js', 'utf8');
 const calendar = readFileSync('js/calendar.js', 'utf8');
@@ -180,6 +180,6 @@ assert.ok(calendar.includes('...Object.keys(week.plannedBySport)'), 'year legend
 assert.ok(charts.includes('export function getActivityTelemetrySeries(act)'), 'activity chart options are built from available telemetry and FIT series');
 assert.ok(charts.includes('export function setActivityTelemetryMetric(metric)'), 'activity chart exposes a single metric switch');
 assert.ok(charts.includes('state.activityTelemetryMetric = preferred'), 'activity chart retains a valid selected metric');
-assert.ok(index.includes('id="activity-telemetry-switch"'), 'activity detail has one central telemetry switch');
+assert.ok(html.includes('id="activity-telemetry-switch"'), 'activity detail has one central telemetry switch');
 assert.ok(!activities.includes('activityFitSeriesChart'), 'FIT diagnostic panel does not create a second time-series chart');
 assert.ok(activities.includes("getSportsCatalog()[act.type]?.color"), 'activity header uses the configured sport color');
