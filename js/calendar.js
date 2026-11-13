@@ -262,7 +262,7 @@ function renderCalendarDayDetail(date, target) {
         '<div class="calendar-time-summary"><div class="calendar-time-primary"><span>Trainingszeit</span><strong>' + durationText + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
         '<div class="calendar-time-comparison"><span>Trainingszeit-Vergleich</span><small>' + escapeHtml(durationCoverage) + '</small><div class="calendar-time-bars">' + (todayBar + priorBar || '<small>Für den Vergleich fehlen vollständige Dauerangaben.</small>') + '</div><small>' + escapeHtml(priorCoverage) + '</small></div></div></div></section>' +
         '<section class="calendar-detail-section"><h3>Recovery</h3><div class="calendar-recovery-rings">' + (recovery.length ? recovery.join('') : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>') + '</div></section>' +
-        '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><button type="button" onclick="openDayEditor(\'' + date + '\')">Tagesdaten bearbeiten</button></div>';
+        '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><span class="calendar-day-events">' + calendarEventIcons(date) + '</span><button type="button" onclick="openDayEditor(\'' + date + '\')">Tagesdaten bearbeiten</button></div>';
 }
 export function openCalendarDay(date, keepMonth = false) {
     if (!date) return;
