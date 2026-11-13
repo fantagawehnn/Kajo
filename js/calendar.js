@@ -189,8 +189,8 @@ function calendarActivityRow(activity, planned) {
     const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
     const status = planned ? 'Geplant' : 'Abgeschlossen';
     const action = planned
-        ? 'switchTab(\\'training-planning\\')'
-        : 'openCSVDetailsModal(\\'' + id + '\\')';
+        ? 'switchTab(\'training-planning\')'
+        : 'openCSVDetailsModal(\'' + id + '\')';
     return '<button type="button" class="calendar-day-activity-row" style="--activity-color:' + color + '" onclick="' + action + '">' +
         '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span>' +
         '<strong>' + escapeHtml(activity.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
@@ -199,7 +199,7 @@ function calendarActivityRow(activity, planned) {
 }
 function calendarRaceRow(race) {
     const sport = calendarSport(race.sport);
-    return '<button type="button" class="calendar-day-activity-row calendar-race-row" style="--activity-color:' + sport.color + '" onclick="switchTab(\\'training-planning\\')">' +
+    return '<button type="button" class="calendar-day-activity-row calendar-race-row" style="--activity-color:' + sport.color + '" onclick="switchTab(\'training-planning\')">' +
         '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span><strong>' + escapeHtml(race.name || 'Wettkampf') + '</strong>' +
         '<small>' + escapeHtml(race.location || '') + '</small></span><span class="calendar-entry-status is-event">Wettkampf</span></button>';
 }
@@ -241,7 +241,7 @@ function renderCalendarDayDetail(date, target) {
         '<div class="calendar-time-summary"><div class="calendar-time-primary"><span>Trainingszeit</span><strong>' + durationText + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
         '<div class="calendar-time-comparison"><span>Vorherige 7 Tage</span><strong>' + (priorDuration === null ? '—' : calendarFormatMinutes(priorDuration)) + '</strong><small>' + escapeHtml(priorCoverage) + '</small></div></div></div></section>' +
         '<section class="calendar-detail-section"><h3>Recovery</h3><div class="calendar-recovery-rings">' + (recovery.length ? recovery.join('') : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>') + '</div></section>' +
-        '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><button type="button" onclick="openDayEditor(\\'' + date + '\\')">Tagesdaten bearbeiten</button></div>';
+        '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><button type="button" onclick="openDayEditor(\'' + date + '\')">Tagesdaten bearbeiten</button></div>';
 }
 export function openCalendarDay(date, keepMonth = false) {
     if (!date) return;
@@ -444,7 +444,7 @@ export function renderYearView() {
             (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured"></i>' : '');
-        return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\\'' + week.start + '\\')"><span class="calendar-year-week-bar">' + segments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
+        return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')"><span class="calendar-year-week-bar">' + segments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
     }).join('');
     const legendTypes = [...new Set(weeks.flatMap(week => Object.keys(week.bySport)))];
     const legend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
@@ -477,7 +477,7 @@ export function renderMonthView() {
         data.activities.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-completed" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label) + ' · Abgeschlossen"></span>'); });
         data.planned.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-planned" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label) + ' · Geplant"></span>'); });
         const load = data.loadValue === null ? '' : '<small class="calendar-month-load">' + Math.round(data.loadValue) + '</small>';
-        grid.insertAdjacentHTML('beforeend', '<button type="button" class="calendar-month-day ' + (date === today ? 'is-today ' : '') + (selected ? 'is-selected' : '') + '" data-date="' + date + '" aria-pressed="' + selected + '" aria-label="' + calendarDateLabel(date) + '" onclick="openCalendarDay(\\'' + date + '\\',true)">' +
+        grid.insertAdjacentHTML('beforeend', '<button type="button" class="calendar-month-day ' + (date === today ? 'is-today ' : '') + (selected ? 'is-selected' : '') + '" data-date="' + date + '" aria-pressed="' + selected + '" aria-label="' + calendarDateLabel(date) + '" onclick="openCalendarDay(\'' + date + '\',true)">' +
             '<span class="calendar-month-day-head"><span class="calendar-month-day-number">' + day + '</span>' + load + '</span>' +
             '<span class="calendar-month-markers">' + markers.join('') + '</span><span class="calendar-month-events">' + calendarEventIcons(date) + '</span></button>');
     }
@@ -522,16 +522,16 @@ export function renderWeekView() {
         const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
         const activityItems = data.activities.map(item => {
             const sport = calendarSport(item.type);
-            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small></button>';
+            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small></button>';
         }).join('');
         const planItems = data.planned.map(item => {
             const sport = calendarSport(item.type);
-            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + sport.color + '" onclick="switchTab(\\'training-planning\\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplant') + '</small></button>';
+            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + sport.color + '" onclick="switchTab(\'training-planning\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplant') + '</small></button>';
         }).join('');
         const eventIcons = calendarEventIcons(date);
         const cell = document.createElement('section');
         cell.className = 'calendar-week-day ' + (date === today ? 'is-today ' : '') + (state.selectedCalendarDay === date ? 'is-selected' : '');
-        cell.innerHTML = '<button type="button" class="calendar-week-day-head" onclick="openCalendarDay(\\'' + date + '\\')"><span>' + dayNames[d.getDay()] + '</span><strong>' + d.getDate() + '</strong><span class="calendar-week-day-events">' + eventIcons + '</span></button>' +
+        cell.innerHTML = '<button type="button" class="calendar-week-day-head" onclick="openCalendarDay(\'' + date + '\')"><span>' + dayNames[d.getDay()] + '</span><strong>' + d.getDate() + '</strong><span class="calendar-week-day-events">' + eventIcons + '</span></button>' +
             '<div class="calendar-week-activities">' + (activityItems + planItems || '<span class="calendar-week-empty">—</span>') + '</div>' +
             '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? '—' : Math.round(data.durationTotal) + ' min') + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div>';
         container.appendChild(cell);
