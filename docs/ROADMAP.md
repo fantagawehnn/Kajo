@@ -24,7 +24,7 @@
 
 ## Phase 3 – Kernmodule
 - [x] Dashboard-Navigationsstruktur und kompakte interaktive Trainingswochenübersicht; vollständige Inhalts-/Datenabnahme offen
-- [x] Aktivitäten-Unterbereich mit bestehender Aktivitätsliste und Detailmodal; fachliche Datenabnahme offen
+- [x] Aktivitäten-Unterbereich mit bestehender Aktivitätsliste und Detailmodal; gemeinsamer Telemetrie-Switch, bedingte GPS-Karte, Rundenfokus und konservative Vergleiche ergänzt; reale Daten-/Browserabnahme offen
 - [x] Kalender-Navigation mit Tag-, Wochen-, Monats- und Jahresansicht; mobile/visuelle Endabnahme offen
 - [x] Eigenständiger Training-Load-Unterbereich
 - [x] Eigenständiger Recovery-Unterbereich mit vorhandenen Messwert-Details
@@ -45,6 +45,7 @@
 - [ ] Bestehende Garmin-Daten werden korrekt gelesen und nicht dupliziert.
 - [ ] Berechnungen mit definierten Testfällen prüfen.
 - [ ] Desktop- und Mobilansichten prüfen.
+- [ ] Aktivitätsdetails mit realen FIT-Dateien (mit/ohne GPS, Leistung, Kadenz, Runden) sowie Light/Dark Mode visuell abnehmen.
 - [ ] GitHub-Actions-Smoke-Test und Pages-Build für den aktuellen Commit erfolgreich prüfen; Live-Funktionstests bleiben offen.
 - [ ] Erst nach erfolgreicher Abnahme V2 als vollständige App freigeben.
 
