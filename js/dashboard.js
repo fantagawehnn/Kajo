@@ -14,7 +14,8 @@ function localTodayKey() {
   return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
 }
 function clamp(v,min=0,max=100){return Math.max(min,Math.min(max,v));}
-function fiveLevelColor(score){return score>=80?'#22c55e':score>=60?'#eab308':score>=40?'#f97316':score>=20?'#ef4444':'#a855f7';}
+const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-status-attention)', critical:'var(--kajo-status-critical)', info:'var(--kajo-status-info)' };
+function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STATUS_COLORS.attention:STATUS_COLORS.critical;}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 export function calculateReadiness(dateKey=localTodayKey()){
@@ -438,7 +439,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     state.homeCheckinDate = checkinDate || selectedDate;
     const wearableState = (key, value) => {
         const color = historyRingColor(key, validNumber(value) ? Number(value) : null, checkinDate || selectedDate);
-        const states = {'#22c55e':'good','#eab308':'mild','#f97316':'moderate','#ef4444':'poor','#a855f7':'critical','#60a5fa':'reference','#334155':'neutral','#94a3b8':'neutral'};
+        const states = {[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor',[STATUS_COLORS.info]:'reference'};
         return states[color] || 'neutral';
     };
     const metric = (valueId, ringId, value, stateName = 'neutral') => {
@@ -466,7 +467,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const raw = historyValue(checkin, key);
         const valid = validNumber(raw) && Number(raw) >= 1 && Number(raw) <= 10;
         const colorHex = valid ? historyRingColor(key, Number(raw), checkinDate || selectedDate) : null;
-        const color = ({'#22c55e':'good','#eab308':'mild','#f97316':'moderate','#ef4444':'poor','#a855ff':'critical','#a855f7':'critical'})[colorHex] || 'neutral';
+        const color = ({[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor'})[colorHex] || 'neutral';
         metric(valueId,ringId,valid ? historyDisplay(Number(raw), key) + ' / 10' : '—',color);
     });
     const wearableCount = [checkin.rhr,checkin.hrv,checkin.sleepScore,sleepDuration,checkin.respiration].filter(validNumber).length;
@@ -513,7 +514,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             : 'Noch kein vorheriger CTL-Wert zum Vergleichen vorhanden';
     }
     applyRingState('home-readiness-ring', trainingRingState('readiness', readinessNumber, checkinDate || selectedDate));
-    applyRingState('home-form-ring', { value: loadNumber, progress: loadNumber === null ? 0 : Math.max(0, Math.min(100, loadNumber)), color: '#60a5fa', empty: loadNumber === null });
+    applyRingState('home-form-ring', { value: loadNumber, progress: loadNumber === null ? 0 : Math.max(0, Math.min(100, loadNumber)), color: STATUS_COLORS.info, empty: loadNumber === null });
     const formValueEl = document.getElementById('home-form-value');
     if (formValueEl) formValueEl.style.color = '#f8fafc';
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
@@ -959,11 +960,11 @@ function fitnessChange(dateKey, value) {
     if (!previous) return null;
     const delta = Number(value) - Number(previous.ctl);
     if (!Number.isFinite(delta)) return null;
-    const color = delta >= 1 ? '#22c55e'
-        : delta > 0.2 ? '#86efac'
-        : delta <= -1 ? '#ef4444'
-        : delta < -0.2 ? '#f97316'
-        : '#60a5fa';
+    const color = delta >= 1 ? STATUS_COLORS.good
+        : delta > 0.2 ? STATUS_COLORS.good
+        : delta <= -1 ? STATUS_COLORS.critical
+        : delta < -0.2 ? STATUS_COLORS.attention
+        : STATUS_COLORS.info;
     const direction = delta > 0.2 ? '↑' : delta < -0.2 ? '↓' : '→';
     const formatted = (delta > 0 ? '+' : '') + delta.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const previousDate = new Date(previous.date + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
@@ -971,7 +972,7 @@ function fitnessChange(dateKey, value) {
 }
 function trainingRingState(key, value, dateKey) {
     const numeric = validNumber(value) ? Number(value) : null;
-    if (numeric === null) return { value: null, progress: 0, color: '#334155', empty: true };
+    if (numeric === null) return { value: null, progress: 0, color: STATUS_COLORS.info, empty: true };
     // Trainingssaldo ist ein Statusindikator: Der Ring bleibt vollständig sichtbar,
     // die Einordnung erfolgt über die Farbe statt über eine geklemmte Prozentfüllung.
     const progress = key === 'form'
@@ -985,40 +986,39 @@ function trainingRingState(key, value, dateKey) {
     };
 }
 function historyRingColor(key, value, dateKey) {
-    if (value === null) return '#334155';
+    if (value === null) return STATUS_COLORS.info;
     if (key === 'readiness') return fiveLevelColor(value);
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
-        if (!day) return '#60a5fa';
+        if (!day) return STATUS_COLORS.info;
         if (String(day.loadMode || '').toLowerCase() === 'srpe') {
             const score = relativeSrpEBalanceScore(value, dateKey);
-            // Bei zu wenigen Vergleichstagen neutral-blau statt farblos/grau anzeigen.
-            return score === null ? '#60a5fa' : fiveLevelColor(score);
+            return score === null ? STATUS_COLORS.info : fiveLevelColor(score);
         }
         const isGarmin = String(day.loadMode || '').startsWith('garmin');
         const statusValue = Number(value);
-        if (!Number.isFinite(statusValue)) return '#94a3b8';
-        if (statusValue < (isGarmin ? -25 : -30)) return '#a855f7';
-        if (statusValue < -10) return '#ef4444';
-        if (statusValue <= 5) return '#f97316';
-        if (statusValue <= (isGarmin ? 20 : 25)) return '#eab308';
-        return '#22c55e';
+        if (!Number.isFinite(statusValue)) return STATUS_COLORS.info;
+        if (statusValue < (isGarmin ? -25 : -30)) return STATUS_COLORS.critical;
+        if (statusValue < -10) return STATUS_COLORS.critical;
+        if (statusValue <= 5) return STATUS_COLORS.attention;
+        if (statusValue <= (isGarmin ? 20 : 25)) return STATUS_COLORS.attention;
+        return STATUS_COLORS.good;
     }
-    if (key === 'fitness') return fitnessChange(dateKey, value)?.color || '#60a5fa';
-    if (key === 'weight') return '#94a3b8';
+    if (key === 'fitness') return fitnessChange(dateKey, value)?.color || STATUS_COLORS.info;
+    if (key === 'weight') return STATUS_COLORS.info;
     if (key === 'rhr' || key === 'hrv' || key === 'respiration') {
         const prior = Object.entries(state.dailyCheckins).filter(([date]) => date < dateKey && date >= historyWindow('6m', dateKey).from)
             .map(([, row]) => historyValue(row, key)).filter(v => v !== null);
-        if (prior.length < 14) return '#60a5fa';
+        if (prior.length < 14) return STATUS_COLORS.info;
         const avg = mean(prior), sd = standardDeviation(prior, avg), delta = value - avg;
         const threshold = Math.max(sd * 0.5, key === 'rhr' ? 1 : key === 'hrv' ? 5 : 0.5);
         const adverse = key === 'hrv' ? delta < 0 : delta > 0;
-        if (!adverse) return Math.abs(delta) <= threshold ? '#22c55e' : '#eab308';
+        if (!adverse) return Math.abs(delta) <= threshold ? STATUS_COLORS.good : STATUS_COLORS.attention;
         const severity = Math.abs(delta) / threshold;
-        return severity < 1.5 ? '#eab308' : severity < 2 ? '#f97316' : severity < 3 ? '#ef4444' : '#a855f7';
+        return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
     }
-    if (key === 'sleepDuration') return value >= 7 && value <= 9 ? '#22c55e' : value >= 6 && value <= 10 ? '#eab308' : value >= 5 ? '#f97316' : value >= 4 ? '#ef4444' : '#a855f7';
-    if (key === 'sleepScore') return value >= 90 ? '#22c55e' : value >= 80 ? '#eab308' : value >= 70 ? '#f97316' : value >= 60 ? '#ef4444' : '#a855f7';
+    if (key === 'sleepDuration') return value >= 7 && value <= 9 ? STATUS_COLORS.good : value >= 6 && value <= 10 ? STATUS_COLORS.attention : value >= 5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
+    if (key === 'sleepScore') return value >= 90 ? STATUS_COLORS.good : value >= 70 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
     const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
     const goodness = reverse ? (10 - value) / 9 * 100 : (value - 1) / 9 * 100;
     return fiveLevelColor(goodness);
