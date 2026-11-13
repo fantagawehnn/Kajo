@@ -41,7 +41,14 @@ function renderActivityDataQuality(activity) {
     const fields = activity?.garminFitData?.recordFields || {};
     const lat = telemetry.latitude || telemetry.lat || telemetry.position_lat || fields.position_lat || fields.latitude;
     const lon = telemetry.longitude || telemetry.lon || telemetry.position_long || fields.position_long || fields.longitude;
-    const hasGps = Array.isArray(lat) && Array.isArray(lon) && lat.length === lon.length && lat.length >= 2;
+    const hasGps = Array.isArray(lat) && Array.isArray(lon) && lat.length === lon.length
+        && lat.reduce((count, rawLat, index) => {
+            let latitude = Number(rawLat), longitude = Number(lon[index]);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return count;
+            if (Math.abs(latitude) > 90) latitude = latitude * 180 / 2147483648;
+            if (Math.abs(longitude) > 180) longitude = longitude * 180 / 2147483648;
+            return count + (Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 ? 1 : 0);
+        }, 0) >= 2;
     const laps = Array.isArray(activity?.laps) ? activity.laps : Array.isArray(activity?.intervals) ? activity.intervals : [];
     const parts = [
         'Quelle: ' + getActivitySourceLabel(activity),
