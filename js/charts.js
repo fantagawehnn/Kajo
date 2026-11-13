@@ -598,6 +598,8 @@ export function renderActivityTelemetryChart(act) {
 export function setTimeframe(tf) {
     state.activeTimeframe = tf;
     state.metricHistoryRange = tf;
+    const periodLabel = document.getElementById('analysis-period-label');
+    if (periodLabel) periodLabel.textContent = ({ '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '3m': 'Letzte 90 Tage', '6m': 'Letzte 180 Tage', '1y': 'Letztes Jahr' })[tf] || 'Individueller Zeitraum';
     ['7d', '28d', '3m', '6m', '1y'].forEach(t => {
         const btn = document.getElementById(`tf-${t}`);
         if (btn) btn.className = t === tf ? 'px-3 py-1.5 rounded-lg bg-sky-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
@@ -615,6 +617,8 @@ export function applyCustomDateRange() {
     if (!from || !to || from > to) return;
     state.metricHistoryRange = 'custom';
     state.activeTimeframe = 'custom';
+    const periodLabel = document.getElementById('analysis-period-label');
+    if (periodLabel) periodLabel.textContent = 'Individueller Zeitraum';
     ['health', 'training'].forEach(kind => {
         const fromInput = document.getElementById(kind + '-history-from');
         const toInput = document.getElementById(kind + '-history-to');
