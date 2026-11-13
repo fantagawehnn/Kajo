@@ -3620,3 +3620,33 @@ body > #daily-checkin-modal:not(.hidden) { z-index: 2147483646 !important; }
     font-size:.52rem;
   }
 }
+
+/* KAJO V2 – verbindliche Fünf-Tab-Navigation */
+.kajo-primary-nav{display:flex;align-items:center;gap:4px;min-width:0}
+.kajo-nav-item,.kajo-mobile-nav-item{display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;border-radius:11px;color:#94a3b8;background:transparent;font-size:12px;font-weight:650;padding:9px 11px;white-space:nowrap;transition:background .15s ease,color .15s ease,border-color .15s ease}
+.kajo-nav-item i,.kajo-mobile-nav-item i{width:16px;height:16px;flex:0 0 auto}
+.kajo-nav-item:hover,.kajo-mobile-nav-item:hover{background:rgba(148,163,184,.08);color:#f8fafc}
+.kajo-nav-item.is-active,.kajo-mobile-nav-item.is-active{color:#67e8f9;background:rgba(34,211,238,.09);border-color:rgba(34,211,238,.2)}
+.kajo-mobile-nav{display:none}
+.kajo-subnav{display:flex;align-items:center;gap:5px;overflow-x:auto;padding:3px 0 9px;border-bottom:1px solid #1e293b;margin-bottom:4px;scrollbar-width:none}
+.kajo-subnav::-webkit-scrollbar{display:none}
+.kajo-subnav-item{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;border-radius:9px;padding:7px 10px;color:#94a3b8;font-size:11px;font-weight:650;white-space:nowrap}
+.kajo-subnav-item i{width:14px;height:14px}
+.kajo-subnav-item.is-active{color:#67e8f9;background:rgba(34,211,238,.09);border-color:rgba(34,211,238,.2)}
+.kajo-more-group{border:1px solid #1e293b;background:rgba(15,23,42,.55);border-radius:14px;padding:12px;display:grid;gap:9px}
+.kajo-more-group>h2{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.07em;text-transform:uppercase}
+.kajo-training-activity-mode .calendar-topbar,.kajo-training-activity-mode #next-race-card,.kajo-training-activity-mode #cal-format-month,.kajo-training-activity-mode #cal-format-week,.kajo-training-activity-mode #cal-format-year,.kajo-training-activity-mode .calendar-footer{display:none!important}
+.kajo-training-activity-mode #cal-format-list{display:block!important}
+#app-main{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+@media(max-width:767px){
+  #app-navigation>.max-w-7xl{padding-left:12px;padding-right:12px}
+  #app-navigation>.max-w-7xl>.flex{height:52px}
+  .kajo-primary-nav{display:none}
+  .kajo-version-tag{display:none}
+  .kajo-mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:90;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(5,8,14,.96);border-top:1px solid #1e293b;backdrop-filter:blur(16px)}
+  .kajo-mobile-nav-item{flex-direction:column;gap:3px;padding:5px 2px;border-radius:9px;font-size:9px;min-width:0}
+  .kajo-mobile-nav-item i{width:18px;height:18px}
+  #app-main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .kajo-subnav{margin-left:-2px;margin-right:-2px}
+}
+@media(min-width:768px){.kajo-mobile-nav{display:none!important}}
