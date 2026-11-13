@@ -3811,3 +3811,76 @@ html[data-theme="light"] .kajo-analysis-baseline-note { color:#475569; }
 .kajo-analysis-metric-link:hover { border-color:var(--kajo-blue); background:var(--kajo-surface-raised); }
 .kajo-analysis-metric-link:focus-visible { outline:2px solid var(--kajo-blue); outline-offset:2px; }
 .kajo-analysis-metric-hint { color:var(--kajo-blue) !important; font-size:.56rem !important; opacity:.82; }
+
+
+/* KAJO Home redesign – compact WHOOP-inspired dashboard, independent from data logic. */
+.kajo-home{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding-bottom:24px}
+.kajo-home-topbar{display:flex;align-items:center;justify-content:space-between;min-height:42px}
+.kajo-home-brand{display:flex;align-items:center;border:0;background:transparent;padding:0;cursor:pointer}
+.kajo-home-brand img{display:block;width:112px;max-height:38px;object-fit:contain;object-position:left center}
+.kajo-home-header-actions{display:flex;align-items:center;gap:8px}
+.kajo-home-icon-button{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--kajo-border,#263449);border-radius:50%;background:transparent;color:var(--kajo-text,#e8eef8)}
+.kajo-home-icon-button svg{width:18px;height:18px}
+.kajo-home-status{display:flex;flex-direction:column;align-items:center;gap:12px;padding:2px 0 0}
+.kajo-home-status h2,.kajo-home-section-heading h2{font-size:.9rem;font-weight:650;letter-spacing:.01em;color:var(--kajo-text,#e8eef8);margin:0}
+.kajo-home .kajo-readiness-grid{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,3vw,26px);justify-items:center}
+.kajo-home .kajo-ring-card{width:100%;padding:0;border:0;background:transparent;cursor:pointer}
+.kajo-home .kajo-ring{width:clamp(100px,19vw,140px);border:0;box-shadow:none;background:conic-gradient(var(--ring-color,#60a5fa) var(--ring-value,0%),var(--kajo-ring-track,#263449) 0)}
+.kajo-home .kajo-ring:before{inset:8px;background:var(--kajo-page,#05080e);border:0}
+.kajo-home .kajo-ring strong{font-size:clamp(1.35rem,4vw,1.8rem)}
+.kajo-home .kajo-ring span{font-size:.72rem;color:var(--kajo-muted,#94a3b8);font-weight:650}
+.kajo-home .kajo-ring small{font-size:.55rem;color:var(--kajo-muted,#94a3b8);margin-top:2px}
+.kajo-home-date{margin:0;color:var(--kajo-muted,#94a3b8);font-size:.7rem;text-align:center}
+.kajo-home-section{min-width:0}
+.kajo-home-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.kajo-home-meta{font-size:.65rem;color:var(--kajo-muted,#94a3b8)}
+.kajo-home-session-group+.kajo-home-session-group{margin-top:12px}
+.kajo-home-subheading{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.kajo-home-subheading h3{font-size:.75rem;font-weight:650;color:var(--kajo-text,#e8eef8)}
+.kajo-home-subheading span{font-size:.58rem;letter-spacing:.08em;color:var(--kajo-muted,#94a3b8)}
+.kajo-home .home-session-card{width:100%;padding:10px 12px;border-radius:12px;background:var(--kajo-surface,#101927);border-color:var(--kajo-border,#263449);text-align:left}
+.kajo-home .home-session-state{min-width:74px;font-size:.55rem}
+.kajo-home .home-session-card strong{font-size:.78rem}
+.kajo-home .home-session-card small{font-size:.65rem}
+.kajo-home-recommendation,.kajo-home-race{display:flex;width:100%;flex-direction:column;gap:6px;text-align:left;padding:13px 15px;border:1px solid var(--kajo-border,#263449);border-radius:14px;background:var(--kajo-surface,#101927);color:var(--kajo-text,#e8eef8)}
+.kajo-home-recommendation .kajo-home-section-heading,.kajo-home-race .kajo-home-section-heading{width:100%;margin:0 0 3px}
+.kajo-home-recommendation .kajo-home-section-heading strong,.kajo-home-race .kajo-home-section-heading strong{font-size:.82rem}
+.kajo-home-recommendation .kajo-home-section-heading svg,.kajo-home-race .kajo-home-section-heading svg{width:16px;height:16px;color:var(--kajo-muted,#94a3b8)}
+.kajo-home-recommendation>strong,.kajo-home-race>strong{font-size:.86rem;font-weight:700}
+.kajo-home-recommendation>span:not(.kajo-home-section-heading){font-size:.72rem;line-height:1.45;color:var(--kajo-muted,#94a3b8)}
+.kajo-home-recommendation small,.kajo-home-race small{font-size:.63rem;color:var(--kajo-muted,#94a3b8)}
+.kajo-home .kajo-circle-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(3px,1.6vw,12px);margin:0}
+.kajo-home .kajo-health-circle-item{display:flex;align-items:center;flex-direction:column;gap:5px;min-width:0;text-align:center}
+.kajo-home .kajo-health-circle-item .kajo-health-circle{width:clamp(42px,10vw,58px);height:clamp(42px,10vw,58px);display:grid;place-items:center;border:2px solid var(--kajo-ring-track,#344154);border-radius:50%;background:transparent;color:var(--kajo-text,#e8eef8);padding:0}
+.kajo-home .kajo-health-circle-item>span{font-size:clamp(.55rem,1.8vw,.68rem);color:var(--kajo-muted,#94a3b8)}
+.kajo-home .kajo-health-circle-item strong{font-size:clamp(.65rem,2.2vw,.82rem);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kajo-home .kajo-health-circle[data-state="good"]{border-color:#16a34a}
+.kajo-home .kajo-health-circle[data-state="mild"],.kajo-home .kajo-health-circle[data-state="mid"]{border-color:#eab308}
+.kajo-home .kajo-health-circle[data-state="moderate"]{border-color:#f97316}
+.kajo-home .kajo-health-circle[data-state="poor"]{border-color:#ef4444}
+.kajo-home .kajo-health-circle[data-state="reference"]{border-color:#60a5fa}
+.kajo-week-chart{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:clamp(5px,1.5vw,14px);align-items:end;min-height:142px;padding:4px 0}
+.kajo-week-day{display:grid;grid-template-rows:18px 104px 18px;justify-items:center;align-items:end;gap:5px;min-width:0;padding:0;border:0;background:transparent;color:var(--kajo-text,#e8eef8);cursor:pointer}
+.kajo-week-day-total{font-size:clamp(.53rem,1.6vw,.68rem);font-variant-numeric:tabular-nums;color:var(--kajo-muted,#94a3b8);white-space:nowrap;align-self:center}
+.kajo-week-bar-track{display:flex;align-items:flex-end;justify-content:center;width:min(100%,34px);height:104px;border-radius:5px 5px 2px 2px;background:var(--kajo-bar-track,#1b2738);overflow:hidden}
+.kajo-week-bar-stack{display:flex;flex-direction:column-reverse;justify-content:flex-start;width:100%;height:100%;gap:0}
+.kajo-week-segment{display:block;flex:0 0 auto;width:100%;min-height:0;border:0;border-radius:0;cursor:pointer}
+.kajo-week-day-label{font-size:.66rem;color:var(--kajo-muted,#94a3b8);align-self:center}
+.kajo-week-day.is-today .kajo-week-day-label{color:var(--kajo-accent,#60a5fa);font-weight:800}
+.kajo-week-legend{display:flex;flex-wrap:wrap;gap:8px 14px}
+.kajo-week-legend-item{display:inline-flex;align-items:center;gap:5px;font-size:.62rem;color:var(--kajo-muted,#94a3b8)}
+.kajo-week-legend-item i{width:8px;height:8px;border-radius:2px;display:block}
+.kajo-week-total{margin:2px 0 0;font-size:.75rem;font-weight:700;color:var(--kajo-text,#e8eef8);font-variant-numeric:tabular-nums}
+.kajo-home button:focus-visible{outline:2px solid #38bdf8;outline-offset:3px}
+.kajo-home .metric-history-clickable:hover{border-color:var(--kajo-accent,#60a5fa)}
+@media(max-width:480px){
+ .kajo-home{gap:15px}
+ .kajo-home .kajo-ring{width:min(28vw,106px)}
+ .kajo-home .kajo-ring:before{inset:6px}
+ .kajo-home .kajo-ring strong{font-size:1.28rem}
+ .kajo-home .kajo-ring span{font-size:.62rem}
+ .kajo-home .kajo-ring small{font-size:.48rem}
+ .kajo-week-chart{min-height:126px;gap:3px}
+ .kajo-week-day{grid-template-rows:16px 92px 16px}
+ .kajo-week-bar-track{height:92px;width:min(100%,27px)}
+}
