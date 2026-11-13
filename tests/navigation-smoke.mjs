@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync('index.html', 'utf8');
 const activities = readFileSync('js/activities.js', 'utf8');
+const calculations = readFileSync('js/calculations.js', 'utf8');
 const css = readFileSync('css/styles.css', 'utf8');
 const main = readFileSync('js/main.js', 'utf8');
 const calendar = readFileSync('js/calendar.js', 'utf8');
