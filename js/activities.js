@@ -25,10 +25,11 @@ function getActivityZoneConfig(activity) {
 // Einheitliche Zeit-in-HF-Zonen-Berechnung für Zonenübersicht und Reizprofil.
 // Ohne Zeitstempel wird die dokumentierte Dauer gleichmäßig auf alle Samples verteilt.
 function calculateActivityZoneTime(activity, zoneConfig = getActivityZoneConfig(activity)) {
-    const hr = activity.telemetry?.hr;
+    const telemetry = getGarminTelemetry(activity);
+    const hr = telemetry?.hr;
     const zones = zoneConfig.zones;
     if (!Array.isArray(hr) || hr.length < 2 || !Array.isArray(zones) || zones.length !== 4) return null;
-    const time = activity.telemetry?.time;
+    const time = telemetry?.time;
     const hasTime = Array.isArray(time) && time.length === hr.length
         && time.every(value => Number.isFinite(Number(value)));
     const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
@@ -103,7 +104,7 @@ export function openCSVDetailsModal(id) {
         badge.style.borderColor = sportColor + '88';
         badge.style.color = sportColor;
     }
-    const analysisActivity = act.garminTelemetry ? { ...act, telemetry: act.garminTelemetry } : act;
+    const analysisActivity = { ...act, telemetry: getGarminTelemetry(act) };
     state.activityTelemetryMetric = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
@@ -144,7 +145,7 @@ export function openCSVDetailsModal(id) {
 function renderActivityHeartRateSeriesStatus(activity) {
     const container = document.getElementById('activity-hr-series-status');
     if (!container) return;
-    const telemetry = activity?.garminTelemetry || activity?.telemetry;
+    const telemetry = getGarminTelemetry(activity);
     const hr = Array.isArray(telemetry?.hr) ? telemetry.hr : [];
     const time = Array.isArray(telemetry?.time) ? telemetry.time : [];
     const validCount = hr.reduce((count, value, index) => {
@@ -423,9 +424,10 @@ function renderOptionalActivityViews(act) {
         el.innerHTML = `<h4 class="text-xs font-bold text-white mb-2">${title}</h4>${body}`;
     };
     const safe = value => Number.isFinite(Number(value)) ? Number(value) : null;
-    const hr = Array.isArray(act.telemetry?.hr) ? act.telemetry.hr.map(safe) : [];
-    const speed = Array.isArray(act.telemetry?.speed) ? act.telemetry.speed.map(safe) : [];
-    const times = Array.isArray(act.telemetry?.time) ? act.telemetry.time : [];
+    const telemetry = getGarminTelemetry(act) || {};
+    const hr = Array.isArray(telemetry.hr) ? telemetry.hr.map(safe) : [];
+    const speed = Array.isArray(telemetry.speed) ? telemetry.speed.map(safe) : [];
+    const times = Array.isArray(telemetry.time) ? telemetry.time : [];
     const validHr = hr.filter(v => v !== null && v >= 30 && v <= 250);
     const validSpeed = speed.filter(v => v !== null && v >= 0);
     const hasIntensity = getActivityTelemetrySeries(act).length > 0;
@@ -433,7 +435,7 @@ function renderOptionalActivityViews(act) {
     if (chartPanel) chartPanel.classList.toggle('hidden', !hasIntensity);
 
     // Herzfrequenz-Erholung nur bei explizit als Erholungsphase gespeicherten Messwerten.
-    const recovery = act.telemetry?.recoveryHr || act.recoveryHr;
+    const recovery = telemetry.recoveryHr || act.recoveryHr;
     if (Array.isArray(recovery) && recovery.length >= 2) {
         const values = recovery.map(safe).filter(v => v !== null && v >= 30 && v <= 250);
         const drop = values.length >= 2 ? values[0] - values[values.length - 1] : null;
@@ -502,7 +504,7 @@ function renderOptionalActivityViews(act) {
     } else setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', '');
 
     // Höhenprofil nur anzeigen, wenn ein Höhenverlauf oder Höhengewinn gespeichert ist.
-    const altitude = act.telemetry?.altitude || act.telemetry?.elevation || act.garminFitData?.recordFields?.altitude || act.garminFitData?.recordFields?.enhanced_altitude;
+    const altitude = telemetry.altitude || telemetry.elevation || act.garminFitData?.recordFields?.altitude || act.garminFitData?.recordFields?.enhanced_altitude;
     const gain = safe(act.elevationGain ?? act.elevation_gain);
     if ((Array.isArray(altitude) && altitude.length >= 2) || gain !== null) {
         const validAlt = Array.isArray(altitude) ? altitude.map(safe).filter(v => v !== null) : [];
