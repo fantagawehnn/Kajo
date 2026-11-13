@@ -16,6 +16,7 @@ import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
+import { renderAnalysisPageUI } from './analysis-ui.js';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
 import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu } from './calendar.js?v=8';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker } from './charts.js';
@@ -184,6 +185,7 @@ function switchTab(requestedTab) {
     }
 
     if (view === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); refreshSportAnalytics(); renderAnalysisInsights(); }
+    if (view === 'analyses') { renderAnalysisPageUI(sub || 'load'); if (sub === 'recovery') renderMetricHistory('health'); if (sub === 'performance') renderMetricHistory('training'); }
     if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
     if (view === 'strength') renderStrengthView();
     if (view === 'nutrition') renderNutritionView();
