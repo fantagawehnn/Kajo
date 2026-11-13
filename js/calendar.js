@@ -550,7 +550,7 @@ export function renderWeekView() {
         const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
         const activityItems = data.activities.map(item => {
             const sport = calendarSport(item.type);
-            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small></button>';
+            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small><small class="calendar-week-source">' + escapeHtml(calendarActivitySourceLabel(item)) + '</small></button>';
         }).join('');
         const planItems = data.planned.map(item => {
             const sport = calendarSport(item.type);
