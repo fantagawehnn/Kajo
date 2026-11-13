@@ -505,7 +505,7 @@ export function renderMonthView() {
         const data = calendarDateData(date);
         const selected = state.selectedCalendarDay === date;
         const markers = [];
-        data.activities.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-completed" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label) + ' · Abgeschlossen"></span>'); });
+        data.activities.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-completed" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + ' · Abgeschlossen"></span>'); });
         data.planned.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-planned" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label) + ' · Geplant"></span>'); });
         const load = data.loadValue === null ? '' : '<small class="calendar-month-load">' + Math.round(data.loadValue) + '</small>';
         grid.insertAdjacentHTML('beforeend', '<button type="button" class="calendar-month-day ' + (date === today ? 'is-today ' : '') + (selected ? 'is-selected' : '') + '" data-date="' + date + '" aria-pressed="' + selected + '" aria-label="' + calendarDateLabel(date) + '" onclick="openCalendarDay(\'' + date + '\',true)">' +
@@ -553,7 +553,7 @@ export function renderWeekView() {
         const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
         const activityItems = data.activities.map(item => {
             const sport = calendarSport(item.type);
-            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small><small class="calendar-week-source">' + escapeHtml(calendarActivitySourceLabel(item)) + '</small></button>';
+            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\')"><span></span><strong>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small><small class="calendar-week-source">' + escapeHtml(calendarActivitySourceLabel(item)) + '</small></button>';
         }).join('');
         const planItems = data.planned.map(item => {
             const sport = calendarSport(item.type);
