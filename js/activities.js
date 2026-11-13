@@ -135,6 +135,7 @@ export function openCSVDetailsModal(id) {
     try { renderActivityTelemetryChart(analysisActivity); } catch (error) { console.error('Telemetrie konnte nicht gerendert werden:', error); }
     try { renderActivityTrainingInsights(analysisActivity); } catch (error) { console.error('Trainingsanalyse konnte nicht gerendert werden:', error); }
     try { renderOptionalActivityViews(analysisActivity); } catch (error) { console.error('Zusatzansichten konnten nicht gerendert werden:', error); }
+    try { renderActivityRouteMap(analysisActivity); } catch (error) { console.error('GPS-Strecke konnte nicht gerendert werden:', error); }
     try { renderActivityComparisons(act); } catch (error) { console.error('Aktivitätsvergleich konnte nicht gerendert werden:', error); }
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
 }
@@ -357,6 +358,71 @@ function renderActivityTrainingInsights(act) {
 }
 
 
+
+
+function renderActivityRouteMap(activity) {
+    const panel = document.getElementById('activity-route-map-panel');
+    if (!panel) return;
+    const telemetry = activity?.telemetry || activity?.garminTelemetry || {};
+    const fields = activity?.garminFitData?.recordFields || {};
+    const latitudes = telemetry.latitude || telemetry.lat || fields.position_lat || fields.latitude;
+    const longitudes = telemetry.longitude || telemetry.lon || telemetry.position_long || fields.position_long || fields.longitude;
+    const normalizeCoordinate = (value, limit) => {
+        if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return null;
+        let number = Number(value);
+        if (Math.abs(number) > limit) number = number * 180 / 2147483648;
+        return Math.abs(number) <= limit ? number : null;
+    };
+    if (!Array.isArray(latitudes) || !Array.isArray(longitudes) || latitudes.length !== longitudes.length) {
+        panel.classList.add('hidden');
+        panel.innerHTML = '';
+        return;
+    }
+    const points = latitudes.map((lat, index) => ({
+        lat: normalizeCoordinate(lat, 90),
+        lon: normalizeCoordinate(longitudes[index], 180),
+        index
+    })).filter(point => point.lat !== null && point.lon !== null);
+    if (points.length < 2 || !globalThis.L) {
+        panel.classList.add('hidden');
+        panel.innerHTML = '';
+        return;
+    }
+    if (state.activityRouteMap) {
+        state.activityRouteMap.remove();
+        state.activityRouteMap = null;
+    }
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="activity-detail-section-heading"><div><h3>GPS-Strecke</h3></div><span class="activity-detail-context-tag">' + points.length.toLocaleString('de-DE') + ' GPS-Punkte</span></div>'
+        + '<div id="activity-route-map" class="activity-route-map" role="img" aria-label="Interaktive GPS-Strecke mit Start und Ziel"></div>';
+    const sportColor = getSportsCatalog()[activity.type]?.color || '#38bdf8';
+    const map = L.map('activity-route-map', { zoomControl: true, scrollWheelZoom: false, preferCanvas: true });
+    state.activityRouteMap = map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    const latLngs = points.map(point => [point.lat, point.lon]);
+    const line = L.polyline(latLngs, { color: sportColor, weight: 4, opacity: .9 }).addTo(map);
+    const start = L.circleMarker(latLngs[0], { radius: 6, color: '#fff', weight: 2, fillColor: '#16a34a', fillOpacity: 1 }).addTo(map);
+    const finish = L.circleMarker(latLngs[latLngs.length - 1], { radius: 6, color: '#fff', weight: 2, fillColor: '#ef4444', fillOpacity: 1 }).addTo(map);
+    start.bindTooltip('Start');
+    finish.bindTooltip('Ziel');
+    const time = Array.isArray(telemetry.time) && telemetry.time.length === latitudes.length ? telemetry.time : null;
+    if (time) {
+        const step = Math.max(1, Math.ceil(points.length / 60));
+        points.forEach((point, index) => {
+            if (index % step !== 0 || index === 0 || index === points.length - 1) return;
+            const seconds = Number(time[point.index]);
+            if (!Number.isFinite(seconds)) return;
+            L.circleMarker([point.lat, point.lon], { radius: 2.5, color: sportColor, weight: 1, fillOpacity: .8 })
+                .bindTooltip(String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'))
+                .addTo(map);
+        });
+    }
+    map.fitBounds(line.getBounds(), { padding: [18, 18] });
+    setTimeout(() => map.invalidateSize(), 80);
+}
 
 function renderActivityComparisons(activity) {
     const panel = document.getElementById('activity-comparison-panel');
@@ -758,6 +824,7 @@ function renderActivityWaterConditionStatus(act) {
 }
 
 export function closeCSVDetailsModal() {
+    if (state.activityRouteMap) { state.activityRouteMap.remove(); state.activityRouteMap = null; }
     const modal = document.getElementById('csv-details-modal');
     if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
     document.body.classList.remove('activity-detail-open');
