@@ -298,7 +298,19 @@
                 <div><p class="kajo-analysis-eyebrow">KAJO · PERFORMANCE LAB</p><h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1><p class="text-xs sm:text-sm text-slate-400 mt-1">Belastung, Fitness, Regeneration, Gesundheit und Wettkampf im Zusammenhang betrachten.</p></div>
                 <span class="kajo-analysis-period" id="analysis-period-label">Letzte 90 Tage</span>
             </header>
-<div id="analysis-subpage-load" class="space-y-4"><section class="kajo-analysis-overview" aria-label="Belastungsübersicht">
+            <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Gemeinsamer Analysezeitraum"></div>
+<div id="analysis-subpage-load" class="space-y-4">
+<section class="kajo-analysis-hero" aria-label="Training Load">
+  <div class="kajo-analysis-hero-ring" id="load-hero-ring" aria-live="polite">
+    <div><strong id="analysis-load-hero-value">—</strong><span id="analysis-load-hero-unit"></span></div>
+  </div>
+  <div class="kajo-analysis-hero-copy">
+    <p class="kajo-analysis-eyebrow">TRAINING LOAD</p>
+    <h2 id="analysis-load-hero-status">Kurzfristige Belastung · ATL</h2>
+    <p id="load-hero-note" class="kajo-analysis-hero-note"></p>
+  </div>
+</section>
+<div id="load-analysis-metrics" class="kajo-analysis-metric-row" aria-live="polite"></div><section class="kajo-analysis-overview hidden" aria-label="Belastungsübersicht">
                 <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Belastung im Überblick</h2></div><span class="kajo-analysis-context">Letzter verfügbarer Tag</span></div>
                 <div id="analysis-overview-kpis"><p class="text-xs text-slate-500">Die Übersicht wird aus den vorhandenen Trainingsdaten erstellt.</p></div>
                 <div id="analysis-overview-note"></div>
@@ -314,7 +326,7 @@
                         <p class="text-[10px] text-slate-500 mt-1">Fitness, Ermüdung und Form im Zeitverlauf. Aktivitätsdetails und Gesundheitsereignisse findest du direkt beim jeweiligen Datum.</p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                    <div id="analysis-period-buttons" class="analysis-period-buttons flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
                         <button type="button" onclick="setTimeframe('7d')" id="tf-7d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">7 Tage</button>
                         <button type="button" onclick="setTimeframe('28d')" id="tf-28d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">28 Tage</button>
                         <button type="button" onclick="setTimeframe('3m')" id="tf-3m" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-semibold">3 Monate</button>
@@ -394,7 +406,18 @@
                     </div>
                 </details>
             </div></div>
-<div id="analysis-subpage-performance" class="hidden space-y-4"><section id="analysis-fitness-section" class="kajo-analysis-domain-panel">
+<div id="analysis-subpage-performance" class="hidden space-y-4">
+<section class="kajo-analysis-hero" aria-label="Performance">
+  <div class="kajo-analysis-hero-ring" id="performance-hero-ring" aria-live="polite">
+    <div><strong id="analysis-performance-hero-value">—</strong><span id="analysis-performance-hero-unit"></span></div>
+  </div>
+  <div class="kajo-analysis-hero-copy">
+    <p class="kajo-analysis-eyebrow">PERFORMANCE</p>
+    <h2 id="analysis-performance-hero-status">Direkte Leistungskennzahl</h2>
+    <p id="performance-hero-note" class="kajo-analysis-hero-note"></p>
+  </div>
+</section>
+<div id="performance-analysis-metrics" class="kajo-analysis-metric-row" aria-live="polite"></div><section id="analysis-fitness-section" class="kajo-analysis-domain-panel">
                 <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">LANGFRISTIGE ENTWICKLUNG</p><h2>Fitness</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
                 <div id="analysis-fitness-insight"></div>
             </section>
@@ -408,7 +431,7 @@
                 <button type="button" data-history-metric="form" onclick="setHistoryMetric('training','form')" class="more-subnav-button">Trainingssaldo</button>
                 <button type="button" data-history-metric="readiness" onclick="setHistoryMetric('training','readiness')" class="more-subnav-button">Readiness</button>
             </nav>
-            <div class="flex flex-wrap gap-2" aria-label="Zeitraum">
+            <div id="training-history-range-controls" class="flex flex-wrap gap-2" aria-label="Zeitraum">
                 <button type="button" data-history-kind="training" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
                 <button type="button" data-history-kind="training" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
                 <button type="button" data-history-kind="training" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
@@ -438,7 +461,18 @@
             
 
             <!-- DAILY READINESS -->
-            <div id="analysis-subpage-recovery" class="hidden space-y-4"><div id="analysis-regeneration-section" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3 kajo-analysis-panel">
+            <div id="analysis-subpage-recovery" class="hidden space-y-4">
+<section class="kajo-analysis-hero" aria-label="Recovery">
+  <div class="kajo-analysis-hero-ring" id="recovery-hero-ring" aria-live="polite">
+    <div><strong id="analysis-recovery-hero-value">—</strong><span id="analysis-recovery-hero-unit"></span></div>
+  </div>
+  <div class="kajo-analysis-hero-copy">
+    <p class="kajo-analysis-eyebrow">RECOVERY</p>
+    <h2 id="analysis-recovery-hero-status">Tägliche Readiness</h2>
+    <p id="recovery-hero-note" class="kajo-analysis-hero-note"></p>
+  </div>
+</section>
+<div id="recovery-analysis-metrics" class="kajo-analysis-metric-row" aria-live="polite"></div><div id="analysis-regeneration-section" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3 kajo-analysis-panel">
                 <div><h2 class="text-base font-bold text-white">Tägliche Trainings-Readiness</h2></div>
                 <div id="readiness-details" class="space-y-2"><p class="text-xs text-slate-500">Die Readiness wird berechnet, sobald genügend objektive und subjektive Daten vorliegen.</p></div>
                 <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-recovery-insight"></div></div>
@@ -458,7 +492,7 @@
                 <button type="button" data-history-metric="stress" onclick="setHistoryMetric('health','stress')" class="more-subnav-button">Stress</button>
                 <button type="button" data-history-metric="weight" onclick="setHistoryMetric('health','weight')" class="more-subnav-button">Körpergewicht</button>
             </nav>
-            <div class="flex flex-wrap gap-2" aria-label="Zeitraum">
+            <div id="health-history-range-controls" class="flex flex-wrap gap-2" aria-label="Zeitraum">
                 <button type="button" data-history-kind="health" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
                 <button type="button" data-history-kind="health" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
                 <button type="button" data-history-kind="health" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
@@ -487,7 +521,19 @@
 
             
 
-            <div id="analysis-subpage-health" class="hidden space-y-4"><section class="kajo-panel"><div class="kajo-panel-heading"><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div><div id="health-event-list" class="space-y-2"></div></section>
+            <div id="analysis-subpage-health" class="hidden space-y-4">
+<section class="kajo-analysis-hero" aria-label="Health">
+  <div class="kajo-analysis-hero-ring" id="health-hero-ring" aria-live="polite">
+    <div><strong id="analysis-health-hero-value">—</strong><span id="analysis-health-hero-unit"></span></div>
+  </div>
+  <div class="kajo-analysis-hero-copy">
+    <p class="kajo-analysis-eyebrow">HEALTH</p>
+    <h2 id="analysis-health-hero-status">Trainingsverfügbarkeit</h2>
+    <p id="health-hero-note" class="kajo-analysis-hero-note"></p>
+  </div>
+</section>
+<div id="health-analysis-metrics" class="kajo-analysis-metric-row" aria-live="polite"></div><section class="kajo-panel"><div class="kajo-panel-heading"><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div><div id="health-event-list" class="space-y-2"></div></section>
+<section class="kajo-panel"><div class="kajo-panel-heading"><h2>Gesundheits- und Verfügbarkeitsverlauf</h2><span class="text-xs text-slate-500">28 Tage</span></div><div class="kajo-analysis-health-chart"><canvas id="analysis-health-timeline"></canvas></div></section>
 <section class="kajo-panel"><div class="kajo-panel-heading"><h2>Trainingsverfügbarkeit</h2><span class="text-xs text-slate-500">Datenstatus</span></div><p id="health-availability-status" class="text-sm text-slate-300">Noch nicht berechenbar.</p><p class="text-xs text-slate-500 mt-1">Eine Verfügbarkeitsquote wird nur ausgewiesen, wenn Gesundheits- und Planungsdaten für denselben Zeitraum ausreichend vollständig vorliegen.</p></section><section id="analysis-health-section" class="kajo-analysis-domain-panel">
                 <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WOHLBEFINDEN</p><h2>Gesundheit</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
                 <div id="analysis-health-insight"></div>
