@@ -606,6 +606,32 @@ export function getActivityTelemetrySeries(act) {
     return result;
 }
 
+
+export function focusActivityTelemetryPoint(index) {
+    const chart = state.telemetryChartInstance;
+    const readout = document.getElementById('activity-telemetry-point');
+    const data = chart?.data?.datasets?.[0]?.data;
+    const value = Array.isArray(data) ? data[index] : null;
+    if (!chart || !readout || value == null || !Number.isFinite(Number(value))) return;
+    const active = [{ datasetIndex: 0, index }];
+    const x = chart.scales?.x?.getPixelForValue(index) ?? 0;
+    const y = chart.scales?.y?.getPixelForValue(Number(value)) ?? 0;
+    chart.setActiveElements(active);
+    chart.tooltip?.setActiveElements?.(active, { x, y });
+    chart.update();
+    const metric = getActivityTelemetrySeries(state.selectedActivityForModal)
+        .find(item => item.key === state.activityTelemetryMetric);
+    const isPace = metric?.key === 'pace' || metric?.key === 'swimPace';
+    const rounded = Math.round(Number(value));
+    const shown = isPace
+        ? Math.floor(rounded / 60) + ':' + String(rounded % 60).padStart(2, '0')
+        : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
+    const label = chart.data.labels?.[index] ?? ('Messpunkt ' + (index + 1));
+    readout.textContent = label + ' · ' + (metric?.label || 'Messwert') + ': ' + shown
+        + (isPace ? '' : metric?.unit ? ' ' + metric.unit : '');
+    readout.hidden = false;
+}
+
 export function setActivityTelemetryMetric(metric) {
     const act = state.selectedActivityForModal;
     if (!act) return;
