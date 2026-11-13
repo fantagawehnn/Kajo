@@ -9,7 +9,7 @@
 
 import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
-import { inspectDay, calculateReadiness } from './dashboard.js';
+import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
 
 function renderLoadSourceNote(timeline) {
@@ -597,13 +597,30 @@ export function renderActivityTelemetryChart(act) {
 
 export function setTimeframe(tf) {
     state.activeTimeframe = tf;
+    state.metricHistoryRange = tf;
     ['7d', '28d', '3m', '6m', '1y'].forEach(t => {
         const btn = document.getElementById(`tf-${t}`);
         if (btn) btn.className = t === tf ? 'px-3 py-1.5 rounded-lg bg-sky-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
     });
-    document.getElementById('custom-date-box').classList.add('hidden');
+    document.getElementById('custom-date-box')?.classList.add('hidden');
     renderMainLoadChart(state.dailyTimeline, state.activeTimeframe);
+    renderMetricHistory('health');
+    renderMetricHistory('training');
 }
 
-export function toggleCustomDatePicker() { document.getElementById('custom-date-box').classList.toggle('hidden'); }
-export function applyCustomDateRange() { renderMainLoadChart(state.dailyTimeline, 'custom'); }
+export function toggleCustomDatePicker() { document.getElementById('custom-date-box')?.classList.toggle('hidden'); }
+export function applyCustomDateRange() {
+    const from = document.getElementById('date-from')?.value;
+    const to = document.getElementById('date-to')?.value;
+    if (!from || !to || from > to) return;
+    state.metricHistoryRange = 'custom';
+    ['health', 'training'].forEach(kind => {
+        const fromInput = document.getElementById(kind + '-history-from');
+        const toInput = document.getElementById(kind + '-history-to');
+        if (fromInput) fromInput.value = from;
+        if (toInput) toInput.value = to;
+    });
+    renderMainLoadChart(state.dailyTimeline, 'custom');
+    renderMetricHistory('health');
+    renderMetricHistory('training');
+}
