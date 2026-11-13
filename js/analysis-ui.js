@@ -180,5 +180,5 @@ export function renderAnalysisPageUI(subpage = 'load') {
   renderPerformance();
   renderHealth();
   const note = document.getElementById('health-history-baseline-note');
-  if (note) note.textContent = 'Persönlicher Normalbereich noch nicht verfügbar: Der Intervals-Wellnessimport bezeichnet hrv als RMSSD, während manuelle HRV-Eingaben denselben Speicherwert verwenden. Die Herkunft wird aktuell nicht getrennt gespeichert; hrvSDNN wird zudem nicht in den Check-in übernommen. Deshalb sind eine sichere ln(RMSSD)-Umrechnung und eine quellenreine Baseline noch nicht möglich.';
+  if (note) note.textContent = 'Persönlicher Normalbereich noch nicht verfügbar: Neue Intervals-Wellnesswerte werden als RMSSD und manuelle HRV-Eingaben als eigene Quelle gekennzeichnet. Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt und werden nicht nachträglich zugeordnet. Manuelle HRV-Werte haben keine bestätigte Messmethode; nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich für eine ln(RMSSD)-Reihe. Eine adaptive Baseline benötigt zusätzlich eine verbindlich festgelegte Statistik und Mindestdatenbasis.';
 }
