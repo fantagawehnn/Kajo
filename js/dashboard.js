@@ -1106,7 +1106,7 @@ export function renderMetricHistory(kind) {
     if (chartNote) chartNote.textContent = dates.length + ' Kalendertage · fehlende Messungen werden als Lücken dargestellt.';
     const canvasLabels = dates.map(date => {
         const d = new Date(date + 'T12:00:00');
-        return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
     });
     renderHistoryChart(kind, canvasLabels, values, definition, key);
     renderHistoryRangeControls(kind);
