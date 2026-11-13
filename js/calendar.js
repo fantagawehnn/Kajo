@@ -178,6 +178,21 @@ function calendarDateLabel(date) {
     const d = new Date(date + 'T12:00:00');
     return new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
 }
+function calendarActivitySourceLabel(activity) {
+    const refs = activity?.sourceRefs || {};
+    const sources = new Set([
+        ...(Array.isArray(activity?.sources) ? activity.sources : []),
+        activity?.source,
+        refs.garminActivityId != null ? 'garmin' : null,
+        refs.intervalsActivityId != null ? 'intervals' : null
+    ].filter(Boolean).map(value => String(value).toLowerCase()));
+    const labels = [];
+    if (sources.has('garmin') || activity?.garminData || activity?.garminFitImported) labels.push('Garmin');
+    if (sources.has('intervals')) labels.push('Intervals.icu');
+    if (sources.has('manual')) labels.push('Manuell');
+    if (sources.has('csv') || sources.has('fit') || sources.has('file') || sources.has('import')) labels.push('Dateiimport');
+    return labels.length ? [...new Set(labels)].join(' + ') : 'Quelle nicht ausgewiesen';
+}
 function calendarActivityRow(activity, planned) {
     const sport = calendarSport(activity.type);
     const color = sport.color || '#64748b';
@@ -193,7 +208,7 @@ function calendarActivityRow(activity, planned) {
     return '<button type="button" class="calendar-day-activity-row" style="--activity-color:' + color + '" onclick="' + action + '">' +
         '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span>' +
         '<strong>' + escapeHtml(activity.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
-        '<small>' + [time, duration].filter(Boolean).map(escapeHtml).join(' · ') + '</small></span>' +
+        '<small>' + [time, duration, planned ? 'Planung' : calendarActivitySourceLabel(activity)].filter(Boolean).map(escapeHtml).join(' · ') + '</small></span>' +
         '<span class="calendar-entry-status ' + (planned ? 'is-planned' : 'is-completed') + '">' + status + '</span></button>';
 }
 function calendarRaceRow(race) {
@@ -452,7 +467,7 @@ export function renderYearView() {
             return '<span class="calendar-year-sport-segment" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(sport.label) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
         }).join('');
         const plannedSegments = Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
-        const hours = week.activities.length ? (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h') : '—';
+        const hours = !week.activities.length || (!week.durationComplete && week.totalMinutes === 0) ? '—' : (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h');
         const events = (week.races.length ? '<i data-lucide="trophy" class="calendar-year-event calendar-event-race"></i>' : '') +
             (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick"></i>' : '') +
