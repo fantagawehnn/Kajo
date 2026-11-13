@@ -76,7 +76,7 @@ Die vier Analyse-Unterseiten verwenden einen gemeinsamen Zeitraumfilter und eine
 - **Performance:** Ein importierter VO₂max-Wert wird nur als importierter Wellnesswert mit offen ausgewiesener Messart angezeigt. Fehlt er, bleibt der Hauptkreis leer. CTL wird ausdrücklich nicht als direkte Performance-Messung ausgegeben.
 - **Health:** Trainingsverfügbarkeit bleibt nicht berechenbar, bis Gesundheits- und Planungsdaten für denselben Zeitraum ausreichend vollständig verknüpft sind. Krankheit und Verletzung werden als dokumentierte Einträge getrennt dargestellt; ein 28-Tage-Ereignisverlauf ergänzt die Ansicht.
 
-Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe. Ein persönlicher Normalbereich wird in dieser Ansicht derzeit nicht ausgewiesen. Die vorhandene einfache Vergleichslogik ist noch keine freigegebene adaptive Baseline nach den neuen Anforderungen.
+Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe. Ein persönlicher Normalbereich wird in dieser Ansicht derzeit nicht ausgewiesen. Die bisherige einfache Mittelwert-/Streuungs-Einordnung wird in der Anzeige nicht mehr als persönlicher Normalbereich oder Statusfarbe ausgegeben. Bis zur Methodenfreigabe zeigt KAJO stattdessen transparent an, dass der persönliche Normalbereich noch nicht festgelegt ist.
 
 ### Noch offene fachliche und technische Punkte
 
