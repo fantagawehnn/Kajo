@@ -126,9 +126,9 @@ export function toggleCalendarAddMenu(){document.getElementById('calendar-add-me
 export function closeCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.add('hidden');}
 
 export function setCalendarFormat(fmt) {
-    const nextFormat = ['month', 'week', 'activities'].includes(fmt) ? fmt : 'month';
+    const nextFormat = ['day', 'week', 'month', 'year', 'activities'].includes(fmt) ? fmt : 'week';
     state.activeCalendarFormat = nextFormat;
-    ['month', 'week', 'activities'].forEach(f => {
+    ['day', 'week', 'month', 'year', 'activities'].forEach(f => {
         const btn = document.getElementById(`btn-fmt-${f}`);
         if (btn) {
             const active = f === nextFormat;
@@ -140,8 +140,12 @@ export function setCalendarFormat(fmt) {
 }
 
 export function navigateCalendarPeriod(dir) {
-    if (state.activeCalendarFormat === 'week') {
+    if (state.activeCalendarFormat === 'day') {
+        state.currentCalendarDate.setDate(state.currentCalendarDate.getDate() + dir);
+    } else if (state.activeCalendarFormat === 'week') {
         state.currentCalendarDate.setDate(state.currentCalendarDate.getDate() + (dir * 7));
+    } else if (state.activeCalendarFormat === 'year') {
+        state.currentCalendarDate.setFullYear(state.currentCalendarDate.getFullYear() + dir);
     } else {
         state.currentCalendarDate.setMonth(state.currentCalendarDate.getMonth() + dir);
     }
@@ -226,34 +230,87 @@ function renderCalendarLegend() {
     el.classList.toggle('hidden', items.length === 0);
 }
 export function renderCalendar() {
-    const format = ['month', 'week', 'activities'].includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'month';
+    const format = ['day', 'week', 'month', 'year', 'activities'].includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'week';
     state.activeCalendarFormat = format;
+    ['day', 'week', 'month', 'year', 'activities'].forEach(f => {
+        const button = document.getElementById('btn-fmt-' + f);
+        if (button) {
+            const active = f === format;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', String(active));
+        }
+    });
+    document.getElementById('cal-format-day')?.classList.toggle('hidden', format !== 'day');
     document.getElementById('cal-format-month')?.classList.toggle('hidden', format !== 'month');
     document.getElementById('cal-format-week')?.classList.toggle('hidden', format !== 'week');
+    document.getElementById('cal-format-year')?.classList.toggle('hidden', format !== 'year');
     document.getElementById('cal-format-list')?.classList.toggle('hidden', format !== 'activities');
     const isActivities = format === 'activities';
     ['calendar-period-prev', 'calendar-period-next'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', isActivities));
-    ['month', 'week', 'activities'].forEach(f => {
-        const btn = document.getElementById(`btn-fmt-${f}`);
-        if (btn) {
-            const active = f === format;
-            btn.classList.toggle('active', active);
-            btn.setAttribute('aria-pressed', String(active));
-        }
-    });
-
-    const mode=calendarDisplayMode();
-    const modeToggle=document.getElementById('calendar-display-toggle');
-    if(modeToggle){
-        const trainingMode=mode==='training';
-        modeToggle.setAttribute('aria-checked',String(trainingMode));
-        modeToggle.setAttribute('aria-label',trainingMode?'Eintragsanzeige: Trainingsart. Zu Sportart wechseln':'Eintragsanzeige: Sportart. Zu Trainingsart wechseln');
-        document.getElementById('calendar-display-thumb')?.classList.toggle('translate-x-full',trainingMode);
+    const mode = calendarDisplayMode();
+    const modeToggle = document.getElementById('calendar-display-toggle');
+    if (modeToggle) {
+        const trainingMode = mode === 'training';
+        modeToggle.setAttribute('aria-checked', String(trainingMode));
+        modeToggle.setAttribute('aria-label', trainingMode ? 'Eintragsanzeige: Trainingsart. Zu Sportart wechseln' : 'Eintragsanzeige: Sportart. Zu Trainingsart wechseln');
+        document.getElementById('calendar-display-thumb')?.classList.toggle('translate-x-full', trainingMode);
     }
     renderCalendarLegend();
     if (format === 'month') renderMonthView();
-    else if (format === 'week') renderWeekView();
+    else if (format === 'week' || format === 'day') renderWeekView();
+    else if (format === 'year') renderYearView();
     else renderListView();
+}
+
+export function renderYearView() {
+    const container = document.getElementById('cal-format-year');
+    if (!container) return;
+    const year = state.currentCalendarDate.getFullYear();
+    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const today = toLocalDateString();
+    document.getElementById('calendar-period-title').textContent = String(year);
+    container.innerHTML = '';
+    for (let month = 0; month < 12; month++) {
+        const first = new Date(year, month, 1);
+        const offset = (first.getDay() + 6) % 7;
+        const days = new Date(year, month + 1, 0).getDate();
+        const card = document.createElement('section');
+        card.className = 'rounded-xl border border-slate-800 bg-slate-900 p-2 min-w-0';
+        const heading = document.createElement('h3');
+        heading.className = 'text-xs font-semibold text-slate-200 mb-2';
+        heading.textContent = monthNames[month];
+        card.appendChild(heading);
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-7 gap-1 text-center';
+        ['M','D','M','D','F','S','S'].forEach(label => {
+            const cell = document.createElement('span');
+            cell.className = 'text-[9px] text-slate-500';
+            cell.textContent = label;
+            grid.appendChild(cell);
+        });
+        for (let blank = 0; blank < offset; blank++) {
+            const cell = document.createElement('span');
+            cell.className = 'h-6';
+            grid.appendChild(cell);
+        }
+        for (let day = 1; day <= days; day++) {
+            const date = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+            const hasTraining = (state.rawActivities || []).some(item => item.date === date) || (state.plannedActivities || []).some(item => item.date === date);
+            const hasHealth = Boolean(state.healthLogs?.[date]);
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'h-6 rounded-md text-[10px] ' + (date === today ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-500/50' : hasTraining ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:bg-slate-800');
+            cell.textContent = String(day);
+            cell.setAttribute('aria-label', date + (hasTraining ? ', Trainingseintrag' : '') + (hasHealth ? ', Gesundheitseintrag' : ''));
+            cell.addEventListener('click', () => {
+                state.currentCalendarDate = new Date(year, month, day);
+                setCalendarFormat('day');
+            });
+            grid.appendChild(cell);
+        }
+        card.appendChild(grid);
+        container.appendChild(card);
+    }
 }
 
 export function renderMonthView() {
