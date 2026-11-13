@@ -4449,3 +4449,5 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
   #csv-details-modal .activity-telemetry-chart-wrap { height:220px; }
   #csv-details-modal .activity-series-switch { padding:7px 9px; }
 }
+
+#csv-details-modal #activity-comparison-panel { order:15; }
