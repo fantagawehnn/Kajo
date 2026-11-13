@@ -3793,3 +3793,11 @@ html[data-theme="light"] .kajo-analysis-baseline-note { color:#475569; }
   :root:not([data-theme="dark"]) .kajo-analysis-metric > span,
   :root:not([data-theme="dark"]) .kajo-analysis-metric small { color:#64748b !important; }
 }
+
+.kajo-analysis-source-row {
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.5rem; margin:-.45rem 0 .9rem;
+}
+.kajo-analysis-source-row .kajo-analysis-metric { padding:.55rem .7rem; }
+@media (max-width:640px) {
+    .kajo-analysis-source-row { grid-template-columns:1fr; gap:.4rem; }
+}
