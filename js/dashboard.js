@@ -487,26 +487,16 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     // Fitness und Trainingssaldo können an unterschiedlichen Tagen zuletzt vorliegen.
     // Deshalb getrennte Stichtage verwenden, statt beide Werte an denselben Datensatz zu koppeln.
     const latestFitnessDay = [...eligibleTimeline].reverse().find(day => validNumber(day?.ctl)) || null;
-    const getFormBalance = day => {
-        if (!day) return null;
-        const isGarmin = String(day.loadMode || '').toLowerCase().startsWith('garmin');
-        const preferred = isGarmin ? day.formPct : day.tsb;
-        if (validNumber(preferred)) return Number(preferred);
-        // Ältere bzw. abweichende Garmin-Datensätze können den Saldo noch in tsb führen.
-        return validNumber(day.tsb) ? Number(day.tsb)
-            : validNumber(day.formPct) ? Number(day.formPct) : null;
-    };
-    const latestFormDay = [...eligibleTimeline].reverse().find(day => getFormBalance(day) !== null) || null;
-    state.homeLoadDate = latestFitnessDay?.date || selectedDate;
-    state.homeFormDate = latestFormDay?.date || selectedDate;
+    const latestLoadDay = [...eligibleTimeline].reverse().find(day => validNumber(day?.atl)) || null;
+    state.homeLoadDate = latestLoadDay?.date || selectedDate;
     const ctl = latestFitnessDay ? String(latestFitnessDay.ctl) : read('kpi-ctl');
-    const tsb = latestFormDay ? String(getFormBalance(latestFormDay)) : read('kpi-tsb');
+    const atl = latestLoadDay ? String(latestLoadDay.atl) : read('kpi-atl');
     const readiness = calculateReadiness(state.homeReadinessDate || selectedDate).score;
     const ctlNumber = validNumber(ctl) ? Number(ctl) : null;
-    const formNumber = validNumber(tsb) ? Number(tsb) : null;
+    const loadNumber = validNumber(atl) ? Number(atl) : null;
     const readinessNumber = validNumber(readiness) ? Number(readiness) : null;
     set('home-fitness-value',ctlNumber === null ? '—' : historyDisplay(ctlNumber,'fitness'));
-    set('home-form-value',formNumber === null ? '—' : historyDisplay(formNumber,'form'));
+    set('home-form-value',loadNumber === null ? '—' : Math.round(loadNumber));
     set('home-readiness-value',readinessNumber === null ? '—' : historyDisplay(readinessNumber,'readiness'));
     const applyRingState = (id, ringState) => {
         const el = document.getElementById(id); if (!el) return;
@@ -530,7 +520,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             : 'Noch kein vorheriger CTL-Wert zum Vergleichen vorhanden';
     }
     applyRingState('home-readiness-ring', trainingRingState('readiness', readinessNumber, checkinDate || selectedDate));
-    applyRingState('home-form-ring', trainingRingState('form', formNumber, formDate));
+    applyRingState('home-form-ring', { value: loadNumber, progress: loadNumber === null ? 0 : Math.max(0, Math.min(100, loadNumber)), color: '#60a5fa', empty: loadNumber === null });
     const formValueEl = document.getElementById('home-form-value');
     if (formValueEl) formValueEl.style.color = '#f8fafc';
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
