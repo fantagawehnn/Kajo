@@ -331,12 +331,13 @@ function formatHomeDate(date) {
 
 export function renderHomeDashboard(dateKey=localTodayKey()) {
     const selectedDate = dateKey || localTodayKey();
+    const sportFocus = state.homeWeekSportFocus || null;
     const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
     const planned = Array.isArray(state.plannedActivities) ? state.plannedActivities : [];
     const sportsCatalog = getSportsCatalog();
-    const dayActivities = activities.filter(a => String(a?.date || '').slice(0, 10) === selectedDate)
+    const dayActivities = activities.filter(a => String(a?.date || '').slice(0, 10) === selectedDate && (!sportFocus || a.type === sportFocus))
         .sort((a,b)=>String(a.startTime||a.startTimeLocal||'').localeCompare(String(b.startTime||b.startTimeLocal||'')));
-    const dayPlanned = planned.filter(p => String(p?.date || '').slice(0, 10) === selectedDate)
+    const dayPlanned = planned.filter(p => String(p?.date || '').slice(0, 10) === selectedDate && (!sportFocus || p.type === sportFocus))
         .sort((a,b)=>String(a.time||a.startTime||'').localeCompare(String(b.time||b.startTime||'')));
 
     // Die Trainingsempfehlung nutzt ausschließlich die bereits berechnete
@@ -377,7 +378,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const sport = sportsCatalog[p.type]?.label || p.type || 'Training';
         const duration = validNumber(p.duration) ? Number(p.duration) + ' min' : 'Dauer offen';
         const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Load' : '';
-        return '<article class="home-session-card is-planned"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="clock-3"></i></article>';
+        return '<button type="button" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
     }).join('');
 
     const emptyDay = document.getElementById('home-training-empty');
@@ -546,15 +547,21 @@ export function renderHomeTrainingWeek() {
     dates.forEach((date,index) => {
         const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item));
         const total = dayTotals[index];
-        const dayButton = document.createElement('button');
-        dayButton.type = 'button';
+        const dayButton = document.createElement('div');
         dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '');
+        dayButton.setAttribute('role','group');
         dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (dayItems.length ? Math.round(total) + ' Minuten Training' : 'keine Einheit mit erfasster Dauer'));
-        dayButton.addEventListener('click', () => window.openDayEditor?.(date));
-        const totalLabel = document.createElement('span');
+        const selectDay = sport => window.selectDashboardDate?.(date, sport || null);
+        const totalLabel = document.createElement('button');
+        totalLabel.type = 'button';
         totalLabel.className = 'kajo-week-day-total';
         totalLabel.textContent = dayItems.length ? (total / 60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h' : '—';
-        const track = document.createElement('span'); track.className = 'kajo-week-bar-track';
+        totalLabel.addEventListener('click', () => selectDay(null));
+        const track = document.createElement('div'); track.className = 'kajo-week-bar-track';
+        track.setAttribute('role','button'); track.setAttribute('tabindex','0');
+        track.setAttribute('aria-label', dayNames[index] + ' öffnen');
+        track.addEventListener('click', () => selectDay(null));
+        track.addEventListener('keydown', event => { if(event.key === 'Enter' || event.key === ' '){event.preventDefault();selectDay(null);} });
         const stack = document.createElement('span'); stack.className = 'kajo-week-bar-stack';
         const grouped = new Map();
         dayItems.forEach(item => grouped.set(item.type || 'Other',(grouped.get(item.type || 'Other') || 0)+minutes(item)));
@@ -568,12 +575,13 @@ export function renderHomeTrainingWeek() {
             segment.setAttribute('aria-label', labelFor(type) + ' am ' + date + ': Tagesdetails öffnen');
             segment.addEventListener('click', event => {
                 event.stopPropagation();
-                window.openDayEditor?.(date);
+                selectDay(type);
             });
             stack.appendChild(segment);
         });
         track.appendChild(stack);
-        const dayLabel = document.createElement('span'); dayLabel.className = 'kajo-week-day-label'; dayLabel.textContent = dayNames[index];
+        const dayLabel = document.createElement('button'); dayLabel.type = 'button'; dayLabel.className = 'kajo-week-day-label'; dayLabel.textContent = dayNames[index];
+        dayLabel.addEventListener('click', () => selectDay(null));
         dayButton.append(totalLabel,track,dayLabel);
         root.appendChild(dayButton);
     });
@@ -706,7 +714,18 @@ export function renderSelectedDashboardDay() {
     if (context) context.textContent = selectedDashboardDate === today ? 'Heute' : selectedDashboardDate < today ? 'Rückblick' : 'Vorschau';
 }
 
+export function selectDashboardDate(dateKey, sportType = null) {
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(dateKey || ''))) return;
+    selectedDashboardDate = dateKey;
+    dashboardDateWasManuallyChanged = true;
+    state.homeWeekSportFocus = sportType || null;
+    renderSelectedDashboardDay();
+    const label = document.getElementById('home-daily-date-label');
+    if (label && sportType) label.textContent = 'SPORTFOKUS · ' + (getSportsCatalog()[sportType]?.label || sportType);
+}
+
 export function changeDashboardDay(offset) {
+    state.homeWeekSportFocus = null;
     const today = localTodayKey();
     const base = selectedDashboardDate || today;
     const date = new Date(base + 'T12:00:00');
@@ -718,6 +737,7 @@ export function changeDashboardDay(offset) {
 }
 
 export function goToDashboardToday() {
+    state.homeWeekSportFocus = null;
     selectedDashboardDate = localTodayKey();
     dashboardDateWasManuallyChanged = false;
     renderSelectedDashboardDay();
