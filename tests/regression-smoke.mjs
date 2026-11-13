@@ -138,6 +138,7 @@ assert.equal(state.settings.heartRateZones.Kayaking[3], 180);
 const activities = await import('../js/activities.js');
 const editable = { id: 'edit-me', name: 'Training', type: 'Kayaking', category: 'ga', duration: 60, distance: 10 };
 state.selectedActivityForModal = editable;
+state.rawActivities = [editable];
 for (const [id,value] of Object.entries({ 'modal-edit-name': 'Training', 'modal-edit-sport-select': 'Kayaking', 'modal-edit-type-select': 'ga', 'modal-edit-distance': '12.345', 'modal-edit-duration': '60', 'modal-edit-rpe': '8' })) document.getElementById(id).value = value;
 activities.saveManualSportCorrection();
 assert.equal(editable.distance, 12.345);
