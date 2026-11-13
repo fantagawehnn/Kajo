@@ -1,6 +1,6 @@
 # KAJO V2 – Konzept des passiven KI-Coachs
 
-**Status:** Fachkonzept – Entwurf 1.1 (individuelles Mehrsportprofil)  
+**Status:** Fachkonzept – Entwurf 1.2 (Priorisierung der Sportarten)  
 **Ziel-Repository:** `fantagawehnn/Kajo`  
 **Ziel-Branch:** `v2`  
 **Geltungsbereich:** KI-gestützte Trainingsanalyse und Trainingsempfehlungen  
@@ -82,7 +82,7 @@ Sind relevante äußere Bedingungen unbekannt, muss er die Vergleichbarkeit eins
 
 ### 3.3 Weitere Trainingsformen
 
-Laufen, Radfahren, Schwimmen, Krafttraining, Paddelergometer und Mobilität/Prävention können als eigenständige Trainingsbereiche analysiert werden. Ihre Belastungswerte dürfen jedoch nicht ohne methodische Grundlage mit kanuspezifischen Kennzahlen gleichgesetzt werden.
+Der Kanu-Wildwasserrennsport ist die einzige Sportart mit einem eigenständigen Leistungs- und Wettkampfziel. Weitere Sportarten und Trainingsformen betreibt die Nutzerin aus Freude und für die allgemeine Fitness. Sie werden deshalb in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt, erhalten aber keine eigenen Leistungsziele und werden nicht als separate Leistungsentwicklungsprojekte bewertet. Ihre sportartspezifischen Messwerte können zur Beschreibung der jeweiligen Aktivität dienen; daraus wird jedoch keine eigenständige Leistungsbewertung abgeleitet. Belastungswerte dürfen außerdem nicht ohne methodische Grundlage mit kanuspezifischen Kennzahlen gleichgesetzt werden.
 
 ## 4. Analyse- und Empfehlungskreislauf
 
@@ -149,7 +149,7 @@ Der Coach muss zwischen einem beobachteten Datenbefund, einer plausiblen Interpr
 
 Die Empfehlungen sollen sich an einem gepflegten Athletenprofil orientieren. Dazu können gehören:
 
-- primäre Sportart sowie ergänzende Sportarten und Trainingsformen\n- Disziplinen, Bootsklassen und Trainingsschwerpunkte im Kanusport\n- Funktion und Priorität der einzelnen Sportarten im Gesamttrainingsplan
+- primäre Sportart mit eigenständigem Leistungsziel: Kanu-Wildwasserrennsport\n- ergänzende Sportarten und Trainingsformen, die aus Freude und für die allgemeine Fitness ausgeübt werden\n- Disziplinen, Bootsklassen und Trainingsschwerpunkte im Kanusport
 - Trainingsziele und Saisonplanung
 - individuelle Herzfrequenz- und Leistungszonen
 - Trainingshistorie und individuelle Normalbereiche
@@ -216,7 +216,7 @@ Der Coach ist fachlich erst dann als nutzbar zu bewerten, wenn:
 
 Die folgenden Punkte sind bewusst noch nicht festgelegt, weil die vorhandenen Unterlagen dafür keine ausreichende Vorgabe enthalten:
 
-1. Welche weiteren Sportarten übt die Nutzerin aktuell regelmäßig aus, und welchen Stellenwert haben sie im Gesamttraining?
+1. Welche weiteren Sportarten übt die Nutzerin aktuell regelmäßig aus? Sie dienen dem Spaß und der allgemeinen Fitness; ein eigenständiger Leistungsanspruch besteht nicht.
 2. Welche Trainingsziele und Saisonphasen sollen bei Empfehlungen verbindlich berücksichtigt werden?
 3. Welche Datenbasis ist für eine Tagesempfehlung mindestens erforderlich?
 4. Soll der Coach geplante Einheiten aktiv kommentieren oder nur auf ausdrückliche Frage analysieren?
