@@ -387,7 +387,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const sport = sportsCatalog[p.type]?.label || p.type || 'Training';
         const duration = validNumber(p.duration) ? Number(p.duration) + ' min' : 'Dauer offen';
         const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Load' : '';
-        return '<button type="button" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
+        return '<button type="button" data-sport-type="' + escapeHtml(p.type || '') + '" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
     }).join('');
     plannedList?.querySelectorAll('[data-sport-type]').forEach(el => { el.style.borderLeft = '3px solid ' + (sportsCatalog[el.dataset.sportType]?.color || '#64748b'); });
 
@@ -700,7 +700,7 @@ export function renderSelectedDashboardDay() {
     const selectedDateLabel = document.getElementById("dashboard-selected-date");
     if (selectedDateLabel) {
         const selectedDate = new Date(selectedDashboardDate + 'T12:00:00');
-        selectedDateLabel.textContent = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long' }).format(selectedDate);
+        selectedDateLabel.textContent = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate);
     }
     const noteButton = document.getElementById('dashboard-day-note');
     if (noteButton) {
