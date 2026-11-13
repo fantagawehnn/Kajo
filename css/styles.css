@@ -4164,3 +4164,80 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 @media (min-width: 641px) {
     .kajo-mobile-header { display: none !important; }
 }
+
+
+/* Analysis refinement: one centered, consistently sized hero metric across all four domains. */
+.kajo-analysis-view { gap: .85rem !important; }
+.kajo-analysis-header { align-items: flex-end; gap: .75rem; }
+.kajo-analysis-header > div { min-width: 0; }
+.kajo-analysis-header h1 { font-size: clamp(1.25rem, 2.8vw, 1.75rem) !important; }
+.kajo-analysis-header > div > p:last-child { max-width: 58ch; }
+.kajo-analysis-shared-period {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .45rem;
+    padding: .45rem 0 .65rem; border-bottom: 1px solid var(--kajo-border);
+}
+.kajo-analysis-hero {
+    min-height: 0 !important; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: .55rem;
+    padding: .55rem .75rem .85rem !important;
+    border: 0 !important; border-radius: 0 !important;
+    background: transparent !important; text-align: center;
+}
+.kajo-analysis-hero-ring {
+    flex: 0 0 128px !important; width: 128px !important; height: 128px !important;
+    border-width: 7px !important; margin: 0 auto;
+}
+.kajo-analysis-hero-ring strong { font-size: 1.8rem !important; }
+.kajo-analysis-hero-copy { width: min(100%, 620px); }
+.kajo-analysis-hero-copy .kajo-analysis-eyebrow { margin-bottom: .2rem; }
+.kajo-analysis-hero-copy h2 { font-size: .9rem !important; }
+.kajo-analysis-hero-note { margin: .25rem auto 0 !important; max-width: 64ch; }
+.kajo-analysis-metric-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0; margin: .35rem 0 .8rem;
+    border-top: 1px solid var(--kajo-border);
+    border-bottom: 1px solid var(--kajo-border);
+}
+.kajo-analysis-metric {
+    justify-content: center; min-height: 66px;
+    padding: .55rem .7rem !important; border: 0 !important;
+    border-radius: 0 !important; background: transparent !important;
+}
+.kajo-analysis-metric + .kajo-analysis-metric { border-left: 1px solid var(--kajo-border) !important; }
+.kajo-analysis-metric > span { font-size: .6rem; }
+.kajo-analysis-metric strong { font-size: .98rem; }
+.kajo-analysis-metric small { font-size: .56rem; }
+.kajo-analysis-metric-link { cursor: pointer; text-align: left; }
+.kajo-analysis-metric-link:hover { background: color-mix(in srgb, var(--kajo-blue) 7%, transparent) !important; }
+.kajo-analysis-source-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .4rem; }
+.kajo-analysis-source-row .kajo-analysis-metric {
+    min-height: 54px; padding: .45rem .55rem !important;
+    border: 1px solid var(--kajo-border) !important; border-radius: 9px !important;
+    background: color-mix(in srgb, var(--kajo-surface) 75%, transparent) !important;
+}
+#analysis-subpage-load, #analysis-subpage-recovery,
+#analysis-subpage-performance, #analysis-subpage-health { min-width: 0; }
+#analysis-subpage-load .kajo-analysis-load-section { min-width: 0; }
+#analysis-subpage-load .kajo-analysis-load-section > .flex:first-child { align-items: center; }
+#analysis-subpage-load #intervalsLoadChart { cursor: crosshair; }
+#analysis-subpage-health .kajo-analysis-health-chart { min-height: 180px; }
+@media (max-width: 640px) {
+    .kajo-analysis-view { gap: .65rem !important; }
+    .kajo-analysis-header { align-items: flex-start; }
+    .kajo-analysis-header > div > p:last-child { max-width: 36ch; }
+    .kajo-analysis-period { margin-top: .15rem; }
+    .kajo-analysis-shared-period { padding: .35rem 0 .55rem; }
+    .kajo-analysis-hero { padding: .35rem .25rem .65rem !important; }
+    .kajo-analysis-hero-ring {
+        flex: 0 0 128px !important; width: 128px !important; height: 128px !important;
+    }
+    .kajo-analysis-hero-ring strong { font-size: 1.75rem !important; }
+    .kajo-analysis-hero-copy h2 { font-size: .84rem !important; }
+    .kajo-analysis-hero-note { font-size: .62rem !important; }
+    .kajo-analysis-metric-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .kajo-analysis-metric { min-height: 60px; padding: .5rem .55rem !important; }
+    .kajo-analysis-metric:nth-child(odd) { border-left: 0 !important; }
+    .kajo-analysis-metric:nth-child(n+3) { border-top: 1px solid var(--kajo-border) !important; }
+    .kajo-analysis-source-row { grid-template-columns: 1fr; }
+    .kajo-analysis-source-row .kajo-analysis-metric { min-height: 48px; }
+}
