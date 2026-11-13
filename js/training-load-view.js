@@ -26,7 +26,7 @@ function filteredRows() {
   return count ? all.slice(-count) : all;
 }
 function latestModelDay() {
-  return [...rows()].reverse().find(x => ['ctl', 'atl', 'tsb'].every(k => valid(x[k]))) || null;
+  return [...rows()].reverse().find(x => ['ctl', 'atl', 'tsb'].every(k => valid(x[k])) && ['complete', 'confirmed-rest'].includes(x.dataStatus)) || null;
 }
 function setText(id, value) {
   const node = document.getElementById(id);
@@ -59,7 +59,7 @@ function renderChart(metric) {
       labels: points.map(x => new Date(x.date + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })),
       datasets: [{
         label: meta[metric][0],
-        data: points.map(x => valid(x[metric]) ? Number(x[metric]) : null),
+        data: points.map(x => ['complete', 'confirmed-rest'].includes(x.dataStatus) && valid(x[metric]) ? Number(x[metric]) : null),
         borderColor: '#6DA8F7',
         backgroundColor: 'rgba(109,168,247,.10)',
         borderWidth: 2, pointRadius: 0, pointHitRadius: 9, tension: .25, fill: true, spanGaps: false
