@@ -42,9 +42,25 @@ assert.equal(formatKm(12.3456), '12.35');
 state.settings = { sports: { custom_row: { label: 'Rudern', color: '#123456' } }, categories: {}, heartRateZones: {} };
 assert.equal(getSportsCatalog().custom_row.label, 'Rudern');
 const todayKey = toLocalDateString();
-const timeline = computePerformanceTimeline([{ date: todayKey, tss: 80 }]);
-assert.equal(timeline[0].tss, 80);
-assert.equal(timeline[0].isProvisional, true);
+const completedDate = new Date();
+completedDate.setDate(completedDate.getDate() - 1);
+const completedKey = toLocalDateString(completedDate);
+const loadSettings = {
+    ...state.settings,
+    garminActivityCoverageRanges: [{
+        startDate: completedKey, endDate: completedKey,
+        status: 'complete', source: 'garmin_activity_list'
+    }]
+};
+const timeline = computePerformanceTimeline([{
+    id: 'garmin-smoke-activity', source: 'garmin', date: completedKey,
+    garminTrainingLoad: 80
+}], loadSettings, state.profile);
+const loadedDay = timeline.find(day => day.date === completedKey);
+assert.equal(loadedDay.load, 80);
+assert.equal(loadedDay.dataStatus, 'complete');
+assert.equal(loadedDay.isProvisional, true);
+assert.equal(computePerformanceTimeline([{ date: todayKey, tss: 80 }], state.settings, state.profile).length, 0);
 
 // Competition priorities cover all five levels and migrate old generic C entries safely.
 assert.equal(getRacePriorityMeta('A').title, 'International WM/EM');

@@ -181,6 +181,13 @@ function renderLoadPeriodSummary(timeline) {
     const last = timeline.length - 1;
     const current7 = timeline.slice(last - 6, last + 1);
     const previous7 = timeline.length >= 14 ? timeline.slice(last - 13, last - 6) : null;
+    const isCompleteDay = day => day.load != null
+        && day.dataStatus !== 'unknown'
+        && day.dataStatus !== 'incomplete-activity-load';
+    if (!current7.every(isCompleteDay)) {
+        root.innerHTML = '<p class="text-xs text-amber-300">Die 7-Tage-Belastung ist nicht vollständig auswertbar: Für mindestens einen Tag fehlt eine bestätigte Garmin-Aktivitätsabdeckung oder ein Load-Wert. Unbekannte Tage werden nicht als Ruhetage gewertet.</p>';
+        return;
+    }
     const sumLoad = days => days.reduce((sum, day) => sum + Math.max(0, Number(day.load) || 0), 0);
     const activeDays = current7.filter(day => Number(day.load) > 0).length;
     const currentLoad = sumLoad(current7);
@@ -191,7 +198,7 @@ function renderLoadPeriodSummary(timeline) {
     const metric = (label, value, detail) => '<div class="bg-slate-950 rounded-xl border border-slate-800 p-3 min-w-0"><div class="text-[10px] text-slate-500 uppercase tracking-wide">' + label + '</div><div class="text-lg font-bold text-white mt-1 break-words">' + value + '</div><div class="text-[10px] text-slate-500 mt-1">' + detail + '</div></div>';
     let comparison = 'Vergleich ab 14 Tagen';
     let changeNote = 'Für eine Verlaufsbewertung werden zwei vollständige 7-Tage-Zeiträume benötigt.';
-    if (previous7) {
+    if (previous7 && previous7.every(isCompleteDay)) {
         const previousLoad = sumLoad(previous7);
         if (previousLoad > 0) {
             const change = (currentLoad - previousLoad) / previousLoad * 100;
@@ -207,15 +214,21 @@ function renderLoadPeriodSummary(timeline) {
     let average28 = 'Noch keine 28 Tage';
     let baselineContext = 'Ein längerfristiger Wochenvergleich ist ab 28 Tagen möglich.';
     if (timeline.length >= 28) {
-        const total28 = sumLoad(timeline.slice(last - 27, last + 1));
-        average28 = (total28 / 4).toFixed(1) + ' ' + unit + ' / Woche';
-        const previous21Average = sumLoad(timeline.slice(last - 27, last - 6)) / 3;
-        if (previous21Average > 0) {
+        const recent28 = timeline.slice(last - 27, last + 1);
+        if (recent28.every(isCompleteDay)) {
+            const total28 = sumLoad(recent28);
+            average28 = (total28 / 4).toFixed(1) + ' ' + unit + ' / Woche';
+            const previous21 = recent28.slice(0, 21);
+            const previous21Average = previous21.every(isCompleteDay) ? sumLoad(previous21) / 3 : 0;
+            if (previous21Average > 0) {
             const deviation = (currentLoad - previous21Average) / previous21Average * 100;
             const context = deviation > 20 ? 'deutlich über' : deviation > 10 ? 'über' : deviation < -20 ? 'deutlich unter' : deviation < -10 ? 'unter' : 'im Bereich';
             baselineContext = 'Aktuelle Woche liegt ' + context + ' dem durchschnittlichen Wochenumfang der vorherigen 21 Tage (' + (deviation > 0 ? '+' : '') + deviation.toFixed(0) + ' %).';
+            } else {
+                baselineContext = 'In den vorherigen 21 Tagen wurde keine vollständige Belastung erfasst; ein Vergleich ist nicht möglich.';
+            }
         } else {
-            baselineContext = 'In den vorherigen 21 Tagen wurde keine Belastung erfasst; ein Vergleich ist nicht möglich.';
+            baselineContext = 'Der 28-Tage-Zeitraum enthält Datenlücken und wird nicht als vollständiger Wochenvergleich ausgewertet.';
         }
     }
     const modelDays = Math.min(timeline.length, 126);
@@ -282,6 +295,26 @@ export function renderSummaryKPICards(timeline) {
         return;
     }
     const last = eligible[eligible.length - 1];
+    if (last.load == null || last.ctl == null) {
+        ['kpi-ctl','kpi-atl','kpi-tsb','kpi-acwr'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+        ['kpi-ctl-trend','kpi-atl-trend'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = 'Datenabdeckung unvollständig'; el.className = 'text-[10px] text-amber-300 font-mono mt-1'; }
+        });
+        const status = document.getElementById('kpi-tsb-status');
+        if (status) status.textContent = 'Nicht berechenbar';
+        const recommendation = document.getElementById('kpi-rec-short');
+        if (recommendation) recommendation.textContent = 'Keine aktuelle Belastungsbasis';
+        const detail = document.getElementById('kpi-rec-sub');
+        if (detail) detail.textContent = 'Für diesen Tag fehlt eine vollständige Aktivitäts- oder Load-Abdeckung.';
+        const marker = document.getElementById('zone-gauge-marker');
+        if (marker) marker.style.display = 'none';
+        const gauge = document.getElementById('zone-gauge-text');
+        if (gauge) gauge.textContent = 'Belastungsmodell derzeit nicht berechenbar';
+        renderLoadPeriodSummary(timeline);
+        renderReadinessDashboard(selectedKey);
+        return;
+    }
     const sevenDaysAgo = eligible.length >= 8 ? eligible[eligible.length - 8] : null;
     renderLoadTrend('kpi-ctl-trend', last.ctl, sevenDaysAgo?.ctl, 'ctl');
     renderLoadTrend('kpi-atl-trend', last.atl, sevenDaysAgo?.atl, 'atl');
@@ -325,6 +358,11 @@ export function renderSummaryKPICards(timeline) {
 export function generateAutomatedNarrative(timeline) {
     if (!timeline || timeline.length === 0) return;
     const last = timeline[timeline.length - 1];
+    if (last.load == null || last.ctl == null) {
+        const root = document.getElementById('automated-narrative-text');
+        if (root) root.innerHTML = '<p>Die aktuelle Trainingsbelastung ist nicht berechenbar, weil für den jüngsten Tag keine vollständige Aktivitäts- und Load-Abdeckung vorliegt.</p><p class="text-slate-400">Unbekannte Tage werden nicht als Ruhetage oder Belastung 0 interpretiert. Bitte synchronisiere den betroffenen Garmin-Zeitraum erneut.</p>';
+        return;
+    }
     const sourceText = last.loadMode === 'srpe' ? 'Session-RPE (Dauer × Gesamtanstrengung)' : last.loadMode === 'garmin-zone' ? 'Garmin-FIT-HF-Zeitreihen; Endurance AI Zonen-Load' : last.loadMode === 'garmin-native' ? 'Garmin-eigene Trainingsload-Werte' : last.loadMode === 'garmin-mixed' ? 'Garmin-FIT-Zonen-Load und native Garmin-Load-Werte (je Aktivität nur eine Quelle)' : 'externe TSS-Daten';
     const formText = last.loadMode === 'srpe' ? `sRPE-Bilanz: ${last.tsb} AU` : last.loadMode?.startsWith('garmin') ? `Relativer Saldo: ${last.formPct}%` : `Belastungssaldo: ${last.tsb}`;
     document.getElementById('automated-narrative-text').innerHTML = `

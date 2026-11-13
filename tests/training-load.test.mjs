@@ -1,0 +1,146 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { computePerformanceTimeline } from '../js/calculations.js';
+import { getGarminTelemetry } from '../js/data-source.js';
+
+function dateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function offsetDate(key, offset) {
+    const date = new Date(key + 'T12:00:00');
+    date.setDate(date.getDate() + offset);
+    return dateKey(date);
+}
+
+function covered(startDate, endDate = startDate) {
+    return { startDate, endDate, status: 'complete', source: 'garmin_activity_list' };
+}
+
+function entryOn(date, records, settings) {
+    const timeline = computePerformanceTimeline(records, settings, {});
+    return timeline.find(day => day.date === date);
+}
+
+const today = dateKey(new Date());
+const completedDay = offsetDate(today, -1);
+
+test('generic telemetry is never used as a Garmin fallback', () => {
+    const activity = {
+        source: 'garmin',
+        telemetry: { hr: [120, 130], time: [0, 1] }
+    };
+    assert.equal(getGarminTelemetry(activity), null);
+});
+
+test('only the separated Garmin telemetry field is exposed for Garmin activities', () => {
+    const telemetry = { hr: [120, 130], time: [0, 1] };
+    const activity = { source: 'garmin', telemetry: { hr: [90, 100] }, garminTelemetry: telemetry };
+    assert.equal(getGarminTelemetry(activity), telemetry);
+});
+
+test('a non-Garmin activity cannot expose telemetry through the Garmin accessor', () => {
+    const activity = {
+        source: 'csv',
+        telemetry: { hr: [90, 100] },
+        garminTelemetry: { hr: [120, 130] }
+    };
+    assert.equal(getGarminTelemetry(activity), null);
+});
+
+test('successfully synchronized day without activities is a confirmed rest day', () => {
+    const day = entryOn(completedDay, [], { garminActivityCoverageRanges: [covered(completedDay)] });
+    assert.ok(day);
+    assert.equal(day.load, 0);
+    assert.equal(day.dataStatus, 'confirmed-rest');
+});
+
+test('Garmin activity without a calculable load remains unknown', () => {
+    const records = [{ id: 'g-1', source: 'garmin', date: completedDay, duration: 60 }];
+    const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
+});
+
+test('non-Garmin activity prevents a false confirmed-rest day', () => {
+    const records = [{ id: 'csv-1', source: 'csv', date: completedDay, duration: 60, tss: 80 }];
+    const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
+    assert.equal(day.loadMode, 'garmin-unavailable');
+});
+
+test('Garmin native training load is used when available', () => {
+    const records = [{ id: 'g-2', source: 'garmin', date: completedDay, garminTrainingLoad: 35 }];
+    const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
+    assert.equal(day.load, 35);
+    assert.equal(day.dataStatus, 'complete');
+    assert.equal(day.loadMode, 'garmin-native');
+});
+
+test('manual session-RPE load is calculated as duration in minutes times RPE', () => {
+    const records = [{ id: 'manual-1', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 6 }];
+    const settings = {
+        trainingLoadSource: 'srpe',
+        garminActivityCoverageRanges: [covered(completedDay)]
+    };
+    const day = entryOn(completedDay, records, settings);
+    assert.equal(day.load, 360);
+    assert.equal(day.dataStatus, 'complete');
+    assert.equal(day.loadMode, 'srpe');
+});
+
+test('a day with multiple activities is incomplete if any activity lacks the selected load', () => {
+    const records = [
+        { id: 'g-3', source: 'garmin', date: completedDay, garminTrainingLoad: 30 },
+        { id: 'g-4', source: 'garmin', date: completedDay, duration: 45 }
+    ];
+    const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
+    assert.equal(day.load, null);
+    assert.equal(day.activityCount, 2);
+    assert.equal(day.loadActivityCount, 1);
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
+});
+
+test('without confirmed activity-list coverage no performance timeline is produced', () => {
+    const records = [{ id: 'g-no-coverage', source: 'garmin', date: completedDay, garminTrainingLoad: 25 }];
+    const timeline = computePerformanceTimeline(records, {}, {});
+    assert.deepEqual(timeline, []);
+});
+
+test('a day outside confirmed activity-list coverage remains unknown', () => {
+    const twoDaysAgo = offsetDate(today, -2);
+    const timeline = computePerformanceTimeline([], {
+        garminActivityCoverageRanges: [covered(twoDaysAgo)]
+    }, {});
+    const day = timeline.find(item => item.date === today);
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'unknown');
+});
+
+test('current-day activity remains unknown until the day is fully covered', () => {
+    const records = [{ id: 'g-current', source: 'garmin', date: today, garminTrainingLoad: 50 }];
+    const day = entryOn(today, records, {
+        garminActivityCoverageRanges: [covered(completedDay)]
+    });
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'unknown');
+});
+
+test('an unknown day breaks the CTL model instead of carrying load across the gap', () => {
+    const threeDaysAgo = offsetDate(today, -3);
+    const gapDate = offsetDate(today, -2);
+    const records = [
+        { id: 'g-5', source: 'garmin', date: threeDaysAgo, garminTrainingLoad: 50 },
+        { id: 'g-6', source: 'garmin', date: completedDay, garminTrainingLoad: 40 }
+    ];
+    const timeline = computePerformanceTimeline(records, {
+        garminActivityCoverageRanges: [covered(threeDaysAgo), covered(completedDay)]
+    }, {});
+    const gap = timeline.find(day => day.date === gapDate);
+    const current = timeline.find(day => day.date === completedDay);
+    assert.equal(gap.load, null);
+    assert.equal(gap.dataStatus, 'unknown');
+    assert.equal(current.load, 40);
+    assert.equal(current.ctl, Number((40 * (1 - Math.exp(-1 / 42))).toFixed(1)));
+});

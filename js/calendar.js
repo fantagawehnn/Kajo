@@ -3,6 +3,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
+import { getGarminTelemetry } from './data-source.js';
 import { calculateReadiness } from './dashboard.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js';
 import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js';
@@ -633,7 +634,8 @@ export function renderListView() {
             ? (getTypeColorMap()[act.category || 'ga'] || getTypeColorMap().ga).color
             : (sportCatalog[act.type] || sportCatalog.Workout).color;
         const isStrength = act.type === 'WeightTraining' || act.category === 'strength';
-        const telemetryHr = Array.isArray(act.telemetry?.hr) ? act.telemetry.hr.map(Number).filter(v => Number.isFinite(v) && v > 0) : [];
+        const telemetry = getGarminTelemetry(act);
+        const telemetryHr = Array.isArray(telemetry?.hr) ? telemetry.hr.map(Number).filter(v => Number.isFinite(v) && v > 0) : [];
         const maxHr = Number(act.maxHr) > 0 ? Math.round(Number(act.maxHr)) : (telemetryHr.length ? Math.round(Math.max(...telemetryHr)) : null);
         const hrValues = [];
         if (act.hr != null && Number.isFinite(Number(act.hr))) hrValues.push('Ø ' + Math.round(Number(act.hr)) + ' bpm');

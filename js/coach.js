@@ -16,7 +16,13 @@ export function sendAICoachMessage() {
     setTimeout(() => {
         const last = state.dailyTimeline[state.dailyTimeline.length - 1];
         let reply = `Basierend auf deinen lokalen Daten:<br>`;
-        if (!last) { reply += 'Keine Daten vorhanden.'; } else {
+        if (!last) {
+            reply += 'Keine Daten vorhanden.';
+        } else if (last.loadMode === 'garmin-unavailable') {
+            reply += 'Für die erfassten Tage liegt aktuell keine berechenbare Garmin-Load-Quelle vor. Externe TSS-Werte werden nicht als Ersatz verwendet; falls Aktivitäten ohne Garmin-Load vorliegen, bleiben ihre Tageswerte unbekannt.';
+        } else if (last.load == null || last.ctl == null) {
+            reply += 'Die aktuelle Trainingsbelastung ist wegen einer unvollständigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage oder Load 0 interpretiert. Bitte synchronisiere den betroffenen Garmin-Zeitraum erneut.';
+        } else {
             reply += `• CTL = ${last.ctl}, ATL = ${last.atl}, Form (TSB) = ${last.tsb}.<br>`;
             reply += `• Aktueller Status: "${last.statusLabel}".`;
         }
