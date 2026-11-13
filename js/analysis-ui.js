@@ -148,7 +148,9 @@ function renderHealthTimeline() {
   });
 }
 function renderHealth() {
-  const from = new Date(todayKey() + 'T12:00:00'); from.setDate(from.getDate() - 27);\n  const fromKey = from.getFullYear() + '-' + String(from.getMonth() + 1).padStart(2, '0') + '-' + String(from.getDate()).padStart(2, '0');\n  const entries = Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= fromKey && date <= todayKey() && (item?.status === 'sick' || item?.status === 'injured'));
+  const from = new Date(todayKey() + 'T12:00:00'); from.setDate(from.getDate() - 27);
+  const fromKey = from.getFullYear() + '-' + String(from.getMonth() + 1).padStart(2, '0') + '-' + String(from.getDate()).padStart(2, '0');
+  const entries = Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= fromKey && date <= todayKey() && (item?.status === 'sick' || item?.status === 'injured'));
   const sick = entries.filter(([, item]) => item.status === 'sick').length;
   const injured = entries.filter(([, item]) => item.status === 'injured').length;
   setHero('health', '—', '', 'Noch nicht berechenbar',
