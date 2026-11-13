@@ -4136,3 +4136,6 @@ html[data-theme="light"] .kajo-profile-detail-card .kajo-profile-cancel { backgr
 .kajo-home .kajo-wearable-value[data-state="neutral"] { color:var(--kajo-status-info)!important; }
 html[data-theme="light"] .kajo-ring:before { background:var(--kajo-surface); border-color:var(--kajo-border); }
 html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle); }
+
+.kajo-profile-overview-back { width:30px; height:30px; padding:0; display:grid; place-items:center; border-radius:50%; }
+.kajo-profile-overview-back svg { width:14px; height:14px; }
