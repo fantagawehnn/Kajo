@@ -62,6 +62,9 @@ storage.loadStateFromStorage();
 assert.deepEqual(state.dailyCheckins, {});
 assert.equal(store.get('endurance_checkins'), legacyCheckins);
 
+// Subsequent import checks run inside an isolated authenticated-user storage scope.
+await storage.loadStateForUser('smoke-test-user');
+
 // Wellness merge preserves manual values and does not replace fields absent from API.
 state.rawActivities = [];
 state.dailyCheckins['2026-11-10'] = {
