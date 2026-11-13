@@ -184,3 +184,7 @@ assert.ok(charts.includes('state.activityTelemetryMetric = preferred'), 'activit
 assert.ok(html.includes('id="activity-telemetry-switch"'), 'activity detail has one central telemetry switch');
 assert.ok(!activities.includes('activityFitSeriesChart'), 'FIT diagnostic panel does not create a second time-series chart');
 assert.ok(activities.includes("getSportsCatalog()[act.type]?.color"), 'activity header uses the configured sport color');
+
+assert.ok(activities.includes('function renderActivityComparisons(activity)'), 'activity comparisons are gated by sport-specific comparability');
+assert.ok(activities.includes('identische Strecke und ähnliche dokumentierte Wasserbedingungen'), 'canoe comparisons require matching route and recorded water conditions');
+assert.ok(activities.includes('getActivityTelemetrySeries(act).length > 0'), 'telemetry chart remains visible for any supported measured series');
