@@ -13,6 +13,7 @@ Version 2 wird parallel zur bestehenden Anwendung im Repository `fantagawehnn/En
 - `docs/ARCHITECTURE.md`: Zielarchitektur und Sicherheitsgrenzen.
 - `docs/ROADMAP.md`: schrittweise Umsetzung und Abnahmekriterien.
 - `docs/AUDIT.md`: technische Bestandsaufnahme, FIT-/Load-/RPE-Befunde und offene Prüfungen.
+- `docs/NAVIGATION.md`: verbindliche Fünf-Tab-Navigation, Seitenzuordnung und Abnahmestatus.
 - Die bereitgestellten KAJO-UI-/UX-Richtlinien.
 - Das bereitgestellte Masterdokument zur Berechnungsmethodik und Datenarchitektur.
 
