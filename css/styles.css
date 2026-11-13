@@ -4935,3 +4935,22 @@ html[data-theme="light"] #settings-modal { background:var(--kajo-bg) !important;
 .kajo-data-page#view-methods>header p{font-size:.72rem;line-height:1.5}
 .kajo-data-page#view-methods>section{padding:14px;border:1px solid var(--kajo-border);border-radius:13px;background:var(--kajo-surface)}
 .kajo-data-page#view-methods>section h3{font-size:.82rem}
+
+
+/* Analyse-Übersicht: kompakte Einordnung statt kopierter Detailanalysen. */
+.kajo-analysis-short-insight {
+  margin:0;
+  color:var(--kajo-text-secondary,var(--kajo-muted));
+  font-size:.76rem;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+#analysis-overview-content { gap:.7rem !important; }
+#analysis-overview-content .kajo-analysis-overview-panel { padding:clamp(10px,1.6vw,15px); }
+#analysis-overview-content .kajo-analysis-section-heading { margin-bottom:.35rem; }
+#analysis-overview-content .kajo-analysis-switch { margin:.45rem 0 .65rem; }
+#analysis-overview-content .kajo-analysis-chart-note:empty { display:none; }
+@media(max-width:640px) {
+  #analysis-overview-content { gap:.6rem !important; }
+  #analysis-overview-content .kajo-analysis-overview-panel { padding:10px; }
+}
