@@ -88,3 +88,6 @@ assert.ok(competitions.includes('openNextRaceDetail'), 'next race opens a dedica
 
 assert.ok(homeMarkup.includes('home-next-race-location') && homeMarkup.includes('home-next-race-sport'), 'next race shows available location and discipline fields');
 assert.ok(dashboard.includes('data-sport-type'), 'today sessions use configured sport identity for their color accent');
+
+assert.ok(main.includes("document.body.classList.toggle('kajo-home-active', view === 'dashboard')"), 'home header state avoids duplicate global branding');
+assert.ok(dashboard.includes("year: 'numeric'"), 'home date includes the current year');
