@@ -67,6 +67,14 @@ function renderLoad() {
     metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance),
     metric('ACWR', fmt(last.acwr))
   ]);
+  const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
+  const garminValues = activities.filter(activity => valid(activity.garminTrainingLoad)).length;
+  const srpeValues = activities.filter(activity => valid(activity.sRpeLoad)).length;
+  renderMetrics('load-analysis-sources', [
+    metric('Garmin Training Load', String(garminValues), 'Aktivitäten mit separatem Garmin-Wert'),
+    metric('Edwards TRIMP', '—', 'Kein eigenständiges Datenfeld nachgewiesen'),
+    metric('sRPE-Load', String(srpeValues), 'Aktivitäten mit separatem sRPE-Wert')
+  ]);
 }
 function renderRecovery() {
   if (!state.healthHistoryMetric) state.healthHistoryMetric = 'hrv';
