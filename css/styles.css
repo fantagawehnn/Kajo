@@ -3884,3 +3884,10 @@ html[data-theme="light"] .kajo-analysis-baseline-note { color:#475569; }
  .kajo-week-day{grid-template-rows:16px 92px 16px}
  .kajo-week-bar-track{height:92px;width:min(100%,27px)}
 }
+
+
+/* On the home tab the compact in-page header replaces the global brand/account header. */
+body.kajo-home-active .kajo-mobile-header{display:none!important}
+body.kajo-home-active #app-navigation .kajo-desktop-brand{display:none!important}
+.kajo-home-race:disabled{opacity:.72;cursor:default}
+.kajo-home-race:disabled:hover{border-color:var(--kajo-border,#263449)}
