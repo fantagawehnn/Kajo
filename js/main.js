@@ -116,6 +116,7 @@ function switchTab(requestedTab) {
         more: { parent: 'more', view: 'more' },
         profile: { parent: 'more', view: 'profile' },
         data: { parent: 'more', view: 'data' },
+        backup: { parent: 'more', view: 'backup' },
         upload: { parent: 'more', view: 'upload' },
         methods: { parent: 'more', view: 'methods' },
         routes: { parent: 'more', view: 'routes' },
@@ -128,7 +129,7 @@ function switchTab(requestedTab) {
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
-    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'ai', 'profile'];
+    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'backup', 'ai', 'profile'];
     viewIds.forEach(id => {
         const el = document.getElementById('view-' + id);
         if (el) el.classList.toggle('hidden', id !== view);
