@@ -187,7 +187,7 @@ Vor jedem Vergleich prüft der Coach mindestens:
 
 ### 7.2 Ergänzende Sportarten
 
-Der Kanu-Wildwasserrennsport ist die einzige Sportart mit eigenständigem Leistungs- und Wettkampfziel. Laufen, Radfahren, Schwimmen und Krafttraining werden ergänzend aus Freude und für die allgemeine Fitness ausgeübt. Für sie werden keine eigenen Leistungsziele, Leistungsbewertungen oder Entwicklungsprognosen erstellt. Sie müssen jedoch in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt werden, soweit geeignete Daten vorliegen. Ihre Messwerte dürfen zur Beschreibung der jeweiligen Aktivität und ihrer Belastung genutzt werden, aber nicht als eigenständiger Leistungsfortschritt interpretiert werden. Sportartspezifische Belastungsmodelle bleiben getrennt; ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
+Der Kanu-Wildwasserrennsport ist die einzige Sportart mit eigenständigem Leistungs- und Wettkampfziel. Laufen, Radfahren, Schwimmen und Krafttraining werden ergänzend aus Freude und für die allgemeine Fitness ausgeübt. Für sie werden keine eigenen Leistungsziele, Leistungsbewertungen oder Entwicklungsprognosen erstellt. Ihre Belastung muss dennoch nach Möglichkeit anhand von Dauer, Herzfrequenz und subjektiver Belastung (RPE) eingeordnet werden. Welche Kennzahlen tatsächlich verfügbar und geeignet sind, hängt von Sportart, Aktivität und Datenqualität ab. Sie müssen jedoch in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt werden, soweit geeignete Daten vorliegen. Der Coach soll dabei zwischen lockerer und intensiver Ausführung unterscheiden, ohne Intensität aus fehlenden Daten zu erfinden. Ihre Messwerte dürfen zur Beschreibung der jeweiligen Aktivität und ihrer Belastung genutzt werden, aber nicht als eigenständiger Leistungsfortschritt interpretiert werden. Sportartspezifische Belastungsmodelle bleiben getrennt; ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
 
 ## 8. Regeln für Trainingsempfehlungen
 
@@ -285,7 +285,7 @@ Jede Coach-Regel muss mit Testfällen geprüft werden. Mindestens abzudecken sin
 - Wildwasseraktivität ohne Angaben zu äußeren Bedingungen,
 - Vergleich K1 mit C1 oder C2,
 - Vergleich Classic mit Sprint,
-- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport und ergänzenden Sportarten zur allgemeinen Fitness,\n- ergänzende Sportart wird fälschlich als eigenständiges Leistungsziel bewertet,
+- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport und ergänzenden Sportarten zur allgemeinen Fitness,\n- ergänzende Sportart wird fälschlich als eigenständiges Leistungsziel bewertet,\n- ergänzende Einheit wird trotz vorhandener Intensitätsdaten nicht in der Belastungseinordnung berücksichtigt,\n- Intensität wird bei fehlender Herzfrequenz oder RPE fälschlich als bekannt angenommen,
 - keine sinnvolle Empfehlung möglich,
 - Nutzerin lehnt eine Empfehlung ab.
 
