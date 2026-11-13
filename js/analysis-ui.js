@@ -180,5 +180,5 @@ export function renderAnalysisPageUI(subpage = 'load') {
   renderPerformance();
   renderHealth();
   const note = document.getElementById('health-history-baseline-note');
-  if (note) note.textContent = 'Persönlicher Normalbereich noch nicht verfügbar: Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht festgelegt. Es wird daher kein Normalbereich vorgetäuscht.';
+  if (note) note.textContent = 'Persönlicher Normalbereich noch nicht verfügbar: Der Intervals-Wellnessimport bezeichnet hrv als RMSSD, während manuelle HRV-Eingaben denselben Speicherwert verwenden. Die Herkunft wird aktuell nicht getrennt gespeichert; hrvSDNN wird zudem nicht in den Check-in übernommen. Deshalb sind eine sichere ln(RMSSD)-Umrechnung und eine quellenreine Baseline noch nicht möglich.';
 }
