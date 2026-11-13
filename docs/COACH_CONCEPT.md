@@ -82,7 +82,7 @@ Sind relevante äußere Bedingungen unbekannt, muss er die Vergleichbarkeit eins
 
 ### 3.3 Weitere Trainingsformen
 
-Der Kanu-Wildwasserrennsport ist die einzige Sportart mit einem eigenständigen Leistungs- und Wettkampfziel. Laufen, Radfahren und Schwimmen betreibt die Nutzerin ergänzend aus Freude und für die allgemeine Fitness. Sie werden deshalb in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt, erhalten aber keine eigenen Leistungsziele und werden nicht als separate Leistungsentwicklungsprojekte bewertet. Ihre sportartspezifischen Messwerte können zur Beschreibung der jeweiligen Aktivität dienen; daraus wird jedoch keine eigenständige Leistungsbewertung abgeleitet. Belastungswerte dürfen außerdem nicht ohne methodische Grundlage mit kanuspezifischen Kennzahlen gleichgesetzt werden.
+Der Kanu-Wildwasserrennsport ist die einzige Sportart mit einem eigenständigen Leistungs- und Wettkampfziel. Laufen, Radfahren, Schwimmen und Krafttraining betreibt die Nutzerin ergänzend aus Freude und für die allgemeine Fitness. Sie werden deshalb in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt, erhalten aber keine eigenen Leistungsziele und werden nicht als separate Leistungsentwicklungsprojekte bewertet. Ihre sportartspezifischen Messwerte können zur Beschreibung der jeweiligen Aktivität dienen; daraus wird jedoch keine eigenständige Leistungsbewertung abgeleitet. Belastungswerte dürfen außerdem nicht ohne methodische Grundlage mit kanuspezifischen Kennzahlen gleichgesetzt werden.
 
 ## 4. Analyse- und Empfehlungskreislauf
 
@@ -149,7 +149,7 @@ Der Coach muss zwischen einem beobachteten Datenbefund, einer plausiblen Interpr
 
 Die Empfehlungen sollen sich an einem gepflegten Athletenprofil orientieren. Dazu können gehören:
 
-- primäre Sportart mit eigenständigem Leistungsziel: Kanu-Wildwasserrennsport\n- ergänzende Sportarten: Laufen, Radfahren und Schwimmen (aus Freude und für die allgemeine Fitness)\n- Disziplinen, Bootsklassen und Trainingsschwerpunkte im Kanusport
+- primäre Sportart mit eigenständigem Leistungsziel: Kanu-Wildwasserrennsport\n- ergänzende Sportarten und Trainingsbereiche: Laufen, Radfahren, Schwimmen und Krafttraining (aus Freude und für die allgemeine Fitness)\n- Disziplinen, Bootsklassen und Trainingsschwerpunkte im Kanusport
 - Trainingsziele und Saisonplanung
 - individuelle Herzfrequenz- und Leistungszonen
 - Trainingshistorie und individuelle Normalbereiche
@@ -216,7 +216,7 @@ Der Coach ist fachlich erst dann als nutzbar zu bewerten, wenn:
 
 Die folgenden Punkte sind bewusst noch nicht festgelegt, weil die vorhandenen Unterlagen dafür keine ausreichende Vorgabe enthalten:
 
-1. Welche weiteren Sportarten und Trainingsformen sollen neben Laufen, Radfahren und Schwimmen im Profil berücksichtigt werden? Für Laufen, Radfahren und Schwimmen besteht kein eigenständiger Leistungsanspruch.
+1. Welche weiteren Sportarten und Trainingsformen sollen neben Laufen, Radfahren, Schwimmen und Krafttraining im Profil berücksichtigt werden? Für diese ergänzenden Bereiche besteht kein eigenständiger Leistungsanspruch.
 2. Welche Trainingsziele und Saisonphasen sollen bei Empfehlungen verbindlich berücksichtigt werden?
 3. Welche Datenbasis ist für eine Tagesempfehlung mindestens erforderlich?
 4. Soll der Coach geplante Einheiten aktiv kommentieren oder nur auf ausdrückliche Frage analysieren?
