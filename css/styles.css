@@ -4524,39 +4524,19 @@ html[data-theme="light"] #csv-details-modal textarea { background:var(--kajo-sur
 #csv-details-modal .activity-strength-set-chip { padding:4px 7px; border-radius:6px; background:var(--kajo-surface-raised,#17212c); color:var(--kajo-text-secondary,#a9b5c2); font-size:9px; }
 #csv-details-modal .activity-strength-volume { margin-top:9px; color:var(--kajo-text-secondary,#a9b5c2); font-size:10px; }
 
-/* KAJO V2 – Analyse-Hauptübersicht */
-.kajo-analysis-overview-hero,.kajo-analysis-overview-panel{min-width:0;padding:13px;border:1px solid var(--kajo-border,#293644);border-radius:14px;background:var(--kajo-surface,#111820)}
-.kajo-analysis-overview-hero h2{margin-top:3px;color:var(--kajo-text,#f4f7fa);font-size:17px;font-weight:850;letter-spacing:-.02em}
-.kajo-analysis-overview-subtitle{margin-top:4px;color:var(--kajo-muted,#a9b5c2);font-size:11px;line-height:1.45}
-.kajo-analysis-domain-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
-.kajo-analysis-domain-card{display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:150px;padding:11px;border:1px solid var(--kajo-border,#293644);border-radius:13px;background:var(--kajo-surface,#111820);text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
-.kajo-analysis-domain-card:hover,.kajo-analysis-domain-card:focus-visible{border-color:var(--kajo-red,#d64a4a);background:var(--kajo-surface-raised,#17212c);outline:none}
-.kajo-analysis-domain-top{display:flex;width:100%;align-items:center;justify-content:space-between;gap:6px;color:var(--kajo-muted,#8794a6);font-size:9px;font-weight:800;letter-spacing:.1em}
-.kajo-analysis-domain-top i,.kajo-analysis-domain-top svg{width:14px;height:14px;flex:0 0 14px}
-.kajo-analysis-domain-value{display:flex;align-items:baseline;gap:4px;margin-top:13px;color:var(--kajo-text,#f4f7fa)}
-.kajo-analysis-domain-value strong{font-size:clamp(19px,2.3vw,25px);font-weight:850;line-height:1;font-variant-numeric:tabular-nums}
-.kajo-analysis-domain-value small{color:var(--kajo-muted,#a9b5c2);font-size:9px}
-.kajo-analysis-domain-status{margin-top:7px;color:var(--kajo-text,#f4f7fa);font-size:10px;font-weight:750;line-height:1.25}
-.kajo-analysis-domain-note{display:-webkit-box;min-height:29px;margin-top:4px;overflow:hidden;color:var(--kajo-muted,#8794a6);font-size:9px;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.kajo-analysis-domain-link{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:8px;color:var(--kajo-muted,#8794a6);font-size:9px;font-weight:700}
-.kajo-analysis-domain-link svg{width:11px;height:11px}
-.kajo-analysis-domain-card[data-status="good"] .kajo-analysis-domain-value strong{color:var(--kajo-status-good,#39C98A)}
-.kajo-analysis-domain-card[data-status="attention"] .kajo-analysis-domain-value strong{color:var(--kajo-status-attention,#F2B84B)}
-.kajo-analysis-domain-card[data-status="critical"] .kajo-analysis-domain-value strong{color:var(--kajo-status-critical,#F16B6B)}
-.kajo-analysis-domain-card[data-status="neutral"] .kajo-analysis-domain-value strong{color:var(--kajo-status-neutral,#6DA8F7)}
-.kajo-analysis-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.kajo-analysis-section-heading h2{color:var(--kajo-text,#f4f7fa);font-size:14px;font-weight:800}
-.kajo-analysis-trend-switch{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px}
-.kajo-analysis-trend-switch button{padding:6px 10px;border:1px solid var(--kajo-border,#293644);border-radius:7px;background:var(--kajo-surface-raised,#17212c);color:var(--kajo-muted,#a9b5c2);font-size:10px;font-weight:700}
-.kajo-analysis-trend-switch button.active{border-color:var(--kajo-red,#d64a4a);background:rgba(214,74,74,.13);color:var(--kajo-text,#f4f7fa)}
-.kajo-analysis-overview-chart{position:relative;width:100%;height:clamp(190px,30vw,250px);margin-top:9px}
-.kajo-analysis-overview-footnote,.kajo-analysis-overview-disclaimer{margin-top:8px;color:var(--kajo-muted,#8794a6);font-size:10px;line-height:1.5}
-.kajo-analysis-assessment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-.kajo-analysis-assessment-item{min-width:0;padding:9px 10px;border:1px solid var(--kajo-border,#293644);border-radius:9px;background:var(--kajo-surface-raised,#17212c)}
-.kajo-analysis-assessment-item strong{display:block;color:var(--kajo-text,#f4f7fa);font-size:10px;font-weight:800;margin-bottom:4px}
-.kajo-analysis-assessment-item p{color:var(--kajo-muted,#a9b5c2);font-size:9px;line-height:1.45}
-@media(max-width:700px){.kajo-analysis-domain-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kajo-analysis-domain-card{min-height:140px;padding:10px}.kajo-analysis-assessment-grid{grid-template-columns:1fr}}
-@media(max-width:360px){.kajo-analysis-domain-grid{gap:6px}.kajo-analysis-domain-card{padding:8px}.kajo-analysis-domain-value strong{font-size:18px}}
-html[data-theme="light"] .kajo-analysis-overview-hero,html[data-theme="light"] .kajo-analysis-overview-panel,html[data-theme="light"] .kajo-analysis-domain-card,html[data-theme="light"] .kajo-analysis-assessment-item{background:#fff;border-color:#d8e0ea}
-html[data-theme="light"] .kajo-analysis-overview-hero h2,html[data-theme="light"] .kajo-analysis-section-heading h2,html[data-theme="light"] .kajo-analysis-domain-value,html[data-theme="light"] .kajo-analysis-domain-status,html[data-theme="light"] .kajo-analysis-assessment-item strong{color:#172033}
-html[data-theme="light"] .kajo-analysis-domain-card:hover{background:#f3f6fa}
+
+/* KAJO V2 – kompakte Analyseübersicht mit vier Kennzahlenkreisen */
+.kajo-analysis-overview{padding:4px 0}
+.kajo-analysis-overview-title{margin:0 0 16px;color:var(--kajo-text);font-size:1rem;font-weight:800}
+.kajo-analysis-circles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:12px}
+.kajo-analysis-circle-item{display:flex;min-width:0;flex-direction:column;align-items:center;gap:7px;padding:7px 3px;border:0;background:transparent;color:var(--kajo-text);cursor:pointer;text-align:center;border-radius:12px}
+.kajo-analysis-circle-item:focus-visible{outline:2px solid var(--kajo-blue);outline-offset:3px}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring{flex:0 0 104px;width:104px;height:104px;border-width:6px}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring strong{font-size:1.35rem}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring small{color:var(--kajo-muted);font-size:.58rem;line-height:1.2}
+.kajo-analysis-circle-item>strong{font-size:.76rem;font-weight:750;line-height:1.2}
+.kajo-analysis-circle-item>small{color:var(--kajo-muted);font-size:.65rem;line-height:1.2}
+.kajo-analysis-circle-item:hover .kajo-analysis-hero-ring{border-top-color:var(--kajo-text)}
+@media(max-width:640px){.kajo-analysis-circles{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 8px}.kajo-analysis-circle-item .kajo-analysis-hero-ring{flex-basis:100px;width:100px;height:100px}}
+@media(max-width:360px){.kajo-analysis-circle-item .kajo-analysis-hero-ring{flex-basis:88px;width:88px;height:88px}.kajo-analysis-circle-item .kajo-analysis-hero-ring strong{font-size:1.2rem}}
+html[data-theme="light"] .kajo-analysis-circle-item{color:var(--kajo-text)}
