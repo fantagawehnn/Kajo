@@ -31,7 +31,7 @@ Im vorhandenen `js/import.js` ist ein FIT-Parser eingebunden. Der Parser liest S
 
 **Auditbefund:** Der aus FIT erzeugte Aktivitätsdatensatz erhält aktuell `tss` aus `session.training_load` und eine Telemetrie-Struktur mit `labels`, `hr`, `speed` und `time`. Der erzeugte Datensatz setzt an dieser Stelle jedoch nicht eindeutig `source: 'garmin'`, `garminTrainingLoad` oder `garminFitImported`.
 
-Das muss vor einer fachlichen Nutzung geklärt werden: FIT-Aktivitäten könnten dadurch in der Belastungslogik nicht zuverlässig als Garmin-Datensätze erkannt werden. Die FIT-Zeitreihe ist vorhanden, ihre Zuordnung zur internen Datenherkunft ist aber nicht eindeutig genug.
+Die FIT-Aktivität bleibt bewusst als `source: 'fit'` klassifiziert und wird dadurch nicht automatisch als Garmin-Aktivität in der Garmin-Load-Logik behandelt. Für die Aktivitätsdetailansicht ist inzwischen ein eigener, provenance-geprüfter Zugriff ergänzt: Telemetrie aus `activity.telemetry` wird dort nur genutzt, wenn `source === 'fit'` oder `sources` explizit `fit` enthält. Mehrdeutige Legacy-Telemetrie bleibt ausgeschlossen.
 
 ## 4. Belastungsberechnung
 
@@ -133,27 +133,27 @@ Die Theme-Auswahl bietet System, Hell und Dunkel und speichert die Präferenz lo
 - Die Detailansicht wird in js/activities.js über openCSVDetailsModal aufgebaut.
 - Die zentrale Aktivitätstelemetrie wird in js/charts.js dargestellt.
 - Der manuelle FIT-Import erfolgt in js/import.js über fit-file-parser mit speedUnit: km/h und lengthUnit: km.
-- Im manuellen FIT-Import werden vorhandene Record-Felder für Herzfrequenz, Geschwindigkeit, Leistung, Kadenz, Höhe, Distanz und GPS-Koordinaten übernommen. Fehlende Felder werden nicht ergänzt.
-- FIT-Runden werden mit ihrem vorhandenen Trigger als manuell, automatisch oder nicht zugeordnet klassifiziert. Zeitbereiche werden nur gespeichert, wenn Startzeit und Dauer tatsächlich vorliegen.
+- Im manuellen FIT-Import werden vorhandene Record-Felder für Herzfrequenz, Geschwindigkeit, Leistung, Kadenz, Höhe, Distanz, Zeitstempel und GPS-Koordinaten übernommen. Fehlende Felder werden nicht ergänzt. Die Aktivitätsdetailansicht nutzt diese Zeitreihen nur bei expliziter FIT-Provenienz; Garmin-verknüpfte Telemetrie bleibt die bevorzugte Quelle.
+- FIT-Runden werden mit ihrem vorhandenen Trigger als manuell, automatisch oder nicht zugeordnet klassifiziert. Vorhandene Runden-Leistung und -Kadenz werden zusätzlich gespeichert. Zeitbereiche werden nur gespeichert, wenn Startzeit und Dauer tatsächlich vorliegen.
 - Bereits gespeicherte Garmin-FIT-Diagnosedaten (garminFitData.recordFields und messageGroups) bleiben verfügbar; die Detailansicht nutzt diese nur, wenn sie im Aktivitätsdatensatz tatsächlich vorhanden sind.
 
 ### UI- und Interaktionsstand
 - Ein zentraler Diagrammbereich bietet ausschließlich Messreihen mit mindestens zwei gültigen Werten an.
 - Die Messgrößen werden einzeln umgeschaltet. Es gibt kein zweites FIT-Zeitreihendiagramm.
 - Bei gültiger, monotoner Zeitreihe wird die Achse als Zeit seit Start geführt. Andernfalls werden vorhandene Uhrzeitlabels oder ein Messpunktindex verwendet und der Datenstatus als eingeschränkt gekennzeichnet.
-- Tooltips zeigen Messwert und Einheit. Zeitlich zugeordnete FIT-Runden können angewählt werden und markieren ihren Zeitraum im zentralen Diagramm.
+- Tooltips und die Auswahl eines Messpunkts zeigen Zeit und Messwert. Pace wird als min/km beziehungsweise min/100 m formatiert. Zeitlich zugeordnete FIT-Runden können angewählt werden und markieren ihren Zeitraum im zentralen Diagramm. GPS-Streckenpunkte können den entsprechenden Diagrammpunkt fokussieren, aber nur wenn Zeit-, GPS- und ausgewählte Messreihe indexgenau zusammenpassen.
 - Eine Leaflet-Streckenkarte wird nur gerendert, wenn mindestens zwei gültige GPS-Koordinatenpaare gespeichert sind und die Kartenbibliothek verfügbar ist. Ohne GPS-Daten bleibt der Kartenbereich verborgen.
 - Kanu-Aktivitäten können um einen manuell dokumentierten Gewässertyp (Flachwasser/Wildwasser) ergänzt werden.
-- Die Sportartenfarbe für Aktivitätskopf und Kennzahlen wird aus getSportsCatalog() bezogen; Datenverfügbarkeit wird neutral und nicht als positiver Trainingsstatus eingefärbt.
+- Die Sportartenfarbe für Aktivitätskopf, Kennzahlenakzent und Telemetrieverlauf wird aus getSportsCatalog() bezogen; reine Messwerte bleiben neutral und werden nicht willkürlich als Status eingefärbt. Die Detailansicht zeigt Quelle, Messpunktumfang, Zeitachsenqualität, GPS-Verfügbarkeit und vorhandene Runden an.
 - Die Detailansicht besitzt explizite Light-Theme-Overrides für data-theme="light".
 
 ### Belastung und Vergleiche
 - Garmin Training Load, KAJO HF-Zonen-Load und sRPE-Load werden getrennt angezeigt. Ein Edwards-TRIMP-Wert erscheint nur, wenn ein entsprechendes Feld im Aktivitätsdatensatz explizit vorhanden ist. Die UI erzeugt kein separates Edwards-TRIMP-Feld.
-- Vergleichskandidaten werden konservativ gefiltert: gleiche Sportart, Trainingskategorie, Rennformat und auf 0,01 km gleiche Distanz. Bei Kanu kommen gleiche gespeicherte Strecke, dokumentierter Gewässertyp, Pegel und Abfluss hinzu. Fehlen erforderliche Angaben, wird kein Kanuvergleich angeboten.
+- Vergleichskandidaten werden konservativ gefiltert: gleiche Sportart, Trainingskategorie, Rennformat und auf 0,01 km gleiche Distanz. Bei Kanu kommen gleiche gespeicherte Strecke, dokumentierter Gewässertyp, Pegel und Abfluss hinzu; bei C2 zusätzlich derselbe dokumentierte Trainingspartner. Fehlen erforderliche Angaben, wird kein Kanuvergleich angeboten.
 - Die Dauer und Geschwindigkeit werden als Ergebniswerte verglichen; die Dauer ist kein Ausschlusskriterium. Nicht gespeicherte Wind-, Wetter- oder Linienwahlbedingungen werden nicht angenommen.
 - Der Vergleich ist aktuell eine kompakte Gegenüberstellung, kein synchronisiertes Mehrfach-Zeitreihendiagramm.
 
 ### Offene Abnahme
-- Die Browserprüfung mit realen Garmin-Aktivitäten, FIT-Dateien mit und ohne GPS, mobilen Geräten sowie Dark/Light Mode steht aus.
+- Die automatisierten Syntax-, Navigations- und Regressionstests sind erfolgreich. Die manuelle Browserprüfung mit realen Garmin-Aktivitäten, FIT-Dateien mit und ohne GPS, mobilen Geräten sowie Dark/Light Mode steht weiterhin aus.
 - Die Verfügbarkeit und Einheit der einzelnen Garmin-FIT-Felder muss anhand realer importierter Datensätze geprüft werden. Die bloße Existenz einer FIT-Datei gilt nicht als Nachweis für eine gespeicherte Zeitreihe.
 - Die Aktivitätsdetailänderungen verändern keine zentralen Trainingsberechnungsformeln oder Supabase-Tabellen.
