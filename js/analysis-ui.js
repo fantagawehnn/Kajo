@@ -97,7 +97,7 @@ function renderRecovery() {
   ];
   renderMetrics('recovery-analysis-metrics', entries.map(([label, key, unit]) => {
     const entry = latestCheckin(key);
-    const supported = {"hrv":"hrv","rhr":"rhr","sleepDuration":"sleepDuration","sleepScore":"sleepScore","stress":"stress","fatigue":"fatigue","soreness":"soreness"}[key];
+    const supported = {"hrv":"hrv","rhr":"rhr","sleepDuration":"sleepDuration","sleepScore":"sleepScore","bodyBattery":"bodyBattery","stress":"stress","fatigue":"fatigue","soreness":"soreness"}[key];
     return metric(label, entry ? fmt(entry.value, key === 'sleepDuration' ? 1 : 0) + (unit ? ' ' + unit : '') : '—',
       entry ? dateLabel(entry.date) : 'Nicht erfasst',
       supported ? "openHealthMetric('" + supported + "')" : '');
@@ -200,6 +200,21 @@ export function renderAnalysisPageUI(subpage = 'load') {
   renderRecovery();
   renderPerformance();
   renderHealth();
+  const overviewDetail = document.getElementById('analysis-overview-detail-content');
+  if (overviewDetail) {
+    const sections = [
+      ['Belastung', 'analysis-load-insight'],
+      ['Fitness', 'analysis-fitness-insight'],
+      ['Regeneration', 'analysis-recovery-insight'],
+      ['Gesundheit', 'analysis-health-insight']
+    ];
+    overviewDetail.innerHTML = sections.map(([label, id]) => {
+      const source = document.getElementById(id);
+      return '<section class="kajo-analysis-detail-section"><h3>' + label + '</h3>' +
+        (source?.innerHTML || '<p class="kajo-analysis-chart-note">Noch keine auswertbare Einordnung vorhanden.</p>') +
+        '</section>';
+    }).join('');
+  }
   const note = document.getElementById('health-history-baseline-note');
   if (note) note.textContent = 'Persönlicher Normalbereich noch nicht verfügbar: Neue Intervals-Wellnesswerte werden als RMSSD und manuelle HRV-Eingaben als eigene Quelle gekennzeichnet. Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt und werden nicht nachträglich zugeordnet. Manuelle HRV-Werte haben keine bestätigte Messmethode; nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich für eine ln(RMSSD)-Reihe. Eine adaptive Baseline benötigt zusätzlich eine verbindlich festgelegte Statistik und Mindestdatenbasis.';
 }
