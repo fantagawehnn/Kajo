@@ -456,20 +456,20 @@ function renderActivityComparisons(activity) {
         if ((candidate.raceFormat || '') !== (activity.raceFormat || '')) return false;
         const otherDistance = Number(candidate.distance);
         const otherDuration = Number(candidate.duration);
-        if (!(distance > 0 && otherDistance > 0 && Math.abs(otherDistance - distance) / distance <= .10)) return false;
-        if (!(duration > 0 && otherDuration > 0 && Math.abs(otherDuration - duration) / duration <= .20)) return false;
+        if (!(distance > 0 && otherDistance > 0 && Math.round(otherDistance * 100) === Math.round(distance * 100))) return false;
         if (isCanoe) {
+            if (!activity.raceFormat) return false;
             const otherRoutes = storedRouteIds(candidate);
             if (!routeIds.length || !otherRoutes.length || routeIds.join('|') !== otherRoutes.join('|')) return false;
             const otherWater = candidate.waterConditions || {};
             if (water.level == null || otherWater.level == null || (water.levelUnit || 'cm') !== (otherWater.levelUnit || 'cm')) return false;
             const levelA = Number(water.level), levelB = Number(otherWater.level);
-            if (!Number.isFinite(levelA) || !Number.isFinite(levelB) || Math.abs(levelA - levelB) > Math.max(1, Math.abs(levelA) * .05)) return false;
+            if (!Number.isFinite(levelA) || !Number.isFinite(levelB) || levelA !== levelB) return false;
             const dischargeA = water.discharge == null ? null : Number(water.discharge);
             const dischargeB = otherWater.discharge == null ? null : Number(otherWater.discharge);
             if ((dischargeA === null) !== (dischargeB === null)) return false;
             if (dischargeA !== null && (!Number.isFinite(dischargeA) || !Number.isFinite(dischargeB)
-                || Math.abs(dischargeA - dischargeB) > Math.max(.1, Math.abs(dischargeA) * .10))) return false;
+                || dischargeA !== dischargeB)) return false;
             const currentWaterType = water.type || activity.waterType || '';
             const candidateWaterType = otherWater.type || candidate.waterType || '';
             if (!currentWaterType || !candidateWaterType || currentWaterType !== candidateWaterType) return false;
@@ -495,7 +495,7 @@ function renderActivityComparisons(activity) {
     panel.classList.remove('hidden');
     panel.innerHTML = '<h4 class="text-xs font-bold text-white mb-2">Vergleichbare Aktivitäten</h4>'
         + '<p class="text-[10px] text-slate-500 mb-2">Gleiche Sportart, Trainingskategorie und Rennformat sowie ähnliche Distanz und Dauer'
-        + (isCanoe ? ', identische Strecke und ähnliche dokumentierte Wasserbedingungen' : '') + '.</p>' + rows;
+        + (isCanoe ? ', identische Strecke, Gewässertyp, Pegel und Abfluss' : '') + '.</p>' + rows;
 }
 
 function renderOptionalActivityViews(act) {
