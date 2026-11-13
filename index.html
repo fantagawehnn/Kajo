@@ -329,8 +329,7 @@
 <div id="view-analyses" class="hidden space-y-6 kajo-analysis-view">
 
             <header class="kajo-analysis-header">
-                <div><p class="kajo-analysis-eyebrow">KAJO · PERFORMANCE LAB</p><h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1><p class="text-xs sm:text-sm text-slate-400 mt-1">Belastung, Fitness, Regeneration, Gesundheit und Wettkampf im Zusammenhang betrachten.</p></div>
-                <span class="kajo-analysis-period" id="analysis-period-label">Letzte 90 Tage</span>
+                <div><h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1></div>
             </header>
             <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
  <section class="kajo-analysis-circles" aria-label="Vier Analysebereiche">
@@ -352,12 +351,12 @@
   </button>
  </section>
 </div>
-<div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Gemeinsamer Analysezeitraum"></div>
-<div id="analysis-overview-content" class="space-y-4" aria-label="Analyseverlauf und Gesamteinordnung">
+<div id="analysis-overview-content" class="space-y-4" aria-label="Analyseverlauf, Trainingsaktivität und Einordnung">
  <section class="kajo-analysis-overview-panel">
   <div class="kajo-analysis-section-heading">
-   <div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h2>Belastungsverlauf</h2></div>
+   <div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h2>Verlauf</h2></div>
   </div>
+  <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div>
   <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihe auswählen">
    <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Belastung</button>
    <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="false">Regeneration</button>
@@ -365,7 +364,7 @@
    <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="false">Gesundheit</button>
   </nav>
   <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Zeitlicher Verlauf der ausgewählten Analysedaten"></canvas></div>
-  <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note">Es wird jeweils eine Datenreihe mit ihrer eigenen Einheit und Skala dargestellt.</p>
+  <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
  </section>
  <section class="kajo-analysis-overview-panel">
   <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">TRAININGSHISTORIE</p><h2>Trainingsaktivität</h2></div></div>
@@ -373,9 +372,8 @@
   <p id="analysis-overview-activity-note" class="kajo-analysis-chart-note">Nur tatsächlich gespeicherte Aktivitäten mit erfasster Dauer werden dargestellt.</p>
  </section>
  <section class="kajo-analysis-overview-panel">
-  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">DATENBASIERTE EINORDNUNG</p><h2>Gesamteinordnung</h2></div></div>
-  <div id="analysis-overview-detail-content" class="kajo-analysis-detail-content"></div>
-  <p class="kajo-analysis-chart-note">Die Einordnung basiert auf den vorhandenen, regelbasierten Auswertungen. Fehlende Daten werden nicht ergänzt oder als Nullwerte interpretiert.</p>
+  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">KURZANALYSE</p><h2>Datenbasierte Einordnung</h2></div></div>
+  <p id="analysis-overview-detail-content" class="kajo-analysis-short-insight" aria-live="polite">Die Einordnung wird aus den verfügbaren Trainings- und Gesundheitsdaten erstellt.</p>
  </section>
 </div>
 <div id="analysis-subpage-load" class="space-y-4">
