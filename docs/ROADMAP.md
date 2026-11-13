@@ -23,21 +23,21 @@
 - [ ] Tests für fehlende Daten, Benutzerwechsel und Berechnungsmethoden.
 
 ## Phase 3 – Kernmodule
-- [ ] Dashboard
-- [ ] Aktivitäten und Aktivitätsdetails
-- [ ] Kalender mit Tag-, Wochen-, Monats- und Jahresansicht
-- [ ] Training Load
-- [ ] Recovery
-- [ ] Performance
-- [ ] Health
+- [x] Dashboard-Navigationsstruktur und kompakte interaktive Trainingswochenübersicht; vollständige Inhalts-/Datenabnahme offen
+- [x] Aktivitäten-Unterbereich mit bestehender Aktivitätsliste und Detailmodal; fachliche Datenabnahme offen
+- [x] Kalender-Navigation mit Tag-, Wochen-, Monats- und Jahresansicht; mobile/visuelle Endabnahme offen
+- [x] Eigenständiger Training-Load-Unterbereich
+- [x] Eigenständiger Recovery-Unterbereich mit vorhandenen Messwert-Details
+- [x] Eigenständiger Performance-Unterbereich mit vorhandenen Leistungs-/Fitness-Details
+- [x] Eigenständiger Health-Unterbereich; Verfügbarkeit bleibt bei unvollständiger Datenbasis nicht berechenbar
 
 ## Phase 4 – Erweiterte Module
 - [ ] Saisonanalyse
 - [ ] Trainingsplanung
 - [ ] Wettkämpfe
 - [ ] Krafttraining
-- [ ] Profil und Einstellungen
-- [ ] Datenimport, Datenqualität und Export
+- [x] Profil und Einstellungen unter Mehr gruppiert
+- [x] Datenimport, Datenqualität und Export unter Mehr gruppiert
 
 ## Phase 5 – Qualitätssicherung und Freigabe
 - [ ] Garmin-Verbindung mit bestehendem Konto testen.
