@@ -91,3 +91,5 @@ assert.ok(dashboard.includes('data-sport-type'), 'today sessions use configured 
 
 assert.ok(main.includes("document.body.classList.toggle('kajo-home-active', view === 'dashboard')"), 'home header state avoids duplicate global branding');
 assert.ok(dashboard.includes("year: 'numeric'"), 'home date includes the current year');
+
+assert.ok(!dashboard.includes('latestFormDay'), 'home rendering does not reference an undefined load timeline variable');
