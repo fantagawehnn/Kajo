@@ -731,6 +731,7 @@ export function setTimeframe(tf) {
     renderMetricHistory('health');
     renderMetricHistory('training');
     window.kajoRenderTrainingLoadView?.();
+    window.kajoRenderAnalysisOverview?.();
 }
 
 export function toggleCustomDatePicker() { document.getElementById('custom-date-box')?.classList.toggle('hidden'); }
