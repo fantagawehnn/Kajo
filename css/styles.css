@@ -3759,3 +3759,37 @@ html[data-theme="light"] .kajo-analysis-metric strong { color:#172033 !important
 html[data-theme="light"] .kajo-analysis-baseline-note { color:#475569; }
 
 #analysis-subpage-performance #training-history-ring { display:none !important; }
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme:light;
+    --kajo-bg:#f3f6fa; --kajo-surface:#ffffff; --kajo-surface-raised:#eef2f7;
+    --kajo-border:#d8e0ea; --kajo-text:#172033; --kajo-muted:#64748b;
+  }
+  :root:not([data-theme="dark"]) #analysis-subpage-load,
+  :root:not([data-theme="dark"]) #analysis-subpage-recovery,
+  :root:not([data-theme="dark"]) #analysis-subpage-performance,
+  :root:not([data-theme="dark"]) #analysis-subpage-health { color:#172033; }
+  :root:not([data-theme="dark"]) .kajo-analysis-hero,
+  :root:not([data-theme="dark"]) .kajo-analysis-metric,
+  :root:not([data-theme="dark"]) #analysis-subpage-health .kajo-panel,
+  :root:not([data-theme="dark"]) #analysis-subpage-performance .kajo-analysis-domain-panel,
+  :root:not([data-theme="dark"]) #analysis-subpage-recovery .kajo-analysis-panel {
+    background:#fff !important; border-color:#d8e0ea !important;
+  }
+  :root:not([data-theme="dark"]) .kajo-analysis-hero-ring { background:#f3f6fa; }
+  :root:not([data-theme="dark"]) .kajo-analysis-hero-ring strong,
+  :root:not([data-theme="dark"]) .kajo-analysis-hero-copy h2,
+  :root:not([data-theme="dark"]) .kajo-analysis-metric strong,
+  :root:not([data-theme="dark"]) #analysis-subpage-load h2,
+  :root:not([data-theme="dark"]) #analysis-subpage-recovery h2,
+  :root:not([data-theme="dark"]) #analysis-subpage-performance h2,
+  :root:not([data-theme="dark"]) #analysis-subpage-health h2 { color:#172033 !important; }
+  :root:not([data-theme="dark"]) #analysis-subpage-load .text-white,
+  :root:not([data-theme="dark"]) #analysis-subpage-recovery .text-white,
+  :root:not([data-theme="dark"]) #analysis-subpage-performance .text-white,
+  :root:not([data-theme="dark"]) #analysis-subpage-health .text-white { color:#172033 !important; }
+  :root:not([data-theme="dark"]) .kajo-analysis-hero-note,
+  :root:not([data-theme="dark"]) .kajo-analysis-metric > span,
+  :root:not([data-theme="dark"]) .kajo-analysis-metric small { color:#64748b !important; }
+}
