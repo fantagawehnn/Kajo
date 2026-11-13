@@ -308,26 +308,53 @@
                 <div><p class="kajo-analysis-eyebrow">KAJO · PERFORMANCE LAB</p><h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1><p class="text-xs sm:text-sm text-slate-400 mt-1">Belastung, Fitness, Regeneration, Gesundheit und Wettkampf im Zusammenhang betrachten.</p></div>
                 <span class="kajo-analysis-period" id="analysis-period-label">Letzte 90 Tage</span>
             </header>
-            <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Gemeinsamer Analysezeitraum"></div>
-<div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
- <h2 class="kajo-analysis-overview-title">Analyse</h2>
+            <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
  <section class="kajo-analysis-circles" aria-label="Vier Analysebereiche">
   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-load')" aria-label="Belastung öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-load-ring"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span>
-   <strong>Belastung</strong><small>ATL</small>
+   <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-status="neutral"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span>
+   <strong>Belastung</strong><small class="kajo-analysis-circle-status" id="analysis-overview-load-status" data-status="neutral">Nicht bewertet</small>
   </button>
   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-recovery')" aria-label="Regeneration öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-recovery-ring"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span>
-   <strong>Regeneration</strong><small>HRV</small>
+   <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-status="neutral"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span>
+   <strong>Regeneration</strong><small class="kajo-analysis-circle-status" id="analysis-overview-recovery-status" data-status="neutral">Keine Basis</small>
   </button>
   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-performance')" aria-label="Fitness öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-performance-ring"><span><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit">ml/kg/min</small></span></span>
-   <strong>Fitness</strong><small>VO₂max</small>
+   <span class="kajo-analysis-hero-ring" id="overview-performance-ring" data-status="neutral"><span><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit">ml/kg/min</small></span></span>
+   <strong>Fitness</strong><small class="kajo-analysis-circle-status" id="analysis-overview-performance-status" data-status="neutral">Messwert</small>
   </button>
   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-health')" aria-label="Gesundheit öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-health-ring"><span><strong id="analysis-overview-health-value">—</strong><small id="analysis-overview-health-unit"></small></span></span>
-   <strong>Gesundheit</strong><small id="analysis-overview-health-caption">Verfügbarkeit</small>
+   <span class="kajo-analysis-hero-ring" id="overview-health-ring" data-status="neutral"><span><strong id="analysis-overview-health-value">—</strong><small id="analysis-overview-health-unit"></small></span></span>
+   <strong>Gesundheit</strong><small class="kajo-analysis-circle-status" id="analysis-overview-health-status" data-status="neutral">Nicht berechenbar</small>
   </button>
+ </section>
+</div>
+<div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Gemeinsamer Analysezeitraum"></div>
+<div id="analysis-overview-content" class="space-y-4" aria-label="Analyseverlauf und Gesamteinordnung">
+ <section class="kajo-analysis-overview-panel">
+  <div class="kajo-analysis-section-heading">
+   <div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h2>Belastungsverlauf</h2></div>
+  </div>
+  <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihe auswählen">
+   <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Belastung</button>
+   <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="false">Regeneration</button>
+   <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="false">Fitness</button>
+   <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="false">Gesundheit</button>
+  </nav>
+  <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Zeitlicher Verlauf der ausgewählten Analysedaten"></canvas></div>
+  <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note">Es wird jeweils eine Datenreihe mit ihrer eigenen Einheit und Skala dargestellt.</p>
+ </section>
+ <section class="kajo-analysis-overview-panel">
+  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">TRAININGSHISTORIE</p><h2>Trainingsaktivität</h2></div></div>
+  <div class="kajo-analysis-chart-wrap kajo-analysis-activity-chart-wrap"><canvas id="analysis-overview-activity-chart" aria-label="Tägliche Trainingsdauer nach Sportart"></canvas></div>
+  <p id="analysis-overview-activity-note" class="kajo-analysis-chart-note">Nur tatsächlich gespeicherte Aktivitäten mit erfasster Dauer werden dargestellt.</p>
+ </section>
+ <section class="kajo-analysis-overview-panel">
+  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">GESAMTEINORDNUNG</p><h2>Ausführliche Analyse</h2></div></div>
+  <details class="kajo-analysis-disclosure">
+   <summary>Gesamteinordnung öffnen</summary>
+   <div id="analysis-overview-detail-content" class="kajo-analysis-detail-content"></div>
+  </details>
+  <p class="kajo-analysis-chart-note">Die Einordnung nutzt vorhandene, regelbasierte Auswertungen. Fehlende Daten werden nicht ergänzt oder als Nullwerte interpretiert.</p>
  </section>
 </div>
 <div id="analysis-subpage-load" class="space-y-4">
