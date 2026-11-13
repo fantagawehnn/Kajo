@@ -475,7 +475,11 @@ function renderActivityComparisons(activity) {
         }
         return true;
     }).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0,3);
-    if (!matches.length) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+    if (!matches.length) {
+        panel.classList.remove('hidden');
+        panel.innerHTML = '<p class="text-xs text-slate-500">Noch keine direkt vergleichbare Einheit vorhanden. Kanu-Vergleiche setzen eine identische Strecke und ähnliche dokumentierte Wasserbedingungen voraus.</p>';
+        return;
+    }
     const currentSpeed = Number(activity.avgSpeed ?? activity.averageSpeed);
     const rows = matches.map(candidate => {
         const otherSpeed = Number(candidate.avgSpeed ?? candidate.averageSpeed);
