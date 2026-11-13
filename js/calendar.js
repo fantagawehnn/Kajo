@@ -417,6 +417,9 @@ export function renderYearView() {
         const weekNo = (() => { const d = new Date(thursday); const jan4 = new Date(d.getFullYear(), 0, 4, 12); const jan4Monday = new Date(jan4); jan4Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7)); return Math.floor((d - jan4Monday) / 604800000) + 1; })();
         const yearStart = year + '-01-01', yearEnd = year + '-12-31';
         const activities = (state.rawActivities || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const plannedActivities = (state.plannedActivities || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const plannedBySport = {};
+        plannedActivities.forEach(item => { const key = item.type || 'Workout'; plannedBySport[key] = (plannedBySport[key] || 0) + 1; });
         const bySport = {};
         activities.forEach(item => {
             const key = item.type || 'Workout';
@@ -430,7 +433,7 @@ export function renderYearView() {
         const races = (state.races || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
         const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= yearStart && date <= yearEnd && date >= toLocalDateString(start) && date <= toLocalDateString(end));
         const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= toLocalDateString(start) && date <= toLocalDateString(end) && item?.cycle?.period === true);
-        weeks.push({ start: toLocalDateString(start), end: toLocalDateString(end), weekNo, activities, bySport, totalMinutes, durationComplete, races, health, cycle, month: thursday.getMonth() });
+        weeks.push({ start: toLocalDateString(start), end: toLocalDateString(end), weekNo, activities, plannedActivities, plannedBySport, bySport, totalMinutes, durationComplete, races, health, cycle, month: thursday.getMonth() });
     }
     const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
     const monthGroups = [];
@@ -448,12 +451,13 @@ export function renderYearView() {
             const width = week.totalMinutes > 0 ? Math.max(3, data.minutes / week.totalMinutes * 100) : 0;
             return '<span class="calendar-year-sport-segment" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(sport.label) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
         }).join('');
+        const plannedSegments = Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
         const hours = week.activities.length ? (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h') : '—';
         const events = (week.races.length ? '<i data-lucide="trophy" class="calendar-year-event calendar-event-race"></i>' : '') +
             (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured"></i>' : '');
-        return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')"><span class="calendar-year-week-bar">' + segments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
+        return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')"><span class="calendar-year-week-bar">' + segments + '</span><span class="calendar-year-planned-bar">' + plannedSegments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
     }).join('');
     const legendTypes = [...new Set(weeks.flatMap(week => Object.keys(week.bySport)))];
     const legend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
