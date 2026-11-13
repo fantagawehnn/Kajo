@@ -59,7 +59,7 @@ function renderLoad() {
     : last.loadMode === 'garmin-zone' ? 'Garmin-HF-Zonenindex'
     : last.loadMode === 'srpe' ? 'sRPE-Load'
     : last.loadMode || 'Belastungsmodell';
-  setHero('load', fmt(last.atl), 'ATL', 'Kurzfristige Belastung', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
+  setHero('load', fmt(last.atl), last.loadUnit || 'Load-Punkte', 'Kurzfristige Belastung · ATL', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
   const balance = String(last.loadMode || '').startsWith('garmin')
     ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—')
     : fmt(last.tsb);
@@ -174,7 +174,7 @@ function renderHealth() {
   const entries = Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= fromKey && date <= todayKey() && (item?.status === 'sick' || item?.status === 'injured'));
   const sick = entries.filter(([, item]) => item.status === 'sick').length;
   const injured = entries.filter(([, item]) => item.status === 'injured').length;
-  setHero('health', '—', '', 'Noch nicht berechenbar',
+  setHero('health', '—', '', 'Trainingsverfügbarkeit nicht berechenbar',
     'Eine belastbare Trainingsverfügbarkeit kann erst ausgewiesen werden, wenn Gesundheits- und Planungsdaten für denselben Zeitraum vollständig verknüpft sind.', 'neutral');
   renderMetrics('health-analysis-metrics', [
     metric('Krankheitstage', String(sick), 'Dokumentierte Einträge'),
