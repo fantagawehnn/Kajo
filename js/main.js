@@ -102,11 +102,11 @@ function switchTab(requestedTab) {
         strength: { parent: 'more', view: 'strength' },
         analyses: { parent: 'analysis', view: 'analyses', sub: 'load' },
         'analysis-load': { parent: 'analysis', view: 'analyses', sub: 'load' },
-        'analysis-recovery': { parent: 'analysis', view: 'health-data', sub: 'recovery' },
+        'analysis-recovery': { parent: 'analysis', view: 'analyses', sub: 'recovery' },
         'health-data': { parent: 'analysis', view: 'health-data', sub: 'recovery' },
-        'analysis-performance': { parent: 'analysis', view: 'training-analysis', sub: 'performance' },
+        'analysis-performance': { parent: 'analysis', view: 'analyses', sub: 'performance' },
         'training-analysis': { parent: 'analysis', view: 'training-analysis', sub: 'performance' },
-        'analysis-health': { parent: 'analysis', view: 'health-analysis', sub: 'health' },
+        'analysis-health': { parent: 'analysis', view: 'analyses', sub: 'health' },
         more: { parent: 'more', view: 'more' },
         profile: { parent: 'more', view: 'profile' },
         data: { parent: 'more', view: 'data' },
@@ -121,7 +121,7 @@ function switchTab(requestedTab) {
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
-    const viewIds = ['more', 'routes', 'health-data', 'training-analysis', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'ai', 'profile', 'health-analysis'];
+    const viewIds = ['more', 'routes', 'health-data', 'training-analysis', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'ai', 'profile'];
     viewIds.forEach(id => {
         const el = document.getElementById('view-' + id);
         if (el) el.classList.toggle('hidden', id !== view);
@@ -129,6 +129,10 @@ function switchTab(requestedTab) {
 
     document.getElementById('training-subnav')?.classList.toggle('hidden', parent !== 'training');
     document.getElementById('analysis-subnav')?.classList.toggle('hidden', parent !== 'analysis');
+    ['load', 'recovery', 'performance', 'health'].forEach(id => {
+        const page = document.getElementById('analysis-subpage-' + id);
+        if (page) page.classList.toggle('hidden', view !== 'analyses' || sub !== id);
+    });
     document.getElementById('area-back-link')?.classList.toggle('hidden', parent !== 'more' || view === 'more');
 
     ['today', 'calendar', 'training', 'analysis', 'more'].forEach(id => {
@@ -175,7 +179,7 @@ function switchTab(requestedTab) {
     if (view === 'training-analysis') renderMetricHistory('training');
     if (view === 'routes') renderRoutesView();
     if (view === 'profile') renderAthleteProfile();
-    if (view === 'health-analysis') renderHealthAnalysis();
+    if (view === 'analyses' && sub === 'health') renderHealthAnalysis();
     if (parent === 'calendar' || (parent === 'training' && sub === 'activities')) renderCalendar();
 }
 function switchMoreTab(tab) {
