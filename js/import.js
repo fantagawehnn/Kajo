@@ -735,6 +735,16 @@ export async function handleMultipleFileSelect(evt) {
                     const cadences = extractRecordSeries('cadence');
                     const altitudes = extractRecordSeries('enhanced_altitude', 'altitude');
                     const distances = extractRecordSeries('distance');
+                    const latitudes = extractRecordSeries('position_lat', 'latitude');
+                    const longitudes = extractRecordSeries('position_long', 'longitude');
+                    const normalizeFitCoordinate = (value, limit) => {
+                        if (value === null || value === undefined || !Number.isFinite(Number(value))) return null;
+                        let number = Number(value);
+                        if (Math.abs(number) > limit) number = number * 180 / 2147483648;
+                        return Math.abs(number) <= limit ? number : null;
+                    };
+                    const gpsPairs = latitudes && longitudes && latitudes.length === longitudes.length
+                        ? latitudes.reduce((count, value, index) => count + (normalizeFitCoordinate(value, 90) !== null && normalizeFitCoordinate(longitudes[index], 180) !== null ? 1 : 0), 0) : 0;
                     // Tatsächliche verstrichene Sekunden seit Sessionbeginn; dieselbe Record-Reihenfolge wie HR und Geschwindigkeit.
                     const times = sessionRecords.map(r => (new Date(r.timestamp).getTime() - sessionStartMs) / 1000);
                     const dist = session.total_distance!=null?Number(session.total_distance):null; // FitParser ist oben auf km konfiguriert.
@@ -770,6 +780,7 @@ export async function handleMultipleFileSelect(evt) {
                         ...(cadences && cadences.filter(value => value !== null).length >= 2 ? { cadence: cadences } : {}),
                         ...(altitudes && altitudes.filter(value => value !== null).length >= 2 ? { altitude: altitudes } : {}),
                         ...(distances && distances.filter(value => value !== null).length >= 2 ? { distance: distances } : {}),
+                        ...(gpsPairs >= 2 ? { latitude: latitudes.map(value => normalizeFitCoordinate(value, 90)), longitude: longitudes.map(value => normalizeFitCoordinate(value, 180)) } : {}),
                         time: times.every(Number.isFinite) ? times : null
                     }:null};
                 }).filter(Boolean);
