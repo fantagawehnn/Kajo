@@ -9,10 +9,20 @@ globalThis.localStorage = {
 globalThis.document = {
     getElementById(id) {
         return elements[id] ||= {
-            value: '', textContent: '', className: '',
-            classList: { add() {}, remove() {} }
+            value: '', textContent: '', className: '', checked: false,
+            classList: { add() {}, remove() {}, toggle() {} }
         };
-    }
+    },
+    createElement() {
+        const child = {
+            id: '', className: '', innerHTML: '', hidden: false,
+            setAttribute() {},
+            querySelector() { return { textContent: '', addEventListener() {} }; },
+            remove() {}
+        };
+        return child;
+    },
+    body: { appendChild() {} }
 };
 globalThis.confirm = () => true;
 globalThis.window = { dispatchEvent() {}, addEventListener() {} };
