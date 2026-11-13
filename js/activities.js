@@ -5,8 +5,8 @@
 
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js';
-import { formatDateDDMMYY, formatKm } from './utils.js';
-import { renderActivityTelemetryChart } from './charts.js';
+import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
+import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData } from './training-load.js';
 import { populateActivityRouteSelect } from './routes.js';
 function getActivityZoneConfig(activity) {
@@ -51,7 +51,7 @@ function calculateActivityZoneTime(activity, zoneConfig = getActivityZoneConfig(
 
 
 let activityDetailReturnFocus = null;
-let fitSeriesChartInstance = null;
+
 
 export function openCSVDetailsModal(id) {
     let decodedId = String(id ?? '');
@@ -85,14 +85,14 @@ export function openCSVDetailsModal(id) {
     const titleEl = document.getElementById('modal-act-title');
     const dateEl = document.getElementById('modal-act-date');
     if (titleEl) titleEl.textContent = act.name || 'Trainingseinheit';
-    if (dateEl) dateEl.textContent = formatDateDDMMYY(act.date);
+    if (dateEl) {\n        const start = act.startTime ? new Date(act.startTime) : null;\n        const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';\n        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : act.garminFitImported ? 'FIT-Import' : 'Quelle nicht ausgewiesen';\n        dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');\n    }
     const badge = document.getElementById('modal-act-type-badge');
     if (badge) {
         const sports = { Kayaking: 'K1', C1: 'C1', C2: 'C2', PaddleErgo: 'Paddelergometer', Run: 'Laufen', Ride: 'Radfahren', Swim: 'Schwimmen', WeightTraining: 'Krafttraining' };
         const categories = { ga: 'GA', interval: 'Intervalle', race: 'Wettkampf', reg: 'Regeneration', strength: 'Kraft', tech: 'Technik' };
-        badge.textContent = [sports[act.type] || act.type || 'Aktivität', categories[act.category] || ''].filter(Boolean).join(' · ');
+        badge.textContent = [sports[act.type] || act.type || 'Aktivität', act.raceFormat ? String(act.raceFormat).toUpperCase() : '', act.waterType || '', categories[act.category] || ''].filter(Boolean).join(' · ');\n        const sportColor = getSportsCatalog()[act.type]?.color || '#38bdf8';\n        badge.style.setProperty('--activity-sport-color', sportColor);\n        badge.style.borderColor = sportColor + '88';\n        badge.style.color = sportColor;
     }
-    const analysisActivity = act.garminTelemetry ? { ...act, telemetry: act.garminTelemetry } : act;
+    const analysisActivity = act.garminTelemetry ? { ...act, telemetry: act.garminTelemetry } : act;\n    state.activityTelemetryMetric = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
@@ -206,7 +206,7 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
 
     const elevation = firstNumber(act.elevationGain, act.totalAscent, act.ascent);
     add('Höhenmeter', elevation !== null && elevation > 0 ? Math.round(elevation) + ' m' : null);
-    add('Training Load', loadSummary && loadSummary !== '—' ? loadSummary : null, 'text-cyan-400');
+    // Die aktive Load-Methode wird im Belastungsbereich separat mit ihrer Quelle ausgewiesen.
     if (type === 'C2') add('Trainingspartner', act.trainingPartner || null, 'text-cyan-300');
     if (isStrength && Array.isArray(act.exercises) && act.exercises.length) {
         add('Übungen dokumentiert', String(act.exercises.length));
@@ -508,28 +508,11 @@ function renderGarminFitDataPanel(act) {
     panel.classList.remove('hidden');
     panel.innerHTML = '<div class="flex flex-wrap items-start justify-between gap-2"><div><h4 class="text-xs font-bold text-cyan-300">Garmin FIT-Daten im Detail</h4><p class="text-[10px] text-slate-500 mt-1">'+(imported?'FIT-Datei ausgewertet':'Noch keine erweiterten FIT-Daten gespeichert')+(fitData.importedAt?' · Import '+escape(new Date(fitData.importedAt).toLocaleString('de-DE')):'')+'</p></div><span class="text-[10px] text-slate-500">'+Number(fitData.recordCount||0)+' Records</span></div>'
         +'<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">'+cardHtml+'</div>'
-        +(series.length?'<div class="mt-4 space-y-2"><div class="flex flex-wrap items-center justify-between gap-2"><h5 class="text-[11px] font-semibold text-white">Zeitreihe einzeln betrachten</h5><select id="activity-fit-series-select" class="max-w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-white">'+series.map(([key])=>'<option value="'+escape(key)+'">'+escape(pretty(key))+(units[key]?' ('+units[key]+')':'')+'</option>').join('')+'</select></div><div class="h-52 relative"><canvas id="activityFitSeriesChart"></canvas></div></div>':'')
+        
         +'<div class="mt-4"><h5 class="text-[11px] font-semibold text-white mb-1">Messwerte – Min / Durchschnitt / Max</h5>'+statsHtml+'</div>'
         +'<div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3"><section><h5 class="text-[11px] font-semibold text-white mb-2">Runden ('+laps.length+')</h5>'+objectRows(laps,'Runde')+'</section><section><h5 class="text-[11px] font-semibold text-white mb-2">Kraft-Sätze ('+sets.length+')</h5>'+objectRows(sets,'Satz')+'</section><section><h5 class="text-[11px] font-semibold text-white mb-2">Trainingsschritte ('+steps.length+')</h5>'+objectRows(steps,'Schritt')+'</section></div>'
         +'<details class="mt-4"><summary class="cursor-pointer text-[11px] text-sky-300">Alle erkannten FIT-Messfelder und Beispielwerte</summary><div class="mt-2 max-h-80 overflow-y-auto pr-1">'+(rawFieldHtml||'<p class="text-[10px] text-slate-500">Keine Messfelder gespeichert.</p>')+'</div></details>';
-    if (fitSeriesChartInstance) { fitSeriesChartInstance.destroy(); fitSeriesChartInstance = null; }
-    const select = document.getElementById('activity-fit-series-select');
-    const draw = key => {
-        const canvas = document.getElementById('activityFitSeriesChart');
-        if (!canvas || typeof Chart !== 'function') return;
-        const values = fields[key] || [];
-        const times = act.telemetry?.time;
-        const labels = Array.isArray(times) && times.length === values.length
-            ? times.map(sec=>String(Math.floor(Number(sec)/60)).padStart(2,'0')+':'+String(Math.floor(Number(sec)%60)).padStart(2,'0'))
-            : values.map((_,i)=>String(i+1));
-        if (fitSeriesChartInstance) fitSeriesChartInstance.destroy();
-        fitSeriesChartInstance = new Chart(canvas.getContext('2d'), {
-            type:'line',
-            data:{labels,datasets:[{label:pretty(key)+(units[key]?' ('+units[key]+')':''),data:values.map(v=>numeric(v)?Number(v):null),borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.12)',borderWidth:1.5,pointRadius:0,tension:.2,spanGaps:false,fill:false}]},
-            options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}},scales:{x:{ticks:{color:'#64748b',maxTicksLimit:8},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8'},grid:{color:'#1e293b'}}}}
-        });
-    };
-    if (select && series.length) { select.addEventListener('change',()=>draw(select.value)); draw(select.value); }
+
 }
 
 export function toggleActivityEdit() {
