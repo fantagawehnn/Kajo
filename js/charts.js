@@ -563,6 +563,8 @@ export function renderRaceTimeline(){
 
 const activitySeriesMeta = {
     hr: { label: 'Herzfrequenz', unit: 'bpm', color: '#fb7185', min: 30, max: 250 },
+    pace: { label: 'Pace', unit: 's/km', color: '#f59e0b', min: 0 },
+    swimPace: { label: 'Pace', unit: 's/100 m', color: '#f59e0b', min: 0 },
     speed: { label: 'Geschwindigkeit', unit: 'km/h', color: '#38bdf8', min: 0 },
     power: { label: 'Leistung', unit: 'W', color: '#a78bfa', min: 0 },
     cadence: { label: 'Frequenz', unit: '/min', color: '#fbbf24', min: 0 },
@@ -575,6 +577,8 @@ export function getActivityTelemetrySeries(act) {
     const fields = act?.garminFitData?.recordFields || {};
     const aliases = {
         hr: [telem.hr, fields.heart_rate],
+        pace: [telem.paceSecondsPerKm, fields.pace_seconds_per_km],
+        swimPace: [telem.paceSecondsPer100m, fields.pace_seconds_per_100m],
         speed: [telem.speed, fields.speed, fields.enhanced_speed],
         power: [telem.power, fields.power],
         cadence: [telem.cadence, fields.cadence],
