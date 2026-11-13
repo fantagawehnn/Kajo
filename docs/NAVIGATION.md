@@ -65,3 +65,22 @@ Noch manuell/end-to-end zu prüfen:
 - echte Authentifizierung und Garmin-Synchronisierung,
 - Datenqualität bei unvollständigen und gemischten Aktivitätsdaten,
 - visuelle Abnahme der Ringgrößen, Wochenraster und responsiven Abstände.
+
+
+## Verfeinerung der Analyse-Seiten
+
+Die vier Analyse-Unterseiten verwenden einen gemeinsamen Zeitraumfilter und eine einheitliche Kennzahlenkreis-Komponente mit identischer Größe und Position. Die Darstellung greift auf vorhandene Zustands- und Berechnungswerte zurück:
+
+- **Training Load:** ATL wird als kurzfristige Belastungskennzahl im Hauptkreis angezeigt. CTL, ATL, Belastungssaldo und ACWR werden kompakt ergänzt. Die vorhandene Quelleninformation bleibt erhalten; unterschiedliche Belastungsmodelle werden nicht zu einer neuen Kennzahl vermischt.
+- **Recovery:** Die bestehende KAJO-Readiness wird wiederverwendet und als bestehendes Modell gekennzeichnet. HRV, Ruhepuls, Schlafdauer, Sleep Score, Body Battery (falls im Check-in vorhanden), Stress, Müdigkeit und Muskelkater werden ohne Ersatzwerte kompakt dargestellt.
+- **Performance:** Ein importierter VO₂max-Wert wird nur als importierter Wellnesswert mit offen ausgewiesener Messart angezeigt. Fehlt er, bleibt der Hauptkreis leer. CTL wird ausdrücklich nicht als direkte Performance-Messung ausgegeben.
+- **Health:** Trainingsverfügbarkeit bleibt nicht berechenbar, bis Gesundheits- und Planungsdaten für denselben Zeitraum ausreichend vollständig verknüpft sind. Krankheit und Verletzung werden als dokumentierte Einträge getrennt dargestellt; ein 28-Tage-Ereignisverlauf ergänzt die Ansicht.
+
+Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe. Ein persönlicher Normalbereich wird in dieser Ansicht derzeit nicht ausgewiesen. Die vorhandene einfache Vergleichslogik ist noch keine freigegebene adaptive Baseline nach den neuen Anforderungen.
+
+### Noch offene fachliche und technische Punkte
+
+- Vor Implementierung einer adaptiven Baseline ist die statistische Methode verbindlich festzulegen (robuste Lage-/Streuungsmaße, Mindestdatenbasis, Ausreißerbehandlung, Aktualisierungsfenster, Schutz vor kurzfristiger Baseline-Verschiebung und Änderungsprotokoll).
+- Für Performance fehlen derzeit eine sportartspezifische, methodisch vergleichbare Hauptkennzahl und ein entsprechend gefilterter Leistungsverlauf. VO₂max bleibt wegen der nicht getrennten Messart ein eingeschränkt interpretierbarer Importwert.
+- Eine getrennte, fachlich verifizierte Anzeige von Garmin Training Load, Edwards TRIMP und sRPE erfordert zunächst die eindeutige Zuordnung der vorhandenen Datenfelder.
+- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist damit noch nicht umgesetzt.
