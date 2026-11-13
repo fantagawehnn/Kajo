@@ -1023,7 +1023,7 @@ function trainingRingState(key, value, dateKey) {
         empty: false
     };
 }
-function historyRingColor(key, value, dateKey) {
+export function historyRingColor(key, value, dateKey) {
     if (value === null) return STATUS_COLORS.info;
     if (key === 'readiness') return fiveLevelColor(value);
     if (key === 'form') {
