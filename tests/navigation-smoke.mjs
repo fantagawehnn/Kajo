@@ -246,3 +246,6 @@ assert.ok(calculations.includes('export function calculateStrengthActivitySummar
 assert.ok(calculations.includes('completeSets.length === sets.length'), 'strength volume is withheld when any set lacks data');
 assert.ok(activities.includes('function renderActivityStrengthAnalysis(activity)'), 'strength sessions have a dedicated read-only detail module');
 assert.ok(html.includes('id="activity-strength-analysis-panel"'), 'strength detail panel is part of the activity detail structure');
+
+assert.ok(charts.includes('paceSecondsPerKm') && charts.includes('paceSecondsPer100m'), 'pace series are offered only when unit-specific pace streams exist');
+assert.ok(activities.includes("' min/100 m'"), 'swim pace uses a 100-metre unit rather than min/km');
