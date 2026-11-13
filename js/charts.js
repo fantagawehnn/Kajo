@@ -643,6 +643,11 @@ export function renderActivityTelemetryChart(act) {
         });
     }
     const selected = series.find(item => item.key === preferred);
+    const pointReadout = document.getElementById('activity-telemetry-point');
+    if (pointReadout) { pointReadout.hidden = true; pointReadout.textContent = ''; }
+    const formatValue = value => (selected.key === 'pace' || selected.key === 'swimPace') && Number.isFinite(Number(value))
+        ? Math.floor(Number(value) / 60) + ':' + String(Math.round(Number(value) % 60)).padStart(2, '0')
+        : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
     const telem = act?.telemetry || act?.garminTelemetry || {};
     const times = Array.isArray(telem.time) ? telem.time : [];
     const hasElapsedTime = times.length === selected.values.length
@@ -671,7 +676,7 @@ export function renderActivityTelemetryChart(act) {
     state.telemetryChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: { labels, datasets: [{
-            label: selected.label + (selected.unit ? ' (' + selected.unit + ')' : ''),
+            label: selected.label + (selected.key === 'pace' ? ' (min/km)' : selected.key === 'swimPace' ? ' (min/100 m)' : selected.unit ? ' (' + selected.unit + ')' : ''),
             data: selected.values,
             borderColor: selected.color,
             backgroundColor: selected.color + '22',
@@ -707,10 +712,22 @@ export function renderActivityTelemetryChart(act) {
                     + (selected.unit ? ' ' + selected.unit : ''))
                 } }
             },
+            onClick(event, elements, chart) {
+                const active = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                if (!active.length || !pointReadout) return;
+                const index = active[0].index;
+                const value = selected.values[index];
+                if (value === null || value === undefined || !Number.isFinite(Number(value))) return;
+                const timeLabel = labels[index] ?? ('Messpunkt ' + (index + 1));
+                const shown = formatValue(value) + ((selected.key === 'pace' || selected.key === 'swimPace') ? '' : selected.unit ? ' ' + selected.unit : '');
+                pointReadout.textContent = timeLabel + ' · ' + selected.label + ': ' + shown;
+                pointReadout.hidden = false;
+            },
             scales: {
                 x: { title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
                     grid: { color: 'rgba(100,116,139,.12)' }, ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 8 } },
-                y: { title: { display: true, text: selected.unit, color: '#64748b', font: { size: 9 } },
+                y: { title: { display: true, text: selected.key === 'pace' ? 'min/km' : selected.key === 'swimPace' ? 'min/100 m' : selected.unit, color: '#64748b', font: { size: 9 } },
+                    ticks: { callback: value => (selected.key === 'pace' || selected.key === 'swimPace') ? formatValue(value) : value, color: '#94a3b8', font: { size: 9 } },
                     grid: { color: 'rgba(100,116,139,.16)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
             }
         }
