@@ -4491,3 +4491,28 @@ html[data-theme="light"] .kajo-training-load-panel,html[data-theme="light"] .kaj
 html[data-theme="light"] .kajo-load-ring,html.theme-light .kajo-load-ring{background:#f3f6fa;border-color:#d8e0ea}
 html[data-theme="light"] .kajo-training-load-heading h2,html[data-theme="light"] .kajo-training-load-heading h3,html[data-theme="light"] .kajo-load-ring strong,html[data-theme="light"] .kajo-load-label,html.theme-light .kajo-load-ring strong,html.theme-light .kajo-load-label{color:#172033}
 @media(max-width:420px){.kajo-training-load-rings{gap:2px;padding:7px 4px}.kajo-load-ring{border-width:4px}}
+
+html[data-theme="light"] #csv-details-modal .activity-detail-shell { background:var(--kajo-bg,#f4f7fa); color:var(--kajo-text,#172033); }
+html[data-theme="light"] #csv-details-modal .activity-detail-toolbar { background:rgba(255,255,255,.96); border-color:var(--kajo-border,#d8e0ea); }
+html[data-theme="light"] #csv-details-modal .activity-detail-panel,
+html[data-theme="light"] #csv-details-modal .activity-detail-overview { background:var(--kajo-surface,#fff); border-color:var(--kajo-border,#d8e0ea); }
+html[data-theme="light"] #csv-details-modal .activity-detail-section-heading h3,
+html[data-theme="light"] #csv-details-modal .activity-detail-metrics>div div,
+html[data-theme="light"] #csv-details-modal .activity-detail-dynamic-panel h4 { color:var(--kajo-text,#172033); }
+html[data-theme="light"] #csv-details-modal .activity-detail-metrics>div,
+html[data-theme="light"] #csv-details-modal .activity-canoe-subsection,
+html[data-theme="light"] #csv-details-modal .bg-slate-900,
+html[data-theme="light"] #csv-details-modal .bg-slate-950,
+html[data-theme="light"] #csv-details-modal .bg-slate-800 { background:var(--kajo-surface-raised,#eef2f7)!important; }
+html[data-theme="light"] #csv-details-modal .border-slate-800,
+html[data-theme="light"] #csv-details-modal .border-slate-700 { border-color:var(--kajo-border,#d8e0ea)!important; }
+html[data-theme="light"] #csv-details-modal .text-white:not(button),
+html[data-theme="light"] #csv-details-modal .text-slate-100,
+html[data-theme="light"] #csv-details-modal .text-slate-200,
+html[data-theme="light"] #csv-details-modal .text-slate-300 { color:var(--kajo-text,#172033)!important; }
+html[data-theme="light"] #csv-details-modal .text-slate-400,
+html[data-theme="light"] #csv-details-modal .text-slate-500 { color:var(--kajo-muted,#64748b)!important; }
+html[data-theme="light"] #csv-details-modal .activity-detail-nav-button { background:var(--kajo-surface-raised,#eef2f7); border-color:var(--kajo-border,#d8e0ea); color:var(--kajo-text,#172033); }
+html[data-theme="light"] #csv-details-modal input,
+html[data-theme="light"] #csv-details-modal select,
+html[data-theme="light"] #csv-details-modal textarea { background:var(--kajo-surface,#fff)!important; color:var(--kajo-text,#172033)!important; border-color:var(--kajo-border,#d8e0ea)!important; }
