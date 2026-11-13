@@ -3803,3 +3803,11 @@ html[data-theme="light"] .kajo-analysis-baseline-note { color:#475569; }
 @media (max-width:640px) {
     .kajo-analysis-source-row { grid-template-columns:1fr; gap:.4rem; }
 }
+
+.kajo-analysis-metric-link {
+    width:100%; text-align:left; color:inherit; font:inherit; cursor:pointer;
+    transition:border-color .15s ease, background-color .15s ease, transform .15s ease;
+}
+.kajo-analysis-metric-link:hover { border-color:var(--kajo-blue); background:var(--kajo-surface-raised); }
+.kajo-analysis-metric-link:focus-visible { outline:2px solid var(--kajo-blue); outline-offset:2px; }
+.kajo-analysis-metric-hint { color:var(--kajo-blue) !important; font-size:.56rem !important; opacity:.82; }
