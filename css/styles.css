@@ -4630,3 +4630,135 @@ html[data-theme="light"] .kajo-analysis-circle-item{color:var(--kajo-text)}
  .kajo-analysis-circle-status{font-size:.5rem!important}
 }
 html[data-theme="light"] .kajo-analysis-overview-panel{background:var(--kajo-surface);border-color:var(--kajo-border)}
+
+
+/* KAJO settings overview – uses the documented KAJO design tokens, not a new accent palette. */
+#settings-modal > div.kajo-settings-shell {
+  width:min(100%,1040px);
+  max-height:min(94vh,1040px);
+  padding:clamp(14px,2vw,24px);
+  background:#0B0F14;
+  border:1px solid #293644;
+  border-radius:22px;
+  color:#F4F7FA;
+}
+.kajo-settings-header { border-color:#293644; padding-bottom:14px; }
+.kajo-settings-mark,
+.kajo-settings-section-icon {
+  background:#17212C;
+  border:1px solid #293644;
+  color:#A9B5C2;
+}
+.kajo-settings-eyebrow { color:#7D8A98; }
+.kajo-settings-close { background:#17212C; border-color:#293644; color:#A9B5C2; }
+.kajo-settings-status-strip {
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  margin:14px 0 16px; padding:12px 14px;
+  border:1px solid #293644; border-radius:14px; background:#111820;
+}
+.kajo-settings-status-main { display:flex; align-items:center; gap:11px; min-width:0; }
+.kajo-settings-status-indicator { width:9px; height:9px; flex:0 0 auto; border-radius:50%; background:#6DA8F7; }
+.kajo-settings-status-indicator.is-connected { background:#39C98A; }
+.kajo-settings-status-indicator.is-error { background:#F16B6B; }
+.kajo-settings-status-label { display:block; color:#7D8A98; font-size:10px; }
+.kajo-settings-status-main strong { display:block; margin-top:2px; color:#F4F7FA; font-size:12px; font-weight:750; }
+.kajo-settings-status-action { flex:0 0 auto; padding:7px 10px; border:1px solid #293644; border-radius:9px; background:#17212C; color:#A9B5C2; font-size:10px; font-weight:700; }
+.kajo-settings-status-action:hover { background:#1C2835; color:#F4F7FA; }
+.kajo-settings-overview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:22px; }
+.kajo-settings-overview-group { min-width:0; padding:12px; border:1px solid #293644; border-radius:14px; background:#111820; }
+.kajo-settings-overview-heading { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.kajo-settings-overview-heading>span { color:#7D8A98; font-size:9px; font-weight:800; font-variant-numeric:tabular-nums; }
+.kajo-settings-overview-heading h3 { color:#F4F7FA; font-size:12px; font-weight:800; }
+.kajo-settings-overview-row {
+  display:flex; align-items:center; gap:10px; width:100%; min-width:0;
+  padding:9px 4px; border-top:1px solid #293644; text-align:left;
+  background:transparent; color:#A9B5C2; cursor:pointer;
+}
+.kajo-settings-overview-row:first-of-type { border-top:0; }
+.kajo-settings-overview-row>svg { width:17px; height:17px; flex:0 0 auto; color:#7D8A98; }
+.kajo-settings-overview-row>span { display:grid; gap:2px; min-width:0; }
+.kajo-settings-overview-row strong { color:#F4F7FA; font-size:11px; font-weight:700; }
+.kajo-settings-overview-row small { color:#7D8A98; font-size:9px; line-height:1.35; }
+.kajo-settings-overview-row:hover,
+.kajo-settings-overview-row:focus-visible { background:#17212C; outline:none; border-radius:8px; }
+.kajo-settings-content { gap:18px; }
+.kajo-settings-group-heading { gap:10px; margin:2px 0 8px; }
+.kajo-settings-group-heading h3 { color:#F4F7FA; font-size:15px; }
+.kajo-settings-group-heading p:not(.kajo-settings-eyebrow) { color:#A9B5C2; }
+.kajo-settings-group-icon { width:34px; height:34px; border-radius:10px; background:#17212C; border:1px solid #293644; color:#A9B5C2; }
+.kajo-settings-group-icon svg { width:17px; height:17px; }
+.kajo-settings-card { padding:14px; border:1px solid #293644; border-radius:13px; background:#111820; }
+.kajo-settings-section-head h3 { color:#F4F7FA; }
+.kajo-settings-section-head p { color:#A9B5C2; }
+.kajo-settings-primary { background:#17212C; border:1px solid #3A4A5A; color:#F4F7FA; box-shadow:none; }
+.kajo-settings-primary:hover { background:#1C2835; }
+.kajo-settings-secondary { background:#17212C; border:1px solid #293644; color:#A9B5C2; }
+.kajo-settings-secondary:hover { background:#1C2835; color:#F4F7FA; }
+.kajo-settings-field { color:#A9B5C2; }
+.kajo-settings-field input,.kajo-settings-field textarea,.kajo-settings-field select { background:#1C2835; border-color:#293644; color:#F4F7FA; }
+.kajo-settings-field input:focus,.kajo-settings-field textarea:focus,.kajo-settings-field select:focus { border-color:#6DA8F7; box-shadow:0 0 0 2px rgba(109,168,247,.14); }
+.kajo-settings-divider { background:#293644; }
+.kajo-push-status { background:#17212C; border-color:#293644; color:#A9B5C2; }
+.kajo-push-status-dot { background:#F2B84B; box-shadow:none; }
+.kajo-push-status.is-ready .kajo-push-status-dot { background:#39C98A; box-shadow:none; }
+.kajo-push-status.is-error .kajo-push-status-dot { background:#F16B6B; box-shadow:none; }
+.kajo-push-hint { background:#17212C; border-color:#293644; color:#A9B5C2; }
+.kajo-push-hint svg { color:#6DA8F7; }
+.kajo-reminder-form,.kajo-reminder-item { background:#17212C; border-color:#293644; }
+.kajo-reminder-days span { background:#1C2835; border-color:#293644; color:#A9B5C2; }
+.kajo-reminder-days input:checked+span { background:rgba(109,168,247,.12); border-color:#6DA8F7; color:#F4F7FA; }
+.kajo-reminder-item-icon { background:#1C2835; color:#A9B5C2; }
+.kajo-reminder-item h4 { color:#F4F7FA; }
+.kajo-reminder-item p,.kajo-settings-footnote { color:#7D8A98; }
+#settings-modal .kajo-settings-card input[type="checkbox"] { accent-color:#6DA8F7; }
+#settings-modal .kajo-settings-footer { border-color:#293644; }
+@media(max-width:700px) {
+  #settings-modal > div.kajo-settings-shell { width:100%; max-height:100dvh; height:100dvh; border-radius:0; border-left:0; border-right:0; padding:14px 12px calc(18px + env(safe-area-inset-bottom)); }
+  .kajo-settings-overview { grid-template-columns:1fr; gap:8px; }
+  .kajo-settings-overview-group { padding:10px 11px; }
+  .kajo-settings-overview-row { padding:8px 3px; }
+  .kajo-settings-status-strip { margin:11px 0 13px; padding:10px 11px; }
+}
+html[data-theme="light"] #settings-modal > div.kajo-settings-shell { background:#F4F6F8; border-color:#DCE3EA; color:#17212B; }
+html[data-theme="light"] .kajo-settings-header,
+html[data-theme="light"] .kajo-settings-footer { border-color:#DCE3EA; }
+html[data-theme="light"] .kajo-settings-mark,
+html[data-theme="light"] .kajo-settings-section-icon,
+html[data-theme="light"] .kajo-settings-group-icon,
+html[data-theme="light"] .kajo-settings-close { background:#EDF1F5; border-color:#DCE3EA; color:#526170; }
+html[data-theme="light"] .kajo-settings-status-strip,
+html[data-theme="light"] .kajo-settings-overview-group,
+html[data-theme="light"] .kajo-settings-card { background:#FFFFFF; border-color:#DCE3EA; }
+html[data-theme="light"] .kajo-settings-status-main strong,
+html[data-theme="light"] .kajo-settings-overview-heading h3,
+html[data-theme="light"] .kajo-settings-overview-row strong,
+html[data-theme="light"] .kajo-settings-section-head h3,
+html[data-theme="light"] .kajo-settings-group-heading h3,
+html[data-theme="light"] .kajo-reminder-item h4 { color:#17212B; }
+html[data-theme="light"] .kajo-settings-status-label,
+html[data-theme="light"] .kajo-settings-overview-heading>span,
+html[data-theme="light"] .kajo-settings-overview-row small,
+html[data-theme="light"] .kajo-settings-group-heading p:not(.kajo-settings-eyebrow),
+html[data-theme="light"] .kajo-settings-section-head p,
+html[data-theme="light"] .kajo-settings-footnote { color:#718091; }
+html[data-theme="light"] .kajo-settings-overview-row { border-color:#DCE3EA; color:#526170; }
+html[data-theme="light"] .kajo-settings-overview-row>svg { color:#526170; }
+html[data-theme="light"] .kajo-settings-overview-row:hover,
+html[data-theme="light"] .kajo-settings-overview-row:focus-visible { background:#EDF1F5; }
+html[data-theme="light"] .kajo-settings-status-action,
+html[data-theme="light"] .kajo-settings-primary,
+html[data-theme="light"] .kajo-settings-secondary { background:#EDF1F5; border-color:#DCE3EA; color:#17212B; box-shadow:none; }
+html[data-theme="light"] .kajo-settings-field input,
+html[data-theme="light"] .kajo-settings-field textarea,
+html[data-theme="light"] .kajo-settings-field select,
+html[data-theme="light"] .kajo-reminder-form,
+html[data-theme="light"] .kajo-reminder-item { background:#EDF1F5; border-color:#DCE3EA; color:#17212B; }
+html[data-theme="light"] .kajo-settings-field { color:#526170; }
+html[data-theme="light"] .kajo-settings-field input:focus,
+html[data-theme="light"] .kajo-settings-field textarea:focus,
+html[data-theme="light"] .kajo-settings-field select:focus { border-color:#2768B8; box-shadow:0 0 0 2px rgba(39,104,184,.12); }
+html[data-theme="light"] .kajo-push-status { background:#EDF1F5; border-color:#DCE3EA; color:#526170; }
+html[data-theme="light"] .kajo-push-hint { background:#EDF1F5; border-color:#DCE3EA; color:#526170; }
+html[data-theme="light"] .kajo-reminder-days span { background:#EDF1F5; border-color:#DCE3EA; color:#526170; }
+html[data-theme="light"] .kajo-reminder-days input:checked+span { background:rgba(39,104,184,.08); border-color:#2768B8; color:#17212B; }
+html[data-theme="light"] .kajo-reminder-item h4 { color:#17212B; }
