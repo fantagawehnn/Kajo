@@ -1260,9 +1260,8 @@ function showSettingsModal() {
             settingsDot.classList.toggle('is-error', !connected);
         }
     } catch (error) { console.error('Einstellungen konnten nicht vorbereitet werden:', error); }
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modal.style.display = 'flex';
+    modal.classList.remove('hidden', 'flex');
+    modal.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('kajo-modal-open');
 }
@@ -1899,7 +1898,9 @@ Object.assign(window, {
         if (!menu || !content) return;
         const isMenu = selected === 'menu';
         menu.classList.toggle('hidden', !isMenu);
+        menu.setAttribute('aria-hidden', String(!isMenu));
         content.classList.toggle('hidden', isMenu);
+        content.setAttribute('aria-hidden', String(isMenu));
         modal?.setAttribute('data-settings-page', selected);
         content.querySelectorAll('[data-settings-page]').forEach(section => {
             section.classList.toggle('hidden', section.dataset.settingsPage !== selected);
@@ -1907,7 +1908,9 @@ Object.assign(window, {
         footer?.classList.toggle('hidden', selected !== 'training');
         if (!isMenu) {
             content.scrollTop = 0;
-            content.querySelector('#kajo-settings-back')?.focus({ preventScroll: true });
+            document.getElementById('kajo-settings-back')?.focus({ preventScroll: true });
+        } else {
+            menu.querySelector('button')?.focus({ preventScroll: true });
         }
     },
     renderKajoPushSettings,
