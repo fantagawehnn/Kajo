@@ -42,7 +42,8 @@ export const state = {
     selectedCalendarDay: null,
     calendarDisplayMode: null,
     currentCalendarDate: new Date(),
-    selectedActivityForModal: null,\n    activityTelemetryMetric: null
+    selectedActivityForModal: null,
+    activityTelemetryMetric: null
 };
 
 /* ------------------------------------------------------------
