@@ -3712,10 +3712,12 @@ body > #daily-checkin-modal:not(.hidden) { z-index: 2147483646 !important; }
     color:var(--kajo-muted); font-size:.68rem; line-height:1.45;
 }
 #training-history-range-controls, #health-history-range-controls { display:none !important; }
-#analysis-subpage-performance #view-training-analysis > header,
-#analysis-subpage-recovery #view-health-data > header,
 #analysis-subpage-performance [data-history-kind],
 #analysis-subpage-recovery [data-history-kind] { display:none !important; }
+.kajo-analysis-history-header { display:flex; flex-direction:column; gap:.18rem; margin:.9rem 0 .55rem; }
+.kajo-analysis-history-header h2 { color:var(--kajo-text); font-size:.92rem; font-weight:750; line-height:1.25; }
+.kajo-analysis-history-header p:last-child { color:var(--kajo-muted); font-size:.68rem; line-height:1.4; max-width:76ch; }
+.kajo-analysis-history-header .kajo-analysis-eyebrow { margin:0; }
 #analysis-subpage-performance #analysis-fitness-section,
 #analysis-subpage-performance #analysis-competition-section { margin-top:.8rem; }
 @media (max-width:640px) {
