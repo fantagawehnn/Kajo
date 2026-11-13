@@ -9,6 +9,7 @@ const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
 const charts = readFileSync('js/charts.js', 'utf8');
 const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
+const health = readFileSync('js/health.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -51,8 +52,8 @@ assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe sy
 assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV field is identified as RMSSD');
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
-assert.ok(dashboard.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
+assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
 assert.ok(analysisUI.includes('Die Herkunft wird aktuell nicht getrennt gespeichert'), 'HRV source ambiguity is disclosed');
-assert.ok(!analysisUI.includes('\\\\n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
+assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
 console.log('KAJO navigation and analysis UI smoke tests passed.');
