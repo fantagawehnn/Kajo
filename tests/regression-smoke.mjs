@@ -15,7 +15,7 @@ globalThis.document = {
     },
     createElement() {
         const child = {
-            id: '', className: '', innerHTML: '', hidden: false,
+            id: '', className: '', innerHTML: '', hidden: false, dataset: {},
             setAttribute() {},
             querySelector() { return { textContent: '', addEventListener() {} }; },
             remove() {}
