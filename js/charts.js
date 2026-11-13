@@ -11,6 +11,7 @@ import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
+import { getGarminTelemetry } from './data-source.js';
 
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
@@ -20,7 +21,7 @@ function renderLoadSourceNote(timeline) {
     const descriptions = {
         'garmin-zone': 'Quelle: Garmin-FIT-Herzfrequenzdaten. Der angezeigte Wert ist ein Endurance-AI-Index aus gewichteter Zeit in HF-Zonen (Z1–Z5), kein TSS und kein Garmin-Training-Load. Es zählen nur Aktivitäten mit auswertbarer HF-Zeitreihe und gültigen HF-Zonen.',
         'garmin-native': 'Quelle: Garmin-eigene Trainingsbelastung. Diese Werte werden nicht mit externem TSS oder dem Endurance-AI-HF-Zonenindex vermischt und sind nicht direkt mit ihnen vergleichbar.',
-        'external-tss': 'Quelle: extern gespeicherte TSS-Werte. TSS wird nur verwendet, wenn keine Garmin-Datenquelle für die Belastungsberechnung aktiv ist.',
+        'external-tss': 'Externe TSS-Werte werden nicht als Belastungsgrundlage verwendet.',
         'garmin-unavailable': 'Garmin-Daten erkannt, aber aktuell keine auswertbaren Garmin-Load-Werte vorhanden. Externe TSS-Werte werden in diesem Modus nicht beigemischt.'
     };
     const coverage = last?.loadCoverage;
@@ -54,11 +55,12 @@ export function renderMainLoadChart(timeline, timeframe) {
     }
     if (!filtered.length) return;
     const last=timeline[timeline.length-1];
-    const isGarmin=last.loadMode?.startsWith('garmin');
+    const isGarmin=last.loadMode === 'garmin-native' || last.loadMode === 'garmin-zone';
+    const isSrpe=last.loadMode === 'srpe';
     const labels=filtered.map(t=>formatDateDDMMYY(t.date));
     const ctl=filtered.map(t=>t.ctl);
     const atl=filtered.map(t=>t.atl);
-    const form=filtered.map(t=>isGarmin ? t.formPct : t.tsb);
+    const form=filtered.map(t=>isGarmin ? t.formPct : isSrpe ? t.tsb : null);
     const health=filtered.map(t=>state.healthLogs[t.date] ? t.ctl : null);
     const ctx=canvas.getContext('2d');
     if(state.mainChartInstance) state.mainChartInstance.destroy();
@@ -67,7 +69,7 @@ export function renderMainLoadChart(timeline, timeframe) {
         data:{labels,datasets:[
             {label:'Langfristige Belastung (CTL)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
             {label:'Kurzfristige Belastung (ATL)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (EA-HF-Zonenindex)'):'Belastungssaldo (TSS · Tagesende)',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
+            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (EA-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
             {label:'Krankheit / Verletzung',data:health,showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#facc15',yAxisID:'y'}
         ]},
         options:{
@@ -417,7 +419,7 @@ export function renderHeartRateZoneDistribution(records) {
 
     let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedActivities = 0;
     for (const activity of records || []) {
-        const telemetry = activity.garminTelemetry || activity.telemetry || {};
+        const telemetry = getGarminTelemetry(activity) || {};
         const hr = telemetry.hr;
         if (!Array.isArray(hr) || hr.length < 2) {
             missingTelemetry++;
@@ -569,7 +571,7 @@ const activitySeriesMeta = {
 };
 
 export function getActivityTelemetrySeries(act) {
-    const telem = act?.telemetry || act?.garminTelemetry || {};
+    const telem = getGarminTelemetry(act) || {};
     const fields = act?.garminFitData?.recordFields || {};
     const aliases = {
         hr: [telem.hr, fields.heart_rate],
