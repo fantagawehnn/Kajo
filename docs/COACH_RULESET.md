@@ -335,13 +335,13 @@ Erwartetes Verhalten:
 - keine automatische Planänderung,
 - nachvollziehbare Begründung und Datenqualitätsanzeige.
 
-## 14. Regeln zur vollständigen Nutzung verfügbarer Daten
+## 13. Regeln zur vollständigen Nutzung verfügbarer Daten
 
-### 14.1 Grundsatz
+### 13.1 Grundsatz
 
 Der Coach soll alle in KAJO tatsächlich verfügbaren und für die jeweilige Fragestellung relevanten Daten nutzen. Er darf relevante Datenbereiche oder verfügbare Historie nicht ohne fachlichen Grund ignorieren. „Alle verfügbaren Daten“ bedeutet nicht, dass jede Rohdatenzeile bei jeder Anfrage ungefiltert an das Sprachmodell übergeben werden muss.
 
-### 14.2 Zu berücksichtigende Datenbereiche
+### 13.2 Zu berücksichtigende Datenbereiche
 
 Soweit vorhanden, zugänglich, der Nutzerin zugeordnet und relevant, berücksichtigt der Coach:
 - Trainingsaktivitäten und Trainingshistorie einschließlich Dauer, Umfang, Intensität, Sportart und Einheitentyp,
@@ -357,7 +357,7 @@ Soweit vorhanden, zugänglich, der Nutzerin zugeordnet und relevant, berücksich
 
 Diese Aufzählung beschreibt Datenbereiche, die zu prüfen sind. Sie behauptet nicht, dass jeder einzelne Wert bereits technisch in KAJO verfügbar oder vollständig importiert ist.
 
-### 14.3 Historische und longitudinale Analyse
+### 13.3 Historische und longitudinale Analyse
 
 - Der Coach darf sich nicht ausschließlich auf den letzten Tag oder die letzten Aktivitäten beschränken.
 - Für längerfristige Aussagen nutzt er die verfügbare relevante Historie über geeignete Zeiträume und unterscheidet kurzfristige, mittelfristige und langfristige Entwicklungen.
@@ -365,7 +365,7 @@ Diese Aufzählung beschreibt Datenbereiche, die zu prüfen sind. Sie behauptet n
 - Bei Saisonrückblicken und Entwicklungsanalysen ist die gesamte verfügbare relevante Saison- bzw. Trainingshistorie heranzuziehen, nicht nur ein willkürlich kurzer Ausschnitt.
 - Reichen Historie oder Datenabdeckung nicht aus, muss der Coach dies offenlegen und seine Aussage begrenzen.
 
-### 14.4 Kontextbezogene Auswahl und Zugriff
+### 13.4 Kontextbezogene Auswahl und Zugriff
 
 - Vor jeder Antwort bestimmt der Coach, welche Datenbereiche für die konkrete Fragestellung relevant sind.
 - Hochaufgelöste Rohdaten und Zeitreihen werden nur herangezogen, wenn sie für die Fragestellung erforderlich sind; ansonsten können geeignete KAJO-Aggregate und Trends verwendet werden.
@@ -374,14 +374,14 @@ Diese Aufzählung beschreibt Datenbereiche, die zu prüfen sind. Sie behauptet n
 - Daten anderer Nutzerinnen und Nutzer dürfen nicht einbezogen werden.
 - Quellenherkunft, Qualitätsstatus, Zeitbezug und mögliche Duplikate bleiben bei jeder Zusammenführung erhalten.
 
-### 14.5 Keine falsche Vollständigkeit
+### 13.5 Keine falsche Vollständigkeit
 
 - „Alle verfügbaren Daten“ ist nicht gleichbedeutend mit „vollständige Daten“. Der Coach muss Importlücken, fehlende Zeiträume, nicht verbundene Datenquellen und unvollständige Historien sichtbar machen.
 - Nicht vorhandene oder technisch nicht angebundene Daten dürfen nicht als verfügbar dargestellt werden.
 - Eine Datenkategorie, die in der App sichtbar ist, darf nicht automatisch als vollständig importiert oder für den Coach zugänglich angenommen werden.
 - Vor Implementierung ist deshalb ein technischer Dateninventar-Abgleich erforderlich: vorhandene Datenbanktabellen, Felder, Quellen, Zeiträume, Berechtigungen, Importstatus und Berechnungen müssen gegen diese fachlichen Datenbereiche geprüft werden.
 
-## 15. Technische Umsetzungsgrenzen
+## 14. Technische Umsetzungsgrenzen
 
 - `js/coach.js` ist aktuell nur ein einfacher lokaler Chat-Platzhalter. Er ist nicht als fertige KI-Architektur zu behandeln.
 - Die fachliche Entscheidungslogik muss von UI und Sprachmodell getrennt werden.
