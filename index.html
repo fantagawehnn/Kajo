@@ -344,7 +344,7 @@
   </button>
   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-performance')" aria-label="Fitness öffnen">
    <span class="kajo-analysis-hero-ring" id="overview-performance-ring" data-status="neutral"><span><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit">ml/kg/min</small></span></span>
-   <strong>Fitness</strong><small class="kajo-analysis-circle-status" id="analysis-overview-performance-status" data-status="neutral">Messwert</small>
+   <strong>Performance</strong><small class="kajo-analysis-circle-status" id="analysis-overview-performance-status" data-status="neutral">Messwert</small>
   </button>
   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-health')" aria-label="Gesundheit öffnen">
    <span class="kajo-analysis-hero-ring" id="overview-health-ring" data-status="neutral"><span><strong id="analysis-overview-health-value">—</strong><small id="analysis-overview-health-unit"></small></span></span>
@@ -361,7 +361,7 @@
   <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihe auswählen">
    <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Belastung</button>
    <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="false">Regeneration</button>
-   <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="false">Fitness</button>
+   <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="false">Performance</button>
    <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="false">Gesundheit</button>
   </nav>
   <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Zeitlicher Verlauf der ausgewählten Analysedaten"></canvas></div>
