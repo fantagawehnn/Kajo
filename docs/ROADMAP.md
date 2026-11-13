@@ -16,7 +16,7 @@
 - [ ] Keine produktiven Datenbankänderungen vornehmen.
 
 ## Phase 2 – Zentrales Designsystem und Kernarchitektur
-- [ ] Design-Tokens zentralisieren.
+- [x] Design-Tokens für Farb-, Status- und Oberflächenfarben zentralisieren; appweite visuelle Endabnahme bleibt offen.
 - [ ] Wiederverwendbare Layout-, Ring-, Diagramm-, Karten- und Navigationskomponenten.
 - [ ] Zentrale Datenzugriffsschicht.
 - [ ] Zentrale Berechnungsebene mit Datenstatus und Herkunft.
