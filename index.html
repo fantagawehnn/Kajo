@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=63">
+    <link rel="stylesheet" href="css/styles.css?v=64">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons CDN -->
@@ -59,7 +59,10 @@
         <div class="kajo-mobile-header" aria-label="KAJO Kopfzeile">
             <img src="./branding/Herzschlag%20im%20Kajak-Wellenlogo.png?v=2" alt="KAJO" class="kajo-mobile-logo">
             <span class="kajo-version-tag inline-flex items-center rounded-md border border-rose-500/30 bg-rose-950/40 px-1.5 py-1 text-[9px] font-semibold tracking-wide text-rose-300" aria-label="App-Version">v2.0</span>
-            <button id="kajo-mobile-profile-button" type="button" title="Benutzerkonto öffnen" aria-label="Benutzerkonto öffnen" class="kajo-mobile-account kajo-account-button" onclick="kajoOpenProfile(event)">
+            <button id="kajo-mobile-notifications-button" type="button" title="Push- und Erinnerungseinstellungen öffnen" aria-label="Benachrichtigungseinstellungen öffnen" class="kajo-mobile-account kajo-mobile-notifications" onclick="openSettingsModal()">
+                <i data-lucide="bell" aria-hidden="true"></i>
+            </button>
+            <button id="kajo-mobile-profile-button" type="button" title="Athletenprofil öffnen" aria-label="Athletenprofil öffnen" class="kajo-mobile-account kajo-account-button" onclick="kajoOpenProfile(event)">
                 <i data-lucide="user-round" aria-hidden="true"></i>
             </button>
         </div>
@@ -90,6 +93,10 @@
             <button type="button" id="mobile-nav-more" class="kajo-mobile-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
         </nav>
                 <span class="kajo-version-tag" aria-label="App-Version">v2.0</span>
+                <div class="kajo-desktop-header-actions">
+                    <button type="button" class="kajo-home-icon-button" onclick="openSettingsModal()" aria-label="Benachrichtigungseinstellungen öffnen" title="Benachrichtigungen"><i data-lucide="bell"></i></button>
+                    <button type="button" class="kajo-home-icon-button" onclick="kajoOpenProfile(event)" aria-label="Athletenprofil öffnen" title="Athletenprofil"><i data-lucide="user-round"></i></button>
+                </div>
                     <input id="backup-import-input" type="file" accept="application/json,.json" class="hidden" onchange="restoreDatabaseBackup(event)"><div id="backup-preview-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[95] items-center justify-center p-4">
                         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-4">
                             <div class="flex items-center justify-between gap-3">
@@ -213,16 +220,6 @@
         
 
         <div id="view-dashboard" class="kajo-home">
-  <header class="kajo-home-topbar">
-    <button type="button" class="kajo-home-brand" onclick="switchTab('today')" aria-label="KAJO Homescreen">
-      <img src="./branding/Herzschlag%20im%20Kajak-Wellenlogo.png?v=2" alt="KAJO">
-    </button>
-    <div class="kajo-home-header-actions">
-      <button type="button" class="kajo-home-icon-button" onclick="openSettingsModal()" aria-label="Push- und Erinnerungseinstellungen öffnen" title="Push & Erinnerungen"><i data-lucide="bell"></i></button>
-      <button type="button" class="kajo-home-icon-button" onclick="kajoOpenProfile(event)" aria-label="Profil öffnen" title="Profil"><i data-lucide="user-round"></i></button>
-    </div>
-  </header>
-
   <section class="kajo-home-status" aria-labelledby="home-status-heading">
     <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
