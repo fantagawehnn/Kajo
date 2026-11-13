@@ -300,7 +300,7 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         container.innerHTML = '<p class="col-span-full text-xs text-slate-500">Für diese Aktivität sind noch keine auswertbaren Kennzahlen hinterlegt.</p>';
         return;
     }
-    container.innerHTML = metrics.map(metric => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-500">${metric.label}</span><div class="text-base font-bold mt-0.5 ${metric.tone}">${metric.value}</div></div>`).join('');
+    container.innerHTML = metrics.map(metric => `<div><span>${metric.label}</span><div>${metric.value}</div></div>`).join('');
     container.className = 'activity-detail-metrics';
 }
 
