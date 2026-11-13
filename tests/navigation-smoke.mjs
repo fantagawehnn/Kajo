@@ -199,3 +199,6 @@ assert.ok(activities.includes('const storedRouteIds = item =>'), 'comparison ren
 
 assert.ok(activities.includes("container.style.setProperty('--activity-sport-color'"), 'activity metric accents use the configured sport color');
 assert.ok(activities.includes("'border-sky-800/50 bg-sky-950/20"), 'telemetry availability uses neutral information color, not positive status color');
+
+assert.ok(importer.includes("source:'fit',sources:['fit']"), 'manually imported FIT activities retain their file-import provenance');
+assert.ok(activities.includes("zoneLoad.zoneSource === 'maxhr-estimate'"), 'estimated HR-zone basis is explicitly identified in activity load details');
