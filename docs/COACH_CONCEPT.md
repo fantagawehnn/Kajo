@@ -1,6 +1,6 @@
 # KAJO V2 – Konzept des passiven KI-Coachs
 
-**Status:** Fachkonzept – Entwurf 1.2 (Priorisierung der Sportarten)  
+**Status:** Fachkonzept – Entwurf 1.3 (Saisonziele und Wettkampfprioritäten)  
 **Ziel-Repository:** `fantagawehnn/Kajo`  
 **Ziel-Branch:** `v2`  
 **Geltungsbereich:** KI-gestützte Trainingsanalyse und Trainingsempfehlungen  
@@ -217,7 +217,7 @@ Der Coach ist fachlich erst dann als nutzbar zu bewerten, wenn:
 Die folgenden Punkte sind bewusst noch nicht festgelegt, weil die vorhandenen Unterlagen dafür keine ausreichende Vorgabe enthalten:
 
 1. Welche weiteren Sportarten und Trainingsformen sollen neben Laufen, Radfahren, Schwimmen und Krafttraining im Profil berücksichtigt werden? Für diese ergänzenden Bereiche besteht kein eigenständiger Leistungsanspruch.
-2. Welche Trainingsziele und Saisonphasen sollen bei Empfehlungen verbindlich berücksichtigt werden?
+2. Die Nutzerin trägt Saisonziele und Saisonhöhepunkte selbst im bestehenden Profilbereich „Ziele und Saisonplanung“ ein. Zu klären ist nur noch, ob die vorhandenen Profilfelder inhaltlich und technisch für die Coach-Anbindung ausreichen.
 3. Welche Datenbasis ist für eine Tagesempfehlung mindestens erforderlich?
 4. Soll der Coach geplante Einheiten aktiv kommentieren oder nur auf ausdrückliche Frage analysieren?
 5. Welche Rolle sollen subjektive Check-ins und manuelle Rückmeldungen im Vergleich zu Garmin-Daten spielen?
