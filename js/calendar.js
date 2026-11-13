@@ -3,7 +3,6 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { getTrainingLoadData } from './training-load.js';
 import { calculateReadiness } from './dashboard.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js';
 import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js';
@@ -215,7 +214,7 @@ function renderCalendarDayDetail(date, target) {
     data.races.forEach(item => units.push(calendarRaceRow(item)));
     const trainingMarkup = units.length ? units.join('') : '<div class="calendar-empty-state">Keine Trainingseinheiten oder Wettkämpfe dokumentiert.</div>';
     const loadTone = data.loadValue === null ? 'info' : calendarLoadTone(data.timeline);
-    const durationText = data.durationTotal === null ? '—' : calendarFormatMinutes(data.durationTotal);
+    const durationText = data.durationTotal === null ? '—' : (data.durationComplete ? '' : '∼') + calendarFormatMinutes(data.durationTotal);
     const durationCoverage = data.activities.length
         ? (data.durationRecords.length + '/' + data.activities.length + ' Einheiten mit Dauer')
         : 'Keine absolvierten Einheiten dokumentiert';
@@ -223,8 +222,15 @@ function renderCalendarDayDetail(date, target) {
     for (let i = 1; i <= 7; i++) { const d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() - i); priorDates.push(toLocalDateString(d)); }
     const priorActivities = (state.rawActivities || []).filter(item => priorDates.includes(item.date));
     const priorDurationRecords = priorActivities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
-    const priorDuration = priorDurationRecords.length ? priorDurationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
-    const priorCoverage = priorActivities.length ? priorDurationRecords.length + '/' + priorActivities.length + ' Einheiten mit Dauer' : 'Keine Einheiten dokumentiert';
+    const priorByDate = {};
+    priorActivities.forEach(item => { (priorByDate[item.date] ||= []).push(item); });
+    const priorCompleteDays = Object.values(priorByDate).filter(items => items.length && items.every(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0));
+    const priorAverage = priorCompleteDays.length ? priorCompleteDays.reduce((sum, items) => sum + items.reduce((daySum, item) => daySum + Number(item.duration), 0), 0) / priorCompleteDays.length : null;
+    const priorCoverage = priorCompleteDays.length + ' vollständig dokumentierte Trainingstage';
+    const todayComparable = data.durationComplete ? data.durationTotal : null;
+    const comparisonMax = Math.max(todayComparable || 0, priorAverage || 0, 1);
+    const todayBar = todayComparable === null ? '' : '<div class="calendar-time-bar-row"><span>Ausgewählter Tag</span><span class="calendar-time-bar-track"><i style="width:' + (todayComparable / comparisonMax * 100) + '%"></i></span><b>' + calendarFormatMinutes(todayComparable) + '</b></div>';
+    const priorBar = priorAverage === null ? '' : '<div class="calendar-time-bar-row"><span>Ø vorherige 7 Tage</span><span class="calendar-time-bar-track"><i style="width:' + (priorAverage / comparisonMax * 100) + '%"></i></span><b>' + calendarFormatMinutes(priorAverage) + '</b></div>';
     const recovery = [];
     recovery.push(calendarRing(readiness.score, 'Readiness', '/100', readiness.score === null ? 'info' : calendarReadinessTone(readiness.score)));
     if (checkin.sleepScore !== null && checkin.sleepScore !== undefined && checkin.sleepScore !== '') recovery.push(calendarRing(Math.round(Number(checkin.sleepScore)), 'Schlafscore', '/100', 'info'));
@@ -239,7 +245,7 @@ function renderCalendarDayDetail(date, target) {
         '<section class="calendar-detail-section"><h3>Training Load & Trainingszeit</h3><div class="calendar-day-load-time">' +
         calendarRing(data.loadValue === null ? null : Number(data.loadValue).toFixed(0), 'Training Load', data.timeline?.loadUnit || '', loadTone) +
         '<div class="calendar-time-summary"><div class="calendar-time-primary"><span>Trainingszeit</span><strong>' + durationText + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
-        '<div class="calendar-time-comparison"><span>Vorherige 7 Tage</span><strong>' + (priorDuration === null ? '—' : calendarFormatMinutes(priorDuration)) + '</strong><small>' + escapeHtml(priorCoverage) + '</small></div></div></div></section>' +
+        '<div class="calendar-time-comparison"><span>Trainingszeit-Vergleich</span><small>' + escapeHtml(durationCoverage) + '</small><div class="calendar-time-bars">' + (todayBar + priorBar || '<small>Für den Vergleich fehlen vollständige Dauerangaben.</small>') + '</div><small>' + escapeHtml(priorCoverage) + '</small></div></div></div></section>' +
         '<section class="calendar-detail-section"><h3>Recovery</h3><div class="calendar-recovery-rings">' + (recovery.length ? recovery.join('') : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>') + '</div></section>' +
         '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><button type="button" onclick="openDayEditor(\'' + date + '\')">Tagesdaten bearbeiten</button></div>';
 }
@@ -259,16 +265,17 @@ export function openCalendarWeek(date) {
     const selected = new Date(date + 'T12:00:00');
     selected.setDate(selected.getDate() - ((selected.getDay() + 6) % 7));
     state.currentCalendarDate = selected;
+    state.selectedCalendarDay = null;
     setCalendarFormat('week');
 }
 export function openCalendarTrainingCreate() {
-    const date = state.selectedCalendarDay || toLocalDateString(state.currentCalendarDate);
+    const date = (['day', 'month'].includes(state.activeCalendarFormat) && state.selectedCalendarDay) ? state.selectedCalendarDay : toLocalDateString(state.currentCalendarDate);
     const input = document.getElementById('plan-date');
     if (input) input.value = date;
     window.openPlannedWorkoutModal?.();
 }
 export function openCalendarRaceCreate() {
-    const date = state.selectedCalendarDay || toLocalDateString(state.currentCalendarDate);
+    const date = (['day', 'month'].includes(state.activeCalendarFormat) && state.selectedCalendarDay) ? state.selectedCalendarDay : toLocalDateString(state.currentCalendarDate);
     const input = document.getElementById('race-date');
     if (input) input.value = date;
     window.toggleRaceModal?.();
@@ -303,6 +310,7 @@ export function navigateCalendarPeriod(dir) {
         state.currentCalendarDate.setMonth(state.currentCalendarDate.getMonth() + dir);
     }
     if (state.activeCalendarFormat === 'month' || state.activeCalendarFormat === 'year') state.selectedCalendarDay = null;
+    else if (state.activeCalendarFormat === 'day') state.selectedCalendarDay = toLocalDateString(state.currentCalendarDate);
     renderCalendar();
 }
 
@@ -407,7 +415,8 @@ export function renderYearView() {
         const start = new Date(monday), end = new Date(monday); end.setDate(end.getDate() + 6);
         const thursday = new Date(start); thursday.setDate(thursday.getDate() + 3);
         const weekNo = (() => { const d = new Date(thursday); const jan4 = new Date(d.getFullYear(), 0, 4, 12); const jan4Monday = new Date(jan4); jan4Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7)); return Math.floor((d - jan4Monday) / 604800000) + 1; })();
-        const activities = (state.rawActivities || []).filter(item => item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const yearStart = year + '-01-01', yearEnd = year + '-12-31';
+        const activities = (state.rawActivities || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
         const bySport = {};
         activities.forEach(item => {
             const key = item.type || 'Workout';
@@ -418,9 +427,9 @@ export function renderYearView() {
         });
         const totalMinutes = activities.reduce((sum, item) => sum + (Number.isFinite(Number(item.duration)) && Number(item.duration) > 0 ? Number(item.duration) : 0), 0);
         const durationComplete = activities.length > 0 && activities.every(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
-        const races = (state.races || []).filter(item => item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
-        const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= toLocalDateString(start) && date <= toLocalDateString(end));
-        const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= toLocalDateString(start) && date <= toLocalDateString(end) && item?.cycle?.period === true);
+        const races = (state.races || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= yearStart && date <= yearEnd && date >= toLocalDateString(start) && date <= toLocalDateString(end));
+        const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= toLocalDateString(start) && date <= toLocalDateString(end) && item?.cycle?.period === true);
         weeks.push({ start: toLocalDateString(start), end: toLocalDateString(end), weekNo, activities, bySport, totalMinutes, durationComplete, races, health, cycle, month: thursday.getMonth() });
     }
     const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
@@ -512,7 +521,7 @@ export function renderWeekView() {
     const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
     const durationTotal = durationRecords.length ? durationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
     const summary = document.getElementById('calendar-week-summary');
-    if (summary) summary.innerHTML = '<span><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></span><span><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : calendarFormatMinutes(durationTotal)) + '</strong><em>' + (activities.length ? durationRecords.length + '/' + activities.length + ' Dauern erfasst' : 'Keine Einheiten dokumentiert') + '</em></span>';
+    if (summary) summary.innerHTML = '<span><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></span><span><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : (durationComplete ? '' : '∼') + calendarFormatMinutes(durationTotal)) + '</strong><em>' + (activities.length ? durationRecords.length + '/' + activities.length + ' Dauern erfasst' : 'Keine Einheiten dokumentiert') + '</em></span>';
     container.classList.remove('grid-cols-1', 'grid-cols-7', 'min-w-[900px]');
     container.innerHTML = '';
     const today = toLocalDateString();
@@ -533,7 +542,7 @@ export function renderWeekView() {
         cell.className = 'calendar-week-day ' + (date === today ? 'is-today ' : '') + (state.selectedCalendarDay === date ? 'is-selected' : '');
         cell.innerHTML = '<button type="button" class="calendar-week-day-head" onclick="openCalendarDay(\'' + date + '\')"><span>' + dayNames[d.getDay()] + '</span><strong>' + d.getDate() + '</strong><span class="calendar-week-day-events">' + eventIcons + '</span></button>' +
             '<div class="calendar-week-activities">' + (activityItems + planItems || '<span class="calendar-week-empty">—</span>') + '</div>' +
-            '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? '—' : Math.round(data.durationTotal) + ' min') + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div>';
+            '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? '—' : (data.durationComplete ? '' : '∼') + Math.round(data.durationTotal) + ' min') + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div>';
         container.appendChild(cell);
     });
     globalThis.lucide?.createIcons?.();
