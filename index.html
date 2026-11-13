@@ -84,14 +84,14 @@
                     <button type="button" id="nav-today" class="kajo-nav-item is-active" onclick="switchTab('today')" aria-current="page"><i data-lucide="house"></i><span>Heute</span></button>
                     <button type="button" id="nav-calendar" class="kajo-nav-item" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i><span>Kalender</span></button>
                     <button type="button" id="nav-training" class="kajo-nav-item" onclick="switchTab('training')"><i data-lucide="dumbbell"></i><span>Training</span></button>
-                    <button type="button" id="nav-analysis" class="kajo-nav-item" onclick="switchTab('analysis-load')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
+                    <button type="button" id="nav-analysis" class="kajo-nav-item" onclick="switchTab('analysis-overview')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
                     <button type="button" id="nav-more" class="kajo-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
                 </nav>
         <nav class="kajo-mobile-nav" aria-label="Hauptnavigation mobil">
             <button type="button" id="mobile-nav-today" class="kajo-mobile-nav-item is-active" onclick="switchTab('today')" aria-current="page"><i data-lucide="house"></i><span>Heute</span></button>
             <button type="button" id="mobile-nav-calendar" class="kajo-mobile-nav-item" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i><span>Kalender</span></button>
             <button type="button" id="mobile-nav-training" class="kajo-mobile-nav-item" onclick="switchTab('training')"><i data-lucide="dumbbell"></i><span>Training</span></button>
-            <button type="button" id="mobile-nav-analysis" class="kajo-mobile-nav-item" onclick="switchTab('analysis-load')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
+            <button type="button" id="mobile-nav-analysis" class="kajo-mobile-nav-item" onclick="switchTab('analysis-overview')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
             <button type="button" id="mobile-nav-more" class="kajo-mobile-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
         </nav>
                 <span class="kajo-version-tag" aria-label="App-Version">v2.0</span>
@@ -131,12 +131,13 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 hidden" id="app-main">
         <div id="area-back-link" class="hidden">
             <button type="button" onclick="switchTab('more')" class="kajo-back-link"><i data-lucide="arrow-left"></i><span>Alle Bereiche</span></button>
+        </div>
         <nav id="training-subnav" class="kajo-subnav hidden" aria-label="Training-Unterbereiche">
             <button type="button" id="training-subnav-activities" class="kajo-subnav-item is-active" onclick="switchTab('training-activities')"><i data-lucide="activity"></i><span>Aktivitäten</span></button>
             <button type="button" id="training-subnav-planning" class="kajo-subnav-item" onclick="switchTab('training-planning')"><i data-lucide="calendar-check"></i><span>Trainingsplanung</span></button>
         </nav>
         <nav id="analysis-subnav" class="kajo-subnav hidden" aria-label="Analyse-Unterbereiche">
-            <button type="button" id="analysis-subnav-load" class="kajo-subnav-item is-active" onclick="switchTab('analysis-load')"><span>Training Load</span></button>
+            <button type="button" id="analysis-subnav-load" class="kajo-subnav-item" onclick="switchTab('analysis-load')"><span>Training Load</span></button>
             <button type="button" id="analysis-subnav-recovery" class="kajo-subnav-item" onclick="switchTab('analysis-recovery')"><span>Recovery</span></button>
             <button type="button" id="analysis-subnav-performance" class="kajo-subnav-item" onclick="switchTab('analysis-performance')"><span>Performance</span></button>
             <button type="button" id="analysis-subnav-health" class="kajo-subnav-item" onclick="switchTab('analysis-health')"><span>Health</span></button>
@@ -308,6 +309,27 @@
                 <span class="kajo-analysis-period" id="analysis-period-label">Letzte 90 Tage</span>
             </header>
             <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Gemeinsamer Analysezeitraum"></div>
+<div id="analysis-subpage-overview" class="space-y-4">
+ <section class="kajo-analysis-overview-hero">
+  <div><p class="kajo-analysis-eyebrow">KAJO · PERFORMANCE LAB</p><h2>Dein Trainingsstatus</h2><p class="kajo-analysis-overview-subtitle">Belastung, Regeneration, Leistungsentwicklung und Gesundheit im gemeinsamen Überblick.</p></div>
+ </section>
+ <section class="kajo-analysis-domain-grid" id="analysis-overview-domains" aria-label="Vier Analysebereiche">
+  <button type="button" class="kajo-analysis-domain-card" onclick="switchTab('analysis-load')" data-analysis-domain="load"><span class="kajo-analysis-domain-top"><span>TRAINING LOAD</span><i data-lucide="activity"></i></span><span class="kajo-analysis-domain-value"><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit"></small></span><strong class="kajo-analysis-domain-status" id="analysis-overview-load-status">Belastung</strong><small class="kajo-analysis-domain-note" id="analysis-overview-load-note"></small><span class="kajo-analysis-domain-link">Details ansehen <i data-lucide="arrow-up-right"></i></span></button>
+  <button type="button" class="kajo-analysis-domain-card" onclick="switchTab('analysis-recovery')" data-analysis-domain="recovery"><span class="kajo-analysis-domain-top"><span>RECOVERY</span><i data-lucide="heart-pulse"></i></span><span class="kajo-analysis-domain-value"><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit"></small></span><strong class="kajo-analysis-domain-status" id="analysis-overview-recovery-status">Regeneration</strong><small class="kajo-analysis-domain-note" id="analysis-overview-recovery-note"></small><span class="kajo-analysis-domain-link">Details ansehen <i data-lucide="arrow-up-right"></i></span></button>
+  <button type="button" class="kajo-analysis-domain-card" onclick="switchTab('analysis-performance')" data-analysis-domain="performance"><span class="kajo-analysis-domain-top"><span>PERFORMANCE</span><i data-lucide="trending-up"></i></span><span class="kajo-analysis-domain-value"><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit"></small></span><strong class="kajo-analysis-domain-status" id="analysis-overview-performance-status">Leistungsentwicklung</strong><small class="kajo-analysis-domain-note" id="analysis-overview-performance-note"></small><span class="kajo-analysis-domain-link">Details ansehen <i data-lucide="arrow-up-right"></i></span></button>
+  <button type="button" class="kajo-analysis-domain-card" onclick="switchTab('analysis-health')" data-analysis-domain="health"><span class="kajo-analysis-domain-top"><span>HEALTH</span><i data-lucide="shield-check"></i></span><span class="kajo-analysis-domain-value"><strong id="analysis-overview-health-value">—</strong><small id="analysis-overview-health-unit"></small></span><strong class="kajo-analysis-domain-status" id="analysis-overview-health-status">Gesundheit</strong><small class="kajo-analysis-domain-note" id="analysis-overview-health-note"></small><span class="kajo-analysis-domain-link">Details ansehen <i data-lucide="arrow-up-right"></i></span></button>
+ </section>
+ <section class="kajo-analysis-overview-panel">
+  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h2>Deine Trends</h2></div><span class="kajo-analysis-context" id="analysis-overview-trend-period">Letzte 90 Tage</span></div>
+  <nav class="kajo-analysis-trend-switch" aria-label="Kennzahl für den Analyse-Trend"><button type="button" data-analysis-overview-metric="ctl" onclick="setAnalysisOverviewMetric('ctl')" aria-pressed="true">CTL</button><button type="button" data-analysis-overview-metric="atl" onclick="setAnalysisOverviewMetric('atl')" aria-pressed="false">ATL</button><button type="button" data-analysis-overview-metric="tsb" onclick="setAnalysisOverviewMetric('tsb')" aria-pressed="false">TSB</button><button type="button" data-analysis-overview-metric="activityCount" onclick="setAnalysisOverviewMetric('activityCount')" aria-pressed="false">Aktivitäten</button></nav>
+  <div class="kajo-analysis-overview-chart"><canvas id="analysis-overview-trend-chart" aria-label="Zeitlicher Verlauf der ausgewählten Analysekennzahl"></canvas></div><p id="analysis-overview-trend-note" class="kajo-analysis-overview-footnote"></p>
+ </section>
+ <section class="kajo-analysis-overview-panel">
+  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h2>Datenbasierte Gesamteinordnung</h2></div></div>
+  <p class="kajo-analysis-overview-disclaimer">Die folgenden Hinweise beruhen auf den vorhandenen Mess- und Trainingsdaten. Sie sind keine medizinische Diagnose und ersetzen keine direkte Leistungsdiagnostik.</p>
+  <div id="analysis-overview-assessment" class="kajo-analysis-assessment-grid"></div>
+ </section>
+</div>
 <div id="analysis-subpage-load" class="space-y-4">
 <section class="kajo-analysis-hero hidden" aria-label="Training Load">
   <div class="kajo-analysis-hero-ring" id="load-hero-ring" aria-live="polite">
