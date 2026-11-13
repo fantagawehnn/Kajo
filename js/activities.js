@@ -6,7 +6,7 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
-import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
+import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry } from './data-source.js';
@@ -470,17 +470,21 @@ function renderActivityRouteMap(activity) {
     start.bindTooltip('Start');
     finish.bindTooltip('Ziel');
     const time = Array.isArray(telemetry.time) && telemetry.time.length === latitudes.length ? telemetry.time : null;
+    const selectedSeries = getActivityTelemetrySeries(activity).find(item => item.key === state.activityTelemetryMetric);
+    const canLinkRouteToChart = Boolean(time && selectedSeries?.values.length === latitudes.length);
     if (time) {
         const step = Math.max(1, Math.ceil(points.length / 60));
         points.forEach((point, index) => {
             if (index % step !== 0 || index === 0 || index === points.length - 1) return;
             const seconds = Number(time[point.index]);
             if (!Number.isFinite(seconds)) return;
-            L.circleMarker([point.lat, point.lon], { radius: 2.5, color: sportColor, weight: 1, fillOpacity: .8 })
-                .bindTooltip(String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'))
-                .addTo(map);
+            const marker = L.circleMarker([point.lat, point.lon], { radius: 2.5, color: sportColor, weight: 1, fillOpacity: .8 })
+                .bindTooltip(String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'));
+            if (canLinkRouteToChart) marker.on('click', () => focusActivityTelemetryPoint(point.index));
+            marker.addTo(map);
         });
     }
+    if (canLinkRouteToChart) panel.insertAdjacentHTML('beforeend', '<p class="activity-detail-muted mt-2">Streckenpunkt antippen, um den passenden Messpunkt im Verlauf zu markieren.</p>');
     map.fitBounds(line.getBounds(), { padding: [18, 18] });
     requestAnimationFrame(() => { if (state.activityRouteMap === map) map.invalidateSize(); });
 }
@@ -658,12 +662,18 @@ function renderOptionalActivityViews(act) {
                 ? (distance >= 1000 ? (distance / 1000).toFixed(2) + ' km' : distance.toFixed(0) + ' m') : '—';
             const avgHr = safe(lap.avgHr ?? lap.avg_heart_rate);
             const maxHr = safe(lap.maxHr ?? lap.max_heart_rate);
+            const avgPower = safe(lap.avgPower ?? lap.avg_power);
+            const maxPower = safe(lap.maxPower ?? lap.max_power);
+            const avgCadence = safe(lap.avgCadence ?? lap.avg_cadence);
             const details = [
                 durationText,
                 distanceText,
                 speed !== null ? speed.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' km/h' : null,
                 avgHr !== null ? 'Ø ' + Math.round(avgHr) + ' bpm' : null,
-                maxHr !== null ? 'Max ' + Math.round(maxHr) + ' bpm' : null
+                maxHr !== null ? 'Max ' + Math.round(maxHr) + ' bpm' : null,
+                avgPower !== null ? 'Ø ' + Math.round(avgPower) + ' W' : null,
+                maxPower !== null ? 'Max ' + Math.round(maxPower) + ' W' : null,
+                avgCadence !== null ? 'Ø ' + Math.round(avgCadence) + '/min' : null
             ].filter(Boolean).join(' · ');
             const isFastestManual = lap.kind === 'manual' && speed !== null && fastestManual !== null && Math.abs(speed - fastestManual) < 0.0001;
             const speedTone = isFastestManual ? 'text-emerald-300' : 'text-slate-400';
