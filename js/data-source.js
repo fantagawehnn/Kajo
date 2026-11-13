@@ -1,6 +1,7 @@
 /* Central access to Garmin-origin sensor time series.
- * Generic activity.telemetry is retained for data preservation, but is never
- * used as a fallback because its historical provenance may be ambiguous.
+ * Generic activity.telemetry is retained for data preservation. It is only
+ * eligible through getActivityTelemetry when the activity explicitly records
+ * FIT-file provenance; ambiguous legacy telemetry remains excluded.
  */
 export function isGarminActivity(activity) {
     return activity?.source === 'garmin'
