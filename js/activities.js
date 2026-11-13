@@ -8,7 +8,7 @@ import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
-import { populateActivityRouteSelect, getActivityRouteAssignments } from './routes.js';
+import { populateActivityRouteSelect } from './routes.js';
 function getActivityZoneConfig(activity) {
     const saved = state.settings?.heartRateZones?.[activity.type];
     const valid = values => Array.isArray(values) && values.length === 4
@@ -191,10 +191,14 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
 
     if (['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(type)) {
         const speed = firstNumber(act.avgSpeed, act.averageSpeed, act.speed);
+        const maxSpeed = firstNumber(act.maxSpeed, act.maximumSpeed);
         const power = firstNumber(act.avgPower, act.averagePower, act.power);
+        const maxPower = firstNumber(act.maxPower, act.maximumPower);
         const strokeRate = firstNumber(act.strokeRate, act.avgStrokeRate, act.cadence);
         add('Ø Geschwindigkeit', formatSpeed(speed));
+        add('Max. Geschwindigkeit', formatSpeed(maxSpeed));
         add(type === 'PaddleErgo' ? 'Ø Leistung' : 'Ø Paddelleistung', power !== null && power > 0 ? Math.round(power) + ' W' : null);
+        add('Max. Leistung', maxPower !== null && maxPower > 0 ? Math.round(maxPower) + ' W' : null);
         add('Schlagfrequenz', strokeRate !== null && strokeRate > 0 ? Math.round(strokeRate) + '/min' : null);
     } else if (type === 'Run') {
         add('Ø Pace', formatPace(firstNumber(act.avgPaceSecondsPerKm, act.averagePaceSecondsPerKm, act.avgPace, act.pace)));
@@ -358,7 +362,8 @@ function renderActivityComparisons(activity) {
     const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const distance = Number(activity.distance);
     const duration = Number(activity.duration);
-    const routeIds = getActivityRouteAssignments(activity).map(item => String(item.routeId)).sort();
+    const storedRouteIds = item => Array.isArray(item.routeAssignments) ? item.routeAssignments.map(entry => String(entry.routeId)).filter(Boolean).sort() : item.routeId ? [String(item.routeId)] : [];
+    const routeIds = storedRouteIds(activity);
     const isCanoe = ['Kayaking', 'C1', 'C2'].includes(activity.type);
     const water = activity.waterConditions || {};
     const matches = (state.rawActivities || []).filter(candidate => {
@@ -370,7 +375,7 @@ function renderActivityComparisons(activity) {
         if (!(distance > 0 && otherDistance > 0 && Math.abs(otherDistance - distance) / distance <= .10)) return false;
         if (!(duration > 0 && otherDuration > 0 && Math.abs(otherDuration - duration) / duration <= .20)) return false;
         if (isCanoe) {
-            const otherRoutes = getActivityRouteAssignments(candidate).map(item => String(item.routeId)).sort();
+            const otherRoutes = storedRouteIds(candidate);
             if (!routeIds.length || !otherRoutes.length || routeIds.join('|') !== otherRoutes.join('|')) return false;
             const otherWater = candidate.waterConditions || {};
             if (water.level == null || otherWater.level == null || (water.levelUnit || 'cm') !== (otherWater.levelUnit || 'cm')) return false;
