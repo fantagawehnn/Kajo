@@ -103,9 +103,9 @@ function switchTab(requestedTab) {
         analyses: { parent: 'analysis', view: 'analyses', sub: 'load' },
         'analysis-load': { parent: 'analysis', view: 'analyses', sub: 'load' },
         'analysis-recovery': { parent: 'analysis', view: 'analyses', sub: 'recovery' },
-        'health-data': { parent: 'analysis', view: 'health-data', sub: 'recovery' },
+        'health-data': { parent: 'analysis', view: 'analyses', sub: 'recovery' },
         'analysis-performance': { parent: 'analysis', view: 'analyses', sub: 'performance' },
-        'training-analysis': { parent: 'analysis', view: 'training-analysis', sub: 'performance' },
+        'training-analysis': { parent: 'analysis', view: 'analyses', sub: 'performance' },
         'analysis-health': { parent: 'analysis', view: 'analyses', sub: 'health' },
         more: { parent: 'more', view: 'more' },
         profile: { parent: 'more', view: 'profile' },
@@ -121,7 +121,7 @@ function switchTab(requestedTab) {
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
-    const viewIds = ['more', 'routes', 'health-data', 'training-analysis', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'ai', 'profile'];
+    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'ai', 'profile'];
     viewIds.forEach(id => {
         const el = document.getElementById('view-' + id);
         if (el) el.classList.toggle('hidden', id !== view);
