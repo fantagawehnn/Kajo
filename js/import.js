@@ -761,12 +761,14 @@ export async function handleMultipleFileSelect(evt) {
                         const isAutomatic = ['time', 'distance', 'position', 'heart_rate', 'fitness_equipment'].some(value => trigger.includes(value));
                         const lapDistanceKm = lap.total_distance != null ? Number(lap.total_distance) : null;
                         const lapDuration = Number(lap.total_timer_time ?? lap.total_elapsed_time);
+                        const lapStartSeconds = lapStart ? (new Date(lapStart).getTime() - sessionStartMs) / 1000 : null;
                         return {
                             name: isManual ? `Manuelle Runde ${lapIndex + 1}` : isAutomatic ? `Automatische Runde ${lapIndex + 1}` : `Runde ${lapIndex + 1}`,
                             trigger: trigger || null,
                             kind: isManual ? 'manual' : isAutomatic ? 'automatic' : 'unclassified',
                             duration: Number.isFinite(lapDuration) && lapDuration > 0 ? lapDuration : null,
                             durationUnit: 'seconds',
+                            ...(Number.isFinite(lapStartSeconds) && Number.isFinite(lapDuration) && lapDuration > 0 ? { startTimeSeconds: lapStartSeconds, endTimeSeconds: lapStartSeconds + lapDuration } : {}),
                             distance: Number.isFinite(lapDistanceKm) && lapDistanceKm > 0 ? lapDistanceKm * 1000 : null,
                             avgHr: Number(lap.avg_heart_rate) || null,
                             maxHr: Number(lap.max_heart_rate) || null
