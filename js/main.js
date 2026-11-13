@@ -156,10 +156,23 @@ function switchTab(requestedTab) {
 
     const calendarView = document.getElementById('view-calendar');
     if (calendarView) {
+        const wasActivityMode = calendarView.classList.contains('kajo-training-activity-mode');
         const activityMode = parent === 'training' && sub === 'activities';
-        calendarView.classList.toggle('kajo-training-activity-mode', activityMode);
-        if (activityMode) setCalendarFormat('activities');
-        else if (parent === 'calendar' && state.activeCalendarFormat === 'activities') setCalendarFormat('week');
+        if (activityMode) {
+            if (!wasActivityMode && state.activeCalendarFormat !== 'activities') {
+                window.kajoCalendarFormatBeforeActivities = state.activeCalendarFormat;
+            }
+            calendarView.classList.add('kajo-training-activity-mode');
+            if (state.activeCalendarFormat !== 'activities') setCalendarFormat('activities');
+        } else {
+            calendarView.classList.remove('kajo-training-activity-mode');
+            if (wasActivityMode && state.activeCalendarFormat === 'activities') {
+                setCalendarFormat(window.kajoCalendarFormatBeforeActivities || 'week');
+                window.kajoCalendarFormatBeforeActivities = null;
+            } else if (parent === 'calendar' && state.activeCalendarFormat === 'activities') {
+                setCalendarFormat('week');
+            }
+        }
     }
 
     const coachFab = document.getElementById('coach-fab');
