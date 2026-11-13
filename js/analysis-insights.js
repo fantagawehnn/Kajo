@@ -56,12 +56,12 @@ function renderOverview(timeline) {
         setPanel('analysis-overview-note', note('Keine auswertbare Belastungszeitreihe vorhanden. Fehlende CTL-, ATL- und Formwerte werden nicht geschätzt.'));
         return;
     }
-    const isGarmin = String(last.loadMode || '').startsWith('garmin');
+    const isGarmin = last.loadMode === 'garmin-native' || last.loadMode === 'garmin-zone';
     const isSrpe = last.loadMode === 'srpe';
     const balanceLabel = last.loadMode === 'garmin-native' ? 'Relativer Saldo · Garmin Load'
         : last.loadMode === 'garmin-zone' ? 'Relativer Saldo · EA-HF-Zonenindex'
-        : isSrpe ? 'Belastungsbilanz · sRPE' : 'Belastungssaldo · TSS';
-    const balanceValue = isGarmin ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—') : fmt(last.tsb);
+        : isSrpe ? 'Belastungsbilanz · sRPE' : 'Keine Load-Quelle';
+    const balanceValue = isGarmin ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—') : isSrpe ? fmt(last.tsb) : '—';
         setPanel('analysis-overview-kpis',
         '<div class="kajo-insight-grid">' +
         metric('CTL · aktuell', fmt(last.ctl)) +
@@ -71,7 +71,9 @@ function renderOverview(timeline) {
         metric('Krankheitstage', sick, 'Dokumentierte Tage / 90 Tage') +
         metric('Verletzungstage', injured, 'Dokumentierte Tage / 90 Tage') +
         '</div>');
-    setPanel('analysis-overview-note', note('Modellwerte zum Tagesende · keine medizinische oder leistungsdiagnostische Bewertung.'));
+    setPanel('analysis-overview-note', note(last.load == null
+        ? 'Aktuelle Belastungskennzahlen nicht berechenbar: Für den jüngsten Tag fehlt eine bestätigte Aktivitätsabdeckung oder ein vollständiger Load-Wert. Unbekannte Tage werden nicht als Ruhetage gewertet.'
+        : 'Modellwerte zum Tagesende · keine medizinische oder leistungsdiagnostische Bewertung.'));
 }
 
 function renderLoadInsight(timeline) {
@@ -82,14 +84,16 @@ function renderLoadInsight(timeline) {
     const isSrpe = last.loadMode === 'srpe';
     const formLabel = last.loadMode === 'garmin-native' ? 'Relativer Saldo (Garmin Load)'
         : last.loadMode === 'garmin-zone' ? 'Relativer Saldo (EA-HF-Zonenindex)'
-        : isSrpe ? 'Belastungsbilanz (sRPE)' : 'Belastungssaldo (TSS)';
-    const formValue = isGarmin ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—') : fmt(last.tsb);
-    const activeDays = recent.filter(day => Number(day.load) > 0).length;
+        : isSrpe ? 'Belastungsbilanz (sRPE)' : 'Keine Load-Quelle';
+    const formValue = isGarmin ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—') : isSrpe ? fmt(last.tsb) : '—';
+    const activeDays = recent.filter(day => day.load != null && Number(day.load) > 0).length;
     const activities = recent.reduce((sum, day) => sum + (Number(day.activityCount) || 0), 0);
     const loadActivities = recent.reduce((sum, day) => sum + (Number(day.loadActivityCount) || 0), 0);
     const sick = recent.filter(day => state.healthLogs[day.date]?.status === 'sick').length;
     const injured = recent.filter(day => state.healthLogs[day.date]?.status === 'injured').length;
-        const interpretation = !loadActivities
+        const interpretation = recent.some(day => day.load == null || day.dataStatus === 'unknown' || day.dataStatus === 'incomplete-activity-load')
+        ? 'Der Zeitraum enthält unvollständige Daten. Fehlende Tage werden nicht als Ruhetage interpretiert.'
+        : !loadActivities
         ? 'Keine auswertbaren Belastungswerte in den letzten 28 Tagen.'
         : 'Modellierter Verlauf · keine Diagnose von Überlastung oder Leistungsfähigkeit.';
     setPanel('analysis-load-insight',
