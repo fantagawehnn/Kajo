@@ -140,3 +140,26 @@ export function computePerformanceTimeline(records, settings, profile) {
     }
     return timeline;
 }
+
+
+/**
+ * Activity-level strength summary. Volume is returned only when every set
+ * has documented repetitions and weight; missing set data is never zero-filled.
+ */
+export function calculateStrengthActivitySummary(exercises) {
+    if (!Array.isArray(exercises)) return { exerciseCount: 0, setCount: 0, volume: null, volumeComplete: false };
+    const entries = exercises.filter(exercise => exercise && Array.isArray(exercise.sets));
+    const sets = entries.flatMap(exercise => exercise.sets);
+    const completeSets = sets.filter(set => {
+        const reps = Number(set?.reps);
+        const weight = Number(set?.weight);
+        return set?.reps !== null && set?.reps !== undefined && set?.reps !== ''
+            && set?.weight !== null && set?.weight !== undefined && set?.weight !== ''
+            && Number.isInteger(reps) && reps > 0 && Number.isFinite(weight) && weight >= 0;
+    });
+    const volumeComplete = sets.length > 0 && completeSets.length === sets.length;
+    const volume = volumeComplete
+        ? Number(completeSets.reduce((sum, set) => sum + Number(set.weight) * Number(set.reps), 0).toFixed(1))
+        : null;
+    return { exerciseCount: entries.length, setCount: sets.length, volume, volumeComplete };
+}
