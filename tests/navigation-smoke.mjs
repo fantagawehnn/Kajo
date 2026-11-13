@@ -258,7 +258,7 @@ assert.ok(['load','recovery','performance','health'].every(id => html.includes('
 assert.ok(['Belastung','Regeneration','Fitness','Gesundheit'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed German domain labels');
 assert.ok(!html.includes('analysis-overview-trend-chart') && !html.includes('analysis-overview-assessment'), 'overview excludes extra trend and assessment panels');
 assert.ok(overviewModule.includes('analysis-' + domain + '-hero-value'), 'overview reads the existing domain hero values');
-assert.ok(overviewModule.includes("setText('analysis-overview-health-value', '—')"), 'health availability remains unavailable when no valid calculation exists');
+assert.ok(overviewModule.includes("hasAvailability ? health.value : '—'"), 'health availability remains unavailable when no valid calculation exists');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
 assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
 assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(2'), 'four circles use a responsive two-by-two mobile layout');
