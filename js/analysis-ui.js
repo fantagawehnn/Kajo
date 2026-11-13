@@ -65,9 +65,9 @@ function renderLoad() {
     : fmt(last.tsb);
   renderMetrics('load-analysis-metrics', [
     metric('CTL', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
-    metric('ATL', fmt(last.atl), 'kurzfristige Belastung'),
+    metric('ATL', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
     metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance, '', "openTrainingMetric('form')"),
-    metric('ACWR', fmt(last.acwr))
+    metric('ACWR', fmt(last.acwr), '', "openTrainingMetric('acwr')")
   ]);
   const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
   const garminValues = activities.filter(activity => valid(activity.garminTrainingLoad)).length;
@@ -113,7 +113,7 @@ function renderPerformance() {
       'CTL bleibt ein Belastungs-/Fitnessindikator und wird nicht als gemessene Performance ausgegeben.', 'neutral');
   }
   renderMetrics('performance-analysis-metrics', [
-    metric('VO₂max', vo2 ? fmt(vo2.value, 1) : '—', vo2 ? 'Letzter Wert · ' + dateLabel(vo2.date) : 'Nicht erfasst'),
+    metric('VO₂max', vo2 ? fmt(vo2.value, 1) : '—', vo2 ? 'Letzter Wert · ' + dateLabel(vo2.date) : 'Nicht erfasst', "openHealthMetric('vo2max')"),
     metric('Geschwindigkeit', '—', 'Keine methodisch vergleichbare Zeitreihe eingebunden'),
     metric('Leistung', '—', 'Keine methodisch vergleichbare Zeitreihe eingebunden'),
     metric('HF-Drift / HRR60', '—', 'Noch nicht als Analysewerte eingebunden')
