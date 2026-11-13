@@ -1,6 +1,6 @@
 # KAJO V2 – Regelwerk des passiven KI-Coachs
 
-**Status:** Fachregelwerk – Entwurf 1.1 (individuelles Mehrsportprofil)  
+**Status:** Fachregelwerk – Entwurf 1.2 (Priorisierung der Sportarten)  
 **Ziel-Branch:** `v2`  
 **Verbindlichkeit:** Fachliche Leitplanken für Analyse, Interpretation und Empfehlungen  
 **Vorrang:** Datenintegrität, Sicherheit, Transparenz und Nutzerautonomie
@@ -187,7 +187,7 @@ Vor jedem Vergleich prüft der Coach mindestens:
 
 ### 7.2 Ergänzende Sportarten
 
-Laufen, Radfahren, Schwimmen, Krafttraining und Paddelergometer werden zunächst in ihren eigenen Mess- und Belastungslogiken bewertet. Ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
+Der Kanu-Wildwasserrennsport ist die einzige Sportart mit eigenständigem Leistungs- und Wettkampfziel. Weitere Sportarten und Trainingsformen werden aus Freude und für die allgemeine Fitness ausgeübt. Für sie werden keine eigenen Leistungsziele, Leistungsbewertungen oder Entwicklungsprognosen erstellt. Sie müssen jedoch in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt werden, soweit geeignete Daten vorliegen. Ihre Messwerte dürfen zur Beschreibung der jeweiligen Aktivität und ihrer Belastung genutzt werden, aber nicht als eigenständiger Leistungsfortschritt interpretiert werden. Sportartspezifische Belastungsmodelle bleiben getrennt; ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
 
 ## 8. Regeln für Trainingsempfehlungen
 
@@ -285,7 +285,7 @@ Jede Coach-Regel muss mit Testfällen geprüft werden. Mindestens abzudecken sin
 - Wildwasseraktivität ohne Angaben zu äußeren Bedingungen,
 - Vergleich K1 mit C1 oder C2,
 - Vergleich Classic mit Sprint,
-- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport, Ausdauerergänzung und Krafttraining,\n- Wechsel oder Änderung der Priorität einer Sportart,
+- mehrere Trainingsformen am selben Tag,\n- mehrere Sportarten innerhalb einer Trainingswoche,\n- Gesamtbelastung aus Kanusport und ergänzenden Sportarten zur allgemeinen Fitness,\n- ergänzende Sportart wird fälschlich als eigenständiges Leistungsziel bewertet,
 - keine sinnvolle Empfehlung möglich,
 - Nutzerin lehnt eine Empfehlung ab.
 
