@@ -1230,6 +1230,7 @@
                     <section class="activity-canoe-subsection">
                         <div class="activity-detail-subheading"><i data-lucide="waves"></i><div><h4>Wasserstand</h4></div></div>
                         <div class="activity-water-grid">
+                            <label class="activity-detail-field">Gewässertyp<select id="activity-water-type" onchange="saveActivityWaterConditions()"><option value="">Nicht dokumentiert</option><option value="flatwater">Flachwasser</option><option value="wildwater">Wildwasser</option></select></label>
                             <label class="activity-detail-field">Pegel / Wasserstand<input id="activity-water-level" type="number" min="0" step="any" placeholder="z. B. 145" onchange="saveActivityWaterConditions()"></label>
                             <label class="activity-detail-field">Einheit<select id="activity-water-level-unit" onchange="saveActivityWaterConditions()"><option value="cm">cm</option><option value="m">m</option></select></label>
                             <label class="activity-detail-field activity-water-discharge-field">Abfluss<span class="activity-detail-input-with-unit"><input id="activity-water-discharge" type="number" min="0" step="any" placeholder="z. B. 18.5" onchange="saveActivityWaterConditions()"><span>m³/s</span></span></label>
