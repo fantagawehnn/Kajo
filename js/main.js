@@ -10,7 +10,8 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { renderAthleteProfile, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=1';
+import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=2';
+import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
@@ -1794,6 +1795,9 @@ Object.assign(window, {
     closeMoreMenu,
     openMoreTab,
     openProfileModal,
+    openAthleteProfileSection,
+    closeAthleteProfileSection,
+    setKajoTheme,
     openSettingsModal: showSettingsModal,
     kajoSettingsJump: (id) => {
         const target = document.getElementById(id);
@@ -1907,6 +1911,8 @@ Object.assign(window, {
     enableNutritionNotifications,
     switchMoreTab,
 });
+
+initializeKajoTheme();
 
 // Profil- und Check-in-Buttons verwenden die unabhängigen Direktaktionen aus ui-actions.js.
 
