@@ -154,6 +154,7 @@ function renderHealth() {
   renderHealthTimeline();
 }
 function setupSharedPeriod() {
+  if (!state.metricHistoryRange) state.metricHistoryRange = state.activeTimeframe || '3m';
   const target = document.getElementById('analysis-shared-period');
   const buttons = document.getElementById('analysis-period-buttons');
   const custom = document.getElementById('custom-date-box');
