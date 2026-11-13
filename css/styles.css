@@ -4139,3 +4139,28 @@ html[data-theme="light"] .kajo-ring { background-color:var(--kajo-surface-subtle
 
 .kajo-profile-overview-back { width:30px; height:30px; padding:0; display:grid; place-items:center; border-radius:50%; }
 .kajo-profile-overview-back svg { width:14px; height:14px; }
+
+
+/* KAJO global top bar: branding and account actions stay outside the home view. */
+.kajo-desktop-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    margin-left: .65rem;
+}
+@media (max-width: 640px) {
+    .kajo-mobile-header .kajo-mobile-logo {
+        flex: 0 1 9.5rem !important;
+        width: 9.5rem !important;
+        min-width: 0 !important;
+        max-width: 9.5rem !important;
+        max-height: 2.9rem !important;
+    }
+    .kajo-mobile-header .kajo-mobile-notifications {
+        flex: 0 0 2.55rem !important;
+        margin: 0 !important;
+    }
+}
+@media (min-width: 641px) {
+    .kajo-mobile-header { display: none !important; }
+}
