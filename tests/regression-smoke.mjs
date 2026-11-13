@@ -15,6 +15,7 @@ globalThis.document = {
     }
 };
 globalThis.confirm = () => true;
+globalThis.window = { dispatchEvent() {}, addEventListener() {} };
 globalThis.alert = () => {};
 globalThis.setTimeout = () => 0;
 
