@@ -44,7 +44,8 @@ export const state = {
     currentCalendarDate: new Date(),
     selectedActivityForModal: null,
     activityTelemetryMetric: null,
-    activityRouteMap: null
+    activityRouteMap: null,
+    activitySelectedLap: null
 };
 
 /* ------------------------------------------------------------
