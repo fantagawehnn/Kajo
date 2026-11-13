@@ -559,37 +559,133 @@ export function renderRaceTimeline(){
     state.raceTimelineChartInstance = new Chart(canvas.getContext('2d'), { type:'line', data:{labels,datasets:[{label:'Fitness-Projektion',data,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,tension:.25,pointRadius:5,pointBackgroundColor:colors}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#94a3b8',maxRotation:30,minRotation:0},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8'},grid:{color:'#1e293b'}}}}});
 }
 
+const activitySeriesMeta = {
+    hr: { label: 'Herzfrequenz', unit: 'bpm', color: '#fb7185', min: 30, max: 250 },
+    speed: { label: 'Geschwindigkeit', unit: 'km/h', color: '#38bdf8', min: 0 },
+    power: { label: 'Leistung', unit: 'W', color: '#a78bfa', min: 0 },
+    cadence: { label: 'Frequenz', unit: '/min', color: '#fbbf24', min: 0 },
+    altitude: { label: 'Höhe', unit: 'm', color: '#34d399' },
+    distance: { label: 'Distanz', unit: 'km', color: '#60a5fa', min: 0 }
+};
+
+export function getActivityTelemetrySeries(act) {
+    const telem = act?.telemetry || act?.garminTelemetry || {};
+    const fields = act?.garminFitData?.recordFields || {};
+    const aliases = {
+        hr: [telem.hr, fields.heart_rate],
+        speed: [telem.speed, fields.speed, fields.enhanced_speed],
+        power: [telem.power, fields.power],
+        cadence: [telem.cadence, fields.cadence],
+        altitude: [telem.altitude, fields.altitude, fields.enhanced_altitude],
+        distance: [telem.distance, fields.distance]
+    };
+    const result = [];
+    for (const [key, sources] of Object.entries(aliases)) {
+        const values = sources.find(value => Array.isArray(value) && value.filter(item =>
+            item !== null && item !== undefined && item !== '' && Number.isFinite(Number(item))
+        ).length >= 2);
+        if (!values) continue;
+        const meta = activitySeriesMeta[key];
+        const valid = values.filter(value => value !== null && value !== undefined && value !== ''
+            && Number.isFinite(Number(value)) && (meta.min == null || Number(value) >= meta.min)
+            && (meta.max == null || Number(value) <= meta.max));
+        if (valid.length < 2) continue;
+        result.push({ key, label: meta.label, unit: meta.unit, color: meta.color, values: values.map(value =>
+            value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
+                || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
+                ? null : Number(value)
+        ) });
+    }
+    return result;
+}
+
+export function setActivityTelemetryMetric(metric) {
+    const act = state.selectedActivityForModal;
+    if (!act) return;
+    state.activityTelemetryMetric = metric;
+    renderActivityTelemetryChart(act);
+}
+
 export function renderActivityTelemetryChart(act) {
-    const telem = act.telemetry || {};
-    const hr = Array.isArray(telem.hr) ? telem.hr : [];
-    const speed = Array.isArray(telem.speed) ? telem.speed : [];
-    const count = Math.max(hr.length, speed.length);
     const canvas = document.getElementById('activityTelemetryChart');
-    if (!canvas) return;
-    if (state.telemetryChartInstance) state.telemetryChartInstance.destroy();
-    const labels = Array.isArray(telem.labels) && telem.labels.length
-        ? telem.labels
-        : Array.isArray(telem.time) && telem.time.length
-            ? telem.time.map(seconds => String(Math.floor(Number(seconds)/60)).padStart(2,'0')+':'+String(Math.floor(Number(seconds)%60)).padStart(2,'0'))
-            : Array.from({length:count},(_,i)=>String(i+1));
-    const datasets = [];
-    if (hr.filter(v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))).length >= 2) {
-        datasets.push({label:'Herzfrequenz (bpm)',data:hr,borderColor:'#f43f5e',backgroundColor:'rgba(244,63,94,.1)',borderWidth:.9,pointRadius:0,pointHoverRadius:2,tension:.25,fill:false,yAxisID:'y'});
+    const panel = document.getElementById('activity-telemetry-panel');
+    const controls = document.getElementById('activity-telemetry-switch');
+    if (!canvas || !panel) return;
+    const series = getActivityTelemetrySeries(act);
+    if (state.telemetryChartInstance) {
+        state.telemetryChartInstance.destroy();
+        state.telemetryChartInstance = null;
     }
-    if (speed.filter(v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))).length >= 2) {
-        datasets.push({label:'Geschwindigkeit (km/h)',data:speed,borderColor:'#38bdf8',borderWidth:.9,pointRadius:0,pointHoverRadius:2,tension:.25,yAxisID:'y1'});
+    if (!series.length) {
+        panel.classList.add('hidden');
+        if (controls) controls.innerHTML = '';
+        return;
     }
-    const empty = datasets.length === 0;
+    panel.classList.remove('hidden');
+    const preferred = series.some(item => item.key === state.activityTelemetryMetric)
+        ? state.activityTelemetryMetric
+        : series.some(item => item.key === 'hr') ? 'hr' : series[0].key;
+    state.activityTelemetryMetric = preferred;
+    if (controls) {
+        controls.innerHTML = series.map(item =>
+            '<button type="button" class="activity-series-switch' + (item.key === preferred ? ' is-active' : '')
+            + '" data-metric="' + item.key + '" aria-pressed="' + (item.key === preferred ? 'true' : 'false') + '">'
+            + item.label + '</button>'
+        ).join('');
+        controls.querySelectorAll('[data-metric]').forEach(button => {
+            button.addEventListener('click', () => setActivityTelemetryMetric(button.dataset.metric));
+        });
+    }
+    const selected = series.find(item => item.key === preferred);
+    const telem = act?.telemetry || act?.garminTelemetry || {};
+    const times = Array.isArray(telem.time) ? telem.time : [];
+    const labels = times.length === selected.values.length
+        ? times.map(value => {
+            const seconds = Number(value);
+            return Number.isFinite(seconds)
+                ? String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(Math.floor(seconds % 60)).padStart(2, '0')
+                : '';
+        })
+        : Array.isArray(telem.labels) && telem.labels.length === selected.values.length
+            ? telem.labels
+            : selected.values.map((_, index) => String(index + 1));
+    const hasElapsedTime = times.length === selected.values.length
+        && times.every(value => Number.isFinite(Number(value)));
+    const status = document.getElementById('activity-hr-series-status');
+    if (status) status.textContent = hasElapsedTime
+        ? selected.values.filter(value => value !== null).length.toLocaleString('de-DE') + ' gültige Messpunkte · Zeit seit Start'
+        : selected.values.filter(value => value !== null).length.toLocaleString('de-DE') + ' gültige Messpunkte · Messpunktindex (keine Zeitstempel zugeordnet)';
     state.telemetryChartInstance = new Chart(canvas.getContext('2d'), {
-        type:'line',
-        data:{labels:empty?[]:labels,datasets},
-        options:{
-            responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{display:!empty,labels:{color:'#94a3b8',font:{size:10}}},title:{display:empty,text:'Keine Herzfrequenz- oder Geschwindigkeitszeitreihe vorhanden',color:'#94a3b8'}},
-            scales:{
-                x:{grid:{color:'#1e293b'},ticks:{color:'#64748b',font:{size:10}}},
-                y:{display:datasets.some(d=>d.yAxisID==='y'),position:'left',grid:{color:'#1e293b'},ticks:{color:'#64748b',font:{size:10}}},
-                y1:{display:datasets.some(d=>d.yAxisID==='y1'),position:'right',grid:{display:false},ticks:{color:'#38bdf8',font:{size:10}}}
+        type: 'line',
+        data: { labels, datasets: [{
+            label: selected.label + (selected.unit ? ' (' + selected.unit + ')' : ''),
+            data: selected.values,
+            borderColor: selected.color,
+            backgroundColor: selected.color + '22',
+            borderWidth: 1.7,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: .18,
+            spanGaps: false,
+            fill: false
+        }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: context =>
+                    selected.label + ': ' + (context.parsed.y == null ? '—' :
+                    Number(context.parsed.y).toLocaleString('de-DE', { maximumFractionDigits: 2 })
+                    + (selected.unit ? ' ' + selected.unit : ''))
+                } }
+            },
+            scales: {
+                x: { title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
+                    grid: { color: 'rgba(100,116,139,.12)' }, ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 8 } },
+                y: { title: { display: true, text: selected.unit, color: '#64748b', font: { size: 9 } },
+                    grid: { color: 'rgba(100,116,139,.16)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
             }
         }
     });
