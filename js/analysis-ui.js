@@ -123,15 +123,28 @@ let healthChart = null;
 function renderHealthTimeline() {
   const canvas = document.getElementById('analysis-health-timeline');
   if (!canvas || typeof Chart !== 'function') return;
-  const labels = [], sick = [], injured = [];
+  const labels = [], dateKeys = [], sick = [], injured = [];
   const end = new Date(todayKey() + 'T12:00:00');
   for (let i = 27; i >= 0; i--) {
     const d = new Date(end); d.setDate(d.getDate() - i);
     const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    labels.push(d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }));
+    dateKeys.push(key);
+    labels.push(d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }));
     sick.push(state.healthLogs?.[key]?.status === 'sick' ? 1 : 0);
     injured.push(state.healthLogs?.[key]?.status === 'injured' ? 1 : 0);
   }
+  const detail = document.getElementById('health-timeline-selection');
+  const showDay = index => {
+    if (!detail || index < 0 || index >= dateKeys.length) return;
+    const key = dateKeys[index];
+    const entry = state.healthLogs?.[key];
+    const status = entry?.status === 'sick' ? 'Krankheit dokumentiert'
+      : entry?.status === 'injured' ? 'Verletzung dokumentiert'
+      : 'Kein Krankheits- oder Verletzungseintrag dokumentiert';
+    detail.textContent = new Date(key + 'T12:00:00').toLocaleDateString('de-DE', {
+      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+    }) + ' · ' + status + (entry?.diagnosis ? ' · ' + entry.diagnosis : '');
+  };
   if (healthChart) healthChart.destroy();
   healthChart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
@@ -142,6 +155,9 @@ function renderHealthTimeline() {
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: (_event, elements) => {
+        if (elements.length) showDay(elements[0].index);
+      },
       plugins: { legend: { labels: { color: '#94a3b8', usePointStyle: true, boxWidth: 8 } },
         tooltip: { callbacks: { title: items => items.length ? labels[items[0].dataIndex] : '',
           label: item => item.dataset.label + ': ' + (item.parsed.y ? 'dokumentiert' : 'kein Eintrag') } } },
