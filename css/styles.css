@@ -4925,3 +4925,5 @@ html[data-theme="light"] #settings-modal { background:var(--kajo-bg) !important;
 .kajo-data-warning{display:flex;align-items:flex-start;gap:7px;margin:0 13px 13px;padding:9px;border:1px solid rgba(217,155,54,.25);border-radius:9px;background:rgba(217,155,54,.07);color:var(--kajo-muted);font-size:.65rem;line-height:1.45}
 .kajo-data-warning svg{width:14px;height:14px;flex:0 0 auto;color:#d99b36}
 @media(max-width:520px){.kajo-data-page-header{display:grid}.kajo-data-status-link{justify-self:start}.kajo-data-page-header h1{font-size:1.2rem}}
+
+.kajo-data-page.hidden{display:none!important}
