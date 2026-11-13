@@ -256,7 +256,7 @@ const overviewModule = readFileSync('js/analysis-overview.js', 'utf8');
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
 assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview begins with the four agreed metric circles');
 assert.ok(['load','recovery','performance','health'].every(id => html.includes('id="overview-' + id + '-ring"')), 'overview renders load, recovery, fitness and health circles');
-assert.ok(['Belastung','Regeneration','Fitness','Gesundheit'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed German domain labels');
+assert.ok(['Belastung','Regeneration','Performance','Gesundheit'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed German domain labels');
 assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has a dedicated selectable four-domain trend chart');
 assert.ok(html.includes('id="analysis-overview-activity-chart"'), 'overview includes a sport-colored training activity chart');
 assert.ok(html.includes('id="analysis-overview-detail-content"'), 'overview includes a progressive detailed analysis section');
