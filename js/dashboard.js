@@ -500,7 +500,6 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         el.classList.toggle('is-empty', ringState.empty);
     };
     const loadDate = latestFitnessDay?.date || selectedDate;
-    const formDate = latestFormDay?.date || selectedDate;
     // Dashboard und Detailansicht verwenden dieselbe Daten-, Fortschritts- und Farbzuordnung.
     const fitnessRingState = trainingRingState('fitness', ctlNumber, loadDate);
     applyRingState('home-fitness-ring', fitnessRingState);
