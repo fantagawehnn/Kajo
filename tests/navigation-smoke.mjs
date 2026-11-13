@@ -220,3 +220,7 @@ assert.ok(charts.includes('state.activitySelectedLap'), 'chart highlight uses th
 
 assert.ok(charts.includes("const complete = hasElapsedTime && validCount === selected.values.length"), 'activity telemetry distinguishes complete from limited data');
 assert.ok(activities.includes('grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left'), 'time-aligned laps are directly selectable without duplicate class attributes');
+
+assert.ok(activities.includes('Math.round(otherDistance * 100) === Math.round(distance * 100)'), 'comparisons use the same recorded distance rather than arbitrary duration bands');
+assert.ok(activities.includes('levelA !== levelB'), 'canoe comparisons require identical documented water level');
+assert.ok(activities.includes('if (!activity.raceFormat) return false'), 'canoe comparison requires a known Classic or Sprint discipline');
