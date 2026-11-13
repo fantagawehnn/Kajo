@@ -477,7 +477,7 @@ function renderActivityComparisons(activity) {
     }).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0,3);
     if (!matches.length) {
         panel.classList.remove('hidden');
-        panel.innerHTML = '<p class="text-xs text-slate-500">Noch keine direkt vergleichbare Einheit vorhanden. Kanu-Vergleiche setzen eine identische Strecke und ähnliche dokumentierte Wasserbedingungen voraus.</p>';
+        panel.innerHTML = '<p class="text-xs text-slate-500">Noch keine ausreichend vergleichbare Einheit vorhanden. Kanu-Vergleiche setzen gleiche Bootsklasse, Rennformat, Strecke, Gewässertyp, Pegel und Abfluss voraus; andere Sportarten gleiche Kategorie, Rennformat und Distanz.</p>';
         return;
     }
     const currentSpeed = Number(activity.avgSpeed ?? activity.averageSpeed);
