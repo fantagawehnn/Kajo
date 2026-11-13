@@ -5,6 +5,8 @@ const html = readFileSync('index.html', 'utf8');
 const main = readFileSync('js/main.js', 'utf8');
 const calendar = readFileSync('js/calendar.js', 'utf8');
 const state = readFileSync('js/state.js', 'utf8');
+const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
+const charts = readFileSync('js/charts.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -27,4 +29,16 @@ assert.ok(main.includes("view !== 'analyses' || sub !== id"), 'analysis subpages
 assert.ok(calendar.includes("['day', 'week', 'month', 'year', 'activities']"), 'calendar supports day/week/month/year');
 assert.match(state, /activeCalendarFormat:\s*'week'/, 'week is the default calendar mode');
 
-console.log('KAJO navigation smoke tests passed.');
+
+for (const id of ['load-hero-ring', 'recovery-hero-ring', 'performance-hero-ring', 'health-hero-ring']) {
+  assert.ok(html.includes('id="' + id + '"'), 'consistent analysis hero ring: ' + id);
+}
+assert.ok(html.includes('id="analysis-shared-period"'), 'shared analysis period container exists');
+assert.ok(html.includes('id="health-history-baseline-note"'), 'wearable baseline limitation is disclosed');
+assert.ok(html.includes('id="analysis-health-timeline"'), 'health availability/event timeline exists');
+assert.ok(analysisUI.includes('calculateReadiness()'), 'recovery reuses the existing readiness calculation');
+assert.ok(analysisUI.includes('CTL bleibt ein Belastungs-/Fitnessindikator'), 'CTL is not presented as direct performance');
+assert.ok(analysisUI.includes('statistische Methode für eine robuste, adaptive Baseline ist noch nicht festgelegt'), 'adaptive baseline is not fabricated');
+assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe synchronizes detail history');
+
+console.log('KAJO navigation and analysis UI smoke tests passed.');
