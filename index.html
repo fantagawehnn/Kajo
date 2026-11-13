@@ -309,7 +309,7 @@
             </header>
             <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Gemeinsamer Analysezeitraum"></div>
 <div id="analysis-subpage-load" class="space-y-4">
-<section class="kajo-analysis-hero" aria-label="Training Load">
+<section class="kajo-analysis-hero hidden" aria-label="Training Load">
   <div class="kajo-analysis-hero-ring" id="load-hero-ring" aria-live="polite">
     <div><strong id="analysis-load-hero-value">—</strong><span id="analysis-load-hero-unit"></span></div>
   </div>
@@ -319,12 +319,35 @@
     <p id="load-hero-note" class="kajo-analysis-hero-note"></p>
   </div>
 </section>
-<div id="load-analysis-metrics" class="kajo-analysis-metric-row" aria-live="polite"></div>
-<div id="load-analysis-sources" class="kajo-analysis-source-row" aria-live="polite"></div><section class="kajo-analysis-overview hidden" aria-label="Belastungsübersicht">
+<div id="load-analysis-metrics" class="kajo-analysis-metric-row hidden" aria-live="polite"></div>
+<div id="load-analysis-sources" class="kajo-analysis-source-row hidden" aria-live="polite"></div><section class="kajo-analysis-overview hidden" aria-label="Belastungsübersicht">
                 <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Belastung im Überblick</h2></div><span class="kajo-analysis-context">Letzter verfügbarer Tag</span></div>
                 <div id="analysis-overview-kpis"><p class="text-xs text-slate-500">Die Übersicht wird aus den vorhandenen Trainingsdaten erstellt.</p></div>
                 <div id="analysis-overview-note"></div>
             </section>
+
+<section id="training-load-overview" class="kajo-training-load-view space-y-4" aria-label="Training Load Übersicht">
+ <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Training Load</h2><p id="training-load-model-date" class="kajo-training-load-muted">Modellstand wird geladen …</p></div><span id="training-load-period-label" class="kajo-analysis-period">Letzte 90 Tage</span></div>
+ <div id="training-load-no-data" class="kajo-training-load-panel hidden" role="status"><strong>Keine auswertbare Belastungszeitreihe</strong><p>Für die gewählte Belastungsquelle liegen derzeit keine berechenbaren CTL-, ATL- und TSB-Werte vor.</p></div>
+ <div id="training-load-content" class="space-y-4">
+  <div class="kajo-training-load-rings" aria-label="Belastungskennzahlen">
+   <button type="button" data-training-load-metric="ctl" class="kajo-load-metric" onclick="openTrainingLoadMetric('ctl')"><span class="kajo-load-ring"><strong id="training-load-value-ctl">—</strong></span><span class="kajo-load-label">CTL</span><small>Langfristig</small></button>
+   <button type="button" data-training-load-metric="atl" class="kajo-load-metric" onclick="openTrainingLoadMetric('atl')"><span class="kajo-load-ring"><strong id="training-load-value-atl">—</strong></span><span class="kajo-load-label">ATL</span><small>Kurzfristig</small></button>
+   <button type="button" data-training-load-metric="tsb" class="kajo-load-metric" onclick="openTrainingLoadMetric('tsb')"><span class="kajo-load-ring"><strong id="training-load-value-tsb">—</strong></span><span class="kajo-load-label">TSB</span><small>Belastungssaldo</small></button>
+  </div>
+  <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">AKTIVE BERECHNUNGSBASIS</p><h3 id="training-load-source-title">—</h3></div><p id="training-load-source-description" class="kajo-training-load-muted"></p><p id="training-load-coverage" class="kajo-training-load-coverage"></p></section>
+  <section class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h3>Belastungsverlauf</h3></div></div>
+   <nav class="kajo-load-switch" aria-label="Kennzahl im Belastungsverlauf"><button type="button" data-training-load-chart-metric="ctl" onclick="setTrainingLoadChartMetric('ctl')" aria-pressed="true" class="active">CTL</button><button type="button" data-training-load-chart-metric="atl" onclick="setTrainingLoadChartMetric('atl')" aria-pressed="false">ATL</button><button type="button" data-training-load-chart-metric="tsb" onclick="setTrainingLoadChartMetric('tsb')" aria-pressed="false">TSB</button></nav>
+   <div class="kajo-training-load-chart-wrap"><canvas id="training-load-detail-chart" aria-label="Zeitlicher Verlauf der ausgewählten Belastungskennzahl"></canvas></div><p id="training-load-chart-note" class="kajo-training-load-muted"></p>
+  </section>
+  <section class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h3>Belastungsanalyse</h3></div></div><div id="training-load-insight"></div></section>
+  <p class="kajo-training-load-method">Die Ansicht nutzt die vorhandene zentrale KAJO-Belastungszeitreihe. Garmin Training Load, KAJO-HF-Zonenindex, TSS und sRPE werden nicht miteinander vermischt. Es werden keine zusätzlichen Belastungskennzahlen oder Berechnungsformeln eingeführt.</p>
+ </div>
+</section>
+<section id="training-load-metric-detail" class="hidden space-y-4" aria-live="polite"><button type="button" onclick="closeTrainingLoadMetric()" class="kajo-back-link"><i data-lucide="arrow-left"></i><span>Training Load</span></button>
+ <header><p class="kajo-analysis-eyebrow">KENNZAHL IM DETAIL</p><h2 id="training-load-detail-title" class="text-lg font-bold text-white mt-1">—</h2><p id="training-load-detail-description" class="text-xs text-slate-400 mt-2"></p></header>
+ <section class="kajo-training-load-panel"><div class="kajo-training-load-chart-wrap"><canvas id="training-load-metric-chart" aria-label="Detailverlauf der ausgewählten Belastungskennzahl"></canvas></div><p id="training-load-metric-chart-note" class="kajo-training-load-muted"></p></section>
+</section>
 <div id="analysis-load-section" class="space-y-4 kajo-analysis-load-section">
                 
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
