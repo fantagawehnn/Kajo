@@ -437,8 +437,10 @@ export function renderYearView() {
         plannedActivities.forEach(item => { const key = item.type || 'Workout'; plannedBySport[key] = (plannedBySport[key] || 0) + 1; });
         const bySport = {};
         activities.forEach(item => {
-            const key = item.type || 'Workout';
-            if (!bySport[key]) bySport[key] = { minutes: 0, count: 0, complete: true };
+            const type = item.type || 'Workout';
+            const format = item.raceFormat || '';
+            const key = type + '::' + format;
+            if (!bySport[key]) bySport[key] = { type, format, minutes: 0, count: 0, complete: true };
             bySport[key].count++;
             if (item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0) bySport[key].minutes += Number(item.duration);
             else bySport[key].complete = false;
@@ -462,9 +464,10 @@ export function renderYearView() {
     const weekHeader = weeks.map(week => '<span class="calendar-year-week-number">' + week.weekNo + '</span>').join('');
     const weekCells = weeks.map(week => {
         const segments = Object.entries(week.bySport).map(([type, data]) => {
-            const sport = catalog[type] || catalog.Workout;
+            const sport = catalog[data.type] || catalog.Workout;
             const width = week.totalMinutes > 0 ? Math.max(3, data.minutes / week.totalMinutes * 100) : 0;
-            return '<span class="calendar-year-sport-segment" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(sport.label) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
+            const label = sport.label + (data.format ? ' · ' + data.format : '');
+            return '<span class="calendar-year-sport-segment" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(label) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
         }).join('');
         const plannedSegments = Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
         const hours = !week.activities.length || (!week.durationComplete && week.totalMinutes === 0) ? '—' : (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h');
@@ -474,7 +477,7 @@ export function renderYearView() {
             (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured"></i>' : '');
         return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')"><span class="calendar-year-week-bar">' + segments + '</span><span class="calendar-year-planned-bar">' + plannedSegments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
     }).join('');
-    const legendTypes = [...new Set(weeks.flatMap(week => Object.keys(week.bySport)))];
+    const legendTypes = [...new Set(weeks.flatMap(week => Object.values(week.bySport).map(item => item.type)))];
     const legend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
     document.getElementById('calendar-period-title').textContent = String(year);
     container.innerHTML = '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '">' +
