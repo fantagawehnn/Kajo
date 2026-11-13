@@ -24,7 +24,7 @@ function getActivitySourceLabel(activity) {
     if (sources.has('garmin') || sources.has('garmin-fit') || activity?.garminData) labels.push('Garmin');
     if (sources.has('intervals')) labels.push('Intervals.icu');
     if (sources.has('manual')) labels.push('Manuell');
-    if (sources.has('csv') || sources.has('fit') || sources.has('file') || sources.has('import')) labels.push('Dateiimport');
+    if (sources.has('csv') || sources.has('file') || sources.has('import') || (sources.has('fit') && activity?.garminFitImported !== true)) labels.push('Dateiimport');
     return labels.length ? [...new Set(labels)].join(' + ') : 'Quelle nicht ausgewiesen';
 }
 
