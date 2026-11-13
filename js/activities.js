@@ -107,6 +107,7 @@ export function openCSVDetailsModal(id) {
     }
     const analysisActivity = act.garminTelemetry ? { ...act, telemetry: act.garminTelemetry } : act;
     state.activityTelemetryMetric = null;
+    state.activitySelectedLap = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
