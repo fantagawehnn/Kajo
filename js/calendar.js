@@ -3,6 +3,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
+import { getTrainingLoadData } from './training-load.js';
 import { calculateReadiness } from './dashboard.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js';
 import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js';
@@ -122,6 +123,158 @@ export function saveDayEditor(){
 
 let selectedActivitySports = new Set();
 
+function calendarSport(type) {
+    const catalog = getSportsCatalog();
+    return catalog[type] || catalog.Workout || { label: type || 'Training', color: '#64748b' };
+}
+function calendarEventIcons(date) {
+    const health = state.healthLogs?.[date];
+    const cycle = state.dailyCheckins?.[date]?.cycle?.period === true;
+    const races = (state.races || []).filter(item => item.date === date);
+    let html = '';
+    if (races.length) html += '<i data-lucide="trophy" class="calendar-event-icon calendar-event-race" title="Wettkampf" aria-label="Wettkampf"></i>';
+    if (cycle) html += '<i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle" title="Menstruation (erfasst)" aria-label="Menstruation"></i>';
+    if (health?.status === 'sick') html += '<i data-lucide="thermometer" class="calendar-event-icon calendar-event-sick" title="Krankheit" aria-label="Krankheit"></i>';
+    if (health?.status === 'injured') html += '<i data-lucide="bandage" class="calendar-event-icon calendar-event-injured" title="Verletzung" aria-label="Verletzung"></i>';
+    return html;
+}
+function calendarDateData(date) {
+    const activities = (state.rawActivities || []).filter(item => item.date === date);
+    const planned = (state.plannedActivities || []).filter(item => item.date === date);
+    const races = (state.races || []).filter(item => item.date === date);
+    const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+    const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
+    const durationTotal = durationRecords.length ? durationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
+    const timeline = (state.dailyTimeline || []).find(item => item.date === date);
+    const loadComplete = Boolean(timeline && Number(timeline.activityCount) > 0 && Number(timeline.activityCount) === Number(timeline.loadActivityCount));
+    const loadValue = loadComplete && Number.isFinite(Number(timeline.tss)) ? Number(timeline.tss) : null;
+    return { activities, planned, races, durationRecords, durationComplete, durationTotal, timeline, loadComplete, loadValue };
+}
+function calendarLoadTone(timeline) {
+    const label = timeline?.statusLabel || '';
+    if (label === 'Hohe Ermüdung') return 'critical';
+    if (label === 'Belastung') return 'attention';
+    if (label === 'Frisch' || label === 'Tapering') return 'good';
+    return 'info';
+}
+function calendarReadinessTone(score) {
+    if (!Number.isFinite(Number(score))) return 'info';
+    if (Number(score) >= 80) return 'good';
+    if (Number(score) >= 60) return 'attention';
+    if (Number(score) >= 20) return 'critical';
+    return 'critical';
+}
+function calendarRing(value, label, unit, tone) {
+    const display = value === null || value === undefined ? '—' : escapeHtml(value);
+    const color = 'var(--kajo-status-' + (tone || 'info') + ')';
+    return '<div class="calendar-kpi-ring-wrap"><div class="calendar-kpi-ring" style="--calendar-ring-color:' + color + '"><span>' + display + '</span></div><div class="calendar-kpi-label">' + escapeHtml(label) + (unit ? '<small>' + escapeHtml(unit) + '</small>' : '') + '</div></div>';
+}
+function calendarFormatMinutes(value) {
+    if (!Number.isFinite(Number(value))) return '—';
+    const minutes = Math.round(Number(value));
+    const hours = Math.floor(minutes / 60), rest = minutes % 60;
+    return hours ? hours + ' h ' + String(rest).padStart(2, '0') + ' min' : minutes + ' min';
+}
+function calendarDateLabel(date) {
+    const d = new Date(date + 'T12:00:00');
+    return new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+}
+function calendarActivityRow(activity, planned) {
+    const sport = calendarSport(activity.type);
+    const color = sport.color || '#64748b';
+    const id = encodeURIComponent(String(activity.id || '')).replace(/'/g, '%27');
+    const timeRaw = activity.startTime || activity.startTimeLocal || activity.time || '';
+    const timeMatch = String(timeRaw).match(/(?:T|\s)?(\d{1,2}:\d{2})/);
+    const time = timeMatch ? timeMatch[1] : '';
+    const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
+    const status = planned ? 'Geplant' : 'Abgeschlossen';
+    const action = planned
+        ? 'switchTab(\\'training-planning\\')'
+        : 'openCSVDetailsModal(\\'' + id + '\\')';
+    return '<button type="button" class="calendar-day-activity-row" style="--activity-color:' + color + '" onclick="' + action + '">' +
+        '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span>' +
+        '<strong>' + escapeHtml(activity.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
+        '<small>' + [time, duration].filter(Boolean).map(escapeHtml).join(' · ') + '</small></span>' +
+        '<span class="calendar-entry-status ' + (planned ? 'is-planned' : 'is-completed') + '">' + status + '</span></button>';
+}
+function calendarRaceRow(race) {
+    const sport = calendarSport(race.sport);
+    return '<button type="button" class="calendar-day-activity-row calendar-race-row" style="--activity-color:' + sport.color + '" onclick="switchTab(\\'training-planning\\')">' +
+        '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span><strong>' + escapeHtml(race.name || 'Wettkampf') + '</strong>' +
+        '<small>' + escapeHtml(race.location || '') + '</small></span><span class="calendar-entry-status is-event">Wettkampf</span></button>';
+}
+function renderCalendarDayDetail(date, target) {
+    const root = typeof target === 'string' ? document.getElementById(target) : target;
+    if (!root) return;
+    const data = calendarDateData(date);
+    const readiness = calculateReadiness(date);
+    const checkin = state.dailyCheckins?.[date] || {};
+    const units = [];
+    data.activities.forEach(item => units.push(calendarActivityRow(item, false)));
+    data.planned.forEach(item => units.push(calendarActivityRow(item, true)));
+    data.races.forEach(item => units.push(calendarRaceRow(item)));
+    const trainingMarkup = units.length ? units.join('') : '<div class="calendar-empty-state">Keine Trainingseinheiten oder Wettkämpfe dokumentiert.</div>';
+    const loadTone = data.loadValue === null ? 'info' : calendarLoadTone(data.timeline);
+    const durationText = data.durationTotal === null ? '—' : calendarFormatMinutes(data.durationTotal);
+    const durationCoverage = data.activities.length
+        ? (data.durationRecords.length + '/' + data.activities.length + ' Einheiten mit Dauer')
+        : 'Keine absolvierten Einheiten dokumentiert';
+    const priorDates = [];
+    for (let i = 1; i <= 7; i++) { const d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() - i); priorDates.push(toLocalDateString(d)); }
+    const priorActivities = (state.rawActivities || []).filter(item => priorDates.includes(item.date));
+    const priorDurationRecords = priorActivities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+    const priorDuration = priorDurationRecords.length ? priorDurationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
+    const priorCoverage = priorActivities.length ? priorDurationRecords.length + '/' + priorActivities.length + ' Einheiten mit Dauer' : 'Keine Einheiten dokumentiert';
+    const recovery = [];
+    recovery.push(calendarRing(readiness.score, 'Readiness', '/100', readiness.score === null ? 'info' : calendarReadinessTone(readiness.score)));
+    if (checkin.sleepScore !== null && checkin.sleepScore !== undefined && checkin.sleepScore !== '') recovery.push(calendarRing(Math.round(Number(checkin.sleepScore)), 'Schlafscore', '/100', 'info'));
+    if (checkin.hrv !== null && checkin.hrv !== undefined && checkin.hrv !== '') recovery.push(calendarRing(Number(checkin.hrv).toFixed(0), 'HRV', 'ms', 'info'));
+    if (checkin.rhr !== null && checkin.rhr !== undefined && checkin.rhr !== '') recovery.push(calendarRing(Math.round(Number(checkin.rhr)), 'Ruhepuls', 'bpm', 'info'));
+    const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
+    if (sleepDuration !== null && sleepDuration !== undefined) recovery.push(calendarRing(Number(sleepDuration).toFixed(1), 'Schlaf', 'h', 'info'));
+    const bodyBattery = checkin.bodyBattery ?? checkin.bodyBatteryAtWake ?? checkin.bodyBatteryMorning;
+    if (bodyBattery !== null && bodyBattery !== undefined && bodyBattery !== '') recovery.push(calendarRing(Math.round(Number(bodyBattery)), 'Body Battery', '/100', 'info'));
+    if (checkin.stress !== null && checkin.stress !== undefined && checkin.stress !== '') recovery.push(calendarRing(Math.round(Number(checkin.stress)), 'Stress', '', 'info'));
+    root.innerHTML = '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Trainingseinheiten</h3><span>' + (data.activities.length + data.planned.length + data.races.length) + '</span></div><div class="calendar-day-activity-list">' + trainingMarkup + '</div></section>' +
+        '<section class="calendar-detail-section"><h3>Training Load & Trainingszeit</h3><div class="calendar-day-load-time">' +
+        calendarRing(data.loadValue === null ? null : Number(data.loadValue).toFixed(0), 'Training Load', data.timeline?.loadUnit || '', loadTone) +
+        '<div class="calendar-time-summary"><div class="calendar-time-primary"><span>Trainingszeit</span><strong>' + durationText + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
+        '<div class="calendar-time-comparison"><span>Vorherige 7 Tage</span><strong>' + (priorDuration === null ? '—' : calendarFormatMinutes(priorDuration)) + '</strong><small>' + escapeHtml(priorCoverage) + '</small></div></div></div></section>' +
+        '<section class="calendar-detail-section"><h3>Recovery</h3><div class="calendar-recovery-rings">' + (recovery.length ? recovery.join('') : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>') + '</div></section>' +
+        '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><button type="button" onclick="openDayEditor(\\'' + date + '\\')">Tagesdaten bearbeiten</button></div>';
+}
+export function openCalendarDay(date, keepMonth = false) {
+    if (!date) return;
+    state.currentCalendarDate = new Date(date + 'T12:00:00');
+    state.selectedCalendarDay = date;
+    if (keepMonth) {
+        state.activeCalendarFormat = 'month';
+        renderCalendar();
+    } else {
+        setCalendarFormat('day');
+    }
+}
+export function openCalendarWeek(date) {
+    if (!date) return;
+    const selected = new Date(date + 'T12:00:00');
+    selected.setDate(selected.getDate() - ((selected.getDay() + 6) % 7));
+    state.currentCalendarDate = selected;
+    setCalendarFormat('week');
+}
+export function openCalendarTrainingCreate() {
+    const date = state.selectedCalendarDay || toLocalDateString(state.currentCalendarDate);
+    const input = document.getElementById('plan-date');
+    if (input) input.value = date;
+    window.openPlannedWorkoutModal?.();
+}
+export function openCalendarRaceCreate() {
+    const date = state.selectedCalendarDay || toLocalDateString(state.currentCalendarDate);
+    const input = document.getElementById('race-date');
+    if (input) input.value = date;
+    window.toggleRaceModal?.();
+}
+
+
 export function toggleCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.toggle('hidden');}
 export function closeCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.add('hidden');}
 
@@ -149,6 +302,7 @@ export function navigateCalendarPeriod(dir) {
     } else {
         state.currentCalendarDate.setMonth(state.currentCalendarDate.getMonth() + dir);
     }
+    if (state.activeCalendarFormat === 'month' || state.activeCalendarFormat === 'year') state.selectedCalendarDay = null;
     renderCalendar();
 }
 
@@ -175,89 +329,67 @@ export function setCalendarDisplayMode(mode) {
 function renderCalendarLegend() {
     const el = document.getElementById('calendar-legend');
     if (!el) return;
-    const mode = calendarDisplayMode();
+    const dates = [];
     const format = state.activeCalendarFormat;
-    const visibleActivities = [];
-    let showPlanned = false, showRace = false, showSick = false, showInjured = false;
-
-    if (format === 'month') {
-        const year = state.currentCalendarDate.getFullYear();
-        const month = state.currentCalendarDate.getMonth();
-        const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
-        visibleActivities.push(...state.rawActivities.filter(a => String(a.date || '').startsWith(prefix)));
-        showPlanned = state.plannedActivities.some(a => String(a.date || '').startsWith(prefix));
-        showRace = state.races.some(a => String(a.date || '').startsWith(prefix));
-        showSick = Object.entries(state.healthLogs).some(([date, h]) => date.startsWith(prefix) && h?.status === 'sick');
-        showInjured = Object.entries(state.healthLogs).some(([date, h]) => date.startsWith(prefix) && h?.status === 'injured');
-    } else if (format === 'week') {
-        const curr = new Date(state.currentCalendarDate);
-        const offset = curr.getDay() === 0 ? -6 : 1 - curr.getDay();
-        const monday = new Date(curr);
-        monday.setDate(curr.getDate() + offset);
-        const dates = Array.from({ length: 7 }, (_, i) => {
-            const d = new Date(monday);
-            d.setDate(monday.getDate() + i);
-            return toLocalDateString(d);
-        });
-        const visible = new Set(dates);
-        visibleActivities.push(...state.rawActivities.filter(a => visible.has(a.date)));
-        showPlanned = state.plannedActivities.some(a => visible.has(a.date));
-        // Wettkämpfe werden in der Wochenansicht nicht als eigener Marker dargestellt.
-        showRace = false;
-        showSick = dates.some(date => state.healthLogs[date]?.status === 'sick');
-        showInjured = dates.some(date => state.healthLogs[date]?.status === 'injured');
-    } else {
-        const filtered = selectedActivitySports.size
-            ? state.rawActivities.filter(a => selectedActivitySports.has(a.type || 'Workout'))
-            : state.rawActivities;
-        visibleActivities.push(...filtered);
+    if (format === 'day') dates.push(toLocalDateString(state.currentCalendarDate));
+    else if (format === 'week') {
+        const start = new Date(state.currentCalendarDate);
+        start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+        for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); dates.push(toLocalDateString(d)); }
+    } else if (format === 'month') {
+        const prefix = state.currentCalendarDate.getFullYear() + '-' + String(state.currentCalendarDate.getMonth() + 1).padStart(2, '0') + '-';
+        dates.push(...(state.rawActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
+        dates.push(...(state.plannedActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
+    } else if (format === 'year') {
+        const prefix = String(state.currentCalendarDate.getFullYear()) + '-';
+        dates.push(...(state.rawActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
+        dates.push(...(state.plannedActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
     }
-
-    const catalog = mode === 'sport' ? getSportsCatalog() : getTypeColorMap();
-    const keys = [...new Set(visibleActivities.map(a => mode === 'sport' ? (a.type || 'Workout') : (a.category || 'ga')))];
-    const entries = keys.map(key => {
-        const value = catalog[key] || (mode === 'sport' ? catalog.Workout : catalog.ga);
-        return value ? { label: value.label || key, color: value.color } : null;
-    }).filter(Boolean);
-    const items = entries.map(v => '<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:' + v.color + '"></span>' + escapeHtml(v.label) + '</span>');
-    if (format !== 'activities') {
-        if (showRace) items.push('<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-rose-500"></span>Wettkampf</span>');
-        if (showPlanned) items.push('<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-sky-500"></span>Geplant</span>');
-        if (showSick) items.push('<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-orange-500"></span>Krankheit</span>');
-        if (showInjured) items.push('<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400"></span>Verletzung</span>');
-    }
+    const types = new Set();
+    dates.forEach(date => {
+        (state.rawActivities || []).filter(item => item.date === date).forEach(item => types.add(item.type || 'Workout'));
+        (state.plannedActivities || []).filter(item => item.date === date).forEach(item => types.add(item.type || 'Workout'));
+    });
+    const catalog = getSportsCatalog();
+    const items = [...types].map(type => {
+        const sport = catalog[type] || catalog.Workout;
+        return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + sport.color + '"></span>' + escapeHtml(sport.label || type) + '</span>';
+    });
+    items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-completed">●</span>Abgeschlossen</span>');
+    items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-planned">○</span>Geplant</span>');
+    items.push('<span class="calendar-legend-item"><i data-lucide="trophy" class="calendar-event-icon calendar-event-race"></i>Wettkampf</span>');
+    items.push('<span class="calendar-legend-item"><i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle"></i>Menstruation</span>');
+    items.push('<span class="calendar-legend-item"><i data-lucide="thermometer" class="calendar-event-icon calendar-event-sick"></i>Krankheit</span>');
+    items.push('<span class="calendar-legend-item"><i data-lucide="bandage" class="calendar-event-icon calendar-event-injured"></i>Verletzung</span>');
     el.innerHTML = items.join('');
-    el.classList.toggle('hidden', items.length === 0);
+    globalThis.lucide?.createIcons?.();
 }
+
 export function renderCalendar() {
-    const format = ['day', 'week', 'month', 'year', 'activities'].includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'week';
+    const formats = ['day', 'week', 'month', 'year', 'activities'];
+    const format = formats.includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'week';
     state.activeCalendarFormat = format;
-    ['day', 'week', 'month', 'year', 'activities'].forEach(f => {
-        const button = document.getElementById('btn-fmt-' + f);
+    formats.forEach(item => {
+        const button = document.getElementById('btn-fmt-' + item);
         if (button) {
-            const active = f === format;
+            const active = item === format;
             button.classList.toggle('active', active);
             button.setAttribute('aria-pressed', String(active));
         }
     });
     document.getElementById('cal-format-day')?.classList.toggle('hidden', format !== 'day');
     document.getElementById('cal-format-month')?.classList.toggle('hidden', format !== 'month');
-    document.getElementById('cal-format-week')?.classList.toggle('hidden', format !== 'week' && format !== 'day');
+    document.getElementById('cal-format-week')?.classList.toggle('hidden', format !== 'week');
+    document.getElementById('calendar-week-summary')?.classList.toggle('hidden', format !== 'week');
     document.getElementById('cal-format-year')?.classList.toggle('hidden', format !== 'year');
     document.getElementById('cal-format-list')?.classList.toggle('hidden', format !== 'activities');
-    const isActivities = format === 'activities';
-    ['calendar-period-prev', 'calendar-period-next'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', isActivities));
-    const mode = calendarDisplayMode();
-    const modeToggle = document.getElementById('calendar-display-toggle');
-    if (modeToggle) {
-        const trainingMode = mode === 'training';
-        modeToggle.setAttribute('aria-checked', String(trainingMode));
-        modeToggle.setAttribute('aria-label', trainingMode ? 'Eintragsanzeige: Trainingsart. Zu Sportart wechseln' : 'Eintragsanzeige: Sportart. Zu Trainingsart wechseln');
-        document.getElementById('calendar-display-thumb')?.classList.toggle('translate-x-full', trainingMode);
-    }
+    const activities = format === 'activities';
+    ['calendar-period-prev', 'calendar-period-next'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', activities));
+    document.getElementById('calendar-add-button')?.classList.toggle('hidden', activities);
     renderCalendarLegend();
-    if (format === 'month') renderMonthView();
-    else if (format === 'week' || format === 'day') renderWeekView();
+    if (format === 'day') renderCalendarDayDetail(toLocalDateString(state.currentCalendarDate), 'cal-format-day');
+    else if (format === 'week') renderWeekView();
+    else if (format === 'month') renderMonthView();
     else if (format === 'year') renderYearView();
     else renderListView();
 }
@@ -266,229 +398,144 @@ export function renderYearView() {
     const container = document.getElementById('cal-format-year');
     if (!container) return;
     const year = state.currentCalendarDate.getFullYear();
-    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-    const today = toLocalDateString();
-    document.getElementById('calendar-period-title').textContent = String(year);
-    container.innerHTML = '';
-    for (let month = 0; month < 12; month++) {
-        const first = new Date(year, month, 1);
-        const offset = (first.getDay() + 6) % 7;
-        const days = new Date(year, month + 1, 0).getDate();
-        const card = document.createElement('section');
-        card.className = 'rounded-xl border border-slate-800 bg-slate-900 p-2 min-w-0';
-        const heading = document.createElement('h3');
-        heading.className = 'text-xs font-semibold text-slate-200 mb-2';
-        heading.textContent = monthNames[month];
-        card.appendChild(heading);
-        const grid = document.createElement('div');
-        grid.className = 'grid grid-cols-7 gap-1 text-center';
-        ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(label => {
-            const cell = document.createElement('span');
-            cell.className = 'text-[9px] text-slate-500';
-            cell.textContent = label;
-            grid.appendChild(cell);
+    const catalog = getSportsCatalog();
+    const first = new Date(year, 0, 1, 12);
+    first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+    const last = new Date(year, 11, 31, 12);
+    const weeks = [];
+    for (let monday = new Date(first); monday <= last; monday.setDate(monday.getDate() + 7)) {
+        const start = new Date(monday), end = new Date(monday); end.setDate(end.getDate() + 6);
+        const thursday = new Date(start); thursday.setDate(thursday.getDate() + 3);
+        const weekNo = (() => { const d = new Date(thursday); const jan4 = new Date(d.getFullYear(), 0, 4, 12); const jan4Monday = new Date(jan4); jan4Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7)); return Math.floor((d - jan4Monday) / 604800000) + 1; })();
+        const activities = (state.rawActivities || []).filter(item => item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const bySport = {};
+        activities.forEach(item => {
+            const key = item.type || 'Workout';
+            if (!bySport[key]) bySport[key] = { minutes: 0, count: 0, complete: true };
+            bySport[key].count++;
+            if (item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0) bySport[key].minutes += Number(item.duration);
+            else bySport[key].complete = false;
         });
-        for (let blank = 0; blank < offset; blank++) {
-            const cell = document.createElement('span');
-            cell.className = 'h-6';
-            grid.appendChild(cell);
-        }
-        for (let day = 1; day <= days; day++) {
-            const date = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-            const hasTraining = (state.rawActivities || []).some(item => item.date === date) || (state.plannedActivities || []).some(item => item.date === date);
-            const hasHealth = Boolean(state.healthLogs?.[date]);
-            const hasRace = (state.races || []).some(item => item.date === date);
-            const hasCycle = Boolean(periodCalendarMarker(date));
-            const cell = document.createElement('button');
-            cell.type = 'button';
-            cell.className = 'h-6 rounded-md text-[10px] ' + (date === today ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-500/50' : hasTraining ? 'bg-slate-800 text-slate-100' : 'text-slate-400 hover:bg-slate-800');
-            if (hasRace) cell.classList.add('border', 'border-rose-400/70');
-            if (hasHealth) cell.classList.add('ring-1', 'ring-amber-400/70');
-            if (hasCycle) cell.classList.add('underline', 'decoration-pink-400');
-            cell.textContent = String(day);
-            cell.setAttribute('aria-label', date + (hasTraining ? ', Trainingseintrag' : '') + (hasRace ? ', Wettkampf' : '') + (hasHealth ? ', Gesundheitsereignis' : '') + (hasCycle ? ', Zykluseintrag' : ''));
-            cell.addEventListener('click', () => {
-                state.currentCalendarDate = new Date(year, month, day);
-                setCalendarFormat('day');
-                window.openDayEditor?.(date);
-            });
-            grid.appendChild(cell);
-        }
-        card.appendChild(grid);
-        container.appendChild(card);
+        const totalMinutes = activities.reduce((sum, item) => sum + (Number.isFinite(Number(item.duration)) && Number(item.duration) > 0 ? Number(item.duration) : 0), 0);
+        const durationComplete = activities.length > 0 && activities.every(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+        const races = (state.races || []).filter(item => item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= toLocalDateString(start) && date <= toLocalDateString(end));
+        const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= toLocalDateString(start) && date <= toLocalDateString(end) && item?.cycle?.period === true);
+        weeks.push({ start: toLocalDateString(start), end: toLocalDateString(end), weekNo, activities, bySport, totalMinutes, durationComplete, races, health, cycle, month: thursday.getMonth() });
     }
+    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+    const monthGroups = [];
+    weeks.forEach((week, index) => {
+        const lastGroup = monthGroups[monthGroups.length - 1];
+        if (lastGroup && lastGroup.month === week.month) lastGroup.span++;
+        else monthGroups.push({ month: week.month, span: 1, start: index });
+    });
+    const cols = 'repeat(' + weeks.length + ', minmax(22px, 1fr))';
+    const monthHeader = monthGroups.map(group => '<span class="calendar-year-month-label" style="grid-column:span ' + group.span + '">' + monthNames[group.month] + '</span>').join('');
+    const weekHeader = weeks.map(week => '<span class="calendar-year-week-number">' + week.weekNo + '</span>').join('');
+    const weekCells = weeks.map(week => {
+        const segments = Object.entries(week.bySport).map(([type, data]) => {
+            const sport = catalog[type] || catalog.Workout;
+            const width = week.totalMinutes > 0 ? Math.max(3, data.minutes / week.totalMinutes * 100) : 0;
+            return '<span class="calendar-year-sport-segment" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(sport.label) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
+        }).join('');
+        const hours = week.activities.length ? (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h') : '—';
+        const events = (week.races.length ? '<i data-lucide="trophy" class="calendar-year-event calendar-event-race"></i>' : '') +
+            (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle"></i>' : '') +
+            (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick"></i>' : '') +
+            (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured"></i>' : '');
+        return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\\'' + week.start + '\\')"><span class="calendar-year-week-bar">' + segments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
+    }).join('');
+    const legendTypes = [...new Set(weeks.flatMap(week => Object.keys(week.bySport)))];
+    const legend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
+    document.getElementById('calendar-period-title').textContent = String(year);
+    container.innerHTML = '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '">' +
+        '<div class="calendar-year-months">' + monthHeader + '</div><div class="calendar-year-week-head">' + weekHeader + '</div><div class="calendar-year-weeks">' + weekCells + '</div></div></div>' +
+        '<div class="calendar-year-legend">' + (legend || '<span class="text-xs text-slate-500">Noch keine Trainingsaktivitäten mit Sportart erfasst.</span>') + '<span class="text-[10px] text-slate-500">Balken = dokumentierte Trainingszeit je Sportart und Kalenderwoche · ∼ = unvollständige Dauererfassung</span></div>';
+    globalThis.lucide?.createIcons?.();
 }
 
 export function renderMonthView() {
-    const sportCatalog=getSportsCatalog(),categoryColors=getTypeColorMap();
+    const catalog = getSportsCatalog();
     const year = state.currentCalendarDate.getFullYear();
     const month = state.currentCalendarDate.getMonth();
-    const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-    document.getElementById('calendar-period-title').textContent = `${monthNames[month]} ${year}`;
-
+    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    document.getElementById('calendar-period-title').textContent = monthNames[month] + ' ' + year;
     const grid = document.getElementById('month-grid-cells');
+    if (!grid) return;
     grid.innerHTML = '';
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const adjustedFirstDay = (firstDayIndex === 0 ? 6 : firstDayIndex - 1);
-    const todayStr = toLocalDateString();
-
-    for (let i = 0; i < adjustedFirstDay; i++) {
-        grid.insertAdjacentHTML('beforeend', '<div class="calendar-day-empty rounded-xl"></div>');
+    const firstDay = new Date(year, month, 1, 12);
+    const offset = (firstDay.getDay() + 6) % 7;
+    const days = new Date(year, month + 1, 0).getDate();
+    const today = toLocalDateString();
+    for (let i = 0; i < offset; i++) grid.insertAdjacentHTML('beforeend', '<div class="calendar-month-empty"></div>');
+    for (let day = 1; day <= days; day++) {
+        const date = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const data = calendarDateData(date);
+        const selected = state.selectedCalendarDay === date;
+        const markers = [];
+        data.activities.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-completed" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label) + ' · Abgeschlossen"></span>'); });
+        data.planned.forEach(item => { const sport = catalog[item.type] || catalog.Workout; markers.push('<span class="calendar-month-sport-marker is-planned" style="--activity-color:' + sport.color + '" title="' + escapeHtml(sport.label) + ' · Geplant"></span>'); });
+        const load = data.loadValue === null ? '' : '<small class="calendar-month-load">' + Math.round(data.loadValue) + '</small>';
+        grid.insertAdjacentHTML('beforeend', '<button type="button" class="calendar-month-day ' + (date === today ? 'is-today ' : '') + (selected ? 'is-selected' : '') + '" data-date="' + date + '" aria-pressed="' + selected + '" aria-label="' + calendarDateLabel(date) + '" onclick="openCalendarDay(\\'' + date + '\\',true)">' +
+            '<span class="calendar-month-day-head"><span class="calendar-month-day-number">' + day + '</span>' + load + '</span>' +
+            '<span class="calendar-month-markers">' + markers.join('') + '</span><span class="calendar-month-events">' + calendarEventIcons(date) + '</span></button>');
     }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const isToday = dateStr === todayStr;
-        const dayActs = state.rawActivities.filter(a => a.date === dateStr);
-        const dayPlans = state.plannedActivities.filter(p => p.date === dateStr);
-        const dayRaces = state.races.filter(r => r.date === dateStr);
-        const dayHealth = state.healthLogs[dateStr];
-        const dayLoadComplete = dayActs.length > 0 && dayActs.every(act => act.tss != null && Number.isFinite(Number(act.tss)));
-        const dayLoad = dayLoadComplete ? Math.round(dayActs.reduce((sum,a)=>sum+Number(a.tss),0)) : null;
-
-        const activityMarkers = dayActs.map(act => {
-            const mode = calendarDisplayMode();
-            const activityColor = mode === 'training'
-                ? (categoryColors[act.category || 'ga'] || categoryColors.ga).color
-                : (sportCatalog[act.type] || sportCatalog.Workout).color;
-            const label = escapeHtml(act.name || (sportCatalog[act.type] || sportCatalog.Workout).label || 'Training');
-            return `<button type="button" onclick="event.stopPropagation();openCSVDetailsModal('${encodeURIComponent(String(act.id)).replace(/'/g, '%27')}')" title="${label}" aria-label="${label}" class="calendar-month-activity-marker" style="--activity-color:${activityColor}"></button>`;
-        }).join('');
-
-        const plannedMarker = dayPlans.length
-            ? '<span class="calendar-month-planned-marker" title="Geplante Einheit" aria-label="Geplante Einheit"></span>'
-            : '';
-        const raceMarker = dayRaces.length
-            ? '<span class="calendar-month-race-marker" title="' + dayRaces.map(r => escapeHtml(r.name)).join(', ') + '" aria-label="Wettkampf"></span>'
-            : '';
-        const illnessMarker = dayHealth?.status === 'sick' ? '<span class="calendar-month-illness-marker" title="Krankheit" aria-label="Krankheit"></span>' : '';
-        const injuryMarker = dayHealth?.status === 'injured' ? '<span class="calendar-month-injury-marker" title="Verletzung" aria-label="Verletzung"></span>' : '';
-        const cycleMarker = periodCalendarMarker(dateStr);
-        const loadMarkup = dayLoad !== null ? '<div class="calendar-month-load" title="Trainingsload">'+dayLoad+' Load</div>' : '';
-        const borderClass = isToday ? 'is-today' : '';
-
-        grid.insertAdjacentHTML('beforeend', `
-            <div onclick="openDayEditor(this.dataset.date)" data-date="${dateStr}" role="button" tabindex="0" class="calendar-day-card calendar-month-day ${borderClass}">
-                <div class="calendar-month-day-head"><span class="calendar-month-day-number">${d}${cycleMarker}</span>${loadMarkup}</div>
-                <div class="calendar-month-markers">${activityMarkers}${plannedMarker}${raceMarker}${illnessMarker}${injuryMarker}</div>
-            </div>
-        `);
+    const selectedDate = state.selectedCalendarDay;
+    const detail = document.getElementById('month-day-detail');
+    if (detail) {
+        const sameMonth = selectedDate && selectedDate.slice(0, 7) === year + '-' + String(month + 1).padStart(2, '0');
+        detail.classList.toggle('hidden', !sameMonth);
+        if (sameMonth) renderCalendarDayDetail(selectedDate, detail);
+        else detail.innerHTML = '';
     }
     globalThis.lucide?.createIcons?.();
 }
 
-// Wochenansicht exakt nach Designvorgabe des Screenshots
 export function renderWeekView() {
-    const sportCatalog=getSportsCatalog(),categoryColors=getTypeColorMap();
     const container = document.getElementById('cal-format-week');
     if (!container) return;
-    container.classList.toggle('grid-cols-1', state.activeCalendarFormat === 'day');
-    container.classList.toggle('grid-cols-7', state.activeCalendarFormat !== 'day');
-    container.classList.toggle('min-w-[900px]', state.activeCalendarFormat !== 'day');
+    const current = new Date(state.currentCalendarDate);
+    current.setHours(12, 0, 0, 0);
+    current.setDate(current.getDate() - ((current.getDay() + 6) % 7));
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) { const date = new Date(current); date.setDate(current.getDate() + i); weekDates.push(toLocalDateString(date)); }
+    const endDate = weekDates[6];
+    const monthShort = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+    document.getElementById('calendar-period-title').textContent = 'KW ' + (() => { const d = new Date(weekDates[3] + 'T12:00:00'); const jan4 = new Date(d.getFullYear(),0,4,12); const monday = new Date(jan4); monday.setDate(jan4.getDate()-((jan4.getDay()+6)%7)); return Math.floor((d-monday)/604800000)+1; })() + ' · ' + new Date(weekDates[0] + 'T12:00:00').getDate() + '. ' + monthShort[new Date(weekDates[0] + 'T12:00:00').getMonth()] + ' – ' + new Date(endDate + 'T12:00:00').getDate() + '. ' + monthShort[new Date(endDate + 'T12:00:00').getMonth()];
+    const activities = (state.rawActivities || []).filter(item => item.date >= weekDates[0] && item.date <= endDate);
+    const planned = (state.plannedActivities || []).filter(item => item.date >= weekDates[0] && item.date <= endDate);
+    const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+    const loadDays = weekDates.map(date => calendarDateData(date)).filter(data => data.activities.length);
+    const loadComplete = loadDays.length > 0 && loadDays.every(data => data.loadValue !== null);
+    const loadTotal = loadComplete ? loadDays.reduce((sum, data) => sum + data.loadValue, 0) : null;
+    const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
+    const durationTotal = durationRecords.length ? durationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
+    const summary = document.getElementById('calendar-week-summary');
+    if (summary) summary.innerHTML = '<span><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></span><span><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : calendarFormatMinutes(durationTotal)) + '</strong><em>' + (activities.length ? durationRecords.length + '/' + activities.length + ' Dauern erfasst' : 'Keine Einheiten dokumentiert') + '</em></span>';
+    container.classList.remove('grid-cols-1', 'grid-cols-7', 'min-w-[900px]');
     container.innerHTML = '';
-    
-    const curr = new Date(state.currentCalendarDate);
-    const dayOfWeek = curr.getDay();
-    const diffToMonday = state.activeCalendarFormat === 'day' ? curr.getDate() : curr.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const monday = new Date(curr.setDate(diffToMonday));
-    
-    const monthNamesShort = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
-    const weekdayNamesFull=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-    document.getElementById('calendar-period-title').textContent = state.activeCalendarFormat === 'day' ? `${weekdayNamesFull[monday.getDay()]}, ${monday.getDate()}. ${monthNamesShort[monday.getMonth()]}` : `Woche ab ${monday.getDate()}. ${monthNamesShort[monday.getMonth()]}`;
-
-    const todayStr = toLocalDateString();
-
-    const visibleDays=state.activeCalendarFormat==='day'?1:7;
-    for (let i = 0; i < visibleDays; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        const isToday = (dateStr === todayStr);
-
-        const checkin = state.dailyCheckins[dateStr] || {};
-        const health = state.healthLogs[dateStr];
-        const dayActs = state.rawActivities.filter(a => a.date === dateStr);
-        const dayPlans = state.plannedActivities.filter(p => p.date === dateStr);
-
-        const weekdayNames = ["So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."];
-        const wName = weekdayNames[d.getDay()];
-
-        let healthHeaderHtml = '';
-        if (checkin.weight) healthHeaderHtml += `<span class="text-[11px] text-slate-300">${checkin.weight}kg</span> `;
-        const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
-        if (sleepDuration != null) { const h=Number(sleepDuration),color=h<7?'text-rose-400':h<=9?'text-emerald-400':'text-cyan-300'; healthHeaderHtml += `<span class="text-[11px] ${color}">🌙 ${escapeHtml(sleepDuration)}h</span> `; }
-        if (checkin.sleepScore != null) { const score=Number(checkin.sleepScore),color=score<80?'text-rose-400':score<=90?'text-amber-300':'text-emerald-400'; healthHeaderHtml += `<span class="text-[11px] ${color}">${Math.round(score)}</span> `; }
-        if (checkin.rhr != null) healthHeaderHtml += `<span class="text-[11px] text-rose-400" title="Ruheherzfrequenz">♥ ${checkin.rhr}</span> `;
-        if (checkin.hrv) healthHeaderHtml += `<span class="text-[11px] text-sky-400">HRV ${checkin.hrv}</span> `;
-        if (checkin.respiration != null) healthHeaderHtml += `<span class="text-[11px] text-cyan-300">AF ${Number(checkin.respiration).toFixed(1)}</span> `;
-        const readiness=calculateReadiness(dateStr);
-        if(readiness.score!==null){const tone=readiness.score>=80?'text-green-300':readiness.score>=60?'text-yellow-300':readiness.score>=40?'text-orange-300':readiness.score>=20?'text-red-300':'text-purple-300';healthHeaderHtml += `<span class="text-[11px] ${tone}">Ready ${readiness.score}</span> `;}
-        const durationsComplete = dayActs.length > 0 && dayActs.every(act => act.duration != null && Number.isFinite(Number(act.duration)));
-        const loadsComplete = dayActs.length > 0 && dayActs.every(act => act.tss != null && Number.isFinite(Number(act.tss)));
-        const dayTrainingMinutes = durationsComplete ? Math.round(dayActs.reduce((sum, act) => sum + Number(act.duration), 0)) : null;
-        const dayTrainingLoad = loadsComplete ? Math.round(dayActs.reduce((sum, act) => sum + Number(act.tss), 0)) : null;
-        const dayTotals = [];
-        if (dayTrainingMinutes !== null) dayTotals.push(dayTrainingMinutes + ' min');
-        if (dayTrainingLoad !== null) dayTotals.push(dayTrainingLoad + ' Load');
-        if (dayTotals.length) healthHeaderHtml += `<span class="text-[11px] text-sky-300">${dayTotals.join(' · ')}</span> `;
-        if (health) healthHeaderHtml += health.status === 'sick' ? `<div class="text-[10px] text-orange-300 font-bold">Krankheit · ${escapeHtml(health.diagnosis || 'Infekt')}</div>` : `<div class="text-[10px] text-amber-300 font-bold">Verletzung · ${escapeHtml(health.diagnosis || 'Verletzung')}</div>`;
-
-        let actsHtml = '';
-        dayActs.forEach(act => {
-            const mode = calendarDisplayMode();
-            const activityColor = mode === 'training'
-                ? (categoryColors[act.category || 'ga'] || categoryColors.ga).color
-                : (sportCatalog[act.type] || sportCatalog.Workout).color;
-            actsHtml += `
-                <div onclick="event.stopPropagation();openCSVDetailsModal('${encodeURIComponent(String(act.id)).replace(/'/g, '%27')}')" role="button" tabindex="0" class="relative z-10 bg-slate-950 border rounded-2xl p-3 space-y-2 cursor-pointer hover:border-white transition shadow-md" style="border-color:${activityColor}">
-                    <div class="flex items-center justify-between">
-                        <span class="px-2 py-0.5 text-[10px] font-bold rounded border" style="background-color:${activityColor}22;color:${activityColor};border-color:${activityColor}">${act.duration ? act.duration + 'm' : ''} ${act.distance != null ? formatKm(act.distance) + ' km' : ''}</span>
-                        <i data-lucide="activity" class="w-3.5 h-3.5 text-sky-400"></i>
-                    </div>
-                    <div class="font-mono text-xs space-y-0.5">
-                        <div class="font-bold text-rose-400">${act.hr ? act.hr + ' bpm' : ''}</div>
-                        <div class="text-white font-semibold">Belastung ${act.tss || 0}</div>
-                        ${act.perceivedEffort != null ? `<div class="text-slate-400 text-[10px]">Empfinden ${act.perceivedEffort}/10</div>` : ''}
-                    </div>
-                    <div class="pt-1 border-t border-slate-800/80 text-[11px] text-slate-300">
-                        <span class="truncate font-medium">${escapeHtml(act.name)}</span>
-                    </div>
-                </div>
-            `;
-        });
-
-        dayPlans.forEach(p => {
-            actsHtml += `
-                <div class="bg-sky-950/40 border border-sky-800/60 rounded-2xl p-3 space-y-1 text-xs text-sky-300">
-                    <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 bg-sky-900 rounded">Geplant</span>
-                    <div class="font-bold text-white mt-1">${escapeHtml(p.name)}</div>
-                    <div class="font-mono text-[10px] text-slate-400">${escapeHtml(p.duration)} min · Ziel: ${escapeHtml(p.targetTss)} Load</div>
-                </div>
-            `;
-        });
-
-        const colBorder = isToday ? 'border-2 border-sky-500 bg-slate-900/90' : 'border border-slate-800 bg-slate-900';
-
-        container.insertAdjacentHTML('beforeend', `
-            <div onclick="openDayEditor('${dateStr}')" role="button" tabindex="0" class="calendar-day-card ${colBorder} p-3 rounded-2xl flex flex-col space-y-3 min-h-[420px]">
-                <!-- Tageskopf -->
-                <div class="border-b border-slate-800 pb-2.5">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold ${isToday ? 'text-sky-400 bg-sky-500/20 px-2 py-0.5 rounded' : 'text-slate-300'}">${wName} ${d.getDate()}. ${monthNamesShort[d.getMonth()]}${state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true?periodCalendarMarker(dateStr):''}</span>
-                    </div>
-                    <div class="mt-1.5 flex flex-wrap gap-1 font-mono">
-                        ${healthHeaderHtml || '<span class="text-[10px] text-slate-500 italic">Keine Wearable-Daten</span>'}
-                    </div>
-                </div>
-
-                <!-- Aktivitätskarten untereinander -->
-                <div class="space-y-2 flex-1">
-                    ${actsHtml || '<div class="text-center py-6 text-[11px] text-slate-600 italic">Keine Einheiten</div>'}
-                </div>
-            </div>
-        `);
-    }
+    const today = toLocalDateString();
+    weekDates.forEach(date => {
+        const data = calendarDateData(date);
+        const d = new Date(date + 'T12:00:00');
+        const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        const activityItems = data.activities.map(item => {
+            const sport = calendarSport(item.type);
+            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small></button>';
+        }).join('');
+        const planItems = data.planned.map(item => {
+            const sport = calendarSport(item.type);
+            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + sport.color + '" onclick="switchTab(\\'training-planning\\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplant') + '</small></button>';
+        }).join('');
+        const eventIcons = calendarEventIcons(date);
+        const cell = document.createElement('section');
+        cell.className = 'calendar-week-day ' + (date === today ? 'is-today ' : '') + (state.selectedCalendarDay === date ? 'is-selected' : '');
+        cell.innerHTML = '<button type="button" class="calendar-week-day-head" onclick="openCalendarDay(\\'' + date + '\\')"><span>' + dayNames[d.getDay()] + '</span><strong>' + d.getDate() + '</strong><span class="calendar-week-day-events">' + eventIcons + '</span></button>' +
+            '<div class="calendar-week-activities">' + (activityItems + planItems || '<span class="calendar-week-empty">—</span>') + '</div>' +
+            '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? '—' : Math.round(data.durationTotal) + ' min') + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div>';
+        container.appendChild(cell);
+    });
     globalThis.lucide?.createIcons?.();
 }
 
