@@ -88,7 +88,7 @@ export function openCSVDetailsModal(id) {
     if (dateEl) {
         const start = act.startTime ? new Date(act.startTime) : null;
         const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
-        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData || act.sources?.includes?.('garmin') ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null || act.sources?.includes?.('intervals') ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : act.garminFitImported ? 'FIT-Import' : 'Quelle nicht ausgewiesen';
+        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData || act.sources?.includes?.('garmin') ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null || act.sources?.includes?.('intervals') ? 'Intervals.icu' : act.source === 'manual' ? 'Manuell' : ['fit', 'csv', 'file', 'import'].includes(act.source) || act.garminFitImported ? 'Dateiimport' : 'Quelle nicht ausgewiesen';
         dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');
     }
     const metricsContainer = document.getElementById('activity-sport-metrics');
@@ -334,7 +334,7 @@ function renderActivityTrainingInsights(act) {
     const srpeItem = srpeData.records[0];
     const separateLoads = [
         act.garminTrainingLoad != null && Number.isFinite(Number(act.garminTrainingLoad)) ? ['Garmin Training Load', Number(act.garminTrainingLoad).toFixed(1)] : null,
-        zoneLoad ? ['KAJO HF-Zonen-Load', zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,
+        zoneLoad ? ['KAJO HF-Zonen-Load' + (zoneLoad.zoneSource === 'maxhr-estimate' ? ' · HFmax-Näherung' : ''), zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,
         srpeItem ? ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU'] : null,
         act.edwardsTrimp != null && Number.isFinite(Number(act.edwardsTrimp)) ? ['Edwards TRIMP', Number(act.edwardsTrimp).toFixed(1)] : null
     ].filter(Boolean);
