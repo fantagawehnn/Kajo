@@ -60,7 +60,7 @@ Noch zu prüfen bzw. zu ergänzen sind:
 - klare Trennung von Garmin-Schätzungen und direkt gemessenen VO₂max-Werten,
 - eindeutige Herkunft und Einheit der importierten HRV-Werte,
 - Abgrenzung von RMSSD, SDNN und aggregierten Garmin-Werten,
-- persönliche HRV-Baseline und Trendberechnung,
+- persönliche HRV-Baseline und Trendberechnung: Intervals-Wellness bezeichnet `hrv` als RMSSD, während manuelle HRV-Eingaben denselben Check-in-Schlüssel nutzen. Die Herkunft ist im Check-in nicht getrennt gespeichert; `hrvSDNN` wird zwar diagnostisch gezählt, aber nicht übernommen. Eine quellenreine ln(RMSSD)-Baseline ist daher vor einer Klärung der Herkunft nicht zulässig,
 - Datenvollständigkeit bei Schlaf- und Gesundheitsdaten,
 - Krankheitstage, Verletzungen und Trainingsverfügbarkeit als getrennte Health-Daten.
 
