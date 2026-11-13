@@ -596,7 +596,8 @@ export function getActivityTelemetrySeries(act) {
             && Number.isFinite(Number(value)) && (meta.min == null || Number(value) >= meta.min)
             && (meta.max == null || Number(value) <= meta.max));
         if (valid.length < 2) continue;
-        result.push({ key, label: meta.label, unit: meta.unit, color: meta.color, values: values.map(value =>
+        const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
+        result.push({ key, label: meta.label, unit: meta.unit, color: sportColor, values: values.map(value =>
             value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
                 || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
                 ? null : Number(value)
