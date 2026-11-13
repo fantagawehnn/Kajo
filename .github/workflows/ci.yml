@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check js/main.js && node --check js/calendar.js && node --check js/dashboard.js
+        run: node --check js/main.js && node --check js/calendar.js && node --check js/dashboard.js && node --check js/charts.js && node --check js/analysis-ui.js
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
       - name: Run regression smoke tests
