@@ -11,6 +11,49 @@ import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getGarminTelemetry } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
+function getActivitySourceLabel(activity) {
+    const refs = activity?.sourceRefs || {};
+    const sources = new Set([
+        ...(Array.isArray(activity?.sources) ? activity.sources : []),
+        activity?.source,
+        refs.garminActivityId != null ? 'garmin' : null,
+        refs.intervalsActivityId != null ? 'intervals' : null,
+        activity?.garminFitImported === true ? 'garmin-fit' : null
+    ].filter(Boolean).map(value => String(value).toLowerCase()));
+    const labels = [];
+    if (sources.has('garmin') || sources.has('garmin-fit') || activity?.garminData) labels.push('Garmin');
+    if (sources.has('intervals')) labels.push('Intervals.icu');
+    if (sources.has('manual')) labels.push('Manuell');
+    if (sources.has('csv') || sources.has('fit') || sources.has('file') || sources.has('import')) labels.push('Dateiimport');
+    return labels.length ? [...new Set(labels)].join(' + ') : 'Quelle nicht ausgewiesen';
+}
+
+function renderActivityDataQuality(activity) {
+    const container = document.getElementById('activity-data-quality');
+    if (!container) return;
+    const telemetry = getGarminTelemetry(activity) || {};
+    const series = getActivityTelemetrySeries(activity);
+    const sampleCount = series.reduce((max, item) => Math.max(max, item.values.length), 0);
+    const time = Array.isArray(telemetry.time) ? telemetry.time : [];
+    const hasTimeAxis = sampleCount >= 2 && time.length === sampleCount
+        && time.every(value => Number.isFinite(Number(value)))
+        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
+    const fields = activity?.garminFitData?.recordFields || {};
+    const lat = telemetry.latitude || telemetry.lat || telemetry.position_lat || fields.position_lat || fields.latitude;
+    const lon = telemetry.longitude || telemetry.lon || telemetry.position_long || fields.position_long || fields.longitude;
+    const hasGps = Array.isArray(lat) && Array.isArray(lon) && lat.length === lon.length && lat.length >= 2;
+    const laps = Array.isArray(activity?.laps) ? activity.laps : Array.isArray(activity?.intervals) ? activity.intervals : [];
+    const parts = [
+        'Quelle: ' + getActivitySourceLabel(activity),
+        series.length ? sampleCount.toLocaleString('de-DE') + ' Messpunkte' : 'Keine auswertbare Garmin-Zeitreihe',
+        series.length ? (hasTimeAxis ? 'Zeitachse zugeordnet' : 'Zeitachse eingeschränkt') : null,
+        hasGps ? 'GPS vorhanden' : null,
+        laps.length ? laps.length + ' Runden / Abschnitte' : null
+    ].filter(Boolean);
+    container.textContent = parts.join(' · ');
+    container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'unavailable';
+}
+
 function getActivityZoneConfig(activity) {
     const saved = state.settings?.heartRateZones?.[activity.type];
     const valid = values => Array.isArray(values) && values.length === 4
@@ -116,6 +159,7 @@ export function openCSVDetailsModal(id) {
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
     const loadSummary = loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}` : '—';
     renderSportSpecificActivityMetrics(act, loadSummary);
+    renderActivityDataQuality(analysisActivity);
     renderActivityStrengthSets(act);
     toggleActivityStrengthSection(act.type);
     const editName = document.getElementById('modal-edit-name'); if (editName) editName.value = act.name || '';
@@ -360,10 +404,11 @@ function renderActivityTrainingInsights(act) {
     const { seconds, totalSeconds: total, hasTime } = zoneTime;
     if (zonePanel) zonePanel.classList.remove('hidden');
     const colors = ['#38bdf8', '#34d399', '#facc15', '#fb923c', '#f43f5e'];
+    const topZone = seconds.reduce((best, value, index) => value > seconds[best] ? index : best, 0);
     zoneBox.innerHTML = seconds.map((v, i) => {
         const pct = v / total * 100;
         return `<div class="grid grid-cols-[2rem_1fr_5rem] items-center gap-2 text-xs"><span class="text-slate-300">Z${i + 1}</span><div class="h-2 rounded-full bg-slate-800 overflow-hidden"><div class="h-full rounded-full" style="width:${pct.toFixed(1)}%;background:${colors[i]}"></div></div><span class="text-right text-slate-300">${Math.round(v / 60)} min · ${pct.toFixed(0)}%</span></div>`;
-    }).join('') + `<details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Datenbasis</summary><p class="mt-1">${hasTime ? 'Aus Zeitstempeln der HF-Messwerte berechnet.' : 'Zeitlich angenähert, da Zeitstempel fehlen.'}</p></details>`;
+    }).join('') + `<p class="mt-2 text-[10px] text-slate-400">Größter Zeitanteil: Z${topZone + 1} (${(seconds[topZone] / total * 100).toFixed(0)}%).</p><details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Datenbasis</summary><p class="mt-1">${hasTime ? 'Aus Zeitstempeln der HF-Messwerte berechnet.' : 'Zeitlich angenähert, da Zeitstempel fehlen.'} ${zoneTime.zoneSource === 'maxhr-estimate' ? 'HF-Zonen basieren auf einer HFmax-Näherung.' : 'HF-Zonen stammen aus der individuellen Sportkonfiguration.'}</p></details>`;
 }
 
 
