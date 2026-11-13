@@ -69,6 +69,7 @@ function renderLoad() {
   ]);
 }
 function renderRecovery() {
+  if (!state.healthHistoryMetric) state.healthHistoryMetric = 'hrv';
   const readiness = calculateReadiness();
   const today = todayKey();
   const current = state.dailyCheckins?.[today] || {};
