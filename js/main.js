@@ -705,6 +705,7 @@ async function syncGarminSelectedRange() {
             try {
                 response = await callGarminFunction({
                     action: 'sync-range', startDate, endDate, includeActivities,
+                    timezoneOffsetMinutes: new Date().getTimezoneOffset(),
                     onlyMissingDays: true
                 });
             } catch (error) {
