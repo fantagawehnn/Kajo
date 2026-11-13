@@ -119,6 +119,7 @@ function switchTab(requestedTab) {
     };
     const destination = route[requestedTab] || { parent: 'more', view: 'more' };
     const { parent, view, sub } = destination;
+    document.body.classList.toggle('kajo-home-active', view === 'dashboard');
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
