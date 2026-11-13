@@ -16,7 +16,7 @@ import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
-import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, changeDashboardDay, goToDashboardToday, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
+import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
 import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu } from './calendar.js?v=8';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker } from './charts.js';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js';
@@ -1114,6 +1114,7 @@ function initEngine() {
     runInitStep('Belastungs-KPIs', () => renderSummaryKPICards(state.dailyTimeline));
     runInitStep('Readiness', () => renderReadinessDashboard());
     runInitStep('Nächster Wettkampf', () => renderDashboardNextRace());
+    runInitStep('Trainingswoche', () => renderHomeTrainingWeek());
     runInitStep('Belastungsdiagramm', () => renderMainLoadChart(state.dailyTimeline, state.activeTimeframe));
     runInitStep('Analysebereiche', () => renderAnalysisInsights());
     runInitStep('Sportverteilung', () => renderSportDistribution(state.rawActivities));
