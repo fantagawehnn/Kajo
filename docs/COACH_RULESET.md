@@ -187,7 +187,7 @@ Vor jedem Vergleich prüft der Coach mindestens:
 
 ### 7.2 Ergänzende Sportarten
 
-Der Kanu-Wildwasserrennsport ist die einzige Sportart mit eigenständigem Leistungs- und Wettkampfziel. Laufen, Radfahren und Schwimmen werden ergänzend aus Freude und für die allgemeine Fitness ausgeübt. Für sie werden keine eigenen Leistungsziele, Leistungsbewertungen oder Entwicklungsprognosen erstellt. Sie müssen jedoch in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt werden, soweit geeignete Daten vorliegen. Ihre Messwerte dürfen zur Beschreibung der jeweiligen Aktivität und ihrer Belastung genutzt werden, aber nicht als eigenständiger Leistungsfortschritt interpretiert werden. Sportartspezifische Belastungsmodelle bleiben getrennt; ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
+Der Kanu-Wildwasserrennsport ist die einzige Sportart mit eigenständigem Leistungs- und Wettkampfziel. Laufen, Radfahren, Schwimmen und Krafttraining werden ergänzend aus Freude und für die allgemeine Fitness ausgeübt. Für sie werden keine eigenen Leistungsziele, Leistungsbewertungen oder Entwicklungsprognosen erstellt. Sie müssen jedoch in der Gesamtbelastung und Regenerationsbetrachtung berücksichtigt werden, soweit geeignete Daten vorliegen. Ihre Messwerte dürfen zur Beschreibung der jeweiligen Aktivität und ihrer Belastung genutzt werden, aber nicht als eigenständiger Leistungsfortschritt interpretiert werden. Sportartspezifische Belastungsmodelle bleiben getrennt; ein sportartenübergreifender Vergleich ist nur zulässig, wenn die verwendete Kennzahl dafür methodisch geeignet und eindeutig beschrieben ist.
 
 ## 8. Regeln für Trainingsempfehlungen
 
