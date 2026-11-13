@@ -34,3 +34,18 @@ export function sanitizeGarminActivityTelemetry(activity) {
     };
     return true;
 }
+
+
+/* Activity-level telemetry may also come from an explicitly identified FIT-file
+ * import. Do not use generic legacy telemetry unless its FIT provenance is
+ * explicit; Garmin-linked telemetry remains the preferred source.
+ */
+export function getActivityTelemetry(activity) {
+    const garminTelemetry = getGarminTelemetry(activity);
+    if (garminTelemetry) return garminTelemetry;
+    const explicitFitSource = activity?.source === 'fit'
+        || (Array.isArray(activity?.sources) && activity.sources.includes('fit'));
+    if (!explicitFitSource) return null;
+    const telemetry = activity?.telemetry;
+    return telemetry && typeof telemetry === 'object' ? telemetry : null;
+}
