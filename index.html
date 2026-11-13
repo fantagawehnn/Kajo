@@ -277,6 +277,7 @@
         
 
         <div id="view-dashboard" class="kajo-home space-y-5">
+  <h2 class="text-sm font-semibold text-slate-200">Dein Status</h2>
   <div class="kajo-status-overview">
     <div class="kajo-readiness-grid">
       <article class="kajo-ring-card metric-history-clickable" role="button" tabindex="0" onclick="openTrainingMetric('fitness')" onkeydown="if(event.key==='Enter'||event.key===' ')openTrainingMetric('fitness')"><div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small id="home-fitness-change" class="kajo-fitness-change">→ —</small></div></div></article>
@@ -341,6 +342,11 @@
       <div id="home-next-race-days" class="shrink-0 text-sm font-bold text-rose-300 tabular-nums"></div>
     </div>
     <span id="home-next-race-rank" class="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md"></span>
+  </section>
+  <section id="home-training-week" class="kajo-panel space-y-3" aria-labelledby="home-training-week-title">
+    <div class="kajo-panel-heading"><h2 id="home-training-week-title" class="text-sm font-semibold text-white">Trainingswoche</h2><span id="home-week-range" class="text-[10px] text-slate-500"></span></div>
+    <p id="home-week-summary" class="text-xs text-slate-400"></p>
+    <div id="home-week-days" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"></div>
   </section>
   <div class="hidden" id="kpi-cards-grid">
     <span id="kpi-ctl">—</span><span id="kpi-atl">—</span><span id="kpi-tsb">—</span><span id="kpi-acwr">—</span>
