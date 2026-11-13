@@ -37,7 +37,8 @@ for (const id of ['load-hero-ring', 'recovery-hero-ring', 'performance-hero-ring
 assert.ok(html.includes('id="analysis-shared-period"'), 'shared analysis period container exists');
 assert.ok(html.includes('id="health-history-baseline-note"'), 'wearable baseline limitation is disclosed');
 assert.ok(html.includes('id="analysis-health-timeline"'), 'health availability/event timeline exists');
-assert.ok(analysisUI.includes('calculateReadiness()'), 'recovery reuses the existing readiness calculation');
+assert.ok(analysisUI.includes("latestCheckin('hrv')"), 'recovery uses a raw HRV measurement rather than a composite score');
+assert.ok(analysisUI.includes('Es wird kein künstlicher Recovery-Gesamtscore gebildet'), 'recovery does not add a synthetic overall score');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
 assert.ok(analysisUI.includes('CTL bleibt ein Belastungs-/Fitnessindikator'), 'CTL is not presented as direct performance');
