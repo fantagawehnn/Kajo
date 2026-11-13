@@ -242,11 +242,16 @@ export function saveCheckin() {
     // Preserve sync data like HRV, rhr if they exist
     const existing = state.dailyCheckins[todayStr] || {};
     
+    const measurementSources = { ...(existing.measurementSources || {}) };
+    if (Object.prototype.hasOwnProperty.call(wearableUpdates, 'hrv')) {
+        measurementSources.hrv = { source: 'manual', metric: 'unspecified', unit: 'ms' };
+    }
     const checkin = {
         ...existing,
         sleepQuality: sleep,
         soreness, fatigue, motivation, stress,
         ...wearableUpdates,
+        ...(Object.keys(measurementSources).length ? { measurementSources } : {}),
         weight: weightEnabled && Number.isFinite(weightVal) ? weightVal : existing.weight
     };
     const cycleSection = document.getElementById('cycle-checkin-section');
