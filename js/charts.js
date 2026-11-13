@@ -639,18 +639,13 @@ export function renderActivityTelemetryChart(act) {
     const selected = series.find(item => item.key === preferred);
     const telem = act?.telemetry || act?.garminTelemetry || {};
     const times = Array.isArray(telem.time) ? telem.time : [];
-    const labels = times.length === selected.values.length
-        ? times.map(value => {
-            const seconds = Number(value);
-            return Number.isFinite(seconds)
-                ? String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(Math.floor(seconds % 60)).padStart(2, '0')
-                : '';
-        })
-        : Array.isArray(telem.labels) && telem.labels.length === selected.values.length
-            ? telem.labels
-            : selected.values.map((_, index) => String(index + 1));
     const hasElapsedTime = times.length === selected.values.length
-        && times.every(value => Number.isFinite(Number(value)));
+        && times.every(value => Number.isFinite(Number(value)))
+        && times.slice(1).every((value, index) => Number(value) > Number(times[index]));
+    const hasClockLabels = Array.isArray(telem.labels) && telem.labels.length === selected.values.length;
+    const labels = hasElapsedTime
+        ? times.map(value => String(Math.floor(Number(value) / 60)).padStart(2, '0') + ':' + String(Math.floor(Number(value) % 60)).padStart(2, '0'))
+        : hasClockLabels ? telem.labels : selected.values.map((_, index) => String(index + 1));
     const selectedLap = state.activitySelectedLap;
     const highlightedIndexes = hasElapsedTime && selectedLap
         ? times.reduce((indexes, value, index) => {
@@ -660,9 +655,13 @@ export function renderActivityTelemetryChart(act) {
         }, []) : [];
     const highlightRange = highlightedIndexes.length ? [highlightedIndexes[0], highlightedIndexes[highlightedIndexes.length - 1]] : null;
     const status = document.getElementById('activity-hr-series-status');
-    if (status) status.textContent = hasElapsedTime
-        ? selected.values.filter(value => value !== null).length.toLocaleString('de-DE') + ' gültige Messpunkte · Zeit seit Start'
-        : selected.values.filter(value => value !== null).length.toLocaleString('de-DE') + ' gültige Messpunkte · Messpunktindex (keine Zeitstempel zugeordnet)';
+    if (status) {
+        const validCount = selected.values.filter(value => value !== null).length;
+        const complete = hasElapsedTime && validCount === selected.values.length;
+        const dataStatus = complete ? 'Vollständig' : 'Eingeschränkt';
+        const axisNote = hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit · keine verlässliche Zeitachse' : 'Messpunktindex · keine Zeitstempel';
+        status.textContent = 'Datenstatus: ' + dataStatus + ' · ' + validCount.toLocaleString('de-DE') + ' gültige Messpunkte · ' + axisNote;
+    }
     state.telemetryChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: { labels, datasets: [{
@@ -703,7 +702,7 @@ export function renderActivityTelemetryChart(act) {
                 } }
             },
             scales: {
-                x: { title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
+                x: { title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
                     grid: { color: 'rgba(100,116,139,.12)' }, ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 8 } },
                 y: { title: { display: true, text: selected.unit, color: '#64748b', font: { size: 9 } },
                     grid: { color: 'rgba(100,116,139,.16)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
