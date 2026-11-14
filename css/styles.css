@@ -7378,3 +7378,33 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
 @media(min-width:641px) and (max-width:900px) {
   #view-more .kajo-more-groups { gap:9px; }
 }
+
+
+/* KAJO settings: unified compact navigation with clear category colors. */
+#settings-modal .kajo-settings-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid rgba(148,163,184,.14)}
+#settings-modal .kajo-settings-mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,rgba(96,165,250,.22),rgba(167,139,250,.2));color:#a5c8ff}
+#settings-modal .kajo-settings-eyebrow{font-size:9px;letter-spacing:.13em;font-weight:850;color:#91a4bd}
+#settings-modal .kajo-settings-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 20px}
+#settings-modal .kajo-settings-overview-group{--settings-accent:#60a5fa;--settings-tint:rgba(96,165,250,.13);min-width:0;padding:12px 13px;border:1px solid color-mix(in srgb,var(--settings-accent) 28%,#293644);border-radius:15px;background:linear-gradient(145deg,var(--settings-tint),rgba(17,24,39,.82) 68%)}
+#settings-modal .kajo-settings-overview-group[data-tone="coral"]{--settings-accent:#fb8b83;--settings-tint:rgba(251,139,131,.13)}
+#settings-modal .kajo-settings-overview-group[data-tone="blue"]{--settings-accent:#70b7ff;--settings-tint:rgba(112,183,255,.13)}
+#settings-modal .kajo-settings-overview-group[data-tone="mint"]{--settings-accent:#5ed6b0;--settings-tint:rgba(94,214,176,.12)}
+#settings-modal .kajo-settings-overview-group[data-tone="violet"]{--settings-accent:#b69aff;--settings-tint:rgba(182,154,255,.13)}
+#settings-modal .kajo-settings-overview-heading{display:flex;align-items:center;gap:9px;margin:0 0 7px}
+#settings-modal .kajo-settings-overview-heading>span:first-child{width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:var(--settings-tint);color:var(--settings-accent)}
+#settings-modal .kajo-settings-overview-heading>span:first-child svg{width:15px;height:15px}
+#settings-modal .kajo-settings-overview-heading h3{font-size:12px;font-weight:850;color:#f8fafc}
+#settings-modal .kajo-settings-overview-row{gap:9px;padding:9px 2px;border-top:1px solid rgba(148,163,184,.12);color:#e2e8f0}
+#settings-modal .kajo-settings-overview-row>svg:first-child{width:15px;height:15px;color:var(--settings-accent)}
+#settings-modal .kajo-settings-overview-row strong{font-size:11px;font-weight:700;color:#e8eef8}
+#settings-modal .kajo-settings-overview-row .kajo-settings-row-chevron{width:14px;height:14px;margin-left:auto;color:#718096}
+#settings-modal .kajo-settings-overview-row:hover{background:rgba(255,255,255,.045);border-radius:8px}
+#settings-modal .kajo-settings-group-heading{margin:3px 0 10px}
+#settings-modal .kajo-settings-group-heading>div>p:not(.kajo-settings-eyebrow){display:none}
+#settings-modal .kajo-settings-group-heading .kajo-settings-eyebrow{display:none}
+#settings-modal .kajo-settings-group[data-settings-page="training"] .kajo-settings-group-icon{background:rgba(112,183,255,.14);border-color:rgba(112,183,255,.28);color:#70b7ff}
+#settings-modal .kajo-settings-group[data-settings-page="notifications"] .kajo-settings-group-icon{background:rgba(182,154,255,.14);border-color:rgba(182,154,255,.28);color:#b69aff}
+#settings-modal .kajo-settings-group[data-settings-page="app"] .kajo-settings-group-icon{background:rgba(94,214,176,.14);border-color:rgba(94,214,176,.28);color:#5ed6b0}
+#settings-modal .kajo-settings-card{border-color:rgba(148,163,184,.16);background:linear-gradient(145deg,rgba(24,37,55,.96),rgba(14,24,38,.98));padding:13px}
+#settings-modal .kajo-settings-section-icon{background:rgba(112,183,255,.13);border-color:rgba(112,183,255,.25);color:#70b7ff}
+@media(max-width:700px){#settings-modal .kajo-settings-overview{grid-template-columns:1fr;gap:8px}#settings-modal .kajo-settings-overview-group{padding:10px 12px}#settings-modal .kajo-settings-overview-heading{margin-bottom:4px}#settings-modal .kajo-settings-overview-row{padding:8px 2px}}
