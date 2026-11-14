@@ -138,14 +138,8 @@ async function importGarminActivityJsonTelemetry() {
         output.hidden = false;
         return;
     }
-    if (activity.garminJsonImportedAt) {
-        output.textContent = 'Diese Aktivität wurde bereits aus Garmin-JSON importiert. Es wurde nichts erneut geschrieben.';
-        output.hidden = false;
-        return;
-    }
-    if (activity.garminFitImported === true
-        || (activity.garminTelemetry && Object.keys(activity.garminTelemetry).some(key => Array.isArray(activity.garminTelemetry[key]) && activity.garminTelemetry[key].length))) {
-        output.textContent = 'Für diese Aktivität ist bereits eine Garmin-Zeitreihe vorhanden. Zum Schutz vorhandener Daten wurde der JSON-Import abgebrochen.';
+    if (activity.garminFitImported === true) {
+        output.textContent = 'Für diese Aktivität liegt bereits ein FIT-Import vor. Zum Schutz dieser Daten wurde die JSON-Erweiterung abgebrochen.';
         output.hidden = false;
         return;
     }
@@ -175,33 +169,46 @@ async function importGarminActivityJsonTelemetry() {
 
         const previousTelemetry = activity.garminTelemetry;
         const previousImportedAt = activity.garminJsonImportedAt;
-        activity.garminTelemetry = telemetry;
+        const previousSource = activity.garminJsonSource;
+        const previousSeries = previousTelemetry?.metricSeries && typeof previousTelemetry.metricSeries === 'object'
+            ? previousTelemetry.metricSeries : {};
+        // Keep every already stored field/series; add only previously missing raw Garmin metrics.
+        activity.garminTelemetry = {
+            ...(telemetry || {}),
+            ...(previousTelemetry || {}),
+            metricSeries: { ...(telemetry.metricSeries || {}), ...previousSeries }
+        };
         activity.garminJsonImportedAt = new Date().toISOString();
         activity.garminJsonSource = 'garmin-activity-details-json';
         if (!saveActivitiesToLocalStorage()) {
-            activity.garminTelemetry = previousTelemetry;
+            if (previousTelemetry == null) delete activity.garminTelemetry;
+            else activity.garminTelemetry = previousTelemetry;
             if (previousImportedAt == null) delete activity.garminJsonImportedAt;
             else activity.garminJsonImportedAt = previousImportedAt;
-            delete activity.garminJsonSource;
+            if (previousSource == null) delete activity.garminJsonSource;
+            else activity.garminJsonSource = previousSource;
             throw new Error('Die Aktivität konnte nicht im angemeldeten Benutzerspeicher gesichert werden.');
         }
         refreshAll();
         renderActivityTelemetryChart(activity);
         renderActivityDataQuality(activity);
         const fields = ['hr', 'altitude', 'distance', 'respirationRate', 'bodyBattery']
-            .filter(key => Array.isArray(telemetry[key]) && telemetry[key].filter(value => value != null).length >= 2);
-        output.textContent = 'Import erfolgreich.\n'
-            + 'Aktivität: Prague Kajakfahren · 14.11.2026\n'
-            + 'Messpunkte: ' + telemetry.sampleCount + '\n'
-            + 'Dauer der Zeitreihe: ' + Math.floor(telemetry.durationSeconds / 60) + ':' + String(Math.round(telemetry.durationSeconds % 60)).padStart(2, '0') + ' min\n'
-            + 'Übernommene Messreihen: ' + fields.join(', ') + '\n'
-            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\n'
+            .filter(key => Array.isArray(activity.garminTelemetry[key]) && activity.garminTelemetry[key].filter(value => value != null).length >= 2);
+        const rawSeriesCount = Object.keys(activity.garminTelemetry.metricSeries || {}).length;
+        output.textContent = 'Telemetrie-Erweiterung erfolgreich.\\n'
+            + 'Aktivität: Prague Kajakfahren · 14.11.2026\\n'
+            + 'Messpunkte: ' + telemetry.sampleCount + '\\n'
+            + 'Dauer der Zeitreihe: ' + Math.floor(telemetry.durationSeconds / 60) + ':' + String(Math.round(telemetry.durationSeconds % 60)).padStart(2, '0') + ' min\\n'
+            + 'Standard-Messreihen: ' + fields.join(', ') + '\\n'
+            + 'Zusätzliche Garmin-Rohmessreihen: ' + rawSeriesCount + '\\n'
+            + 'Alle verfügbaren numerischen Metriken werden mit Einheit-/Skalierungsmetadaten gespeichert; Rohwerte bleiben unverändert.\\n'
+            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\\n'
             + 'Quelle: Garmin Activity Details JSON · kein FIT-Import.';
     } catch (error) {
         output.textContent = 'JSON-Import fehlgeschlagen: ' + (error?.message || String(error));
     } finally {
         button.disabled = false;
-        button.textContent = 'Garmin-JSON-Zeitreihe für diese Aktivität importieren';
+        button.textContent = 'Garmin-Telemetrie vollständig ergänzen';
     }
 }
 
