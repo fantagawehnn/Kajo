@@ -7703,3 +7703,82 @@ html[data-theme="light"] .kajo-settings-category {
 }
 html[data-theme="light"] .kajo-settings-category-copy strong { color:#17212B; }
 html[data-theme="light"] .kajo-settings-category-copy small { color:#718091; }
+
+
+/* Mehr: Gruppenüberschriften entfallen; die Farbtöne übernehmen die Orientierung. */
+#view-more .kajo-more-groups { display:grid; gap:14px; }
+#view-more .kajo-more-group {
+  --more-accent:#75BFFF;
+  --more-tint:rgba(76,157,235,.11);
+  display:block;
+  padding:10px;
+  border:1px solid color-mix(in srgb,var(--more-accent) 34%,var(--kajo-border,#263449));
+  border-radius:17px;
+  background:linear-gradient(145deg,var(--more-tint),var(--kajo-surface,#0f1420) 76%);
+}
+#view-more .kajo-more-group[data-tone="blue"] { --more-accent:#75BFFF; --more-tint:rgba(76,157,235,.12); }
+#view-more .kajo-more-group[data-tone="mint"] { --more-accent:#75E0C0; --more-tint:rgba(52,190,151,.12); }
+#view-more .kajo-more-group[data-tone="violet"] { --more-accent:#D0A5FF; --more-tint:rgba(164,111,224,.13); }
+#view-more .kajo-area-list {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:9px !important;
+}
+#view-more .kajo-area-card {
+  display:grid !important;
+  grid-template-columns:2.7rem minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:12px !important;
+  min-height:88px !important;
+  padding:15px !important;
+  border:1px solid color-mix(in srgb,var(--more-accent) 23%,transparent) !important;
+  border-radius:13px !important;
+  background:color-mix(in srgb,var(--more-accent) 7%,var(--kajo-surface,#0f1420)) !important;
+  color:var(--kajo-text,#fff) !important;
+  text-align:left !important;
+  box-shadow:none !important;
+  transition:background .16s ease,border-color .16s ease,transform .16s ease;
+}
+#view-more .kajo-area-card:hover,
+#view-more .kajo-area-card:focus-visible {
+  border-color:var(--more-accent) !important;
+  background:color-mix(in srgb,var(--more-accent) 13%,var(--kajo-surface,#0f1420)) !important;
+  outline:none;
+  transform:translateY(-1px);
+}
+#view-more .kajo-area-icon {
+  display:grid !important;
+  place-items:center !important;
+  width:2.7rem !important;
+  height:2.7rem !important;
+  border-radius:12px !important;
+  color:var(--more-accent) !important;
+  background:color-mix(in srgb,var(--more-accent) 13%,transparent) !important;
+}
+#view-more .kajo-area-icon svg { width:1.35rem !important; height:1.35rem !important; }
+#view-more .kajo-area-copy { display:flex; flex-direction:column; gap:5px; min-width:0; }
+#view-more .kajo-area-copy strong {
+  color:var(--kajo-text,#fff);
+  font-size:.94rem;
+  font-weight:700;
+  line-height:1.3;
+}
+#view-more .kajo-area-copy small {
+  color:var(--kajo-muted,#9ca3af);
+  font-size:.74rem;
+  line-height:1.45;
+}
+#view-more .kajo-area-chevron { width:1.05rem; height:1.05rem; color:var(--more-accent); }
+@media(max-width:560px) {
+  #view-more .kajo-area-list { grid-template-columns:minmax(0,1fr) !important; }
+  #view-more .kajo-area-card { min-height:82px !important; padding:13px !important; }
+}
+html[data-theme="light"] #view-more .kajo-more-group {
+  background:linear-gradient(145deg,var(--more-tint),#fff 82%);
+  border-color:color-mix(in srgb,var(--more-accent) 34%,#dce3ea);
+}
+html[data-theme="light"] #view-more .kajo-area-card {
+  background:color-mix(in srgb,var(--more-accent) 7%,#fff) !important;
+}
+html[data-theme="light"] #view-more .kajo-area-copy strong { color:#17212b; }
+html[data-theme="light"] #view-more .kajo-area-copy small { color:#718091; }
