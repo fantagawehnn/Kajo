@@ -6844,3 +6844,132 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #view-calendar .calendar-month-summary-rings .calendar-kpi-ring { width:42px; height:42px; }
   #view-calendar .calendar-month-summary-rings .calendar-kpi-label { font-size:7px; }
 }
+
+
+/* KAJO calendar refinements: compact monthly markers and outlined weekly sessions. */
+#view-calendar .calendar-month-markers {
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap;
+  align-items:center;
+  justify-content:flex-start;
+  gap:3px;
+  min-width:0;
+  overflow:hidden;
+}
+#view-calendar .calendar-month-sport-marker {
+  display:block;
+  flex:0 0 6px;
+  width:6px;
+  height:6px;
+  min-width:6px;
+  border-radius:50%;
+}
+#view-calendar .calendar-week-agenda-entries { display:flex; flex-direction:column; gap:6px; }
+#view-calendar .calendar-week-activity {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center;
+  gap:8px 12px;
+  width:100%;
+  min-width:0;
+  padding:8px 10px;
+  border:1px solid var(--activity-color) !important;
+  border-radius:9px;
+  background:var(--color-surface-raised,#17212c);
+  text-align:left;
+}
+#view-calendar .calendar-week-activity.is-planned {
+  border-style:dashed !important;
+  background:transparent;
+}
+#view-calendar .calendar-week-activity > span:first-child {
+  grid-row:auto;
+  width:auto;
+  height:auto;
+  min-height:0;
+  border:0;
+  background:transparent !important;
+}
+#view-calendar .calendar-week-activity-main {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  min-width:0;
+}
+#view-calendar .calendar-week-activity-main strong {
+  color:var(--activity-color);
+  font-size:10px;
+  line-height:1.2;
+}
+#view-calendar .calendar-week-activity-main small {
+  color:var(--color-text-primary,#f4f7fa);
+  font-size:10px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+#view-calendar .calendar-week-activity-status {
+  font-size:8px;
+  line-height:1.2;
+  color:var(--color-text-muted,#7d8a98);
+}
+#view-calendar .calendar-week-activity-status.is-planned { font-style:italic; }
+#view-calendar .calendar-week-activity-metrics {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:3px;
+  min-width:max-content;
+  color:var(--color-text-secondary,#a9b5c2);
+  font-size:9px;
+  line-height:1.2;
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+}
+#view-calendar .calendar-week-activity-metrics > span { white-space:nowrap; }
+@media(max-width:420px) {
+  #view-calendar .calendar-week-activity { gap:6px; padding:7px; }
+  #view-calendar .calendar-week-activity-metrics { font-size:8px; }
+}
+
+/* Recovery values stay on one row, independently of available width. */
+#view-calendar .calendar-day-recovery-rings {
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  grid-auto-flow:column;
+  width:100%;
+  min-width:0;
+  gap:4px 2px;
+  justify-items:center;
+  align-items:start;
+  overflow:visible;
+}
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring-wrap {
+  width:100%;
+  min-width:0;
+  flex:none;
+}
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring {
+  width:clamp(30px,5.8vw,58px) !important;
+  height:clamp(30px,5.8vw,58px) !important;
+}
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-label {
+  max-width:100%;
+  font-size:clamp(6px,.85vw,9px) !important;
+  line-height:1.05;
+  overflow-wrap:anywhere;
+}
+#view-calendar .calendar-day-health-rings {
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  width:100%;
+  justify-items:center;
+}
+#view-calendar .calendar-day-health-rings .calendar-kpi-ring-wrap { grid-column:3; }
+#view-calendar .calendar-day-health-rings .calendar-kpi-ring {
+  width:clamp(30px,5.8vw,58px) !important;
+  height:clamp(30px,5.8vw,58px) !important;
+}
+#view-calendar .calendar-footer { margin-top:8px; }
