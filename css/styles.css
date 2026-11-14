@@ -6697,3 +6697,60 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   width:100%;
   min-width:0;
 }
+
+
+/* KAJO weekly summary: sport-coloured composition bar and training-time total. */
+#view-calendar .calendar-week-summary {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:18px;
+  padding:9px 12px;
+}
+#view-calendar .calendar-week-load {
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:6px;
+}
+#view-calendar .calendar-week-load-value,
+#view-calendar .calendar-week-duration {
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+#view-calendar .calendar-week-load-value small,
+#view-calendar .calendar-week-duration small {
+  color:var(--color-text-muted,#7d8a98);
+  font-size:9px;
+}
+#view-calendar .calendar-week-load-value strong,
+#view-calendar .calendar-week-duration strong {
+  color:var(--color-text-primary,#f4f7fa);
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+}
+#view-calendar .calendar-week-load-track {
+  display:flex;
+  width:100%;
+  height:9px;
+  min-height:9px;
+  overflow:hidden;
+  border-radius:99px;
+  background:var(--color-surface-subtle,#1c2835);
+}
+#view-calendar .calendar-week-load-segment {
+  display:block;
+  min-width:2px;
+  height:100%;
+  background:var(--sport-color);
+}
+#view-calendar .calendar-week-duration {
+  min-width:max-content;
+  padding-left:14px;
+  border-left:1px solid var(--color-border,#293644);
+}
+@media(max-width:380px) {
+  #view-calendar .calendar-week-summary { gap:10px; padding:8px; }
+  #view-calendar .calendar-week-duration { padding-left:9px; }
+}
