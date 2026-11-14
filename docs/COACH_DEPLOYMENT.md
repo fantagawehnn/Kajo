@@ -36,23 +36,41 @@ npx wrangler secret put SUPABASE_ANON_KEY
 
 Die Variable `SUPABASE_URL` wird in den Worker-Einstellungen hinterlegt. Vor der Aktivierung muss geprüft werden, dass beide Supabase-Werte in der richtigen Worker-Umgebung gesetzt sind und das Workers-AI-Binding vorhanden ist.
 
+## Kontextauswahl und Begrenzung
+
+`js/coach-data-context.js` wählt Daten anhand der konkreten Frage aus. Die Auswahl wird im Request unter `contextSelection` und `dataCoverage` transparent dokumentiert.
+
+| Fragetyp | Auswahlregel |
+|---|---|
+| Allgemeine Trainingsfrage | letzte 90 Tage |
+| Regeneration/Recovery | letzte 42 Tage; Check-ins letzte 60 Tage |
+| Krafttraining | letzte 180 Tage; Kraft-PBs |
+| Trainingsplanung | letzte 56 Tage plus geplante Einheiten von 14 Tagen rückwirkend bis 42 Tage voraus |
+| Leistungsentwicklung/Belastungstrend | letzte 180 Tage |
+| Krankheit/Verletzung/Gesundheit | letzte 180 Tage; Health-Ereignisse werden einbezogen |
+| Saisonrückblick/Gesamthistorie | vollständige verfügbare Historie, soweit innerhalb der technischen Datensatzgrenzen |
+
+Die Regeln sind eine technische Vorauswahl, keine fachliche Aussage darüber, welche Daten für jede denkbare Frage genügen. Der Coach muss Zeitraum, verfügbare und tatsächlich einbezogene Datensätze sowie Trunkierungen berücksichtigen. Wenn ein gewünschter Zeitraum nicht in der Auswahl liegt, soll die Nutzerin die Frage präzisieren.
+
+Technische Obergrenzen: 500 Aktivitäten, 500 Timeline-Einträge, 180 Check-ins, 200 Kraftsessions und 200 Wettkämpfe. Bei Überschreitung kennzeichnet `dataCoverage` die Auswahl als abgeschnitten. Der Worker begrenzt den serialisierten Kontext zusätzlich auf 300.000 Zeichen. Eine vollständige Saisonanalyse darf daher nicht als vollständig ausgegeben werden, wenn eine dieser Grenzen greift.
+
 ## Sicherheits- und Datenverhalten
 
 - Der Worker prüft das Supabase-Access-Token bei Supabase Auth.
 - Es wird kein service_role-Key verwendet.
 - Es gibt keinen Modell-API-Key im Browser und keinen OpenAI-Aufruf.
-- Die Anfrage enthält nur den vom Client bereits geladenen Account-Kontext; Roh-Telemetrie, GPS, Nutzer-IDs, Körpergewicht und Zyklusdaten werden nicht pauschal übertragen.
+- Roh-Telemetrie, GPS, Nutzer-IDs, Körpergewicht und Zyklusdaten werden nicht pauschal übertragen.
 - KAJO-Belastungskennzahlen werden aus der vorhandenen `dailyTimeline` übernommen und nicht durch den Coach neu berechnet.
-- Das Modell wird direkt über das Cloudflare-Binding aufgerufen. Die Modellseite weist für GLM-4.7-Flash Zero Data Retention aus; maßgeblich bleiben Cloudflares aktuelle Bedingungen und Datenschutzinformationen.
+- Der Modellaufruf erfolgt direkt über das Cloudflare-Binding. Die konkrete Verarbeitung und Aufbewahrung richtet sich nach Cloudflares aktuellen Bedingungen und Datenschutzinformationen.
 - Chatverlauf bleibt vorerst nur im Arbeitsspeicher des geöffneten Browser-Tabs und wird nicht dauerhaft gespeichert.
 - Der Coach-Endpunkt schreibt keine Trainings-, Profil- oder Kalenderdaten.
 - Der Worker validiert die Sitzung, liest die Trainingsdaten aber nicht selbst aus der Datenbank: Der authentifizierte Browser übermittelt den bereits geladenen KAJO-Kontext. Die Authentifizierung schützt den Endpunkt, garantiert jedoch nicht die Unveränderbarkeit der vom Browser gesendeten Kennzahlen.
+- Das kostenlose Tageskontingent ist accountweit. Es gibt noch keine zusätzliche serverseitige Rate-Limitierung pro Nutzer.
 
 ## Noch offen
 
 - Cloudflare Workers AI muss für den bestehenden Worker aktiviert bzw. das Binding deployed werden.
 - Supabase-Variablen müssen in der Cloudflare-Produktionsumgebung vorhanden sein.
 - Das tatsächliche Neuron-Kontingent und die Modellantwort müssen nach Freigabe in der Cloudflare-Umgebung beobachtet werden.
-- Es gibt noch keine persistente anwendungsseitige Tagesbegrenzung pro Nutzer; das kostenlose Kontingent ist accountweit.
 - Der Umfang des Datenkontexts ist noch nicht durch reale Produktionsdaten validiert.
 - Es wurde kein Deployment ausgeführt und es wurden auf ausdrücklichen Wunsch keine Tests ausgeführt.
