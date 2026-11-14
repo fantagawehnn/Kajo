@@ -263,7 +263,7 @@ export function buildLocalCoachReply(context, message = '') {
         overview: buildOverviewReply
     };
     return builders[intent](context)
-        + '\\n\\nHinweis: Dies ist eine lokale, regelbasierte Datenauswertung und noch keine KI-generierte Trainingsberatung. Fehlende oder unvollständige Daten werden nicht durch Schätzwerte ersetzt.';
+        + '\n\nHinweis: Dies ist eine lokale, regelbasierte Datenauswertung und noch keine KI-generierte Trainingsberatung. Fehlende oder unvollständige Daten werden nicht durch Schätzwerte ersetzt.';
 }
 
 export function sendAICoachMessage() {
