@@ -536,6 +536,7 @@ export function openCalendarPhaseEditor(id) {
     if (!phase) return;
     const host = document.getElementById('calendar-year-phase-editor');
     if (!host) return;
+    host.classList.add('calendar-year-phase-editor');
     host.innerHTML = '<div class="calendar-year-editor-backdrop" role="presentation" onclick="closeCalendarPhaseEditor()"></div><form class="calendar-year-editor" onsubmit="saveCalendarPhaseEditor(event)">' +
         '<div class="calendar-year-editor-head"><strong>Trainingsphase bearbeiten</strong><button type="button" onclick="closeCalendarPhaseEditor()" aria-label="Schließen">×</button></div>' +
         '<label>Bezeichnung<input id="calendar-phase-name" maxlength="60" required value="' + escapeHtml(phase.name) + '"></label>' +
