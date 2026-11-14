@@ -27,3 +27,17 @@ jobs:
         run: node tests/regression-smoke.mjs
       - name: Run Garmin load and coverage tests
         run: node --experimental-default-type=module --test tests/training-load.test.mjs
+
+  deploy-cloudflare:
+    needs: regression-smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/v2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy KAJO to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
