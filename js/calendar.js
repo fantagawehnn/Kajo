@@ -176,8 +176,7 @@ function calendarDayRing(value, label, tone) {
 }
 function calendarDayDurationValue(minutes) {
     if (!Number.isFinite(Number(minutes))) return '—';
-    const value = Math.max(0, Number(minutes));
-    return value < 60 ? String(Math.round(value)) : (value / 60).toFixed(2).replace('.', ',');
+    return (Math.max(0, Number(minutes)) / 60).toFixed(2).replace('.', ',');
 }
 function calendarFormatMinutes(value) {
     if (!Number.isFinite(Number(value))) return '—';
@@ -316,7 +315,7 @@ function renderCalendarDayDetail(date, target) {
 
     const loadMarkup = '<div class="calendar-day-load-rings">' +
         calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
-        calendarDayRing(durationText, 'Dauer', 'info') +
+        calendarDayRing(durationText, 'Trainingsstunden', 'info') +
         calendarDayRing(String(completedCount), 'Abgeschlossen', 'good') +
         calendarDayRing(String(planned.length), 'Geplant', 'info') +
         '</div>';
@@ -324,7 +323,7 @@ function renderCalendarDayDetail(date, target) {
     root.innerHTML =
         '<section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
             calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
-            calendarDayRing(durationText, 'Dauer', 'info') +
+            calendarDayRing(durationText, 'Trainingsstunden', 'info') +
             calendarDayRing(String(completedCount), 'Einheiten', 'good') +
             calendarDayRing(readinessText, 'Recovery', calendarReadinessTone(readiness.score)) +
         '</section>' +
@@ -333,7 +332,7 @@ function renderCalendarDayDetail(date, target) {
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3><span>' + planned.length + '</span></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>' +
         '<section class="calendar-detail-section"><h3>Belastungsanalyse</h3>' + loadMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup +
-            '<div class="calendar-day-health-rings">' + calendarRing(health?.status === 'sick' ? 'Krank' : health?.status === 'injured' ? 'Verletzt' : '—', 'Gesundheit', health?.status ? (health.diagnosis || 'dokumentiert') : 'nicht erfasst', health?.status === 'sick' ? 'critical' : health?.status === 'injured' ? 'attention' : 'info') + '</div>' + '</section>' +
+            '<div class="calendar-day-health-rings">' + calendarDayRing(health?.status === 'sick' ? 'Krank' : health?.status === 'injured' ? 'Verletzt' : '—', 'Gesundheit', health?.status === 'sick' ? 'critical' : health?.status === 'injured' ? 'attention' : 'info') + '</div>' + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\'' + escapeHtml(date) + '\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
             (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>';
 }
@@ -425,39 +424,32 @@ export function setCalendarDisplayMode(mode) {
 
 function renderCalendarLegend() {
     const el = document.getElementById('calendar-legend');
+    const footer = el?.closest('.calendar-footer');
     if (!el) return;
-    const dates = [];
     const format = state.activeCalendarFormat;
-    if (format === 'day') dates.push(toLocalDateString(state.currentCalendarDate));
-    else if (format === 'week') {
-        const start = new Date(state.currentCalendarDate);
-        start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-        for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); dates.push(toLocalDateString(d)); }
-    } else if (format === 'month') {
-        const prefix = state.currentCalendarDate.getFullYear() + '-' + String(state.currentCalendarDate.getMonth() + 1).padStart(2, '0') + '-';
-        dates.push(...(state.rawActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
-        dates.push(...(state.plannedActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
-    } else if (format === 'year') {
-        const prefix = String(state.currentCalendarDate.getFullYear()) + '-';
-        dates.push(...(state.rawActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
-        dates.push(...(state.plannedActivities || []).filter(item => String(item.date || '').startsWith(prefix)).map(item => item.date));
+    const showLegend = format === 'month';
+    if (footer) footer.classList.toggle('hidden', !showLegend);
+    if (!showLegend) { el.innerHTML = ''; return; }
+
+    const prefix = state.currentCalendarDate.getFullYear() + '-' + String(state.currentCalendarDate.getMonth() + 1).padStart(2, '0') + '-';
+    const activities = (state.rawActivities || []).filter(item => String(item.date || '').startsWith(prefix));
+    const planned = (state.plannedActivities || []).filter(item => String(item.date || '').startsWith(prefix));
+    const dates = [];
+    for (let day = 1; day <= new Date(state.currentCalendarDate.getFullYear(), state.currentCalendarDate.getMonth() + 1, 0).getDate(); day++) {
+        dates.push(prefix + String(day).padStart(2, '0'));
     }
-    const types = new Set();
-    dates.forEach(date => {
-        (state.rawActivities || []).filter(item => item.date === date).forEach(item => types.add(item.type || 'Workout'));
-        (state.plannedActivities || []).filter(item => item.date === date).forEach(item => types.add(item.type || 'Workout'));
-    });
+    const types = new Set([...activities, ...planned].map(item => item.type || 'Workout'));
     const catalog = getSportsCatalog();
     const items = [...types].map(type => {
         const sport = catalog[type] || catalog.Workout;
         return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + sport.color + '"></span>' + escapeHtml(sport.label || type) + '</span>';
     });
-    items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-completed">●</span>Abgeschlossen</span>');
-    items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-planned">○</span>Geplant</span>');
-    items.push('<span class="calendar-legend-item"><i data-lucide="trophy" class="calendar-event-icon calendar-event-race"></i>Wettkampf</span>');
-    items.push('<span class="calendar-legend-item"><i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle"></i>Menstruation</span>');
-    items.push('<span class="calendar-legend-item"><i data-lucide="thermometer" class="calendar-event-icon calendar-event-sick"></i>Krankheit</span>');
-    items.push('<span class="calendar-legend-item"><i data-lucide="bandage" class="calendar-event-icon calendar-event-injured"></i>Verletzung</span>');
+    if (activities.length) items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-completed">●</span>Abgeschlossen</span>');
+    if (planned.length) items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-planned">○</span>Geplant</span>');
+    if ((state.races || []).some(item => dates.includes(item.date))) items.push('<span class="calendar-legend-item"><i data-lucide="trophy" class="calendar-event-icon calendar-event-race"></i>Wettkampf</span>');
+    if (dates.some(date => state.dailyCheckins?.[date]?.cycle?.period === true)) items.push('<span class="calendar-legend-item"><i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle"></i>Menstruation</span>');
+    if (dates.some(date => state.healthLogs?.[date]?.status === 'sick')) items.push('<span class="calendar-legend-item"><i data-lucide="thermometer" class="calendar-event-icon calendar-event-sick"></i>Krankheit</span>');
+    if (dates.some(date => state.healthLogs?.[date]?.status === 'injured')) items.push('<span class="calendar-legend-item"><i data-lucide="bandage" class="calendar-event-icon calendar-event-injured"></i>Verletzung</span>');
     el.innerHTML = items.join('');
     globalThis.lucide?.createIcons?.();
 }
@@ -879,8 +871,8 @@ function renderCalendarMonthSummary(date, target) {
     const data = calendarDateData(date);
     const actualMinutes = data.durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
     const durationText = data.activities.length === 0
-        ? '0 min'
-        : (data.durationComplete ? '' : '≈') + calendarFormatMinutes(actualMinutes);
+        ? '0,00'
+        : (data.durationComplete ? '' : '≈') + calendarDayDurationValue(actualMinutes);
     const loadText = data.loadValue === null ? '—' : Math.round(data.loadValue);
     const activityRows = (items, planned) => items.slice(0, 3).map(item => {
         const sport = calendarSport(item.type);
@@ -900,11 +892,11 @@ function renderCalendarMonthSummary(date, target) {
     root.innerHTML =
         '<div class="calendar-month-summary-heading"><div><p class="calendar-month-summary-eyebrow">Tageszusammenfassung</p><h3>' + escapeHtml(calendarDateLabel(date)) + '</h3></div>' +
         '<button type="button" class="calendar-month-summary-open" onclick="openCalendarDay(\'' + escapeHtml(date) + '\')">Tagesansicht <i data-lucide="arrow-right"></i></button></div>' +
-        '<div class="calendar-month-summary-metrics">' +
-            '<div><span>Absolviert</span><strong>' + data.activities.length + '</strong></div>' +
-            '<div><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong></div>' +
-            '<div><span>Load</span><strong>' + escapeHtml(loadText) + '</strong><small>' + (data.loadValue === null ? 'Nicht vollständig berechenbar' : escapeHtml(data.timeline?.loadUnit || 'Tagesbelastung')) + '</small></div>' +
-            '<div><span>Geplant</span><strong>' + data.planned.length + '</strong></div>' +
+        '<div class="calendar-month-summary-rings">' +
+            calendarDayRing(String(data.activities.length), 'Absolviert', 'good') +
+            calendarDayRing(durationText, 'Trainingsstunden', 'info') +
+            calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
+            calendarDayRing(String(data.planned.length), 'Geplant', 'info') +
         '</div>' +
         ((data.activities.length || data.planned.length) ?
             '<div class="calendar-month-summary-lists">' +
