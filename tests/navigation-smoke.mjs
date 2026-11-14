@@ -175,7 +175,7 @@ const dayDetailEnd = calendar.indexOf('export function openCalendarDay', dayDeta
 const dayDetail = calendar.slice(dayDetailStart, dayDetailEnd);
 assert.ok(dayDetail.indexOf('Tagesverlauf') < dayDetail.indexOf('Absolviertes Training') && dayDetail.indexOf('Absolviertes Training') < dayDetail.indexOf('Recovery & Gesundheit'), 'day cockpit order is timeline, completed training, recovery and health');
 assert.ok(calendar.includes('getSportsCatalog()'), 'calendar activity colors come from configured sport colors');
-assert.ok(calendar.includes('calendar-month-sport-marker is-planned') && calendar.includes('calendar-entry-status is-completed'), 'sport color is separate from planned/completed status');
+assert.ok(calendar.includes("calendar-month-sport-marker ' + (planned ? 'is-planned' : 'is-completed')") && calendar.includes('calendar-entry-status is-completed'), 'sport color is separate from planned/completed status');
 assert.ok(calendar.includes('calendarEventIcons(date)'), 'calendar shows distinct event symbols');
 assert.ok(calendar.includes('item?.cycle?.period === true'), 'calendar shows recorded menstruation days only');
 assert.ok(calendar.includes('calendar-year-week-cell') && calendar.includes('calendar-year-month-label') && calendar.includes('calendar-year-sport-segment'), 'year view is a month and calendar-week matrix with sport-specific bars');
