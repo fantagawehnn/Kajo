@@ -34,7 +34,7 @@ assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does n
 
 for (const domain of ['load', 'recovery', 'performance', 'health']) {
   assert.ok(html.includes('id="analysis-subpage-' + domain + '"'), domain + ' analysis detail page exists');
-  if (domain !== 'performance') assert.ok(html.includes('id="' + domain + '-hero-ring"'), domain + ' uses the shared hero metric ring');
+  if (domain !== 'performance' && domain !== 'health') assert.ok(html.includes('id="' + domain + '-hero-ring"'), domain + ' uses the shared hero metric ring');
 }
 assert.ok(css.includes('one centered, consistently sized hero metric'), 'analysis pages share the centered hero layout');
 
@@ -61,19 +61,19 @@ assert.ok(calendar.includes("['day', 'week', 'month', 'year', 'activities']"), '
 assert.match(state, /activeCalendarFormat:\s*'week'/, 'week is the default calendar mode');
 
 
-for (const id of ['load-hero-ring', 'recovery-hero-ring', 'health-hero-ring']) {
+for (const id of ['load-hero-ring', 'recovery-hero-ring']) {
   assert.ok(html.includes('id="' + id + '"'), 'consistent analysis hero ring: ' + id);
 }
 assert.ok(html.includes('id="analysis-shared-period"'), 'shared analysis period container exists');
-assert.ok(html.includes('id="health-history-baseline-note"'), 'wearable baseline limitation is disclosed');
-assert.ok(html.includes('id="analysis-health-timeline"'), 'health availability/event timeline exists');
-assert.ok(html.includes('id="health-timeline-selection"'), 'health timeline has an accessible selected-day detail');
-assert.ok(analysisUI.includes('onClick: (_event, elements) =>'), 'health timeline supports selecting a day');
-assert.ok(analysisUI.includes('Kein Krankheits- oder Verletzungseintrag dokumentiert'), 'missing health entries are not interpreted as healthy days');
-assert.ok(analysisUI.includes("weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'"), 'selected health day displays its full date');
+assert.ok(html.includes('id="health-documentation-metrics"'), 'Health has separate documented-event metric circles');
+assert.ok(html.includes('id="health-trend-chart"') && html.includes('data-health-range="28d"'), 'Health has a selectable trend chart and time ranges');
+assert.ok(analysisUI.includes('Tage ohne Balken sind nicht dokumentiert'), 'missing health entries are not interpreted as healthy days');
+assert.ok(analysisUI.includes('item?.cycle?.period===true'), 'cycle trends use only explicitly documented cycle entries');
+assert.ok(analysisUI.includes('keine medizinische Interpretation') || analysisUI.includes('keine medizinische Interpretation.'), 'Health trend avoids medical interpretation');
 assert.ok(analysisUI.includes("['HRV', 'hrv', 'ms', 1]") && analysisUI.includes('const entry = latestCheckin(key)'), 'recovery exposes the latest raw HRV measurement as a separate metric');
 assert.ok(analysisUI.includes('const readiness = calculateReadiness(todayKey())') && analysisUI.includes('const score = readiness.enoughData ? readiness.score : null'), 'aggregate recovery value reuses the existing calculation for the analysis overview');
 assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes('id="recovery-hero-note" class="kajo-analysis-hero-note"'), 'Recovery detail does not display a readiness summary');
+assert.ok(!html.includes('id="health-hero-ring"') && !html.includes('id="health-availability-status"'), 'Health does not display an unsupported availability score');
 assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'), 'each recovery circle uses the existing metric-specific status classification');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
 assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
