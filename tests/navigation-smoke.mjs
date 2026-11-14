@@ -204,7 +204,7 @@ assert.ok(calendar.includes("calendarDayEvent('Menstruation dokumentiert'") && c
 assert.ok(!dayDetail.includes('calendar-day-events') && !dayDetail.includes('calendarRaceRow') && !dayDetail.includes('calendar-day-duration-comparison') && !dayDetail.includes('calendar-day-edit-row'), 'day view excludes unagreed duplicate sections and controls');
 assert.ok(calendar.includes('calendar-day-kpis') && calendar.includes('calendar-day-timeline'), 'day view renders a KPI cockpit and chronological event timeline');
 assert.ok(calendar.includes('Absolviertes Training') && calendar.includes('Geplantes Training'), 'day view separates completed and planned sessions');
-assert.ok(calendar.includes('calendar-day-recovery-details') && calendar.includes('calendar-day-recovery-metrics'), 'day view keeps recovery compact with expandable details');
+assert.ok(calendar.includes('calendar-day-recovery-rings') && calendar.includes('subjectiveMarkup'), 'day view keeps recovery compact with documented recovery rings and subjective metrics');
 assert.ok(calendar.includes("Tagesreflexion") && calendar.includes("openDailyNote(") && dashboard.includes("openDailyNote(requestedDate = null)"), "day view reuses date-specific daily notes for reflection");
 assert.ok(calendar.includes('calendar-day-date-actions') && calendar.includes('openCalendarDay(this.value)'), 'day view supports direct date selection and today navigation');
 assert.ok(dayDetail.includes('Vorheriger Tag') && dayDetail.includes('Nächster Tag'), 'day view supports previous and next day navigation');
