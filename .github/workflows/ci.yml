@@ -25,6 +25,8 @@ jobs:
         run: node tests/navigation-smoke.mjs
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
+      - name: Run cloud sync policy tests
+        run: node --experimental-default-type=module --test tests/cloud-sync-policy.test.mjs
       - name: Run competition result tests
         run: node --experimental-default-type=module --test tests/race-results.test.mjs
       - name: Run canoe performance tests
