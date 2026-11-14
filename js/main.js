@@ -1994,7 +1994,7 @@ Object.assign(window, {
     setKajoTheme,
     openSettingsModal: showSettingsModal,
     kajoSettingsOpenPage: (page) => {
-        const allowed = ['menu', 'training', 'app', 'notifications'];
+        const allowed = ['menu', 'training', 'performance', 'app', 'notifications'];
         const selected = allowed.includes(page) ? page : 'menu';
         const menu = document.getElementById('kajo-settings-menu');
         const content = document.getElementById('kajo-settings-subpages');
@@ -2010,7 +2010,7 @@ Object.assign(window, {
         content.querySelectorAll('[data-settings-page]').forEach(section => {
             section.classList.toggle('hidden', section.dataset.settingsPage !== selected);
         });
-        footer?.classList.toggle('hidden', selected !== 'training');
+        footer?.classList.toggle('hidden', !['training', 'performance'].includes(selected));
         if (!isMenu) {
             content.scrollTop = 0;
             document.getElementById('kajo-settings-back')?.focus({ preventScroll: true });
