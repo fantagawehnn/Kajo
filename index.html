@@ -173,26 +173,10 @@
         <!-- Bereichsauswahl: weitere Funktionen öffnen sich als eigenständige Ansichten. -->
          <section id="view-more" class="hidden kajo-more-view">
             <header class="kajo-more-header">
-                <div><p class="kajo-more-eyebrow">DEIN PERSÖNLICHER BEREICH</p><h1>Mehr</h1><p>Profil, Daten und Einstellungen an einem Ort.</p></div>
+                <div><p class="kajo-more-eyebrow">DEIN PERSÖNLICHER BEREICH</p><h1>Mehr</h1><p>Weitere Funktionen und deine Datenverwaltung.</p></div>
             </header>
 
-            <button type="button" class="kajo-more-status" onclick="openGarminConnectionModal()" aria-label="Garmin-Verbindungsstatus öffnen">
-                <span class="kajo-more-status-main">
-                    <span class="kajo-more-status-icon"><i data-lucide="watch" aria-hidden="true"></i></span>
-                    <span class="kajo-more-status-copy"><span class="kajo-more-status-label">DATENVERBINDUNG</span><strong>Garmin</strong><small id="settings-garmin-status">Status wird geladen</small></span>
-                </span>
-                <span class="kajo-more-status-action"><span>Verbindung verwalten</span><i data-lucide="arrow-up-right" aria-hidden="true"></i></span>
-                <span id="settings-garmin-status-dot" class="kajo-more-status-dot" aria-hidden="true"></span>
-            </button>
-
             <div class="kajo-more-groups">
-                <section class="kajo-more-group" data-tone="coral">
-                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="user-round" aria-hidden="true"></i></span><div><h2>Athletenprofil</h2><p>Deine persönlichen und sportlichen Grundlagen</p></div></div>
-                    <div class="kajo-area-list">
-                        <button type="button" class="kajo-area-card" onclick="switchTab('profile')"><span class="kajo-area-icon"><i data-lucide="contact-round"></i></span><span class="kajo-area-copy"><strong>Persönliche &amp; sportliche Daten</strong><small>Profil, Körperdaten und Leistungswerte</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
-                    </div>
-                </section>
-
                 <section class="kajo-more-group" data-tone="blue">
                     <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></span><div><h2>Training &amp; Sport</h2><p>Konfiguriere deine Trainingsumgebung</p></div></div>
                     <div class="kajo-area-list">
@@ -205,20 +189,10 @@
                 <section class="kajo-more-group" data-tone="mint">
                     <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="database" aria-hidden="true"></i></span><div><h2>Daten &amp; Synchronisierung</h2><p>Import, Datenqualität und Sicherung</p></div></div>
                     <div class="kajo-area-list">
-                        <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="cloud-sync"></i></span><span class="kajo-area-copy"><strong>Datenquellen &amp; Synchronisierung</strong><small>Garmin-Verbindungen und Datenstatus</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
-                        <button type="button" class="kajo-area-card" onclick="switchTab('upload')"><span class="kajo-area-icon"><i data-lucide="file-up"></i></span><span class="kajo-area-copy"><strong>Manueller Datenimport</strong><small>Trainingsdateien und weitere Daten einlesen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
-                        <button type="button" class="kajo-area-card" onclick="switchTab('methods')"><span class="kajo-area-icon"><i data-lucide="book-open-check"></i></span><span class="kajo-area-copy"><strong>Datenqualität &amp; Methodik</strong><small>Herkunft, Datenlücken und Berechnungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
-                        <button type="button" class="kajo-area-card" onclick="switchTab('backup')"><span class="kajo-area-icon"><i data-lucide="archive"></i></span><span class="kajo-area-copy"><strong>Datensicherung</strong><small>Backup erstellen oder wiederherstellen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="cloud-sync"></i></span><span class="kajo-area-copy"><strong>Datenverwaltung</strong><small>Verbindungen, Importe, Datenqualität und Sicherungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
                     </div>
                 </section>
 
-                <section class="kajo-more-group" data-tone="violet">
-                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="sparkles" aria-hidden="true"></i></span><div><h2>App &amp; Unterstützung</h2><p>KAJO anpassen und Hilfe erhalten</p></div></div>
-                    <div class="kajo-area-list">
-                        <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="palette"></i></span><span class="kajo-area-copy"><strong>Darstellung &amp; Benachrichtigungen</strong><small>Design, Theme und persönliche Erinnerungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
-                        <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="brain-circuit"></i></span><span class="kajo-area-copy"><strong>KAJO Coach &amp; KI-Einstellungen</strong><small>Coach öffnen und Optionen verwalten</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
-                    </div>
-                </section>
             </div>
         </section>
         <section id="view-routes" class="hidden space-y-5">
@@ -905,7 +879,7 @@
         </div>
 
         <div id="view-data" class="hidden kajo-data-page kajo-sync-overview">
-<header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datenquellen &amp; Synchronisierung</h1><p>Verbindungen, Datenabrufe und gespeicherte Daten zentral verwalten.</p></div><button id="garmin-sync-indicator" type="button" onclick="openGarminConnectionModal()" class="kajo-data-status-link" title="Garmin-Status prüfen" aria-label="Garmin-Status wird geprüft"><span id="garmin-sync-indicator-dot" aria-hidden="true"></span><span id="garmin-sync-indicator-text">Status prüfen</span></button></header>
+<header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datenquellen &amp; Synchronisierung</h1><p>Verbindungen, Datenabrufe und gespeicherte Daten zentral verwalten.</p></div><div id="garmin-sync-indicator" class="kajo-data-status-link" title="Garmin-Verbindungsstatus"><span id="garmin-sync-indicator-dot" aria-hidden="true"></span><span id="garmin-sync-indicator-text">Status prüfen</span></div></header>
 <section class="kajo-sync-source-grid" aria-label="Datenquellen">
   <article class="kajo-sync-source-card" data-source="garmin">
     <div class="kajo-sync-source-top"><span class="kajo-sync-source-icon"><i data-lucide="watch"></i></span><span class="kajo-sync-source-type">TRAINING &amp; HEALTH</span></div>
@@ -923,7 +897,7 @@
     <button type="button" onclick="openCloudSyncModal()">Cloud-Status ansehen <i data-lucide="arrow-up-right"></i></button>
   </article>
 </section>
-<section class="kajo-data-section kajo-sync-history-section"><div class="kajo-data-section-heading"><h2>Garmin-Datenbestand</h2><span>Gespeicherte Datensätze</span></div><p class="kajo-data-note">Die Detailhistorie zeigt Anzahl und abgedeckten Zeitraum je Datenfeld – nicht einzelne Messpunkte.</p><button type="button" class="kajo-data-inline-action" onclick="openGarminConnectionModal()">Synchronisierungshistorie öffnen <i data-lucide="arrow-up-right"></i></button></section>
+<section class="kajo-data-section kajo-sync-history-section"><div class="kajo-data-section-heading"><h2>Garmin-Datenbestand</h2><span>Gespeicherte Datensätze</span></div><p class="kajo-data-note">Die Synchronisierungshistorie mit Umfang und Zeitraum der gespeicherten Daten findest du im Garmin-Verbindungsfenster der Datenquellen.</p></section>
 <section class="kajo-data-section kajo-sync-tools"><div class="kajo-data-section-heading"><h2>Weitere Datenwerkzeuge</h2><span>Unabhängig von Live-Verbindungen</span></div>
 <button type="button" class="kajo-data-source-row" onclick="switchTab('upload')"><span class="kajo-data-source-icon"><i data-lucide="file-up"></i></span><span><strong>Manueller Dateiimport</strong><small>CSV-, FIT- und GPX-Aktivitäten</small></span><span class="kajo-data-row-action">Öffnen</span></button>
 <button type="button" class="kajo-data-source-row" onclick="switchTab('methods')"><span class="kajo-data-source-icon"><i data-lucide="clipboard-check"></i></span><span><strong>Datenqualität &amp; Methodik</strong><small>Quellen, Berechenbarkeit und Grenzen</small></span><span class="kajo-data-row-action">Öffnen</span></button>
@@ -1351,20 +1325,10 @@
           <button type="button" onclick="closeSettingsModal()" aria-label="Einstellungen schließen" class="kajo-settings-close">×</button>
         </header>
         <nav class="kajo-settings-overview" id="kajo-settings-menu" aria-label="Einstellungsbereiche">
-          <section class="kajo-settings-overview-group" data-tone="coral">
-            <div class="kajo-settings-overview-heading"><span class="kajo-settings-overview-icon"><i data-lucide="user-round"></i></span><h3>Profil</h3></div>
-            <button type="button" class="kajo-settings-overview-row" onclick="closeSettingsModal(); openProfileModal()"><i data-lucide="contact-round"></i><span><strong>Athletenprofil</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-          </section>
           <section class="kajo-settings-overview-group" data-tone="blue">
             <div class="kajo-settings-overview-heading"><span class="kajo-settings-overview-icon"><i data-lucide="dumbbell"></i></span><h3>Training &amp; Sport</h3></div>
             <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsOpenPage('training')"><i data-lucide="settings-2"></i><span><strong>Sportarten &amp; Belastung</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
             <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsOpenPage('training')"><i data-lucide="heart-pulse"></i><span><strong>Leistungsparameter &amp; Zonen</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-          </section>
-          <section class="kajo-settings-overview-group" data-tone="mint">
-            <div class="kajo-settings-overview-heading"><span class="kajo-settings-overview-icon"><i data-lucide="database"></i></span><h3>Daten</h3></div>
-            <button type="button" class="kajo-settings-overview-row" onclick="closeSettingsModal(); openGarminConnectionModal()"><i data-lucide="watch"></i><span><strong>Garmin verbinden</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-            <button type="button" class="kajo-settings-overview-row" onclick="closeSettingsModal(); switchMoreTab('data')"><i data-lucide="database"></i><span><strong>Import &amp; Datenqualität</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-            <button type="button" class="kajo-settings-overview-row" onclick="exportDatabaseBackup()"><i data-lucide="download"></i><span><strong>Backup exportieren</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
           </section>
           <section class="kajo-settings-overview-group" data-tone="violet">
             <div class="kajo-settings-overview-heading"><span class="kajo-settings-overview-icon"><i data-lucide="smartphone"></i></span><h3>App</h3></div>
