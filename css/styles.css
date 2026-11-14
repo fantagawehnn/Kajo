@@ -5059,3 +5059,8 @@ html[data-theme="light"] .kajo-analysis-overview-panel{background:var(--kajo-sur
 html[data-theme="light"] .kajo-load-model-nav,html.theme-light .kajo-load-model-nav{background:#eef2f7;border-color:#d8e0ea}
 html[data-theme="light"] .kajo-load-model-nav button,html.theme-light .kajo-load-model-nav button{color:#64748b}
 html[data-theme="light"] .kajo-load-model-nav button.active,html.theme-light .kajo-load-model-nav button.active{background:#fff;border-color:#d8e0ea;color:#172033}
+
+
+.kajo-training-load-rings .kajo-load-metric:nth-child(1) .kajo-load-ring{border-color:#6DA8F7}
+.kajo-training-load-rings .kajo-load-metric:nth-child(2) .kajo-load-ring{border-color:#D64A4A}
+.kajo-training-load-rings .kajo-load-metric:nth-child(3) .kajo-load-ring{border-color:#D7A64A}
