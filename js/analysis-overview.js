@@ -231,15 +231,42 @@ function renderActivityChart() {
         (incompleteSports ? ' · ' + incompleteSports + ' Sportarten wegen fehlender Dauer nicht in der Verteilung' : '');
   setText('analysis-overview-activity-note', note);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
+  const totalValue = values.reduce((sum, value) => sum + value, 0);
+  const sportDatasets = entries.map((item, index) => ({
+    label: item.label,
+    data: [values[index]],
+    backgroundColor: item.color,
+    borderWidth: 0,
+    barThickness: 22,
+    categoryPercentage: 0.72,
+    barPercentage: 0.9
+  }));
   activityChart = new Chart(canvas.getContext('2d'), {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 3 }] },
+    type: 'bar',
+    data: { labels: [''], datasets: sportDatasets },
     options: {
-      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          stacked: true,
+          beginAtZero: true,
+          max: totalValue || undefined,
+          display: false,
+          grid: { display: false },
+          ticks: { display: false }
+        },
+        y: { stacked: true, display: false, grid: { display: false } }
+      },
       plugins: {
         legend: { display: false },
         title: { display: !values.length, text: activityMeasure === 'duration' && activities.length ? 'Keine vollständigen Dauern verfügbar' : 'Noch keine Trainingsaktivitäten erfasst', color: textColor, font: { size: 11, weight: 'normal' } },
-        tooltip: { callbacks: { label: context => context.label + ': ' + fmt(context.parsed) + (activityMeasure === 'sessions' ? ' Einheiten' : ' h') } }
+        tooltip: { callbacks: { label: context => {
+          const value = Number(context.parsed.x || 0);
+          const share = totalValue > 0 ? value / totalValue * 100 : 0;
+          return context.dataset.label + ': ' + fmt(value) + (activityMeasure === 'sessions' ? ' Einheiten' : ' h') + ' · ' + share.toFixed(1) + ' %';
+        } } }
       }
     }
   });
