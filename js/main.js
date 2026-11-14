@@ -1582,6 +1582,10 @@ function scheduleCloudSync(userId) {
 
 async function flushCloudSync() {
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return;
+    if (!canAutomaticallySyncCloudSnapshot(cloudInitialTransferState)) {
+        setCloudSyncStatus('Noch keine automatische Cloud-Speicherung: Bitte bestätige zuerst den Erstupload ausdrücklich.');
+        return;
+    }
     if (cloudSyncInFlight) {
         cloudSyncPending = true;
         return;
