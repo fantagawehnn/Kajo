@@ -7782,3 +7782,59 @@ html[data-theme="light"] #view-more .kajo-area-card {
 }
 html[data-theme="light"] #view-more .kajo-area-copy strong { color:#17212b; }
 html[data-theme="light"] #view-more .kajo-area-copy small { color:#718091; }
+
+
+/* Mehr: vollständig offene Liste ohne Kachelflächen oder Umrandungen. */
+#view-more .kajo-more-groups { display:flex; flex-direction:column; gap:0; }
+#view-more .kajo-more-group {
+  display:block;
+  padding:0;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent !important;
+}
+#view-more .kajo-area-list {
+  display:flex !important;
+  flex-direction:column !important;
+  gap:0 !important;
+}
+#view-more .kajo-area-card {
+  display:grid !important;
+  grid-template-columns:2.7rem minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:12px !important;
+  width:100% !important;
+  min-height:78px !important;
+  padding:13px 4px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+#view-more .kajo-area-card:hover,
+#view-more .kajo-area-card:focus-visible {
+  border:0 !important;
+  background:transparent !important;
+  outline:none;
+  transform:none !important;
+}
+#view-more .kajo-area-icon {
+  width:2.7rem !important;
+  height:2.7rem !important;
+  border:0 !important;
+  border-radius:11px !important;
+  background:transparent !important;
+}
+#view-more .kajo-area-copy strong { font-size:.96rem; }
+#view-more .kajo-area-copy small { font-size:.75rem; }
+#view-more .kajo-area-chevron { opacity:.8; }
+html[data-theme="light"] #view-more .kajo-more-group,
+html[data-theme="light"] #view-more .kajo-area-card {
+  background:transparent !important;
+  border:0 !important;
+}
+@media(max-width:560px) {
+  #view-more .kajo-area-card { min-height:74px !important; padding:12px 2px !important; }
+}
