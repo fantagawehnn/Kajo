@@ -6754,3 +6754,8 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #view-calendar .calendar-week-summary { gap:10px; padding:8px; }
   #view-calendar .calendar-week-duration { padding-left:9px; }
 }
+
+/* Keep the weekly summary exclusive to the week view; the ID selector above otherwise overrides .hidden. */
+#view-calendar .calendar-week-summary.hidden {
+  display:none !important;
+}
