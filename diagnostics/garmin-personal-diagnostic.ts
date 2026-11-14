@@ -905,7 +905,6 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
     label: string;
     unit: string | null;
     scaleFactor: number | null;
-    time: number[];
     values: Array<number | null>;
     nonNullCount: number;
   }> = {};
@@ -920,7 +919,6 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
       label: descriptor.label || readableKey || key,
       unit: descriptor.unitKey,
       scaleFactor: descriptor.factor,
-      time,
       values,
       nonNullCount,
     };
@@ -929,6 +927,7 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
   return {
     source: "garmin-activity-details-json",
     time,
+    metricSeriesTime: time,
     ...(hr ? { hr } : {}),
     ...(altitude ? { altitude } : {}),
     ...(distance ? { distance } : {}),
