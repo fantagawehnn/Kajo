@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=124">
+    <link rel="stylesheet" href="css/styles.css?v=125">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -239,16 +239,15 @@
           </section>
 
           <section class="space-y-3">
-            <div class="kajo-route-list-heading"><h2>Meine Strecken</h2><span id="route-filter-count">0 Einträge</span></div>
-            <div id="training-routes-list" class="kajo-route-list"></div>
-          </section>
-
-          <section class="kajo-route-manager">
-            <button type="button" class="kajo-route-manager-toggle" onclick="toggleTrainingWatersManager()" aria-expanded="false" aria-controls="route-water-manager">
-              <span><i data-lucide="waves"></i><span><strong>Gewässer verwalten</strong><small>Flüsse und Flussabschnitte hinzufügen oder bearbeiten</small></span></span>
-              <i data-lucide="chevron-down" class="kajo-route-manager-chevron"></i>
-            </button>
-            <div id="route-water-manager" class="hidden kajo-route-manager-content">
+            <div class="kajo-route-list-heading">
+              <h2>Meine Strecken</h2>
+              <div class="flex items-center gap-3">
+                <span id="route-filter-count">0 Einträge</span>
+                <button type="button" class="kajo-route-manager-toggle" onclick="toggleTrainingWatersManager()" aria-label="Gewässer verwalten öffnen" title="Gewässer verwalten" aria-expanded="false" aria-controls="route-water-manager"><i data-lucide="pencil"></i></button>
+              </div>
+            </div>
+            <div id="route-water-manager" class="hidden kajo-route-manager-content kajo-route-manager-inline">
+              <div class="text-[10px] font-semibold tracking-wide text-cyan-300 mb-3">GEWÄSSER VERWALTEN</div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <label class="text-slate-400">Fluss / Gewässer<input id="route-water-name" list="route-river-suggestions" maxlength="100" placeholder="z. B. Sieg" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><datalist id="route-river-suggestions"><option value="Sieg"><option value="Moldau – Prag"><option value="Inn – Rosenheim"><option value="Rhein – Bonn"><option value="Agger"></datalist></label>
                 <label class="text-slate-400">Flussabschnitt<input id="route-section-name" maxlength="120" placeholder="z. B. Trainingsstrecke unterhalb der Brücke" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"></label>
@@ -256,6 +255,7 @@
               <button type="button" onclick="saveTrainingWaterSection()" class="kajo-route-primary mt-3">Flussabschnitt speichern</button>
               <div id="training-waters-list" class="kajo-route-water-list"></div>
             </div>
+            <div id="training-routes-list" class="kajo-route-list"></div>
           </section>
         </section>
 
