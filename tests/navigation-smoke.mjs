@@ -261,13 +261,15 @@ assert.ok(activities.includes("' min/100 m'"), 'swim pace uses a 100-metre unit 
 
 
 const performanceUi = readFileSync('js/analysis-ui.js', 'utf8');
-assert.ok(html.includes('id="performance-aerobic-metrics"') && html.includes('id="performance-paddling-metrics"') && html.includes('id="performance-strength-metrics"'), 'Performance separates aerobic, paddling and strength dimensions');
+assert.ok(html.includes('id="fitness-aerobic-metrics"') && html.includes('id="fitness-overview-view"'), 'Fitness opens with its own aerobic fitness view');
+assert.ok(html.includes('id="performance-detail-view"') && html.includes('onclick="openPerformanceDetail()"'), 'Performance is a separate circle with its own detail view');
+assert.ok(html.includes('id="performance-paddling-metrics"') && html.includes('id="performance-strength-metrics"'), 'Performance detail separates paddling and strength dimensions');
 assert.ok(html.includes('id="performance-trend-chart"') && html.includes('data-performance-range="28d"'), 'Performance has a dedicated selectable trend chart and time ranges');
 assert.ok(performanceUi.includes('getActivityTelemetrySeries(activity)'), 'Performance reads existing provenance-gated activity telemetry');
 assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
 assert.ok(performanceUi.includes('state.strengthPBs'), 'strength progression uses stored exercise-specific personal best records');
-assert.ok(!html.includes('id="analysis-fitness-section"') && !html.includes('id="analysis-competition-section"'), 'Performance no longer mixes load-based fitness or unrecorded competition outcomes into its direct performance view');
+assert.ok(html.includes('<span>Fitness</span>') && html.includes('id="fitness-aerobic-metrics"'), 'analysis navigation identifies the fitness view separately from performance');
 
 const overviewModule = readFileSync('js/analysis-overview.js', 'utf8');
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
