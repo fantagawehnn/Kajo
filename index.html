@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=117">
+    <link rel="stylesheet" href="css/styles.css?v=118">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -814,7 +814,7 @@
         </div>
         <p class="kajo-methods-formula">Neuer EWMA-Wert = alter Wert + α × (Tages-Load − alter Wert)</p>
         <p class="kajo-methods-note">α = 1 − e^(−1 / Zeitkonstante). Die Zeitkonstante beträgt 42 Tage für CTL und 7 Tage für ATL. Die ersten 126 gültigen Tage eines Modellabschnitts werden als vorläufig gekennzeichnet.</p>
-        <p class="kajo-methods-warning"><i data-lucide="alert-triangle"></i><span><strong>Datenlücken:</strong> Ein Tag ohne Aktivität wird nur dann als bestätigter Ruhetag (Load = 0) gewertet, wenn der Aktivitätszeitraum erfolgreich synchronisiert wurde. Fehlt die Abdeckung oder hat eine Aktivität keinen berechenbaren Load, wird der Tag als unbekannt behandelt und die EWMA-Zeitreihe an dieser Stelle unterbrochen.</span></p>
+        <p class="kajo-methods-warning"><i data-lucide="alert-triangle"></i><span><strong>Datenlücken:</strong> Ein Tag ohne Aktivität wird nur dann als bestätigter Ruhetag (Load = 0) gewertet, wenn der Aktivitätszeitraum erfolgreich synchronisiert wurde. Fehlt die Abdeckung oder hat eine Aktivität keinen berechenbaren Load, wird der Tag als unbekannt behandelt und die EWMA-Zeitreihe an dieser Stelle unterbrochen. <strong>Technische Einschränkung:</strong> Die aktuelle Zeitreihe benötigt diese Garmin-Aktivitätsabdeckung auch dann, wenn sRPE als Belastungsmodell gewählt ist.</span></p>
       </div>
     </details>
 
