@@ -3,7 +3,7 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
-import { calculateReadiness } from './dashboard.js';
+import { calculateReadiness, historyRingColor } from './dashboard.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -79,30 +79,26 @@ function renderLoad() {
     metric('sRPE-Load', String(srpeValues), 'Aktivitäten mit separatem sRPE-Wert')
   ]);
 }
-function recoveryCircleMetric(label, key, value, unit = '', date = '', interactive = true) {
+function recoveryCircleMetric(label, key, value, unit = '', date = '', interactive = true, color = 'var(--kajo-status-info)') {
   const detail = date ? 'Letzter Wert · ' + dateLabel(date) : 'Nicht erfasst';
   const action = interactive
     ? ` onclick="toggleRecoveryMetric('${key}')"`
     : ' disabled aria-disabled="true"';
   return '<button type="button" class="kajo-recovery-metric' + (interactive ? '' : ' is-unavailable') +
-    '" data-recovery-metric="' + key + '" aria-pressed="false" aria-label="' + label + ': ' + value + (unit ? ' ' + unit : '') + '"' + action + '>' +
+    '" data-recovery-metric="' + key + '" aria-pressed="false" style="--recovery-metric-color:' + color + '"' +
+    ' aria-label="' + label + ': ' + value + (unit ? ' ' + unit : '') + '"' + action + '>' +
     '<span class="kajo-recovery-metric-circle"><strong>' + value + '</strong></span>' +
     '<span class="kajo-recovery-metric-label">' + label + '</span>' +
     '<small>' + (unit || detail) + '</small>' +
     '</button>';
 }
 function renderRecovery() {
+  // Keep the existing aggregate value available to the analysis overview only.
+  // Its visual summary is intentionally not rendered on the Recovery detail page.
   const readiness = calculateReadiness(todayKey());
   const score = readiness.enoughData ? readiness.score : null;
-  const status = score === null ? 'Trainings-Readiness nicht ausreichend beurteilbar'
-    : score >= 80 ? 'Günstige Trainings-Readiness'
-    : score >= 60 ? 'Mittlere Trainings-Readiness'
-    : 'Niedrige Trainings-Readiness';
-  const note = score === null
-    ? 'Für eine Readiness-Einordnung sind mindestens zwei gültige Messgrößen oder Check-in-Angaben erforderlich. Fehlende Werte werden nicht als null oder Erholung interpretiert.'
-    : readiness.dataMode + ' · ' + readiness.dataQuality + ' · ' + readiness.totalCount + ' berücksichtigte Angaben. Die bestehende Kennzahl berücksichtigt ACWR, sofern für den Tag verfügbar.';
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
-    status, note, score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
+    'Readiness', '', score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
     ['HRV', 'hrv', 'ms', 1],
@@ -113,8 +109,9 @@ function renderRecovery() {
   ];
   renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
     const entry = latestCheckin(key);
+    const color = entry ? historyRingColor(key, entry.value, entry.date) : 'var(--kajo-status-info)';
     return recoveryCircleMetric(label, key, entry ? fmt(entry.value, digits) : '—',
-      unit, entry?.date || '', true);
+      unit, entry?.date || '', true, color);
   }));
 
   const subjectiveEntries = [
@@ -126,8 +123,9 @@ function renderRecovery() {
   ];
   renderMetrics('recovery-subjective-metrics', subjectiveEntries.map(([label, key]) => {
     const entry = latestCheckin(key);
+    const color = entry ? historyRingColor(key, entry.value, entry.date) : 'var(--kajo-status-info)';
     return recoveryCircleMetric(label, key, entry ? fmt(entry.value, 0) : '—',
-      '/10', entry?.date || '', true);
+      '/10', entry?.date || '', true, color);
   }));
 
   const objectiveRoot = document.getElementById('recovery-analysis-metrics');
