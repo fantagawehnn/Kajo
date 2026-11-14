@@ -258,6 +258,16 @@ assert.ok(html.includes('id="activity-strength-analysis-panel"'), 'strength deta
 assert.ok(charts.includes('paceSecondsPerKm') && charts.includes('paceSecondsPer100m'), 'pace series are offered only when unit-specific pace streams exist');
 assert.ok(activities.includes("' min/100 m'"), 'swim pace uses a 100-metre unit rather than min/km');
 
+
+const performanceUi = readFileSync('js/analysis-ui.js', 'utf8');
+assert.ok(html.includes('id="performance-aerobic-metrics"') && html.includes('id="performance-paddling-metrics"') && html.includes('id="performance-strength-metrics"'), 'Performance separates aerobic, paddling and strength dimensions');
+assert.ok(html.includes('id="performance-trend-chart"') && html.includes('data-performance-range="28d"'), 'Performance has a dedicated selectable trend chart and time ranges');
+assert.ok(performanceUi.includes('getActivityTelemetrySeries(activity)'), 'Performance reads existing provenance-gated activity telemetry');
+assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
+assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
+assert.ok(performanceUi.includes('state.strengthPBs'), 'strength progression uses stored exercise-specific personal best records');
+assert.ok(!html.includes('id="analysis-fitness-section"') && !html.includes('id="analysis-competition-section"'), 'Performance no longer mixes load-based fitness or unrecorded competition outcomes into its direct performance view');
+
 const overviewModule = readFileSync('js/analysis-overview.js', 'utf8');
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
 assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview begins with the four agreed metric circles');
