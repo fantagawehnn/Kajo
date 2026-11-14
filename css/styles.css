@@ -6883,7 +6883,7 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   border-style:dashed !important;
   background:transparent;
 }
-#view-calendar .calendar-week-activity > span:first-child {
+#view-calendar .calendar-week-activity > span {
   grid-row:auto;
   width:auto;
   height:auto;
