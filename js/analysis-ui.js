@@ -82,14 +82,14 @@ function renderLoad() {
 function renderRecovery() {
   if (!state.healthHistoryMetric) state.healthHistoryMetric = 'hrv';
   const readiness = calculateReadiness(todayKey());
-  const score = readiness.score;
-  const status = score === null ? 'Readiness nicht verfügbar'
-    : score >= 80 ? 'Günstige Readiness'
-    : score >= 60 ? 'Mittlere Readiness'
-    : 'Niedrige Readiness';
+  const score = readiness.enoughData ? readiness.score : null;
+  const status = score === null ? 'Trainings-Readiness nicht ausreichend beurteilbar'
+    : score >= 80 ? 'Günstige Trainings-Readiness'
+    : score >= 60 ? 'Mittlere Trainings-Readiness'
+    : 'Niedrige Trainings-Readiness';
   const note = score === null
-    ? 'Für heute liegen noch nicht genügend auswertbare Regenerations- und Trainingsdaten vor. Fehlende Werte werden nicht als null oder Erholung interpretiert.'
-    : readiness.dataMode + ' · ' + readiness.dataQuality + ' · ' + readiness.totalCount + ' berücksichtigte Angaben.';
+    ? 'Für eine Readiness-Einordnung sind mindestens zwei gültige Messgrößen oder Check-in-Angaben erforderlich. Fehlende Werte werden nicht als null oder Erholung interpretiert.'
+    : readiness.dataMode + ' · ' + readiness.dataQuality + ' · ' + readiness.totalCount + ' berücksichtigte Angaben. Die bestehende Kennzahl berücksichtigt ACWR, sofern für den Tag verfügbar.';
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
     status, note, score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
