@@ -171,5 +171,5 @@ const modelGapReply = buildLocalCoachReply({
     recovery: { checkins: [], healthEvents: [] },
     season: { races: [], plannedActivities: [] }
 }, 'Wie ist meine Trainingsbelastung?');
-assert.match(modelGapReply, /CTL-\/-ATL-\/-TSB-Veränderung über 7 Tage nicht ausgewiesen/);
+assert.ok(modelGapReply.includes('CTL-/ATL-/TSB-Veränderung über 7 Tage nicht ausgewiesen'));
 console.log('Coach intent, load-window, model-trend and activity-volume tests passed.');
