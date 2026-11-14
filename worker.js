@@ -59,6 +59,11 @@ async function handleCoach(request, env) {
 
   const contextText = JSON.stringify(payload.context);
   if (contextText.length > 850_000) return json({ error: "Der Coach-Kontext ist zu groß. Bitte grenze die Anfrage zeitlich ein." }, 413);
+  const history = Array.isArray(payload.history) ? payload.history.slice(-8) : [];
+  const historyMessages = history
+    .filter(item => (item?.role === "user" || item?.role === "assistant")
+      && typeof item.content === "string" && item.content.trim())
+    .map(item => ({ role: item.role, content: item.content.slice(0, 4000) }));
 
   const instructions = `Du bist KAJO, ein passiver, sportwissenschaftlich vorsichtiger Mehrsport-Coach mit Schwerpunkt Kanu-Wildwasserrennsport.
 
@@ -90,6 +95,7 @@ VERBINDLICHE REGELN:
         model: env.OPENAI_MODEL,
         instructions,
         input: [
+          ...historyMessages,
           {
             role: "user",
             content: `Nutzerfrage:\n${question}\n\nKAJO-Datenkontext (JSON):\n${contextText}`
