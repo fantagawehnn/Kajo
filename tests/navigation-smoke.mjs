@@ -207,7 +207,7 @@ assert.ok(calendar.includes('Absolviertes Training') && calendar.includes('Gepla
 assert.ok(calendar.includes('calendar-day-recovery-rings') && calendar.includes('subjectiveMarkup'), 'day view keeps recovery compact with documented recovery rings and subjective metrics');
 assert.ok(calendar.includes("Tagesreflexion") && calendar.includes("openDailyNote(") && dashboard.includes("openDailyNote(requestedDate = null)"), "day view reuses date-specific daily notes for reflection");
 assert.ok(calendar.includes('export function openCalendarDay(date, keepMonth = false)') && calendar.includes("state.currentCalendarDate = new Date(date + 'T12:00:00')"), 'day view opens the selected date and updates the calendar period');
-assert.ok(dayDetail.includes('Vorheriger Tag') && dayDetail.includes('Nächster Tag'), 'day view supports previous and next day navigation');
+assert.ok(calendar.includes('state.selectedCalendarDay = date') && calendar.includes("setCalendarFormat('day')"), 'day view opens the selected date in the day format');
 assert.ok(css.includes('.calendar-day-timeline-item') && css.includes('.calendar-day-kpis'), 'day cockpit has responsive timeline and KPI styling');
 
 assert.ok(calendar.includes('data.source === \'Manuell\'') && calendar.includes('data.source.includes(\'Garmin\')'), 'year timeline separates activity source types while retaining sport colors');
