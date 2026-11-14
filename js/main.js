@@ -20,7 +20,7 @@ import { sanitizeGarminActivityTelemetry } from './data-source.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=1';
-import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric } from './training-load-view.js';
+import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure } from './training-load-view.js?v=2';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
 import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, openCalendarDay, openCalendarWeek, openCalendarTrainingCreate, openCalendarRaceCreate } from './calendar.js?v=9';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=1';
@@ -215,7 +215,7 @@ function switchMoreTab(tab) {
 // ------------------------------------------------------------
 // Gesamt-Aktualisierung der Oberfläche (im Original: initEngine)
 // ------------------------------------------------------------
-function refreshSportAnalytics() { renderSportDistribution(state.rawActivities); renderHeartRateZoneDistribution(state.rawActivities); renderCanoeTrainingHours(state.rawActivities); }
+function refreshSportAnalytics() { renderSportDistribution(state.rawActivities); renderHeartRateZoneDistribution(state.rawActivities); }
 
 function openGarminConnectionModal() {
     const modal = document.getElementById('garmin-connection-modal');
@@ -1858,6 +1858,8 @@ Object.assign(window, {
     openTrainingLoadMetric,
     closeTrainingLoadMetric,
     setTrainingLoadChartMetric,
+    setTrainingLoadModel,
+    setTrainingLoadDailyMeasure,
     kajoRenderTrainingLoadView: renderTrainingLoadView,
     renderAnalysisOverview,
     setAnalysisOverviewMetric,
