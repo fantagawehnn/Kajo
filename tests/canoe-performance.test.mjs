@@ -53,3 +53,28 @@ test('applies inclusive date filters and preserves missing metrics', () => {
     assert.equal(result.comparableGroups[0].averageSpeedKmh.count, 0);
     assert.equal(result.comparableGroups[0].averageSpeedKmh.mean, null);
 });
+
+test('derives session averages from Garmin FIT telemetry when scalar summaries are absent', () => {
+    const result = buildCanoePerformanceSummary([{
+        date: '2026-04-01',
+        type: 'Kayaking',
+        raceFormat: 'sprint',
+        routeId: 'R1',
+        distance: 5,
+        waterConditions: { type: 'flatwater' },
+        garminTelemetry: {
+            speed: [8, 10, null, 12],
+            power: [100, 120, null, 140],
+            cadence: [65, 67, null, 69],
+            hr: [150, 160, null, 170]
+        }
+    }]);
+    const group = result.comparableGroups.find(item => item.comparable);
+    assert.equal(group.averageSpeedKmh.mean, 10);
+    assert.equal(group.averagePowerW.mean, 120);
+    assert.equal(group.cadencePerMinute.mean, 67);
+    assert.equal(group.averageHeartRateBpm.mean, 160);
+    assert.equal(result.dataQuality.metricCounts.averageSpeed, 1);
+    assert.equal(result.dataQuality.metricCounts.averagePower, 1);
+    assert.equal(result.dataQuality.metricCounts.cadence, 1);
+});
