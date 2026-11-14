@@ -183,7 +183,10 @@ const activityDetailReply = buildLocalCoachReply({
             { date: '2026-11-01', type: 'C1', name: 'C1 Einheit', isCanoePerformanceActivity: true, durationMinutes: 60 }
         ]
     },
-    trainingLoad: { selectedSource: 'garmin', timeline: [] },
+    trainingLoad: { selectedSource: 'garmin', resolvedMode: 'garmin-native', loadCoverageByActivityType: [
+        { type: 'C1', isCanoePerformanceActivity: true, activityCount: 1, loadAvailableCount: 1, loadMissingCount: 0 },
+        { type: 'Run', isCanoePerformanceActivity: false, activityCount: 1, loadAvailableCount: 0, loadMissingCount: 1 }
+    ], timeline: [] },
     recovery: { checkins: [], healthEvents: [] },
     season: { races: [], plannedActivities: [] }
 }, 'Zeig meine Aktivitäten');
@@ -191,6 +194,8 @@ assert.match(activityDetailReply, /Aktivitäten der letzten 28 Tage/);
 assert.ok(activityDetailReply.includes('Kanu-Performance: 1 Einheiten; 1,0 h dokumentiert bei 1/1 Einheiten'));
 assert.ok(activityDetailReply.includes('Ergänzende Sportarten: 1 Einheiten; 0,5 h dokumentiert bei 1/1 Einheiten'));
 assert.match(activityDetailReply, /weder eine Belastungssumme/);
+assert.match(activityDetailReply, /Belastungswert für 1\/1 Einheiten vorhanden/);
+assert.match(activityDetailReply, /Belastungswert für 0\/1 Einheiten vorhanden/);
 
 const modelTrendReply = buildLocalCoachReply({
     asOfDate: '2026-11-14',
