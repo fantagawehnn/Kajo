@@ -259,9 +259,7 @@ function renderCalendarDayDetail(date, target) {
     const actualMarkup = completed.length
         ? completed.map(item => calendarActivityRow(item, false)).join('')
         : '<div class="calendar-empty-state">Noch keine absolvierte Trainingseinheit dokumentiert.</div>';
-    const plannedMarkup = planned.length
-        ? planned.map(item => calendarActivityRow(item, true)).join('')
-        : '<div class="calendar-empty-state">Keine Trainingseinheit für diesen Tag geplant.</div>';
+    const plannedMarkup = planned.map(item => calendarActivityRow(item, true)).join('');
     const events = [];
     if (calendarDayHasCheckin(checkin)) {
         events.push(calendarDayEvent('Tages-Check-in', 'Recovery- und Self-Monitoring-Daten erfasst', '', 'checkin'));
@@ -308,25 +306,33 @@ function renderCalendarDayDetail(date, target) {
     ].filter(([, value]) => value !== null && value !== undefined && value !== '');
     const healthValue = health?.status === 'sick' ? 'Krank' : health?.status === 'injured' ? 'Verletzt' : '—';
     const healthTone = health?.status === 'sick' ? 'critical' : health?.status === 'injured' ? 'attention' : 'info';
-    recoveryMetrics.push(calendarDayRing(healthValue, 'Gesundheit', healthTone));
+    if (health?.status) recoveryMetrics.push(calendarDayRing(healthValue, 'Gesundheit', healthTone));
     const subjectiveMarkup = subjective.length
         ? '<div class="calendar-day-subjective">' + subjective.map(([label, value]) => '<span>' + escapeHtml(label) + ' <b>' + escapeHtml(value) + '</b></span>').join('') + '</div>'
         : '';
-    const recoveryMarkup = '<div class="calendar-day-recovery-summary"><div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup + '</div>';
+    const recoveryMarkup = '<div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup;
+
+    const note = String(checkin.note || '').trim();
+    const diaryButton = '<button type="button" class="calendar-day-diary-button" title="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" aria-label="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" onclick="openDailyNote(\\'' + escapeHtml(date) + '\\')"><i data-lucide="book-heart"></i></button>';
+    const plannedSection = planned.length
+        ? '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>'
+        : '';
+    const noteSection = note
+        ? '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3></div><p class="calendar-day-note-preview">' + escapeHtml(note) + '</p></section>'
+        : '';
 
     root.innerHTML =
-        '<section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
+        '<div class="calendar-day-topline"><section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
             calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
             calendarDayRing(durationText, 'Trainingsstunden', 'info') +
             calendarDayRing(String(completedCount), 'Einheiten', 'good') +
             calendarDayRing(readinessText, 'Recovery', calendarReadinessTone(readiness.score)) +
-        '</section>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3><span>' + events.length + ' Ereignisse</span></div>' + timelineMarkup + '</section>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3><span>' + completed.length + '</span></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3><span>' + planned.length + '</span></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup + '</section>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\'' + escapeHtml(date) + '\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
-            (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>';
+        '</section>' + diaryButton + '</div>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3></div>' + timelineMarkup + '</section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
+        plannedSection +
+        '<section class="calendar-day-recovery-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3></div>' + recoveryMarkup + '</section>' +
+        noteSection;
 }
 export function openCalendarDay(date, keepMonth = false) {
     if (!date) return;
