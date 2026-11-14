@@ -3,7 +3,7 @@
  * ============================================================ */
 
 import { state } from './state.js';
-import { saveDataToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage } from './storage.js?v=2';
 import { formatDateDDMMYY, escapeHtml, toLocalDateString } from './utils.js';
 
 export function renderStrengthView() {
