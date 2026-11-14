@@ -5026,3 +5026,6 @@ html[data-theme="light"] #settings-modal { background:var(--kajo-bg) !important;
  .kajo-analysis-circle-item>strong{font-size:.5rem}
 }
 html[data-theme="light"] .kajo-analysis-overview-panel{background:var(--kajo-surface);border-color:var(--kajo-border)}
+
+#analysis-overview-metric-switch button:disabled{opacity:.42;cursor:not-allowed}
+#analysis-overview-metric-switch button:disabled::before{opacity:.65}
