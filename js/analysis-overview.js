@@ -20,7 +20,7 @@ const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE',
 const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
 let trendChart = null;
 let activityChart = null;
-let selectedMetrics = new Set(['load', 'recovery', 'performance', 'health']);
+let selectedMetrics = new Set(['load', 'recovery', 'performance']);
 let activityMeasure = 'duration';
 
 function sourceHero(domain) {
@@ -93,6 +93,7 @@ function updateMetricSwitch() {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
     button.classList.toggle('is-unavailable', key === 'health');
+    button.disabled = key === 'health';
   });
 }
 function renderTrendChart() {
