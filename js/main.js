@@ -35,6 +35,7 @@ import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSpo
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=2';
 import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js';
+import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=1';
 
 // Externe UI-Bibliotheken dürfen die Kontoaktivierung nicht blockieren.
 // Insbesondere kann das optionale Lucide-CDN vorübergehend nicht erreichbar sein.
@@ -117,6 +118,7 @@ function switchTab(requestedTab) {
         more: { parent: 'more', view: 'more' },
         profile: { parent: 'more', view: 'profile' },
         data: { parent: 'more', view: 'data' },
+        'garmin-health': { parent: 'more', view: 'garmin-health' },
         backup: { parent: 'more', view: 'backup' },
         upload: { parent: 'more', view: 'upload' },
         methods: { parent: 'more', view: 'methods' },
@@ -132,7 +134,7 @@ function switchTab(requestedTab) {
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
-    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'backup', 'ai', 'profile'];
+    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'garmin-health', 'backup', 'ai', 'profile'];
     viewIds.forEach(id => {
         const el = document.getElementById('view-' + id);
         if (el) el.classList.toggle('hidden', id !== view);
@@ -203,6 +205,7 @@ function switchTab(requestedTab) {
     if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
     if (view === 'strength') renderStrengthView();
     if (view === 'nutrition') renderNutritionView();
+    if (view === 'garmin-health') renderGarminHealthData();
     if (view === 'upload') renderImportHistory();
     if (view === 'health-data') renderMetricHistory('health');
     if (view === 'training-analysis') renderMetricHistory('training');
@@ -1971,6 +1974,11 @@ Object.assign(window, {
     applyHistoryCustomRange,
     openHealthMetric,
     openTrainingMetric,
+    renderGarminHealthData,
+    openGarminHealthMetric,
+    closeGarminHealthMetric,
+    setGarminHealthRange,
+    applyGarminHealthCustomRange,
     openCloudInitialTransferConfirmation,
     openCloudSyncModal,
     closeCloudSyncModal,
