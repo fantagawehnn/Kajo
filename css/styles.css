@@ -5861,3 +5861,10 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
     height:min(19vw,70px);
   }
 }
+
+#analysis-subpage-recovery .kajo-recovery-data-note {
+  margin:.15rem 0 .65rem;
+  color:var(--kajo-muted);
+  font-size:.65rem;
+  line-height:1.4;
+}
