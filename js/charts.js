@@ -411,7 +411,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
     const rangeEl = document.getElementById('sport-range');
     const days = rangeEl ? rangeEl.value : '7';
     if (options.fromDate && options.toDate) {
-        records = (records || []).filter(activity => activity?.date >= options.fromDate && activity?.date <= options.toDate);
+        records = (records || []).filter(activity => String(activity?.date || '').slice(0, 10) >= options.fromDate && String(activity?.date || '').slice(0, 10) <= options.toDate);
     } else if (days !== 'all') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - (Number(days) - 1));
