@@ -116,6 +116,7 @@ function buildLoadReply(context) {
         lines.push(formatLoadWindow('7 Tage', windows[0]));
         lines.push(formatLoadWindow('28 Tage', windows[1]));
         lines.push(formatLoadWindow('90 Tage', windows[2]));
+        lines.push(`• Im 7-Tage-Fenster: ${windows[0].validDays} Tage mit auswertbarer Belastung; ${windows[0].missingDays + windows[0].unknownDays} Tage mit unbekannter oder unvollständiger Belastung.`);
 
         const previousEnd = dateKeyOffset(endDate, -7);
         const previous = summarizeLoadWindow(timeline, previousEnd, 7);
