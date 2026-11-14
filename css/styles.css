@@ -7569,3 +7569,85 @@ html[data-theme="light"] #intervals-sync-modal select{background:#f7f9fb;color:#
   .kajo-methods-jump { flex-wrap:nowrap; overflow-x:auto; padding-bottom:.35rem; }
   .kajo-methods-jump a { flex:0 0 auto; }
 }
+
+/* KAJO viewport contract: mobile header and bottom navigation stay outside
+   the independently scrollable content viewport on every tab. */
+@media (max-width: 767px) {
+  html, body {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden !important;
+  }
+
+  body {
+    padding: 0 !important;
+    overscroll-behavior: none;
+  }
+
+  body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header {
+    position: fixed !important;
+    inset: 0 0 auto 0 !important;
+    height: calc(3.65rem + env(safe-area-inset-top)) !important;
+    z-index: 2147483000 !important;
+  }
+
+  #app-navigation:not(.hidden) {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    top: auto !important;
+    z-index: 2147483001 !important;
+    width: 100% !important;
+  }
+
+  #app-main {
+    position: fixed !important;
+    top: calc(3.65rem + env(safe-area-inset-top)) !important;
+    right: 0 !important;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom)) !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 1120px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    padding: 1rem .75rem 1.25rem !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+
+  #app-main > section,
+  #app-main > div,
+  #app-main > nav {
+    min-height: 0;
+    max-width: 100%;
+  }
+
+  #app-main .kajo-data-page,
+  #app-main .kajo-more-view,
+  #app-main .kajo-analysis-view {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  #app-navigation:not(.hidden) {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  #app-main {
+    position: relative;
+    min-height: calc(100dvh - 4rem);
+    box-sizing: border-box;
+    padding-bottom: 2rem;
+  }
+}
+
