@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=114">
+    <link rel="stylesheet" href="css/styles.css?v=115">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -171,51 +171,56 @@
         <!-- TAB 1: DASHBOARD (HAUPTSEITE) -->
         <!-- ========================================== -->
         <!-- Bereichsauswahl: weitere Funktionen öffnen sich als eigenständige Ansichten. -->
-        <section id="view-more" class="hidden kajo-more-view">
+         <section id="view-more" class="hidden kajo-more-view">
             <header class="kajo-more-header">
-                <div><h1>Mehr</h1><p>Deine Bereiche</p></div>
+                <div><p class="kajo-more-eyebrow">DEIN PERSÖNLICHER BEREICH</p><h1>Mehr</h1><p>Profil, Daten und Einstellungen an einem Ort.</p></div>
             </header>
 
             <button type="button" class="kajo-more-status" onclick="openGarminConnectionModal()" aria-label="Garmin-Verbindungsstatus öffnen">
                 <span class="kajo-more-status-main">
-                    <span id="settings-garmin-status-dot" class="kajo-more-status-dot" aria-hidden="true"></span>
-                    <span class="kajo-more-status-label">Garmin</span>
-                    <strong id="settings-garmin-status">Status wird geladen</strong>
+                    <span class="kajo-more-status-icon"><i data-lucide="watch" aria-hidden="true"></i></span>
+                    <span class="kajo-more-status-copy"><span class="kajo-more-status-label">DATENVERBINDUNG</span><strong>Garmin</strong><small id="settings-garmin-status">Status wird geladen</small></span>
                 </span>
-                <span class="kajo-more-status-action"><i data-lucide="refresh-cw" aria-hidden="true"></i><span>Verbindung prüfen</span></span>
+                <span class="kajo-more-status-action"><span>Verbindung verwalten</span><i data-lucide="arrow-up-right" aria-hidden="true"></i></span>
+                <span id="settings-garmin-status-dot" class="kajo-more-status-dot" aria-hidden="true"></span>
             </button>
 
-            <section class="kajo-more-group">
-                <h2>Athletenprofil</h2>
-                <div class="kajo-area-list">
-                    <button type="button" class="kajo-area-card" onclick="switchTab('profile')"><span class="kajo-area-icon"><i data-lucide="user-round"></i></span><span class="kajo-area-copy"><strong>Persönliche &amp; sportliche Daten</strong><small>Profil, Körperdaten und Leistungswerte</small></span></button>
-                </div>
-            </section>
-            <section class="kajo-more-group">
-                <h2>Sport &amp; Trainingskonfiguration</h2>
-                <div class="kajo-area-list">
-                    <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="sliders-horizontal"></i></span><strong>Sportarten, Disziplinen &amp; Trainingszonen</strong></button>
-                    <button type="button" class="kajo-area-card" onclick="switchTab('routes')"><span class="kajo-area-icon"><i data-lucide="route"></i></span><strong>Trainings- &amp; Wettkampfstrecken</strong></button>
-                    <button type="button" class="kajo-area-card" onclick="switchTab('nutrition')"><span class="kajo-area-icon"><i data-lucide="utensils"></i></span><strong>Ernährung</strong></button>
-                </div>
-            </section>
-            <section class="kajo-more-group">
-                <h2>Datenverwaltung</h2>
-                <div class="kajo-area-list">
-                    <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="database"></i></span><strong>Garmin, Datenquellen &amp; Synchronisierung</strong></button>
-                    <button type="button" class="kajo-area-card" onclick="switchTab('upload')"><span class="kajo-area-icon"><i data-lucide="upload-cloud"></i></span><strong>Manueller Import</strong></button>
-                    <button type="button" class="kajo-area-card" onclick="switchTab('methods')"><span class="kajo-area-icon"><i data-lucide="book-open-check"></i></span><strong>Datenqualität &amp; Berechnungsmethodik</strong></button><button type="button" class="kajo-area-card" onclick="switchTab('backup')"><span class="kajo-area-icon"><i data-lucide="archive"></i></span><strong>Datensicherung</strong></button>
-                </div>
-            </section>
-            <section class="kajo-more-group">
-                <h2>App &amp; Coach</h2>
-                <div class="kajo-area-list">
-                    <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="settings"></i></span><strong>Darstellung &amp; Benachrichtigungen</strong></button>
-                    <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="brain-circuit"></i></span><strong>KAJO Coach &amp; KI-Einstellungen</strong></button>
-                </div>
-            </section>
-        </section>
+            <div class="kajo-more-groups">
+                <section class="kajo-more-group" data-tone="coral">
+                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="user-round" aria-hidden="true"></i></span><div><h2>Athletenprofil</h2><p>Deine persönlichen und sportlichen Grundlagen</p></div></div>
+                    <div class="kajo-area-list">
+                        <button type="button" class="kajo-area-card" onclick="switchTab('profile')"><span class="kajo-area-icon"><i data-lucide="contact-round"></i></span><span class="kajo-area-copy"><strong>Persönliche &amp; sportliche Daten</strong><small>Profil, Körperdaten und Leistungswerte</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                    </div>
+                </section>
 
+                <section class="kajo-more-group" data-tone="blue">
+                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></span><div><h2>Training &amp; Sport</h2><p>Konfiguriere deine Trainingsumgebung</p></div></div>
+                    <div class="kajo-area-list">
+                        <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="settings-2"></i></span><span class="kajo-area-copy"><strong>Sportarten &amp; Trainingszonen</strong><small>Disziplinen, Farben und individuelle Bereiche</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('routes')"><span class="kajo-area-icon"><i data-lucide="route"></i></span><span class="kajo-area-copy"><strong>Trainings- &amp; Wettkampfstrecken</strong><small>Gewässer, Abschnitte und Strecken verwalten</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('nutrition')"><span class="kajo-area-icon"><i data-lucide="utensils"></i></span><span class="kajo-area-copy"><strong>Ernährung</strong><small>Ernährungsübersicht und Erinnerungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <section class="kajo-more-group" data-tone="mint">
+                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="database" aria-hidden="true"></i></span><div><h2>Daten &amp; Synchronisierung</h2><p>Import, Datenqualität und Sicherung</p></div></div>
+                    <div class="kajo-area-list">
+                        <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="cloud-sync"></i></span><span class="kajo-area-copy"><strong>Datenquellen &amp; Synchronisierung</strong><small>Garmin-Verbindungen und Datenstatus</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('upload')"><span class="kajo-area-icon"><i data-lucide="file-up"></i></span><span class="kajo-area-copy"><strong>Manueller Datenimport</strong><small>Trainingsdateien und weitere Daten einlesen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('methods')"><span class="kajo-area-icon"><i data-lucide="book-open-check"></i></span><span class="kajo-area-copy"><strong>Datenqualität &amp; Methodik</strong><small>Herkunft, Datenlücken und Berechnungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('backup')"><span class="kajo-area-icon"><i data-lucide="archive"></i></span><span class="kajo-area-copy"><strong>Datensicherung</strong><small>Backup erstellen oder wiederherstellen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <section class="kajo-more-group" data-tone="violet">
+                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="sparkles" aria-hidden="true"></i></span><div><h2>App &amp; Unterstützung</h2><p>KAJO anpassen und Hilfe erhalten</p></div></div>
+                    <div class="kajo-area-list">
+                        <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="palette"></i></span><span class="kajo-area-copy"><strong>Darstellung &amp; Benachrichtigungen</strong><small>Design, Theme und persönliche Erinnerungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="brain-circuit"></i></span><span class="kajo-area-copy"><strong>KAJO Coach &amp; KI-Einstellungen</strong><small>Coach öffnen und Optionen verwalten</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                    </div>
+                </section>
+            </div>
+        </section>
         <section id="view-routes" class="hidden space-y-5">
           <header class="space-y-1"><p class="kajo-eyebrow">STRECKENVERWALTUNG</p><h1 class="text-xl font-bold text-white">Flüsse, Abschnitte &amp; Strecken</h1><p class="text-xs text-slate-400">Verwalte zuerst deine Gewässer und Flussabschnitte. Anschließend ordnest du Trainings- und Wettkampfstrecken einem Abschnitt zu. Bestehende Strecken werden automatisch übernommen.</p></header>
           <section class="rounded-2xl border border-slate-800 bg-slate-900 p-4 space-y-3">
