@@ -3,7 +3,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage } from './storage.js?v=2';
 import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
 import { renderCalendar } from './calendar.js';
 

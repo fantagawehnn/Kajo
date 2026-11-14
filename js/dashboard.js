@@ -7,7 +7,7 @@ import { state } from './state.js';
 import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog } from './utils.js';
 import { getTrainingLoadData } from './training-load.js';
 import { loadCheckinInputs } from './health.js';
-import { saveDataToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage } from './storage.js?v=2';
 
 function localTodayKey() {
   const n = new Date();

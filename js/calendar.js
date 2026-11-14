@@ -5,7 +5,7 @@
 import { state, refreshAll } from './state.js';
 import { getGarminTelemetry } from './data-source.js';
 import { calculateReadiness } from './dashboard.js';
-import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js';
+import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=2';
 import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js';
 
 

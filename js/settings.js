@@ -1,5 +1,5 @@
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage } from './storage.js?v=2';
 import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml } from './utils.js';
 
 
