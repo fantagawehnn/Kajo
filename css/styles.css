@@ -6486,3 +6486,8 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #csv-details-modal .activity-detail-tab { min-height:36px; padding:0 11px; font-size:10px; }
   #csv-details-modal .activity-detail-tab-panel { gap:10px; }
 }
+
+
+/* Training-Unterbereich: Kraftleistungen nutzt dieselbe Subnavigation wie Aktivitäten und Planung. */
+#training-subnav-strength { white-space:nowrap; }
+#training-subnav-strength.is-active { color:var(--kajo-text,#fff); }
