@@ -333,9 +333,9 @@ function renderCalendarDayDetail(date, target) {
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3><span>' + planned.length + '</span></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>' +
         '<section class="calendar-detail-section"><h3>Belastungsanalyse</h3>' + loadMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup +
-            (health?.status ? '<p class="calendar-day-health-note">Gesundheitsstatus: ' + escapeHtml(health.status === 'sick' ? 'Krankheit' : 'Verletzung') + (health.diagnosis ? ' · ' + escapeHtml(health.diagnosis) : '') + '</p>' : '') +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\'' + escapeHtml(date) + '\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
-            (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>' +
+            (health?.status ? '<p class="calendar-day-health-note">Gesundheitsstatus: ' + escapeHtml(health.status === 'sick' ? 'Krankheit' : 'Verletzung') + (health.diagnosis ? ' · ' + escapeHtml(health.diagnosis) : '') + '</p>' : '') + '</section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\\'' + escapeHtml(date) + '\\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
+            (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>';
 }
 export function openCalendarDay(date, keepMonth = false) {
     if (!date) return;
