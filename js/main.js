@@ -730,7 +730,6 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
             }
             const hr = Array.isArray(detail?.telemetry?.hr) ? detail.telemetry.hr : [];
             const time = Array.isArray(detail?.telemetry?.time) ? detail.telemetry.time : [];
-            const validCount = hr.reduce((count, pointIndex) => count + 0, 0);
             const validHrCount = hr.reduce((count, value, pointIndex) => {
                 const bpm = Number(value), seconds = Number(time[pointIndex]);
                 return count + (Number.isFinite(bpm) && bpm >= 30 && bpm <= 250
