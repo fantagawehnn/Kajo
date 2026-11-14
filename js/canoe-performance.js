@@ -28,7 +28,7 @@ function firstNumber(activity, keys, minimum = -Infinity) {
     return null;
 }
 
-function conditionKey(activity) {
+function conditionDetails(activity) {
     const water = activity?.waterConditions && typeof activity.waterConditions === 'object'
         ? activity.waterConditions : {};
     const route = activity?.routeId ?? activity?.route ?? null;
@@ -126,9 +126,9 @@ export function buildCanoePerformanceSummary(activities, options = {}) {
         dataQuality: {
             activitiesWithoutDate: source.filter(item => CANOE_TYPES.has(item?.type) && !dateKey(item?.date)).length,
             activitiesWithUnspecifiedFormat: canoe.filter(item => !FORMATS.has(item.raceFormat)).length,
-            activitiesWithUnspecifiedWaterType: canoe.filter(item => !item?.waterConditions?.type).length,
+            activitiesWithUnspecifiedWaterType: canoe.filter(item => !item?.waterConditions?.type).length,\n            activitiesWithoutComparableConditions: canoe.filter(item => !conditionDetails(item).comparable).length,\n            comparableGroupCount: comparableGroups.filter(group => group.comparable).length,
             metricCounts,
-            note: 'Gruppen werden nach Bootsklasse, dokumentiertem Format, Strecke (falls zugeordnet), Gewässertyp, Pegel und Abfluss getrennt. Fehlende Angaben werden nicht ergänzt.'
+            note: 'Nur Einheiten mit dokumentierter Strecke, Distanz und Gewässertyp werden als vergleichbar markiert. Wildwasservergleiche benötigen zusätzlich Pegel und Abfluss. Fehlende Angaben werden nicht ergänzt.'
         }
     };
 }
