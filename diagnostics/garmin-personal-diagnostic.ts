@@ -905,6 +905,7 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
     label: string;
     unit: string | null;
     scaleFactor: number | null;
+    time: number[];
     values: Array<number | null>;
     nonNullCount: number;
   }> = {};
