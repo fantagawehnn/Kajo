@@ -1049,7 +1049,7 @@ async function reloadSelectedActivityHeartRate() {
     const status = document.getElementById('activity-hr-series-status');
     const button = document.getElementById('activity-hr-reload-button');
     const id = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
-    if (!activity || id == null || !/^\\d+$/.test(String(id))) {
+    if (!activity || id == null || !/^\d+$/.test(String(id))) {
         if (status) status.textContent = 'Für diese Aktivität ist keine Garmin-Aktivitäts-ID hinterlegt.';
         return;
     }
