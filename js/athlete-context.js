@@ -6,6 +6,8 @@
  * data, infer missing values, or perform medical assessment.
  */
 
+import { getTrainingLoadData } from './training-load.js';
+
 const CANOE_ACTIVITY_TYPES = new Set(['Kayaking', 'C1', 'C2']);
 const CHECKIN_FIELDS = [
     'sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress',
@@ -132,13 +134,32 @@ export function buildAthleteContext(state, options = {}) {
         'thresholdPace', 'testSource', 'trainingNotes', 'knownLimitations'
     ];
 
-    const recentActivities = activities
+    const recentRawActivities = activities
         .filter(activity => {
             const age = daysBetween(activity?.date, asOfDate);
             return age !== null && age >= 0 && age < activityDays;
         })
-        .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-        .map(summarizeActivity);
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const recentActivities = recentRawActivities.map(summarizeActivity);
+    const selectedLoadData = getTrainingLoadData(recentRawActivities, settings, profile);
+    const loadedActivityRefs = new Set(selectedLoadData.records.map(item => item.activity));
+    const loadCoverageByActivityType = Object.entries(recentRawActivities.reduce((groups, activity) => {
+        const type = String(activity?.type ?? 'unknown');
+        (groups[type] ||= []).push(activity);
+        return groups;
+    }, {})).sort(([a], [b]) => a.localeCompare(b)).map(([type, items]) => {
+        const durations = items.map(item => finiteOrNull(item.duration)).filter(value => value !== null && value > 0);
+        const loadAvailableCount = items.filter(item => loadedActivityRefs.has(item)).length;
+        return {
+            type,
+            isCanoePerformanceActivity: CANOE_ACTIVITY_TYPES.has(type),
+            activityCount: items.length,
+            loadAvailableCount,
+            loadMissingCount: items.length - loadAvailableCount,
+            documentedDurationCount: durations.length,
+            documentedDurationMinutes: Number(durations.reduce((sum, value) => sum + value, 0).toFixed(1))
+        };
+    });
 
     const recentTimeline = timeline
         .filter(day => {
@@ -216,7 +237,9 @@ export function buildAthleteContext(state, options = {}) {
         trainingLoad: {
             timeline: recentTimeline,
             coverageRanges,
-            selectedSource: settings.trainingLoadSource ?? null
+            selectedSource: settings.trainingLoadSource ?? null,
+            resolvedMode: selectedLoadData.mode,
+            loadCoverageByActivityType
         },
         recovery: {
             checkins: summarizeCheckins(state?.dailyCheckins, asOfDate, checkinDays),
@@ -232,7 +255,9 @@ export function buildAthleteContext(state, options = {}) {
             checkinDaysInWindow: summarizeCheckins(state?.dailyCheckins, asOfDate, checkinDays).length,
             timelineDaysInWindow: recentTimeline.length,
             unknownLoadDaysInWindow: recentTimeline.filter(day => day.load === null || day.dataStatus === 'unknown' || day.dataStatus === 'incomplete-activity-load').length,
-            confirmedCoverageRangeCount: coverageRanges.length
+            confirmedCoverageRangeCount: coverageRanges.length,
+            activitiesWithSelectedLoad: selectedLoadData.records.length,
+            activitiesWithoutSelectedLoad: Math.max(0, recentRawActivities.length - selectedLoadData.records.length)
         }
     };
 }
