@@ -146,7 +146,7 @@
         </nav>
         </div>
 
-        <div id="cloud-sync-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[96] items-center justify-center p-4">
+        <div id="cloud-sync-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[96] items-center justify-center p-4 kajo-sync-modal kajo-sync-modal-cloud">
             <section id="cloud-sync-panel" class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 space-y-4 shadow-2xl">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2"><i data-lucide="cloud-cog" class="w-5 h-5 text-cyan-400"></i><h2 class="text-base font-semibold text-white">Cloud-Synchronisation</h2></div>
@@ -904,17 +904,30 @@
             </section>
         </div>
 
-        <div id="view-data" class="hidden kajo-data-page">
-<header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datenquellen &amp; Synchronisierung</h1><p>Verbindungen, Datenabrufe und gespeicherte Garmin-Daten.</p></div><button id="garmin-sync-indicator" type="button" onclick="openGarminConnectionModal()" class="kajo-data-status-link" title="Garmin-Status prüfen" aria-label="Garmin-Status wird geprüft"><span id="garmin-sync-indicator-dot" aria-hidden="true"></span><span id="garmin-sync-indicator-text">Status prüfen</span></button></header>
-<section class="kajo-data-section"><div class="kajo-data-section-heading"><h2>Verbundene Datenquellen</h2><span>Verbindungen verwalten</span></div>
-<button type="button" class="kajo-data-source-row" onclick="openGarminConnectionModal()"><span class="kajo-data-source-icon"><i data-lucide="watch"></i></span><span><strong>Garmin</strong><small>Aktivitäten und verfügbare Gesundheitsdaten</small></span><span class="kajo-data-row-action">Verwalten</span></button>
-<button type="button" class="kajo-data-source-row" onclick="openIntervalsSyncModal()"><span class="kajo-data-source-icon"><i data-lucide="refresh-cw"></i></span><span><strong>Intervals.icu</strong><small>Aktivitäten und verfügbare ergänzende Daten</small></span><span class="kajo-data-row-action">Verwalten</span></button>
-<button type="button" class="kajo-data-source-row" onclick="openCloudSyncModal()"><span class="kajo-data-source-icon"><i data-lucide="cloud"></i></span><span><strong>KAJO Cloud</strong><small>Synchronisierung deines konto-gebundenen Datenbestands</small></span><span class="kajo-data-row-action">Status</span></button></section>
-<section class="kajo-data-section"><div class="kajo-data-section-heading"><h2>Garmin-Datenbestand</h2><span>Gespeicherte Datensätze</span></div><p class="kajo-data-note">Die Detailhistorie zeigt Anzahl und abgedeckten Zeitraum je Datenfeld. Sie zählt Datensätze, nicht einzelne Messpunkte.</p><button type="button" class="kajo-data-inline-action" onclick="openGarminConnectionModal()">Synchronisierungshistorie öffnen <i data-lucide="arrow-up-right"></i></button></section>
-<section class="kajo-data-section"><div class="kajo-data-section-heading"><h2>Weitere Datenwerkzeuge</h2></div>
-<button type="button" class="kajo-data-source-row" onclick="switchTab('upload')"><span class="kajo-data-source-icon"><i data-lucide="file-up"></i></span><span><strong>Manueller Dateiimport</strong><small>CSV-, FIT- und GPX-Aktivitäten importieren</small></span><span class="kajo-data-row-action">Öffnen</span></button>
-<button type="button" class="kajo-data-source-row" onclick="switchTab('methods')"><span class="kajo-data-source-icon"><i data-lucide="clipboard-check"></i></span><span><strong>Datenqualität &amp; Methodik</strong><small>Quellen, Berechenbarkeit und Grenzen verstehen</small></span><span class="kajo-data-row-action">Öffnen</span></button>
-<button type="button" class="kajo-data-source-row" onclick="switchTab('backup')"><span class="kajo-data-source-icon"><i data-lucide="archive"></i></span><span><strong>Datensicherung</strong><small>Backup exportieren oder selektiv wiederherstellen</small></span><span class="kajo-data-row-action">Öffnen</span></button></section></div>
+        <div id="view-data" class="hidden kajo-data-page kajo-sync-overview">
+<header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datenquellen &amp; Synchronisierung</h1><p>Verbindungen, Datenabrufe und gespeicherte Daten zentral verwalten.</p></div><button id="garmin-sync-indicator" type="button" onclick="openGarminConnectionModal()" class="kajo-data-status-link" title="Garmin-Status prüfen" aria-label="Garmin-Status wird geprüft"><span id="garmin-sync-indicator-dot" aria-hidden="true"></span><span id="garmin-sync-indicator-text">Status prüfen</span></button></header>
+<section class="kajo-sync-source-grid" aria-label="Datenquellen">
+  <article class="kajo-sync-source-card" data-source="garmin">
+    <div class="kajo-sync-source-top"><span class="kajo-sync-source-icon"><i data-lucide="watch"></i></span><span class="kajo-sync-source-type">TRAINING &amp; HEALTH</span></div>
+    <h2>Garmin</h2><p>Aktivitäten, Herzfrequenz und verfügbare Gesundheitsdaten</p>
+    <button type="button" onclick="openGarminConnectionModal()">Verbindung &amp; Sync verwalten <i data-lucide="arrow-up-right"></i></button>
+  </article>
+  <article class="kajo-sync-source-card" data-source="intervals">
+    <div class="kajo-sync-source-top"><span class="kajo-sync-source-icon"><i data-lucide="activity"></i></span><span class="kajo-sync-source-type">TRAININGSDATEN</span></div>
+    <h2>Intervals.icu</h2><p>Aktivitäten und ergänzende Belastungs- und Wellnessdaten</p>
+    <button type="button" onclick="openIntervalsSyncModal()">Verbindung &amp; Sync verwalten <i data-lucide="arrow-up-right"></i></button>
+  </article>
+  <article class="kajo-sync-source-card" data-source="cloud">
+    <div class="kajo-sync-source-top"><span class="kajo-sync-source-icon"><i data-lucide="cloud"></i></span><span class="kajo-sync-source-type">KONTO &amp; SICHERUNG</span></div>
+    <h2>KAJO Cloud</h2><p>Konto-gebundener Datenbestand und Cloud-Übertragung</p>
+    <button type="button" onclick="openCloudSyncModal()">Cloud-Status ansehen <i data-lucide="arrow-up-right"></i></button>
+  </article>
+</section>
+<section class="kajo-data-section kajo-sync-history-section"><div class="kajo-data-section-heading"><h2>Garmin-Datenbestand</h2><span>Gespeicherte Datensätze</span></div><p class="kajo-data-note">Die Detailhistorie zeigt Anzahl und abgedeckten Zeitraum je Datenfeld – nicht einzelne Messpunkte.</p><button type="button" class="kajo-data-inline-action" onclick="openGarminConnectionModal()">Synchronisierungshistorie öffnen <i data-lucide="arrow-up-right"></i></button></section>
+<section class="kajo-data-section kajo-sync-tools"><div class="kajo-data-section-heading"><h2>Weitere Datenwerkzeuge</h2><span>Unabhängig von Live-Verbindungen</span></div>
+<button type="button" class="kajo-data-source-row" onclick="switchTab('upload')"><span class="kajo-data-source-icon"><i data-lucide="file-up"></i></span><span><strong>Manueller Dateiimport</strong><small>CSV-, FIT- und GPX-Aktivitäten</small></span><span class="kajo-data-row-action">Öffnen</span></button>
+<button type="button" class="kajo-data-source-row" onclick="switchTab('methods')"><span class="kajo-data-source-icon"><i data-lucide="clipboard-check"></i></span><span><strong>Datenqualität &amp; Methodik</strong><small>Quellen, Berechenbarkeit und Grenzen</small></span><span class="kajo-data-row-action">Öffnen</span></button>
+<button type="button" class="kajo-data-source-row" onclick="switchTab('backup')"><span class="kajo-data-source-icon"><i data-lucide="archive"></i></span><span><strong>Datensicherung</strong><small>Backup exportieren oder wiederherstellen</small></span><span class="kajo-data-row-action">Öffnen</span></button></section></div>
 <div id="view-backup" class="hidden kajo-data-page"><header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datensicherung</h1><p>Exportiere deinen Datenbestand oder stelle ausgewählte Bereiche aus einem Backup wieder her.</p></div></header>
 <section class="kajo-data-section"><div class="kajo-data-section-heading"><h2>Backup exportieren</h2><span><i data-lucide="download"></i></span></div><p class="kajo-data-note">Erstelle eine JSON-Sicherungsdatei deines verfügbaren KAJO-Datenbestands und speichere sie außerhalb der App.</p><button type="button" class="kajo-data-primary-action" onclick="exportDatabaseBackup()"><i data-lucide="download"></i> Backup herunterladen</button></section>
 <section class="kajo-data-section"><div class="kajo-data-section-heading"><h2>Backup wiederherstellen</h2><span><i data-lucide="upload"></i></span></div><p class="kajo-data-note">Wähle eine zuvor exportierte JSON-Datei. Vor dem Import wird eine Vorschau angezeigt. Du kannst die zu ersetzenden Datenbereiche auswählen; nicht ausgewählte Bereiche bleiben unverändert.</p><button type="button" class="kajo-data-secondary-action" onclick="document.getElementById('backup-import-input').click()"><i data-lucide="folder-open"></i> Backup-Datei auswählen</button><p class="kajo-data-warning"><i data-lucide="alert-triangle"></i> Beim Wiederherstellen werden ausgewählte Datenbereiche des angemeldeten Kontos ersetzt. Prüfe die Vorschau sorgfältig.</p></section></div><div id="view-ai" class="hidden space-y-6">
@@ -974,7 +987,7 @@
     </div>
 
     <!-- MODAL: GARMIN PERSONAL API -->
-    <div id="garmin-connection-modal" class="hidden fixed inset-0 z-[110] bg-slate-950/95 backdrop-blur-md">
+    <div id="garmin-connection-modal" class="hidden fixed inset-0 z-[110] bg-slate-950/95 backdrop-blur-md kajo-sync-modal kajo-sync-modal-garmin">
       <section class="kajo-modal-sheet">
         <header class="kajo-modal-header">
           <div class="flex items-center gap-3 min-w-0"><span class="kajo-modal-icon"><i data-lucide="watch" class="w-5 h-5"></i></span><div class="min-w-0"><p class="kajo-eyebrow">VERBINDUNGEN</p><h2 class="text-base font-bold text-white">Garmin verbinden</h2></div></div>
@@ -1014,7 +1027,7 @@
     </div>
 
     <!-- MODAL: INTERVALS.ICU LIVE SYNC -->
-    <div id="intervals-sync-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[2147483001] flex items-center justify-center p-2 sm:p-4">
+    <div id="intervals-sync-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[2147483001] flex items-center justify-center p-2 sm:p-4 kajo-sync-modal kajo-sync-modal-intervals">
         <div class="intervals-sync-dialog bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-2xl max-w-md w-full space-y-3">
             <div class="intervals-sync-scroll space-y-3">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
