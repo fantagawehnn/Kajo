@@ -2,7 +2,6 @@
  * coach.js – passiver KI-Coach
  * ============================================================ */
 import { state } from './state.js';
-import { escapeHtml } from './utils.js';
 import { supabase } from './supabase-client.js';
 import { buildAthleteContext } from './coach-context.js';
 import { buildCoachRequestContext } from './coach-data-context.js';
