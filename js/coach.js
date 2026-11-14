@@ -4,6 +4,12 @@
 
 import { state } from './state.js';
 import { escapeHtml } from './utils.js';
+import { buildAthleteContext } from './coach-context.js';
+
+/** Strukturierter, ausschließlich aus dem gespeicherten Profil abgeleiteter Coach-Kontext. */
+export function getAICoachAthleteContext() {
+    return buildAthleteContext(state.profile);
+}
 
 export function sendAICoachMessage() {
     const input = document.getElementById('chat-input');
