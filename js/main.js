@@ -1051,8 +1051,22 @@ function mergeGarminActivity(existing, incoming) {
     return changed;
 }
 function selectAllGarminActivities(){document.querySelectorAll('#garmin-activity-preview [data-garmin-activity-id]:not(:disabled)').forEach(e=>{e.checked=true;});}
+let fitParserModulePromise = null;
+
 async function downloadGarminFitTelemetry(activityId) {
-    if (!window.JSZip || typeof FitParser !== 'function') throw new Error('FIT-Parser oder ZIP-Bibliothek ist nicht verfügbar.');
+    if (!window.JSZip) throw new Error('ZIP-Bibliothek ist nicht verfügbar.');
+    fitParserModulePromise ??= import('https://esm.sh/fit-file-parser@1.21.0?bundle');
+    let fitParserModule;
+    try {
+        fitParserModule = await fitParserModulePromise;
+    } catch (error) {
+        fitParserModulePromise = null;
+        throw new Error('FIT-Parser konnte nicht geladen werden: ' + (error?.message || 'CDN nicht erreichbar'));
+    }
+    const FitParser = fitParserModule.default?.default || fitParserModule.default || fitParserModule.FitParser;
+    if (typeof FitParser !== 'function') {
+        throw new Error('FIT-Parser wurde geladen, stellt aber keine verwendbare FitParser-Funktion bereit.');
+    }
     const result = await callGarminFunction({ action: 'download-fit', activityId: String(activityId) });
     const binary = atob(result.zipBase64 || '');
     const bytes = new Uint8Array(binary.length);
