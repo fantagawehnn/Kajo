@@ -7070,3 +7070,53 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   .kajo-home-race-type-label { top:45px; right:12px; max-width:92px; }
   .kajo-home-race-main { padding-right:78px; }
 }
+
+
+/* Training: vier kompakte Unterbereiche bleiben auf einer Zeile. */
+.kajo-training-subnav {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:center;
+  gap:4px;
+  width:100%;
+  overflow:visible;
+  padding:3px 0 9px;
+}
+.kajo-training-subnav .kajo-subnav-item {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-width:0;
+  padding:8px 3px;
+  font-size:10px;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.kajo-training-subnav .kajo-subnav-item i {
+  width:13px;
+  height:13px;
+  flex:0 0 13px;
+}
+.kajo-training-subnav .kajo-subnav-item span {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.kajo-training-subnav #training-subnav-activities.is-active { color:#67b7ff; background:rgba(59,130,246,.10); border-color:rgba(96,165,250,.25); }
+.kajo-training-subnav #training-subnav-planning.is-active { color:#55d6a0; background:rgba(16,185,129,.10); border-color:rgba(52,211,153,.25); }
+.kajo-training-subnav #training-subnav-competitions.is-active { color:#f2ad67; background:rgba(249,115,22,.10); border-color:rgba(251,146,60,.25); }
+.kajo-training-subnav #training-subnav-strength.is-active { color:#c4a1f5; background:rgba(168,85,247,.10); border-color:rgba(192,132,252,.25); }
+
+/* Planung und Wettkämpfe sind getrennte Ansichten desselben Datenbereichs. */
+body.kajo-training-planning-view #races-countdown-grid,
+body.kajo-training-planning-view #race-modal,
+body.kajo-training-planning-view #race-timeline-section,
+body.kajo-training-planning-view #races-full-list { display:none !important; }
+body.kajo-training-competitions-view #planned-this-week-section { display:none !important; }
+
+@media (max-width:380px) {
+  .kajo-training-subnav { gap:2px; }
+  .kajo-training-subnav .kajo-subnav-item { gap:3px; padding-left:1px; padding-right:1px; font-size:9px; }
+  .kajo-training-subnav .kajo-subnav-item i { width:12px; height:12px; flex-basis:12px; }
+}
