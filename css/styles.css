@@ -6362,3 +6362,6 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #view-calendar .calendar-day-date-actions input { flex:1; }
   #view-calendar .calendar-day-recovery-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+#view-calendar .calendar-day-note-preview { margin:0; padding:9px 10px; border-radius:8px; background:var(--color-surface-raised,#17212c); color:var(--color-text-secondary,#a9b5c2); font-size:10px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
+#view-calendar .calendar-day-timeline-item.is-note .calendar-day-timeline-dot { background:var(--kajo-status-info,#63a9ee); }
