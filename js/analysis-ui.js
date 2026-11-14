@@ -79,8 +79,19 @@ function renderLoad() {
     metric('sRPE-Load', String(srpeValues), 'Aktivitäten mit separatem sRPE-Wert')
   ]);
 }
+function recoveryCircleMetric(label, key, value, unit = '', date = '', interactive = true) {
+  const detail = date ? 'Letzter Wert · ' + dateLabel(date) : 'Nicht erfasst';
+  const action = interactive
+    ? ' onclick="toggleRecoveryMetric(\\'' + key + '\\')"'
+    : ' disabled aria-disabled="true"';
+  return '<button type="button" class="kajo-recovery-metric' + (interactive ? '' : ' is-unavailable') +
+    '" data-recovery-metric="' + key + '" aria-pressed="false" aria-label="' + label + ': ' + value + (unit ? ' ' + unit : '') + '"' + action + '>' +
+    '<span class="kajo-recovery-metric-circle"><strong>' + value + '</strong></span>' +
+    '<span class="kajo-recovery-metric-label">' + label + '</span>' +
+    '<small>' + (unit || detail) + '</small>' +
+    '</button>';
+}
 function renderRecovery() {
-  if (!state.healthHistoryMetric) state.healthHistoryMetric = 'hrv';
   const readiness = calculateReadiness(todayKey());
   const score = readiness.enoughData ? readiness.score : null;
   const status = score === null ? 'Trainings-Readiness nicht ausreichend beurteilbar'
@@ -97,16 +108,13 @@ function renderRecovery() {
     ['HRV', 'hrv', 'ms', 1],
     ['Ruhepuls', 'rhr', 'bpm', 0],
     ['Schlafdauer', 'sleepDuration', 'h', 1],
-    ['Sleep Score', 'sleepScore', '/ 100', 0],
-    ['Body Battery', 'bodyBattery', '', 0]
+    ['Sleep Score', 'sleepScore', '/100', 0],
+    ['Atemfrequenz', 'respiration', '/min', 1]
   ];
   renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
-    if (key === 'bodyBattery') return metric(label, '—', 'Garmin-Import noch nicht angebunden');
     const entry = latestCheckin(key);
-    return metric(label,
-      entry ? fmt(entry.value, digits) + (unit ? ' ' + unit : '') : '—',
-      entry ? 'Letzter Wert · ' + dateLabel(entry.date) : 'Nicht erfasst',
-      "openHealthMetric('" + key + "')");
+    return recoveryCircleMetric(label, key, entry ? fmt(entry.value, digits) : '—',
+      unit, entry?.date || '', true);
   }));
 
   const subjectiveEntries = [
@@ -114,20 +122,18 @@ function renderRecovery() {
     ['Müdigkeit', 'fatigue'],
     ['Muskelkater', 'soreness'],
     ['Motivation', 'motivation'],
-    ['Stress', 'stress']
+    ['Subjektiver Stress', 'stress']
   ];
   renderMetrics('recovery-subjective-metrics', subjectiveEntries.map(([label, key]) => {
     const entry = latestCheckin(key);
-    return metric(label,
-      entry ? fmt(entry.value, 0) + ' / 10' : '—',
-      entry ? 'Letzter Check-in · ' + dateLabel(entry.date) : 'Nicht erfasst',
-      "openHealthMetric('" + key + "')");
+    return recoveryCircleMetric(label, key, entry ? fmt(entry.value, 0) : '—',
+      '/10', entry?.date || '', true);
   }));
 
   const objective = document.getElementById('recovery-objective-count');
   const subjective = document.getElementById('recovery-subjective-count');
-  if (objective) objective.textContent = readiness.objectiveCount + ' Messgrößen';
-  if (subjective) subjective.textContent = readiness.subjectiveCount + ' Angaben';
+  if (objective) objective.textContent = objectiveEntries.length + ' Messwerte';
+  if (subjective) subjective.textContent = subjectiveEntries.length + ' Angaben';
 }
 function renderPerformance() {
   const vo2 = latestCheckin('vo2max');
