@@ -1070,6 +1070,22 @@ Deno.serve(async (req) => {
           : "Unbekannter Fehler beim Abruf der Aktivitätsdetails.";
       }
 
+      const detailRecord = remoteDetails && typeof remoteDetails === "object"
+        ? remoteDetails as Record<string, unknown>
+        : {};
+      const descriptors = Array.isArray(detailRecord.metricDescriptors)
+        ? detailRecord.metricDescriptors.slice(0, 32)
+        : [];
+      const detailRows = Array.isArray(detailRecord.activityDetailMetrics)
+        ? detailRecord.activityDetailMetrics.slice(0, 3)
+        : [];
+      const heartRateDtos = detailRecord.heartRateDTOs;
+      const heartRatePreview = Array.isArray(heartRateDtos)
+        ? { type: "array", length: heartRateDtos.length, firstItems: heartRateDtos.slice(0, 3) }
+        : heartRateDtos && typeof heartRateDtos === "object"
+          ? { type: "object", keys: Object.keys(heartRateDtos as Record<string, unknown>), preview: heartRateDtos }
+          : { type: typeof heartRateDtos, value: heartRateDtos ?? null };
+
       return json(200, {
         ok: true,
         readOnly: true,
@@ -1083,6 +1099,15 @@ Deno.serve(async (req) => {
         garmin: {
           summary: summarizeActivityJson(remote),
           details: summarizeActivityJson(remoteDetails),
+          detailsPreview: {
+            measurementCount: detailRecord.measurementCount ?? null,
+            metricsCount: detailRecord.metricsCount ?? null,
+            totalMetricsCount: detailRecord.totalMetricsCount ?? null,
+            detailsAvailable: detailRecord.detailsAvailable ?? null,
+            metricDescriptors: descriptors,
+            firstDetailRows: detailRows,
+            heartRateDTOs: heartRatePreview,
+          },
           detailsError: remoteDetailsError,
         },
         note: "Es wurden keine Daten geschrieben und keine FIT-Datei abgerufen.",
