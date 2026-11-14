@@ -6794,6 +6794,7 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   min-width:0;
   flex:initial;
 }
+#view-calendar .calendar-day-health-rings .calendar-kpi-ring-wrap { grid-column:3; }
 #view-calendar .calendar-day-recovery-rings .calendar-kpi-ring,
 #view-calendar .calendar-day-health-rings .calendar-kpi-ring {
   width:clamp(38px,6.5vw,62px) !important;
