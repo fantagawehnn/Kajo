@@ -96,7 +96,7 @@ await storage.loadStateForUser('smoke-test-user');
 // Full Garmin raw telemetry is kept in its own local collection and restored
 // without bloating the compact activity record.
 state.rawActivities = [{
-    id: 'garmin-telemetry-smoke',
+    id: 'garmin-123456',
     source: 'garmin',
     date: todayKey,
     garminTelemetry: {
