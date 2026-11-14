@@ -82,7 +82,7 @@ function renderLoad() {
 function recoveryCircleMetric(label, key, value, unit = '', date = '', interactive = true) {
   const detail = date ? 'Letzter Wert · ' + dateLabel(date) : 'Nicht erfasst';
   const action = interactive
-    ? ' onclick="toggleRecoveryMetric(\\'' + key + '\\')"'
+    ? ` onclick="toggleRecoveryMetric('${key}')"`
     : ' disabled aria-disabled="true"';
   return '<button type="button" class="kajo-recovery-metric' + (interactive ? '' : ' is-unavailable') +
     '" data-recovery-metric="' + key + '" aria-pressed="false" aria-label="' + label + ': ' + value + (unit ? ' ' + unit : '') + '"' + action + '>' +
