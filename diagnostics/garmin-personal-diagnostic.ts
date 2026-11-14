@@ -847,6 +847,121 @@ async function syncGarminActivitiesForUser(
   };
 }
 
+
+function prepareActivityTimeSeries(details: Record<string, unknown>) {
+  const descriptors = Array.isArray(details.metricDescriptors)
+    ? details.metricDescriptors.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    : [];
+  const rows = Array.isArray(details.activityDetailMetrics)
+    ? details.activityDetailMetrics.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    : [];
+  const descriptorByKey = new Map<string, { index: number; unitKey: string | null; factor: number | null }>();
+  for (const descriptor of descriptors) {
+    const key = typeof descriptor.key === "string" ? descriptor.key : "";
+    const index = Number(descriptor.metricsIndex);
+    if (!key || !Number.isInteger(index) || index < 0) continue;
+    const unit = descriptor.unit && typeof descriptor.unit === "object"
+      ? descriptor.unit as Record<string, unknown>
+      : {};
+    descriptorByKey.set(key, {
+      index,
+      unitKey: typeof unit.key === "string" ? unit.key : null,
+      factor: typeof unit.factor === "number" ? unit.factor : null,
+    });
+  }
+
+  const timestampDescriptor = descriptorByKey.get("directTimestamp");
+  const heartRateDescriptor = descriptorByKey.get("directHeartRate");
+  const timestampAt = (row: Record<string, unknown>): number | null => {
+    const metrics = Array.isArray(row.metrics) ? row.metrics : [];
+    const value = timestampDescriptor ? metrics[timestampDescriptor.index] : null;
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  };
+  const heartRateAt = (row: Record<string, unknown>): number | null => {
+    const metrics = Array.isArray(row.metrics) ? row.metrics : [];
+    const value = heartRateDescriptor ? metrics[heartRateDescriptor.index] : null;
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  };
+
+  const fieldSummaries = descriptors
+    .filter((descriptor) => typeof descriptor.key === "string" &&
+      descriptor.key !== "directTimestamp" &&
+      descriptor.key !== "directLatitude" &&
+      descriptor.key !== "directLongitude")
+    .map((descriptor) => {
+      const key = String(descriptor.key);
+      const index = Number(descriptor.metricsIndex);
+      const values = rows.map((row) => {
+        const metrics = Array.isArray(row.metrics) ? row.metrics : [];
+        const value = metrics[index];
+        return typeof value === "number" && Number.isFinite(value) ? value : null;
+      }).filter((value): value is number => value !== null);
+      const unit = descriptor.unit && typeof descriptor.unit === "object"
+        ? descriptor.unit as Record<string, unknown>
+        : {};
+      return {
+        key,
+        metricsIndex: index,
+        unit: typeof unit.key === "string" ? unit.key : null,
+        scaleFactor: typeof unit.factor === "number" ? unit.factor : null,
+        nonNullCount: values.length,
+        minRaw: values.length ? Math.min(...values) : null,
+        maxRaw: values.length ? Math.max(...values) : null,
+        averageRaw: values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null,
+        interpretation: key === "directHeartRate"
+          ? "Rohwert entspricht bpm laut Garmin-Deskriptor."
+          : "Rohwerte; Skalierung noch nicht angewendet.",
+      };
+    });
+
+  const validTimestamps = rows.map(timestampAt).filter((value): value is number => value !== null);
+  const firstTimestamp = validTimestamps.length ? validTimestamps[0] : null;
+  const toSample = (row: Record<string, unknown>) => {
+    const timestamp = timestampAt(row);
+    const hr = heartRateAt(row);
+    const metrics = Array.isArray(row.metrics) ? row.metrics : [];
+    const rawValues: Record<string, number | null> = {};
+    for (const descriptor of descriptors) {
+      const key = typeof descriptor.key === "string" ? descriptor.key : "";
+      const index = Number(descriptor.metricsIndex);
+      if (!key || key === "directTimestamp" || key === "directLatitude" || key === "directLongitude") continue;
+      const value = metrics[index];
+      rawValues[key] = typeof value === "number" && Number.isFinite(value) ? value : null;
+    }
+    return {
+      timestampMs: timestamp,
+      timestampIso: timestamp === null ? null : new Date(timestamp).toISOString(),
+      elapsedSeconds: timestamp === null || firstTimestamp === null ? null : (timestamp - firstTimestamp) / 1000,
+      heartRateBpm: hr,
+      rawValues,
+    };
+  };
+  const heartRates = rows.map(heartRateAt).filter((value): value is number => value !== null);
+  return {
+    rowCount: rows.length,
+    timestampCount: validTimestamps.length,
+    startTimeIso: firstTimestamp === null ? null : new Date(firstTimestamp).toISOString(),
+    endTimeIso: validTimestamps.length ? new Date(validTimestamps[validTimestamps.length - 1]).toISOString() : null,
+    durationFromTimestampsSeconds: validTimestamps.length > 1
+      ? (validTimestamps[validTimestamps.length - 1] - validTimestamps[0]) / 1000
+      : null,
+    heartRate: {
+      unit: "bpm",
+      sampleCount: heartRates.length,
+      min: heartRates.length ? Math.min(...heartRates) : null,
+      max: heartRates.length ? Math.max(...heartRates) : null,
+      average: heartRates.length ? heartRates.reduce((sum, value) => sum + value, 0) / heartRates.length : null,
+    },
+    fieldSummaries,
+    samples: {
+      firstFive: rows.slice(0, 5).map(toSample),
+      lastFive: rows.slice(-5).map(toSample),
+    },
+    excludedFromSamples: ["directLatitude", "directLongitude"],
+    note: "Nur-Lese-Aufbereitung. Zeitstempel werden als Unix-Millisekunden dargestellt; Herzfrequenz gemäß Garmin-Deskriptor in bpm. Andere Messwerte bleiben Rohwerte, bis ihre Skalierung separat verifiziert ist.",
+  };
+}
+
 function summarizeActivityJson(payload: unknown) {
   const arrayPaths: Array<{ path: string; length: number }> = [];
   const matchingPaths: string[] = [];
@@ -1107,6 +1222,7 @@ Deno.serve(async (req) => {
             metricDescriptors: descriptors,
             firstDetailRows: detailRows,
             heartRateDTOs: heartRatePreview,
+            preparedTimeSeries: prepareActivityTimeSeries(detailRecord),
           },
           detailsError: remoteDetailsError,
         },
