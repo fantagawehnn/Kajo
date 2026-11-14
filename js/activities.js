@@ -1195,6 +1195,10 @@ function initializeActivityDetailTabs() {
     const garminDiagnosticOutput = document.getElementById('garmin-json-diagnostic-output');
     if (garminDiagnosticButton) diagnosticPanel.appendChild(garminDiagnosticButton);
     if (garminDiagnosticOutput) diagnosticPanel.appendChild(garminDiagnosticOutput);
+    const garminImportButton = document.getElementById('garmin-json-import-run');
+    const garminImportOutput = document.getElementById('garmin-json-import-output');
+    if (garminImportButton) diagnosticPanel.appendChild(garminImportButton);
+    if (garminImportOutput) diagnosticPanel.appendChild(garminImportOutput);
     diagnosticSource?.remove();
 
     const dataHeading = document.createElement('div');
