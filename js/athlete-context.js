@@ -142,6 +142,30 @@ export function buildAthleteContext(state, options = {}) {
         .sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const recentActivities = recentRawActivities.map(summarizeActivity);
     const selectedLoadData = getTrainingLoadData(recentRawActivities, settings, profile);
+    // Independent all-sport session-RPE view. This is deliberately separate
+    // from the selected Garmin/CTL-ATL load model and never fills missing data.
+    const allSportsRpeData = getTrainingLoadData(
+        recentRawActivities,
+        { ...settings, trainingLoadSource: 'srpe' },
+        profile
+    );
+    const rpeLoadByActivity = new Map(allSportsRpeData.records.map(item => [item.activity, item.value]));
+    const documentedSessionRpeByDay = Object.entries(recentRawActivities.reduce((groups, activity) => {
+        const date = validDateKey(activity?.date);
+        if (!date) return groups;
+        (groups[date] ||= []).push(activity);
+        return groups;
+    }, {})).sort(([a], [b]) => a.localeCompare(b)).map(([date, items]) => {
+        const knownLoads = items.map(item => rpeLoadByActivity.get(item)).filter(value => Number.isFinite(value));
+        return {
+            date,
+            recordedActivityCount: items.length,
+            activitiesWithSessionRpe: knownLoads.length,
+            activitiesMissingSessionRpe: items.length - knownLoads.length,
+            documentedLoadAU: knownLoads.length ? Number(knownLoads.reduce((sum, value) => sum + value, 0).toFixed(1)) : null,
+            allRecordedActivitiesHaveSessionRpe: knownLoads.length === items.length
+        };
+    });
     const loadedActivityRefs = new Set(selectedLoadData.records.map(item => item.activity));
     const loadCoverageByActivityType = Object.entries(recentRawActivities.reduce((groups, activity) => {
         const type = String(activity?.type ?? 'unknown');
@@ -239,7 +263,8 @@ export function buildAthleteContext(state, options = {}) {
             coverageRanges,
             selectedSource: settings.trainingLoadSource ?? null,
             resolvedMode: selectedLoadData.mode,
-            loadCoverageByActivityType
+            loadCoverageByActivityType,
+            documentedSessionRpeByDay
         },
         recovery: {
             checkins: summarizeCheckins(state?.dailyCheckins, asOfDate, checkinDays),
