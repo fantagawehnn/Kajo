@@ -2,7 +2,7 @@ name: KAJO V2 CI
 
 on:
   push:
-    branches: [v2, feat/garmin-data-quality-v2, integration/athlete-context-v2, integration/athlete-context-v5]
+    branches: [v2, feat/garmin-data-quality-v2, integration/athlete-context-v5]
   pull_request:
     branches: [v2]
 
