@@ -277,7 +277,6 @@ export function renderAnalysisInsights() {
     renderOverview(timeline);
     renderLoadInsight(timeline);
     renderFitnessInsight(timeline);
-    renderRecoveryInsight();
     renderHealthInsight();
     renderCompetitionInsight();
 }
