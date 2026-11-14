@@ -298,6 +298,8 @@ export function toggleTrainingWatersManager() {
   const opening = panel.classList.contains('hidden');
   panel.classList.toggle('hidden', !opening);
   button?.setAttribute('aria-expanded', String(opening));
+  button?.setAttribute('aria-label', opening ? 'Gewässer verwalten schließen' : 'Gewässer verwalten öffnen');
+  button?.setAttribute('title', opening ? 'Gewässer verwalten schließen' : 'Gewässer verwalten öffnen');
   button?.classList.toggle('is-open', opening);
 }
 
