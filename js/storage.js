@@ -40,7 +40,7 @@ const COLLECTION_KEYS = {
 function getGarminActivityStorageId(activity) {
     const rawId = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId ?? activity?.id;
     const id = String(rawId ?? '').replace(/^garmin-/, '');
-    return /^\\d+$/.test(id) ? id : null;
+    return /^\d+$/.test(id) ? id : null;
 }
 
 /**
