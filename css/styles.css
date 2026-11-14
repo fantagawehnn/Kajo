@@ -6365,3 +6365,57 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
 
 #view-calendar .calendar-day-note-preview { margin:0; padding:9px 10px; border-radius:8px; background:var(--color-surface-raised,#17212c); color:var(--color-text-secondary,#a9b5c2); font-size:10px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
 #view-calendar .calendar-day-timeline-item.is-note .calendar-day-timeline-dot { background:var(--kajo-status-info,#63a9ee); }
+
+
+/* Mobile-first compact day summary below the month grid */
+#view-calendar .calendar-month-day-detail {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #263449;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #141d2b, #0d1420);
+}
+#view-calendar .calendar-month-summary-heading {
+  display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;
+}
+#view-calendar .calendar-month-summary-eyebrow {
+  margin:0 0 3px; color:#94a3b8; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em;
+}
+#view-calendar .calendar-month-summary-heading h3 { margin:0; color:#f1f5f9; font-size:14px; font-weight:750; }
+#view-calendar .calendar-month-summary-open {
+  display:inline-flex; align-items:center; gap:6px; flex-shrink:0; padding:7px 10px; border:1px solid #33465f;
+  border-radius:9px; color:#bfdbfe; font-size:11px; font-weight:700; background:rgba(59,130,246,.09);
+}
+#view-calendar .calendar-month-summary-open svg { width:13px; height:13px; }
+#view-calendar .calendar-month-summary-metrics {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin-bottom:12px;
+}
+#view-calendar .calendar-month-summary-metrics > div {
+  min-width:0; padding:9px 7px; border-radius:9px; background:rgba(255,255,255,.035);
+}
+#view-calendar .calendar-month-summary-metrics span,
+#view-calendar .calendar-month-summary-metrics small { display:block; color:#94a3b8; font-size:9px; line-height:1.3; }
+#view-calendar .calendar-month-summary-metrics strong { display:block; margin:3px 0; color:#f8fafc; font-size:15px; line-height:1.2; overflow-wrap:anywhere; }
+#view-calendar .calendar-month-summary-lists { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#view-calendar .calendar-month-summary-lists > div > p { margin:0 0 6px; color:#94a3b8; font-size:10px; font-weight:750; }
+#view-calendar .calendar-month-summary-entry { display:flex; align-items:center; gap:7px; min-width:0; padding:7px 0; border-top:1px solid rgba(148,163,184,.12); }
+#view-calendar .calendar-month-summary-dot { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:var(--activity-color); }
+#view-calendar .calendar-month-summary-entry.is-planned .calendar-month-summary-dot { background:transparent; border:1.5px solid var(--activity-color); }
+#view-calendar .calendar-month-summary-entry-copy { display:flex; flex:1; min-width:0; flex-direction:column; }
+#view-calendar .calendar-month-summary-entry-copy strong { overflow:hidden; color:#e2e8f0; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+#view-calendar .calendar-month-summary-entry-copy small { color:#94a3b8; font-size:9px; }
+#view-calendar .calendar-month-summary-status { color:#94a3b8; font-size:9px; white-space:nowrap; }
+#view-calendar .calendar-month-summary-more,
+#view-calendar .calendar-month-summary-empty { margin:7px 0 0; color:#94a3b8; font-size:10px; }
+#view-calendar .calendar-month-summary-events { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+#view-calendar .calendar-month-summary-events span { padding:4px 7px; border-radius:6px; color:#cbd5e1; background:rgba(148,163,184,.1); font-size:9px; }
+@media(max-width:640px) {
+  #view-calendar .calendar-month-day-detail { padding:11px; }
+  #view-calendar .calendar-month-summary-heading { align-items:flex-start; }
+  #view-calendar .calendar-month-summary-heading h3 { font-size:12px; }
+  #view-calendar .calendar-month-summary-open { padding:7px 8px; font-size:10px; }
+  #view-calendar .calendar-month-summary-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  #view-calendar .calendar-month-summary-metrics > div { padding:8px; }
+  #view-calendar .calendar-month-summary-metrics strong { font-size:14px; }
+  #view-calendar .calendar-month-summary-lists { grid-template-columns:1fr; gap:8px; }
+}
