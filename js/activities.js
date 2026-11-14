@@ -4,7 +4,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=2';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
