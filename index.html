@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=95">
+    <link rel="stylesheet" href="css/styles.css?v=96">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -135,6 +135,7 @@
         <nav id="training-subnav" class="kajo-subnav hidden" aria-label="Training-Unterbereiche">
             <button type="button" id="training-subnav-activities" class="kajo-subnav-item is-active" onclick="switchTab('training-activities')"><i data-lucide="activity"></i><span>Aktivitäten</span></button>
             <button type="button" id="training-subnav-planning" class="kajo-subnav-item" onclick="switchTab('training-planning')"><i data-lucide="calendar-check"></i><span>Trainingsplanung</span></button>
+            <button type="button" id="training-subnav-strength" class="kajo-subnav-item" onclick="switchTab('strength')"><i data-lucide="dumbbell"></i><span>Kraftleistungen</span></button>
         </nav>
         <nav id="analysis-subnav" class="kajo-subnav hidden" aria-label="Analyse-Unterbereiche">
             <button type="button" id="analysis-subnav-load" class="kajo-subnav-item" onclick="switchTab('analysis-load')"><span>Training Load</span></button>
@@ -184,15 +185,14 @@
             </button>
 
             <section class="kajo-more-group">
-                <h2>Persönliches Profil</h2>
+                <h2>Athletenprofil</h2>
                 <div class="kajo-area-list">
                     <button type="button" class="kajo-area-card" onclick="switchTab('profile')"><span class="kajo-area-icon"><i data-lucide="user-round"></i></span><span class="kajo-area-copy"><strong>Persönliche &amp; sportliche Daten</strong><small>Profil, Körperdaten und Leistungswerte</small></span></button>
                 </div>
             </section>
             <section class="kajo-more-group">
-                <h2>Sport &amp; Training</h2>
+                <h2>Sport &amp; Trainingskonfiguration</h2>
                 <div class="kajo-area-list">
-                    <button type="button" class="kajo-area-card" onclick="switchTab('strength')"><span class="kajo-area-icon"><i data-lucide="dumbbell"></i></span><strong>Kraftleistungen</strong></button>
                     <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="sliders-horizontal"></i></span><strong>Sportarten, Disziplinen &amp; Trainingszonen</strong></button>
                     <button type="button" class="kajo-area-card" onclick="switchTab('routes')"><span class="kajo-area-icon"><i data-lucide="route"></i></span><strong>Trainings- &amp; Wettkampfstrecken</strong></button>
                     <button type="button" class="kajo-area-card" onclick="switchTab('nutrition')"><span class="kajo-area-icon"><i data-lucide="utensils"></i></span><strong>Ernährung</strong></button>
@@ -207,9 +207,9 @@
                 </div>
             </section>
             <section class="kajo-more-group">
-                <h2>App</h2>
+                <h2>App &amp; Coach</h2>
                 <div class="kajo-area-list">
-                    <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="settings"></i></span><strong>Darstellung, Benachrichtigungen &amp; Einstellungen</strong></button>
+                    <button type="button" class="kajo-area-card" onclick="openSettingsModal()"><span class="kajo-area-icon"><i data-lucide="settings"></i></span><strong>Darstellung &amp; Benachrichtigungen</strong></button>
                     <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="brain-circuit"></i></span><strong>KAJO Coach &amp; KI-Einstellungen</strong></button>
                 </div>
             </section>
