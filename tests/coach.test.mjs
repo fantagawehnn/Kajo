@@ -223,6 +223,7 @@ for (let offset = -10; offset <= 0; offset++) {
         date: dateOffset('2026-11-14', offset),
         load: offset % 2 === 0 ? 20 : 40,
         loadMode: 'garmin-native',
+        loadUnit: 'Garmin Load',
         dataStatus: 'complete',
         ctl: 40, atl: 45, tsb: -5
     });
