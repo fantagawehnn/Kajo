@@ -29,9 +29,10 @@ Die nicht geheimen Variablen `SUPABASE_URL` und `OPENAI_MODEL` können in den Wo
 - Der OpenAI-Key wird nie an den Browser ausgeliefert.
 - Die Anfrage enthält nur den vom Client bereits geladenen Account-Kontext; Roh-Telemetrie, GPS, Nutzer-IDs, Körpergewicht und Zyklusdaten werden nicht pauschal übertragen.
 - KAJO-Belastungskennzahlen werden aus der vorhandenen `dailyTimeline` übernommen und nicht durch den Coach neu berechnet.
-- OpenAI Responses wird mit `store: false` aufgerufen.
+- OpenAI Responses wird mit `store: false` aufgerufen; das deaktiviert die Speicherung der Response im Responses-API-Store. Weitere Datenverarbeitung und Aufbewahrung richten sich nach den Einstellungen und Bedingungen des OpenAI-Projekts.
 - Chatverlauf bleibt vorerst nur im Arbeitsspeicher des geöffneten Browser-Tabs und wird nicht dauerhaft gespeichert.
 - Der Coach-Endpunkt schreibt keine Trainings-, Profil- oder Kalenderdaten.
+- Der Worker validiert die Sitzung, liest die Trainingsdaten aber nicht selbst aus der Datenbank: Der authentifizierte Browser übermittelt den bereits geladenen KAJO-Kontext. Die Authentifizierung schützt den Endpunkt, garantiert jedoch nicht die Unveränderbarkeit der vom Browser gesendeten Kennzahlen.
 
 ## Noch nicht erledigt
 
