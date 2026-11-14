@@ -201,18 +201,33 @@
             </div>
         </section>
         <section id="view-routes" class="hidden space-y-5">
-          <header class="space-y-1"><p class="kajo-eyebrow">STRECKENVERWALTUNG</p><h1 class="text-xl font-bold text-white">Flüsse, Abschnitte &amp; Strecken</h1><p class="text-xs text-slate-400">Verwalte zuerst deine Gewässer und Flussabschnitte. Anschließend ordnest du Trainings- und Wettkampfstrecken einem Abschnitt zu. Bestehende Strecken werden automatisch übernommen.</p></header>
-          <section class="rounded-2xl border border-slate-800 bg-slate-900 p-4 space-y-3">
-            <h2 class="text-sm font-bold text-white">Flussabschnitt anlegen</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <label class="text-slate-400">Fluss / Gewässer<input id="route-water-name" list="route-river-suggestions" maxlength="100" placeholder="z. B. Sieg" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><datalist id="route-river-suggestions"><option value="Sieg"><option value="Moldau – Prag"><option value="Inn – Rosenheim"><option value="Rhein – Bonn"><option value="Agger"></datalist></label>
-              <label class="text-slate-400">Flussabschnitt<input id="route-section-name" maxlength="120" placeholder="z. B. Trainingsstrecke unterhalb der Brücke" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"></label>
-            </div>
-            <button type="button" onclick="saveTrainingWaterSection()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Flussabschnitt speichern</button>
-            <div id="training-waters-list" class="space-y-2"></div>
+          <header class="space-y-1">
+            <p class="kajo-eyebrow">STRECKENVERWALTUNG</p>
+            <h1 class="text-xl font-bold text-white">Trainings- &amp; Wettkampfstrecken</h1>
+            <p class="text-xs text-slate-400">Verwalte deine Strecken nach Gewässern und Flussabschnitten. Trainings- und Wettkampfstrecken bleiben in einer gemeinsamen Übersicht.</p>
+          </header>
+
+          <section class="kajo-route-summary" aria-label="Streckenübersicht">
+            <div><strong id="route-summary-waters">0</strong><span>Gewässer</span></div>
+            <div><strong id="route-summary-sections">0</strong><span>Abschnitte</span></div>
+            <div><strong id="route-summary-routes">0</strong><span>Strecken</span></div>
           </section>
-          <section class="rounded-2xl border border-slate-800 bg-slate-900 p-4 space-y-3">
-            <h2 id="route-form-title" class="text-sm font-bold text-white">Neue Strecke anlegen</h2><input type="hidden" id="route-edit-id">
+
+          <section class="kajo-route-toolbar" aria-label="Streckenfilter">
+            <div class="kajo-route-filter-row">
+              <button type="button" class="kajo-route-filter is-active" data-route-filter="all" onclick="setTrainingRouteFilter('all')">Alle</button>
+              <button type="button" class="kajo-route-filter" data-route-filter="training" onclick="setTrainingRouteFilter('training')">Training</button>
+              <button type="button" class="kajo-route-filter" data-route-filter="competition" onclick="setTrainingRouteFilter('competition')">Wettkampf</button>
+            </div>
+            <button type="button" class="kajo-route-primary" onclick="toggleTrainingRouteForm(true)"><i data-lucide="plus"></i> Strecke hinzufügen</button>
+          </section>
+
+          <section id="route-form-panel" class="kajo-route-form-panel hidden" aria-labelledby="route-form-title">
+            <div class="kajo-route-form-heading">
+              <div><p class="kajo-route-kicker">STRECKENDETAILS</p><h2 id="route-form-title">Neue Strecke anlegen</h2></div>
+              <button type="button" class="kajo-route-close" onclick="toggleTrainingRouteForm(false)" aria-label="Formular schließen"><i data-lucide="x"></i></button>
+            </div>
+            <input type="hidden" id="route-edit-id">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <label class="text-slate-400">Streckenname<input id="route-name" maxlength="100" placeholder="z. B. Classic Sieg" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"></label>
               <label class="text-slate-400">Flussabschnitt<select id="route-section-id" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><option value="">Flussabschnitt auswählen</option></select></label>
@@ -220,9 +235,28 @@
               <label class="text-slate-400 sm:col-span-2">Aktivitätsnamen / Suchbegriffe für automatische Zuordnung<input id="route-aliases" maxlength="300" placeholder="Kommagetrennt, z. B. Sieg, Training Sieg, Sieg Classic" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><span class="block mt-1 text-[10px] text-slate-500">KAJO sucht diese Begriffe im Namen der importierten Aktivität. Bei mehreren passenden Strecken wird keine automatische Zuordnung vorgenommen.</span></label>
               <label class="text-slate-400 sm:col-span-2">Notizen / Besonderheiten<textarea id="route-notes" rows="2" maxlength="500" placeholder="Optional: markante Passage, Start- und Zielpunkt, Hinweise zur Strecke …" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"></textarea></label>
             </div>
-            <div class="flex flex-wrap gap-2"><button type="button" onclick="saveTrainingRoute()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Strecke speichern</button><button type="button" id="route-cancel-edit" onclick="resetTrainingRouteForm()" class="hidden px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Bearbeitung abbrechen</button></div>
+            <div class="flex flex-wrap gap-2 pt-3"><button type="button" onclick="saveTrainingRoute()" class="kajo-route-primary">Strecke speichern</button><button type="button" id="route-cancel-edit" onclick="resetTrainingRouteForm()" class="kajo-route-secondary hidden">Bearbeitung abbrechen</button></div>
           </section>
-          <section class="space-y-3"><h2 class="text-sm font-bold text-white">Meine Strecken</h2><div id="training-routes-list" class="space-y-2"></div></section>
+
+          <section class="space-y-3">
+            <div class="kajo-route-list-heading"><h2>Meine Strecken</h2><span id="route-filter-count">0 Einträge</span></div>
+            <div id="training-routes-list" class="kajo-route-list"></div>
+          </section>
+
+          <section class="kajo-route-manager">
+            <button type="button" class="kajo-route-manager-toggle" onclick="toggleTrainingWatersManager()" aria-expanded="false" aria-controls="route-water-manager">
+              <span><i data-lucide="waves"></i><span><strong>Gewässer verwalten</strong><small>Flüsse und Flussabschnitte hinzufügen oder bearbeiten</small></span></span>
+              <i data-lucide="chevron-down" class="kajo-route-manager-chevron"></i>
+            </button>
+            <div id="route-water-manager" class="hidden kajo-route-manager-content">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <label class="text-slate-400">Fluss / Gewässer<input id="route-water-name" list="route-river-suggestions" maxlength="100" placeholder="z. B. Sieg" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><datalist id="route-river-suggestions"><option value="Sieg"><option value="Moldau – Prag"><option value="Inn – Rosenheim"><option value="Rhein – Bonn"><option value="Agger"></datalist></label>
+                <label class="text-slate-400">Flussabschnitt<input id="route-section-name" maxlength="120" placeholder="z. B. Trainingsstrecke unterhalb der Brücke" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"></label>
+              </div>
+              <button type="button" onclick="saveTrainingWaterSection()" class="kajo-route-primary mt-3">Flussabschnitt speichern</button>
+              <div id="training-waters-list" class="kajo-route-water-list"></div>
+            </div>
+          </section>
         </section>
 
         
