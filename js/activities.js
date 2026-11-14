@@ -161,7 +161,7 @@ export function openCSVDetailsModal(id) {
     const hrReloadButton = document.getElementById('activity-hr-reload-button');
     const garminActivityId = act.sourceRefs?.garminActivityId ?? act.garminData?.activityId;
     if (hrReloadButton) {
-        hrReloadButton.classList.toggle('hidden', garminActivityId == null || !/^\\d+$/.test(String(garminActivityId)));
+        hrReloadButton.classList.toggle('hidden', garminActivityId == null || !/^\d+$/.test(String(garminActivityId)));
         hrReloadButton.disabled = false;
     }
     const analysisActivity = { ...act, telemetry: getActivityTelemetry(act) };
