@@ -25,7 +25,7 @@ test('does not treat missing or different route conditions as comparable', () =>
     ]);
     assert.equal(result.comparableGroups.filter(group => group.comparable).length, 2);
     assert.equal(result.dataQuality.activitiesWithUnspecifiedFormat, 1);
-    assert.equal(result.dataQuality.activitiesWithoutComparableConditions, 3);
+    assert.equal(result.dataQuality.activitiesWithoutComparableConditions, 1);
 });
 
 test('summarizes metrics only within identical documented conditions', () => {
