@@ -288,46 +288,6 @@ function renderActivityChart() {
     }
   });
 }
-function renderDetailedAnalysis() {
-  const root = document.getElementById('analysis-overview-detail-content');
-  if (!root) return;
-  const range = currentRange();
-  const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
-  const latest = [...timeline].reverse().find(day => day && day.date >= range.from && day.date <= range.to);
-  const checkins = Object.entries(state.dailyCheckins || {})
-    .filter(([date]) => date >= range.from && date <= range.to)
-    .sort(([a], [b]) => b.localeCompare(a));
-  const hrvRow = checkins.find(([, row]) => valid(row?.hrv));
-  const vo2Row = checkins.find(([, row]) => valid(row?.vo2max));
-  const hrv = hrvRow ? { date: hrvRow[0], value: Number(hrvRow[1].hrv) } : null;
-  const vo2 = vo2Row ? { date: vo2Row[0], value: Number(vo2Row[1].vo2max) } : null;
-  const healthEntries = Object.entries(state.healthLogs || {})
-    .filter(([date, item]) => date >= range.from && date <= range.to && ['sick', 'injured'].includes(item?.status));
-  const parts = [];
-
-  if (latest?.load != null && valid(latest.atl)) {
-    const label = latest.statusLabel && latest.statusLabel !== 'Modellwert'
-      ? latest.statusLabel.toLowerCase()
-      : 'Belastungswert vorhanden';
-    parts.push('Belastung: ' + label + ' (ATL ' + fmt(latest.atl) + ').');
-  } else if (latest?.dataStatus === 'unknown' || latest?.dataStatus === 'incomplete-activity-load') {
-    parts.push('Belastung: zuletzt unvollständige Datenabdeckung; fehlende Tage werden nicht als Ruhetage gewertet.');
-  } else {
-    parts.push('Belastung: aktuell keine belastbare Einordnung möglich.');
-  }
-
-  if (hrv) parts.push('Letzter gespeicherter HRV-Wert: ' + fmt(hrv.value) + ' ms (' + dateLabel(hrv.date) + ').');
-  if (vo2) parts.push('Letzter gespeicherter VO₂max-Wert: ' + fmt(vo2.value) + ' ml/kg/min (' + dateLabel(vo2.date) + ').');
-  if (healthEntries.length) {
-    const sick = healthEntries.filter(([, item]) => item.status === 'sick').length;
-    const injured = healthEntries.filter(([, item]) => item.status === 'injured').length;
-    parts.push('Dokumentierte Einträge im Zeitraum: ' + sick + ' Krankheit, ' + injured + ' Verletzung.');
-  }
-
-  root.textContent = parts.length
-    ? parts.slice(0, 3).join(' ')
-    : 'Für den gewählten Zeitraum liegen noch nicht genügend zusammenhängende Daten für eine Einordnung vor.';
-}
 export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance']) renderCircle(domain);
   const health = sourceHero('health');
@@ -337,5 +297,4 @@ export function renderAnalysisOverview() {
   renderShortStatuses();
   renderTrendChart();
   renderActivityChart();
-  renderDetailedAnalysis();
 }
