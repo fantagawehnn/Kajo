@@ -794,7 +794,7 @@ export function renderYearView() {
         { label: 'Einheiten', value: String(sessions), note: 'Abgeschlossene Aktivitäten' },
         { label: 'Wettkämpfe', value: String(races.length), note: 'Dokumentierte Wettkämpfe' }
     ];
-    const kpiMarkup = kpis.map(item => '<article class="calendar-year-kpi"><span>' + escapeHtml(item.label) + '</span><strong>' + escapeHtml(item.value) + '</strong><small>' + escapeHtml(item.note) + '</small></article>').join('');
+    const kpiMarkup = kpis.map((item, index) => '<article class="calendar-year-kpi"><div class="calendar-year-kpi-ring calendar-kpi-ring" style="--calendar-ring-color:' + ['var(--kajo-status-info)','var(--kajo-status-good)','var(--kajo-status-attention)','var(--kajo-status-critical)'][index] + '"><span>' + escapeHtml(item.value) + '</span></div><strong>' + escapeHtml(item.label) + '</strong><small>' + escapeHtml(item.note) + '</small></article>').join('');
 
     const months = Array.from({ length: 12 }, (_, month) => {
         const monthStart = year + '-' + String(month + 1).padStart(2, '0') + '-01';
@@ -943,8 +943,8 @@ export function renderMonthView() {
     if (detail) {
         const sameMonth = selectedDate && selectedDate.slice(0, 7) === year + '-' + String(month + 1).padStart(2, '0');
         detail.classList.toggle('hidden', !sameMonth);
-        if (sameMonth) renderCalendarMonthSummary(selectedDate, detail);
-        else detail.innerHTML = '';
+        if (sameMonth) { detail.classList.add('calendar-day-view'); renderCalendarDayDetail(selectedDate, detail); }
+        else { detail.classList.remove('calendar-day-view'); detail.innerHTML = ''; }
     }
     globalThis.lucide?.createIcons?.();
 }
