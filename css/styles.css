@@ -6196,3 +6196,104 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
     top:calc(5.1rem + env(safe-area-inset-top));
   }
 }
+
+
+/* KAJO annual season overview */
+#view-calendar .calendar-year-kpis {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:9px;
+    margin-bottom:12px;
+}
+#view-calendar .calendar-year-kpi,
+#view-calendar .calendar-year-section {
+    min-width:0;
+    border:1px solid var(--color-border,#293644);
+    border-radius:14px;
+    background:var(--color-surface,#111820);
+}
+#view-calendar .calendar-year-kpi { display:flex; flex-direction:column; gap:5px; padding:12px; }
+#view-calendar .calendar-year-kpi > span { color:var(--color-text-muted,#8b98a7); font-size:10px; font-weight:650; }
+#view-calendar .calendar-year-kpi strong { color:var(--color-text,#eef3f8); font-size:clamp(18px,2.4vw,25px); line-height:1.1; font-variant-numeric:tabular-nums; }
+#view-calendar .calendar-year-kpi small { color:var(--color-text-muted,#8b98a7); font-size:9px; line-height:1.4; }
+#view-calendar .calendar-year-section { padding:13px; margin-bottom:11px; }
+#view-calendar .calendar-year-section-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
+#view-calendar .calendar-year-section-heading h3 { color:var(--color-text,#eef3f8); font-size:13px; font-weight:750; }
+#view-calendar .calendar-year-section-heading p { color:var(--color-text-muted,#8b98a7); font-size:10px; line-height:1.45; margin-top:3px; }
+#view-calendar .calendar-year-section-heading > span { color:var(--color-text-muted,#8b98a7); font-size:9px; text-align:right; }
+#view-calendar .calendar-year-week-cell { background:var(--calendar-load-color,var(--color-surface,#111820)); }
+#view-calendar .calendar-year-week-cell.is-partial { border:1px dashed var(--color-text-muted,#7d8a98); }
+#view-calendar .calendar-year-week-cell.is-unknown { background:repeating-linear-gradient(135deg,var(--color-surface-subtle,#1c2835),var(--color-surface-subtle,#1c2835) 4px,var(--color-surface,#111820) 4px,var(--color-surface,#111820) 8px); }
+#view-calendar .calendar-year-week-load { display:block; height:8px; border-radius:3px; background:rgba(20,35,30,.10); }
+#view-calendar .calendar-year-week-cell small { color:#26352f; font-weight:700; }
+#view-calendar .calendar-year-load-legend { display:flex; flex-wrap:wrap; align-items:center; gap:7px 12px; margin-top:10px; color:var(--color-text-muted,#8b98a7); font-size:9px; }
+#view-calendar .calendar-year-load-legend span { display:inline-flex; align-items:center; gap:4px; }
+#view-calendar .calendar-year-load-legend i { width:11px; height:11px; display:inline-block; border-radius:3px; background:#A7D5B6; }
+#view-calendar .calendar-year-load-legend i.is-unknown { background:repeating-linear-gradient(135deg,#536171,#536171 2px,#273443 2px,#273443 4px); }
+#view-calendar .calendar-year-load-legend i.is-partial { background:transparent; border:1px dashed var(--color-text-muted,#8b98a7); }
+#view-calendar .calendar-year-analysis-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:11px; }
+#view-calendar .calendar-year-month-chart { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:5px; align-items:end; min-height:145px; }
+#view-calendar .calendar-year-month-column { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:5px; height:145px; }
+#view-calendar .calendar-year-month-bar-track { width:min(100%,22px); height:82px; display:flex; align-items:flex-end; overflow:hidden; border-radius:5px; background:var(--color-surface-subtle,#1c2835); }
+#view-calendar .calendar-year-month-bar-track > span { width:100%; min-height:0; display:block; border-radius:4px 4px 0 0; background:linear-gradient(180deg,#D87575,#A7D5B6); }
+#view-calendar .calendar-year-month-bar-track > span.is-partial { opacity:.65; }
+#view-calendar .calendar-year-month-column strong { color:var(--color-text-secondary,#b7c2cd); font-size:8px; font-variant-numeric:tabular-nums; }
+#view-calendar .calendar-year-month-column small { color:var(--color-text-muted,#8b98a7); font-size:8px; }
+#view-calendar .calendar-year-month-column em { color:var(--color-text-muted,#8b98a7); font-size:7px; font-style:normal; white-space:nowrap; }
+#view-calendar .calendar-year-sport-list { display:flex; flex-direction:column; gap:10px; }
+#view-calendar .calendar-year-sport-row { display:grid; grid-template-columns:minmax(76px,1fr) minmax(40px,1.2fr) auto; align-items:center; gap:7px; }
+#view-calendar .calendar-year-sport-name { display:flex; align-items:center; gap:5px; min-width:0; color:var(--color-text-secondary,#b7c2cd); font-size:9px; }
+#view-calendar .calendar-year-sport-name i { width:7px; height:7px; flex:none; border-radius:50%; }
+#view-calendar .calendar-year-sport-track { height:6px; overflow:hidden; border-radius:5px; background:var(--color-surface-subtle,#1c2835); }
+#view-calendar .calendar-year-sport-track i { display:block; height:100%; border-radius:5px; }
+#view-calendar .calendar-year-sport-row > strong { color:var(--color-text,#eef3f8); font-size:9px; white-space:nowrap; }
+#view-calendar .calendar-year-sport-row > small { grid-column:1/-1; color:var(--color-text-muted,#8b98a7); font-size:8px; margin-top:-5px; }
+#view-calendar .calendar-year-phase-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+#view-calendar .calendar-year-phase-card { min-width:0; border:1px solid var(--color-border,#293644); border-radius:10px; padding:10px; background:var(--color-background,#0b1118); }
+#view-calendar .calendar-year-phase-card.is-suggested { border-style:dashed; }
+#view-calendar .calendar-year-phase-heading { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+#view-calendar .calendar-year-phase-heading strong { color:var(--color-text,#eef3f8); font-size:11px; }
+#view-calendar .calendar-year-phase-heading span { color:var(--color-text-muted,#8b98a7); font-size:8px; }
+#view-calendar .calendar-year-phase-dates { color:var(--color-text-secondary,#b7c2cd); font-size:9px; margin-top:5px; }
+#view-calendar .calendar-year-phase-card p { color:var(--color-text-muted,#8b98a7); font-size:9px; line-height:1.45; margin-top:6px; }
+#view-calendar .calendar-year-phase-actions { display:flex; align-items:center; gap:6px; margin-top:9px; }
+#view-calendar .calendar-year-phase-action { border:1px solid var(--color-border,#293644); border-radius:7px; padding:5px 8px; color:var(--color-text-secondary,#b7c2cd); font-size:9px; }
+#view-calendar .calendar-year-phase-action.is-primary { background:var(--kajo-status-info,#357fba); border-color:transparent; color:white; }
+#view-calendar .calendar-year-phase-dismiss { margin-left:auto; color:var(--color-text-muted,#8b98a7); font-size:17px; line-height:1; padding:0 4px; }
+#view-calendar .calendar-year-subheading { color:var(--color-text-secondary,#b7c2cd); font-size:10px; font-weight:700; margin:15px 0 8px; }
+#view-calendar .calendar-year-phase-count { white-space:nowrap; }
+#view-calendar .calendar-year-empty { color:var(--color-text-muted,#8b98a7); font-size:10px; padding:5px 0; }
+#view-calendar .calendar-year-timeline { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+#view-calendar .calendar-year-timeline-item { min-width:0; display:grid; grid-template-columns:65px minmax(0,1fr); gap:2px 8px; padding:8px; border-left:3px solid var(--kajo-status-info,#63a9ee); border-radius:6px; background:var(--color-background,#0b1118); }
+#view-calendar .calendar-year-timeline-item.is-sick,
+#view-calendar .calendar-year-timeline-item.is-injured { border-left-color:var(--kajo-status-critical,#d87575); }
+#view-calendar .calendar-year-timeline-item.is-race { border-left-color:#d6a84c; }
+#view-calendar .calendar-year-timeline-item time { grid-row:span 2; color:var(--color-text-muted,#8b98a7); font-size:9px; }
+#view-calendar .calendar-year-timeline-item span { color:var(--color-text,#eef3f8); font-size:10px; font-weight:650; }
+#view-calendar .calendar-year-timeline-item small { color:var(--color-text-muted,#8b98a7); font-size:8px; overflow-wrap:anywhere; }
+#view-calendar .calendar-year-phase-editor { position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:16px; }
+#view-calendar .calendar-year-editor-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.72); }
+#view-calendar .calendar-year-editor { position:relative; width:min(100%,420px); display:flex; flex-direction:column; gap:12px; padding:17px; border:1px solid var(--color-border,#293644); border-radius:15px; background:var(--color-surface,#111820); box-shadow:0 18px 60px rgba(0,0,0,.35); }
+#view-calendar .calendar-year-editor-head { display:flex; justify-content:space-between; align-items:center; color:var(--color-text,#eef3f8); font-size:13px; }
+#view-calendar .calendar-year-editor-head button { color:var(--color-text-muted,#8b98a7); font-size:20px; }
+#view-calendar .calendar-year-editor label { display:flex; flex-direction:column; gap:5px; color:var(--color-text-secondary,#b7c2cd); font-size:10px; }
+#view-calendar .calendar-year-editor input { width:100%; min-width:0; padding:9px; border:1px solid var(--color-border,#293644); border-radius:8px; background:var(--color-background,#0b1118); color:var(--color-text,#eef3f8); }
+#view-calendar .calendar-year-editor-dates { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+#view-calendar .calendar-year-editor p { color:var(--color-text-muted,#8b98a7); font-size:9px; }
+#view-calendar .calendar-year-editor-actions { display:flex; justify-content:flex-end; gap:8px; }
+#view-calendar .calendar-year-editor-actions button { padding:8px 11px; border:1px solid var(--color-border,#293644); border-radius:8px; color:var(--color-text-secondary,#b7c2cd); font-size:10px; }
+#view-calendar .calendar-year-editor-actions button[type="submit"] { background:var(--kajo-status-info,#357fba); border-color:transparent; color:white; }
+@media (max-width: 760px) {
+    #view-calendar .calendar-year-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    #view-calendar .calendar-year-analysis-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width: 520px) {
+    #view-calendar .calendar-year-section { padding:10px; }
+    #view-calendar .calendar-year-phase-grid,
+    #view-calendar .calendar-year-timeline { grid-template-columns:minmax(0,1fr); }
+    #view-calendar .calendar-year-month-chart { gap:2px; }
+    #view-calendar .calendar-year-month-column em { font-size:6px; }
+    #view-calendar .calendar-year-sport-row { grid-template-columns:minmax(68px,1fr) minmax(25px,.8fr) auto; gap:5px; }
+    #view-calendar .calendar-year-section-heading { gap:6px; }
+    #view-calendar .calendar-year-section-heading h3 { font-size:12px; }
+}
