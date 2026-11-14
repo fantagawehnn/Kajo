@@ -1058,6 +1058,18 @@ Deno.serve(async (req) => {
       const token = await garminToken(apiKey);
       const remote = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}`);
 
+      // Separate read-only probe for the activity time-series/detail endpoint.
+      // Keep this independent so an unavailable details route does not hide the summary result.
+      let remoteDetails: unknown = null;
+      let remoteDetailsError: string | null = null;
+      try {
+        remoteDetails = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}/details`);
+      } catch (detailsError) {
+        remoteDetailsError = detailsError instanceof Error
+          ? detailsError.message.slice(0, 300)
+          : "Unbekannter Fehler beim Abruf der Aktivitätsdetails.";
+      }
+
       return json(200, {
         ok: true,
         readOnly: true,
@@ -1068,7 +1080,11 @@ Deno.serve(async (req) => {
           fitObjectPathPresent: Boolean(stored?.fit_object_path),
           summary: summarizeActivityJson(stored?.activity_detail ?? null),
         },
-        garmin: { summary: summarizeActivityJson(remote) },
+        garmin: {
+          summary: summarizeActivityJson(remote),
+          details: summarizeActivityJson(remoteDetails),
+          detailsError: remoteDetailsError,
+        },
         note: "Es wurden keine Daten geschrieben und keine FIT-Datei abgerufen.",
       });
     }
