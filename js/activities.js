@@ -11,6 +11,7 @@ import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, isGarminActivity } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
+import { supabase } from './supabase-client.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
 // Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
@@ -90,11 +91,47 @@ function diagnoseSelectedActivityTelemetry() {
     output.hidden = false;
 }
 
+// Gezielte, serverseitige JSON-Diagnose für die ausdrücklich freigegebene Aktivität.
+// Der Supabase-Client übermittelt die bestehende Sitzung automatisch; es werden
+// keine Daten geschrieben und keine FIT-Dateien geladen.
+async function diagnoseGarminActivityJson() {
+    const output = document.getElementById('garmin-json-diagnostic-output');
+    const button = document.getElementById('garmin-json-diagnostic-run');
+    if (!output || !button) return;
+    const activity = state.selectedActivityForModal;
+    const activityId = String(activity?.id ?? '').replace(/^garmin-/, '');
+    if (activityId !== '25077002341') {
+        output.textContent = 'Diese Diagnose ist ausschließlich für die freigegebene Aktivität Prague Kajakfahren (14.11.2026) verfügbar. Bitte öffne genau diese Aktivität.';
+        output.hidden = false;
+        return;
+    }
+    if (!supabase) {
+        output.textContent = 'Supabase ist in dieser Sitzung nicht verfügbar.';
+        output.hidden = false;
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'JSON-Diagnose läuft …';
+    output.textContent = 'Prüfe gespeicherte JSON-Daten und frage Garmin einmal gezielt ab …';
+    output.hidden = false;
+    try {
+        const { data, error } = await supabase.functions.invoke('garmin-personal', {
+            body: { action: 'diagnose-activity-json', activityId: '25077002341' }
+        });
+        if (error) throw error;
+        output.textContent = JSON.stringify(data, null, 2);
+    } catch (error) {
+        output.textContent = 'Diagnose fehlgeschlagen: ' + (error?.message || String(error));
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Garmin-JSON-Diagnose für diese Aktivität ausführen';
+    }
+}
+
 if (typeof document.addEventListener === 'function') {
     document.addEventListener('click', event => {
-        if (event.target?.closest?.('#activity-telemetry-diagnose')) {
-            diagnoseSelectedActivityTelemetry();
-        }
+        if (event.target?.closest?.('#activity-telemetry-diagnose')) diagnoseSelectedActivityTelemetry();
+        if (event.target?.closest?.('#garmin-json-diagnostic-run')) diagnoseGarminActivityJson();
     });
 }
 
