@@ -193,6 +193,13 @@
                     </div>
                 </section>
 
+                <section class="kajo-more-group" data-tone="violet">
+                    <div class="kajo-more-group-heading"><span class="kajo-more-group-icon"><i data-lucide="book-open-check" aria-hidden="true"></i></span><div><h2>Wissen &amp; Transparenz</h2><p>Verstehe deine Trainingsdaten und KAJO-Kennzahlen</p></div></div>
+                    <div class="kajo-area-list">
+                        <button type="button" class="kajo-area-card" onclick="switchTab('methods')"><span class="kajo-area-icon"><i data-lucide="calculator"></i></span><span class="kajo-area-copy"><strong>Berechnungen &amp; Datenquellen</strong><small>Load, Readiness, Trainingsanalysen und Datenqualität nachvollziehen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                    </div>
+                </section>
+
             </div>
         </section>
         <section id="view-routes" class="hidden space-y-5">
@@ -896,7 +903,7 @@
 <section class="kajo-data-section kajo-sync-history-section"><div class="kajo-data-section-heading"><h2>Garmin-Datenbestand</h2><span>Gespeicherte Datensätze</span></div><p class="kajo-data-note">Die Synchronisierungshistorie mit Umfang und Zeitraum der gespeicherten Daten findest du im Garmin-Verbindungsfenster der Datenquellen.</p></section>
 <section class="kajo-data-section kajo-sync-tools"><div class="kajo-data-section-heading"><h2>Weitere Datenwerkzeuge</h2><span>Unabhängig von Live-Verbindungen</span></div>
 <button type="button" class="kajo-data-source-row" onclick="switchTab('upload')"><span class="kajo-data-source-icon"><i data-lucide="file-up"></i></span><span><strong>Manueller Dateiimport</strong><small>CSV-, FIT- und GPX-Aktivitäten</small></span><span class="kajo-data-row-action">Öffnen</span></button>
-<button type="button" class="kajo-data-source-row" onclick="switchTab('methods')"><span class="kajo-data-source-icon"><i data-lucide="clipboard-check"></i></span><span><strong>Datenqualität &amp; Methodik</strong><small>Quellen, Berechenbarkeit und Grenzen</small></span><span class="kajo-data-row-action">Öffnen</span></button>
+
 <button type="button" class="kajo-data-source-row" onclick="switchTab('backup')"><span class="kajo-data-source-icon"><i data-lucide="archive"></i></span><span><strong>Datensicherung</strong><small>Backup exportieren oder wiederherstellen</small></span><span class="kajo-data-row-action">Öffnen</span></button></section></div>
 <div id="view-backup" class="hidden kajo-data-page"><header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datensicherung</h1><p>Exportiere deinen Datenbestand oder stelle ausgewählte Bereiche aus einem Backup wieder her.</p></div></header>
 <section class="kajo-data-section"><div class="kajo-data-section-heading"><h2>Backup exportieren</h2><span><i data-lucide="download"></i></span></div><p class="kajo-data-note">Erstelle eine JSON-Sicherungsdatei deines verfügbaren KAJO-Datenbestands und speichere sie außerhalb der App.</p><button type="button" class="kajo-data-primary-action" onclick="exportDatabaseBackup()"><i data-lucide="download"></i> Backup herunterladen</button></section>
