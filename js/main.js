@@ -19,7 +19,7 @@ import { computePerformanceTimeline } from './calculations.js';
 import { sanitizeGarminActivityTelemetry } from './data-source.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js';
-import { renderAnalysisOverview, setAnalysisOverviewMetric } from './analysis-overview.js';
+import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric } from './training-load-view.js';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js';
 import { navigateCalendarPeriod, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, openCalendarDay, openCalendarWeek, openCalendarTrainingCreate, openCalendarRaceCreate } from './calendar.js?v=9';
@@ -1861,6 +1861,7 @@ Object.assign(window, {
     kajoRenderTrainingLoadView: renderTrainingLoadView,
     renderAnalysisOverview,
     setAnalysisOverviewMetric,
+    setAnalysisOverviewActivityMeasure,
     kajoRenderAnalysisOverview: renderAnalysisOverview,
     setHistoryMetric,
     setHistoryRange,
