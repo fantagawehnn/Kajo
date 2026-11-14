@@ -1955,6 +1955,7 @@ Object.assign(window, {
     setActivityTelemetryMetric,
     switchTab,
     openCoach,
+    sendAICoachMessage,
     switchMoreTab,
     openTrainingLoadMetric,
     closeTrainingLoadMetric,
