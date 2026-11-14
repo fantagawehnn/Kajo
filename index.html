@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=75">
+    <link rel="stylesheet" href="css/styles.css?v=76">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -399,7 +399,7 @@
 
 <section id="training-load-overview" class="kajo-training-load-view space-y-4" aria-label="Training Load Übersicht">
  <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Training Load</h2><p id="training-load-model-date" class="kajo-training-load-muted">Modellstand wird geladen …</p></div><span id="training-load-period-label" class="kajo-analysis-period">Letzte 90 Tage</span></div>
- <div id="analysis-period-buttons" class="analysis-period-buttons flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs" aria-label="Analysezeitraum">
+ <div id="analysis-period-buttons" class="analysis-period-buttons kajo-analysis-switch" aria-label="Analysezeitraum">
   <button type="button" onclick="setTimeframe('7d')" id="tf-7d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">7T</button>
   <button type="button" onclick="setTimeframe('28d')" id="tf-28d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">28T</button>
   <button type="button" onclick="setTimeframe('3m')" id="tf-3m" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-semibold">90T</button>
@@ -412,7 +412,7 @@
   <label class="text-slate-400">Bis <input type="date" id="date-to" class="bg-slate-900 border border-slate-700 text-white px-2 py-1 rounded-lg ml-1"></label>
   <button type="button" onclick="applyCustomDateRange()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg">Anwenden</button>
  </div>
- <nav id="training-load-model-switch" class="kajo-load-model-nav" aria-label="Belastungsmodell auswählen">
+ <nav id="training-load-model-switch" class="kajo-analysis-switch kajo-load-model-nav" aria-label="Belastungsmodell auswählen">
   <button type="button" data-training-load-model="primary" onclick="setTrainingLoadModel('primary')" aria-pressed="true" class="active">Belastungsbilanz</button>
   <button type="button" data-training-load-model="srpe" onclick="setTrainingLoadModel('srpe')" aria-pressed="false">sRPE-Load</button>
   <button type="button" data-training-load-model="compare" onclick="setTrainingLoadModel('compare')" aria-pressed="false">Vergleich</button>
@@ -421,10 +421,10 @@
  <div id="training-load-no-data" class="kajo-training-load-panel hidden" role="status"><strong>Keine auswertbare Belastungszeitreihe</strong><p>Für diese Berechnungsbasis liegen im ausgewählten Zeitraum keine vollständigen CTL-, ATL- und TSB-Werte vor. Prüfe die Datenabdeckung und die gewählte Modellbasis.</p></div>
  <div id="training-load-standard-analysis" class="space-y-4">
   <div id="training-load-content" class="space-y-4">
-   <div class="kajo-training-load-rings" aria-label="Belastungskennzahlen">
-    <button type="button" data-training-load-metric="ctl" class="kajo-load-metric" onclick="openTrainingLoadMetric('ctl')"><span class="kajo-load-ring"><strong id="training-load-value-ctl">—</strong></span><span class="kajo-load-label">CTL</span><small>Langfristig</small></button>
-    <button type="button" data-training-load-metric="atl" class="kajo-load-metric" onclick="openTrainingLoadMetric('atl')"><span class="kajo-load-ring"><strong id="training-load-value-atl">—</strong></span><span class="kajo-load-label">ATL</span><small>Kurzfristig</small></button>
-    <button type="button" data-training-load-metric="tsb" class="kajo-load-metric" onclick="openTrainingLoadMetric('tsb')"><span class="kajo-load-ring"><strong id="training-load-value-tsb">—</strong></span><span class="kajo-load-label">TSB</span><small>CTL − ATL</small></button>
+   <div class="kajo-analysis-circles kajo-training-load-rings" aria-label="Belastungskennzahlen">
+    <button type="button" data-training-load-metric="ctl" class="kajo-analysis-circle-item kajo-load-metric" onclick="openTrainingLoadMetric('ctl')"><span class="kajo-analysis-hero-ring kajo-load-ring"><span><strong id="training-load-value-ctl">—</strong></span></span><strong>CTL</strong><small>Langfristig</small></button>
+    <button type="button" data-training-load-metric="atl" class="kajo-analysis-circle-item kajo-load-metric" onclick="openTrainingLoadMetric('atl')"><span class="kajo-analysis-hero-ring kajo-load-ring"><span><strong id="training-load-value-atl">—</strong></span></span><strong>ATL</strong><small>Kurzfristig</small></button>
+    <button type="button" data-training-load-metric="tsb" class="kajo-analysis-circle-item kajo-load-metric" onclick="openTrainingLoadMetric('tsb')"><span class="kajo-analysis-hero-ring kajo-load-ring"><span><strong id="training-load-value-tsb">—</strong></span></span><strong>TSB</strong><small>CTL − ATL</small></button>
    </div>
    <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">AKTIVE BERECHNUNGSBASIS</p><h3 id="training-load-source-title">—</h3></div><p id="training-load-source-description" class="kajo-training-load-muted"></p><p id="training-load-coverage" class="kajo-training-load-coverage"></p></section>
    <section class="kajo-training-load-panel">
@@ -438,7 +438,7 @@
    </section>
    <section class="kajo-training-load-panel">
     <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">TÄGLICHE BELASTUNG</p><h3>Belastung im Tagesverlauf</h3><p id="training-load-daily-unit" class="kajo-training-load-muted">Load-Punkte pro Tag</p></div></div>
-    <nav class="kajo-load-switch" aria-label="Tagesdiagramm auswählen">
+    <nav class="kajo-analysis-switch kajo-load-switch" aria-label="Tagesdiagramm auswählen">
      <button type="button" data-training-load-daily-measure="load" onclick="setTrainingLoadDailyMeasure('load')" class="active" aria-pressed="true">Täglicher Load</button>
      <button type="button" data-training-load-daily-measure="duration" onclick="setTrainingLoadDailyMeasure('duration')" aria-pressed="false">Trainingszeit</button>
     </nav>
