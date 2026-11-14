@@ -5,7 +5,6 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate } from './utils.js';
-import { renderRaceTimeline } from './charts.js';
 import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
 
 const RACE_PRIORITY_META = {
@@ -39,6 +38,7 @@ export function migrateLegacyRacePriorities() {
 export function renderRaces() {
     const container = document.getElementById('races-full-list');
     const countdownGrid = document.getElementById('races-countdown-grid');
+    const seasonOverview = document.getElementById('race-season-overview');
     if (!container || !countdownGrid) return;
     container.innerHTML = '';
     countdownGrid.innerHTML = '';
@@ -69,37 +69,59 @@ export function renderRaces() {
         countdownGrid.innerHTML = '<div class="md:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">Keine zukünftigen Wettkämpfe eingetragen.</div>';
     }
 
-    [...state.races].sort((a,b)=>a.date.localeCompare(b.date)).forEach(r => {
-        const safePrio = ['A', 'B', 'C', 'D', 'E'].includes(r.prio) ? r.prio : 'C';
-        const priorityMeta = getRacePriorityMeta(safePrio);
-        const prioColor = priorityMeta.color;
-        const routeTrainingCount = r.routeId ? countTrainingOnRouteBefore(r.routeId, r.date) : null;
-        const sectionTrainingCount = r.routeId ? countTrainingOnSectionBefore(r.routeId, r.date) : null;
-        const waterSummary = r.routeId ? getWaterConditionSummaryBefore(r.routeId, r.date) : null;
-        const waterRows = waterSummary?.records?.map(item => {
-            const values = [];
-            if (item.level != null) values.push('Pegel ' + item.level + ' ' + item.levelUnit);
-            if (item.discharge != null) values.push('Abfluss ' + item.discharge + ' m³/s');
-            return escapeHtml(formatDateDDMMYY(item.date) + ': ' + values.join(' · '));
-        }) || [];
-        const routeLabel = r.routeId ? getRouteName(r.routeId) : '';
-        const routeMeta = r.routeId ? `<div class="text-[11px] text-cyan-300 mt-1">Strecke: ${escapeHtml(routeLabel)} · ${routeTrainingCount.sessions} Einheiten / ${routeTrainingCount.runs} Durchfahrten</div><div class="text-[11px] text-slate-400 mt-0.5">Gesamter Flussabschnitt: ${sectionTrainingCount.sessions} Einheiten / ${sectionTrainingCount.runs} Durchfahrten vor dem Rennen</div><div class="text-[11px] text-slate-300 mt-1">Wasserbedingungen dokumentiert: ${waterSummary?.measuredSessions || 0} Trainingseinheiten</div>${waterRows.length ? `<div class="text-[10px] text-slate-500 mt-0.5">Letzte Messungen: ${waterRows.join(" · ")}</div>` : `<div class="text-[10px] text-slate-500 mt-0.5">Noch keine Pegel- oder Abflusswerte für diesen Abschnitt dokumentiert.</div>`}` : '<div class="text-[10px] text-slate-500 mt-1">Keine Wettkampfstrecke zugeordnet</div>';
-        container.insertAdjacentHTML('beforeend', `
-            <div class="bg-slate-950 p-4 rounded-xl border border-rose-900/40 flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="px-2 py-0.5 text-[10px] rounded ${prioColor}">${safePrio}-Wettkampf</span>
-                        <span class="text-xs text-rose-400 font-semibold">${escapeHtml(priorityMeta.title)}</span>
-                    </div>
-                    <h4 class="font-bold text-sm text-white mt-1">${escapeHtml(r.name)}</h4>
-                    <div class="text-xs text-slate-400 font-mono mt-0.5">Datum: ${formatDateDDMMYY(r.date)} | Ziel: ${escapeHtml(r.target)}</div>
-                    ${routeMeta}
-                </div>
-                <button onclick="deleteRace('${encodeURIComponent(String(r.id)).replace(/'/g, '%27')}')" class="shrink-0 text-slate-500 hover:text-rose-400 text-xs">Löschen</button>
-            </div>
-        `);
+    const allResults = state.races.flatMap(race => (Array.isArray(race.results) ? race.results : []).map(result => ({ ...result, race }))).filter(item => Number.isFinite(Number(item.rank)) && Number(item.rank) > 0);
+    const podiums = allResults.filter(item => Number(item.rank) <= 3).length;
+    const wins = allResults.filter(item => Number(item.rank) === 1).length;
+    const best = allResults.length ? Math.min(...allResults.map(item => Number(item.rank))) : null;
+    if (seasonOverview) seasonOverview.innerHTML =
+        '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">' +
+        '<div class="rounded-xl bg-slate-950 border border-slate-800 p-3"><div class="text-[10px] text-slate-500">Wettkämpfe</div><div class="text-xl font-bold text-white">' + state.races.length + '</div></div>' +
+        '<div class="rounded-xl bg-slate-950 border border-slate-800 p-3"><div class="text-[10px] text-slate-500">Starts mit Ergebnis</div><div class="text-xl font-bold text-white">' + allResults.length + '</div></div>' +
+        '<div class="rounded-xl bg-slate-950 border border-slate-800 p-3"><div class="text-[10px] text-slate-500">Podiumsplätze</div><div class="text-xl font-bold text-amber-300">' + podiums + '</div></div>' +
+        '<div class="rounded-xl bg-slate-950 border border-slate-800 p-3"><div class="text-[10px] text-slate-500">Siege</div><div class="text-xl font-bold text-emerald-300">' + wins + '</div></div></div>' +
+        '<p class="text-[10px] text-slate-500 mt-2">' + (best == null ? 'Noch keine Platzierungen dokumentiert.' : 'Beste dokumentierte Platzierung: ' + best + '. Platz') + ' · Es werden nur eingetragene Ergebnisse berücksichtigt.</p>';
+    const sorted = [...state.races].sort((a,b) => a.date.localeCompare(b.date));
+    const past = sorted.filter(race => parseLocalDate(race.date) < today);
+    const future = sorted.filter(race => parseLocalDate(race.date) >= today);
+    container.innerHTML = '';
+    if (past.length) container.insertAdjacentHTML('beforeend', '<h3 class="text-sm font-bold text-white pt-2">Vergangene Wettkämpfe & Ergebnisse</h3>');
+    [...past, ...future].forEach(race => {
+        const priority = ['A','B','C','D','E'].includes(race.prio) ? race.prio : 'C';
+        const meta = getRacePriorityMeta(priority);
+        const results = Array.isArray(race.results) ? race.results : [];
+        const rows = results.map((result,index) =>
+            '<div class="grid grid-cols-[1fr_auto] gap-2 items-center rounded-lg bg-slate-900/80 px-3 py-2">' +
+            '<div class="min-w-0"><div class="text-xs font-semibold text-white">' + escapeHtml(result.discipline || 'Disziplin offen') + ' · ' + escapeHtml(result.format || 'Format offen') + (result.partner ? ' · ' + escapeHtml(result.partner) : '') + '</div>' +
+            '<div class="text-[10px] text-slate-400">' + (result.time ? 'Zeit ' + escapeHtml(result.time) : 'Keine Zeit eingetragen') + (result.gap ? ' · Abstand ' + escapeHtml(result.gap) : '') + '</div></div>' +
+            '<div class="flex items-center gap-2"><span class="text-sm font-bold text-white">' + Number(result.rank) + '.</span><button type="button" onclick="deleteRaceResult(\'' + encodeURIComponent(String(race.id)) + '\',' + index + ')" class="text-[10px] text-slate-500 hover:text-rose-400" aria-label="Ergebnis löschen">×</button></div></div>'
+        ).join('');
+        const encodedId = encodeURIComponent(String(race.id));
+        const formId = 'race-result-form-' + encodedId;
+        const resultForm = '<form id="' + formId + '" class="hidden grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg border border-slate-800 bg-slate-900 p-3" onsubmit="event.preventDefault(); addRaceResult(\'' + encodedId + '\')">' +
+            '<label class="text-[10px] text-slate-400">Disziplin<select name="discipline" required class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"><option>C1</option><option>C2</option><option>K1</option><option>K2</option></select></label>' +
+            '<label class="text-[10px] text-slate-400">Rennformat<select name="format" required class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"><option>Classic</option><option>Sprint</option><option>Sonstiges</option></select></label>' +
+            '<label class="text-[10px] text-slate-400">Platzierung *<input name="rank" type="number" min="1" step="1" required placeholder="z. B. 3" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
+            '<label class="text-[10px] text-slate-400">Rennzeit<input name="time" type="text" placeholder="z. B. 04:32.18" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
+            '<label class="text-[10px] text-slate-400">Abstand<input name="gap" type="text" placeholder="z. B. +2,14 s" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
+            '<label class="text-[10px] text-slate-400">Partner (optional)<input name="partner" type="text" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
+            '<div class="col-span-2 sm:col-span-3 flex justify-end gap-2"><button type="button" onclick="toggleRaceResultsForm(\'' + encodedId + '\')" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="submit" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Ergebnis speichern</button></div></form>';
+        const routeTraining = race.routeId ? countTrainingOnRouteBefore(race.routeId,race.date) : null;
+        const sectionTraining = race.routeId ? countTrainingOnSectionBefore(race.routeId,race.date) : null;
+        const water = race.routeId ? getWaterConditionSummaryBefore(race.routeId,race.date) : null;
+        const routeName = race.routeId ? getRouteName(race.routeId) : '';
+        const routeInfo = race.routeId
+            ? '<div class="text-[10px] text-cyan-300 mt-1">Strecke: ' + escapeHtml(routeName) + ' · ' + routeTraining.sessions + ' Einheiten / ' + routeTraining.runs + ' Durchfahrten</div><div class="text-[10px] text-slate-400">Flussabschnitt: ' + sectionTraining.sessions + ' Einheiten / ' + sectionTraining.runs + ' Durchfahrten · Wasserwerte aus ' + (water?.measuredSessions || 0) + ' Einheiten</div>'
+            : '<div class="text-[10px] text-slate-500 mt-1">Keine Wettkampfstrecke zugeordnet</div>';
+        container.insertAdjacentHTML('beforeend',
+            '<article class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">' +
+            '<div class="flex items-start justify-between gap-3"><div class="min-w-0">' +
+            '<div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 text-[10px] rounded ' + meta.color + '">' + priority + '</span><span class="text-[10px] text-slate-400">' + (parseLocalDate(race.date) < today ? 'Abgeschlossen' : 'Geplant') + ' · ' + escapeHtml(meta.title) + '</span></div>' +
+            '<h4 class="font-bold text-sm text-white mt-1">' + escapeHtml(race.name) + '</h4><div class="text-xs text-slate-400 mt-0.5">' + formatDateDDMMYY(race.date) + ' · ' + escapeHtml(race.location || 'Ort offen') + '</div>' + routeInfo +
+            '</div><button onclick="deleteRace(\'' + encodedId + '\')" class="shrink-0 text-slate-500 hover:text-rose-400 text-xs">Löschen</button></div>' +
+            '<div class="space-y-2"><div class="flex items-center justify-between"><h5 class="text-xs font-semibold text-slate-200">Ergebnisse <span class="text-slate-500 font-normal">(' + results.length + ')</span></h5><button type="button" onclick="toggleRaceResultsForm(\'' + encodedId + '\')" class="text-[11px] text-cyan-300">+ Ergebnis</button></div>' +
+            (rows || '<p class="text-[10px] text-slate-500">Noch keine Ergebnisse eingetragen.</p>') + resultForm + '</div></article>');
     });
-    renderRaceTimeline();
+    if (future.length) container.insertAdjacentHTML('beforeend', '<h3 class="text-sm font-bold text-white pt-3">Kommende Wettkämpfe</h3>');
     globalThis.lucide?.createIcons?.();
 }
 
@@ -186,6 +208,40 @@ export function addRace() {
     saveDataToLocalStorage();
     refreshAll();
     toggleRaceModal();
+}
+
+export function toggleRaceResultsForm(encodedId) {
+    const form = document.getElementById('race-result-form-' + encodedId);
+    if (form) form.classList.toggle('hidden');
+}
+
+export function addRaceResult(encodedId) {
+    const race = state.races.find(item => String(item.id) === decodeURIComponent(encodedId));
+    const form = document.getElementById('race-result-form-' + encodedId);
+    if (!race || !form) return;
+    const data = new FormData(form);
+    const rank = Number(data.get('rank'));
+    if (!Number.isInteger(rank) || rank < 1) return;
+    if (!Array.isArray(race.results)) race.results = [];
+    race.results.push({
+        id: Date.now().toString(),
+        discipline: String(data.get('discipline') || ''),
+        format: String(data.get('format') || ''),
+        rank,
+        time: String(data.get('time') || '').trim(),
+        gap: String(data.get('gap') || '').trim(),
+        partner: String(data.get('partner') || '').trim()
+    });
+    saveDataToLocalStorage();
+    refreshAll();
+}
+
+export function deleteRaceResult(encodedId, index) {
+    const race = state.races.find(item => String(item.id) === decodeURIComponent(encodedId));
+    if (!race || !Array.isArray(race.results) || !Number.isInteger(index)) return;
+    race.results.splice(index, 1);
+    saveDataToLocalStorage();
+    refreshAll();
 }
 
 export function deleteRace(id) {
