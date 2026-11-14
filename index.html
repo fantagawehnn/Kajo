@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=125">
+    <link rel="stylesheet" href="css/styles.css?v=126">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -188,6 +188,7 @@
                 <section class="kajo-more-group" data-tone="mint">
                     <div class="kajo-area-list">
                         <button type="button" class="kajo-area-card" onclick="switchTab('data')"><span class="kajo-area-icon"><i data-lucide="cloud-sync"></i></span><span class="kajo-area-copy"><strong>Datenverwaltung</strong><small>Verbindungen, Importe, Datenqualität und Sicherungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('garmin-health')"><span class="kajo-area-icon"><i data-lucide="heart-pulse"></i></span><span class="kajo-area-copy"><strong>Gesundheitsdaten</strong><small>Garmin-Messwerte, persönliche Baselines und zeitliche Verläufe</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
                     </div>
                 </section>
 
@@ -199,6 +200,46 @@
                 </section>
 
             </div>
+        </section>
+        <section id="view-garmin-health" class="hidden space-y-5">
+          <header class="space-y-1">
+            <p class="kajo-eyebrow">GESUNDHEIT &amp; REGENERATION</p>
+            <h1 class="text-xl font-bold text-white">Gesundheitsdaten</h1>
+            <p class="text-xs text-slate-400">Deine gespeicherten Gesundheitsmesswerte mit persönlicher Einordnung und Verlauf.</p>
+          </header>
+          <div id="kajo-health-data-overview" class="space-y-5">
+            <div class="kajo-health-data-intro"><i data-lucide="chart-no-axes-combined"></i><p>Wähle einen Messwert aus, um seinen Verlauf und deine persönliche Baseline zu sehen. Angezeigt werden nur tatsächlich gespeicherte Werte; fehlende Messungen bleiben Lücken.</p></div>
+            <div id="kajo-health-metric-list" class="space-y-5"></div>
+            <div class="kajo-health-data-footnote">Die persönliche Referenz basiert auf dem Median der vorherigen 90 Tage. Sie wird ab mindestens fünf gültigen Vergleichswerten angezeigt. Die Abweichung ist eine individuelle Verlaufsinformation, keine medizinische Bewertung.</div>
+          </div>
+          <div id="kajo-health-data-detail" class="hidden space-y-4">
+            <button type="button" class="kajo-back-link" onclick="closeGarminHealthMetric()"><i data-lucide="arrow-left"></i><span>Alle Gesundheitsdaten</span></button>
+            <section class="kajo-health-detail-panel">
+              <div class="kajo-health-detail-heading">
+                <div><p class="kajo-analysis-eyebrow">GESUNDHEITSMESSWERT</p><h2 id="kajo-health-detail-title">HRV</h2></div>
+                <span id="kajo-health-detail-count" class="kajo-health-detail-count"></span>
+              </div>
+              <nav class="kajo-health-data-range" aria-label="Zeitraum auswählen">
+                <button type="button" data-kajo-health-range="7d" onclick="setGarminHealthRange('7d')">7 T</button>
+                <button type="button" data-kajo-health-range="28d" onclick="setGarminHealthRange('28d')">28 T</button>
+                <button type="button" data-kajo-health-range="3m" onclick="setGarminHealthRange('3m')">3 M</button>
+                <button type="button" data-kajo-health-range="6m" onclick="setGarminHealthRange('6m')">6 M</button>
+                <button type="button" data-kajo-health-range="1y" onclick="setGarminHealthRange('1y')">1 J</button>
+                <button type="button" data-kajo-health-range="custom" onclick="setGarminHealthRange('custom')">Individuell</button>
+              </nav>
+              <div id="kajo-health-custom-range" class="hidden kajo-health-custom-range">
+                <label>Von<input type="date" id="kajo-health-from"></label>
+                <label>Bis<input type="date" id="kajo-health-to"></label>
+                <button type="button" onclick="applyGarminHealthCustomRange()">Anwenden</button>
+              </div>
+              <div class="kajo-health-detail-current">
+                <div><strong id="kajo-health-detail-current">—</strong><span id="kajo-health-detail-unit"></span><small id="kajo-health-detail-date">Letzter Messwert</small></div>
+                <div class="kajo-health-detail-baseline"><span>Persönlicher Referenzwert</span><strong id="kajo-health-detail-baseline">—</strong><small id="kajo-health-detail-delta">—</small></div>
+              </div>
+              <div class="kajo-health-detail-chart"><canvas id="kajo-health-detail-chart" aria-label="Zeitlicher Verlauf des Gesundheitsmesswerts"></canvas></div>
+              <p id="kajo-health-detail-note" class="kajo-health-data-footnote"></p>
+            </section>
+          </div>
         </section>
         <section id="view-routes" class="hidden space-y-5">
           <header class="space-y-1">
