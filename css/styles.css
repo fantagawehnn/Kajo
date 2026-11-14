@@ -7316,3 +7316,65 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
     margin-top:-1.15rem !important;
   }
 }
+
+
+/* KAJO Mehr-Bereich – klare Themencluster mit differenzierten Akzentfarben. */
+#view-more.kajo-more-view { gap: .8rem !important; max-width: 980px !important; }
+#view-more .kajo-more-header { padding: .1rem 0 .15rem !important; }
+#view-more .kajo-more-eyebrow { margin:0 0 .28rem; color:#f08b91; font-size:.58rem; font-weight:800; letter-spacing:.15em; }
+#view-more .kajo-more-header h1 { font-size:1.8rem !important; }
+#view-more .kajo-more-header p:last-child { margin-top:.22rem; font-size:.76rem; }
+#view-more .kajo-more-status {
+  position:relative; min-height:76px !important; padding:11px 42px 11px 12px !important;
+  border:1px solid rgba(96,165,250,.24) !important; border-radius:16px !important;
+  background:linear-gradient(110deg,rgba(30,64,110,.42),rgba(15,23,42,.92) 65%) !important;
+}
+#view-more .kajo-more-status-main { gap:11px !important; }
+#view-more .kajo-more-status-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 42px; border-radius:13px; color:#8cc8ff; background:rgba(59,130,246,.18); }
+#view-more .kajo-more-status-icon svg { width:21px; height:21px; }
+#view-more .kajo-more-status-copy { display:grid; gap:2px; }
+#view-more .kajo-more-status-label { color:#8db9e8 !important; font-size:.56rem !important; font-weight:800; letter-spacing:.11em; }
+#view-more .kajo-more-status-copy strong { color:#f8fafc; font-size:.88rem; line-height:1.2; }
+#view-more .kajo-more-status-copy small { color:#aebed1; font-size:.67rem; }
+#view-more .kajo-more-status-action { color:#a9cffa !important; font-size:.66rem !important; }
+#view-more .kajo-more-status-action svg { width:14px; height:14px; }
+#view-more .kajo-more-status-dot { position:absolute; top:13px; right:13px; width:8px; height:8px; }
+#view-more .kajo-more-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+#view-more .kajo-more-group {
+  --more-accent:#8cc8ff; --more-tint:rgba(59,130,246,.13);
+  display:flex !important; flex-direction:column; gap:0 !important; min-width:0;
+  overflow:hidden; border:1px solid rgba(148,163,184,.13) !important;
+  border-radius:16px !important; background:linear-gradient(145deg,rgba(20,29,44,.98),rgba(10,16,27,.98)) !important;
+}
+#view-more .kajo-more-group[data-tone="coral"] { --more-accent:#ff9a9e; --more-tint:rgba(244,100,110,.14); }
+#view-more .kajo-more-group[data-tone="blue"] { --more-accent:#83bfff; --more-tint:rgba(59,130,246,.15); }
+#view-more .kajo-more-group[data-tone="mint"] { --more-accent:#70dfbd; --more-tint:rgba(16,185,129,.14); }
+#view-more .kajo-more-group[data-tone="violet"] { --more-accent:#c5a0ff; --more-tint:rgba(139,92,246,.15); }
+#view-more .kajo-more-group-heading { display:flex; align-items:center; gap:10px; padding:13px 13px 10px; }
+#view-more .kajo-more-group-icon { display:grid; place-items:center; width:34px; height:34px; flex:0 0 34px; border-radius:11px; color:var(--more-accent); background:var(--more-tint); }
+#view-more .kajo-more-group-icon svg { width:18px; height:18px; }
+#view-more .kajo-more-group-heading h2 { margin:0; color:#f3f6fb; font-size:.79rem; font-weight:750; line-height:1.2; }
+#view-more .kajo-more-group-heading p { margin:3px 0 0; color:#8493a8; font-size:.62rem; line-height:1.3; }
+#view-more .kajo-area-list { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:0 !important; padding:0 7px 7px; }
+#view-more .kajo-area-card {
+  display:flex !important; align-items:center !important; gap:9px !important; width:100% !important;
+  min-height:55px !important; padding:8px 7px !important; border:0 !important;
+  border-top:1px solid rgba(148,163,184,.10) !important; border-radius:0 !important;
+  background:transparent !important; box-shadow:none !important; text-align:left !important;
+}
+#view-more .kajo-area-card:hover,#view-more .kajo-area-card:focus-visible { background:rgba(255,255,255,.035) !important; outline:0; }
+#view-more .kajo-area-icon { display:grid !important; place-items:center !important; width:31px !important; height:31px !important; flex:0 0 31px !important; border-radius:10px !important; color:var(--more-accent) !important; background:var(--more-tint) !important; }
+#view-more .kajo-area-icon svg { width:16px !important; height:16px !important; }
+#view-more .kajo-area-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:2px; }
+#view-more .kajo-area-copy strong { color:#eef3fa !important; font-size:.72rem !important; font-weight:650 !important; line-height:1.25 !important; }
+#view-more .kajo-area-copy small { color:#8b9ab0 !important; font-size:.6rem !important; line-height:1.3 !important; }
+#view-more .kajo-area-chevron { width:14px; height:14px; flex:0 0 14px; color:#62738a; }
+@media(max-width:640px) {
+  #view-more .kajo-more-groups { grid-template-columns:minmax(0,1fr); gap:9px; }
+  #view-more .kajo-more-group-heading { padding:11px 12px 8px; }
+  #view-more .kajo-area-list { padding:0 7px 6px; }
+  #view-more .kajo-area-card { min-height:52px !important; }
+}
+@media(min-width:641px) and (max-width:900px) {
+  #view-more .kajo-more-groups { gap:9px; }
+}
