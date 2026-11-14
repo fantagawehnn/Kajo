@@ -180,6 +180,11 @@ export function buildAthleteContext(state, options = {}) {
             activityCount: items.length,
             loadAvailableCount,
             loadMissingCount: items.length - loadAvailableCount,
+            sessionRpeAvailableCount: items.filter(item => Number.isFinite(rpeLoadByActivity.get(item))).length,
+            sessionRpeMissingCount: items.length - items.filter(item => Number.isFinite(rpeLoadByActivity.get(item))).length,
+            documentedSessionRpeLoadAU: items.some(item => Number.isFinite(rpeLoadByActivity.get(item)))
+                ? Number(items.reduce((sum, item) => sum + (rpeLoadByActivity.get(item) ?? 0), 0).toFixed(1))
+                : null,
             documentedDurationCount: durations.length,
             documentedDurationMinutes: Number(durations.reduce((sum, value) => sum + value, 0).toFixed(1))
         };
