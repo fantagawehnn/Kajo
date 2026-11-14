@@ -5311,3 +5311,132 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
   background:var(--kajo-surface);
   border-color:var(--kajo-border);
 }
+
+
+/* Analyseübersicht – mobile Kennzahlen, Verlauf und Sportverteilung */
+#analysis-subpage-overview {
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#analysis-subpage-overview > .kajo-analysis-circles {
+  width:100%;
+  min-width:0;
+  margin:0 0 4px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#analysis-subpage-overview .kajo-analysis-circle-item {
+  min-width:0;
+  max-width:100%;
+}
+#analysis-shared-period #analysis-period-buttons {
+  gap:3px;
+}
+#analysis-shared-period #analysis-period-buttons button {
+  min-height:27px!important;
+  min-width:0;
+  padding:3px 7px!important;
+  font-size:.59rem!important;
+  line-height:1.1;
+}
+#analysis-overview-metric-switch {
+  gap:4px;
+  margin:.4rem 0 0;
+}
+#analysis-overview-metric-switch button {
+  min-height:27px;
+  padding:4px 7px;
+  font-size:.6rem;
+}
+#analysis-overview-metric-switch button::before {
+  width:6px;
+  height:6px;
+  flex-basis:6px;
+}
+#analysis-overview-activity-legend .kajo-analysis-distribution-row {
+  gap:8px;
+  padding:3px 1px;
+  font-size:.61rem;
+  line-height:1.2;
+}
+#analysis-overview-activity-legend .kajo-analysis-distribution-row strong {
+  font-size:.61rem;
+  font-weight:650;
+}
+#analysis-overview-activity-legend .kajo-analysis-distribution-label {
+  gap:6px;
+  font-size:.61rem;
+}
+#analysis-overview-activity-legend .kajo-analysis-distribution-label i {
+  width:7px;
+  height:7px;
+  flex-basis:7px;
+}
+@media(max-width:640px) {
+  #analysis-subpage-overview > .kajo-analysis-circles {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:start;
+    justify-items:center;
+    column-gap:8px;
+    row-gap:12px;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item {
+    width:100%;
+    padding:4px 0;
+    gap:5px;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] {
+    flex:0 0 clamp(58px,20vw,78px);
+    width:clamp(58px,20vw,78px);
+    height:clamp(58px,20vw,78px);
+    border-width:4px;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] strong {
+    font-size:clamp(.85rem,4vw,1.05rem);
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] small {
+    font-size:.48rem;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item>strong {
+    font-size:.65rem;
+  }
+  #analysis-shared-period #analysis-period-buttons {
+    width:100%;
+    flex-wrap:wrap;
+    justify-content:flex-start;
+  }
+  #analysis-shared-period #analysis-period-buttons button {
+    flex:0 0 auto;
+    min-height:26px!important;
+    padding:3px 7px!important;
+    font-size:.57rem!important;
+  }
+  #analysis-overview-metric-switch button {
+    min-height:26px;
+    padding:3px 6px;
+    font-size:.57rem;
+  }
+  #analysis-overview .kajo-analysis-sport-distribution,
+  #analysis-subpage-overview .kajo-analysis-sport-distribution {
+    grid-template-columns:minmax(0,1fr);
+    gap:5px;
+  }
+  #analysis-overview-activity-chart {
+    display:block;
+  }
+}
+@media(max-width:350px) {
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] {
+    flex-basis:56px;
+    width:56px;
+    height:56px;
+  }
+}
