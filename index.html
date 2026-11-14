@@ -326,52 +326,59 @@
   </section>
 </div>
 
-<div id="view-analyses" class="hidden space-y-6 kajo-analysis-view">
-
-            <header class="kajo-analysis-header">
-                <div><h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1></div>
-            </header>
-            <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
- <section class="kajo-analysis-circles" aria-label="Vier Analysebereiche">
-  <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-load')" aria-label="Belastung öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-status="neutral"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span>
-   <strong>Belastung</strong><small class="kajo-analysis-circle-status" id="analysis-overview-load-status" data-status="neutral">Nicht bewertet</small>
-  </button>
-  <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-recovery')" aria-label="Regeneration öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-status="neutral"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span>
-   <strong>Regeneration</strong><small class="kajo-analysis-circle-status" id="analysis-overview-recovery-status" data-status="neutral">Keine Basis</small>
-  </button>
-  <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-performance')" aria-label="Fitness öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-performance-ring" data-status="neutral"><span><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit">ml/kg/min</small></span></span>
-   <strong>Performance</strong><small class="kajo-analysis-circle-status" id="analysis-overview-performance-status" data-status="neutral">Messwert</small>
-  </button>
-  <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-health')" aria-label="Gesundheit öffnen">
-   <span class="kajo-analysis-hero-ring" id="overview-health-ring" data-status="neutral"><span><strong id="analysis-overview-health-value">—</strong><small id="analysis-overview-health-unit"></small></span></span>
-   <strong>Gesundheit</strong><small class="kajo-analysis-circle-status" id="analysis-overview-health-status" data-status="neutral">Nicht berechenbar</small>
-  </button>
- </section>
-</div>
-<div id="analysis-overview-content" class="space-y-4" aria-label="Analyseverlauf und Trainingsaktivität">
- <section class="kajo-analysis-overview-panel">
-  <div class="kajo-analysis-section-heading">
-   <div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h2>Verlauf</h2></div>
-  </div>
-  <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div>
-  <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihe auswählen">
-   <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Belastung</button>
-   <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="false">Regeneration</button>
-   <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="false">Performance</button>
-   <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="false">Gesundheit</button>
-  </nav>
-  <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Zeitlicher Verlauf der ausgewählten Analysedaten"></canvas></div>
-  <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
- </section>
- <section class="kajo-analysis-overview-panel">
-  <div class="kajo-analysis-section-heading"><div><p class="kajo-analysis-eyebrow">TRAININGSHISTORIE</p><h2>Trainingsaktivität</h2></div></div>
-  <div class="kajo-analysis-chart-wrap kajo-analysis-activity-chart-wrap"><canvas id="analysis-overview-activity-chart" aria-label="Tägliche Trainingsdauer nach Sportart"></canvas></div>
-  <p id="analysis-overview-activity-note" class="kajo-analysis-chart-note">Nur tatsächlich gespeicherte Aktivitäten mit erfasster Dauer werden dargestellt.</p>
- </section>
-</div>
+<div id="view-analyses" class="hidden space-y-5 kajo-analysis-view">
+ <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
+  <section class="kajo-analysis-circles" aria-label="Vier Performance-Dimensionen">
+   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-load')" aria-label="Load öffnen">
+    <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Load</strong>
+   </button>
+   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-recovery')" aria-label="Recovery öffnen">
+    <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-domain="recovery"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span><strong>Recovery</strong>
+   </button>
+   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-performance')" aria-label="Fitness öffnen">
+    <span class="kajo-analysis-hero-ring" id="overview-performance-ring" data-domain="performance"><span><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit">ml/kg/min</small></span></span><strong>Fitness</strong>
+   </button>
+   <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-health')" aria-label="Health öffnen">
+    <span class="kajo-analysis-hero-ring" id="overview-health-ring" data-domain="health"><span><strong id="analysis-overview-health-value">—</strong><small id="analysis-overview-health-unit"></small></span></span><strong>Health</strong>
+   </button>
+  </section>
+ </div>
+ <div id="analysis-overview-content" class="space-y-4" aria-label="Verlauf und Trainingsverteilung">
+  <section class="kajo-analysis-overview-panel">
+   <div class="kajo-analysis-section-heading"><h2>Verlauf</h2></div>
+   <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div>
+   <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery, Fitness und Health"></canvas></div>
+   <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihen ein- oder ausblenden">
+    <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Load</button>
+    <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="true">Recovery</button>
+    <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="true">Fitness</button>
+    <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="true" title="Trainingsverfügbarkeit derzeit nicht berechenbar">Health*</button>
+   </nav>
+   <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
+  </section>
+  <section class="kajo-analysis-overview-panel">
+   <div class="kajo-analysis-section-heading"><h2>Trainingsverteilung</h2></div>
+   <div class="kajo-analysis-distribution-block">
+    <div class="kajo-analysis-distribution-heading"><strong>Nach Sportart</strong>
+     <nav class="kajo-analysis-switch" aria-label="Sportverteilung nach Dauer oder Einheiten">
+      <button type="button" data-overview-activity-measure="duration" onclick="setAnalysisOverviewActivityMeasure('duration')" aria-pressed="true">Dauer</button>
+      <button type="button" data-overview-activity-measure="sessions" onclick="setAnalysisOverviewActivityMeasure('sessions')" aria-pressed="false">Einheiten</button>
+     </nav>
+    </div>
+    <div class="kajo-analysis-sport-distribution">
+     <div class="kajo-analysis-doughnut-wrap"><canvas id="analysis-overview-activity-chart" aria-label="Trainingsverteilung nach Sportart"></canvas></div>
+     <div id="analysis-overview-activity-legend" class="kajo-analysis-distribution-legend"></div>
+    </div>
+    <p id="analysis-overview-activity-note" class="kajo-analysis-chart-note"></p>
+   </div>
+   <div class="kajo-analysis-distribution-block">
+    <div class="kajo-analysis-distribution-heading"><strong>Nach Intensität</strong><span class="kajo-analysis-muted-label">Herzfrequenzzonen</span></div>
+    <div class="kajo-analysis-intensity-wrap"><canvas id="analysis-overview-intensity-chart" aria-label="Trainingszeit nach Herzfrequenzzonen und Sportart"></canvas></div>
+    <div id="analysis-overview-intensity-summary" class="kajo-analysis-intensity-summary"></div>
+    <p id="analysis-overview-intensity-note" class="kajo-analysis-chart-note"></p>
+   </div>
+  </section>
+ </div>
 <div id="analysis-subpage-load" class="space-y-4">
 <section class="kajo-analysis-hero hidden" aria-label="Training Load">
   <div class="kajo-analysis-hero-ring" id="load-hero-ring" aria-live="polite">
@@ -424,12 +431,12 @@
                     </div>
 
                     <div id="analysis-period-buttons" class="analysis-period-buttons flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-                        <button type="button" onclick="setTimeframe('7d')" id="tf-7d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">7 Tage</button>
-                        <button type="button" onclick="setTimeframe('28d')" id="tf-28d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">28 Tage</button>
-                        <button type="button" onclick="setTimeframe('3m')" id="tf-3m" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-semibold">3 Monate</button>
-                        <button type="button" onclick="setTimeframe('6m')" id="tf-6m" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">6 Monate</button>
-                        <button type="button" onclick="setTimeframe('1y')" id="tf-1y" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">1 Jahr</button>
-                        <button type="button" onclick="toggleCustomDatePicker()" id="tf-custom" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white border border-slate-800">Individuell</button>
+                        <button type="button" onclick="setTimeframe('7d')" id="tf-7d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">7T</button>
+                        <button type="button" onclick="setTimeframe('28d')" id="tf-28d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">28T</button>
+                        <button type="button" onclick="setTimeframe('3m')" id="tf-3m" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-semibold">90T</button>
+                        <button type="button" onclick="setTimeframe('6m')" id="tf-6m" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">6M</button>
+                        <button type="button" onclick="setTimeframe('1y')" id="tf-1y" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">1J</button>
+                        
                     </div>
                 </div>
 
