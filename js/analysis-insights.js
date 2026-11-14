@@ -147,7 +147,6 @@ function renderRecoveryInsight() {
         .filter(([date]) => date >= daysAgoKey(6) && date <= today);
     const readiness = calculateReadiness();
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
-    const subjective = Array.isArray(readiness.subjective) ? readiness.subjective : [];
     const findObjective = key => objective.find(item => item.key === key);
     const formatValue = (value, digits = 1) => valid(value)
         ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: digits })
