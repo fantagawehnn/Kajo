@@ -40,8 +40,18 @@ function conditionDetails(activity) {
   ].join('|');
   return { comparable, key };
 }
-function metricSummary(items, keys, minimum = -Infinity) {
-  const values = items.map(item => firstNumber(item, keys, minimum)).filter(value => value !== null);
+function telemetryMean(activity, key, minimum = -Infinity) {
+  const values = activity?.garminTelemetry?.[key];
+  if (!Array.isArray(values)) return null;
+  const valid = values.map(numberOrNull).filter(value => value !== null && value > minimum);
+  return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : null;
+}
+function metricValue(activity, keys, telemetryKey, minimum = -Infinity) {
+  const recorded = firstNumber(activity, keys, minimum);
+  return recorded !== null ? recorded : telemetryMean(activity, telemetryKey, minimum);
+}
+function metricSummary(items, keys, telemetryKey, minimum = -Infinity) {
+  const values = items.map(item => metricValue(item, keys, telemetryKey, minimum)).filter(value => value !== null);
   return {
     count: values.length,
     mean: values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)) : null,
@@ -100,19 +110,19 @@ export function buildCanoePerformanceSummary(activities, options = {}) {
       activityCount: rows.length,
       dateFrom: dateKey(rows[0].date),
       dateTo: dateKey(rows[rows.length - 1].date),
-      averageSpeedKmh: metricSummary(rows, ['avgSpeed', 'averageSpeed', 'speed'], 0),
-      averagePowerW: metricSummary(rows, ['avgPower', 'averagePower', 'power'], 0),
-      strokeRatePerMinute: metricSummary(rows, ['strokeRate', 'avgStrokeRate', 'cadence'], 0),
-      averageHeartRateBpm: metricSummary(rows, ['avgHr', 'averageHr', 'averageHeartRate', 'hr'], 0)
+      averageSpeedKmh: metricSummary(rows, ['avgSpeed', 'averageSpeed', 'speed'], 'speed', 0),
+      averagePowerW: metricSummary(rows, ['avgPower', 'averagePower', 'power'], 'power', 0),
+      cadencePerMinute: metricSummary(rows, ['cadencePerMinute', 'avgCadence', 'cadence', 'strokeRate', 'avgStrokeRate'], 'cadence', 0),
+      averageHeartRateBpm: metricSummary(rows, ['avgHr', 'averageHr', 'averageHeartRate', 'hr'], 'hr', 0)
     };
   }).sort((a, b) => a.type.localeCompare(b.type) || a.raceFormat.localeCompare(b.raceFormat)
     || a.conditionKey.localeCompare(b.conditionKey));
 
   const metricCounts = {
-    averageSpeed: canoe.filter(item => firstNumber(item, ['avgSpeed', 'averageSpeed', 'speed'], 0) !== null).length,
-    averagePower: canoe.filter(item => firstNumber(item, ['avgPower', 'averagePower', 'power'], 0) !== null).length,
-    strokeRate: canoe.filter(item => firstNumber(item, ['strokeRate', 'avgStrokeRate', 'cadence'], 0) !== null).length,
-    averageHeartRate: canoe.filter(item => firstNumber(item, ['avgHr', 'averageHr', 'averageHeartRate', 'hr'], 0) !== null).length,
+    averageSpeed: canoe.filter(item => metricValue(item, ['avgSpeed', 'averageSpeed', 'speed'], 'speed', 0) !== null).length,
+    averagePower: canoe.filter(item => metricValue(item, ['avgPower', 'averagePower', 'power'], 'power', 0) !== null).length,
+    cadence: canoe.filter(item => metricValue(item, ['cadencePerMinute', 'avgCadence', 'cadence', 'strokeRate', 'avgStrokeRate'], 'cadence', 0) !== null).length,
+    averageHeartRate: canoe.filter(item => metricValue(item, ['avgHr', 'averageHr', 'averageHeartRate', 'hr'], 'hr', 0) !== null).length,
     duration: canoe.filter(item => firstNumber(item, ['duration'], 0) !== null).length,
     distance: canoe.filter(item => firstNumber(item, ['distance'], 0) !== null).length
   };
