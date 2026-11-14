@@ -498,23 +498,36 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
     }
 
     const palette = ['#38bdf8', '#34d399', '#facc15', '#fb923c', '#f43f5e'];
+    const zoneTotals = [0, 0, 0, 0, 0];
+    keys.forEach(key => totals[key].forEach((seconds, index) => { zoneTotals[index] += seconds; }));
+    const totalZoneSeconds = zoneTotals.reduce((sum, seconds) => sum + seconds, 0);
     const datasets = palette.map((color, index) => ({
         label: 'Z' + (index + 1),
-        data: keys.map(key => Number((totals[key][index] / 3600).toFixed(2))),
-        backgroundColor: color
+        data: [Number((zoneTotals[index] / 3600).toFixed(2))],
+        backgroundColor: color,
+        borderWidth: 0,
+        barThickness: 22,
+        categoryPercentage: 0.72,
+        barPercentage: 0.9
     }));
     state[chartKey] = new Chart(canvas.getContext('2d'), {
         type: 'bar',
-        data: { labels: keys.map(key => catalog[key]?.label || key), datasets },
+        data: { labels: [''], datasets },
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             scales: {
-                x: { stacked: true, title: { display: true, text: 'Stunden' }, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                y: { stacked: true, ticks: { color: '#cbd5e1' }, grid: { display: false } }
+                x: { stacked: true, beginAtZero: true, max: totalZoneSeconds > 0 ? Number((totalZoneSeconds / 3600).toFixed(2)) : undefined, display: false, grid: { display: false }, ticks: { display: false } },
+                y: { stacked: true, display: false, grid: { display: false } }
             },
             plugins: {
-                legend: { labels: { color: '#cbd5e1' } },
-                tooltip: { callbacks: { label: context => context.dataset.label + ': ' + context.parsed.x.toFixed(2) + ' h' } }
+                legend: { display: false },
+                tooltip: { callbacks: { label: context => {
+                    const seconds = zoneTotals[context.datasetIndex] || 0;
+                    const percent = totalZoneSeconds > 0 ? seconds / totalZoneSeconds * 100 : 0;
+                    const minutes = Math.round(seconds / 60);
+                    const duration = Math.floor(minutes / 60) + ' h ' + String(minutes % 60).padStart(2, '0') + ' min';
+                    return context.dataset.label + ': ' + duration + ' · ' + percent.toFixed(1) + ' %';
+                } } }
             }
         }
     });
