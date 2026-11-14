@@ -31,7 +31,7 @@ globalThis.alert = () => {};
 globalThis.setTimeout = () => 0;
 
 const { state, setRefreshHandler } = await import('../js/state.js');
-const storage = await import('../js/storage.js');
+const storage = await import('../js/storage.js?v=2');
 const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
 const { getRacePriorityMeta, migrateLegacyRacePriorities } = await import('../js/competitions.js');
@@ -92,6 +92,28 @@ assert.equal(store.get('endurance_checkins'), legacyCheckins);
 
 // Subsequent import checks run inside an isolated authenticated-user storage scope.
 await storage.loadStateForUser('smoke-test-user');
+
+// Full Garmin raw telemetry is kept in its own local collection and restored
+// without bloating the compact activity record.
+state.rawActivities = [{
+    id: 'garmin-telemetry-smoke',
+    source: 'garmin',
+    date: todayKey,
+    garminTelemetry: {
+        time: [0, 1],
+        metricSeriesTime: [0, 1],
+        metricSeries: {
+            directSpeed: { label: 'Speed', unit: 'm/s', values: [1.2, 1.4], nonNullCount: 2 }
+        }
+    }
+}];
+assert.equal(storage.saveActivitiesToLocalStorage(), true);
+await new Promise(resolve => setImmediate(resolve));
+const compactActivity = JSON.parse(store.get('endurance:user:smoke-test-user:activities'))[0];
+assert.equal(compactActivity.garminTelemetry.metricSeries, undefined);
+await storage.loadStateForUser('smoke-test-user');
+assert.deepEqual(state.rawActivities[0].garminTelemetry.metricSeries.directSpeed.values, [1.2, 1.4]);
+assert.deepEqual(state.rawActivities[0].garminTelemetry.metricSeriesTime, [0, 1]);
 
 // Wellness merge preserves manual values and does not replace fields absent from API.
 state.rawActivities = [];
