@@ -380,8 +380,8 @@ function buildActivitiesReply(context) {
                 lines.push('Belastungsdaten nach Aktivitätstyp im betrachteten 90-Tage-Kontext (ausgewählte Quelle: ' + (context.trainingLoad.resolvedMode || context.trainingLoad.selectedSource || 'nicht angegeben') + '):');
                 coverage.forEach(item => {
                     const rpeSummary = item.sessionRpeAvailableCount
-                        ? '; sRPE dokumentiert für ' + item.sessionRpeAvailableCount + '/' + item.activityCount + ' Einheiten (' + formatNumber(item.documentedSessionRpeLoadAU, 1) + ' AU)'
-                        : '; kein gültiger sRPE-Wert dokumentiert';
+                        ? '; sRPE dokumentiert für ' + item.sessionRpeAvailableCount + '/' + item.activityCount + ' Einheiten (' + formatNumber(item.documentedSessionRpeLoadAU, 1) + ' AU); ' + item.sessionRpeMissingCount + ' ohne sRPE'
+                        : '; kein gültiger sRPE-Wert für ' + item.activityCount + ' Einheiten dokumentiert';
                     lines.push('• ' + item.type + (item.isCanoePerformanceActivity ? ' (Kanu-Performance)' : ' (ergänzend)') + ': Belastungswert der ausgewählten Quelle für ' + item.loadAvailableCount + '/' + item.activityCount + ' Einheiten vorhanden; ' + item.loadMissingCount + ' ohne Wert' + rpeSummary + '.');
                 });
             }
