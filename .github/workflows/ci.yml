@@ -11,12 +11,12 @@ permissions:
 
 jobs:
   regression-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Check JavaScript syntax
@@ -31,10 +31,10 @@ jobs:
   deploy-cloudflare:
     needs: regression-smoke
     if: github.event_name == 'push' && github.ref == 'refs/heads/v2'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Deploy KAJO to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
