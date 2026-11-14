@@ -7014,3 +7014,36 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   height:clamp(30px,5.8vw,58px) !important;
 }
 #view-calendar .calendar-day-health-rings { display:none !important; }
+
+
+/* Tagesansicht: kompakte Kennzahlen und reine Sportart-Umrandungen */
+#view-calendar .calendar-day-topline { display:flex; align-items:center; gap:10px; min-width:0; }
+#view-calendar .calendar-day-topline .calendar-day-kpis { flex:1 1 auto; min-width:0; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+#view-calendar .calendar-day-topline .calendar-kpi-ring-wrap { gap:3px; }
+#view-calendar .calendar-day-topline .calendar-kpi-ring { width:clamp(58px,7vw,72px); height:clamp(58px,7vw,72px); }
+#view-calendar .calendar-day-diary-button { flex:0 0 38px; width:38px; height:38px; display:grid; place-items:center; border:1px solid var(--color-border,#293644); border-radius:50%; color:var(--color-text-secondary,#a9b5c2); background:transparent; }
+#view-calendar .calendar-day-diary-button svg { width:18px; height:18px; }
+#view-calendar .calendar-day-recovery-section { padding:4px 0 8px; border:0; background:transparent; }
+#view-calendar .calendar-day-recovery-section .calendar-detail-heading { margin-bottom:9px; }
+#view-calendar .calendar-day-recovery-rings { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:start; gap:6px; width:100%; }
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring-wrap { min-width:0; gap:4px; }
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring { width:clamp(48px,6.2vw,66px); height:clamp(48px,6.2vw,66px); border-width:3px; font-size:14px; }
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-label { max-width:100%; font-size:8px; line-height:1.15; overflow-wrap:anywhere; }
+#view-calendar .calendar-day-recovery-section .calendar-day-subjective { margin-top:10px; }
+#view-calendar .calendar-day-activity-row { border:1.5px solid var(--activity-color) !important; background:transparent !important; }
+#view-calendar .calendar-day-activity-row.is-planned { border-style:dashed !important; }
+#view-calendar .calendar-day-activity-row > span,
+#view-calendar .calendar-day-activity-row .calendar-day-activity-sport,
+#view-calendar .calendar-day-activity-row .calendar-entry-status { background:transparent !important; box-shadow:none !important; }
+#view-calendar .calendar-day-activity-row .calendar-day-activity-sport { color:var(--activity-color) !important; }
+#view-calendar .calendar-day-activity-row .calendar-entry-status { border:0 !important; }
+@media (max-width:640px) {
+  #view-calendar .calendar-day-topline { gap:5px; }
+  #view-calendar .calendar-day-topline .calendar-day-kpis { gap:3px; }
+  #view-calendar .calendar-day-topline .calendar-kpi-ring { width:clamp(50px,13vw,60px); height:clamp(50px,13vw,60px); font-size:13px; }
+  #view-calendar .calendar-day-topline .calendar-kpi-label { font-size:8px; }
+  #view-calendar .calendar-day-diary-button { flex-basis:34px; width:34px; height:34px; }
+  #view-calendar .calendar-day-recovery-rings { grid-template-columns:repeat(6,minmax(0,1fr)); gap:3px; }
+  #view-calendar .calendar-day-recovery-rings .calendar-kpi-ring { width:clamp(42px,11.5vw,52px); height:clamp(42px,11.5vw,52px); font-size:12px; }
+  #view-calendar .calendar-day-recovery-rings .calendar-kpi-label { font-size:7px; }
+}
