@@ -200,6 +200,23 @@ export function applyCloudDataSnapshot(snapshot) {
     return true;
 }
 
+
+/** Speichert ausschließlich die Aktivitätssammlung des angemeldeten Nutzers. */
+export function saveActivitiesToLocalStorage() {
+    if (!activeUserStorage || !activeUserId) {
+        console.warn('Aktivitätsspeicherung übersprungen: Es ist kein authentifizierter Benutzer-Speicher aktiv.');
+        return false;
+    }
+    const activities = state.rawActivities;
+    activeUserStorage.setItem('activities', JSON.stringify(activities));
+    const storageForThisSave = activeUserStorage;
+    indexedDbWriteQueue = indexedDbWriteQueue
+        .then(() => storageForThisSave.saveCollections({ activities }))
+        .catch(error => console.error('Benutzerbezogene Aktivitätssicherung fehlgeschlagen:', error));
+    window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId, collection: 'activities' } }));
+    return true;
+}
+
 export function saveDataToLocalStorage() {
     if (!activeUserStorage || !activeUserId) {
         console.warn('Speichern übersprungen: Es ist kein authentifizierter Benutzer-Speicher aktiv.');
