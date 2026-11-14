@@ -848,6 +848,66 @@ async function syncGarminActivitiesForUser(
 }
 
 
+function buildGarminJsonTelemetry(details: Record<string, unknown>) {
+  const descriptors = Array.isArray(details.metricDescriptors)
+    ? details.metricDescriptors.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    : [];
+  const rows = Array.isArray(details.activityDetailMetrics)
+    ? details.activityDetailMetrics.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    : [];
+  const indexes = new Map<string, number>();
+  for (const descriptor of descriptors) {
+    const key = typeof descriptor.key === "string" ? descriptor.key : "";
+    const index = Number(descriptor.metricsIndex);
+    if (key && Number.isInteger(index) && index >= 0) indexes.set(key, index);
+  }
+  const read = (row: Record<string, unknown>, key: string): number | null => {
+    const index = indexes.get(key);
+    const values = Array.isArray(row.metrics) ? row.metrics : [];
+    const value = index == null ? null : values[index];
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  };
+  const samples = rows.map(row => ({ row, timestamp: read(row, "directTimestamp") }))
+    .filter((item): item is { row: Record<string, unknown>; timestamp: number } =>
+      item.timestamp !== null && item.timestamp >= 1000000000000 && item.timestamp <= 4000000000000)
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .filter((item, index, all) => index === 0 || item.timestamp > all[index - 1].timestamp);
+  if (samples.length < 2) throw new Error("Garmin-JSON enthält keine ausreichend lange, eindeutige Zeitreihe.");
+
+  const startMs = samples[0].timestamp;
+  const time = samples.map(item => (item.timestamp - startMs) / 1000);
+  const collect = (key: string, validate: (value: number) => boolean, transform: (value: number) => number = value => value) => {
+    const values = samples.map(item => {
+      const value = read(item.row, key);
+      return value !== null && validate(value) ? transform(value) : null;
+    });
+    return values.filter(value => value !== null).length >= 2 ? values : null;
+  };
+  const hr = collect("directHeartRate", value => value >= 30 && value <= 250);
+  if (!hr) throw new Error("Garmin-JSON enthält keine ausreichende Herzfrequenz-Zeitreihe.");
+  const altitude = collect("directElevation", value => value >= -500 && value <= 9000);
+  // Garmin liefert die kumulierte Distanz in diesem Datensatz bereits als Meter.
+  // Die beobachteten Werte (0 bis ca. 8.67 km) widersprechen einer Multiplikation mit 100.
+  const distance = collect("sumDistance", value => value >= 0, value => value / 1000);
+  const respirationRate = collect("directRespirationRate", value => value >= 4 && value <= 80);
+  const bodyBattery = collect("directBodyBattery", value => value >= 0 && value <= 100);
+  return {
+    source: "garmin-activity-details-json",
+    time,
+    hr,
+    ...(altitude ? { altitude } : {}),
+    ...(distance ? { distance } : {}),
+    ...(respirationRate ? { respirationRate } : {}),
+    ...(bodyBattery ? { bodyBattery } : {}),
+    sampleCount: samples.length,
+    startTimeIso: new Date(startMs).toISOString(),
+    endTimeIso: new Date(samples[samples.length - 1].timestamp).toISOString(),
+    durationSeconds: time[time.length - 1],
+    importedAt: new Date().toISOString(),
+  };
+}
+
+
 function prepareActivityTimeSeries(details: Record<string, unknown>) {
   const descriptors = Array.isArray(details.metricDescriptors)
     ? details.metricDescriptors.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
@@ -1300,6 +1360,36 @@ Deno.serve(async (req) => {
           detailsError: remoteDetailsError,
         },
         note: "Es wurden keine Daten geschrieben und keine FIT-Datei abgerufen.",
+      });
+    }
+
+    if (action === "import-activity-json") {
+      const activityId = typeof body.activityId === "string" ? body.activityId : String(body.activityId ?? "");
+      // Import ist bewusst auf die eine ausdrücklich freigegebene Aktivität begrenzt.
+      if (activityId !== "25077002341") {
+        return json(403, { error: "Dieser JSON-Import ist auf die freigegebene Aktivität beschränkt." });
+      }
+      const { data: credential, error: credentialError } = await admin
+        .from("garmin_personal_credentials")
+        .select("encrypted_api_key, encryption_iv")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (credentialError) throw credentialError;
+      if (!credential) return json(409, { error: "Für dieses Konto ist kein Garmin-Schlüssel hinterlegt." });
+
+      const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+      const token = await garminToken(apiKey);
+      const remoteDetails = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}/details`);
+      if (!remoteDetails || typeof remoteDetails !== "object") {
+        return json(422, { error: "Garmin hat keine Aktivitätszeitreihe geliefert." });
+      }
+      const telemetry = buildGarminJsonTelemetry(remoteDetails as Record<string, unknown>);
+      return json(200, {
+        ok: true,
+        readOnly: true,
+        activityId,
+        telemetry,
+        note: "Garmin-JSON wurde abgerufen und aufbereitet. Der Server hat keine Datenbankänderung und keinen FIT-Download ausgeführt.",
       });
     }
 
