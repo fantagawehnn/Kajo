@@ -251,7 +251,7 @@ const pairedGapContext = {
     ...pairedRecoveryContext,
     trainingLoad: {
         selectedSource: 'garmin-native',
-        timeline: pairedTimeline.filter(day => day.date !== '2026-11-11')
+        timeline: pairedTimeline.filter(day => !['2026-11-11', '2026-11-13'].includes(day.date))
     }
 };
 const pairedGapReply = buildLocalCoachReply(pairedGapContext, 'Wie ist meine Erholung?');
