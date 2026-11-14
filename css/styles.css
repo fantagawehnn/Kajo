@@ -5790,3 +5790,74 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
   .kajo-recovery-metric-label { font-size:.55rem; }
   .kajo-recovery-metric small { display:none; }
 }
+
+
+/* Recovery circles use the same compact, horizontally aligned metric rhythm as Today. */
+#analysis-subpage-recovery .kajo-analysis-metric-row {
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  align-items:start;
+  justify-items:center;
+  gap:.55rem;
+  width:100%;
+}
+#analysis-subpage-recovery .kajo-recovery-metric {
+  width:100%;
+  max-width:116px;
+  min-height:0;
+  padding:.25rem .1rem;
+  border:0;
+  background:transparent;
+}
+#analysis-subpage-recovery .kajo-recovery-metric-circle {
+  width:clamp(58px,6.2vw,78px);
+  height:clamp(58px,6.2vw,78px);
+  flex:0 0 auto;
+}
+#analysis-subpage-recovery .kajo-recovery-metric-label {
+  max-width:100%;
+  min-height:2.2em;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-wrap:balance;
+}
+#analysis-subpage-recovery .kajo-recovery-metric small {
+  min-height:1em;
+  text-align:center;
+}
+#analysis-subpage-recovery .kajo-recovery-metric.is-selected .kajo-recovery-metric-circle {
+  width:clamp(68px,7vw,90px);
+  height:clamp(68px,7vw,90px);
+}
+#analysis-subpage-recovery .kajo-recovery-metric:disabled {
+  opacity:.55;
+  cursor:default;
+}
+@media(max-width:640px) {
+  #analysis-subpage-recovery .kajo-analysis-metric-row {
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:.12rem;
+  }
+  #analysis-subpage-recovery .kajo-recovery-metric {
+    max-width:none;
+    padding:.15rem 0;
+    gap:.2rem;
+  }
+  #analysis-subpage-recovery .kajo-recovery-metric-circle {
+    width:min(17vw,64px);
+    height:min(17vw,64px);
+    padding:.15rem;
+  }
+  #analysis-subpage-recovery .kajo-recovery-metric-circle strong { font-size:.78rem; }
+  #analysis-subpage-recovery .kajo-recovery-metric-label {
+    font-size:.55rem;
+    line-height:1.15;
+    min-height:2.3em;
+  }
+  #analysis-subpage-recovery .kajo-recovery-metric small { display:none; }
+  #analysis-subpage-recovery .kajo-recovery-metric.is-selected .kajo-recovery-metric-circle {
+    width:min(19vw,70px);
+    height:min(19vw,70px);
+  }
+}
