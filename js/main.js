@@ -740,8 +740,11 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 // the existing axis only when its length demonstrably matches.
                 for (const [key, metric] of Object.entries(mergedSeries)) {
                     if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
-                    const fallback = Array.isArray(previous.time) && previous.time.length === metric.values.length
-                        ? previous.time : null;
+                    const fetchedAxis = fetchedSeries[key]?.time;
+                    const fallback = Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length
+                        ? fetchedAxis
+                        : Array.isArray(previous.time) && previous.time.length === metric.values.length
+                            ? previous.time : null;
                     if (fallback) mergedSeries[key] = { ...metric, time: fallback };
                 }
 
