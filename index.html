@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=102">
+    <link rel="stylesheet" href="css/styles.css?v=103">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -600,7 +600,7 @@
             <div class="calendar-topbar bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
                 <div class="flex items-center justify-between gap-3">
                     <button type="button" id="calendar-period-prev" onclick="navigateCalendarPeriod(-1)" aria-label="Vorheriger Zeitraum" class="calendar-nav-arrow"><i data-lucide="chevron-left"></i></button>
-                    <h2 id="calendar-period-title" class="text-base font-semibold text-white text-center flex-1">November 2026</h2>
+                    <button type="button" id="calendar-period-title" onclick="openCalendarPeriodPicker()" aria-label="Zeitraum auswählen" class="calendar-period-title-button text-base font-semibold text-white text-center flex-1">November 2026</button><input type="date" id="calendar-period-picker" aria-label="Zeitraum auswählen" class="calendar-period-picker" onchange="applyCalendarPeriodDate(this.value)">
                     <button type="button" id="calendar-period-next" onclick="navigateCalendarPeriod(1)" aria-label="Nächster Zeitraum" class="calendar-nav-arrow"><i data-lucide="chevron-right"></i></button>
                 </div>
                 <div class="flex items-center gap-2">
