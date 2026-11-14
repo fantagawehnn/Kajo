@@ -77,6 +77,6 @@ test('does not mix seasons, boat classes or formats', async () => {
   ]);
   assert.equal(summary.rows.length, 3);
   assert.deepEqual(summary.rows.map(row => [row.season, row.discipline, row.format]), [
-    [2025, 'C2', 'Classic'], [2025, 'C1', 'Sprint'], [2024, 'C1', 'Classic']
+    [2025, 'C1', 'Sprint'], [2025, 'C2', 'Classic'], [2024, 'C1', 'Classic']
   ]);
 });
