@@ -6092,3 +6092,86 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #view-calendar .calendar-week-activity { flex-wrap:wrap; }
   #view-calendar .calendar-entry-status { margin-left:13px; }
 }
+
+
+/* KAJO – mobile calendar controls: seven days and four views stay on one row. */
+#view-calendar .calendar-week-strip {
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  width:100%;
+  min-width:0;
+  gap:clamp(1px,.6vw,5px);
+  box-sizing:border-box;
+}
+#view-calendar .calendar-week-strip-day {
+  min-width:0;
+  width:100%;
+  padding-inline:0;
+  overflow:hidden;
+}
+#view-calendar .calendar-week-strip-day > span:first-child {
+  white-space:nowrap;
+}
+#view-calendar .calendar-week-strip-dots {
+  min-width:0;
+  width:100%;
+  flex-wrap:nowrap;
+  overflow:hidden;
+}
+#view-calendar .calendar-view-switch {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  flex:1 1 0%;
+  width:100%;
+  min-width:0;
+  white-space:nowrap;
+}
+#view-calendar .calendar-view-switch > .calendar-view-button {
+  min-width:0;
+  width:100%;
+  padding-inline:2px;
+}
+@media(max-width:767px) {
+  #view-calendar .calendar-topbar > div:nth-child(2) {
+    display:flex;
+    flex-wrap:nowrap;
+    min-width:0;
+    width:100%;
+    gap:7px;
+  }
+  #view-calendar .calendar-view-switch {
+    flex:1 1 0%;
+    min-width:0;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #view-calendar .calendar-add-button {
+    flex:0 0 36px;
+  }
+  #view-calendar .calendar-week-strip {
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:1px;
+    padding:5px 2px;
+  }
+  #view-calendar .calendar-week-strip-day {
+    gap:3px;
+    padding:6px 0 4px;
+    border-radius:7px;
+  }
+  #view-calendar .calendar-week-strip-day > span:first-child {
+    font-size:clamp(8px,2.5vw,10px);
+    line-height:1.1;
+  }
+  #view-calendar .calendar-week-strip-day > strong {
+    font-size:clamp(12px,3.7vw,15px);
+    line-height:1.1;
+  }
+  #view-calendar .calendar-week-dot {
+    width:5px;
+    height:5px;
+    flex-basis:5px;
+  }
+  #view-calendar .calendar-view-button {
+    min-height:34px;
+    padding-inline:1px;
+  }
+}
