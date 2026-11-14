@@ -6003,3 +6003,30 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #analysis-subpage-health .kajo-health-range {width:100%}
   #analysis-subpage-health .kajo-health-range button {flex:1}
 }
+
+
+/* Fitness overview with a separate entry point to sport-specific performance. */
+#analysis-subpage-performance .kajo-fitness-performance-circle {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.38rem;
+  width:100%;min-height:142px;padding:1rem;border:1px solid var(--kajo-border);
+  border-radius:1.15rem;background:var(--kajo-surface);color:var(--kajo-text);
+  transition:border-color .18s ease,background .18s ease;
+}
+#analysis-subpage-performance .kajo-fitness-performance-circle:hover {
+  border-color:var(--kajo-blue);background:color-mix(in srgb,var(--kajo-blue) 7%,var(--kajo-surface));
+}
+#analysis-subpage-performance .kajo-fitness-performance-ring {
+  display:grid;place-items:center;width:66px;height:66px;border-radius:50%;
+  border:2px solid var(--kajo-blue);background:color-mix(in srgb,var(--kajo-blue) 10%,var(--kajo-surface));
+  color:var(--kajo-blue);font-size:1.55rem;font-weight:700;
+}
+#analysis-subpage-performance .kajo-fitness-performance-label {font-size:.82rem;font-weight:750;}
+#analysis-subpage-performance .kajo-fitness-performance-circle small {font-size:.66rem;color:var(--kajo-muted);}
+#analysis-subpage-performance .kajo-performance-detail-header {
+  display:flex;align-items:center;gap:1rem;padding:.2rem 0 .65rem;border-bottom:1px solid var(--kajo-border);
+}
+#analysis-subpage-performance .kajo-performance-detail-header h2 {font-size:1rem;font-weight:750;color:var(--kajo-text);}
+#analysis-subpage-performance .kajo-performance-back {
+  padding:.45rem .7rem;border:1px solid var(--kajo-border);border-radius:.7rem;
+  color:var(--kajo-muted);font-size:.7rem;font-weight:650;
+}
