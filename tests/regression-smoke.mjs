@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 const store = new Map();
 const elements = {};
@@ -35,6 +36,31 @@ const storage = await import('../js/storage.js');
 const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
 const { getRacePriorityMeta, migrateLegacyRacePriorities } = await import('../js/competitions.js');
+
+const health = await import('../js/health.js');
+const originalGetElementById = document.getElementById;
+document.querySelectorAll = () => [];
+document.getElementById = () => null;
+assert.doesNotThrow(() => health.updateCheckin(), 'Check-in updates must tolerate absent modal fields');
+document.getElementById = originalGetElementById;
+
+const indexHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+for (const id of [
+    'daily-checkin-panel', 'input-sleep-quality', 'input-soreness',
+    'input-fatigue', 'input-motivation', 'input-stress',
+    'input-period', 'input-sick', 'input-weight-enabled',
+    'input-cycle-pain', 'input-cycle-impact',
+    'input-health-diagnosis', 'input-weight'
+]) {
+    assert.equal((indexHtml.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1,
+        'Expected exactly one Check-in element: ' + id);
+}
+assert.ok(!indexHtml.includes('fit-file-parser@1.19.0/dist/fit-file-parser.min.js'),
+    'The invalid browser FIT parser script URL must not return');
+const mainJs = await readFile(new URL('../js/main.js', import.meta.url), 'utf8');
+assert.ok(mainJs.includes("import('https://esm.sh/fit-file-parser@1.21.0?bundle')"),
+    'FIT parser must be lazy-loaded as an ESM module');
+
 
 // Local date must not shift to the previous/next day through UTC conversion.
 assert.equal(toLocalDateString(new Date(2026, 10, 10, 0, 15)), '2026-11-10');
