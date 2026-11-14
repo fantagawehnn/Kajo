@@ -183,7 +183,10 @@ const activityDetailReply = buildLocalCoachReply({
             { date: '2026-11-01', type: 'C1', name: 'C1 Einheit', isCanoePerformanceActivity: true, durationMinutes: 60 }
         ]
     },
-    trainingLoad: { selectedSource: 'garmin', resolvedMode: 'garmin-native', loadCoverageByActivityType: [
+    trainingLoad: { selectedSource: 'garmin', resolvedMode: 'garmin-native', documentedSessionRpeByDay: [
+        { date: '2026-11-12', recordedActivityCount: 1, activitiesWithSessionRpe: 1, activitiesMissingSessionRpe: 0, documentedLoadAU: 175, allRecordedActivitiesHaveSessionRpe: true },
+        { date: '2026-11-13', recordedActivityCount: 1, activitiesWithSessionRpe: 0, activitiesMissingSessionRpe: 1, documentedLoadAU: null, allRecordedActivitiesHaveSessionRpe: false }
+    ], loadCoverageByActivityType: [
         { type: 'C1', isCanoePerformanceActivity: true, activityCount: 1, loadAvailableCount: 1, loadMissingCount: 0 },
         { type: 'Run', isCanoePerformanceActivity: false, activityCount: 1, loadAvailableCount: 0, loadMissingCount: 1 }
     ], timeline: [] },
@@ -196,6 +199,8 @@ assert.ok(activityDetailReply.includes('Ergänzende Sportarten: 1 Einheiten; 0,5
 assert.match(activityDetailReply, /weder eine Belastungssumme/);
 assert.match(activityDetailReply, /Belastungswert für 1\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /Belastungswert für 0\/1 Einheiten vorhanden/);
+assert.match(activityDetailReply, /175,0 AU aus 1\/1 dokumentierten Einheiten/);
+assert.match(activityDetailReply, /kein gültiger sRPE-Wert für 1 dokumentierte Einheit/);
 
 const modelTrendReply = buildLocalCoachReply({
     asOfDate: '2026-11-14',
