@@ -92,18 +92,23 @@ function updateCheckinSliderFills() {
 }
 
 export function updateCheckin() {
+    // Das Check-in-Formular ist nicht in jeder Ansicht in den DOM eingebunden.
+    // Fehlende Felder dürfen die übrige App-Initialisierung nicht abbrechen.
     updateCheckinSliderFills();
-    const sleep = document.getElementById('input-sleep-quality').value;
-    const soreness = document.getElementById('input-soreness').value;
-    const fatigue = document.getElementById('input-fatigue').value;
-    const motivation = document.getElementById('input-motivation').value;
-    const stress = document.getElementById('input-stress').value;
 
-    document.getElementById('lbl-sleep').textContent = sleep;
-    document.getElementById('lbl-soreness').textContent = soreness;
-    document.getElementById('lbl-fatigue').textContent = fatigue;
-    document.getElementById('lbl-motivation').textContent = motivation;
-    document.getElementById('lbl-stress').textContent = stress;
+    const fields = [
+        ['input-sleep-quality', 'lbl-sleep'],
+        ['input-soreness', 'lbl-soreness'],
+        ['input-fatigue', 'lbl-fatigue'],
+        ['input-motivation', 'lbl-motivation'],
+        ['input-stress', 'lbl-stress']
+    ];
+    fields.forEach(([inputId, labelId]) => {
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+        if (input && label) label.textContent = input.value;
+    });
+
     const pain = document.getElementById('input-cycle-pain');
     const impact = document.getElementById('input-cycle-impact');
     const painLabel = document.getElementById('lbl-cycle-pain');
