@@ -181,7 +181,7 @@ function buildLoadReply(context) {
         }
         lines.push('Diese Werte bilden nur die dokumentierten Einheiten ab. Auch bei vollständigem sRPE für die erfassten Einheiten ist damit nicht bewiesen, dass alle tatsächlich absolvierten Einheiten erfasst wurden. Daraus werden keine CTL-/ATL-/TSB-Werte berechnet.');
     }
-    lines.push('Belastungssummen und Modellveränderungen werden nur bei vollständigen Tageswerten und einheitlicher Quelle ausgewiesen. CTL und ATL sind rechnerische, quellenabhängige EWMA-Modellwerte; TSB ist ihre Differenz und kein direkt gemessener Ermüdungs- oder Formwert. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
+    lines.push('Belastungssummen und Modellveränderungen werden nur bei vollständigen Tageswerten und einheitlicher Quelle ausgewiesen. CTL und ATL sind rechnerische, quellenabhängige EWMA-Modellwerte; TSB ist ihre Differenz und kein direkt gemessener Ermüdungs- oder Formwert. Die ausgewählte Tagesbelastungsreihe enthält keine verlässliche Aufteilung nach Sportart. Ergänzend werden dokumentierte sRPE-Werte separat nach Aktivitätstyp ausgewiesen; sie werden nicht mit Garmin Load oder Garmin-HF-Zonenpunkten addiert.');
     return lines.join('\n');
 }
 function summarizeRecoveryTrends(checkins) {
