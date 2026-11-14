@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=120">
+    <link rel="stylesheet" href="css/styles.css?v=121">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1328,16 +1328,26 @@
           <button type="button" onclick="closeSettingsModal()" aria-label="Einstellungen schließen" class="kajo-settings-close">×</button>
         </header>
         <nav class="kajo-settings-overview" id="kajo-settings-menu" aria-label="Einstellungsbereiche">
-          <section class="kajo-settings-overview-group" data-tone="blue">
-            <div class="kajo-settings-overview-heading"><span class="kajo-settings-overview-icon"><i data-lucide="dumbbell"></i></span><h3>Training &amp; Sport</h3></div>
-            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsOpenPage('training')"><i data-lucide="settings-2"></i><span><strong>Sportarten &amp; Belastung</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsOpenPage('training')"><i data-lucide="heart-pulse"></i><span><strong>Leistungsparameter &amp; Zonen</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-          </section>
-          <section class="kajo-settings-overview-group" data-tone="violet">
-            <div class="kajo-settings-overview-heading"><span class="kajo-settings-overview-icon"><i data-lucide="smartphone"></i></span><h3>App</h3></div>
-            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsOpenPage('app')"><i data-lucide="sun-moon"></i><span><strong>Darstellung &amp; Datenschutz</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-            <button type="button" class="kajo-settings-overview-row" onclick="kajoSettingsOpenPage('notifications')"><i data-lucide="bell"></i><span><strong>Benachrichtigungen</strong></span><i data-lucide="chevron-right" class="kajo-settings-row-chevron"></i></button>
-          </section>
+          <button type="button" class="kajo-settings-category" data-tone="blue" onclick="kajoSettingsOpenPage('training')">
+            <span class="kajo-settings-category-icon"><i data-lucide="dumbbell" aria-hidden="true"></i></span>
+            <span class="kajo-settings-category-copy"><strong>Training &amp; Sport</strong><small>Sportarten, Trainingskategorien und Belastungsmodell</small></span>
+            <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="kajo-settings-category" data-tone="mint" onclick="kajoSettingsOpenPage('performance')">
+            <span class="kajo-settings-category-icon"><i data-lucide="heart-pulse" aria-hidden="true"></i></span>
+            <span class="kajo-settings-category-copy"><strong>Leistungsparameter</strong><small>Herzfrequenz, Zonen und individuelle Leistungswerte</small></span>
+            <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="kajo-settings-category" data-tone="violet" onclick="kajoSettingsOpenPage('app')">
+            <span class="kajo-settings-category-icon"><i data-lucide="palette" aria-hidden="true"></i></span>
+            <span class="kajo-settings-category-copy"><strong>App &amp; Darstellung</strong><small>Farbschema, Anzeige, Datenschutz und Konto</small></span>
+            <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="kajo-settings-category" data-tone="amber" onclick="kajoSettingsOpenPage('notifications')">
+            <span class="kajo-settings-category-icon"><i data-lucide="bell" aria-hidden="true"></i></span>
+            <span class="kajo-settings-category-copy"><strong>Benachrichtigungen</strong><small>Push-Mitteilungen und persönliche Erinnerungen</small></span>
+            <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
+          </button>
         </nav>
         <div class="kajo-settings-content hidden" id="kajo-settings-subpages">
           <button type="button" id="kajo-settings-back" class="kajo-settings-back" onclick="kajoSettingsOpenPage('menu')" aria-label="Zurück zum Einstellungsmenü" title="Zurück zum Einstellungsmenü"><i data-lucide="arrow-left" aria-hidden="true"></i></button>
@@ -1361,7 +1371,7 @@
            <div id="kajo-reminders-list" class="kajo-reminders-list"><p class="text-xs text-slate-500">Deine Erinnerungen werden geladen …</p></div>
            <p class="kajo-settings-footnote">Zeitzone: <span id="kajo-notification-timezone">wird erkannt</span>. Du kannst mehrere Erinnerungen mit unterschiedlichen Zeiten anlegen.</p>
          </section></section>
-          <section id="settings-training" class="kajo-settings-group" data-settings-page="training"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="calendar-days"></i></span><div><p class="kajo-settings-eyebrow">DEIN TRAININGSALLTAG</p><h3>Training &amp; Planung</h3><p>Organisiere Sportarten, Kalender und die Steuerung deiner Trainingsbelastung.</p></div></div><details id="settings-sports" class="kajo-settings-card border border-slate-800 rounded-xl overflow-hidden">
+          <section id="settings-training" class="kajo-settings-group" data-settings-page="training"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="calendar-days"></i></span><div><p class="kajo-settings-eyebrow">DEIN TRAININGSALLTAG</p><h3>Training &amp; Sport</h3><p>Verwalte deine Sportarten, Trainingskategorien und die Quelle deiner Trainingsbelastung.</p></div></div><details id="settings-sports" class="kajo-settings-card border border-slate-800 rounded-xl overflow-hidden">
           <summary class="flex items-center justify-between gap-3 cursor-pointer list-none bg-slate-950/70 px-4 py-3">
             <span><span class="block text-xs font-bold uppercase tracking-wide text-cyan-400">Sportarten verwalten</span><span class="block text-[11px] text-slate-400 mt-1">Sportarten aktivieren, Farben zuordnen und eigene Sportarten ergänzen</span></span>
             <span class="text-xs text-slate-400">Aufklappen ▾</span>
@@ -1372,7 +1382,7 @@
             <div id="settings-sports-list" class="space-y-2"></div>
           </div>
         </details><section id="settings-categories" class="kajo-settings-card space-y-2"><div class="flex items-center justify-between"><h3 class="text-sm font-bold text-white">Trainingslegenden</h3><button type="button" onclick="addCustomCategory()" class="text-xs text-cyan-400">+ Legende</button></div><div id="settings-categories-list" class="space-y-2"></div></section><section id="settings-load" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Trainingsbelastung</h3><p>Welche Datenquelle für die Belastungssteuerung verwendet wird.</p></div><span class="kajo-settings-section-icon"><i data-lucide="activity"></i></span></div><label class="block text-xs text-slate-300">Belastungsquelle für CTL / ATL<select id="training-load-source" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white"><option value="auto">Automatisch (Garmin / TSS)</option><option value="srpe">Session-RPE (Dauer × Gesamtanstrengung)</option></select></label><p class="text-[11px] text-slate-400">Bewerte die gesamte Einheit möglichst etwa 30 Minuten nach Trainingsende. Load = Dauer in Minuten × RPE (1–10), angegeben in arbiträren Einheiten (AU). Bei Auswahl dieser Quelle werden ausschließlich bewertete Aktivitäten berücksichtigt; Garmin-Load und TSS werden nicht beigemischt. Die relative Belastungsbilanz ist ein Modellwert, keine validierte Trainingsfreigabe.</p></section></section>
-          <section id="settings-performance-group" class="kajo-settings-group" data-settings-page="training"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="heart-pulse"></i></span><div><p class="kajo-settings-eyebrow">INDIVIDUELLE TRAININGSBEREICHE</p><h3>Leistungsparameter</h3><p>Erkenne deine Herzfrequenzzonen automatisch und passe sie bei Bedarf manuell an.</p></div></div><section id="settings-zones" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Herzfrequenzzonen</h3><p>Ein gemeinsames, automatisch vorgeschlagenes und manuell anpassbares Zonenprofil.</p></div><span class="kajo-settings-section-icon"><i data-lucide="heart-pulse"></i></span></div><p class="text-[11px] text-slate-400">KAJO schlägt deine fünf Herzfrequenzzonen anhand der erkannten maximalen Herzfrequenz vor. Du kannst alle Zonengrenzen anschließend manuell anpassen. Die Erkennung ist eine Orientierung und ersetzt keine Leistungsdiagnostik.</p><div id="settings-zones-list" class="space-y-3"></div></section></section>
+          <section id="settings-performance-group" class="kajo-settings-group" data-settings-page="performance"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="heart-pulse"></i></span><div><p class="kajo-settings-eyebrow">INDIVIDUELLE TRAININGSBEREICHE</p><h3>Leistungsparameter</h3><p>Erkenne deine Herzfrequenzzonen automatisch und passe sie bei Bedarf manuell an.</p></div></div><section id="settings-zones" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Herzfrequenzzonen</h3><p>Ein gemeinsames, automatisch vorgeschlagenes und manuell anpassbares Zonenprofil.</p></div><span class="kajo-settings-section-icon"><i data-lucide="heart-pulse"></i></span></div><p class="text-[11px] text-slate-400">KAJO schlägt deine fünf Herzfrequenzzonen anhand der erkannten maximalen Herzfrequenz vor. Du kannst alle Zonengrenzen anschließend manuell anpassen. Die Erkennung ist eine Orientierung und ersetzt keine Leistungsdiagnostik.</p><div id="settings-zones-list" class="space-y-3"></div></section></section>
           <section id="settings-app" class="kajo-settings-group" data-settings-page="app"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="shield-check"></i></span><div><p class="kajo-settings-eyebrow">KONTO UND KONTROLLE</p><h3>App &amp; Datenschutz</h3><p>Behalte den Überblick über deine Daten und deine Kontoeinstellungen.</p></div></div>
             <section class="kajo-settings-card kajo-theme-settings" aria-labelledby="kajo-theme-heading">
               <div class="kajo-settings-section-head"><div><h3 id="kajo-theme-heading">Darstellung</h3><p>Wähle, ob KAJO dem Gerät folgt oder dauerhaft hell bzw. dunkel angezeigt wird.</p></div><span class="kajo-settings-section-icon"><i data-lucide="sun-moon"></i></span></div>
@@ -1388,7 +1398,7 @@
             <p class="kajo-settings-footnote">Dein Athletenprofil und deine Trainingsdaten bleiben privat und deinem angemeldeten Konto zugeordnet.</p>
           </section>
         </div>
-        <div class="kajo-settings-footer hidden" id="kajo-settings-footer"><button type="button" onclick="closeSettingsModal()" class="kajo-settings-secondary">Schließen</button><button type="button" onclick="saveSettings()" class="kajo-settings-primary">Trainingseinstellungen speichern</button></div>
+        <div class="kajo-settings-footer hidden" id="kajo-settings-footer"><button type="button" onclick="closeSettingsModal()" class="kajo-settings-secondary">Schließen</button><button type="button" onclick="saveSettings()" class="kajo-settings-primary">Einstellungen speichern</button></div>
       </div>
     </div>
 
