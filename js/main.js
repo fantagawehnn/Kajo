@@ -103,7 +103,8 @@ function switchTab(requestedTab) {
         training: { parent: 'training', view: 'calendar', sub: 'activities' },
         'training-activities': { parent: 'training', view: 'calendar', sub: 'activities' },
         'training-planning': { parent: 'training', view: 'races', sub: 'planning' },
-        races: { parent: 'training', view: 'races', sub: 'planning' },
+        'training-competitions': { parent: 'training', view: 'races', sub: 'competitions' },
+        races: { parent: 'training', view: 'races', sub: 'competitions' },
         strength: { parent: 'training', view: 'strength', sub: 'strength' },
         analyses: { parent: 'analysis', view: 'analyses', sub: 'overview' },
         'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' },
@@ -126,6 +127,8 @@ function switchTab(requestedTab) {
     const destination = route[requestedTab] || { parent: 'more', view: 'more' };
     const { parent, view, sub } = destination;
     document.body.classList.toggle('kajo-home-active', view === 'dashboard');
+    document.body.classList.toggle('kajo-training-planning-view', parent === 'training' && sub === 'planning');
+    document.body.classList.toggle('kajo-training-competitions-view', parent === 'training' && sub === 'competitions');
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
@@ -153,7 +156,7 @@ function switchTab(requestedTab) {
             else button.removeAttribute('aria-current');
         });
     });
-    ['activities', 'planning', 'strength'].forEach(id => {
+    ['activities', 'planning', 'competitions', 'strength'].forEach(id => {
         const button = document.getElementById('training-subnav-' + id);
         if (button) button.classList.toggle('is-active', sub === id);
     });
