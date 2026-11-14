@@ -113,7 +113,7 @@ function metricCards() {
       return `<button type="button" class="kajo-health-data-card ${noData?'is-empty':''}" onclick="openGarminHealthMetric('${metric.key}')" style="--health-metric-color:${metric.color}">
         <span class="kajo-health-data-icon"><i data-lucide="${metric.icon}"></i></span>
         <span class="kajo-health-data-copy"><strong>${metric.short}</strong><small>${metric.label}</small><em>${status}</em></span>
-        <span class="kajo-health-data-value"><b>${latest?format(latest.value,metric):'—'}</b><small>${latest?metric.unit:'Nicht synchronisiert'}</small></span>
+        <span class="kajo-health-data-value"><b>${latest?format(latest.value,metric):'—'}</b><small>${latest?metric.unit:'Keine Tageswerte gespeichert'}</small></span>
       </button>`;
     }).join('');
     return `<section class="kajo-health-data-group"><h2>${group}</h2><div class="kajo-health-data-grid">${cards}</div></section>`;
