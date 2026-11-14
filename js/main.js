@@ -15,10 +15,11 @@ import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { canAutomaticallySyncCloudSnapshot } from './cloud-sync-policy.js';
 import { computePerformanceTimeline } from './calculations.js';
 import { sanitizeGarminActivityTelemetry } from './data-source.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
-import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
+import { renderAnalysisPageUI } from './analysis-ui.js?v=6';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=1';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure } from './training-load-view.js';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=1';
@@ -28,7 +29,7 @@ import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=74';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js';
-import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail } from './competitions.js';
+import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, openRaceResults, addRaceResultRow, closeRaceResults, saveRaceResults } from './competitions.js';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js';
 import { sendAICoachMessage } from './coach.js';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js';
@@ -1564,6 +1565,10 @@ function scheduleCloudSync(userId) {
         });
         return;
     }
+    if (!canAutomaticallySyncCloudSnapshot(cloudInitialTransferState)) {
+        setCloudSyncStatus('Noch keine automatische Cloud-Speicherung: Bitte bestätige zuerst den Erstupload ausdrücklich.');
+        return;
+    }
     if (cloudSyncBlocked) {
         setCloudSyncStatus('Synchronisierung angehalten: zuerst muss ein Cloud-Konflikt geklärt werden.');
         return;
@@ -1833,6 +1838,7 @@ async function handleAuthSession(session) {
         cloudSyncPending = false;
         cloudSyncBlocked = false;
         cloudSyncAwaitingReadyUserId = null;
+        cloudInitialTransferState = 'unknown';
         // Ein noch laufender Request darf seinen Status selbst abschließen.
         deactivateUserStorage();
         return;
@@ -1846,6 +1852,7 @@ async function handleAuthSession(session) {
     cloudSyncPending = false;
     cloudSyncBlocked = false;
     cloudSyncAwaitingReadyUserId = null;
+    cloudInitialTransferState = 'checking';
 
     // Bei einem Accountwechsel zuerst den vorherigen Zustand aus dem Speicher
     // entfernen. Legacy-Daten werden weder gelesen noch automatisch übernommen.
@@ -1868,6 +1875,7 @@ async function handleAuthSession(session) {
             }
             cloudSyncUserId = userId;
             cloudSyncVersion = cloudSnapshot.version;
+            cloudInitialTransferState = cloudSnapshot.data === null ? 'empty' : 'exists';
             cloudSyncBlocked = false;
             cloudSyncPending = false;
             if (cloudSnapshot.data !== null) {
@@ -2037,6 +2045,10 @@ Object.assign(window, {
     closeBackupPreview,
     confirmBackupRestore,
     addRace,
+    openRaceResults,
+    addRaceResultRow,
+    closeRaceResults,
+    saveRaceResults,
     openNextRaceDetail,
     closeRaceDetail,
     saveTrainingRoute,

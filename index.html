@@ -490,6 +490,19 @@
       <button type="button" class="kajo-performance-back" onclick="closePerformanceDetail()" aria-label="Zurück zur Fitness-Ansicht">← Fitness</button>
       <div><p class="kajo-analysis-eyebrow">SPORTLICHE UMSETZUNG</p><h2>Performance</h2></div>
     </header>
+  <section class="kajo-performance-group" aria-labelledby="canoe-performance-heading">
+    <div class="kajo-performance-group-heading"><h2 id="canoe-performance-heading">Kanu-Performance · K1 / C1 / C2</h2><span>Zeitraum wie Performance-Verlauf</span></div>
+    <div id="canoe-performance-discipline-summary" class="kajo-performance-metric-row" aria-live="polite"></div>
+    <h3 class="text-sm font-semibold text-white mt-4">Dokumentierte Leistungskennwerte</h3>
+    <div id="canoe-performance-comparison-summary" class="space-y-2 mt-2" aria-live="polite"></div>
+    <p id="canoe-performance-data-quality" class="kajo-performance-note mt-3"></p>
+  </section>
+
+  <section class="kajo-performance-group" aria-labelledby="competition-season-heading">
+    <div class="kajo-performance-group-heading"><h2 id="competition-season-heading">Wettkampfergebnisse im Saisonvergleich</h2><span>Nach Bootsklasse und Format</span></div>
+    <div id="competition-season-summary" class="overflow-x-auto" aria-live="polite"></div>
+    <p id="competition-season-note" class="kajo-performance-note mt-3"></p>
+  </section>
   <section class="kajo-performance-group" aria-labelledby="performance-paddling-heading">
     <div class="kajo-performance-group-heading"><h2 id="performance-paddling-heading">Leistung im Training</h2><span>Paddelspezifische Telemetrie</span></div>
     <div id="performance-paddling-metrics" class="kajo-performance-metric-row" aria-live="polite"></div>
@@ -714,6 +727,14 @@
                     <button type="button" onclick="toggleRaceModal()" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button>
                     <button type="button" onclick="addRace()" class="px-4 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-semibold">Speichern</button>
                 </div>
+            </div>
+
+            <div id="race-results-modal" class="hidden fixed inset-0 z-[100] items-center justify-center bg-black/70 p-4">
+                <section class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-5 space-y-4">
+                    <div><h3 id="race-results-title" class="text-base font-bold text-white">Wettkampfergebnisse</h3><p class="text-xs text-slate-400 mt-1">Jeder Start wird separat gespeichert. Zeiten bitte in Sekunden eintragen (z. B. 92,45 als 92.45).</p></div>
+                    <div id="race-results-list" class="space-y-2"></div>
+                    <div class="flex flex-wrap justify-between gap-2"><button type="button" onclick="addRaceResultRow()" class="rounded-xl bg-slate-800 px-3 py-2 text-xs text-cyan-300">+ Weiteren Start hinzufügen</button><div class="flex gap-2"><button type="button" onclick="closeRaceResults()" class="rounded-xl bg-slate-800 px-3 py-2 text-xs text-slate-300">Abbrechen</button><button type="button" onclick="saveRaceResults()" class="rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white">Ergebnisse speichern</button></div></div>
+                </section>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">

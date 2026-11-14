@@ -5,6 +5,8 @@
 import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
+import { buildCanoePerformanceSummary } from './canoe-performance.js';
+import { buildCompetitionSeasonSummary } from './race-results.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -198,7 +200,127 @@ function renderFitness() {
   if (panel) panel.classList.add('hidden');
   if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
 }
+function renderCanoePerformanceSummary() {
+  const summary = buildCanoePerformanceSummary(state.rawActivities, {
+    from: performanceRangeStart(),
+    to: todayKey()
+  });
+  const disciplineRoot = document.getElementById('canoe-performance-discipline-summary');
+  const comparisonRoot = document.getElementById('canoe-performance-comparison-summary');
+  const qualityRoot = document.getElementById('canoe-performance-data-quality');
+  const labels = { Kayaking: 'K1', C1: 'C1', C2: 'C2' };
+  const format = value => Number.isFinite(value)
+    ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
+  if (disciplineRoot) {
+    disciplineRoot.replaceChildren();
+    summary.byDiscipline.forEach(row => {
+      const card = document.createElement('article');
+      card.className = 'kajo-performance-metric';
+      const title = document.createElement('span');
+      title.textContent = labels[row.type];
+      const count = document.createElement('strong');
+      count.textContent = String(row.activityCount) + ' Einheiten';
+      const detail = document.createElement('small');
+      detail.textContent = (row.durationMinutes === null ? 'Dauer nicht dokumentiert' : format(row.durationMinutes / 60) + ' h dokumentiert')
+        + ' · ' + (row.distanceKm === null ? 'Distanz nicht dokumentiert' : format(row.distanceKm) + ' km')
+        + ' · Sprint ' + row.sprintCount + ' / Classic ' + row.classicCount
+        + ' / ohne Format ' + row.unspecifiedFormatCount;
+      card.append(title, count, detail);
+      disciplineRoot.appendChild(card);
+    });
+  }
+  if (comparisonRoot) {
+    comparisonRoot.replaceChildren();
+    const groups = summary.comparableGroups.filter(group => group.comparable &&
+      (group.averageSpeedKmh.count || group.averagePowerW.count || group.cadencePerMinute.count || group.averageHeartRateBpm.count));
+    if (!groups.length) {
+      const empty = document.createElement('p');
+      empty.className = 'kajo-performance-note';
+      empty.textContent = 'Für K1, C1 oder C2 liegen im gewählten Zeitraum noch keine dokumentierten, vergleichbaren Leistungskennwerte vor.';
+      comparisonRoot.appendChild(empty);
+    } else {
+      groups.forEach(group => {
+        const row = document.createElement('div');
+        row.className = 'kajo-performance-comparison-row';
+        const heading = document.createElement('strong');
+        heading.textContent = labels[group.type] + ' · ' + (group.raceFormat === 'unspecified' ? 'Format nicht dokumentiert' : group.raceFormat.toUpperCase())
+          + ' · n=' + group.activityCount;
+        const detail = document.createElement('p');
+        const metrics = [];
+        if (group.averageSpeedKmh.count) metrics.push('Ø Geschwindigkeit ' + format(group.averageSpeedKmh.mean) + ' km/h (n=' + group.averageSpeedKmh.count + ')');
+        if (group.averagePowerW.count) metrics.push('Ø Leistung ' + format(group.averagePowerW.mean) + ' W (n=' + group.averagePowerW.count + ')');
+        if (group.cadencePerMinute.count) metrics.push('Kadenz (Garmin-FIT) ' + format(group.cadencePerMinute.mean) + '/min (n=' + group.cadencePerMinute.count + ')');
+        if (group.averageHeartRateBpm.count) metrics.push('Ø HF ' + format(group.averageHeartRateBpm.mean) + ' bpm (n=' + group.averageHeartRateBpm.count + ')');
+        detail.textContent = metrics.join(' · ');
+        row.append(heading, detail);
+        comparisonRoot.appendChild(row);
+      });
+    }
+  }
+  if (qualityRoot) {
+    const q = summary.dataQuality;
+    qualityRoot.textContent = summary.activityCount + ' Kanu-Einheiten im Zeitraum · '
+      + q.activitiesWithUnspecifiedFormat + ' ohne dokumentiertes Sprint-/Classic-Format · '
+      + q.activitiesWithUnspecifiedWaterType + ' ohne dokumentierten Gewässertyp · ' + q.activitiesWithoutComparableConditions + ' ohne vollständige Vergleichsbedingungen. '
+      + 'Leistungskennwerte werden nur innerhalb gleicher Bootsklasse, Format- und dokumentierter Strecken-/Wasserbedingungen zusammengefasst. Fehlende Angaben bleiben offen.';
+  }
+}
+
+
+function renderCompetitionSeasonSummary() {
+  const root = document.getElementById('competition-season-summary');
+  const note = document.getElementById('competition-season-note');
+  if (!root) return;
+  const summary = buildCompetitionSeasonSummary(state.races);
+  root.replaceChildren();
+  if (!summary.rows.length) {
+    const empty = document.createElement('p');
+    empty.className = 'kajo-performance-note';
+    empty.textContent = 'Noch keine auswertbaren Wettkampfergebnisse dokumentiert. Erfasse Platzierung und/oder Zeit bei einem Wettkampf, um die Saisonübersicht aufzubauen.';
+    root.appendChild(empty);
+    if (note) note.textContent = '';
+    return;
+  }
+  const table = document.createElement('table');
+  table.className = 'w-full text-xs text-left';
+  const headers = ['Saison','Bootsklasse','Format','Starts','Ø Platzierung','Beste Platzierung','Podien','Zeiten erfasst'];
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headers.forEach(label => {
+    const th = document.createElement('th');
+    th.className = 'px-2 py-2 text-slate-400 font-semibold border-b border-slate-700';
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  const tbody = document.createElement('tbody');
+  summary.rows.forEach(item => {
+    const row = document.createElement('tr');
+    row.className = 'border-b border-slate-800';
+    const values = [String(item.season), item.discipline, item.format, String(item.starts),
+      item.averagePlacement === null ? '—' : fmt(item.averagePlacement, 1),
+      item.bestPlacement === null ? '—' : String(item.bestPlacement), String(item.podiums), String(item.timesRecorded)];
+    values.forEach((value, index) => {
+      const cell = document.createElement('td');
+      cell.className = 'px-2 py-2 text-slate-200';
+      cell.textContent = value;
+      if (index === 0) cell.classList.add('font-semibold');
+      row.appendChild(cell);
+    });
+    tbody.appendChild(row);
+  });
+  table.append(thead, tbody);
+  const wrapper = document.createElement('div');
+  wrapper.className = 'overflow-x-auto';
+  wrapper.appendChild(table);
+  root.appendChild(wrapper);
+  if (note) note.textContent = summary.racesWithResults + ' Wettkämpfe mit dokumentierten Ergebnissen · '
+    + summary.totalStarts + ' einzelne Starts. Ø Platzierung basiert nur auf Starts mit erfasster Platzierung. Zeiten werden nicht gemittelt, da Strecken- und Wasserbedingungen die Vergleichbarkeit beeinflussen.';
+}
+
 function renderPerformanceDetail() {
+  renderCanoePerformanceSummary();
+  renderCompetitionSeasonSummary();
   const paddleDefs = [
     ['speed','Geschwindigkeit','km/h'],
     ['hr','Herzfrequenz','bpm'],
@@ -347,6 +469,7 @@ export function setPerformanceRange(range) {
     button.classList.toggle('is-active',button.dataset.performanceRange===range));
   if (selectedPerformanceMetric && ['vo2max','speed','hr','power','cadence'].includes(selectedPerformanceMetric))
     renderPerformanceTrend(selectedPerformanceMetric);
+  renderCanoePerformanceSummary();
 }
 if (typeof window !== 'undefined') {
   window.togglePerformanceMetric = togglePerformanceMetric;

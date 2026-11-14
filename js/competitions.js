@@ -7,6 +7,7 @@ import { saveDataToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate } from './utils.js';
 import { renderRaceTimeline } from './charts.js';
 import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
+import { normalizeRaceResults, formatRaceResultTime } from './race-results.js';
 
 const RACE_PRIORITY_META = {
     A: { title: 'International WM/EM', color: 'bg-rose-500 text-slate-950 font-black' },
@@ -83,6 +84,8 @@ export function renderRaces() {
             return escapeHtml(formatDateDDMMYY(item.date) + ': ' + values.join(' · '));
         }) || [];
         const routeLabel = r.routeId ? getRouteName(r.routeId) : '';
+        const results = normalizeRaceResults(r.results);
+        const resultSummary = results.length ? `<div class="text-[11px] text-emerald-300 mt-2">${results.map(result => escapeHtml(result.discipline + ' · ' + result.format + (result.placement ? ' · Platz ' + result.placement : '') + (result.timeSeconds ? ' · ' + formatRaceResultTime(result.timeSeconds) : ''))).join('<br>')}</div>` : '<div class="text-[10px] text-slate-500 mt-2">Noch keine Ergebnisse erfasst</div>';
         const routeMeta = r.routeId ? `<div class="text-[11px] text-cyan-300 mt-1">Strecke: ${escapeHtml(routeLabel)} · ${routeTrainingCount.sessions} Einheiten / ${routeTrainingCount.runs} Durchfahrten</div><div class="text-[11px] text-slate-400 mt-0.5">Gesamter Flussabschnitt: ${sectionTrainingCount.sessions} Einheiten / ${sectionTrainingCount.runs} Durchfahrten vor dem Rennen</div><div class="text-[11px] text-slate-300 mt-1">Wasserbedingungen dokumentiert: ${waterSummary?.measuredSessions || 0} Trainingseinheiten</div>${waterRows.length ? `<div class="text-[10px] text-slate-500 mt-0.5">Letzte Messungen: ${waterRows.join(" · ")}</div>` : `<div class="text-[10px] text-slate-500 mt-0.5">Noch keine Pegel- oder Abflusswerte für diesen Abschnitt dokumentiert.</div>`}` : '<div class="text-[10px] text-slate-500 mt-1">Keine Wettkampfstrecke zugeordnet</div>';
         container.insertAdjacentHTML('beforeend', `
             <div class="bg-slate-950 p-4 rounded-xl border border-rose-900/40 flex items-center justify-between gap-3">
@@ -94,8 +97,9 @@ export function renderRaces() {
                     <h4 class="font-bold text-sm text-white mt-1">${escapeHtml(r.name)}</h4>
                     <div class="text-xs text-slate-400 font-mono mt-0.5">Datum: ${formatDateDDMMYY(r.date)} | Ziel: ${escapeHtml(r.target)}</div>
                     ${routeMeta}
+                    ${resultSummary}
                 </div>
-                <button onclick="deleteRace('${encodeURIComponent(String(r.id)).replace(/'/g, '%27')}')" class="shrink-0 text-slate-500 hover:text-rose-400 text-xs">Löschen</button>
+                <div class="shrink-0 flex flex-col gap-2"><button onclick="openRaceResults('${encodeURIComponent(String(r.id)).replace(/'/g, '%27')}')" class="text-cyan-400 hover:text-cyan-300 text-xs">${results.length ? 'Ergebnisse bearbeiten' : 'Ergebnis erfassen'}</button><button onclick="deleteRace('${encodeURIComponent(String(r.id)).replace(/'/g, '%27')}')" class="text-slate-500 hover:text-rose-400 text-xs">Löschen</button></div>
             </div>
         `);
     });
@@ -193,4 +197,85 @@ export function deleteRace(id) {
     state.races = state.races.filter(r => String(r.id) !== decodedId);
     saveDataToLocalStorage();
     refreshAll();
+}
+
+
+let activeResultsRaceId = null;
+
+export function openRaceResults(id) {
+    const decodedId = decodeURIComponent(String(id));
+    const race = state.races.find(item => String(item.id) === decodedId);
+    const modal = document.getElementById('race-results-modal');
+    const title = document.getElementById('race-results-title');
+    const list = document.getElementById('race-results-list');
+    if (!race || !modal || !title || !list) return;
+    activeResultsRaceId = decodedId;
+    title.textContent = 'Ergebnisse · ' + (race.name || 'Wettkampf');
+    list.replaceChildren();
+    const results = normalizeRaceResults(race.results);
+    if (results.length) results.forEach(result => addRaceResultRow(result));
+    else addRaceResultRow();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+export function addRaceResultRow(result = {}) {
+    const list = document.getElementById('race-results-list');
+    if (!list) return;
+    const row = document.createElement('div');
+    row.className = 'grid grid-cols-2 md:grid-cols-5 gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3';
+    row.dataset.resultRow = 'true';
+    const field = (label, control) => {
+        const wrap = document.createElement('label');
+        wrap.className = 'block text-[10px] text-slate-400';
+        wrap.append(document.createTextNode(label), control);
+        control.className = 'mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 p-2 text-xs text-white';
+        return wrap;
+    };
+    const discipline = document.createElement('select');
+    ['K1', 'C1', 'C2'].forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; discipline.appendChild(option); });
+    discipline.value = result.discipline || 'K1';
+    const format = document.createElement('select');
+    ['Sprint', 'Classic'].forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; format.appendChild(option); });
+    format.value = result.format || 'Sprint';
+    const placement = document.createElement('input'); placement.type = 'number'; placement.min = '1'; placement.step = '1'; placement.placeholder = 'z. B. 3'; placement.value = result.placement ?? '';
+    const time = document.createElement('input'); time.type = 'number'; time.min = '0.01'; time.step = '0.01'; time.placeholder = 'Sekunden, z. B. 92.45'; time.value = result.timeSeconds ?? '';
+    const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Start entfernen'; remove.className = 'self-end rounded-lg bg-slate-800 px-2 py-2 text-xs text-slate-300';
+    remove.addEventListener('click', () => row.remove());
+    row.append(field('Bootsklasse', discipline), field('Format', format), field('Platzierung (optional)', placement), field('Zeit in Sekunden (optional)', time), remove);
+    list.appendChild(row);
+}
+
+export function closeRaceResults() {
+    const modal = document.getElementById('race-results-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+    activeResultsRaceId = null;
+}
+
+export function saveRaceResults() {
+    if (!activeResultsRaceId) return;
+    const race = state.races.find(item => String(item.id) === activeResultsRaceId);
+    const list = document.getElementById('race-results-list');
+    if (!race || !list) return;
+    const rows = Array.from(list.querySelectorAll('[data-result-row]'));
+    const results = [];
+    for (const [index, row] of rows.entries()) {
+        const controls = row.querySelectorAll('select, input');
+        const [discipline, format, placementInput, timeInput] = controls;
+        const placement = placementInput.value.trim() === '' ? null : Number(placementInput.value);
+        const timeSeconds = timeInput.value.trim() === '' ? null : Number(timeInput.value);
+        if (placement !== null && (!Number.isInteger(placement) || placement < 1)) {
+            alert('Die Platzierung muss eine positive ganze Zahl sein.'); placementInput.focus(); return;
+        }
+        if (timeSeconds !== null && (!Number.isFinite(timeSeconds) || timeSeconds <= 0)) {
+            alert('Die Ergebniszeit muss größer als 0 Sekunden sein.'); timeInput.focus(); return;
+        }
+        if (placement === null && timeSeconds === null) continue;
+        results.push({ id: 'result-' + Date.now() + '-' + index, discipline: discipline.value, format: format.value, placement, timeSeconds });
+    }
+    race.results = normalizeRaceResults(results);
+    saveDataToLocalStorage();
+    refreshAll();
+    closeRaceResults();
 }

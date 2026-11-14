@@ -1,0 +1,80 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { buildCanoePerformanceSummary } from '../js/canoe-performance.js';
+
+test('separates K1, C1 and C2 and keeps non-canoe sports out', () => {
+    const result = buildCanoePerformanceSummary([
+        { id: 1, date: '2026-01-01', type: 'Kayaking', duration: 60, distance: 12, raceFormat: 'classic' },
+        { id: 2, date: '2026-01-02', type: 'C1', duration: 45, raceFormat: 'sprint' },
+        { id: 3, date: '2026-01-03', type: 'C2', duration: 30 },
+        { id: 4, date: '2026-01-04', type: 'Run', duration: 50 },
+        { id: 5, date: '2026-01-05', type: 'PaddleErgo', duration: 40 }
+    ]);
+    assert.equal(result.activityCount, 3);
+    assert.deepEqual(result.byDiscipline.map(row => row.activityCount), [1, 1, 1]);
+    assert.equal(result.byDiscipline[0].durationMinutes, 60);
+    assert.equal(result.byDiscipline[1].sprintCount, 1);
+    assert.equal(result.byDiscipline[2].unspecifiedFormatCount, 1);
+});
+
+test('does not treat missing or different route conditions as comparable', () => {
+    const result = buildCanoePerformanceSummary([
+        { date: '2026-02-01', type: 'Kayaking', raceFormat: 'sprint', avgSpeed: 12, routeId: 'A', distance: 10, waterConditions: { type: 'wildwater', level: 140, levelUnit: 'cm', discharge: 18 } },
+        { date: '2026-02-02', type: 'Kayaking', raceFormat: 'sprint', avgSpeed: 13, routeId: 'A', distance: 10, waterConditions: { type: 'wildwater', level: 145, levelUnit: 'cm', discharge: 18 } },
+        { date: '2026-02-03', type: 'Kayaking', avgSpeed: 14 }
+    ]);
+    assert.equal(result.comparableGroups.filter(group => group.comparable).length, 2);
+    assert.equal(result.dataQuality.activitiesWithUnspecifiedFormat, 1);
+    assert.equal(result.dataQuality.activitiesWithoutComparableConditions, 1);
+});
+
+test('summarizes metrics only within identical documented conditions', () => {
+    const shared = { type: 'C1', raceFormat: 'classic', routeId: 'R1', distance: 8.5, waterConditions: { type: 'wildwater', level: 120, levelUnit: 'cm', discharge: 15 } };
+    const result = buildCanoePerformanceSummary([
+        { ...shared, date: '2026-03-01', avgSpeed: 10 },
+        { ...shared, date: '2026-03-02', avgSpeed: 12, avgPower: 180 },
+        { ...shared, date: '2026-03-03', avgSpeed: 11 }
+    ]);
+    const group = result.comparableGroups.find(item => item.comparable);
+    assert.equal(group.activityCount, 3);
+    assert.equal(group.averageSpeedKmh.mean, 11);
+    assert.equal(group.averageSpeedKmh.count, 3);
+    assert.equal(group.averagePowerW.count, 1);
+});
+
+test('applies inclusive date filters and preserves missing metrics', () => {
+    const result = buildCanoePerformanceSummary([
+        { date: '2026-03-01', type: 'C1', duration: 40 },
+        { date: '2026-03-02', type: 'C1', duration: 50 },
+        { date: '2026-03-03', type: 'C1', duration: 60 }
+    ], { from: '2026-03-02', to: '2026-03-03' });
+    assert.equal(result.activityCount, 2);
+    assert.equal(result.byDiscipline[1].durationMinutes, 110);
+    assert.equal(result.comparableGroups[0].averageSpeedKmh.count, 0);
+    assert.equal(result.comparableGroups[0].averageSpeedKmh.mean, null);
+});
+
+test('derives session averages from Garmin FIT telemetry when scalar summaries are absent', () => {
+    const result = buildCanoePerformanceSummary([{
+        date: '2026-04-01',
+        type: 'Kayaking',
+        raceFormat: 'sprint',
+        routeId: 'R1',
+        distance: 5,
+        waterConditions: { type: 'flatwater' },
+        garminTelemetry: {
+            speed: [8, 10, null, 12],
+            power: [100, 120, null, 140],
+            cadence: [65, 67, null, 69],
+            hr: [150, 160, null, 170]
+        }
+    }]);
+    const group = result.comparableGroups.find(item => item.comparable);
+    assert.equal(group.averageSpeedKmh.mean, 10);
+    assert.equal(group.averagePowerW.mean, 120);
+    assert.equal(group.cadencePerMinute.mean, 67);
+    assert.equal(group.averageHeartRateBpm.mean, 160);
+    assert.equal(result.dataQuality.metricCounts.averageSpeed, 1);
+    assert.equal(result.dataQuality.metricCounts.averagePower, 1);
+    assert.equal(result.dataQuality.metricCounts.cadence, 1);
+});
