@@ -168,6 +168,40 @@ function buildLoadReply(context) {
     lines.push('Belastungssummen und Modellveränderungen werden nur bei vollständigen Tageswerten und einheitlicher Quelle ausgewiesen. CTL und ATL sind rechnerische, quellenabhängige EWMA-Modellwerte; TSB ist ihre Differenz und kein direkt gemessener Ermüdungs- oder Formwert. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
     return lines.join('\n');
 }
+function summarizeRecoveryTrends(checkins) {
+    const metrics = [
+        ['hrv', 'HRV'], ['rhr', 'Ruhepuls'], ['sleepDuration', 'Schlafdauer'],
+        ['sleepScore', 'Schlafscore'], ['respiration', 'Atemfrequenz']
+    ];
+    return metrics.flatMap(([key, label]) => {
+        const observations = checkins.map(item => ({
+            date: item.date,
+            value: item.values?.[key],
+            provenance: item.provenance?.[key]
+        })).filter(item => Number.isFinite(item.value)
+            && item.provenance && typeof item.provenance === 'object'
+            && typeof item.provenance.source === 'string' && item.provenance.source
+            && typeof item.provenance.metric === 'string' && item.provenance.metric
+            && typeof item.provenance.unit === 'string' && item.provenance.unit);
+        if (observations.length < 2) return [];
+        const first = observations[0];
+        const last = observations[observations.length - 1];
+        const compatible = observations.every(item =>
+            item.provenance.source === first.provenance.source
+            && item.provenance.metric === first.provenance.metric
+            && item.provenance.unit === first.provenance.unit
+        );
+        if (!compatible || first.date === last.date) return [];
+        return [{
+            label, first, last,
+            change: Number((last.value - first.value).toFixed(2)),
+            unit: first.provenance.unit,
+            source: first.provenance.source,
+            observations: observations.length
+        }];
+    });
+}
+
 function buildRecoveryReply(context) {
     const lines = ['Deine Erholungsdaten:'];
     const checkins = context.recovery.checkins;
@@ -191,7 +225,17 @@ function buildRecoveryReply(context) {
             ? `• Letzter Check-in (${latest.date}): ${fields.map(([name, value]) => `${name} ${typeof value === 'number' ? formatNumber(value, Number.isInteger(value) ? 0 : 1) : value}`).join(', ')}.`
             : `• Letzter Check-in (${latest.date}) enthält keine auswertbaren Werte.`);
         lines.push(`• Check-ins im betrachteten Zeitraum: ${checkins.length}.`);
-        if (latest.provenance?.hrv) lines.push('• Für die HRV ist eine Messquellen-Angabe hinterlegt; das konkrete Messverfahren wird nicht ohne eindeutige Kennzeichnung interpretiert.');
+        const trends = summarizeRecoveryTrends(checkins);
+        if (trends.length) {
+            lines.push('Dokumentierte Veränderungen zwischen erstem und letztem vergleichbarem Messwert:');
+            for (const trend of trends) {
+                const signed = trend.change > 0 ? '+' : '';
+                lines.push(`• ${trend.label}: ${formatNumber(trend.first.value, 2)} → ${formatNumber(trend.last.value, 2)} ${trend.unit} (${trend.first.date} bis ${trend.last.date}; Veränderung ${signed}${formatNumber(trend.change, 2)}; Quelle: ${trend.source}; ${trend.observations} Messwerte).`);
+            }
+            lines.push('Die Veränderungen sind rein deskriptiv. Sie belegen weder eine Ursache noch eine Veränderung von Trainingsbereitschaft oder Gesundheit.');
+        } else {
+            lines.push('• Noch kein zeitlicher Vergleich von Erholungskennzahlen ausgewiesen: Es fehlen mindestens zwei Werte mit vollständig übereinstimmender Messquelle, Kennzahl und Einheit.');
+        }
     }
     const events = context.recovery.healthEvents;
     lines.push(events.length
