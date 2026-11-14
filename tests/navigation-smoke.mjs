@@ -259,7 +259,7 @@ assert.ok(['load','recovery','performance','health'].every(id => html.includes('
 assert.ok(['Belastung','Regeneration','Performance','Gesundheit'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed German domain labels');
 assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has a dedicated selectable four-domain trend chart');
 assert.ok(html.includes('id="analysis-overview-activity-chart"'), 'overview includes a sport-colored training activity chart');
-assert.ok(html.includes('id="analysis-overview-detail-content"'), 'overview includes a progressive detailed analysis section');
+assert.ok(!html.includes('id="analysis-overview-detail-content"'), 'overview keeps detailed analysis in the four dedicated subpages');
 assert.ok(overviewModule.includes('setAnalysisOverviewMetric'), 'overview exposes compact data-series selection');
 assert.ok(overviewModule.includes('historyRingColor'), 'recovery status reuses the existing personal-baseline color logic');
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
