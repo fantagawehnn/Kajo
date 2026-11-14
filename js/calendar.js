@@ -419,42 +419,216 @@ export function renderCalendar() {
     else renderListView();
 }
 
+function calendarYearPhaseStore() {
+    if (!state.settings || typeof state.settings !== 'object') state.settings = { sports: {}, categories: {}, heartRateZones: {} };
+    if (!Array.isArray(state.settings.calendarSeasonPhases)) state.settings.calendarSeasonPhases = [];
+    if (!Array.isArray(state.settings.calendarSeasonPhaseDismissed)) state.settings.calendarSeasonPhaseDismissed = [];
+    return state.settings.calendarSeasonPhases;
+}
+
+function calendarYearDateRange(year, start, end) {
+    const first = new Date(year, 0, 1, 12), last = new Date(year, 11, 31, 12);
+    const a = new Date(start + 'T12:00:00'), b = new Date(end + 'T12:00:00');
+    const from = a < first ? first : a, to = b > last ? last : b;
+    const dates = [];
+    for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) dates.push(toLocalDateString(d));
+    return dates;
+}
+
+function calendarYearLoadLabel(mode, unit) {
+    const modes = {
+        'garmin-native': 'Garmin Training Load',
+        'garmin-zone': 'Garmin Zonen-Load',
+        'srpe': 'sRPE-Load',
+        'icu': 'Intervals.icu Load'
+    };
+    return [modes[mode] || 'Training Load', unit || ''].filter(Boolean).join(' · ');
+}
+
+function calendarYearLoadColor(value, thresholds) {
+    if (!Number.isFinite(value) || !thresholds.length) return 'var(--color-surface-subtle,#1c2835)';
+    if (value <= thresholds[0]) return '#DCEFE4';
+    if (value <= thresholds[1]) return '#A7D5B6';
+    if (value <= thresholds[2]) return '#F0D58C';
+    if (value <= thresholds[3]) return '#E9A36F';
+    return '#D87575';
+}
+
+function calendarYearFormatHours(minutes, approximate) {
+    if (!Number.isFinite(minutes)) return '—';
+    return (approximate ? '∼' : '') + (minutes / 60).toFixed(1) + ' h';
+}
+
+function calendarYearBuildPhaseSuggestions(year, weeks) {
+    const suggestions = [];
+    const races = (state.races || []).filter(item => item?.date >= year + '-01-01' && item?.date <= year + '-12-31')
+        .sort((a, b) => a.date.localeCompare(b.date));
+    if (races.length) {
+        const startDate = new Date(races[0].date + 'T12:00:00');
+        const endDate = new Date(races[races.length - 1].date + 'T12:00:00');
+        startDate.setDate(startDate.getDate() - 7);
+        endDate.setDate(endDate.getDate() + 2);
+        const start = toLocalDateString(startDate) < year + '-01-01' ? year + '-01-01' : toLocalDateString(startDate);
+        const end = toLocalDateString(endDate) > year + '-12-31' ? year + '-12-31' : toLocalDateString(endDate);
+        suggestions.push({
+            id: 'race-' + start + '-' + end, name: 'Wettkampfphase', type: 'competition',
+            start, end, reason: 'Aus den dokumentierten Wettkampfterminen abgeleitet. Bitte Zeitraum und sportliche Bedeutung prüfen.'
+        });
+    }
+    const completeWeeks = weeks.filter(week => week.loadStatus === 'complete' && Number.isFinite(week.loadValue));
+    for (let i = 2; i < completeWeeks.length; i++) {
+        const a = completeWeeks[i - 2], b = completeWeeks[i - 1], c = completeWeeks[i];
+        if (a.end < b.start && b.end < c.start && a.loadValue < b.loadValue && b.loadValue < c.loadValue) {
+            suggestions.push({
+                id: 'build-' + a.start + '-' + c.end, name: 'Belastungsanstieg', type: 'build',
+                start: a.start, end: c.end,
+                reason: 'Drei aufeinanderfolgende vollständig dokumentierte Wochen mit steigender Load-Summe. Das ist ein Belastungsmuster, keine gesicherte Trainingsintention.'
+            });
+            i += 2;
+        }
+    }
+    const phases = calendarYearPhaseStore();
+    const dismissed = state.settings.calendarSeasonPhaseDismissed;
+    return suggestions.filter(item =>
+        !dismissed.includes(item.id) &&
+        !phases.some(phase => phase.id === item.id || (phase.start <= item.end && phase.end >= item.start))
+    );
+}
+
+function calendarYearPhaseCard(phase, suggested) {
+    const action = suggested
+        ? '<button type="button" class="calendar-year-phase-action is-primary" onclick="confirmCalendarSeasonPhase(\'' + phase.id + '\')">Übernehmen</button><button type="button" class="calendar-year-phase-action" onclick="openCalendarPhaseEditor(\'' + phase.id + '\')">Anpassen</button><button type="button" class="calendar-year-phase-dismiss" onclick="dismissCalendarSeasonPhase(\'' + phase.id + '\')" aria-label="Vorschlag verwerfen">×</button>'
+        : '<button type="button" class="calendar-year-phase-action" onclick="openCalendarPhaseEditor(\'' + phase.id + '\')">Bearbeiten</button><button type="button" class="calendar-year-phase-dismiss" onclick="deleteCalendarSeasonPhase(\'' + phase.id + '\')" aria-label="Phase löschen">×</button>';
+    return '<article class="calendar-year-phase-card ' + (suggested ? 'is-suggested' : 'is-confirmed') + '">' +
+        '<div class="calendar-year-phase-heading"><strong>' + escapeHtml(phase.name) + '</strong><span>' + (suggested ? 'Vorschlag' : 'Bestätigt') + '</span></div>' +
+        '<div class="calendar-year-phase-dates">' + escapeHtml(formatDateDDMMYY(phase.start)) + ' – ' + escapeHtml(formatDateDDMMYY(phase.end)) + '</div>' +
+        (phase.reason ? '<p>' + escapeHtml(phase.reason) + '</p>' : '') +
+        '<div class="calendar-year-phase-actions">' + action + '</div></article>';
+}
+
+export function confirmCalendarSeasonPhase(id) {
+    const suggestion = (state.calendarYearPhaseSuggestions || []).find(item => item.id === id);
+    if (!suggestion) return;
+    const phases = calendarYearPhaseStore();
+    if (!phases.some(item => item.id === id)) phases.push({ ...suggestion, confirmedAt: new Date().toISOString() });
+    state.settings.calendarSeasonPhaseDismissed = (state.settings.calendarSeasonPhaseDismissed || []).filter(item => item !== id);
+    saveDataToLocalStorage();
+    renderYearView();
+}
+
+export function dismissCalendarSeasonPhase(id) {
+    calendarYearPhaseStore();
+    if (!state.settings.calendarSeasonPhaseDismissed.includes(id)) state.settings.calendarSeasonPhaseDismissed.push(id);
+    saveDataToLocalStorage();
+    renderYearView();
+}
+
+export function deleteCalendarSeasonPhase(id) {
+    state.settings.calendarSeasonPhases = calendarYearPhaseStore().filter(item => item.id !== id);
+    saveDataToLocalStorage();
+    renderYearView();
+}
+
+export function openCalendarPhaseEditor(id) {
+    const suggestion = (state.calendarYearPhaseSuggestions || []).find(item => item.id === id);
+    const existing = calendarYearPhaseStore().find(item => item.id === id);
+    const phase = existing || suggestion;
+    if (!phase) return;
+    const host = document.getElementById('calendar-year-phase-editor');
+    if (!host) return;
+    host.innerHTML = '<div class="calendar-year-editor-backdrop" role="presentation" onclick="closeCalendarPhaseEditor()"></div><form class="calendar-year-editor" onsubmit="saveCalendarPhaseEditor(event)">' +
+        '<div class="calendar-year-editor-head"><strong>Trainingsphase bearbeiten</strong><button type="button" onclick="closeCalendarPhaseEditor()" aria-label="Schließen">×</button></div>' +
+        '<label>Bezeichnung<input id="calendar-phase-name" maxlength="60" required value="' + escapeHtml(phase.name) + '"></label>' +
+        '<div class="calendar-year-editor-dates"><label>Beginn<input id="calendar-phase-start" type="date" required value="' + escapeHtml(phase.start) + '"></label><label>Ende<input id="calendar-phase-end" type="date" required value="' + escapeHtml(phase.end) + '"></label></div>' +
+        '<p>Die Phase wird erst nach dem Speichern als bestätigt in deiner Saison geführt.</p>' +
+        '<input id="calendar-phase-id" type="hidden" value="' + escapeHtml(id) + '">' +
+        '<div class="calendar-year-editor-actions"><button type="button" onclick="closeCalendarPhaseEditor()">Abbrechen</button><button type="submit">Speichern</button></div></form>';
+    host.classList.remove('hidden');
+}
+
+export function closeCalendarPhaseEditor() {
+    document.getElementById('calendar-year-phase-editor')?.classList.add('hidden');
+}
+
+export function saveCalendarPhaseEditor(event) {
+    event?.preventDefault?.();
+    const id = document.getElementById('calendar-phase-id')?.value;
+    const name = document.getElementById('calendar-phase-name')?.value.trim();
+    const start = document.getElementById('calendar-phase-start')?.value;
+    const end = document.getElementById('calendar-phase-end')?.value;
+    if (!id || !name || !/^\d{4}-\d{2}-\d{2}$/.test(start || '') || !/^\d{4}-\d{2}-\d{2}$/.test(end || '') || start > end) {
+        alert('Bitte prüfe Bezeichnung und Zeitraum der Trainingsphase.');
+        return;
+    }
+    const phases = calendarYearPhaseStore();
+    const existing = phases.find(item => item.id === id);
+    const suggestion = (state.calendarYearPhaseSuggestions || []).find(item => item.id === id);
+    const updated = { ...(existing || suggestion || {}), id, name, start, end, confirmedAt: new Date().toISOString() };
+    if (existing) Object.assign(existing, updated);
+    else phases.push(updated);
+    state.settings.calendarSeasonPhaseDismissed = (state.settings.calendarSeasonPhaseDismissed || []).filter(item => item !== id);
+    saveDataToLocalStorage();
+    closeCalendarPhaseEditor();
+    renderYearView();
+}
+
 export function renderYearView() {
     const container = document.getElementById('cal-format-year');
     if (!container) return;
     const year = state.currentCalendarDate.getFullYear();
+    const yearStart = year + '-01-01', yearEnd = year + '-12-31';
+    const today = toLocalDateString();
     const catalog = getSportsCatalog();
+    const timelineByDate = new Map((state.dailyTimeline || []).filter(item => item?.date >= yearStart && item?.date <= yearEnd).map(item => [item.date, item]));
     const first = new Date(year, 0, 1, 12);
     first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
     const last = new Date(year, 11, 31, 12);
     const weeks = [];
     for (let monday = new Date(first); monday <= last; monday.setDate(monday.getDate() + 7)) {
-        const start = new Date(monday), end = new Date(monday); end.setDate(end.getDate() + 6);
-        const thursday = new Date(start); thursday.setDate(thursday.getDate() + 3);
+        const startDate = new Date(monday), endDate = new Date(monday); endDate.setDate(endDate.getDate() + 6);
+        const thursday = new Date(startDate); thursday.setDate(thursday.getDate() + 3);
         const weekNo = (() => { const d = new Date(thursday); const jan4 = new Date(d.getFullYear(), 0, 4, 12); const jan4Monday = new Date(jan4); jan4Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7)); return Math.floor((d - jan4Monday) / 604800000) + 1; })();
-        const yearStart = year + '-01-01', yearEnd = year + '-12-31';
-        const activities = (state.rawActivities || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
-        const plannedActivities = (state.plannedActivities || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
+        const start = toLocalDateString(startDate), end = toLocalDateString(endDate);
+        const dates = calendarYearDateRange(year, start, end);
+        const activities = (state.rawActivities || []).filter(item => item?.date >= yearStart && item?.date <= yearEnd && item.date >= start && item.date <= end);
+        const plannedActivities = (state.plannedActivities || []).filter(item => item?.date >= yearStart && item?.date <= yearEnd && item.date >= start && item.date <= end);
         const plannedBySport = {};
         plannedActivities.forEach(item => { const key = item.type || 'Workout'; plannedBySport[key] = (plannedBySport[key] || 0) + 1; });
         const bySport = {};
         activities.forEach(item => {
-            const type = item.type || 'Workout';
-            const format = item.raceFormat || '';
-            const source = calendarActivitySourceLabel(item);
+            const type = item.type || 'Workout', format = item.raceFormat || '', source = calendarActivitySourceLabel(item);
             const key = type + '::' + format + '::' + source;
             if (!bySport[key]) bySport[key] = { type, format, source, minutes: 0, count: 0, complete: true };
             bySport[key].count++;
             if (item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0) bySport[key].minutes += Number(item.duration);
             else bySport[key].complete = false;
         });
-        const totalMinutes = activities.reduce((sum, item) => sum + (Number.isFinite(Number(item.duration)) && Number(item.duration) > 0 ? Number(item.duration) : 0), 0);
-        const durationComplete = activities.length > 0 && activities.every(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
-        const races = (state.races || []).filter(item => item.date >= yearStart && item.date <= yearEnd && item.date >= toLocalDateString(start) && item.date <= toLocalDateString(end));
-        const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= yearStart && date <= yearEnd && date >= toLocalDateString(start) && date <= toLocalDateString(end));
-        const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= toLocalDateString(start) && date <= toLocalDateString(end) && item?.cycle?.period === true);
-        weeks.push({ start: toLocalDateString(start), end: toLocalDateString(end), weekNo, activities, plannedActivities, plannedBySport, bySport, totalMinutes, durationComplete, races, health, cycle, month: thursday.getMonth() });
+        const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+        const totalMinutes = durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
+        const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
+        const races = (state.races || []).filter(item => item?.date >= yearStart && item.date <= yearEnd && item.date >= start && item.date <= end);
+        const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= yearStart && date <= yearEnd && date >= start && date <= end);
+        const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= start && date <= end && item?.cycle?.period === true);
+        const elapsedDates = dates.filter(date => date <= today);
+        const dayLoads = elapsedDates.map(date => timelineByDate.get(date));
+        const knownLoads = dayLoads.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+        const loadKnown = elapsedDates.length > 0 && knownLoads.length === elapsedDates.length;
+        const loadModes = [...new Set(knownLoads.map(item => item.loadMode).filter(Boolean))];
+        const loadStatus = loadKnown && loadModes.length === 1
+            ? (dates.length === 7 && elapsedDates.length === 7 ? 'complete' : 'partial')
+            : 'unknown';
+        const loadValue = loadStatus !== 'unknown' ? knownLoads.reduce((sum, item) => sum + Number(item.load), 0) : null;
+        weeks.push({
+            start, end, weekNo, dates, activities, plannedActivities, plannedBySport, bySport,
+            totalMinutes, durationComplete, races, health, cycle, month: thursday.getMonth(),
+            loadValue, loadStatus, loadMode: loadModes[0] || null, loadUnit: knownLoads[0]?.loadUnit || null
+        });
     }
+
+    const validFullWeeks = weeks.filter(week => week.loadStatus === 'complete' && Number.isFinite(week.loadValue));
+    const sortedLoads = validFullWeeks.map(week => week.loadValue).sort((a, b) => a - b);
+    const quantile = q => sortedLoads.length ? sortedLoads[Math.min(sortedLoads.length - 1, Math.floor((sortedLoads.length - 1) * q))] : null;
+    const thresholds = sortedLoads.length ? [quantile(.2), quantile(.4), quantile(.6), quantile(.8)] : [];
     const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
     const monthGroups = [];
     weeks.forEach((week, index) => {
@@ -466,7 +640,7 @@ export function renderYearView() {
     const monthHeader = monthGroups.map(group => '<span class="calendar-year-month-label" style="grid-column:span ' + group.span + '">' + monthNames[group.month] + '</span>').join('');
     const weekHeader = weeks.map(week => '<span class="calendar-year-week-number">' + week.weekNo + '</span>').join('');
     const weekCells = weeks.map(week => {
-        const segments = Object.entries(week.bySport).map(([type, data]) => {
+        const segments = Object.values(week.bySport).map(data => {
             const sport = catalog[data.type] || catalog.Workout;
             const width = week.totalMinutes > 0 ? Math.max(3, data.minutes / week.totalMinutes * 100) : 0;
             const label = sport.label + (data.format ? ' · ' + data.format : '');
@@ -474,22 +648,107 @@ export function renderYearView() {
             return '<span class="calendar-year-sport-segment ' + sourceClass + '" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(label) + ' · ' + escapeHtml(data.source) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
         }).join('');
         const plannedSegments = Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
-        const hours = !week.activities.length || (!week.durationComplete && week.totalMinutes === 0) ? '—' : (week.durationComplete ? (week.totalMinutes / 60).toFixed(1) + 'h' : '∼' + (week.totalMinutes / 60).toFixed(1) + 'h');
-        const events = (week.races.length ? '<i data-lucide="trophy" class="calendar-year-event calendar-event-race"></i>' : '') +
-            (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle"></i>' : '') +
-            (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick"></i>' : '') +
-            (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured"></i>' : '');
-        return '<button type="button" class="calendar-year-week-cell" data-week-start="' + week.start + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')"><span class="calendar-year-week-bar">' + segments + '</span><span class="calendar-year-planned-bar">' + plannedSegments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
+        const hours = !week.activities.length || (!week.durationComplete && week.totalMinutes === 0) ? '—' : calendarYearFormatHours(week.totalMinutes, !week.durationComplete);
+        const events = (week.races.length ? '<i data-lucide="trophy" class="calendar-year-event calendar-event-race" title="Wettkampf"></i>' : '') +
+            (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle" title="Menstruation erfasst"></i>' : '') +
+            (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick" title="Krankheit"></i>' : '') +
+            (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured" title="Verletzung"></i>' : '');
+        const loadColor = week.loadStatus === 'unknown' ? 'var(--color-surface-subtle,#1c2835)' : calendarYearLoadColor(week.loadValue, thresholds);
+        const loadClass = week.loadStatus === 'partial' ? 'is-partial' : week.loadStatus === 'unknown' ? 'is-unknown' : 'is-complete';
+        const loadTitle = week.loadStatus === 'unknown' ? 'Training Load nicht vollständig berechenbar' : calendarYearLoadLabel(week.loadMode, week.loadUnit) + ': ' + (week.loadStatus === 'partial' ? 'bisher ' : '') + week.loadValue.toFixed(1);
+        return '<button type="button" class="calendar-year-week-cell ' + loadClass + '" data-week-start="' + week.start + '" style="--calendar-load-color:' + loadColor + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · ' + escapeHtml(loadTitle) + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')">' +
+            '<span class="calendar-year-week-load"></span><span class="calendar-year-week-bar">' + segments + '</span><span class="calendar-year-planned-bar">' + plannedSegments + '</span><small>' + hours + '</small><span class="calendar-year-events">' + events + '</span></button>';
     }).join('');
+
+    const activities = (state.rawActivities || []).filter(item => item?.date >= yearStart && item.date <= yearEnd);
+    const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+    const totalMinutes = durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
+    const durationIncomplete = durationRecords.length !== activities.length;
+    const races = (state.races || []).filter(item => item?.date >= yearStart && item.date <= yearEnd);
+    const sessions = activities.length;
+    const elapsedYearDates = calendarYearDateRange(year, yearStart, today > yearEnd ? yearEnd : today);
+    const annualLoadEntries = elapsedYearDates.map(date => timelineByDate.get(date));
+    const annualLoadComplete = elapsedYearDates.length > 0 && annualLoadEntries.every(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+    const annualLoadModes = [...new Set(annualLoadEntries.map(item => item?.loadMode).filter(Boolean))];
+    const annualLoad = annualLoadComplete && annualLoadModes.length === 1
+        ? annualLoadEntries.reduce((sum, item) => sum + Number(item.load), 0) : null;
+    const loadMode = annualLoadModes.length === 1 ? annualLoadEntries.find(item => item?.loadMode)?.loadMode : null;
+    const loadUnit = annualLoadEntries.find(item => item?.loadUnit)?.loadUnit || '';
+    const kpis = [
+        { label: 'Training Load', value: annualLoad === null ? '—' : annualLoad.toFixed(0), note: annualLoad === null ? 'Jahreswert wegen Datenlücken nicht vollständig' : calendarYearLoadLabel(loadMode, loadUnit) },
+        { label: 'Trainingszeit', value: durationRecords.length ? calendarYearFormatHours(totalMinutes, durationIncomplete) : '—', note: durationIncomplete ? 'Nur dokumentierte Dauern · unvollständig' : 'Dokumentierte Trainingszeit' },
+        { label: 'Einheiten', value: String(sessions), note: 'Abgeschlossene Aktivitäten' },
+        { label: 'Wettkämpfe', value: String(races.length), note: 'Dokumentierte Wettkämpfe' }
+    ];
+    const kpiMarkup = kpis.map(item => '<article class="calendar-year-kpi"><span>' + escapeHtml(item.label) + '</span><strong>' + escapeHtml(item.value) + '</strong><small>' + escapeHtml(item.note) + '</small></article>').join('');
+
+    const months = Array.from({ length: 12 }, (_, month) => {
+        const monthStart = year + '-' + String(month + 1).padStart(2, '0') + '-01';
+        const monthLastDate = new Date(year, month + 1, 0, 12);
+        const monthEnd = toLocalDateString(monthLastDate);
+        const elapsed = calendarYearDateRange(year, monthStart, monthEnd < today ? monthEnd : today);
+        const entries = elapsed.map(date => timelineByDate.get(date));
+        const known = entries.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+        const complete = elapsed.length > 0 && known.length === elapsed.length;
+        const modeSet = [...new Set(known.map(item => item.loadMode).filter(Boolean))];
+        const value = complete && modeSet.length === 1 ? known.reduce((sum, item) => sum + Number(item.load), 0) : null;
+        const monthActivities = activities.filter(item => item.date >= monthStart && item.date <= monthEnd);
+        const monthDurations = monthActivities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
+        return { label: monthNames[month], value, partial: monthEnd >= today, minutes: monthDurations.reduce((sum, item) => sum + Number(item.duration), 0), durationPartial: monthDurations.length !== monthActivities.length };
+    });
+    const maxMonthLoad = Math.max(1, ...months.map(item => item.value ?? 0));
+    const monthChart = months.map(item => '<div class="calendar-year-month-column" title="' + item.label + ': ' + (item.value === null ? 'Load nicht vollständig berechenbar' : item.value.toFixed(1)) + '">' +
+        '<div class="calendar-year-month-bar-track"><span style="height:' + (item.value === null ? 0 : Math.max(3, item.value / maxMonthLoad * 100)) + '%" class="' + (item.partial ? 'is-partial' : '') + '"></span></div>' +
+        '<strong>' + (item.value === null ? '—' : Math.round(item.value) + (item.partial ? '∼' : '')) + '</strong><small>' + item.label + '</small><em>' + (item.minutes ? calendarYearFormatHours(item.minutes, item.durationPartial) : '—') + '</em></div>').join('');
+
+    const sportTotals = {};
+    activities.forEach(item => {
+        const type = item.type || 'Workout';
+        if (!sportTotals[type]) sportTotals[type] = { minutes: 0, count: 0, missing: false };
+        sportTotals[type].count++;
+        if (item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0) sportTotals[type].minutes += Number(item.duration);
+        else sportTotals[type].missing = true;
+    });
+    const sportRows = Object.entries(sportTotals).sort((a, b) => b[1].minutes - a[1].minutes).map(([type, data]) => {
+        const sport = catalog[type] || catalog.Workout;
+        const share = totalMinutes > 0 ? data.minutes / totalMinutes * 100 : 0;
+        return '<div class="calendar-year-sport-row"><span class="calendar-year-sport-name"><i style="background:' + sport.color + '"></i>' + escapeHtml(sport.label) + '</span><span class="calendar-year-sport-track"><i style="width:' + share + '%;background:' + sport.color + '"></i></span><strong>' + (data.minutes ? calendarYearFormatHours(data.minutes, data.missing) : '—') + '</strong><small>' + data.count + ' Einheiten</small></div>';
+    }).join('');
+
+    const confirmedPhases = calendarYearPhaseStore().filter(phase => phase?.start <= yearEnd && phase?.end >= yearStart).sort((a, b) => a.start.localeCompare(b.start));
+    const suggestions = calendarYearBuildPhaseSuggestions(year, weeks);
+    state.calendarYearPhaseSuggestions = suggestions;
+    const phaseMarkup = confirmedPhases.map(phase => calendarYearPhaseCard(phase, false)).join('');
+    const suggestionMarkup = suggestions.map(phase => calendarYearPhaseCard(phase, true)).join('');
+
+    const timelineEvents = [
+        ...races.map(item => ({ date: item.date, type: 'race', title: item.name || 'Wettkampf', detail: item.result || item.prio || '' })),
+        ...Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && ['sick', 'injured'].includes(item?.status))
+            .map(([date, item]) => ({ date, type: item.status, title: item.status === 'sick' ? 'Krankheit' : 'Verletzung', detail: item.diagnosis || '' })),
+        ...confirmedPhases.map(item => ({ date: item.start, type: 'phase', title: item.name, detail: formatDateDDMMYY(item.start) + ' – ' + formatDateDDMMYY(item.end) }))
+    ].sort((a, b) => a.date.localeCompare(b.date));
+    const timelineMarkup = timelineEvents.slice(0, 18).map(item => '<div class="calendar-year-timeline-item is-' + item.type + '"><time>' + escapeHtml(formatDateDDMMYY(item.date)) + '</time><span>' + escapeHtml(item.title) + '</span><small>' + escapeHtml(item.detail) + '</small></div>').join('');
+
     const legendTypes = [...new Set(weeks.flatMap(week => [...Object.values(week.bySport).map(item => item.type), ...Object.keys(week.plannedBySport)]))];
-    const legend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
+    const sportLegend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
+    const firstLoadMode = weeks.find(week => week.loadMode)?.loadMode;
+    const firstLoadUnit = weeks.find(week => week.loadUnit)?.loadUnit || '';
     document.getElementById('calendar-period-title').textContent = String(year);
-    container.innerHTML = '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '">' +
-        '<div class="calendar-year-months">' + monthHeader + '</div><div class="calendar-year-week-head">' + weekHeader + '</div><div class="calendar-year-weeks">' + weekCells + '</div></div></div>' +
-        '<div class="calendar-year-legend">' + (legend || '<span class="text-xs text-slate-500">Noch keine Trainingsaktivitäten mit Sportart erfasst.</span>') + '<span class="text-[10px] text-slate-500">Balken = dokumentierte Trainingszeit je Sportart und Kalenderwoche · ∼ = unvollständige Dauererfassung</span></div>';
+    container.innerHTML =
+        '<section class="calendar-year-kpis">' + kpiMarkup + '</section>' +
+        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Trainingsbelastung im Jahresverlauf</h3><p>Wochenwerte aus der zentralen Training-Load-Zeitreihe</p></div><span>' + escapeHtml(calendarYearLoadLabel(firstLoadMode, firstLoadUnit)) + '</span></div>' +
+        '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '"><div class="calendar-year-months">' + monthHeader + '</div><div class="calendar-year-week-head">' + weekHeader + '</div><div class="calendar-year-weeks">' + weekCells + '</div></div></div>' +
+        '<div class="calendar-year-load-legend"><span><i style="background:#DCEFE4"></i>Niedrig</span><span><i style="background:#A7D5B6"></i></span><span><i style="background:#F0D58C"></i>Mittel</span><span><i style="background:#E9A36F"></i></span><span><i style="background:#D87575"></i>Hoch</span><span><i class="is-unknown"></i>Nicht berechenbar</span><span><i class="is-partial"></i>Teilwoche</span></div>' +
+        '<div class="calendar-year-legend">' + (sportLegend || '<span class="text-xs text-slate-500">Noch keine Sportarten dokumentiert.</span>') + '<span class="text-[10px] text-slate-500">Sportfarben = absolvierte Sportarten · umrandete Marker = geplante Einheiten · Symbole = Wettkampf und Gesundheit</span></div></section>' +
+        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Trainingsphasen</h3><p>Automatische Hinweise aus Wettkampfterminen und dokumentierten Belastungsmustern</p></div><span class="calendar-year-phase-count">' + confirmedPhases.length + ' bestätigt</span></div>' +
+        '<div class="calendar-year-phase-grid">' + (phaseMarkup || '<p class="calendar-year-empty">Noch keine Trainingsphasen bestätigt.</p>') + '</div>' +
+        (suggestionMarkup ? '<h4 class="calendar-year-subheading">Vorschläge zur Prüfung</h4><div class="calendar-year-phase-grid">' + suggestionMarkup + '</div>' : '<p class="calendar-year-empty">Aktuell keine ausreichend belegten neuen Phasenvorschläge.</p>') +
+        '<div id="calendar-year-phase-editor" class="hidden"></div></section>' +
+        '<div class="calendar-year-analysis-grid"><section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Monatsvergleich</h3><p>Load-Summe je Monat · Trainingszeit als Zusatzinformation</p></div></div><div class="calendar-year-month-chart">' + monthChart + '</div></section>' +
+        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Sportartenverteilung</h3><p>Dokumentierte Trainingszeit und Einheiten</p></div></div><div class="calendar-year-sport-list">' + (sportRows || '<p class="calendar-year-empty">Noch keine Aktivitäten im Kalenderjahr dokumentiert.</p>') + '</div></section></div>' +
+        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Saison-Timeline</h3><p>Wettkämpfe, Gesundheitsereignisse und bestätigte Trainingsphasen</p></div></div><div class="calendar-year-timeline">' + (timelineMarkup || '<p class="calendar-year-empty">Für dieses Kalenderjahr sind noch keine Ereignisse dokumentiert.</p>') + '</div></section>';
     globalThis.lucide?.createIcons?.();
 }
-
 export function renderMonthView() {
     const catalog = getSportsCatalog();
     const year = state.currentCalendarDate.getFullYear();
