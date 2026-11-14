@@ -648,8 +648,8 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
 }
 
 function recordGarminActivityCoverageRange(startDate, endDate) {
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(startDate || '')
-        || !/^\\d{4}-\\d{2}-\\d{2}$/.test(endDate || '')
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || '')
+        || !/^\d{4}-\d{2}-\d{2}$/.test(endDate || '')
         || startDate > endDate) return false;
 
     // The current local day is still in progress and cannot confirm a rest day.
@@ -663,8 +663,8 @@ function recordGarminActivityCoverageRange(startDate, endDate) {
 
     const ranges = Array.isArray(state.settings?.garminActivityCoverageRanges)
         ? state.settings.garminActivityCoverageRanges.filter(range =>
-            /^\\d{4}-\\d{2}-\\d{2}$/.test(range?.startDate || '')
-            && /^\\d{4}-\\d{2}-\\d{2}$/.test(range?.endDate || '')
+            /^\d{4}-\d{2}-\d{2}$/.test(range?.startDate || '')
+            && /^\d{4}-\d{2}-\d{2}$/.test(range?.endDate || '')
             && range.startDate <= range.endDate && range.status === 'complete')
         : [];
     ranges.push({
