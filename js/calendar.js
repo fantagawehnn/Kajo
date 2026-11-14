@@ -323,10 +323,10 @@ function renderCalendarDayDetail(date, target) {
             '<div class="calendar-day-date-actions"><button type="button" aria-label="Vorheriger Tag" onclick="openCalendarDay(\'' + escapeHtml(calendarShiftDate(date, -1)) + '\')">‹</button><button type="button" onclick="openCalendarDay(\'' + escapeHtml(today) + '\')" ' + (date === today ? 'disabled' : '') + '>Heute</button><button type="button" aria-label="Nächster Tag" onclick="openCalendarDay(\'' + escapeHtml(calendarShiftDate(date, 1)) + '\')">›</button><input type="date" aria-label="Datum auswählen" value="' + escapeHtml(date) + '" onchange="if(this.value)openCalendarDay(this.value)"></div>' +
         '</section>' +
         '<section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
-            '<div class="calendar-day-kpi"><span>Training Load</span><strong>' + escapeHtml(loadText) + '</strong><small>' + (data.loadValue === null ? 'Keine vollständige Datenbasis' : escapeHtml(data.timeline?.loadUnit || 'Belastung')) + '</small></div>' +
-            '<div class="calendar-day-kpi"><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong><small>Absolviert</small></div>' +
-            '<div class="calendar-day-kpi"><span>Einheiten</span><strong>' + completedCount + '</strong><small>Abgeschlossen</small></div>' +
-            '<div class="calendar-day-kpi"><span>Recovery</span><strong>' + escapeHtml(readinessText) + '</strong><small>' + (readiness.score === null ? 'Nicht berechenbar' : '/100 Readiness') + '</small></div>' +
+            calendarRing(loadText, 'Training Load', data.loadValue === null ? 'nicht vollständig' : (data.timeline?.loadUnit || 'Belastung'), calendarLoadTone(data.timeline)) +
+            calendarRing(durationText, 'Trainingszeit', 'absolviert', 'info') +
+            calendarRing(String(completedCount), 'Einheiten', 'abgeschlossen', 'good') +
+            calendarRing(readinessText, 'Recovery', readiness.score === null ? 'nicht berechenbar' : '/100 Readiness', calendarReadinessTone(readiness.score)) +
         '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3><span>' + events.length + ' Ereignisse</span></div>' + timelineMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3><span>' + completed.length + '</span></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
