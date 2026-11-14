@@ -251,7 +251,12 @@ export function saveCheckin() {
         respiration: { source: 'manual', metric: 'respiration-rate', unit: 'breaths/min' }
     };
     for (const key of Object.keys(wearableUpdates)) {
-        measurementSources[key] = manualMeasurementMeta[key];
+        const previousValue = existing[key];
+        const unchangedExistingValue = previousValue !== null && previousValue !== undefined
+            && previousValue !== '' && Number(previousValue) === wearableUpdates[key];
+        // Bereits vorhandene, unveränderte Garmin-Werte bleiben Garmin-Werte.
+        // Bei unveränderten Werten ohne Herkunftsangabe wird keine Quelle nachträglich geraten.
+        if (!unchangedExistingValue) measurementSources[key] = manualMeasurementMeta[key];
     }
     const checkin = {
         ...existing,
