@@ -6428,9 +6428,9 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:12px 8px;
   align-items:start;
 }
-#csv-details-modal .activity-metric-circle-card {
-  min-width:0; display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center;
-  color:#aebbd0;
+#csv-details-modal .activity-detail-metrics > .activity-metric-circle-card {
+  min-width:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none;
+  display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center; color:#aebbd0;
 }
 #csv-details-modal .activity-metric-circle {
   width:clamp(72px,7.2vw,92px); height:clamp(72px,7.2vw,92px); flex:0 0 auto;
