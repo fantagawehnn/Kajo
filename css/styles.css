@@ -4954,3 +4954,75 @@ html[data-theme="light"] #settings-modal { background:var(--kajo-bg) !important;
   #analysis-overview-content { gap:.6rem !important; }
   #analysis-overview-content .kajo-analysis-overview-panel { padding:10px; }
 }
+
+
+
+/* KAJO V2 – final analysis overview */
+.kajo-analysis-view{min-width:0}
+.kajo-analysis-circles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(4px,1.2vw,12px);align-items:start}
+.kajo-analysis-circle-item{min-width:0;padding:5px 2px;gap:6px}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain]{--hero-ring-color:var(--kajo-blue);border-color:color-mix(in srgb,var(--hero-ring-color) 66%,transparent);border-top-color:var(--hero-ring-color);background:var(--kajo-bg)}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain="load"]{--hero-ring-color:#D32F2F}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain="recovery"]{--hero-ring-color:#1E88E5}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain="performance"]{--hero-ring-color:#39C98A}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain="health"]{--hero-ring-color:#F2B84B}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] strong{font-variant-numeric:tabular-nums}
+.kajo-analysis-circle-item>strong{font-size:clamp(.62rem,.85vw,.76rem);font-weight:750}
+.kajo-analysis-overview-panel{min-width:0}
+.kajo-analysis-overview-panel>.kajo-analysis-section-heading{margin-bottom:5px}
+.kajo-analysis-overview-panel h2{font-size:.9rem}
+.kajo-analysis-shared-period{margin:.25rem 0 .65rem}
+#analysis-period-buttons{display:flex;flex-wrap:nowrap;gap:3px;width:max-content;max-width:100%;padding:0!important;border:0!important;background:transparent!important;overflow:visible}
+#analysis-period-buttons button{min-height:32px!important;min-width:42px;padding:5px 9px!important;border:1px solid var(--kajo-border)!important;border-radius:999px!important;background:var(--kajo-surface-raised)!important;color:var(--kajo-text-secondary)!important;font-size:.65rem!important;font-weight:650}
+#analysis-period-buttons button.bg-cyan-600,#analysis-period-buttons button[class*="bg-cyan"]{border-color:var(--kajo-status-info)!important;background:var(--kajo-surface-subtle)!important;color:var(--kajo-text)!important}
+#analysis-period-buttons button:focus-visible,.kajo-analysis-switch button:focus-visible{outline:2px solid var(--kajo-status-info);outline-offset:2px}
+.kajo-analysis-chart-wrap{height:clamp(210px,27vw,270px);min-height:190px}
+#analysis-overview-metric-switch{margin:.55rem 0 0}
+#analysis-overview-metric-switch button{display:inline-flex;align-items:center;gap:5px;min-height:32px}
+#analysis-overview-metric-switch button::before{content:"";width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:var(--series-color,var(--kajo-muted))}
+#analysis-overview-metric-switch [data-overview-metric="load"]{--series-color:#D32F2F}
+#analysis-overview-metric-switch [data-overview-metric="recovery"]{--series-color:#1E88E5}
+#analysis-overview-metric-switch [data-overview-metric="performance"]{--series-color:#39C98A}
+#analysis-overview-metric-switch [data-overview-metric="health"]{--series-color:#F2B84B}
+#analysis-overview-metric-switch button.is-unavailable{opacity:.72}
+.kajo-analysis-distribution-block{min-width:0;padding-top:12px;margin-top:12px;border-top:1px solid var(--kajo-border)}
+.kajo-analysis-distribution-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.kajo-analysis-distribution-heading>strong{color:var(--kajo-text);font-size:.76rem;font-weight:750}
+.kajo-analysis-distribution-heading .kajo-analysis-switch{margin:0}
+.kajo-analysis-distribution-heading .kajo-analysis-switch button{min-height:30px}
+.kajo-analysis-muted-label{color:var(--kajo-muted);font-size:.62rem}
+.kajo-analysis-sport-distribution{display:grid;grid-template-columns:minmax(116px,.8fr) minmax(0,1.2fr);align-items:center;gap:14px}
+.kajo-analysis-doughnut-wrap{position:relative;width:100%;max-width:190px;height:150px;margin:auto}
+.kajo-analysis-distribution-legend{display:grid;gap:4px;min-width:0}
+.kajo-analysis-distribution-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--kajo-border);font-size:.68rem}
+.kajo-analysis-distribution-row:last-child{border-bottom:0}
+.kajo-analysis-distribution-row strong{flex:0 0 auto;color:var(--kajo-text);font-variant-numeric:tabular-nums;font-size:.68rem}
+.kajo-analysis-distribution-label{display:flex;align-items:center;gap:7px;min-width:0;color:var(--kajo-text-secondary)}
+.kajo-analysis-distribution-label i{width:8px;height:8px;flex:0 0 8px;border-radius:50%}
+.kajo-analysis-intensity-wrap{position:relative;width:100%;height:clamp(140px,20vw,210px);min-height:130px}
+.kajo-analysis-intensity-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px;margin-top:8px}
+.kajo-analysis-intensity-summary>div{min-width:0;padding:8px;border:1px solid var(--kajo-border);border-radius:9px;background:var(--kajo-surface-raised)}
+.kajo-analysis-intensity-summary strong{color:var(--kajo-text)}
+.kajo-analysis-intensity-summary .text-white{color:var(--kajo-text)!important}
+.kajo-analysis-intensity-summary .text-slate-300,.kajo-analysis-intensity-summary .text-slate-400,.kajo-analysis-intensity-summary .text-slate-500{color:var(--kajo-text-secondary)!important}
+@media(max-width:640px){
+ .kajo-analysis-circles{grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}
+ .kajo-analysis-circle-item{padding:4px 0;gap:5px}
+ .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain]{width:clamp(60px,19vw,78px);height:clamp(60px,19vw,78px);flex-basis:clamp(60px,19vw,78px);border-width:4px}
+ .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] strong{font-size:clamp(.85rem,4vw,1.05rem)}
+ .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] small{font-size:.48rem}
+ .kajo-analysis-circle-item>strong{font-size:clamp(.53rem,2.6vw,.66rem)}
+ #analysis-period-buttons{width:100%;justify-content:space-between;gap:2px}
+ #analysis-period-buttons button{min-width:0;flex:1;padding:5px 4px!important;font-size:.61rem!important}
+ .kajo-analysis-overview-panel{padding:10px}
+ .kajo-analysis-chart-wrap{height:210px;min-height:190px}
+ .kajo-analysis-sport-distribution{grid-template-columns:minmax(100px,.75fr) minmax(0,1.25fr);gap:8px}
+ .kajo-analysis-doughnut-wrap{height:130px}
+ .kajo-analysis-intensity-summary{grid-template-columns:1fr}
+}
+@media(max-width:350px){
+ .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain]{width:56px;height:56px;flex-basis:56px}
+ .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] strong{font-size:.82rem}
+ .kajo-analysis-circle-item>strong{font-size:.5rem}
+}
+html[data-theme="light"] .kajo-analysis-overview-panel{background:var(--kajo-surface);border-color:var(--kajo-border)}
