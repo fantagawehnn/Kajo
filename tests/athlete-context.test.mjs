@@ -6,7 +6,7 @@ const state = {
   rawActivities: [
     { id: 'canoe-1', date: '2026-11-13', type: 'Kayaking', duration: 60, source: 'garmin',
       garminTelemetry: { hr: [110, 120] }, garminTrainingLoad: 75 },
-    { id: 'run-1', date: '2026-11-12', type: 'Running', duration: 35, perceivedEffort: 5 },
+    { id: 'run-1', date: '2026-11-12', type: 'Run', duration: 35, perceivedEffort: 5 },
     { id: 'old-1', date: '2026-08-01', type: 'Kayaking', duration: 50 }
   ],
   dailyTimeline: [
