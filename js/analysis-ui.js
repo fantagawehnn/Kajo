@@ -5,6 +5,7 @@
 import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
+import { buildCanoePerformanceSummary } from './canoe-performance.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -198,7 +199,74 @@ function renderFitness() {
   if (panel) panel.classList.add('hidden');
   if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
 }
+function renderCanoePerformanceSummary() {
+  const summary = buildCanoePerformanceSummary(state.rawActivities, {
+    from: performanceRangeStart(),
+    to: todayKey()
+  });
+  const disciplineRoot = document.getElementById('canoe-performance-discipline-summary');
+  const comparisonRoot = document.getElementById('canoe-performance-comparison-summary');
+  const qualityRoot = document.getElementById('canoe-performance-data-quality');
+  const labels = { Kayaking: 'K1', C1: 'C1', C2: 'C2' };
+  const format = value => Number.isFinite(value)
+    ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
+  if (disciplineRoot) {
+    disciplineRoot.replaceChildren();
+    summary.byDiscipline.forEach(row => {
+      const card = document.createElement('article');
+      card.className = 'kajo-performance-metric';
+      const title = document.createElement('span');
+      title.textContent = labels[row.type];
+      const count = document.createElement('strong');
+      count.textContent = String(row.activityCount) + ' Einheiten';
+      const detail = document.createElement('small');
+      detail.textContent = (row.durationMinutes === null ? 'Dauer nicht dokumentiert' : format(row.durationMinutes / 60) + ' h dokumentiert')
+        + ' · ' + (row.distanceKm === null ? 'Distanz nicht dokumentiert' : format(row.distanceKm) + ' km')
+        + ' · Sprint ' + row.sprintCount + ' / Classic ' + row.classicCount
+        + ' / ohne Format ' + row.unspecifiedFormatCount;
+      card.append(title, count, detail);
+      disciplineRoot.appendChild(card);
+    });
+  }
+  if (comparisonRoot) {
+    comparisonRoot.replaceChildren();
+    const groups = summary.comparableGroups.filter(group =>
+      group.averageSpeedKmh.count || group.averagePowerW.count || group.strokeRatePerMinute.count || group.averageHeartRateBpm.count);
+    if (!groups.length) {
+      const empty = document.createElement('p');
+      empty.className = 'kajo-performance-note';
+      empty.textContent = 'Für K1, C1 oder C2 liegen im gewählten Zeitraum noch keine dokumentierten, vergleichbaren Leistungskennwerte vor.';
+      comparisonRoot.appendChild(empty);
+    } else {
+      groups.forEach(group => {
+        const row = document.createElement('div');
+        row.className = 'kajo-performance-comparison-row';
+        const heading = document.createElement('strong');
+        heading.textContent = labels[group.type] + ' · ' + (group.raceFormat === 'unspecified' ? 'Format nicht dokumentiert' : group.raceFormat.toUpperCase())
+          + ' · n=' + group.activityCount;
+        const detail = document.createElement('p');
+        const metrics = [];
+        if (group.averageSpeedKmh.count) metrics.push('Ø Geschwindigkeit ' + format(group.averageSpeedKmh.mean) + ' km/h (n=' + group.averageSpeedKmh.count + ')');
+        if (group.averagePowerW.count) metrics.push('Ø Leistung ' + format(group.averagePowerW.mean) + ' W (n=' + group.averagePowerW.count + ')');
+        if (group.strokeRatePerMinute.count) metrics.push('Schlagfrequenz ' + format(group.strokeRatePerMinute.mean) + '/min (n=' + group.strokeRatePerMinute.count + ')');
+        if (group.averageHeartRateBpm.count) metrics.push('Ø HF ' + format(group.averageHeartRateBpm.mean) + ' bpm (n=' + group.averageHeartRateBpm.count + ')');
+        detail.textContent = metrics.join(' · ');
+        row.append(heading, detail);
+        comparisonRoot.appendChild(row);
+      });
+    }
+  }
+  if (qualityRoot) {
+    const q = summary.dataQuality;
+    qualityRoot.textContent = summary.activityCount + ' Kanu-Einheiten im Zeitraum · '
+      + q.activitiesWithUnspecifiedFormat + ' ohne dokumentiertes Sprint-/Classic-Format · '
+      + q.activitiesWithUnspecifiedWaterType + ' ohne dokumentierten Gewässertyp. '
+      + 'Leistungskennwerte werden nur innerhalb gleicher Bootsklasse, Format- und dokumentierter Strecken-/Wasserbedingungen zusammengefasst. Fehlende Angaben bleiben offen.';
+  }
+}
+
 function renderPerformanceDetail() {
+  renderCanoePerformanceSummary();
   const paddleDefs = [
     ['speed','Geschwindigkeit','km/h'],
     ['hr','Herzfrequenz','bpm'],
