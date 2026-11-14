@@ -717,12 +717,13 @@
                 </div>
             </div>
 
-            <div id="race-timeline-section" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
-                <div class="flex items-center justify-between gap-3"><h3 class="text-sm font-bold text-white">Wettkampf-Zeitstrahl & Leistungsprognose</h3><button type="button" onclick="toggleRaceModal()" class="shrink-0 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold"><i data-lucide="plus" class="w-3.5 h-3.5 inline"></i> Wettkampf hinzufügen</button></div>
-                <p class="text-[11px] text-slate-400">Die Prognose ist eine Modellrechnung auf Basis der zuletzt berechneten Belastung und kein Ergebnisversprechen.</p>
-                <div class="h-64"><canvas id="raceTimelineChart"></canvas></div>
-            </div>
-            <!-- Race Detailed List -->
+            <section class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div><h3 class="text-sm font-bold text-white">Saisonbilanz</h3><p class="text-[10px] text-slate-400 mt-1">Zusammenfassung deiner dokumentierten Wettkampfergebnisse</p></div>
+                    <button type="button" onclick="toggleRaceModal()" class="shrink-0 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold"><i data-lucide="plus" class="w-3.5 h-3.5 inline"></i> Wettkampf</button>
+                </div>
+                <div id="race-season-overview"></div>
+            </section>
             <div class="space-y-3" id="races-full-list"></div>
 
         </div>
