@@ -1,14 +1,12 @@
 /* KAJO: caches only the static app shell.
    Supabase requests, authentication, personal records and API responses are never cached. */
 const CACHE_PREFIX = "kajo-shell-";
-const CACHE_NAME = CACHE_PREFIX + "v2-3";
+const CACHE_NAME = CACHE_PREFIX + "v2-4";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./css/styles.css",
-  "./icons/kajo-icon.svg",
-  "./icons/kajo-icon.svg",
   "./icons/kajo-icon.svg",
   "./branding/Herzschlag%20im%20Kajak-Wellenlogo.png",
 ];
@@ -73,7 +71,7 @@ self.addEventListener("fetch", event => {
 
   const isAppShellAsset =
     request.mode === "navigate" ||
-    /\.(?:html|js|css|svg|png|webmanifest)$/i.test(url.pathname);
+    /\\.(?:html|js|css|svg|png|webmanifest)$/i.test(url.pathname);
 
   if (!isAppShellAsset) return;
 
