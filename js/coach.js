@@ -89,6 +89,31 @@ function summarizeLoadWindow(timeline, endDate, days) {
     };
 }
 
+
+function summarizeModelChange(timeline, endDate, days = 7) {
+    const startDate = dateKeyOffset(endDate, -days);
+    if (!startDate) return null;
+    const byDate = new Map(timeline.map(day => [day.date, day]));
+    const rows = [];
+    for (let offset = 0; offset <= days; offset++) {
+        const date = dateKeyOffset(startDate, offset);
+        rows.push(byDate.get(date) || null);
+    }
+    const complete = rows.length === days + 1 && rows.every(day => day
+        && ['complete', 'confirmed-rest'].includes(day.dataStatus)
+        && Number.isFinite(day.load)
+        && Number.isFinite(day.ctl) && Number.isFinite(day.atl) && Number.isFinite(day.tsb)
+        && Boolean(day.loadMode));
+    const modes = [...new Set(rows.filter(Boolean).map(day => day.loadMode))];
+    if (!complete || modes.length !== 1) return { complete: false, startDate, endDate };
+    const first = rows[0], last = rows[rows.length - 1];
+    return {
+        complete: true, startDate, endDate, source: modes[0],
+        ctl: Number((last.ctl - first.ctl).toFixed(1)),
+        atl: Number((last.atl - first.atl).toFixed(1)),
+        tsb: Number((last.tsb - first.tsb).toFixed(1))
+    };
+}
 function formatLoadWindow(label, summary) {
     const completeness = summary.complete
         ? 'vollständig'
@@ -118,6 +143,13 @@ function buildLoadReply(context) {
         lines.push(formatLoadWindow('90 Tage', windows[2]));
         lines.push(`• Im 7-Tage-Fenster: ${windows[0].validDays} Tage mit auswertbarer Belastung; ${windows[0].missingDays + windows[0].unknownDays} Tage mit unbekannter oder unvollständiger Belastung.`);
 
+        const modelChange = summarizeModelChange(timeline, endDate, 7);
+        if (modelChange?.complete) {
+            const signed = value => (value > 0 ? '+' : '') + formatNumber(value, 1);
+            lines.push(`• Modellveränderung über 7 Tage (${modelChange.startDate} bis ${modelChange.endDate}): CTL ${signed(modelChange.ctl)}, ATL ${signed(modelChange.atl)}, TSB ${signed(modelChange.tsb)} (Quelle: ${modelChange.source}).`);
+        } else {
+            lines.push('• CTL-/ATL-/TSB-Veränderung über 7 Tage nicht ausgewiesen: Für den gesamten Vergleichszeitraum fehlen vollständige Tageswerte oder eine einheitliche Belastungsquelle.');
+        }
         const previousEnd = dateKeyOffset(endDate, -7);
         const previous = summarizeLoadWindow(timeline, previousEnd, 7);
         const current = windows[0];
@@ -133,7 +165,7 @@ function buildLoadReply(context) {
     }
 
     lines.push(`• Ausgewählte Belastungsquelle: ${context.trainingLoad.selectedSource || 'nicht angegeben'}.`);
-    lines.push('Die Belastungssummen sind nur bei vollständig erfassten Zeiträumen und einheitlicher Quelle ausgewiesen. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
+    lines.push('Belastungssummen und Modellveränderungen werden nur bei vollständigen Tageswerten und einheitlicher Quelle ausgewiesen. CTL und ATL sind rechnerische, quellenabhängige EWMA-Modellwerte; TSB ist ihre Differenz und kein direkt gemessener Ermüdungs- oder Formwert. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
     return lines.join('\n');
 }
 function buildRecoveryReply(context) {
