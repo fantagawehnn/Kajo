@@ -104,6 +104,11 @@ assert.ok(activities.includes("['overview', 'Übersicht']") && activities.includ
 assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('metricColor'), 'activity overview uses sport-aware metric circles');
 assert.ok(css.includes('.activity-detail-tabs') && css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'activity tabs and metric circles have mobile styling');
 assert.ok(activities.includes('activity-data-quality') && activities.includes('activity-telemetry-diagnostic-output'), 'data quality and diagnostics remain accessible in the data tab');
+
+assert.ok(html.includes('id="training-subnav-strength"'), 'strength is reachable from the training subnavigation');
+assert.ok(main.includes("strength: { parent: 'training', view: 'strength', sub: 'strength' }"), 'strength route belongs to the training area');
+assert.ok(!html.includes('onclick="switchTab(\'strength\')"><span class="kajo-area-icon"'), 'strength is no longer listed under More');
+assert.ok(main.includes("['activities', 'planning', 'strength'].forEach"), 'training subnavigation highlights the active strength section');
 console.log('KAJO navigation and analysis UI smoke tests passed.');
 
 
