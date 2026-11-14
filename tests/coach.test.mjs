@@ -41,7 +41,7 @@ assert.match(loadReply, /unbekannter oder unvollständiger Belastung|unvollstän
 assert.doesNotMatch(loadReply, /Ruhetag oder Belastung 0 wird/);
 
 const recoveryReply = buildLocalCoachReply(context, 'Wie ist meine Erholung?');
-assert.match(recoveryReply, /Schlafdauer 8 h/);
+assert.match(recoveryReply, /Schlafdauer 8,0 h/);
 assert.match(recoveryReply, /HRV 72/);
 assert.match(recoveryReply, /keine medizinische Beurteilung/);
 
