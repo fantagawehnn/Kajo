@@ -7305,3 +7305,14 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
 @media (min-width:641px) {
   #app-main { padding-bottom:.75rem !important; }
 }
+
+
+/* Dashboard "Heute": eigenen Top-Abstand gegenüber dem allgemeinen App-Layout reduzieren. */
+@media (max-width:640px) {
+  #app-main:has(#view-dashboard:not(.hidden)) {
+    padding-top:calc(3.05rem + env(safe-area-inset-top)) !important;
+  }
+  #view-dashboard > .kajo-dashboard-header {
+    margin-top:-1.15rem !important;
+  }
+}
