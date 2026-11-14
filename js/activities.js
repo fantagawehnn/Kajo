@@ -176,11 +176,19 @@ async function importGarminActivityJsonTelemetry() {
         const fetchedSeries = Object.fromEntries(Object.entries(metricSeries).map(([key, metric]) => [
             key, { ...metric, time: Array.isArray(metric.time) ? metric.time : telemetry.time }
         ]));
+        const mergedSeries = { ...fetchedSeries, ...previousSeries };
+        for (const [key, metric] of Object.entries(mergedSeries)) {
+            if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
+            const fetchedAxis = fetchedSeries[key]?.time;
+            if (Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length) {
+                mergedSeries[key] = { ...metric, time: fetchedAxis };
+            }
+        }
         // Preserve FIT fields and all existing series; add missing JSON metrics with their own time axis.
         activity.garminTelemetry = {
             ...(telemetry || {}),
             ...(previousTelemetry || {}),
-            metricSeries: { ...fetchedSeries, ...previousSeries }
+            metricSeries: mergedSeries
         };
         activity.garminJsonImportedAt = new Date().toISOString();
         activity.garminJsonSource = 'garmin-activity-details-json';
@@ -218,7 +226,7 @@ async function importGarminActivityJsonTelemetry() {
         output.textContent = 'JSON-Import fehlgeschlagen: ' + (error?.message || String(error));
     } finally {
         button.disabled = false;
-        button.textContent = 'Garmin-Telemetrie vollständig ergänzen';
+        button.textContent = 'Garmin-Telemetrie für diese Aktivität ergänzen';
     }
 }
 
