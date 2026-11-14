@@ -187,17 +187,49 @@ function buildCompetitionReply(context) {
     return lines.join('\\n');
 }
 
+function summarizeActivityWindow(activities, asOfDate, days) {
+    const end = new Date(asOfDate + 'T12:00:00Z');
+    if (!Number.isFinite(end.getTime())) return null;
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
+    const startDate = start.toISOString().slice(0, 10);
+    const selected = activities.filter(activity => activity.date && activity.date >= startDate && activity.date <= asOfDate);
+    const canoe = selected.filter(activity => activity.isCanoePerformanceActivity);
+    const complementary = selected.filter(activity => !activity.isCanoePerformanceActivity);
+    const summarize = items => {
+        const knownDurations = items.filter(item => Number.isFinite(item.durationMinutes) && item.durationMinutes >= 0);
+        return { count: items.length, durationCount: knownDurations.length, durationMinutes: knownDurations.reduce((sum, item) => sum + item.durationMinutes, 0) };
+    };
+    return { startDate, endDate: asOfDate, total: summarize(selected), canoe: summarize(canoe), complementary: summarize(complementary) };
+}
+
+function formatActivityGroup(label, summary) {
+    const duration = summary.durationCount
+        ? formatNumber(summary.durationMinutes / 60, 1) + ' h dokumentiert bei ' + summary.durationCount + '/' + summary.count + ' Einheiten'
+        : 'keine Dauerangaben bei ' + summary.count + ' Einheiten';
+    return '• ' + label + ': ' + summary.count + ' Einheiten; ' + duration + '.';
+}
 function buildActivitiesReply(context) {
     const all = context.performanceContext.allActivities;
     const canoe = context.performanceContext.canoeActivities;
     const latestCanoe = getLatest(canoe);
     const lines = ['Deine Trainingshistorie:'];
-    lines.push(`• Erfasste Aktivitäten im betrachteten Zeitraum: ${all.length}.`);
-    lines.push(`• Davon Kanu-Performanceeinheiten (K1/Kayaking, C1, C2): ${canoe.length}.`);
-    lines.push(`• Ergänzende Sportarten und weitere Aktivitätstypen: ${all.length - canoe.length}.`);
+    lines.push('• Erfasste Aktivitäten im betrachteten Zeitraum: ' + all.length + '.');
+    lines.push('• Davon Kanu-Performanceeinheiten (K1/Kayaking, C1, C2): ' + canoe.length + '.');
+    lines.push('• Ergänzende Sportarten und weitere Aktivitätstypen: ' + (all.length - canoe.length) + '.');
     lines.push(latestCanoe
-        ? `• Letzte erfasste Kanu-Performanceeinheit: ${latestCanoe.date || 'Datum nicht verfügbar'} – ${latestCanoe.name || latestCanoe.type}.`
+        ? '• Letzte erfasste Kanu-Performanceeinheit: ' + (latestCanoe.date || 'Datum nicht verfügbar') + ' – ' + (latestCanoe.name || latestCanoe.type) + '.'
         : '• Im betrachteten Zeitraum ist keine Kanu-Performanceeinheit erfasst.');
+    const asOfDate = context.asOfDate || getLatest(all)?.date;
+    if (asOfDate) {
+        const window = summarizeActivityWindow(all, asOfDate, 28);
+        if (window) {
+            lines.push('Aktivitäten der letzten 28 Tage (' + window.startDate + ' bis ' + window.endDate + '):');
+            lines.push(formatActivityGroup('Kanu-Performance', window.canoe));
+            lines.push(formatActivityGroup('Ergänzende Sportarten', window.complementary));
+            lines.push('• Die dokumentierten Stunden beschreiben nur die erfasste Dauer. Sie sind weder eine Belastungssumme noch ein Nachweis für vollständige Trainingsdokumentation.');
+        }
+    }
     lines.push('Die Anzahl erfasster Aktivitäten ist nicht gleichbedeutend mit vollständiger Trainingsdokumentation.');
     return lines.join('\\n');
 }
