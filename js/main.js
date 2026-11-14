@@ -104,7 +104,7 @@ function switchTab(requestedTab) {
         'training-activities': { parent: 'training', view: 'calendar', sub: 'activities' },
         'training-planning': { parent: 'training', view: 'races', sub: 'planning' },
         races: { parent: 'training', view: 'races', sub: 'planning' },
-        strength: { parent: 'more', view: 'strength' },
+        strength: { parent: 'training', view: 'strength', sub: 'strength' },
         analyses: { parent: 'analysis', view: 'analyses', sub: 'overview' },
         'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' },
         'analysis-load': { parent: 'analysis', view: 'analyses', sub: 'load' },
@@ -153,7 +153,7 @@ function switchTab(requestedTab) {
             else button.removeAttribute('aria-current');
         });
     });
-    ['activities', 'planning'].forEach(id => {
+    ['activities', 'planning', 'strength'].forEach(id => {
         const button = document.getElementById('training-subnav-' + id);
         if (button) button.classList.toggle('is-active', sub === id);
     });
