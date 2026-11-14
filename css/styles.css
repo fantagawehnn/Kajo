@@ -6673,3 +6673,27 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #view-calendar .calendar-day-recovery-rings .calendar-kpi-ring,
   #view-calendar .calendar-day-health-rings .calendar-kpi-ring { width:58px; height:58px; }
 }
+
+
+/* KAJO week view: keep the weekday selector in normal flow and prevent overlap. */
+#view-calendar #cal-format-week {
+  display:block !important;
+  width:100%;
+  max-width:100%;
+  min-width:0 !important;
+  grid-template-columns:none !important;
+  gap:0;
+  box-sizing:border-box;
+}
+#view-calendar .calendar-week-strip {
+  position:static !important;
+  top:auto !important;
+  z-index:auto !important;
+  margin:0 0 12px;
+  width:100%;
+}
+#view-calendar .calendar-week-agenda {
+  position:relative;
+  width:100%;
+  min-width:0;
+}
