@@ -7838,3 +7838,99 @@ html[data-theme="light"] #view-more .kajo-area-card {
 @media(max-width:560px) {
   #view-more .kajo-area-card { min-height:74px !important; padding:12px 2px !important; }
 }
+
+
+/* Streckenverwaltung: kompakte, nach Gewässern gruppierte Übersicht */
+#view-routes .kajo-route-summary {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px;
+}
+#view-routes .kajo-route-summary > div {
+  display:flex; flex-direction:column; gap:3px; padding:12px 13px;
+  border:1px solid var(--kajo-border,#263449); border-radius:13px;
+  background:var(--kajo-surface,#111827); min-width:0;
+}
+#view-routes .kajo-route-summary strong { color:var(--kajo-text,#fff); font-size:1.2rem; line-height:1.2; font-variant-numeric:tabular-nums; }
+#view-routes .kajo-route-summary span { color:var(--kajo-muted,#9ca3af); font-size:.68rem; }
+#view-routes .kajo-route-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+#view-routes .kajo-route-filter-row { display:flex; align-items:center; gap:5px; padding:4px; border-radius:11px; background:var(--kajo-surface,#111827); }
+#view-routes .kajo-route-filter {
+  border:0; border-radius:8px; padding:8px 13px; color:var(--kajo-muted,#9ca3af);
+  background:transparent; font-size:.75rem; font-weight:650; cursor:pointer;
+}
+#view-routes .kajo-route-filter.is-active { color:var(--kajo-text,#fff); background:var(--kajo-accent,#0891b2); }
+#view-routes .kajo-route-primary {
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:38px; padding:9px 13px; border:0; border-radius:10px;
+  color:#fff; background:#087f9e; font-size:.76rem; font-weight:700; cursor:pointer;
+}
+#view-routes .kajo-route-primary svg { width:15px; height:15px; }
+#view-routes .kajo-route-secondary {
+  min-height:38px; padding:9px 13px; border:1px solid var(--kajo-border,#334155);
+  border-radius:10px; color:var(--kajo-muted,#cbd5e1); background:transparent; font-size:.76rem;
+}
+#view-routes .kajo-route-form-panel {
+  padding:16px; border:1px solid var(--kajo-border,#334155); border-radius:15px;
+  background:var(--kajo-surface,#111827);
+}
+#view-routes .kajo-route-form-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px; }
+#view-routes .kajo-route-form-heading h2 { color:var(--kajo-text,#fff); font-size:.95rem; font-weight:750; }
+#view-routes .kajo-route-kicker { margin-bottom:3px; color:#36b6cf; font-size:.6rem; font-weight:750; letter-spacing:.1em; }
+#view-routes .kajo-route-close { display:grid; place-items:center; width:30px; height:30px; border-radius:8px; color:var(--kajo-muted,#9ca3af); background:transparent; }
+#view-routes .kajo-route-close svg { width:17px; height:17px; }
+#view-routes .kajo-route-list-heading { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+#view-routes .kajo-route-list-heading h2 { color:var(--kajo-text,#fff); font-size:.95rem; font-weight:750; }
+#view-routes .kajo-route-list-heading > span { color:var(--kajo-muted,#9ca3af); font-size:.68rem; }
+#view-routes .kajo-route-list { display:flex; flex-direction:column; gap:15px; }
+#view-routes .kajo-route-water-group { min-width:0; }
+#view-routes .kajo-route-water-heading { display:flex; align-items:center; gap:8px; padding:0 0 8px; color:#43b9d0; }
+#view-routes .kajo-route-water-heading svg { width:17px; height:17px; }
+#view-routes .kajo-route-water-heading h3 { color:var(--kajo-text,#fff); font-size:.9rem; font-weight:750; }
+#view-routes .kajo-route-section-group { margin-left:8px; padding:0 0 0 13px; border-left:1px solid var(--kajo-border,#334155); }
+#view-routes .kajo-route-section-heading { display:flex; align-items:center; gap:7px; padding:5px 0 7px; color:var(--kajo-muted,#aab4c2); font-size:.72rem; font-weight:650; }
+#view-routes .kajo-route-section-heading svg { width:13px; height:13px; color:#6b9fb3; }
+#view-routes .kajo-route-items { display:flex; flex-direction:column; }
+#view-routes .kajo-route-item { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid color-mix(in srgb,var(--kajo-border,#334155) 72%,transparent); }
+#view-routes .kajo-route-item-main { min-width:0; flex:1; }
+#view-routes .kajo-route-item-title { display:flex; align-items:center; flex-wrap:wrap; gap:7px; }
+#view-routes .kajo-route-item-title > strong { color:var(--kajo-text,#fff); font-size:.8rem; font-weight:650; }
+#view-routes .kajo-route-type { display:inline-flex; align-items:center; border-radius:5px; padding:3px 6px; font-size:.58rem; font-weight:700; }
+#view-routes .kajo-route-type.is-training { color:#75dfb6; background:rgba(46,180,126,.12); }
+#view-routes .kajo-route-type.is-competition { color:#f3bd72; background:rgba(222,153,62,.13); }
+#view-routes .kajo-route-type.is-both { color:#91c8ff; background:rgba(74,148,218,.13); }
+#view-routes .kajo-route-usage { display:block; margin-top:3px; color:var(--kajo-muted,#8793a4); font-size:.64rem; }
+#view-routes .kajo-route-item-actions { display:flex; align-items:center; gap:3px; flex-shrink:0; }
+#view-routes .kajo-route-item-actions button { display:grid; place-items:center; width:30px; height:30px; border-radius:7px; color:var(--kajo-muted,#9ca3af); background:transparent; }
+#view-routes .kajo-route-item-actions button:last-child { color:#df8585; }
+#view-routes .kajo-route-item-actions svg { width:14px; height:14px; }
+#view-routes .kajo-route-details { margin-top:6px; color:var(--kajo-muted,#9ca3af); font-size:.66rem; }
+#view-routes .kajo-route-details summary { width:max-content; cursor:pointer; color:#69bcd0; }
+#view-routes .kajo-route-details p { margin-top:5px; line-height:1.45; overflow-wrap:anywhere; }
+#view-routes .kajo-route-details strong { color:var(--kajo-text,#fff); }
+#view-routes .kajo-route-empty { padding:18px 14px; border:1px dashed var(--kajo-border,#334155); border-radius:12px; color:var(--kajo-muted,#9ca3af); font-size:.76rem; text-align:center; }
+#view-routes .kajo-route-manager { border-top:1px solid var(--kajo-border,#334155); }
+#view-routes .kajo-route-manager-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; gap:12px; padding:13px 2px; text-align:left; }
+#view-routes .kajo-route-manager-toggle > span { display:flex; align-items:center; gap:10px; min-width:0; }
+#view-routes .kajo-route-manager-toggle > span > svg { width:20px; height:20px; color:#43b9d0; flex-shrink:0; }
+#view-routes .kajo-route-manager-toggle strong { display:block; color:var(--kajo-text,#fff); font-size:.78rem; }
+#view-routes .kajo-route-manager-toggle small { display:block; margin-top:2px; color:var(--kajo-muted,#9ca3af); font-size:.65rem; }
+#view-routes .kajo-route-manager-chevron { width:16px; height:16px; color:var(--kajo-muted,#9ca3af); transition:transform .18s ease; }
+#view-routes .kajo-route-manager-toggle.is-open .kajo-route-manager-chevron { transform:rotate(180deg); }
+#view-routes .kajo-route-manager-content { padding:0 0 14px; }
+#view-routes .kajo-route-water-list { display:flex; flex-direction:column; gap:8px; margin-top:13px; }
+#view-routes .kajo-route-water-list > article { border:1px solid var(--kajo-border,#334155); border-radius:11px; background:transparent; padding:11px; }
+@media(max-width:520px) {
+  #view-routes .kajo-route-toolbar { align-items:stretch; }
+  #view-routes .kajo-route-filter-row { flex:1; }
+  #view-routes .kajo-route-filter { flex:1; padding:8px 7px; }
+  #view-routes .kajo-route-toolbar > .kajo-route-primary { width:100%; }
+  #view-routes .kajo-route-summary > div { padding:10px; }
+}
+html[data-theme="light"] #view-routes .kajo-route-summary > div,
+html[data-theme="light"] #view-routes .kajo-route-filter-row,
+html[data-theme="light"] #view-routes .kajo-route-form-panel { background:#fff; }
+html[data-theme="light"] #view-routes .kajo-route-item-title > strong,
+html[data-theme="light"] #view-routes .kajo-route-water-heading h3,
+html[data-theme="light"] #view-routes .kajo-route-form-heading h2,
+html[data-theme="light"] #view-routes .kajo-route-manager-toggle strong,
+html[data-theme="light"] #view-routes .kajo-route-details strong { color:#182431; }
+html[data-theme="light"] #view-routes .kajo-route-water-list > article { background:#fff; }
