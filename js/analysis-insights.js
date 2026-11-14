@@ -143,7 +143,7 @@ function recoveryMetric(key, label, value, detail = '') {
 
 let selectedRecoveryMetric = null;
 export function toggleRecoveryMetric(key) {
-    const supported = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'];
+    const supported = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'];
     if (!supported.includes(key)) return;
     selectedRecoveryMetric = selectedRecoveryMetric === key ? null : key;
     document.querySelectorAll('[data-recovery-metric]').forEach(button => {
@@ -194,7 +194,8 @@ function renderRecoveryInsight() {
         recoveryMetric('hrv', 'HRV', valid(current.hrv) ? formatValue(current.hrv) : '—', 'ms'),
         recoveryMetric('rhr', 'Ruhepuls', valid(current.rhr) ? formatValue(current.rhr) : '—', 'bpm'),
         recoveryMetric('sleepDuration', 'Schlafdauer', formatValue(current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null)), 'Stunden'),
-        recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100')
+        recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100'),
+        recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min')
     ];
     setPanel('recovery-analysis-metrics', objectiveCards.join(''));
     setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte');
