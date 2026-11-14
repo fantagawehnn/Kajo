@@ -195,7 +195,7 @@ assert.ok(css.includes('var(--kajo-status-good') && css.includes('var(--kajo-sta
 
 assert.ok(calendar.includes('function calendarActivitySourceLabel(activity)'), 'calendar exposes explicit activity source provenance');
 assert.ok(calendar.includes('Quelle nicht ausgewiesen'), 'unknown activity provenance is not silently presented as manual or imported');
-assert.ok(calendar.includes('calendar-week-source'), 'weekly activity entries expose their source');
+assert.ok(calendar.includes('calendarActivitySourceLabel(activity)') && calendar.includes("planned ? 'Planung' : calendarActivitySourceLabel(activity)"), 'weekly activity entries expose their source');
 
 assert.ok(calendar.includes("const key = type + '::' + format"), 'year calendar keeps Classic and Sprint durations in separate series');
 assert.ok(calendar.includes("activity.raceFormat ? ' · ' + activity.raceFormat"), 'day details preserve the activity race format');
