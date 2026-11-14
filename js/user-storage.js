@@ -86,7 +86,18 @@ export function createUserStorage(userId) {
             for (const [collection, value] of Object.entries(collections)) {
                 const storageKey = getUserStorageKey(id, collection);
                 const serialized = JSON.stringify(value);
-                localStorage.setItem(storageKey, serialized);
+                if (collection === 'garminTelemetry') {
+                    // Keep a small fallback copy only; the complete telemetry
+                    // collection is stored in IndexedDB to avoid localStorage quotas.
+                    try {
+                        if (serialized.length <= 1500000) localStorage.setItem(storageKey, serialized);
+                        else localStorage.removeItem(storageKey);
+                    } catch {
+                        try { localStorage.removeItem(storageKey); } catch (_) {}
+                    }
+                } else {
+                    localStorage.setItem(storageKey, serialized);
+                }
                 indexedCollections[storageKey] = value;
             }
 
