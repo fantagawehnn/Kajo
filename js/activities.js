@@ -90,11 +90,13 @@ function diagnoseSelectedActivityTelemetry() {
     output.hidden = false;
 }
 
-document.addEventListener('click', event => {
-    if (event.target?.closest?.('#activity-telemetry-diagnose')) {
-        diagnoseSelectedActivityTelemetry();
-    }
-});
+if (typeof document.addEventListener === 'function') {
+    document.addEventListener('click', event => {
+        if (event.target?.closest?.('#activity-telemetry-diagnose')) {
+            diagnoseSelectedActivityTelemetry();
+        }
+    });
+}
 
 function getActivitySourceLabel(activity) {
     const refs = activity?.sourceRefs || {};
