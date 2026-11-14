@@ -14,7 +14,7 @@ const state = {
     { date: '2026-11-12', load: null, dataStatus: 'unknown' }
   ],
   dailyCheckins: {
-    '2026-11-13': { sleepDuration: 8, sleepQuality: 7, hrv: 65, weight: 62, manualNote: 'private' },
+    '2026-11-13': { sleepDuration: 8, sleepQuality: 7, hrv: 65, weight: 62, manualNote: 'private', measurementSources: { hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' } } },
     '2026-10-01': { fatigue: 8 }
   },
   healthLogs: {
@@ -54,6 +54,7 @@ assert.equal(context.trainingLoad.coverageRanges.length, 1);
 assert.equal(context.recovery.checkins.length, 1);
 assert.equal(context.recovery.checkins[0].values.weight, undefined);
 assert.equal(context.recovery.checkins[0].values.manualNote, undefined);
+assert.deepEqual(context.recovery.checkins[0].provenance.hrv, { source: 'manual', metric: 'unspecified', unit: 'ms' });
 assert.equal(context.recovery.healthEvents.length, 1);
 assert.equal(context.recovery.healthEvents[0].detailsIncluded, false);
 assert.equal(JSON.stringify(context).includes('private diagnosis'), false);
