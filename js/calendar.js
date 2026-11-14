@@ -310,11 +310,33 @@ function renderCalendarDayDetail(date, target) {
             '<p>Objektive Werte: ' + readiness.objectiveCount + ' · Subjektive Werte: ' + readiness.subjectiveCount + '</p></details></div>'
         : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>';
 
+    const priorDates = [];
+    for (let i = 1; i <= 7; i++) {
+        const previous = new Date(date + 'T12:00:00');
+        previous.setDate(previous.getDate() - i);
+        priorDates.push(toLocalDateString(previous));
+    }
+    const priorActivities = (state.rawActivities || []).filter(item => priorDates.includes(item.date));
+    const priorByDate = {};
+    priorActivities.forEach(item => { (priorByDate[item.date] ||= []).push(item); });
+    const priorCompleteDays = Object.values(priorByDate).filter(items => items.length && items.every(item =>
+        item.duration !== null && item.duration !== undefined && item.duration !== ''
+        && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0));
+    const priorAverage = priorCompleteDays.length
+        ? priorCompleteDays.reduce((sum, items) => sum + items.reduce((daySum, item) => daySum + Number(item.duration), 0), 0) / priorCompleteDays.length
+        : null;
+    const todayComparable = data.durationComplete ? data.durationTotal : null;
+    const durationComparison = todayComparable !== null || priorAverage !== null
+        ? '<div class="calendar-day-duration-comparison"><span>Trainingszeit · Vergleich mit den vorherigen 7 Tagen</span><small>' +
+            (todayComparable !== null ? 'Heute: ' + escapeHtml(calendarFormatMinutes(todayComparable)) : 'Heute: unvollständige Dauerangaben') +
+            ' · ' + (priorAverage !== null ? 'Ø ' + escapeHtml(calendarFormatMinutes(priorAverage)) + ' an ' + priorCompleteDays.length + ' vollständig dokumentierten Trainingstagen' : 'Keine vollständigen Vergleichstage') +
+          '</small></div>'
+        : '';
     const loadMarkup = '<div class="calendar-day-load-grid">' +
         '<div><span>Absolvierter Training Load</span><strong>' + escapeHtml(loadText) + (data.loadValue !== null && data.timeline?.loadUnit ? ' <small>' + escapeHtml(data.timeline.loadUnit) + '</small>' : '') + '</strong><small>' + (data.loadValue === null ? 'Nicht zuverlässig berechenbar' : 'Quelle: ' + escapeHtml(data.timeline?.loadMode || 'Tages-Timeline')) + '</small></div>' +
         '<div><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
         '<div><span>Abgeschlossene Einheiten</span><strong>' + completedCount + '</strong><small>Geplante Einheiten nicht eingerechnet</small></div>' +
-        '<div><span>Geplante Einheiten</span><strong>' + planned.length + '</strong><small>Getrennt von tatsächlicher Belastung</small></div></div>';
+        '<div><span>Geplante Einheiten</span><strong>' + planned.length + '</strong><small>Getrennt von tatsächlicher Belastung</small></div></div>' + durationComparison;
 
     root.innerHTML =
         '<section class="calendar-day-heading">' +
