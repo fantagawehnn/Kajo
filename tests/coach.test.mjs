@@ -171,6 +171,18 @@ assert.match(missingSourceReply, /7 Tage .*unvollständig/);
 assert.match(missingSourceReply, /keine vollständige Belastungssumme ausgewiesen/);
 
 
+const sessionRpeLoadReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    trainingLoad: { selectedSource: 'garmin-native', timeline: [], documentedSessionRpeByDay: [
+        { date: '2026-11-12', recordedActivityCount: 1, activitiesWithSessionRpe: 1, activitiesMissingSessionRpe: 0, documentedLoadAU: 175, allRecordedActivitiesHaveSessionRpe: true }
+    ] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(sessionRpeLoadReply, /175,0 AU aus 1\/1 dokumentierten Einheiten/);
+assert.match(sessionRpeLoadReply, /keine CTL-\/ATL-\/TSB-Werte berechnet/);
+
 const activityDetailReply = buildLocalCoachReply({
     asOfDate: '2026-11-14',
     performanceContext: {
@@ -200,7 +212,6 @@ assert.match(activityDetailReply, /weder eine Belastungssumme/);
 assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 1\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 0\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /sRPE dokumentiert für 1\/1 Einheiten \(360,0 AU\)/);
-assert.match(activityDetailReply, /175,0 AU aus 1\/1 dokumentierten Einheiten/);
 assert.match(activityDetailReply, /kein gültiger sRPE-Wert für 1 dokumentierte Einheit/);
 
 const modelTrendReply = buildLocalCoachReply({
