@@ -215,8 +215,8 @@ function calendarActivityRow(activity, planned) {
     const action = planned
         ? 'switchTab(\'training-planning\')'
         : 'openCSVDetailsModal(\'' + id + '\')';
-    return '<button type="button" class="calendar-day-activity-row" style="--activity-color:' + color + '" onclick="' + action + '">' +
-        '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label + (activity.raceFormat ? ' · ' + activity.raceFormat : '')) + '</span>' +
+    return '<button type="button" class="calendar-day-activity-row ' + (planned ? 'is-planned' : 'is-completed') + '" style="--activity-color:' + color + '" onclick="' + action + '">' +
+        '<span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label + (activity.raceFormat ? ' · ' + activity.raceFormat : '')) + '</span>' +
         '<strong>' + escapeHtml(activity.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
         '<small>' + [time, duration, planned ? 'Planung' : calendarActivitySourceLabel(activity)].filter(Boolean).map(escapeHtml).join(' · ') + '</small></span>' +
         '<span class="calendar-entry-status ' + (planned ? 'is-planned' : 'is-completed') + '">' + status + '</span></button>';
@@ -306,19 +306,13 @@ function renderCalendarDayDetail(date, target) {
         ['Schlafqualität', checkin.sleepQuality], ['Müdigkeit', checkin.fatigue],
         ['Muskelkater', checkin.soreness], ['Motivation', checkin.motivation], ['Stress', checkin.stress]
     ].filter(([, value]) => value !== null && value !== undefined && value !== '');
+    const healthValue = health?.status === 'sick' ? 'Krank' : health?.status === 'injured' ? 'Verletzt' : '—';
+    const healthTone = health?.status === 'sick' ? 'critical' : health?.status === 'injured' ? 'attention' : 'info';
+    recoveryMetrics.push(calendarDayRing(healthValue, 'Gesundheit', healthTone));
     const subjectiveMarkup = subjective.length
         ? '<div class="calendar-day-subjective">' + subjective.map(([label, value]) => '<span>' + escapeHtml(label) + ' <b>' + escapeHtml(value) + '</b></span>').join('') + '</div>'
         : '';
-    const recoveryMarkup = recoveryMetrics.length || subjective.length
-        ? '<div class="calendar-day-recovery-summary"><div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup + '</div>'
-        : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>';
-
-    const loadMarkup = '<div class="calendar-day-load-rings">' +
-        calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
-        calendarDayRing(durationText, 'Trainingsstunden', 'info') +
-        calendarDayRing(String(completedCount), 'Abgeschlossen', 'good') +
-        calendarDayRing(String(planned.length), 'Geplant', 'info') +
-        '</div>';
+    const recoveryMarkup = '<div class="calendar-day-recovery-summary"><div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup + '</div>';
 
     root.innerHTML =
         '<section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
@@ -330,9 +324,7 @@ function renderCalendarDayDetail(date, target) {
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3><span>' + events.length + ' Ereignisse</span></div>' + timelineMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3><span>' + completed.length + '</span></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3><span>' + planned.length + '</span></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>' +
-        '<section class="calendar-detail-section"><h3>Belastungsanalyse</h3>' + loadMarkup + '</section>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup +
-            '<div class="calendar-day-health-rings">' + calendarDayRing(health?.status === 'sick' ? 'Krank' : health?.status === 'injured' ? 'Verletzt' : '—', 'Gesundheit', health?.status === 'sick' ? 'critical' : health?.status === 'injured' ? 'attention' : 'info') + '</div>' + '</section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\'' + escapeHtml(date) + '\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
             (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>';
 }
