@@ -202,6 +202,51 @@ function summarizeRecoveryTrends(checkins) {
     });
 }
 
+function summarizeLoadRecoveryPairs(context) {
+    const timelineByDate = new Map(context.trainingLoad.timeline.map(day => [day.date, day]));
+    const metrics = [
+        ['hrv', 'HRV'], ['rhr', 'Ruhepuls'], ['sleepDuration', 'Schlafdauer'],
+        ['sleepScore', 'Schlafscore'], ['respiration', 'Atemfrequenz']
+    ];
+    return metrics.flatMap(([key, label]) => {
+        const pairs = context.recovery.checkins.flatMap(checkin => {
+            const previousDate = dateKeyOffset(checkin.date, -1);
+            const loadDay = previousDate ? timelineByDate.get(previousDate) : null;
+            const value = checkin.values?.[key];
+            const provenance = checkin.provenance?.[key];
+            if (!Number.isFinite(value) || !provenance
+                || typeof provenance.source !== 'string' || !provenance.source
+                || typeof provenance.metric !== 'string' || !provenance.metric
+                || typeof provenance.unit !== 'string' || !provenance.unit
+                || !loadDay || !['complete', 'confirmed-rest'].includes(loadDay.dataStatus)
+                || !Number.isFinite(loadDay.load) || !loadDay.loadMode) return [];
+            return [{
+                date: checkin.date, previousDate, load: loadDay.load,
+                loadMode: loadDay.loadMode, value, provenance
+            }];
+        });
+        if (pairs.length < 2) return [];
+        const first = pairs[0];
+        const compatible = pairs.every(pair =>
+            pair.loadMode === first.loadMode
+            && pair.provenance.source === first.provenance.source
+            && pair.provenance.metric === first.provenance.metric
+            && pair.provenance.unit === first.provenance.unit
+        );
+        if (!compatible) return [];
+        const loads = pairs.map(pair => pair.load);
+        const values = pairs.map(pair => pair.value);
+        return [{
+            label, count: pairs.length,
+            firstDate: pairs[0].date, lastDate: pairs[pairs.length - 1].date,
+            loadMode: first.loadMode, recoverySource: first.provenance.source,
+            unit: first.provenance.unit,
+            loadMin: Math.min(...loads), loadMax: Math.max(...loads),
+            valueMin: Math.min(...values), valueMax: Math.max(...values)
+        }];
+    });
+}
+
 function buildRecoveryReply(context) {
     const lines = ['Deine Erholungsdaten:'];
     const checkins = context.recovery.checkins;
@@ -235,6 +280,16 @@ function buildRecoveryReply(context) {
             lines.push('Die Veränderungen sind rein deskriptiv. Sie belegen weder eine Ursache noch eine Veränderung von Trainingsbereitschaft oder Gesundheit.');
         } else {
             lines.push('• Noch kein zeitlicher Vergleich von Erholungskennzahlen ausgewiesen: Es fehlen mindestens zwei Werte mit vollständig übereinstimmender Messquelle, Kennzahl und Einheit.');
+        }
+        const paired = summarizeLoadRecoveryPairs(context);
+        if (paired.length) {
+            lines.push('Belastung am Vortag und Check-in am Folgetag – dokumentierte Wertebereiche, keine statistische Zusammenhangsanalyse:');
+            for (const item of paired) {
+                lines.push(`• ${item.label}: ${item.count} passende Tage (${item.firstDate} bis ${item.lastDate}); Vortagesbelastung ${formatNumber(item.loadMin, 1)}–${formatNumber(item.loadMax, 1)} (${item.loadMode}); Check-in-Werte ${formatNumber(item.valueMin, 2)}–${formatNumber(item.valueMax, 2)} ${item.unit} (Quelle: ${item.recoverySource}).`);
+            }
+            lines.push('Die Gegenüberstellung beschreibt nur zeitlich zugeordnete Messwerte. Sie weist keine Korrelation, Ursache oder individuelle Belastungsreaktion nach.');
+        } else {
+            lines.push('• Keine belastbare Gegenüberstellung von Vortagesbelastung und Folgetags-Check-in: Es fehlen mindestens zwei passende Tage mit vollständiger Tagesbelastung sowie jeweils einheitlichen Belastungs- und Messquellen.');
         }
     }
     const events = context.recovery.healthEvents;
