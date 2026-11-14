@@ -769,7 +769,7 @@ export function setTimeframe(tf) {
     state.activeTimeframe = tf;
     state.metricHistoryRange = tf;
     const periodLabel = document.getElementById('analysis-period-label');
-    if (periodLabel) periodLabel.textContent = ({ '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '3m': 'Letzte 90 Tage', '6m': 'Letzte 180 Tage', '1y': 'Letztes Jahr' })[tf] || 'Individueller Zeitraum';
+    if (periodLabel) periodLabel.textContent = ({ '7d': '7T', '28d': '28T', '3m': '90T', '6m': '6M', '1y': '1J' })[tf] || 'Individueller Zeitraum';
     ['7d', '28d', '3m', '6m', '1y'].forEach(t => {
         const btn = document.getElementById(`tf-${t}`);
         if (btn) btn.className = t === tf ? 'px-3 py-1.5 rounded-lg bg-sky-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
