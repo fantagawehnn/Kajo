@@ -288,7 +288,7 @@ function renderCalendarDayDetail(date, target) {
     const recoveryMetrics = [];
     const addRecovery = (label, value, unit) => {
         if (value === null || value === undefined || value === '') return;
-        recoveryMetrics.push('<div class="calendar-day-recovery-metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + (unit ? ' <small>' + escapeHtml(unit) + '</small>' : '') + '</strong></div>');
+        recoveryMetrics.push(calendarRing(String(value), label, unit, 'info'));
     };
     addRecovery('Schlaf', checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null), 'h');
     addRecovery('HRV', checkin.hrv, 'ms');
@@ -305,17 +305,19 @@ function renderCalendarDayDetail(date, target) {
         : '';
     const recoveryMarkup = recoveryMetrics.length || readiness.score !== null || subjective.length
         ? '<div class="calendar-day-recovery-summary">' +
-            '<div class="calendar-day-readiness"><span>Readiness</span><strong>' + escapeHtml(readinessText) + (readiness.score !== null ? '<small>/100</small>' : '') + '</strong><small>' + escapeHtml(readiness.dataQuality || 'Keine ausreichende Datengrundlage') + '</small></div>' +
-            '<div class="calendar-day-recovery-metrics">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup +
+            '<div class="calendar-day-recovery-rings">' +
+            calendarRing(readinessText, 'Readiness', readiness.score === null ? 'nicht berechenbar' : '/100', calendarReadinessTone(readiness.score)) +
+            recoveryMetrics.join('') + '</div>' + subjectiveMarkup +
             '<details class="calendar-day-recovery-details"><summary>Recovery-Details und Datenbasis</summary><p>' + escapeHtml(readiness.dataMode || 'Keine Recovery-Daten verfügbar') + '</p>' +
             '<p>Objektive Werte: ' + readiness.objectiveCount + ' · Subjektive Werte: ' + readiness.subjectiveCount + '</p></details></div>'
         : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>';
 
-    const loadMarkup = '<div class="calendar-day-load-grid">' +
-        '<div><span>Absolvierter Training Load</span><strong>' + escapeHtml(loadText) + (data.loadValue !== null && data.timeline?.loadUnit ? ' <small>' + escapeHtml(data.timeline.loadUnit) + '</small>' : '') + '</strong><small>' + (data.loadValue === null ? 'Nicht zuverlässig berechenbar' : 'Quelle: ' + escapeHtml(data.timeline?.loadMode || 'Tages-Timeline')) + '</small></div>' +
-        '<div><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
-        '<div><span>Abgeschlossene Einheiten</span><strong>' + completedCount + '</strong><small>Geplante Einheiten nicht eingerechnet</small></div>' +
-        '<div><span>Geplante Einheiten</span><strong>' + planned.length + '</strong><small>Getrennt von tatsächlicher Belastung</small></div></div>';
+    const loadMarkup = '<div class="calendar-day-load-rings">' +
+        calendarRing(loadText, 'Training Load', data.loadValue === null ? 'nicht vollständig' : (data.timeline?.loadUnit || 'Belastung'), calendarLoadTone(data.timeline)) +
+        calendarRing(durationText, 'Trainingszeit', durationCoverage, 'info') +
+        calendarRing(String(completedCount), 'Abgeschlossen', 'Einheiten', 'good') +
+        calendarRing(String(planned.length), 'Geplant', 'Einheiten', 'info') +
+        '</div>';
 
     root.innerHTML =
         '<section class="calendar-day-heading">' +
@@ -333,7 +335,7 @@ function renderCalendarDayDetail(date, target) {
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3><span>' + planned.length + '</span></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>' +
         '<section class="calendar-detail-section"><h3>Belastungsanalyse</h3>' + loadMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup +
-            (health?.status ? '<p class="calendar-day-health-note">Gesundheitsstatus: ' + escapeHtml(health.status === 'sick' ? 'Krankheit' : 'Verletzung') + (health.diagnosis ? ' · ' + escapeHtml(health.diagnosis) : '') + '</p>' : '') + '</section>' +
+            '<div class="calendar-day-health-rings">' + calendarRing(health?.status === 'sick' ? 'Krank' : health?.status === 'injured' ? 'Verletzt' : '—', 'Gesundheit', health?.status ? (health.diagnosis || 'dokumentiert') : 'nicht erfasst', health?.status === 'sick' ? 'critical' : health?.status === 'injured' ? 'attention' : 'info') + '</div>' + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\'' + escapeHtml(date) + '\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
             (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>';
 }
@@ -1001,12 +1003,12 @@ export function renderWeekView() {
         const activityItems = data.activities.map(item => {
             const sport = calendarSport(item.type);
             const id = encodeURIComponent(String(item.id || '')).replace(/'/g, '%27');
-            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + (sport.color || '#64748b') + '" onclick="openCSVDetailsModal(\'' + id + '\')"><span class="calendar-week-activity-accent"></span><span class="calendar-week-activity-main"><strong>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</strong><small>' + escapeHtml(item.name || 'Trainingseinheit') + '</small><small class="calendar-week-source">' + escapeHtml(calendarActivitySourceLabel(item)) + '</small></span><span class="calendar-entry-status is-completed">Abgeschlossen</span></button>';
+            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + (sport.color || '#64748b') + '" onclick="openCSVDetailsModal(\'' + id + '\')"><span class="calendar-week-activity-main"><strong><i class="calendar-week-activity-dot"></i>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</strong><small>' + escapeHtml(item.name || 'Trainingseinheit') + '</small></span><span class="calendar-entry-status is-completed">Abgeschlossen</span></button>';
         }).join('');
         const planItems = data.planned.map(item => {
             const sport = calendarSport(item.type);
             const id = encodeURIComponent(String(item.id || '')).replace(/'/g, '%27');
-            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + (sport.color || '#64748b') + '" onclick="openPlannedCalendarDetail(decodeURIComponent(\'' + id + '\'))"><span class="calendar-week-activity-accent"></span><span class="calendar-week-activity-main"><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplante Einheit') + '</small><small>' + (item.duration == null ? 'Dauer —' : escapeHtml(item.duration) + ' min') + '</small></span><span class="calendar-entry-status is-planned">Geplant</span></button>';
+            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + (sport.color || '#64748b') + '" onclick="openPlannedCalendarDetail(decodeURIComponent(\'' + id + '\'))"><span class="calendar-week-activity-main"><strong><i class="calendar-week-activity-dot"></i>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplante Einheit') + '</small><small>' + (item.duration == null ? 'Dauer —' : escapeHtml(item.duration) + ' min') + '</small></span><span class="calendar-entry-status is-planned">Geplant</span></button>';
         }).join('');
         const eventLabels = [];
         if (data.races.length) eventLabels.push('<span class="calendar-week-event-label calendar-event-race"><i data-lucide="trophy"></i> Wettkampf</span>');
