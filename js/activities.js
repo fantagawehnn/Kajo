@@ -254,9 +254,12 @@ function renderActivityDataQuality(activity) {
     const series = getActivityTelemetrySeries(activity);
     const sampleCount = series.reduce((max, item) => Math.max(max, item.values.length), 0);
     const time = Array.isArray(telemetry.time) ? telemetry.time : [];
-    const hasTimeAxis = sampleCount >= 2 && time.length === sampleCount
-        && time.every(value => Number.isFinite(Number(value)))
-        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
+    const hasTimeAxis = series.some(item => {
+        const axis = Array.isArray(item.time) ? item.time : time;
+        return item.values.length >= 2 && axis.length === item.values.length
+            && axis.every(value => Number.isFinite(Number(value)))
+            && axis.slice(1).every((value, index) => Number(value) > Number(axis[index]));
+    });
     const fields = activity?.garminFitData?.recordFields || {};
     const lat = telemetry.latitude || telemetry.lat || telemetry.position_lat || fields.position_lat || fields.latitude;
     const lon = telemetry.longitude || telemetry.lon || telemetry.position_long || fields.position_long || fields.longitude;
