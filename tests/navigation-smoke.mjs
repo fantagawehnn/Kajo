@@ -191,6 +191,13 @@ assert.ok(calendar.includes('data.source === \'Manuell\'') && calendar.includes(
 
 assert.ok(calendar.includes("if (state.activeCalendarFormat === 'month') state.currentCalendarDate.setDate(1)"), 'month navigation avoids day-of-month overflow');
 assert.ok(calendar.includes('...Object.keys(week.plannedBySport)'), 'year legend includes sports with planned sessions only');
+assert.ok(calendar.includes('calendar-year-kpis') && calendar.includes("label: 'Training Load'"), 'year view starts with season KPIs including the selected load metric');
+assert.ok(calendar.includes('calendarYearLoadColor') && calendar.includes("week.loadStatus === 'unknown'"), 'year matrix colors use weekly load and preserve unknown coverage');
+assert.ok(calendar.includes('calendar-year-month-chart') && calendar.includes('calendar-year-sport-list'), 'year view compares monthly load and sport-specific training time');
+assert.ok(calendar.includes('calendarYearBuildPhaseSuggestions') && calendar.includes('confirmCalendarSeasonPhase'), 'year view suggests and persists reviewable training phases');
+assert.ok(calendar.includes('calendar-year-timeline') && calendar.includes('calendar-year-phase-editor'), 'year view includes season events and an editable phase workflow');
+assert.ok(main.includes('confirmCalendarSeasonPhase,') && main.includes('saveCalendarPhaseEditor,'), 'annual phase controls are exposed to calendar interactions');
+
 
 assert.ok(charts.includes('export function getActivityTelemetrySeries(act)'), 'activity chart options are built from available telemetry and FIT series');
 assert.ok(charts.includes('export function setActivityTelemetryMetric(metric)'), 'activity chart exposes a single metric switch');
