@@ -185,12 +185,14 @@ assert.ok(calendar.includes('calendar-week-source'), 'weekly activity entries ex
 assert.ok(calendar.includes("const key = type + '::' + format"), 'year calendar keeps Classic and Sprint durations in separate series');
 assert.ok(calendar.includes("activity.raceFormat ? ' · ' + activity.raceFormat"), 'day details preserve the activity race format');
 
-assert.ok(calendar.includes('calendar-day-events'), 'selected day detail also shows recorded health and competition symbols');
+assert.ok(calendar.includes("calendarDayEvent('Menstruation dokumentiert'") && calendar.includes("calendarDayEvent(item.name || 'Wettkampf'"), 'health, cycle and competition events remain in the chronological timeline');
+assert.ok(!dayDetail.includes('calendar-day-events') && !dayDetail.includes('calendarRaceRow') && !dayDetail.includes('calendar-day-duration-comparison') && !dayDetail.includes('calendar-day-edit-row'), 'day view excludes unagreed duplicate sections and controls');
 assert.ok(calendar.includes('calendar-day-kpis') && calendar.includes('calendar-day-timeline'), 'day view renders a KPI cockpit and chronological event timeline');
 assert.ok(calendar.includes('Absolviertes Training') && calendar.includes('Geplantes Training'), 'day view separates completed and planned sessions');
 assert.ok(calendar.includes('calendar-day-recovery-details') && calendar.includes('calendar-day-recovery-metrics'), 'day view keeps recovery compact with expandable details');
 assert.ok(calendar.includes("Tagesreflexion") && calendar.includes("openDailyNote(") && dashboard.includes("openDailyNote(requestedDate = null)"), "day view reuses date-specific daily notes for reflection");
 assert.ok(calendar.includes('calendar-day-date-actions') && calendar.includes('openCalendarDay(this.value)'), 'day view supports direct date selection and today navigation');
+assert.ok(dayDetail.includes('Vorheriger Tag') && dayDetail.includes('Nächster Tag'), 'day view supports previous and next day navigation');
 assert.ok(css.includes('.calendar-day-timeline-item') && css.includes('.calendar-day-kpis'), 'day cockpit has responsive timeline and KPI styling');
 
 assert.ok(calendar.includes('data.source === \'Manuell\'') && calendar.includes('data.source.includes(\'Garmin\')'), 'year timeline separates activity source types while retaining sport colors');
