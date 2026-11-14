@@ -212,7 +212,7 @@ assert.match(activityDetailReply, /weder eine Belastungssumme/);
 assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 1\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 0\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /sRPE dokumentiert für 1\/1 Einheiten \(360,0 AU\)/);
-assert.match(activityDetailReply, /kein gültiger sRPE-Wert für 1 dokumentierte Einheit/);
+assert.match(activityDetailReply, /kein gültiger sRPE-Wert für 1 Einheiten dokumentiert/);
 
 const modelTrendReply = buildLocalCoachReply({
     asOfDate: '2026-11-14',
