@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=74">
+    <link rel="stylesheet" href="css/styles.css?v=75">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -399,117 +399,66 @@
 
 <section id="training-load-overview" class="kajo-training-load-view space-y-4" aria-label="Training Load Übersicht">
  <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Training Load</h2><p id="training-load-model-date" class="kajo-training-load-muted">Modellstand wird geladen …</p></div><span id="training-load-period-label" class="kajo-analysis-period">Letzte 90 Tage</span></div>
- <div id="training-load-no-data" class="kajo-training-load-panel hidden" role="status"><strong>Keine auswertbare Belastungszeitreihe</strong><p>Für die gewählte Belastungsquelle liegen derzeit keine berechenbaren CTL-, ATL- und TSB-Werte vor.</p></div>
- <div id="training-load-content" class="space-y-4">
-  <div class="kajo-training-load-rings" aria-label="Belastungskennzahlen">
-   <button type="button" data-training-load-metric="ctl" class="kajo-load-metric" onclick="openTrainingLoadMetric('ctl')"><span class="kajo-load-ring"><strong id="training-load-value-ctl">—</strong></span><span class="kajo-load-label">CTL</span><small>Langfristig</small></button>
-   <button type="button" data-training-load-metric="atl" class="kajo-load-metric" onclick="openTrainingLoadMetric('atl')"><span class="kajo-load-ring"><strong id="training-load-value-atl">—</strong></span><span class="kajo-load-label">ATL</span><small>Kurzfristig</small></button>
-   <button type="button" data-training-load-metric="tsb" class="kajo-load-metric" onclick="openTrainingLoadMetric('tsb')"><span class="kajo-load-ring"><strong id="training-load-value-tsb">—</strong></span><span class="kajo-load-label">TSB</span><small>Belastungssaldo</small></button>
+ <nav id="training-load-model-switch" class="kajo-load-model-nav" aria-label="Belastungsmodell auswählen">
+  <button type="button" data-training-load-model="primary" onclick="setTrainingLoadModel('primary')" aria-pressed="true" class="active">Belastungsbilanz</button>
+  <button type="button" data-training-load-model="srpe" onclick="setTrainingLoadModel('srpe')" aria-pressed="false">sRPE-Load</button>
+  <button type="button" data-training-load-model="compare" onclick="setTrainingLoadModel('compare')" aria-pressed="false">Vergleich</button>
+  <button type="button" disabled aria-disabled="true" title="Kein eigenständiges Edwards-TRIMP-Datenfeld nachgewiesen">Edwards TRIMP</button>
+ </nav>
+ <div id="training-load-no-data" class="kajo-training-load-panel hidden" role="status"><strong>Keine auswertbare Belastungszeitreihe</strong><p>Für diese Berechnungsbasis liegen im ausgewählten Zeitraum keine vollständigen CTL-, ATL- und TSB-Werte vor. Prüfe die Datenabdeckung und die gewählte Modellbasis.</p></div>
+ <div id="training-load-standard-analysis" class="space-y-4">
+  <div id="training-load-content" class="space-y-4">
+   <div class="kajo-training-load-rings" aria-label="Belastungskennzahlen">
+    <button type="button" data-training-load-metric="ctl" class="kajo-load-metric" onclick="openTrainingLoadMetric('ctl')"><span class="kajo-load-ring"><strong id="training-load-value-ctl">—</strong></span><span class="kajo-load-label">CTL</span><small>Langfristig</small></button>
+    <button type="button" data-training-load-metric="atl" class="kajo-load-metric" onclick="openTrainingLoadMetric('atl')"><span class="kajo-load-ring"><strong id="training-load-value-atl">—</strong></span><span class="kajo-load-label">ATL</span><small>Kurzfristig</small></button>
+    <button type="button" data-training-load-metric="tsb" class="kajo-load-metric" onclick="openTrainingLoadMetric('tsb')"><span class="kajo-load-ring"><strong id="training-load-value-tsb">—</strong></span><span class="kajo-load-label">TSB</span><small>CTL − ATL</small></button>
+   </div>
+   <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">AKTIVE BERECHNUNGSBASIS</p><h3 id="training-load-source-title">—</h3></div><p id="training-load-source-description" class="kajo-training-load-muted"></p><p id="training-load-coverage" class="kajo-training-load-coverage"></p></section>
+   <section class="kajo-training-load-panel">
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">KURZ- UND LANGFRISTIGE ENTWICKLUNG</p><h3>ATL und CTL</h3></div></div>
+    <div class="kajo-training-load-chart-wrap"><canvas id="training-load-atl-ctl-chart" aria-label="ATL und CTL im zeitlichen Verlauf"></canvas></div>
+    <div class="kajo-load-chart-legend"><span><i class="atl"></i>ATL · kurzfristig</span><span><i class="ctl"></i>CTL · langfristig</span></div>
+   </section>
+   <section class="kajo-training-load-panel">
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSBILANZ</p><h3>TSB</h3><p class="kajo-training-load-muted">Eigene Skala · Differenz zwischen CTL und ATL</p></div></div>
+    <div class="kajo-training-load-chart-wrap kajo-training-load-chart-wrap-compact"><canvas id="training-load-tsb-chart" aria-label="TSB im zeitlichen Verlauf mit Nulllinie"></canvas></div>
+   </section>
+   <section class="kajo-training-load-panel">
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">TÄGLICHE BELASTUNG</p><h3>Belastung im Tagesverlauf</h3><p id="training-load-daily-unit" class="kajo-training-load-muted">Load-Punkte pro Tag</p></div></div>
+    <nav class="kajo-load-switch" aria-label="Tagesdiagramm auswählen">
+     <button type="button" data-training-load-daily-measure="load" onclick="setTrainingLoadDailyMeasure('load')" class="active" aria-pressed="true">Täglicher Load</button>
+     <button type="button" data-training-load-daily-measure="duration" onclick="setTrainingLoadDailyMeasure('duration')" aria-pressed="false">Trainingszeit</button>
+    </nav>
+    <div class="kajo-training-load-chart-wrap kajo-training-load-chart-wrap-compact"><canvas id="training-load-daily-chart" aria-label="Täglicher Load oder Trainingszeit als Balkendiagramm"></canvas></div>
+   </section>
+   <section class="kajo-training-load-panel">
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">TRAININGSUMFANG</p><h3>Trainingszeit und Einheiten</h3><p class="kajo-training-load-muted">Wochenverlauf · getrennte Skalen</p></div></div>
+    <div class="kajo-training-load-volume-grid">
+     <div><p class="kajo-training-load-volume-label">Trainingszeit · Stunden</p><div class="kajo-training-load-volume-chart"><canvas id="training-load-weekly-hours-chart" aria-label="Trainingsstunden pro Woche"></canvas></div></div>
+     <div><p class="kajo-training-load-volume-label">Einheiten · Anzahl</p><div class="kajo-training-load-volume-chart"><canvas id="training-load-weekly-sessions-chart" aria-label="Trainingseinheiten pro Woche"></canvas></div></div>
+    </div>
+   </section>
+   <section class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h3>Belastungsanalyse</h3></div></div><div id="training-load-insight"></div></section>
+   <p class="kajo-training-load-method">Die Belastungszeitreihe wird über die zentrale KAJO-Berechnung erstellt. Fehlende Daten werden nicht als Ruhetage oder Nullwerte interpretiert. Garmin-eigene Belastung und KAJO-HF-Zonenindex werden im Garmin-Pfad anhand der vorhandenen Abdeckung ausgewählt und nicht miteinander addiert.</p>
   </div>
-  <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">AKTIVE BERECHNUNGSBASIS</p><h3 id="training-load-source-title">—</h3></div><p id="training-load-source-description" class="kajo-training-load-muted"></p><p id="training-load-coverage" class="kajo-training-load-coverage"></p></section>
-  <section class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">ZEITLICHE ENTWICKLUNG</p><h3>Belastungsverlauf</h3></div></div>
-   <nav class="kajo-load-switch" aria-label="Kennzahl im Belastungsverlauf"><button type="button" data-training-load-chart-metric="ctl" onclick="setTrainingLoadChartMetric('ctl')" aria-pressed="true" class="active">CTL</button><button type="button" data-training-load-chart-metric="atl" onclick="setTrainingLoadChartMetric('atl')" aria-pressed="false">ATL</button><button type="button" data-training-load-chart-metric="tsb" onclick="setTrainingLoadChartMetric('tsb')" aria-pressed="false">TSB</button></nav>
-   <div class="kajo-training-load-chart-wrap"><canvas id="training-load-detail-chart" aria-label="Zeitlicher Verlauf der ausgewählten Belastungskennzahl"></canvas></div><p id="training-load-chart-note" class="kajo-training-load-muted"></p>
-  </section>
-  <section class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h3>Belastungsanalyse</h3></div></div><div id="training-load-insight"></div></section>
-  <p class="kajo-training-load-method">Die Ansicht nutzt die vorhandene zentrale KAJO-Belastungszeitreihe. Garmin Training Load, KAJO-HF-Zonenindex, TSS und sRPE werden nicht miteinander vermischt. Es werden keine zusätzlichen Belastungskennzahlen oder Berechnungsformeln eingeführt.</p>
+ </div>
+ <div id="training-load-compare-analysis" class="hidden space-y-4">
+  <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">MODELLVERGLEICH</p><h3>Garmin / HF-Zonenindex</h3></div><div class="kajo-training-load-chart-wrap"><canvas id="training-load-compare-garmin-chart" aria-label="ATL und CTL im Garmin- beziehungsweise HF-Zonenmodell"></canvas></div><p id="training-load-compare-garmin-chart-note" class="kajo-training-load-muted"></p></section>
+  <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">MODELLVERGLEICH</p><h3>sRPE-Load</h3></div><div class="kajo-training-load-chart-wrap"><canvas id="training-load-compare-srpe-chart" aria-label="ATL und CTL im sRPE-Modell"></canvas></div><p id="training-load-compare-srpe-chart-note" class="kajo-training-load-muted"></p></section>
+  <p class="kajo-training-load-method">Beide Modelle werden getrennt berechnet und mit jeweils eigener Skala dargestellt. Die absoluten Werte sind nicht direkt vergleichbar. Fehlende Werte oder unvollständige Datenabschnitte bleiben Lücken.</p>
  </div>
 </section>
 <section id="training-load-metric-detail" class="hidden space-y-4" aria-live="polite"><button type="button" onclick="closeTrainingLoadMetric()" class="kajo-back-link"><i data-lucide="arrow-left"></i><span>Training Load</span></button>
  <header><p class="kajo-analysis-eyebrow">KENNZAHL IM DETAIL</p><h2 id="training-load-detail-title" class="text-lg font-bold text-white mt-1">—</h2><p id="training-load-detail-description" class="text-xs text-slate-400 mt-2"></p></header>
  <section class="kajo-training-load-panel"><div class="kajo-training-load-chart-wrap"><canvas id="training-load-metric-chart" aria-label="Detailverlauf der ausgewählten Belastungskennzahl"></canvas></div><p id="training-load-metric-chart-note" class="kajo-training-load-muted"></p></section>
 </section>
-<div id="analysis-load-section" class="space-y-4 kajo-analysis-load-section">
-                
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i>
-                            Belastungsverlauf
-                        </h2>
-                        <p class="text-[10px] text-slate-500 mt-1">Fitness, Ermüdung und Form im Zeitverlauf. Aktivitätsdetails und Gesundheitsereignisse findest du direkt beim jeweiligen Datum.</p>
-                    </div>
-
-                    <div id="analysis-period-buttons" class="analysis-period-buttons flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-                        <button type="button" onclick="setTimeframe('7d')" id="tf-7d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">7T</button>
-                        <button type="button" onclick="setTimeframe('28d')" id="tf-28d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">28T</button>
-                        <button type="button" onclick="setTimeframe('3m')" id="tf-3m" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-semibold">90T</button>
-                        <button type="button" onclick="setTimeframe('6m')" id="tf-6m" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">6M</button>
-                        <button type="button" onclick="setTimeframe('1y')" id="tf-1y" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">1J</button>
-                        
-                    </div>
-                </div>
-
-                <div id="custom-date-box" class="hidden bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center gap-4 text-xs">
-                    <span class="text-slate-400 font-semibold">Benutzerdefinierter Zeitraum:</span>
-                    <label class="text-slate-400">Von: <input type="date" id="date-from" value="" class="bg-slate-900 border border-slate-700 text-white px-2 py-1 rounded-lg ml-1"></label>
-                    <label class="text-slate-400">Bis: <input type="date" id="date-to" value="" class="bg-slate-900 border border-slate-700 text-white px-2 py-1 rounded-lg ml-1"></label>
-                    <button type="button" onclick="applyCustomDateRange()" class="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg">Anwenden</button>
-                </div>
-
-                <!-- BELASTUNGSZONEN-BALKEN -->
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="font-bold text-slate-300 flex items-center gap-1.5">
-                            <i data-lucide="gauge" class="w-4 h-4 text-cyan-400"></i>
-                            Aktuelle Belastungs-Zone (modellierter Belastungssaldo):
-                        </span>
-                        <span class="font-bold text-amber-400 font-mono" id="zone-gauge-text">Belastungssaldo wird berechnet</span>
-                    </div>
-
-                    <div class="relative h-6 w-full rounded-xl overflow-hidden flex font-bold text-[10px] text-slate-950 select-none shadow-inner">
-                        <div class="bg-rose-600 w-[20%] flex items-center justify-center border-r border-slate-900/40" title="Starke Ermüdung">Stark ermüdet</div>
-                        <div class="bg-amber-500 w-[25%] flex items-center justify-center border-r border-slate-900/40" title="Produktive Belastung">Produktive Belastung</div>
-                        <div class="bg-cyan-500 w-[20%] flex items-center justify-center border-r border-slate-900/40" title="Ausgeglichen">Ausgeglichen</div>
-                        <div class="bg-emerald-400 w-[20%] flex items-center justify-center border-r border-slate-900/40" title="Frisch">Frisch</div>
-                        <div class="bg-emerald-600 text-white w-[15%] flex items-center justify-center" title="Tapering">Tapering</div>
-
-                        <!-- Dynamic Marker Needle -->
-                        <div id="zone-gauge-marker" class="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_5px_#ffffff] z-10 transition-all duration-500" style="left: 32%;"></div>
-                    </div>
-                </div>
-
-                <!-- Main Load Chart Canvas -->
-                <div class="h-64 sm:h-72 w-full relative">
-                    <canvas id="intervalsLoadChart"></canvas>
-                </div>
-                <div id="load-source-note" class="text-[10px] text-slate-400 bg-slate-950/70 border border-slate-800 rounded-lg px-3 py-2">Die verwendete Belastungsquelle wird hier erläutert.</div>
-                <div id="load-period-summary" class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2"><p class="text-xs text-slate-500">Wochenbelastung wird aus den verfügbaren Trainingsdaten berechnet.</p></div>
-                <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-load-insight"></div></div>
-<details class="kajo-analysis-extra-details bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <summary class="cursor-pointer text-sm font-semibold text-white">Ergänzende Trainingsauswertungen <span class="block text-[10px] font-normal text-slate-400 mt-1">Trainingsumfang und Trainingsverteilung</span></summary>
-                    <div class="pt-3 space-y-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-cyan-400">Kanu-spezifische Trainingsanalyse</h3>
-                        <section class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div><h3 class="text-xs font-bold text-white">Kanu-Trainingsstunden im Vergleich</h3><p class="text-[10px] text-slate-500 mt-1">K1, C1, C2 und Paddelergometer · Tages- oder Wochenwerte</p></div>
-                    <div class="flex flex-wrap items-end gap-3 bg-slate-900/70 border border-slate-800 rounded-xl p-3">
-                        <label class="text-[10px] text-slate-400">Von <input type="date" id="canoe-date-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"></label>
-                        <label class="text-[10px] text-slate-400">Bis <input type="date" id="canoe-date-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"></label>
-                        <button type="button" onclick="applyCanoeDateRange()" class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg">Zeitraum anwenden</button>
-                        <button type="button" onclick="resetCanoeDateRange()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg">Auf letzte 90 Tage zurücksetzen</button>
-                    </div>
-                    <div class="h-64"><canvas id="canoeTrainingHoursChart"></canvas></div>
-                    <div id="canoe-training-hours-summary" class="grid grid-cols-2 lg:grid-cols-4 gap-2"></div>
-                    <div>
-                        <h4 class="text-xs font-bold text-white mb-2">Trainingsinhalte nach Bootsklasse</h4>
-                        <p class="text-[10px] text-slate-500 mb-2">Trainingskategorien je Bootsklasse</p>
-                        <div id="canoe-training-content-summary"></div>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-white mb-2">Sprint- und Classic-Zuordnung</h4>
-                        <p class="text-[10px] text-slate-500 mb-2">Sprint / Classic</p>
-                        <div id="canoe-race-format-summary" class="grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
-                    </div>
-                    <p id="canoe-training-hours-note" class="text-[10px] text-slate-500"></p>
-                </section>
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-cyan-400">Allgemeine Trainingsanalyse</h3>
-                                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <section class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3"><div class="flex items-center justify-between"><h3 class="text-xs font-bold text-white">Trainingszeit nach Sportart</h3><select id="sport-range" onchange="refreshSportAnalytics()" class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white"><option value="7">7 Tage</option><option value="28">28 Tage</option><option value="90">90 Tage</option><option value="all">Gesamter Zeitraum</option></select></div><div class="h-56"><canvas id="sportDistributionChart"></canvas></div><div id="sport-breakdown-legend" class="space-y-2"></div></section>
-                  <section class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3"><h3 class="text-xs font-bold text-white">Trainingszeit in HF-Zonen</h3><div class="h-56"><canvas id="heartRateZonesChart"></canvas></div><div id="heart-rate-zone-summary" class="grid grid-cols-1 gap-2"></div><p id="heart-rate-zone-note" class="text-[10px] text-slate-500"></p></section>
-                </div>
-                    </div>
-                </details>
-            </div></div>
+<section id="load-supporting-analysis" class="space-y-4" aria-label="Weitere Belastungsperspektiven">
+ <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">ERGÄNZENDE ANALYSE</p><h2>Trainingsverteilung</h2><p class="kajo-training-load-muted">Trainingsumfang nach Sportart und zeitliche Verteilung der Herzfrequenzzonen.</p></div></div>
+ <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <section class="kajo-training-load-panel space-y-3"><div class="flex items-center justify-between gap-2"><h3 class="text-xs font-bold">Trainingszeit nach Sportart</h3><select id="sport-range" onchange="refreshSportAnalytics()" class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white"><option value="7">7 Tage</option><option value="28">28 Tage</option><option value="90" selected>90 Tage</option><option value="all">Gesamter Zeitraum</option></select></div><div class="h-56"><canvas id="sportDistributionChart"></canvas></div><div id="sport-breakdown-legend" class="space-y-2"></div></section>
+  <section class="kajo-training-load-panel space-y-3"><h3 class="text-xs font-bold">Trainingszeit in HF-Zonen</h3><div class="h-56"><canvas id="heartRateZonesChart"></canvas></div><div id="heart-rate-zone-summary" class="grid grid-cols-1 gap-2"></div><p id="heart-rate-zone-note" class="text-[10px] text-slate-500"></p></section>
+ </div>
+</section>
 <div id="analysis-subpage-performance" class="hidden space-y-4">
 <section class="kajo-analysis-hero" aria-label="Performance">
   <div class="kajo-analysis-hero-ring" id="performance-hero-ring" aria-live="polite">
@@ -1621,7 +1570,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js"></script>
-    <script type="module" src="js/main.js?v=78"></script>
+    <script type="module" src="js/main.js?v=79"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
