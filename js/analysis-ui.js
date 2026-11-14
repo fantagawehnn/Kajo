@@ -3,7 +3,7 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
-import { historyRingColor } from './dashboard.js';
+import { calculateReadiness, historyRingColor } from './dashboard.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -93,6 +93,13 @@ function recoveryCircleMetric(label, key, value, unit = '', date = '', interacti
     '</button>';
 }
 function renderRecovery() {
+  // Keep the existing aggregate value available to the analysis overview only.
+  // Its visual summary is intentionally not rendered on the Recovery detail page.
+  const readiness = calculateReadiness(todayKey());
+  const score = readiness.enoughData ? readiness.score : null;
+  setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
+    'Readiness', '', score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
+
   const objectiveEntries = [
     ['HRV', 'hrv', 'ms', 1],
     ['Ruhepuls', 'rhr', 'bpm', 0],
