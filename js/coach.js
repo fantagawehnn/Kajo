@@ -378,7 +378,12 @@ function buildActivitiesReply(context) {
             const coverage = context.trainingLoad.loadCoverageByActivityType || [];
             if (coverage.length) {
                 lines.push('Belastungsdaten nach Aktivitätstyp im betrachteten 90-Tage-Kontext (ausgewählte Quelle: ' + (context.trainingLoad.resolvedMode || context.trainingLoad.selectedSource || 'nicht angegeben') + '):');
-                coverage.forEach(item => lines.push('• ' + item.type + (item.isCanoePerformanceActivity ? ' (Kanu-Performance)' : ' (ergänzend)') + ': Belastungswert für ' + item.loadAvailableCount + '/' + item.activityCount + ' Einheiten vorhanden; ' + item.loadMissingCount + ' ohne Wert.'));
+                coverage.forEach(item => {
+                    const rpeSummary = item.sessionRpeAvailableCount
+                        ? '; sRPE dokumentiert für ' + item.sessionRpeAvailableCount + '/' + item.activityCount + ' Einheiten (' + formatNumber(item.documentedSessionRpeLoadAU, 1) + ' AU)'
+                        : '; kein gültiger sRPE-Wert dokumentiert';
+                    lines.push('• ' + item.type + (item.isCanoePerformanceActivity ? ' (Kanu-Performance)' : ' (ergänzend)') + ': Belastungswert der ausgewählten Quelle für ' + item.loadAvailableCount + '/' + item.activityCount + ' Einheiten vorhanden; ' + item.loadMissingCount + ' ohne Wert' + rpeSummary + '.');
+                });
             }
             lines.push('• Die dokumentierten Stunden beschreiben nur die erfasste Dauer. Sie sind weder eine Belastungssumme noch ein Nachweis für vollständige Trainingsdokumentation.');
         }
