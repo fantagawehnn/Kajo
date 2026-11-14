@@ -173,7 +173,7 @@ assert.ok(calendar.includes("renderCalendarDayDetail(toLocalDateString(state.cur
 const dayDetailStart = calendar.indexOf('function renderCalendarDayDetail');
 const dayDetailEnd = calendar.indexOf('export function openCalendarDay', dayDetailStart);
 const dayDetail = calendar.slice(dayDetailStart, dayDetailEnd);
-assert.ok(dayDetail.indexOf('Absolviertes Training') < dayDetail.indexOf('Belastungsanalyse') && dayDetail.indexOf('Belastungsanalyse') < dayDetail.indexOf('Recovery & Gesundheit'), 'day cockpit order is completed training, load analysis, recovery and health');
+assert.ok(dayDetail.indexOf('Tagesverlauf') < dayDetail.indexOf('Absolviertes Training') && dayDetail.indexOf('Absolviertes Training') < dayDetail.indexOf('Recovery & Gesundheit'), 'day cockpit order is timeline, completed training, recovery and health');
 assert.ok(calendar.includes('getSportsCatalog()'), 'calendar activity colors come from configured sport colors');
 assert.ok(calendar.includes('calendar-month-sport-marker is-planned') && calendar.includes('calendar-entry-status is-completed'), 'sport color is separate from planned/completed status');
 assert.ok(calendar.includes('calendarEventIcons(date)'), 'calendar shows distinct event symbols');
