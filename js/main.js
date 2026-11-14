@@ -436,13 +436,17 @@ function setGarminSyncIndicator(state, label) {
     const text = document.getElementById('garmin-sync-indicator-text');
     if (!indicator || !dot || !text) return;
     const connected = state !== 'error';
-    dot.className = 'inline-block h-2.5 w-2.5 rounded-full ' + (connected ? 'bg-emerald-400' : 'bg-rose-500');
-    text.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
-    indicator.title = connected ? 'Garmin verbunden' : 'Garmin nicht verbunden';
-    indicator.setAttribute('aria-label', 'Garmin-Status: ' + (connected ? 'Verbunden' : 'Nicht verbunden'));
+    const displayLabel = label || (connected ? 'Verbunden' : 'Nicht verbunden');
+    const dotColor = state === 'error' ? 'bg-rose-500'
+        : state === 'partial' ? 'bg-amber-400'
+        : state === 'syncing' ? 'bg-cyan-400' : 'bg-emerald-400';
+    dot.className = 'inline-block h-2.5 w-2.5 rounded-full ' + dotColor;
+    text.textContent = displayLabel;
+    indicator.title = 'Garmin-Status: ' + displayLabel;
+    indicator.setAttribute('aria-label', 'Garmin-Status: ' + displayLabel);
     const settingsStatus = document.getElementById('settings-garmin-status');
     const settingsDot = document.getElementById('settings-garmin-status-dot');
-    if (settingsStatus) settingsStatus.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
+    if (settingsStatus) settingsStatus.textContent = displayLabel;
     if (settingsDot) {
         settingsDot.classList.toggle('is-connected', connected);
         settingsDot.classList.toggle('is-error', !connected);
@@ -1949,23 +1953,28 @@ async function syncGarminTodayOnOpen(userId) {
         } catch (telemetryError) {
             console.warn('KAJO: FIT-Zeitreihen des heutigen Tages konnten nicht vollständig ergänzt werden:', telemetryError);
         }
+        let jsonTelemetry = { failed: 0, rateLimited: false };
         try {
             // Beim automatischen Tagesabgleich werden auch ältere Garmin-Aktivitäten
             // ohne JSON-Rohtelemetrie schrittweise nachgeladen.
-            const jsonTelemetry = await syncMissingGarminJsonTelemetry('0000-01-01', date, null);
+            jsonTelemetry = await syncMissingGarminJsonTelemetry('0000-01-01', date, null);
             console.info('KAJO: Automatische Garmin-Rohtelemetrie abgeschlossen:', jsonTelemetry);
         } catch (jsonTelemetryError) {
+            jsonTelemetry = { failed: 1, rateLimited: false };
             console.warn('KAJO: Garmin-Rohtelemetrie konnte nicht vollständig ergänzt werden:', jsonTelemetryError);
         }
 
         if (activeAppUserId !== userId || !appUserReady) return;
-        if (health?.status === 'partial' || Number(health?.failed || 0) > 0) {
-            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Endpunkte können beim nächsten Öffnen erneut abgerufen werden.', health);
+        const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
+            || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true;
+        if (partial) {
+            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
+            setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
         } else {
             garminDailySyncCompleted.add(runKey);
-            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health);
+            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry);
+            setGarminSyncIndicator('current', 'Verbunden');
         }
-        setGarminSyncIndicator('current', 'Verbunden');
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
         if (activeAppUserId === userId && appUserReady) setGarminSyncIndicator('current', 'Verbunden');
