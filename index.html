@@ -752,132 +752,128 @@
         <!-- ========================================== -->
         <!-- TAB 6: KI-COACH CHAT -->
         <!-- ========================================== -->
-        <div id="view-methods" class="hidden kajo-data-page">
-            <header class="space-y-2">
-                <div class="flex items-center gap-2 text-cyan-400"><i data-lucide="calculator" class="w-5 h-5"></i><span class="text-xs font-semibold uppercase tracking-wider">Transparenz &amp; Methodik</span></div>
-                <h2 class="text-xl font-bold text-white">Berechnungen &amp; Datenquellen</h2>
-                <p class="text-sm text-slate-400 max-w-3xl">Hier findest du, wie KAJO Kennzahlen bildet, welche Daten dafür verwendet werden und wo Grenzen der Aussagekraft liegen. Es werden nur die tatsächlich vorhandenen und auswertbaren Daten berücksichtigt.</p>
-            </header>
+        <div id="view-methods" class="hidden kajo-data-page kajo-methods-page">
+  <header class="kajo-methods-header">
+    <div>
+      <p class="kajo-eyebrow">TRANSPARENZ &amp; NACHVOLLZIEHBARKEIT</p>
+      <h1>Berechnungen &amp; Datenquellen</h1>
+      <p>Finde schnell heraus, woher deine Daten stammen, wie KAJO Kennzahlen bildet und wann Ergebnisse nur eingeschränkt aussagekräftig sind.</p>
+    </div>
+    <div class="kajo-methods-header-mark"><i data-lucide="calculator"></i></div>
+  </header>
 
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">1. Trainingsbelastung (Load)</h3>
-                <p class="text-sm text-slate-300">KAJO verwendet je nach vorhandener Datenquelle genau eine Belastungsmethode. Garmin-Daten haben Vorrang. Externe TSS-Werte werden nicht mit Garmin-Werten oder dem KAJO-HF-Zonenindex vermischt.</p>
-                <div class="grid md:grid-cols-2 gap-3">
-                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
-                        <h4 class="text-sm font-semibold text-cyan-300">Garmin FIT · HF-Zonenzeit</h4>
-                        <p class="text-xs text-slate-300">Wenn eine importierte FIT-Datei eine auswertbare Herzfrequenz-Zeitreihe enthält und gültige HF-Zonen vorliegen, summiert KAJO die Zeit in fünf Zonen. Jede Minute wird mit dem Faktor der Zone gewichtet:</p>
-                        <p class="text-sm text-white font-mono">Z1 × 1 · Z2 × 2 · Z3 × 3 · Z4 × 4 · Z5 × 5</p>
-                        <p class="text-xs text-slate-400">Ergebnis: EA-HF-Punkte. Das ist ein eigener KAJO-Belastungsindex, weder TSS noch Garmin Training Load. Zonen stammen bevorzugt aus den sportartspezifischen Einstellungen. Fehlen gültige Zonen, werden sie aus der maximalen Herzfrequenz geschätzt (73 %, 80 %, 87 %, 93 %). Ohne ausreichende HF-Zeitreihe oder gültige Zonen ist keine Berechnung möglich.</p>
-                    </div>
-                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
-                        <h4 class="text-sm font-semibold text-cyan-300">Garmin Training Load</h4>
-                        <p class="text-xs text-slate-300">Wenn Garmin-Aktivitäten erkannt werden, aber keine HF-Zonenzeit berechnet werden kann, nutzt KAJO vorhandene Garmin-eigene Trainingsbelastungswerte.</p>
-                        <p class="text-xs text-slate-400">Quelle: importierte Garmin-Aktivitätsdaten. Die Werte bleiben in der Einheit „Garmin Load“ und sind nicht direkt mit EA-HF-Punkten oder TSS vergleichbar.</p>
-                    </div>
-                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
-                        <h4 class="text-sm font-semibold text-cyan-300">Externer TSS</h4>
-                        <p class="text-xs text-slate-300">Wenn keine Garmin-Datenquelle für die Belastungsberechnung aktiv ist, verwendet KAJO vorhandene, numerische TSS-Werte aus importierten bzw. synchronisierten Aktivitäten.</p>
-                        <p class="text-xs text-slate-400">TSS wird als übernommener Wert verwendet und von KAJO nicht aus Dauer oder Herzfrequenz neu berechnet.</p>
-                    </div>
-                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
-                        <h4 class="text-sm font-semibold text-cyan-300">Keine berechenbare Belastung</h4>
-                        <p class="text-xs text-slate-300">Fehlen passende Garmin-Load-Werte bzw. externe TSS-Werte, wird keine künstliche Belastung erzeugt. Die Kennzahlen CTL, ATL, Belastungssaldo und ACWR bleiben dann ohne Berechnungsgrundlage.</p>
-                    </div>
-                </div>
-            </section>
+  <nav class="kajo-methods-jump" aria-label="Inhaltsübersicht">
+    <a href="#kajo-methods-calculations"><i data-lucide="activity"></i> Berechnungen</a>
+    <a href="#kajo-methods-sources"><i data-lucide="database"></i> Datenquellen</a>
+    <a href="#kajo-methods-quality"><i data-lucide="shield-check"></i> Datenqualität</a>
+  </nav>
 
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">2. Belastungsverlauf: CTL, ATL, Belastungssaldo und ACWR</h3>
-                <p class="text-xs text-slate-400">Grundlage ist die tägliche Summe der auswertbaren Belastungswerte. Tage ohne registrierte Belastung gehen derzeit als 0 in die Zeitreihe ein. Deshalb können fehlende oder noch nicht synchronisierte Aktivitäten den Verlauf unterschätzen.</p>
-                <div class="space-y-3">
-                    <div><h4 class="text-sm font-semibold text-white">CTL · langfristige Belastung</h4><p class="text-xs text-slate-300">Exponentiell geglätteter Belastungswert mit einer Zeitkonstante von 42 Tagen. Er reagiert langsam auf Veränderungen und beschreibt den längerfristigen Belastungsverlauf – keine direkt gemessene Fitness.</p></div>
-                    <div><h4 class="text-sm font-semibold text-white">ATL · kurzfristige Belastung</h4><p class="text-xs text-slate-300">Exponentiell geglätteter Belastungswert mit einer Zeitkonstante von 7 Tagen. Er reagiert schneller auf aktuelle Trainingsbelastung – keine direkte Messung von Ermüdung.</p></div>
-                    <div class="bg-slate-950 rounded-xl p-3 border border-slate-800"><p class="text-xs text-slate-300">Für beide Werte wird täglich aktualisiert: <span class="font-mono text-white">Neuer Wert = alter Wert + α × (Tages-Load − alter Wert)</span>, mit <span class="font-mono text-white">α = 1 − e^(−1 / Zeitkonstante)</span>.</p></div>
-                    <div><h4 class="text-sm font-semibold text-white">Belastungssaldo · Tagesende</h4><p class="text-xs text-slate-300">Belastungssaldo = CTL − ATL auf Basis der Werte am Ende des jeweiligen Tages. Ein negativer Wert bedeutet, dass die kurzfristige Modellbelastung über der langfristigen liegt; ein positiver Wert bedeutet das Gegenteil. Der Wert ist ein app-interner Modellindikator und keine direkte Aussage über Wettkampfform.</p></div>
-                    <div><h4 class="text-sm font-semibold text-white">Relativer Belastungssaldo</h4><p class="text-xs text-slate-300">Bei Garmin-basiertem Load zeigt KAJO die relative Differenz (CTL − ATL) / CTL × 100. Bei CTL = 0 wird kein Prozentwert als Leistungsindikator interpretiert. Die Kennzahl wird von KAJO aus der ausgewählten Garmin-Load-Quelle berechnet und ist kein Garmin-Messwert.</p></div>
-                    <div><h4 class="text-sm font-semibold text-white">ACWR · Verhältnis kurzfristig zu langfristig</h4><p class="text-xs text-slate-300">ACWR = ATL / CTL. KAJO nutzt dafür exponentiell gewichtete 7- und 42-Tage-Werte. Die Kennzahl wird erst nach mindestens 42 Tagen Zeitreihe und bei CTL &gt; 0 berechnet. Sie ist eine ergänzende Belastungsorientierung, kein Verletzungsgrenzwert.</p></div>
-                    <p class="text-xs text-amber-300">Modellaufbau: Die ersten 126 Tage werden als vorläufig gekennzeichnet, weil ein historischer Ausgangswert fehlt. Die Startwerte für CTL und ATL sind 0.</p>
-                </div>
-            </section>
+  <section class="kajo-methods-intro" aria-label="Datenfluss in KAJO">
+    <div class="kajo-methods-intro-step"><span>01</span><strong>Datenquellen</strong><small>Garmin · Intervals.icu · manuell · Dateien</small></div>
+    <i data-lucide="arrow-right" aria-hidden="true"></i>
+    <div class="kajo-methods-intro-step"><span>02</span><strong>Datenverarbeitung</strong><small>Import · Zuordnung · Prüfung</small></div>
+    <i data-lucide="arrow-right" aria-hidden="true"></i>
+    <div class="kajo-methods-intro-step"><span>03</span><strong>Kennzahlen</strong><small>Load · Recovery · Performance</small></div>
+  </section>
 
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">3. Wochen- und Zeitraumvergleiche</h3>
-                <ul class="list-disc pl-5 space-y-2 text-xs text-slate-300">
-                    <li><strong>7-Tage-Belastung:</strong> Summe der täglichen Load-Werte der letzten sieben Tage.</li>
-                    <li><strong>Wochenvergleich:</strong> aktuelle sieben Tage gegenüber den unmittelbar vorherigen sieben Tagen. Prozentänderung = (aktuelle Woche − Vorwoche) / Vorwoche × 100. Bei Vorwoche ohne Belastung wird kein Prozentwert gebildet.</li>
-                    <li><strong>Trainingstage:</strong> Anzahl der letzten sieben Tage mit einem Load größer 0.</li>
-                    <li><strong>Load-Abdeckung:</strong> Anzahl der Aktivitäten mit berechenbarem Load im Verhältnis zu allen importierten Aktivitäten im Zeitraum. Nicht importierte Aktivitäten können dabei nicht erkannt werden.</li>
-                    <li><strong>28-Tage-Schnitt:</strong> Summe der letzten 28 Tage geteilt durch vier.</li>
-                    <li><strong>21-Tage-Referenz:</strong> aktuelle Woche wird mit dem durchschnittlichen Wochenumfang der davorliegenden 21 Tage verglichen.</li>
-                </ul>
-            </section>
+  <section id="kajo-methods-calculations" class="kajo-methods-section">
+    <div class="kajo-methods-section-heading"><div><p class="kajo-eyebrow">WIE KAJO RECHNET</p><h2>Berechnungen</h2></div><span class="kajo-methods-count">01 / 03</span></div>
+    <p class="kajo-methods-section-lead">Die wichtigsten Modelle auf einen Blick. Öffne eine Kennzahl nur dann, wenn du die Berechnungsdetails benötigst.</p>
 
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">4. Trainings-Readiness</h3>
-                <p class="text-xs text-slate-300">Der Readiness-Wert kombiniert verfügbare objektive Messgrößen und subjektive tägliche Check-ins. Beide Teilbereiche werden zunächst jeweils gemittelt und anschließend gleich gewichtet: 50 % objektiv und 50 % subjektiv.</p>
-                <div class="grid md:grid-cols-2 gap-3">
-                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-3 space-y-2">
-                        <h4 class="text-sm font-semibold text-white">Objektive Messgrößen</h4>
-                        <ul class="list-disc pl-5 text-xs text-slate-300 space-y-1">
-                            <li>HRV, Ruheherzfrequenz und Schlafdauer im Vergleich zum persönlichen Median der vorherigen Check-ins innerhalb von 90 Tagen (mindestens fünf Vergleichswerte).</li>
-                            <li>Schlafscore wird direkt als Wert von 0 bis 100 übernommen.</li>
-                            <li>HRV und Schlafdauer: Score = ((Messwert / Median) − 0,70) / 0,30 × 100. Ruheherzfrequenz: Score = (1,20 − Messwert / Median) / 0,20 × 100. Ergebnisse werden auf 0–100 begrenzt. Der Schlafscore wird direkt übernommen.</li>
-                        </ul>
-                    </div>
-                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-3 space-y-2">
-                        <h4 class="text-sm font-semibold text-white">Subjektive Angaben</h4>
-                        <ul class="list-disc pl-5 text-xs text-slate-300 space-y-1">
-                            <li>Schlafqualität und Motivation: 1–5 wird auf 0–100 umgerechnet.</li>
-                            <li>Müdigkeit, Muskelkater und Stress: umgekehrte Skala, damit niedrigere Belastung höhere Punkte ergibt.</li>
-                            <li>Zyklusbedingte Trainingsbeeinträchtigung fließt nur ein, wenn der Check-in als Periodentag markiert ist und ein Beeinträchtigungswert von 1 bis 5 vorliegt. Score = (5 − Beeinträchtigungswert) / 5 × 100.</li>
-                        </ul>
-                    </div>
-                </div>
-                <p class="text-xs text-amber-300">Ein Gesamtwert wird nur angezeigt, wenn mindestens zwei objektive und drei subjektive Messgrößen vorliegen. Readiness ist eine Orientierung aus den erfassten Angaben, keine medizinische Diagnose oder Trainingsfreigabe.</p>
-            </section>
+    <div class="kajo-methods-metric-grid">
+      <article class="kajo-methods-metric-card" data-tone="coral"><span class="kajo-methods-metric-icon"><i data-lucide="gauge"></i></span><strong>Trainingsbelastung</strong><small>Garmin Load · HF-Zonenindex · sRPE</small><span class="kajo-methods-status">Eine ausgewählte Quelle</span></article>
+      <article class="kajo-methods-metric-card" data-tone="blue"><span class="kajo-methods-metric-icon"><i data-lucide="trending-up"></i></span><strong>Belastungsverlauf</strong><small>CTL · ATL · Belastungssaldo · ACWR</small><span class="kajo-methods-status">EWMA-Modell</span></article>
+      <article class="kajo-methods-metric-card" data-tone="mint"><span class="kajo-methods-metric-icon"><i data-lucide="heart-pulse"></i></span><strong>Readiness</strong><small>Wearable-Daten und tägliche Check-ins</small><span class="kajo-methods-status">Individuelle Referenzen</span></article>
+      <article class="kajo-methods-metric-card" data-tone="violet"><span class="kajo-methods-metric-icon"><i data-lucide="chart-no-axes-combined"></i></span><strong>Trainingsanalysen</strong><small>HF-Zonen · Umfang · Krafttraining</small><span class="kajo-methods-status">Nur vorhandene Messwerte</span></article>
+    </div>
 
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">5. Persönliche Wearable-Vergleiche</h3>
-                <p class="text-xs text-slate-300">Für Ruheherzfrequenz, HRV, Schlafdauer und Schlafscore wird eine persönliche Referenz aus den vorherigen 60 Tagen gebildet (mindestens 14 Messungen). Die Referenz ist Mittelwert ± individuelle Schwankung. Die Schwankungsgrenze entspricht dem größeren Wert aus 0,5 Standardabweichungen und einer Mindeständerung (RHF 1 bpm, HRV 5 ms, Schlafdauer 0,25 h, Schlafscore 5 Punkte). Die jüngsten sieben Tage werden mit der Referenz verglichen; für eine farbliche Einordnung sind mindestens drei Messungen nötig.</p>
-                <p class="text-xs text-slate-400">Atemfrequenz: persönlicher Mittelwert ± Standardabweichung aus bis zu 60 Tagen, sofern mindestens 14 Messungen vorhanden sind. Die Daten stammen aus gespeicherten Check-ins bzw. synchronisierten Wearable-Daten.</p>
-            </section>
-
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">6. Kanu-Trainingsanalyse</h3>
-                <ul class="list-disc pl-5 space-y-2 text-xs text-slate-300">
-                    <li><strong>Trainingsstunden:</strong> Summe der gespeicherten Aktivitätsdauer je Bootsklasse (K1, C1, C2, Paddelergometer). Bis 14 Tage werden Tageswerte, bei längeren Zeiträumen Wochenwerte dargestellt.</li>
-                    <li><strong>Trainingskategorien:</strong> Stunden und Einheiten werden anhand der gespeicherten Kategorie ausgewertet. Nicht zugeordnete Einheiten bleiben separat sichtbar.</li>
-                    <li><strong>Sprint / Classic:</strong> Zuordnung erfolgt ausschließlich über das ausdrücklich gespeicherte Wettkampfformat. Fehlende Angaben werden als „Nicht zugeordnet“ gezählt. Das Format wird nicht automatisch aus dem Namen oder der Dauer abgeleitet.</li>
-                </ul>
-            </section>
-
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">7. Herzfrequenzzonen und Sportverteilung</h3>
-                <ul class="list-disc pl-5 space-y-2 text-xs text-slate-300">
-                    <li><strong>Herzfrequenzzonen:</strong> Jede HF-Messung wird anhand der vier gespeicherten, sportartspezifischen Zonengrenzen einer von fünf Zonen zugeordnet. Die Zeit zwischen zwei Messpunkten wird der Zone des vorherigen Messpunkts zugerechnet. Fehlen Zeitstempel, wird die Aktivitätsdauer gleichmäßig auf die HF-Messpunkte verteilt. Die Prozentanteile beziehen sich nur auf die erfasste HF-Zeit.</li>
-                    <li><strong>Sportverteilung:</strong> Die Trainingsstunden je Sportart sind die Summe der gespeicherten Aktivitätsdauern geteilt durch 60. Distanz ist die Summe gespeicherter Distanzen. Die angezeigte durchschnittliche HF ist der arithmetische Mittelwert der gespeicherten Aktivitäts-Durchschnittswerte, nicht der Mittelwert aller HF-Messpunkte.</li>
-                </ul>
-                <p class="text-xs text-amber-300">Für die HF-Zonenanalyse werden echte HF-Zeitreihen und gültige Zonengrenzen benötigt. Ein einzelner Durchschnitts-HF-Wert reicht nicht aus.</p>
-            </section>
-
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">8. Wettkampf-Fitnessprojektion</h3>
-                <p class="text-xs text-slate-300">Die Projektion startet mit dem aktuellen CTL-Wert. Als angenommene zukünftige Tagesbelastung dient der Mittelwert der täglichen Load-Werte der letzten 28 Tage. Dieser konstante Wert wird mit derselben exponentiellen 42-Tage-Glättung bis zum Wettkampftag fortgeschrieben (maximal 365 Tage). Die Projektion ist ein vereinfachtes Szenario, kein Trainingsplan und keine Vorhersage der tatsächlichen Wettkampfleistung.</p>
-            </section>
-
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h3 class="font-bold text-white">9. Datenquellen, Herkunft und technische Grundlagen</h3>
-                <ul class="list-disc pl-5 space-y-2 text-xs text-slate-300">
-                    <li><strong>Garmin:</strong> importierte Aktivitätsdaten, FIT-Telemetrie und – sofern geliefert – Garmin-eigene Trainingsbelastungswerte sowie Gesundheits-/Wearable-Messungen.</li>
-                    <li><strong>Intervals.icu:</strong> synchronisierte Aktivitätsdaten und übernommene TSS-Werte, soweit diese in den Datensätzen vorhanden sind.</li>
-                    <li><strong>Manuelle Eingaben:</strong> Check-ins, subjektives Empfinden, Trainingskategorien, Bootsklassen, Wettkampfformate und ergänzte Aktivitätsdaten.</li>
-                    <li><strong>FIT-Dateien:</strong> technische Verarbeitung mit der eingebundenen JavaScript-Bibliothek fit-file-parser. Die Bibliothek liest die Datei; die oben beschriebenen KAJO-Berechnungen werden von der App ausgeführt.</li>
-                    <li><strong>Diagramme:</strong> Chart.js visualisiert berechnete oder gespeicherte Werte. Die Bibliothek selbst berechnet keine Trainingsphysiologie.</li>
-                </ul>
-                <p class="text-xs text-slate-400">KAJO führt keine externe Validierung der physiologischen Modelle durch. Die Kennzahlen sind deskriptive Trainingshilfen. Vollständigkeit und Qualität hängen von den importierten Daten, den hinterlegten Zonen und den persönlichen Eingaben ab.</p>
-            </section>
+    <details class="kajo-methods-detail" open>
+      <summary><span class="kajo-methods-detail-icon" data-tone="coral"><i data-lucide="gauge"></i></span><span><strong>1. Trainingsbelastung (Load)</strong><small>Welche Belastungsquelle verwendet wird</small></span><i class="kajo-methods-chevron" data-lucide="chevron-down"></i></summary>
+      <div class="kajo-methods-detail-body">
+        <p>KAJO verwendet für die zentrale Belastungszeitreihe jeweils eine Belastungsmethode. Garmin-Load und sRPE werden nicht miteinander addiert. Wenn Garmin-Aktivitäten vorhanden sind, wird zwischen Garmin-eigenem Load und dem KAJO-HF-Zonenindex anhand der verfügbaren Aktivitätsabdeckung gewählt.</p>
+        <div class="kajo-methods-option-grid">
+          <div class="kajo-methods-option"><span class="kajo-methods-option-label">GARMIN · NATIV</span><h3>Garmin Training Load</h3><p>Übernommener Garmin-Belastungswert, sofern vorhanden. Einheit: Garmin Load.</p></div>
+          <div class="kajo-methods-option"><span class="kajo-methods-option-label">KAJO · BERECHNET</span><h3>HF-Zonenindex</h3><p>Gewichtete Zeit in fünf Herzfrequenzzonen. Z1 × 1, Z2 × 2, Z3 × 3, Z4 × 4, Z5 × 5. Einheit: EA-HF-Punkte. Kein Garmin Load und kein Edwards TRIMP.</p></div>
+          <div class="kajo-methods-option"><span class="kajo-methods-option-label">MANUELL · SUBJEKTIV</span><h3>sRPE-Load</h3><p>Trainingsdauer in Minuten × dokumentierte RPE (1–10). Einheit: AU. Wird verwendet, wenn in den Trainingseinstellungen sRPE als Belastungsquelle ausgewählt ist.</p></div>
         </div>
+        <p class="kajo-methods-note"><strong>Wichtig:</strong> Externe TSS-Werte können in importierten Aktivitätsdaten enthalten sein. Sie werden derzeit aber nicht als Quelle für die zentrale KAJO-Load-Zeitreihe ausgewählt. Fehlt eine geeignete Garmin- oder sRPE-Grundlage, wird kein Load-Wert erfunden.</p>
+        <p class="kajo-methods-formula">sRPE = Dauer (min) × RPE</p>
+        <p class="kajo-methods-note">Für den HF-Zonenindex benötigt KAJO eine Garmin-HF-Zeitreihe mit Zeitstempeln und gültige Zonengrenzen. Vorrang haben sportartspezifische Zonen. Fehlen diese, werden Grenzwerte aus der maximalen Herzfrequenz mit 73 %, 80 %, 87 % und 93 % abgeleitet. Eine auswertbare HF-Zeitreihe muss mindestens 60 Sekunden abdecken.</p>
+      </div>
+    </details>
 
+    <details class="kajo-methods-detail">
+      <summary><span class="kajo-methods-detail-icon" data-tone="blue"><i data-lucide="trending-up"></i></span><span><strong>2. CTL, ATL, Belastungssaldo und ACWR</strong><small>Langfristige und kurzfristige Belastungsentwicklung</small></span><i class="kajo-methods-chevron" data-lucide="chevron-down"></i></summary>
+      <div class="kajo-methods-detail-body">
+        <div class="kajo-methods-definition-list">
+          <div><strong>CTL · 42 Tage</strong><p>Exponentiell geglätteter Verlauf der längerfristigen Belastung. Kein direkt gemessener Fitnesswert.</p></div>
+          <div><strong>ATL · 7 Tage</strong><p>Exponentiell geglätteter Verlauf der kurzfristigen Belastung. Kein direkt gemessener Ermüdungswert.</p></div>
+          <div><strong>Belastungssaldo</strong><p>CTL − ATL. Ein negativer Wert bedeutet, dass die kurzfristige Modellbelastung über der langfristigen liegt.</p></div>
+          <div><strong>Relativer Saldo</strong><p>Bei Garmin-Load: (CTL − ATL) / CTL × 100. Bei sRPE wird der absolute Saldo als Modellwert betrachtet.</p></div>
+          <div><strong>ACWR</strong><p>ATL / CTL. Wird erst nach mindestens 42 gültigen Modelltagen und bei CTL größer 0 ausgegeben. Kein Verletzungsgrenzwert.</p></div>
+        </div>
+        <p class="kajo-methods-formula">Neuer EWMA-Wert = alter Wert + α × (Tages-Load − alter Wert)</p>
+        <p class="kajo-methods-note">α = 1 − e^(−1 / Zeitkonstante). Die Zeitkonstante beträgt 42 Tage für CTL und 7 Tage für ATL. Die ersten 126 gültigen Tage eines Modellabschnitts werden als vorläufig gekennzeichnet.</p>
+        <p class="kajo-methods-warning"><i data-lucide="alert-triangle"></i><span><strong>Datenlücken:</strong> Ein Tag ohne Aktivität wird nur dann als bestätigter Ruhetag (Load = 0) gewertet, wenn der Aktivitätszeitraum erfolgreich synchronisiert wurde. Fehlt die Abdeckung oder hat eine Aktivität keinen berechenbaren Load, wird der Tag als unbekannt behandelt und die EWMA-Zeitreihe an dieser Stelle unterbrochen.</span></p>
+      </div>
+    </details>
+
+    <details class="kajo-methods-detail">
+      <summary><span class="kajo-methods-detail-icon" data-tone="mint"><i data-lucide="heart-pulse"></i></span><span><strong>3. Readiness</strong><small>Objektive Messwerte und subjektives Self-Monitoring</small></span><i class="kajo-methods-chevron" data-lucide="chevron-down"></i></summary>
+      <div class="kajo-methods-detail-body">
+        <p>Readiness verbindet verfügbare Wearable- und Trainingsdaten mit deinen täglichen Angaben. Wenn beide Gruppen vorliegen, werden sie mit 70 % objektiv und 30 % subjektiv gewichtet. Ist nur eine Gruppe vorhanden, wird deren verfügbarer Mittelwert verwendet.</p>
+        <div class="kajo-methods-definition-list">
+          <div><strong>HRV, Ruhepuls und Schlafdauer</strong><p>Vergleich mit dem persönlichen Median der vorherigen 90 Tage. Dafür sind mindestens fünf Vergleichsmessungen erforderlich.</p></div>
+          <div><strong>Schlafscore</strong><p>Wird direkt als Wert von 0 bis 100 übernommen.</p></div>
+          <div><strong>Trainingsbelastung</strong><p>Der verfügbare ACWR-Wert fließt als Belastungsindikator ein, nicht als medizinische Risikobewertung.</p></div>
+          <div><strong>Subjektive Angaben</strong><p>Schlafqualität und Motivation werden positiv, Müdigkeit, Muskelkater und Stress umgekehrt skaliert. Zyklusbedingte Beeinträchtigung fließt nur bei dokumentiertem Periodentag ein.</p></div>
+        </div>
+        <p class="kajo-methods-note">Ein Gesamtwert wird berechnet, sobald mindestens zwei Einzelmessgrößen verfügbar sind. Die Readiness ist eine Orientierung und weder medizinische Diagnose noch Trainingsfreigabe.</p>
+      </div>
+    </details>
+
+    <details class="kajo-methods-detail">
+      <summary><span class="kajo-methods-detail-icon" data-tone="violet"><i data-lucide="chart-no-axes-combined"></i></span><span><strong>4. Weitere Trainingskennzahlen</strong><small>Wie Umfang, Zonen und Krafttraining ausgewertet werden</small></span><i class="kajo-methods-chevron" data-lucide="chevron-down"></i></summary>
+      <div class="kajo-methods-detail-body">
+        <div class="kajo-methods-definition-list">
+          <div><strong>Herzfrequenzzonen</strong><p>HF-Messungen werden anhand der vier gespeicherten Zonengrenzen einer von fünf Zonen zugeordnet. Die Zeit zwischen zwei Messpunkten wird der Zone des vorherigen Messpunkts zugerechnet. Ohne Zeitstempel wird die Aktivitätsdauer gleichmäßig auf die HF-Messpunkte verteilt.</p></div>
+          <div><strong>Sport- und Trainingsumfang</strong><p>Trainingsstunden ergeben sich aus gespeicherten Aktivitätsdauern. Distanzen werden aus gespeicherten Distanzwerten summiert. Durchschnittliche Aktivitäts-HF ist der Mittelwert der gespeicherten Aktivitätsdurchschnitte.</p></div>
+          <div><strong>Kanuanalyse</strong><p>Bootsklassen und Trainingskategorien basieren auf den gespeicherten Zuordnungen. Sprint und Classic werden nur berücksichtigt, wenn das Wettkampfformat ausdrücklich hinterlegt ist.</p></div>
+          <div><strong>Krafttraining</strong><p>Das Trainingsvolumen wird nur ausgewiesen, wenn für alle erfassten Sätze Wiederholungen und Gewicht dokumentiert sind. Fehlende Satzangaben werden nicht als null ergänzt.</p></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section id="kajo-methods-sources" class="kajo-methods-section">
+    <div class="kajo-methods-section-heading"><div><p class="kajo-eyebrow">WOHER DEINE INFORMATIONEN KOMMEN</p><h2>Datenquellen</h2></div><span class="kajo-methods-count">02 / 03</span></div>
+    <p class="kajo-methods-section-lead">Die Herkunft bleibt von der Berechnung getrennt. Nicht jeder importierte Wert wird automatisch für jede Kennzahl verwendet.</p>
+    <div class="kajo-methods-source-list">
+      <article class="kajo-methods-source" data-tone="coral"><span class="kajo-methods-source-icon"><i data-lucide="watch"></i></span><div><div class="kajo-methods-source-heading"><h3>Garmin</h3><span>Primäre Wearable-Quelle</span></div><p>Aktivitäten, Garmin-eigene Trainingsbelastung, Herzfrequenz-Zeitreihen sowie verfügbare Gesundheits- und Wearable-Werte. Die tatsächliche Verfügbarkeit hängt von den synchronisierten Datenfeldern ab.</p><small>Wird unter anderem für Garmin Load, den KAJO-HF-Zonenindex und Wearable-Auswertungen verwendet.</small></div></article>
+      <article class="kajo-methods-source" data-tone="blue"><span class="kajo-methods-source-icon"><i data-lucide="activity"></i></span><div><div class="kajo-methods-source-heading"><h3>Intervals.icu</h3><span>Ergänzende Trainingsquelle</span></div><p>Synchronisierte Aktivitäten, auf Wunsch Herzfrequenz-Zeitreihen und Wellness-Daten. Übernommene Wellness-Felder umfassen beispielsweise HRV (RMSSD/SDNN), Ruhepuls, Schlafdauer, Schlafscore, Atemfrequenz, VO₂max und Gewicht, soweit die API Werte liefert.</p><small>Intervals-Wellness-Werte werden in die täglichen Check-ins übernommen. Sie werden nicht automatisch zu Garmin-Messwerten umetikettiert.</small></div></article>
+      <article class="kajo-methods-source" data-tone="mint"><span class="kajo-methods-source-icon"><i data-lucide="clipboard-pen-line"></i></span><div><div class="kajo-methods-source-heading"><h3>Manuelle Eingaben</h3><span>Deine Ergänzungen</span></div><p>Tägliche Check-ins, subjektives Empfinden, RPE, Gesundheitsangaben sowie ergänzte Aktivitäts- und Trainingsinformationen.</p><small>Manuelles RPE ist die Datengrundlage für sRPE-Load, wenn dieses Modell ausgewählt ist.</small></div></article>
+      <article class="kajo-methods-source" data-tone="violet"><span class="kajo-methods-source-icon"><i data-lucide="file-up"></i></span><div><div class="kajo-methods-source-heading"><h3>Dateiimport</h3><span>FIT · CSV · GPX</span></div><p>FIT-Dateien können je nach Inhalt unter anderem Herzfrequenz, Geschwindigkeit, Leistung, Kadenz, Höhen- und GPS-Daten enthalten. CSV übernimmt unterstützte Aktivitätsfelder. GPX liefert Trackpunkte mit Zeit und gegebenenfalls Herzfrequenz.</p><small>Es werden nur tatsächlich in der Datei vorhandene und auswertbare Werte übernommen.</small></div></article>
+      <article class="kajo-methods-source" data-tone="neutral"><span class="kajo-methods-source-icon"><i data-lucide="cloud"></i></span><div><div class="kajo-methods-source-heading"><h3>KAJO Cloud</h3><span>Synchronisierung &amp; Sicherung</span></div><p>Die Cloud dient der konto-gebundenen Übertragung und Speicherung des KAJO-Datenbestands. Sie ist keine eigenständige physiologische Messquelle.</p><small>Cloud-Status und Übertragung werden in der Datenverwaltung gesteuert.</small></div></article>
+    </div>
+    <details class="kajo-methods-detail kajo-methods-source-detail">
+      <summary><span class="kajo-methods-detail-icon" data-tone="blue"><i data-lucide="git-merge"></i></span><span><strong>Zusammenführung und Datenherkunft</strong><small>Wie KAJO doppelte Aktivitäten behandelt</small></span><i class="kajo-methods-chevron" data-lucide="chevron-down"></i></summary>
+      <div class="kajo-methods-detail-body">
+        <p>Wenn Garmin- und Intervals.icu-Aktivitäten anhand von Startzeit, Datum, Sportart und Dauer als dieselbe Einheit erkannt werden, führt KAJO die Datensätze zusammen. Der Garmin-Datensatz bleibt dabei der führende Aktivitätsdatensatz; fehlende Felder können aus dem ergänzenden Datensatz übernommen werden. Die Quellverweise und beteiligten Quellen bleiben erhalten.</p>
+        <p class="kajo-methods-note">Die Zuordnung ist automatisiert und kann bei ungewöhnlichen Zeitstempeln oder ähnlichen Aktivitäten Grenzen haben. Bei unklaren oder unvollständigen Angaben sollte die Aktivität geprüft werden.</p>
+      </div>
+    </details>
+  </section>
+
+  <section id="kajo-methods-quality" class="kajo-methods-section kajo-methods-quality-section">
+    <div class="kajo-methods-section-heading"><div><p class="kajo-eyebrow">WANN DU ERGEBNISSEN VERTRAUEN KANNST</p><h2>Datenqualität &amp; Aussagekraft</h2></div><span class="kajo-methods-count">03 / 03</span></div>
+    <div class="kajo-methods-quality-grid">
+      <div><span class="kajo-methods-quality-dot" data-state="complete"></span><strong>Vollständig</strong><p>Die für die Kennzahl benötigten Daten sind vorhanden und auswertbar.</p></div>
+      <div><span class="kajo-methods-quality-dot" data-state="limited"></span><strong>Eingeschränkt</strong><p>Eine Berechnung ist möglich, aber Datenlücken oder methodische Einschränkungen bestehen.</p></div>
+      <div><span class="kajo-methods-quality-dot" data-state="missing"></span><strong>Nicht berechenbar</strong><p>Die notwendige Datengrundlage fehlt. KAJO soll keinen Ersatzwert erfinden.</p></div>
+    </div>
+    <p class="kajo-methods-quality-note"><i data-lucide="info"></i><span>Fehlende Werte werden nicht automatisch als null interpretiert. Ein fehlender Aktivitätseintrag gilt nur bei nachgewiesener Synchronisierungsabdeckung als Ruhetag. Berechnete Modellwerte, übernommene Messwerte und Schätzungen müssen unterscheidbar bleiben. KAJO stellt keine medizinischen Diagnosen und die Modelle sind keine extern validierte Trainingsfreigabe.</span></p>
+  </section>
+</div>
         <div id="view-data" class="hidden kajo-data-page kajo-sync-overview">
 <header class="kajo-data-page-header"><div><p class="kajo-eyebrow">DATENVERWALTUNG</p><h1>Datenquellen &amp; Synchronisierung</h1><p>Verbindungen, Datenabrufe und gespeicherte Daten zentral verwalten.</p></div><div id="garmin-sync-indicator" class="kajo-data-status-link" title="Garmin-Verbindungsstatus"><span id="garmin-sync-indicator-dot" aria-hidden="true"></span><span id="garmin-sync-indicator-text">Status prüfen</span></div></header>
 <section class="kajo-sync-source-grid" aria-label="Datenquellen">
