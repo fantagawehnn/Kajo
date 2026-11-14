@@ -251,6 +251,9 @@ export function buildAthleteContext(state, options = {}) {
         scope: {
             allSportsActivityHistoryIncluded: true,
             allSportsContributeToTotalLoadAndRecovery: false,
+            allSportsSessionRpeSummaryAvailable: true,
+            allSportsDailyLoadCompletenessEstablished: false,
+            sessionRpeSeparateFromGarminLoad: true,
             trainingLoadReflectsSelectedLoadSource: true,
             loadCompletenessMustBeChecked: true,
             canoePerformanceActivitiesOnly: true,
