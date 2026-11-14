@@ -33,7 +33,7 @@ assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does n
 
 for (const domain of ['load', 'recovery', 'performance', 'health']) {
   assert.ok(html.includes('id="analysis-subpage-' + domain + '"'), domain + ' analysis detail page exists');
-  assert.ok(html.includes('id="' + domain + '-hero-ring"'), domain + ' uses the shared hero metric ring');
+  if (domain !== 'performance') assert.ok(html.includes('id="' + domain + '-hero-ring"'), domain + ' uses the shared hero metric ring');
 }
 assert.ok(css.includes('one centered, consistently sized hero metric'), 'analysis pages share the centered hero layout');
 
@@ -60,7 +60,7 @@ assert.ok(calendar.includes("['day', 'week', 'month', 'year', 'activities']"), '
 assert.match(state, /activeCalendarFormat:\s*'week'/, 'week is the default calendar mode');
 
 
-for (const id of ['load-hero-ring', 'recovery-hero-ring', 'performance-hero-ring', 'health-hero-ring']) {
+for (const id of ['load-hero-ring', 'recovery-hero-ring', 'health-hero-ring']) {
   assert.ok(html.includes('id="' + id + '"'), 'consistent analysis hero ring: ' + id);
 }
 assert.ok(html.includes('id="analysis-shared-period"'), 'shared analysis period container exists');
@@ -78,7 +78,7 @@ assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:
 assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
-assert.ok(analysisUI.includes('CTL bleibt ein Belastungs-/Fitnessindikator'), 'CTL is not presented as direct performance');
+assert.ok(!html.includes('id="training-history-title"'), 'Performance no longer embeds the training-load history panel');
 assert.ok(analysisUI.includes("openTrainingMetric('fitness')"), 'CTL opens the existing fitness detail view');
 assert.ok(analysisUI.includes("openTrainingMetric('form')"), 'training balance opens the existing balance detail view');
 assert.ok(analysisUI.includes('openHealthMetric('), 'recovery metric rows open their existing detail views');
