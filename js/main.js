@@ -2086,7 +2086,6 @@ Object.assign(window, {
     applyCalendarPeriodDate,
     setCalendarFormat,
     setCalendarDisplayMode,
-    toggleActivitySportFilter,
     setActivitySportFilter,
     clearActivitySportFilter,
     toggleCalendarAddMenu,
