@@ -1111,6 +1111,10 @@ function initializeActivityDetailTabs() {
     const diagnosticOutput = document.getElementById('activity-telemetry-diagnostic-output');
     if (diagnosticButton) diagnosticPanel.appendChild(diagnosticButton);
     if (diagnosticOutput) diagnosticPanel.appendChild(diagnosticOutput);
+    const garminDiagnosticButton = document.getElementById('garmin-json-diagnostic-run');
+    const garminDiagnosticOutput = document.getElementById('garmin-json-diagnostic-output');
+    if (garminDiagnosticButton) diagnosticPanel.appendChild(garminDiagnosticButton);
+    if (garminDiagnosticOutput) diagnosticPanel.appendChild(garminDiagnosticOutput);
     diagnosticSource?.remove();
 
     const dataHeading = document.createElement('div');
