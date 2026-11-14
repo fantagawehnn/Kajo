@@ -25,6 +25,7 @@ export function initializeIndexedDBPersistence() {
 
 const COLLECTION_KEYS = {
     activities: 'rawActivities',
+    garminTelemetry: 'garminTelemetryStore',
     planned: 'plannedActivities',
     checkins: 'dailyCheckins',
     health: 'healthLogs',
@@ -35,6 +36,59 @@ const COLLECTION_KEYS = {
     profile: 'profile',
     settings: 'settings'
 };
+
+function getGarminActivityStorageId(activity) {
+    const rawId = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId ?? activity?.id;
+    const id = String(rawId ?? '').replace(/^garmin-/, '');
+    return /^\\d+$/.test(id) ? id : null;
+}
+
+/**
+ * Große Garmin-Rohzeitreihen werden separat gespeichert, damit die
+ * Aktivitäten-Sammlung und ihr localStorage-Fallback kompakt bleiben.
+ */
+function splitGarminTelemetry(activities) {
+    const telemetryStore = {};
+    const compactActivities = (Array.isArray(activities) ? activities : []).map(activity => {
+        const telemetry = activity?.garminTelemetry;
+        const metricSeries = telemetry?.metricSeries && typeof telemetry.metricSeries === 'object'
+            ? telemetry.metricSeries : null;
+        const id = getGarminActivityStorageId(activity);
+        if (!id || !metricSeries || !Object.keys(metricSeries).length) return activity;
+
+        telemetryStore[id] = {
+            metricSeries,
+            metricSeriesTime: Array.isArray(telemetry.metricSeriesTime) ? telemetry.metricSeriesTime : null
+        };
+        const compactTelemetry = { ...telemetry };
+        delete compactTelemetry.metricSeries;
+        delete compactTelemetry.metricSeriesTime;
+        return { ...activity, garminTelemetry: compactTelemetry };
+    });
+    return { activities: compactActivities, telemetryStore };
+}
+
+function restoreGarminTelemetry(activities, telemetryStore) {
+    if (!Array.isArray(activities)) return [];
+    const stored = telemetryStore && typeof telemetryStore === 'object' ? telemetryStore : {};
+    return activities.map(activity => {
+        const id = getGarminActivityStorageId(activity);
+        const record = id ? stored[id] : null;
+        if (!record || typeof record !== 'object') return activity;
+        const current = activity?.garminTelemetry && typeof activity.garminTelemetry === 'object'
+            ? activity.garminTelemetry : {};
+        const currentSeries = current.metricSeries && typeof current.metricSeries === 'object'
+            ? current.metricSeries : {};
+        return {
+            ...activity,
+            garminTelemetry: {
+                ...current,
+                metricSeries: { ...(record.metricSeries || {}), ...currentSeries },
+                metricSeriesTime: current.metricSeriesTime || record.metricSeriesTime || undefined
+            }
+        };
+    });
+}
 
 function migrateDailyCheckinScale() {
     const version = Number(state.settings?.dailyCheckinScaleVersion || 1);
@@ -66,6 +120,7 @@ function migrateDailyCheckinScale() {
 
 function defaultUserState() {
     state.rawActivities = [];
+    state.garminTelemetryStore = {};
     state.plannedActivities = [];
     state.dailyCheckins = {};
     state.healthLogs = {};
@@ -98,7 +153,12 @@ export async function loadStateForUser(userId) {
     if (activeUserId !== userId) return null;
     const loaded = Object.fromEntries(values);
 
-    state.rawActivities = Array.isArray(loaded.rawActivities) ? loaded.rawActivities : [];
+    state.garminTelemetryStore = loaded.garminTelemetryStore && typeof loaded.garminTelemetryStore === 'object'
+        ? loaded.garminTelemetryStore : {};
+    state.rawActivities = restoreGarminTelemetry(
+        Array.isArray(loaded.rawActivities) ? loaded.rawActivities : [],
+        state.garminTelemetryStore
+    );
     state.plannedActivities = Array.isArray(loaded.plannedActivities) ? loaded.plannedActivities : [];
     state.dailyCheckins = loaded.dailyCheckins && typeof loaded.dailyCheckins === 'object' ? loaded.dailyCheckins : {};
     state.healthLogs = loaded.healthLogs && typeof loaded.healthLogs === 'object' ? loaded.healthLogs : {};
@@ -175,6 +235,7 @@ export function applyCloudDataSnapshot(snapshot) {
     }
 
     state.rawActivities = snapshot.activities;
+    state.garminTelemetryStore = {};
     state.plannedActivities = snapshot.planned;
     state.dailyCheckins = snapshot.checkins;
     state.healthLogs = snapshot.health;
@@ -207,11 +268,15 @@ export function saveActivitiesToLocalStorage() {
         console.warn('Aktivitätsspeicherung übersprungen: Es ist kein authentifizierter Benutzer-Speicher aktiv.');
         return false;
     }
-    const activities = state.rawActivities;
-    activeUserStorage.setItem('activities', JSON.stringify(activities));
+    const split = splitGarminTelemetry(state.rawActivities);
+    state.garminTelemetryStore = split.telemetryStore;
+    activeUserStorage.setItem('activities', JSON.stringify(split.activities));
     const storageForThisSave = activeUserStorage;
     indexedDbWriteQueue = indexedDbWriteQueue
-        .then(() => storageForThisSave.saveCollections({ activities }))
+        .then(() => storageForThisSave.saveCollections({
+            activities: split.activities,
+            garminTelemetry: split.telemetryStore
+        }))
         .catch(error => console.error('Benutzerbezogene Aktivitätssicherung fehlgeschlagen:', error));
     window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId, collection: 'activities' } }));
     return true;
@@ -224,14 +289,22 @@ export function saveDataToLocalStorage() {
     }
 
     const snapshot = getUserDataSnapshot();
+    const split = splitGarminTelemetry(snapshot.activities);
+    state.garminTelemetryStore = split.telemetryStore;
+    const localSnapshot = {
+        ...snapshot,
+        activities: split.activities,
+        garminTelemetry: split.telemetryStore
+    };
 
-    for (const [collection, value] of Object.entries(snapshot)) {
+    for (const [collection, value] of Object.entries(localSnapshot)) {
+        if (collection === 'garminTelemetry') continue;
         activeUserStorage.setItem(collection, JSON.stringify(value));
     }
 
     const storageForThisSave = activeUserStorage;
     indexedDbWriteQueue = indexedDbWriteQueue
-        .then(() => storageForThisSave.saveCollections(snapshot))
+        .then(() => storageForThisSave.saveCollections(localSnapshot))
         .catch(error => console.error('Benutzerbezogene IndexedDB-Sicherung fehlgeschlagen:', error));
 
     // Zentraler Hinweis für die Cloud-Synchronisierung. Die App prüft zusätzlich,
