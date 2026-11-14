@@ -5710,3 +5710,36 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
     flex-basis:48px!important;
   }
 }
+
+
+/* Recovery overview: separate objective measurements from subjective check-ins. */
+#analysis-subpage-recovery .kajo-recovery-group { min-width:0; }
+#analysis-subpage-recovery .kajo-recovery-group-heading {
+  display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+  margin:.25rem 0 .45rem;
+}
+#analysis-subpage-recovery .kajo-recovery-group-heading h2 {
+  color:var(--kajo-text); font-size:.82rem; font-weight:750; line-height:1.25;
+}
+#analysis-subpage-recovery .kajo-recovery-group-heading span {
+  color:var(--kajo-muted); font-size:.62rem; white-space:nowrap;
+}
+#analysis-subpage-recovery .kajo-analysis-metric-row {
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  margin:.35rem 0 .85rem;
+}
+#analysis-subpage-recovery .kajo-analysis-metric-link { text-align:left; cursor:pointer; }
+#analysis-subpage-recovery .kajo-analysis-metric-hint {
+  color:var(--kajo-blue); font-size:.55rem; opacity:.85;
+}
+@media (max-width:640px) {
+  #analysis-subpage-recovery .kajo-analysis-metric-row {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.45rem;
+  }
+  #analysis-subpage-recovery .kajo-analysis-metric { padding:.6rem; }
+  #analysis-subpage-recovery .kajo-analysis-hero { gap:.8rem; padding:.85rem; }
+  #analysis-subpage-recovery .kajo-analysis-hero-ring {
+    flex-basis:96px; width:96px; height:96px;
+  }
+}
