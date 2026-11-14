@@ -86,6 +86,7 @@ export function renderRaces() {
     container.innerHTML = '';
     if (past.length) container.insertAdjacentHTML('beforeend', '<h3 class="text-sm font-bold text-white pt-2">Vergangene Wettkämpfe & Ergebnisse</h3>');
     [...past, ...future].forEach(race => {
+        if (future.length && race === future[0]) container.insertAdjacentHTML('beforeend', '<h3 class="text-sm font-bold text-white pt-3">Kommende Wettkämpfe</h3>');
         const priority = ['A','B','C','D','E'].includes(race.prio) ? race.prio : 'C';
         const meta = getRacePriorityMeta(priority);
         const results = Array.isArray(race.results) ? race.results : [];
@@ -121,7 +122,6 @@ export function renderRaces() {
             '<div class="space-y-2"><div class="flex items-center justify-between"><h5 class="text-xs font-semibold text-slate-200">Ergebnisse <span class="text-slate-500 font-normal">(' + results.length + ')</span></h5><button type="button" onclick="toggleRaceResultsForm(\'' + encodedId + '\')" class="text-[11px] text-cyan-300">+ Ergebnis</button></div>' +
             (rows || '<p class="text-[10px] text-slate-500">Noch keine Ergebnisse eingetragen.</p>') + resultForm + '</div></article>');
     });
-    if (future.length) container.insertAdjacentHTML('beforeend', '<h3 class="text-sm font-bold text-white pt-3">Kommende Wettkämpfe</h3>');
     globalThis.lucide?.createIcons?.();
 }
 
