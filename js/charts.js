@@ -636,7 +636,10 @@ export function getActivityTelemetrySeries(act) {
             key,
             label: canonicalRawAliases.has(key) ? label + ' (Rohwert)' : label,
             unit: typeof metric.unit === 'string' ? metric.unit : '',
-            time: Array.isArray(metric.time) ? metric.time : null,
+            time: Array.isArray(metric.time) && metric.time.length === metric.values.length
+                ? metric.time
+                : Array.isArray(telem.metricSeriesTime) && telem.metricSeriesTime.length === metric.values.length
+                    ? telem.metricSeriesTime : null,
             color: sportColor,
             values: metric.values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
