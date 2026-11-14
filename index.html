@@ -474,64 +474,33 @@
 </section>
 </div>
 <div id="analysis-subpage-performance" class="hidden space-y-4">
-<section class="kajo-analysis-hero" aria-label="Performance">
-  <div class="kajo-analysis-hero-ring" id="performance-hero-ring" aria-live="polite">
-    <div><strong id="analysis-performance-hero-value">—</strong><span id="analysis-performance-hero-unit"></span></div>
-  </div>
-  <div class="kajo-analysis-hero-copy">
-    <p class="kajo-analysis-eyebrow">PERFORMANCE</p>
-    <h2 id="analysis-performance-hero-status">Direkte Leistungskennzahl</h2>
-    <p id="performance-hero-note" class="kajo-analysis-hero-note"></p>
-  </div>
-</section>
-<div id="performance-analysis-metrics" class="kajo-analysis-metric-row" aria-live="polite"></div><section id="analysis-fitness-section" class="kajo-analysis-domain-panel">
-                <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">LANGFRISTIGE ENTWICKLUNG</p><h2>Fitness</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
-                <div id="analysis-fitness-insight"></div>
-            </section>
-<section id="analysis-competition-section" class="kajo-analysis-domain-panel">
-                <div class="kajo-insight-heading"><div><p class="kajo-analysis-eyebrow">WETTKAMPFPLANUNG</p><h2>Wettkampf</h2></div><span class="kajo-insight-tag">Automatisierte Einordnung</span></div>
-                <div id="analysis-competition-insight"></div>
-            </section><div id="view-training-analysis" class="space-y-5">
-            <header class="kajo-analysis-history-header"><p class="kajo-analysis-eyebrow">BELASTUNGSBASIERTE FITNESSENTWICKLUNG</p><h2>Fitnessverlauf</h2><p>CTL und Trainingssaldo zeigen die Entwicklung der modellierten Trainingsbelastung. Sie ersetzen keine direkte Leistungsdiagnostik.</p></header>
-            <nav id="training-metric-tabs" class="flex flex-wrap gap-2" aria-label="Trainingskennzahl">
-                <button type="button" data-history-metric="fitness" onclick="setHistoryMetric('training','fitness')" class="more-subnav-button">Fitness · CTL</button>
-                <button type="button" data-history-metric="atl" onclick="setHistoryMetric('training','atl')" class="more-subnav-button">ATL</button>
-                <button type="button" data-history-metric="acwr" onclick="setHistoryMetric('training','acwr')" class="more-subnav-button">ACWR</button>
-                <button type="button" data-history-metric="tsb" onclick="setHistoryMetric('training','tsb')" class="more-subnav-button">TSB</button>
-                <button type="button" data-history-metric="form" onclick="setHistoryMetric('training','form')" class="more-subnav-button">Trainingssaldo</button>
-                <button type="button" data-history-metric="readiness" onclick="setHistoryMetric('training','readiness')" class="more-subnav-button">Readiness</button>
-            </nav>
-            <div id="training-history-range-controls" class="flex flex-wrap gap-2" aria-label="Zeitraum">
-                <button type="button" data-history-kind="training" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 Tage</button>
-                <button type="button" data-history-kind="training" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 Tage</button>
-                <button type="button" data-history-kind="training" data-history-range="3m" onclick="setHistoryRange('3m')" class="more-subnav-button">3 Monate</button>
-                <button type="button" data-history-kind="training" data-history-range="6m" onclick="setHistoryRange('6m')" class="more-subnav-button">6 Monate</button>
-                <button type="button" data-history-kind="training" data-history-range="1y" onclick="setHistoryRange('1y')" class="more-subnav-button">1 Jahr</button>
-                <button type="button" data-history-kind="training" data-history-range="custom" onclick="setHistoryRange('custom')" class="more-subnav-button">Individuell</button>
-            </div>
-            <div id="training-history-custom-range" class="hidden flex flex-wrap items-end gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
-                <label class="text-xs text-slate-400">Von <input type="date" id="training-history-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-                <label class="text-xs text-slate-400">Bis <input type="date" id="training-history-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-                <button type="button" onclick="applyHistoryCustomRange('training')" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Anwenden</button>
-            </div>
-            <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
-                <div class="flex flex-col items-center text-center gap-3">
-                    <div id="training-history-ring" class="metric-history-ring kajo-status-ring"><div><strong id="training-history-current">—</strong><span id="training-history-unit"></span></div></div>
-                    <div class="max-w-2xl"><h2 id="training-history-title" class="text-base font-bold text-white">Fitness</h2><p id="training-history-status" class="text-sm font-semibold text-slate-200 mt-1">Heute nicht erfasst</p><p id="training-history-recommendation" class="text-xs text-slate-400 mt-1">—</p></div>
-                </div>
-                <div class="h-64 sm:h-80 relative"><canvas id="training-metric-chart"></canvas></div>
-                <p id="training-history-chart-note" class="text-[10px] text-slate-500"></p>
-            </section>
-        </div>
+  <section class="kajo-performance-group" aria-labelledby="performance-aerobic-heading">
+    <div class="kajo-performance-group-heading"><h2 id="performance-aerobic-heading">Aerobe Leistungsfähigkeit</h2><span>Garmin-Wellnessdaten</span></div>
+    <div id="performance-aerobic-metrics" class="kajo-performance-metric-row" aria-live="polite"></div>
+  </section>
+  <section class="kajo-performance-group" aria-labelledby="performance-paddling-heading">
+    <div class="kajo-performance-group-heading"><h2 id="performance-paddling-heading">Leistung im Training</h2><span>Paddelspezifische Telemetrie</span></div>
+    <div id="performance-paddling-metrics" class="kajo-performance-metric-row" aria-live="polite"></div>
+  </section>
+  <section class="kajo-performance-group" aria-labelledby="performance-strength-heading">
+    <div class="kajo-performance-group-heading"><h2 id="performance-strength-heading">Kraftentwicklung</h2><span id="performance-strength-count">—</span></div>
+    <div id="performance-strength-metrics" class="kajo-performance-metric-row" aria-live="polite"></div>
+  </section>
+  <section id="performance-trend-panel" class="kajo-performance-trend hidden" aria-live="polite">
+    <div class="kajo-performance-trend-heading"><div><p class="kajo-analysis-eyebrow">DETAILVERLAUF</p><h2 id="performance-trend-title">Performance</h2></div>
+      <nav class="kajo-performance-range" aria-label="Zeitraum">
+        <button type="button" data-performance-range="7d" onclick="setPerformanceRange('7d')">7 T</button>
+        <button type="button" data-performance-range="28d" class="is-active" onclick="setPerformanceRange('28d')">28 T</button>
+        <button type="button" data-performance-range="3m" onclick="setPerformanceRange('3m')">3 M</button>
+        <button type="button" data-performance-range="6m" onclick="setPerformanceRange('6m')">6 M</button>
+        <button type="button" data-performance-range="1y" onclick="setPerformanceRange('1y')">1 J</button>
+      </nav>
+    </div>
+    <div class="kajo-performance-chart-wrap"><canvas id="performance-trend-chart" aria-label="Ausgewählter Performanceverlauf"></canvas></div>
+    <p id="performance-trend-note" class="kajo-performance-note"></p>
+  </section>
 </div>
-
-
-            
-
-            
-
-            <!-- DAILY READINESS -->
-            <div id="analysis-subpage-recovery" class="hidden space-y-4">
+<div id="analysis-subpage-recovery" class="hidden space-y-4">
 
 <div class="hidden" aria-hidden="true">
   <div id="recovery-hero-ring"><strong id="analysis-recovery-hero-value">—</strong><span id="analysis-recovery-hero-unit"></span></div>
