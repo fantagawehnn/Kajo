@@ -4991,15 +4991,15 @@ html[data-theme="light"] #settings-modal { background:var(--kajo-bg) !important;
 .kajo-analysis-distribution-heading .kajo-analysis-switch{margin:0}
 .kajo-analysis-distribution-heading .kajo-analysis-switch button{min-height:30px}
 .kajo-analysis-muted-label{color:var(--kajo-muted);font-size:.62rem}
-.kajo-analysis-sport-distribution{display:grid;grid-template-columns:minmax(116px,.8fr) minmax(0,1.2fr);align-items:center;gap:14px}
-.kajo-analysis-doughnut-wrap{position:relative;width:100%;max-width:190px;height:150px;margin:auto}
+.kajo-analysis-sport-distribution{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.kajo-analysis-bar-wrap{position:relative;width:100%;height:48px;min-height:48px}
 .kajo-analysis-distribution-legend{display:grid;gap:4px;min-width:0}
 .kajo-analysis-distribution-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--kajo-border);font-size:.68rem}
 .kajo-analysis-distribution-row:last-child{border-bottom:0}
 .kajo-analysis-distribution-row strong{flex:0 0 auto;color:var(--kajo-text);font-variant-numeric:tabular-nums;font-size:.68rem}
 .kajo-analysis-distribution-label{display:flex;align-items:center;gap:7px;min-width:0;color:var(--kajo-text-secondary)}
 .kajo-analysis-distribution-label i{width:8px;height:8px;flex:0 0 8px;border-radius:50%}
-.kajo-analysis-intensity-wrap{position:relative;width:100%;height:clamp(140px,20vw,210px);min-height:130px}
+.kajo-analysis-intensity-wrap{position:relative;width:100%;height:48px;min-height:48px}
 .kajo-analysis-intensity-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px;margin-top:8px}
 .kajo-analysis-intensity-summary>div{min-width:0;padding:8px;border:1px solid var(--kajo-border);border-radius:9px;background:var(--kajo-surface-raised)}
 .kajo-analysis-intensity-summary strong{color:var(--kajo-text)}
