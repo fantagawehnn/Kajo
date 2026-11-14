@@ -172,12 +172,14 @@ const performanceActivityMetric = (key, label, unit) => {
   }).filter(Boolean);
   return matches.length ? matches[matches.length-1] : null;
 };
-const performanceEscape = value => String(value).replace(/[&<>\"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[char]));
+const performanceEscape = value => String(value).replace(/[&<>"']/g, char => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[char]));
 const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-info)') =>
-  '<button type="button" class="kajo-recovery-metric kajo-performance-metric" data-performance-metric="' + key +
-  '" aria-pressed="false" style="--recovery-metric-color:' + color + '" onclick="togglePerformanceMetric(\'' + key.replace(/'/g,"\\'") + '\')">' +
-  '<span class="kajo-recovery-metric-circle"><strong>' + value + '</strong></span>' +
-  '<span class="kajo-recovery-metric-label">' + label + '</span><small>' + (unit || detail || 'Nicht erfasst') + '</small></button>';
+  '<button type="button" class="kajo-recovery-metric kajo-performance-metric" data-performance-metric="' + performanceEscape(key) +
+  '" aria-pressed="false" style="--recovery-metric-color:' + color + '" onclick="togglePerformanceMetric(\'' + performanceEscape(key) + '\')">' +
+  '<span class="kajo-recovery-metric-circle"><strong>' + performanceEscape(value) + '</strong></span>' +
+  '<span class="kajo-recovery-metric-label">' + performanceEscape(label) + '</span><small>' + performanceEscape(unit || detail || 'Nicht erfasst') + '</small></button>';
 function renderPerformance() {
   const vo2 = latestCheckin('vo2max');
   const vo2Color = vo2 ? historyRingColor('vo2max', vo2.value, vo2.date) : 'var(--kajo-status-info)';
