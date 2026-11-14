@@ -1109,8 +1109,10 @@ function activateActivityDetailTab(key) {
     if (key === 'load' && state.selectedActivityForModal) {
         requestAnimationFrame(() => {
             try { renderActivityTelemetryChart({ ...state.selectedActivityForModal, telemetry: getActivityTelemetry(state.selectedActivityForModal) }); } catch (_) {}
-            if (state.activityRouteMap) state.activityRouteMap.invalidateSize?.();
         });
+    }
+    if (key === 'sport' && state.activityRouteMap) {
+        requestAnimationFrame(() => state.activityRouteMap?.invalidateSize?.());
     }
 }
 
