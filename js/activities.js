@@ -1071,10 +1071,12 @@ function initializeActivityDetailTabs() {
     diagnosticHeading.className = 'activity-detail-section-heading';
     diagnosticHeading.innerHTML = '<div><p class="activity-detail-kicker">FEHLERSUCHE</p><h3>Zeitreihen-Diagnose</h3></div>';
     diagnosticPanel.appendChild(diagnosticHeading);
+    const diagnosticSource = document.getElementById('activity-telemetry-diagnostic-source');
     const diagnosticButton = document.getElementById('activity-telemetry-diagnose');
     const diagnosticOutput = document.getElementById('activity-telemetry-diagnostic-output');
     if (diagnosticButton) diagnosticPanel.appendChild(diagnosticButton);
     if (diagnosticOutput) diagnosticPanel.appendChild(diagnosticOutput);
+    diagnosticSource?.remove();
 
     const dataHeading = document.createElement('div');
     dataHeading.className = 'activity-detail-section-heading';
