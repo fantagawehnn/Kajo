@@ -696,7 +696,7 @@ export function renderActivityTelemetryChart(act) {
     const formatValue = value => (selected.key === 'pace' || selected.key === 'swimPace') && Number.isFinite(Number(value))
         ? Math.floor(Math.round(Number(value)) / 60) + ':' + String(Math.round(Number(value)) % 60).padStart(2, '0')
         : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
-    const telem = act?.telemetry || act?.garminTelemetry || {};
+    const telem = getActivityTelemetry(act) || {};
     const times = Array.isArray(telem.time) ? telem.time : [];
     const hasElapsedTime = times.length === selected.values.length
         && times.every(value => Number.isFinite(Number(value)))
