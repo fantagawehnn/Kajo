@@ -230,8 +230,8 @@ function renderCanoePerformanceSummary() {
   }
   if (comparisonRoot) {
     comparisonRoot.replaceChildren();
-    const groups = summary.comparableGroups.filter(group =>
-      group.averageSpeedKmh.count || group.averagePowerW.count || group.strokeRatePerMinute.count || group.averageHeartRateBpm.count);
+    const groups = summary.comparableGroups.filter(group => group.comparable &&
+      (group.averageSpeedKmh.count || group.averagePowerW.count || group.strokeRatePerMinute.count || group.averageHeartRateBpm.count));
     if (!groups.length) {
       const empty = document.createElement('p');
       empty.className = 'kajo-performance-note';
@@ -260,7 +260,7 @@ function renderCanoePerformanceSummary() {
     const q = summary.dataQuality;
     qualityRoot.textContent = summary.activityCount + ' Kanu-Einheiten im Zeitraum · '
       + q.activitiesWithUnspecifiedFormat + ' ohne dokumentiertes Sprint-/Classic-Format · '
-      + q.activitiesWithUnspecifiedWaterType + ' ohne dokumentierten Gewässertyp. '
+      + q.activitiesWithUnspecifiedWaterType + ' ohne dokumentierten Gewässertyp · ' + q.activitiesWithoutComparableConditions + ' ohne vollständige Vergleichsbedingungen. '
       + 'Leistungskennwerte werden nur innerhalb gleicher Bootsklasse, Format- und dokumentierter Strecken-/Wasserbedingungen zusammengefasst. Fehlende Angaben bleiben offen.';
   }
 }
