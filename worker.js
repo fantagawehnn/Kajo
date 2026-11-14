@@ -1,5 +1,6 @@
 // KAJO static assets + authenticated Cloudflare Workers AI coach endpoint.
 const COACH_MODEL = "@cf/zai-org/glm-4.7-flash";
+const MAX_CONTEXT_CHARS = 300_000;
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -39,7 +40,6 @@ async function handleCoach(request, env) {
   const accessToken = authorization.slice(7).trim();
   if (!accessToken) return json({ error: "Anmeldung erforderlich." }, 401);
 
-  // Token gegen Supabase Auth validieren. Keine service_role-Berechtigung.
   let authResponse;
   try {
     authResponse = await fetch(new URL("/auth/v1/user", env.SUPABASE_URL), {
@@ -56,7 +56,9 @@ async function handleCoach(request, env) {
   if (!authUser?.id) return json({ error: "Ungültige Sitzung." }, 401);
 
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
-  if (declaredLength > 900_000) return json({ error: "Der Coach-Kontext ist zu groß. Bitte grenze die Anfrage zeitlich ein." }, 413);
+  if (declaredLength > MAX_CONTEXT_CHARS + 50_000) {
+    return json({ error: "Die Anfrage ist zu groß. Bitte grenze die Analyse zeitlich ein." }, 413);
+  }
 
   let payload;
   try {
@@ -71,12 +73,14 @@ async function handleCoach(request, env) {
   }
 
   const contextText = JSON.stringify(payload.context);
-  if (contextText.length > 850_000) return json({ error: "Der Coach-Kontext ist zu groß. Bitte grenze die Anfrage zeitlich ein." }, 413);
-  const history = Array.isArray(payload.history) ? payload.history.slice(-8) : [];
+  if (contextText.length > MAX_CONTEXT_CHARS) {
+    return json({ error: "Der relevante Trainingskontext ist noch zu umfangreich. Bitte stelle eine konkretere Frage oder grenze den Zeitraum ein." }, 413);
+  }
+  const history = Array.isArray(payload.history) ? payload.history.slice(-6) : [];
   const historyMessages = history
     .filter(item => (item?.role === "user" || item?.role === "assistant")
       && typeof item.content === "string" && item.content.trim())
-    .map(item => ({ role: item.role, content: item.content.slice(0, 4000) }));
+    .map(item => ({ role: item.role, content: item.content.slice(0, 2000) }));
 
   const instructions = `Du bist KAJO, ein passiver, sportwissenschaftlich vorsichtiger Mehrsport-Coach mit Schwerpunkt Kanu-Wildwasserrennsport.
 
@@ -84,6 +88,8 @@ VERBINDLICHE REGELN:
 - Berate; die Athletin entscheidet. Ändere niemals Kalender, Trainingsplan oder Daten.
 - Nutze ausschließlich die im Kontext enthaltenen Informationen. Erfinde keine Werte, Ereignisse, Ziele, Trainingszonen, Baselines oder Datenlücken.
 - Fehlende Werte sind unbekannt, niemals automatisch null, Ruhetag oder gute Regeneration.
+- Prüfe contextSelection und dataCoverage. Unterscheide verfügbare Datensätze, für diese Frage ausgewählte Datensätze und technisch abgeschnittene Datensätze. Behaupte keine vollständige Historie, wenn truncated=true oder die Auswahl nur ein rollierendes Zeitfenster umfasst.
+- Wenn relevante Datensätze wegen des Fragetyps nicht ausgewählt wurden, sage nicht, dass sie in KAJO fehlen. Bitte bei Bedarf um eine präzisere Fragestellung.
 - Unterscheide Garmin-native Load, KAJO-HF-Zonen-Load, sRPE und externe Werte. Vermische keine inkompatiblen Load-Skalen.
 - Die dailyTimeline ist die bereits von KAJO berechnete Belastungszeitreihe. Berechne CTL, ATL, TSB oder andere KAJO-Kennzahlen nicht neu.
 - HRV nur gegen eine tatsächlich im Kontext vorhandene persönliche Baseline interpretieren. Ohne Baseline keine individuelle Normalzone behaupten.
