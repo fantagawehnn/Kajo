@@ -591,6 +591,8 @@ export function renderYearView() {
     const today = toLocalDateString();
     const catalog = getSportsCatalog();
     const timelineByDate = new Map((state.dailyTimeline || []).filter(item => item?.date >= yearStart && item?.date <= yearEnd).map(item => [item.date, item]));
+    const yearTimelineModes = [...new Set([...timelineByDate.values()].filter(item => ['complete', 'confirmed-rest'].includes(item.dataStatus)).map(item => item.loadMode).filter(Boolean))];
+    const yearLoadModeConsistent = yearTimelineModes.length === 1 && yearTimelineModes[0] !== 'garmin-unavailable';
     const first = new Date(year, 0, 1, 12);
     first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
     const last = new Date(year, 11, 31, 12);
@@ -625,7 +627,7 @@ export function renderYearView() {
         const knownLoads = dayLoads.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
         const loadKnown = elapsedDates.length > 0 && knownLoads.length === elapsedDates.length;
         const loadModes = [...new Set(knownLoads.map(item => item.loadMode).filter(Boolean))];
-        const loadStatus = loadKnown && loadModes.length === 1
+        const loadStatus = loadKnown && loadModes.length === 1 && yearLoadModeConsistent && loadModes[0] === yearTimelineModes[0]
             ? (dates.length === 7 && elapsedDates.length === 7 ? 'complete' : 'partial')
             : 'unknown';
         const loadValue = loadStatus !== 'unknown' ? knownLoads.reduce((sum, item) => sum + Number(item.load), 0) : null;
@@ -679,7 +681,7 @@ export function renderYearView() {
     const sessions = activities.length;
     const elapsedYearDates = calendarYearDateRange(year, yearStart, today > yearEnd ? yearEnd : today);
     const annualLoadEntries = elapsedYearDates.map(date => timelineByDate.get(date));
-    const annualLoadComplete = elapsedYearDates.length > 0 && annualLoadEntries.every(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+    const annualLoadComplete = yearLoadModeConsistent && elapsedYearDates.length > 0 && annualLoadEntries.every(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
     const annualLoadModes = [...new Set(annualLoadEntries.map(item => item?.loadMode).filter(Boolean))];
     const annualLoad = annualLoadComplete && annualLoadModes.length === 1
         ? annualLoadEntries.reduce((sum, item) => sum + Number(item.load), 0) : null;
@@ -700,9 +702,9 @@ export function renderYearView() {
         const elapsed = calendarYearDateRange(year, monthStart, monthEnd < today ? monthEnd : today);
         const entries = elapsed.map(date => timelineByDate.get(date));
         const known = entries.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
-        const complete = elapsed.length > 0 && known.length === elapsed.length;
+        const complete = yearLoadModeConsistent && elapsed.length > 0 && known.length === elapsed.length;
         const modeSet = [...new Set(known.map(item => item.loadMode).filter(Boolean))];
-        const value = complete && modeSet.length === 1 ? known.reduce((sum, item) => sum + Number(item.load), 0) : null;
+        const value = complete && modeSet.length === 1 && modeSet[0] === yearTimelineModes[0] ? known.reduce((sum, item) => sum + Number(item.load), 0) : null;
         const monthActivities = activities.filter(item => item.date >= monthStart && item.date <= monthEnd);
         const monthDurations = monthActivities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
         return { label: monthNames[month], value, partial: monthEnd >= today, minutes: monthDurations.reduce((sum, item) => sum + Number(item.duration), 0), durationPartial: monthDurations.length !== monthActivities.length };
