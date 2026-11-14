@@ -3,6 +3,7 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
+import { calculateReadiness } from './dashboard.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -80,28 +81,52 @@ function renderLoad() {
 }
 function renderRecovery() {
   if (!state.healthHistoryMetric) state.healthHistoryMetric = 'hrv';
-  const hrv = latestCheckin('hrv');
-  setHero('recovery', hrv ? fmt(hrv.value, 1) : '—', hrv ? 'ms' : '',
-    hrv ? 'HRV · letzter Messwert' : 'HRV heute nicht erfasst',
-    hrv ? 'Messung vom ' + dateLabel(hrv.date) + ' · einzelner Erholungsmarker, ohne persönliche Normalbereichs-Einstufung.' :
-      'Kein HRV-Messwert vorhanden. Es wird kein künstlicher Recovery-Gesamtscore gebildet.', 'neutral');
-  const entries = [
-    ['HRV', 'hrv', 'ms'],
-    ['Ruhepuls', 'rhr', 'bpm'],
-    ['Schlafdauer', 'sleepDuration', 'h'],
-    ['Sleep Score', 'sleepScore', '/ 100'],
-    ['Body Battery', 'bodyBattery', ''],
-    ['Stress', 'stress', '/ 10'],
-    ['Müdigkeit', 'fatigue', '/ 10'],
-    ['Muskelkater', 'soreness', '/ 10']
+  const readiness = calculateReadiness(todayKey());
+  const score = readiness.score;
+  const status = score === null ? 'Readiness nicht verfügbar'
+    : score >= 80 ? 'Günstige Readiness'
+    : score >= 60 ? 'Mittlere Readiness'
+    : 'Niedrige Readiness';
+  const note = score === null
+    ? 'Für heute liegen noch nicht genügend auswertbare Regenerations- und Trainingsdaten vor. Fehlende Werte werden nicht als null oder Erholung interpretiert.'
+    : readiness.dataMode + ' · ' + readiness.dataQuality + ' · ' + readiness.totalCount + ' berücksichtigte Angaben.';
+  setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
+    status, note, score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
+
+  const objectiveEntries = [
+    ['HRV', 'hrv', 'ms', 1],
+    ['Ruhepuls', 'rhr', 'bpm', 0],
+    ['Schlafdauer', 'sleepDuration', 'h', 1],
+    ['Sleep Score', 'sleepScore', '/ 100', 0],
+    ['Body Battery', 'bodyBattery', '', 0]
   ];
-  renderMetrics('recovery-analysis-metrics', entries.map(([label, key, unit]) => {
+  renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
     const entry = latestCheckin(key);
-    const supported = {"hrv":"hrv","rhr":"rhr","sleepDuration":"sleepDuration","sleepScore":"sleepScore","bodyBattery":"bodyBattery","stress":"stress","fatigue":"fatigue","soreness":"soreness"}[key];
-    return metric(label, entry ? fmt(entry.value, key === 'sleepDuration' ? 1 : 0) + (unit ? ' ' + unit : '') : '—',
-      entry ? dateLabel(entry.date) : 'Nicht erfasst',
-      supported ? "openHealthMetric('" + supported + "')" : '');
+    return metric(label,
+      entry ? fmt(entry.value, digits) + (unit ? ' ' + unit : '') : '—',
+      entry ? 'Letzter Wert · ' + dateLabel(entry.date) : 'Nicht erfasst',
+      "openHealthMetric('" + key + "')");
   }));
+
+  const subjectiveEntries = [
+    ['Schlafqualität', 'sleepQuality'],
+    ['Müdigkeit', 'fatigue'],
+    ['Muskelkater', 'soreness'],
+    ['Motivation', 'motivation'],
+    ['Stress', 'stress']
+  ];
+  renderMetrics('recovery-subjective-metrics', subjectiveEntries.map(([label, key]) => {
+    const entry = latestCheckin(key);
+    return metric(label,
+      entry ? fmt(entry.value, 0) + ' / 10' : '—',
+      entry ? 'Letzter Check-in · ' + dateLabel(entry.date) : 'Nicht erfasst',
+      "openHealthMetric('" + key + "')");
+  }));
+
+  const objective = document.getElementById('recovery-objective-count');
+  const subjective = document.getElementById('recovery-subjective-count');
+  if (objective) objective.textContent = readiness.objectiveCount + ' Messgrößen';
+  if (subjective) subjective.textContent = readiness.subjectiveCount + ' Angaben';
 }
 function renderPerformance() {
   const vo2 = latestCheckin('vo2max');
