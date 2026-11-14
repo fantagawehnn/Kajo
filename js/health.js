@@ -243,8 +243,19 @@ export function saveCheckin() {
     const existing = state.dailyCheckins[todayStr] || {};
     
     const measurementSources = { ...(existing.measurementSources || {}) };
-    if (Object.prototype.hasOwnProperty.call(wearableUpdates, 'hrv')) {
-        measurementSources.hrv = { source: 'manual', metric: 'unspecified', unit: 'ms' };
+    const manualMeasurementMeta = {
+        hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' },
+        rhr: { source: 'manual', metric: 'resting-heart-rate', unit: 'bpm' },
+        sleepDuration: { source: 'manual', metric: 'sleep-duration', unit: 'h' },
+        sleepScore: { source: 'manual', metric: 'sleep-score', unit: 'score-0-100' },
+        respiration: { source: 'manual', metric: 'respiration-rate', unit: 'breaths/min' }
+    };
+    for (const key of Object.keys(wearableUpdates)) {
+        const previousValue = existing[key];
+        const unchangedExistingValue = previousValue !== null && previousValue !== undefined
+            && previousValue !== '' && Number(previousValue) === wearableUpdates[key];
+        // Unveränderte Garmin-Werte behalten ihre Herkunft; unbekannte Quellen werden nicht geraten.
+        if (!unchangedExistingValue) measurementSources[key] = manualMeasurementMeta[key];
     }
     const checkin = {
         ...existing,
