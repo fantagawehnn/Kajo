@@ -870,18 +870,19 @@ function prepareActivityTimeSeries(details: Record<string, unknown>) {
     });
   }
 
-  const timestampDescriptor = descriptorByKey.get("directTimestamp");
-  const heartRateDescriptor = descriptorByKey.get("directHeartRate");
-  const timestampAt = (row: Record<string, unknown>): number | null => {
+  const valueAt = (row: Record<string, unknown>, key: string): number | null => {
+    const descriptor = descriptorByKey.get(key);
     const metrics = Array.isArray(row.metrics) ? row.metrics : [];
-    const value = timestampDescriptor ? metrics[timestampDescriptor.index] : null;
+    const value = descriptor ? metrics[descriptor.index] : null;
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   };
-  const heartRateAt = (row: Record<string, unknown>): number | null => {
-    const metrics = Array.isArray(row.metrics) ? row.metrics : [];
-    const value = heartRateDescriptor ? metrics[heartRateDescriptor.index] : null;
-    return typeof value === "number" && Number.isFinite(value) ? value : null;
-  };
+  const timestampAt = (row: Record<string, unknown>) => valueAt(row, "directTimestamp");
+  const heartRateAt = (row: Record<string, unknown>) => valueAt(row, "directHeartRate");
+  const validRows = rows.map((row) => ({ row, timestamp: timestampAt(row) }))
+    .filter((item): item is { row: Record<string, unknown>; timestamp: number } => item.timestamp !== null)
+    .sort((a, b) => a.timestamp - b.timestamp);
+  const firstTimestamp = validRows.length ? validRows[0].timestamp : null;
+  const lastTimestamp = validRows.length ? validRows[validRows.length - 1].timestamp : null;
 
   const fieldSummaries = descriptors
     .filter((descriptor) => typeof descriptor.key === "string" &&
@@ -890,75 +891,147 @@ function prepareActivityTimeSeries(details: Record<string, unknown>) {
       descriptor.key !== "directLongitude")
     .map((descriptor) => {
       const key = String(descriptor.key);
-      const index = Number(descriptor.metricsIndex);
-      const values = rows.map((row) => {
-        const metrics = Array.isArray(row.metrics) ? row.metrics : [];
-        const value = metrics[index];
-        return typeof value === "number" && Number.isFinite(value) ? value : null;
-      }).filter((value): value is number => value !== null);
-      const unit = descriptor.unit && typeof descriptor.unit === "object"
-        ? descriptor.unit as Record<string, unknown>
-        : {};
+      const values = rows.map((row) => valueAt(row, key)).filter((value): value is number => value !== null);
       return {
         key,
-        metricsIndex: index,
-        unit: typeof unit.key === "string" ? unit.key : null,
-        scaleFactor: typeof unit.factor === "number" ? unit.factor : null,
+        metricsIndex: Number(descriptor.metricsIndex),
+        unit: descriptorByKey.get(key)?.unitKey ?? null,
+        scaleFactorMetadata: descriptorByKey.get(key)?.factor ?? null,
         nonNullCount: values.length,
         minRaw: values.length ? Math.min(...values) : null,
         maxRaw: values.length ? Math.max(...values) : null,
         averageRaw: values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null,
-        interpretation: key === "directHeartRate"
-          ? "Rohwert entspricht bpm laut Garmin-Deskriptor."
-          : "Rohwerte; Skalierung noch nicht angewendet.",
       };
     });
 
-  const validTimestamps = rows.map(timestampAt).filter((value): value is number => value !== null);
-  const firstTimestamp = validTimestamps.length ? validTimestamps[0] : null;
-  const toSample = (row: Record<string, unknown>) => {
-    const timestamp = timestampAt(row);
-    const hr = heartRateAt(row);
-    const metrics = Array.isArray(row.metrics) ? row.metrics : [];
+  const heartRates = validRows.map((item) => ({ timestamp: item.timestamp, value: heartRateAt(item.row) }))
+    .filter((item): item is { timestamp: number; value: number } => item.value !== null);
+  let hrArea = 0;
+  let hrCoveredSeconds = 0;
+  let intervalsOver30Seconds = 0;
+  let maxGapSeconds = 0;
+  const speedComparisons: Array<{ dt: number; distanceSpeed: number; rawSpeed: number; rawSpeedTimesPointOne: number }> = [];
+  const verticalComparisons: Array<{ dt: number; elevationRate: number; rawVerticalSpeed: number; rawVerticalSpeedTimesPointOne: number }> = [];
+
+  for (let i = 1; i < validRows.length; i++) {
+    const previous = validRows[i - 1];
+    const current = validRows[i];
+    const dt = (current.timestamp - previous.timestamp) / 1000;
+    if (!(dt > 0)) continue;
+    maxGapSeconds = Math.max(maxGapSeconds, dt);
+    if (dt > 30) intervalsOver30Seconds++;
+    const previousHr = heartRateAt(previous.row);
+    const currentHr = heartRateAt(current.row);
+    if (previousHr !== null && currentHr !== null) {
+      hrArea += ((previousHr + currentHr) / 2) * dt;
+      hrCoveredSeconds += dt;
+    }
+
+    const previousDistance = valueAt(previous.row, "sumDistance");
+    const currentDistance = valueAt(current.row, "sumDistance");
+    const rawSpeed = valueAt(current.row, "directSpeed");
+    if (previousDistance !== null && currentDistance !== null && rawSpeed !== null) {
+      const distanceDelta = currentDistance - previousDistance;
+      if (distanceDelta >= 0) {
+        speedComparisons.push({
+          dt,
+          distanceSpeed: distanceDelta / dt,
+          rawSpeed,
+          rawSpeedTimesPointOne: rawSpeed * 0.1,
+        });
+      }
+    }
+    const previousElevation = valueAt(previous.row, "directElevation");
+    const currentElevation = valueAt(current.row, "directElevation");
+    const rawVerticalSpeed = valueAt(current.row, "directVerticalSpeed");
+    if (previousElevation !== null && currentElevation !== null && rawVerticalSpeed !== null) {
+      verticalComparisons.push({
+        dt,
+        elevationRate: (currentElevation - previousElevation) / dt,
+        rawVerticalSpeed,
+        rawVerticalSpeedTimesPointOne: rawVerticalSpeed * 0.1,
+      });
+    }
+  }
+
+  const average = (values: number[]) => values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : null;
+  const meanAbsoluteError = (left: number[], right: number[]) => {
+    const count = Math.min(left.length, right.length);
+    return count ? average(left.slice(0, count).map((value, index) => Math.abs(value - right[index]))) : null;
+  };
+  const distanceSpeeds = speedComparisons.map((item) => item.distanceSpeed);
+  const rawSpeeds = speedComparisons.map((item) => item.rawSpeed);
+  const scaledSpeeds = speedComparisons.map((item) => item.rawSpeedTimesPointOne);
+  const elevationRates = verticalComparisons.map((item) => item.elevationRate);
+  const rawVerticalSpeeds = verticalComparisons.map((item) => item.rawVerticalSpeed);
+  const scaledVerticalSpeeds = verticalComparisons.map((item) => item.rawVerticalSpeedTimesPointOne);
+
+  const toSample = (item: { row: Record<string, unknown>; timestamp: number }) => {
     const rawValues: Record<string, number | null> = {};
     for (const descriptor of descriptors) {
       const key = typeof descriptor.key === "string" ? descriptor.key : "";
-      const index = Number(descriptor.metricsIndex);
       if (!key || key === "directTimestamp" || key === "directLatitude" || key === "directLongitude") continue;
-      const value = metrics[index];
-      rawValues[key] = typeof value === "number" && Number.isFinite(value) ? value : null;
+      rawValues[key] = valueAt(item.row, key);
     }
     return {
-      timestampMs: timestamp,
-      timestampIso: timestamp === null ? null : new Date(timestamp).toISOString(),
-      elapsedSeconds: timestamp === null || firstTimestamp === null ? null : (timestamp - firstTimestamp) / 1000,
-      heartRateBpm: hr,
+      timestampMs: item.timestamp,
+      timestampIso: new Date(item.timestamp).toISOString(),
+      elapsedSeconds: firstTimestamp === null ? null : (item.timestamp - firstTimestamp) / 1000,
+      heartRateBpm: heartRateAt(item.row),
       rawValues,
     };
   };
-  const heartRates = rows.map(heartRateAt).filter((value): value is number => value !== null);
+
   return {
     rowCount: rows.length,
-    timestampCount: validTimestamps.length,
+    timestampCount: validRows.length,
     startTimeIso: firstTimestamp === null ? null : new Date(firstTimestamp).toISOString(),
-    endTimeIso: validTimestamps.length ? new Date(validTimestamps[validTimestamps.length - 1]).toISOString() : null,
-    durationFromTimestampsSeconds: validTimestamps.length > 1
-      ? (validTimestamps[validTimestamps.length - 1] - validTimestamps[0]) / 1000
-      : null,
+    endTimeIso: lastTimestamp === null ? null : new Date(lastTimestamp).toISOString(),
+    durationFromTimestampsSeconds: firstTimestamp === null || lastTimestamp === null ? null : (lastTimestamp - firstTimestamp) / 1000,
     heartRate: {
       unit: "bpm",
       sampleCount: heartRates.length,
-      min: heartRates.length ? Math.min(...heartRates) : null,
-      max: heartRates.length ? Math.max(...heartRates) : null,
-      average: heartRates.length ? heartRates.reduce((sum, value) => sum + value, 0) / heartRates.length : null,
+      min: heartRates.length ? Math.min(...heartRates.map((item) => item.value)) : null,
+      max: heartRates.length ? Math.max(...heartRates.map((item) => item.value)) : null,
+      arithmeticAverage: average(heartRates.map((item) => item.value)),
+      timeWeightedAverage: hrCoveredSeconds > 0 ? hrArea / hrCoveredSeconds : null,
+      coveredSeconds: hrCoveredSeconds,
+    },
+    samplingQuality: {
+      intervalsCount: Math.max(0, validRows.length - 1),
+      intervalsOver30Seconds,
+      maxGapSeconds,
+      note: "Zeitgewichtung nutzt trapezförmige Interpolation zwischen benachbarten gültigen Messpunkten; lange Lücken werden separat ausgewiesen.",
+    },
+    scalingChecks: {
+      speed: {
+        comparedIntervals: speedComparisons.length,
+        averageDistanceDeltaPerSecond: average(distanceSpeeds),
+        averageGarminRawSpeed: average(rawSpeeds),
+        averageGarminRawSpeedTimes0_1: average(scaledSpeeds),
+        meanAbsoluteErrorRaw: meanAbsoluteError(distanceSpeeds, rawSpeeds),
+        meanAbsoluteErrorTimes0_1: meanAbsoluteError(distanceSpeeds, scaledSpeeds),
+        note: "Vergleich von kumulierter Distanzänderung pro Zeitintervall mit Garmin-Geschwindigkeit; Stichprobenwerte können wegen unregelmäßiger Intervalle voneinander abweichen.",
+      },
+      verticalSpeed: {
+        comparedIntervals: verticalComparisons.length,
+        averageElevationChangePerSecond: average(elevationRates),
+        averageGarminRawVerticalSpeed: average(rawVerticalSpeeds),
+        averageGarminRawVerticalSpeedTimes0_1: average(scaledVerticalSpeeds),
+        meanAbsoluteErrorRaw: meanAbsoluteError(elevationRates, rawVerticalSpeeds),
+        meanAbsoluteErrorTimes0_1: meanAbsoluteError(elevationRates, scaledVerticalSpeeds),
+        note: "Vergleich der Höhenänderung pro Zeitintervall mit direkter vertikaler Geschwindigkeit; Höhen- und Geschwindigkeitswerte bleiben unskaliert.",
+      },
     },
     fieldSummaries,
     samples: {
-      firstFive: rows.slice(0, 5).map(toSample),
-      lastFive: rows.slice(-5).map(toSample),
+      firstFive: validRows.slice(0, 5).map(toSample),
+      lastFive: validRows.slice(-5).map(toSample),
     },
     excludedFromSamples: ["directLatitude", "directLongitude"],
-    note: "Nur-Lese-Aufbereitung. Zeitstempel werden als Unix-Millisekunden dargestellt; Herzfrequenz gemäß Garmin-Deskriptor in bpm. Andere Messwerte bleiben Rohwerte, bis ihre Skalierung separat verifiziert ist.",
+    note: "Nur-Lese-Aufbereitung. Zeitstempel als Unix-Millisekunden; Herzfrequenz gemäß Garmin-Deskriptor in bpm. Skalierungsvarianten werden verglichen, nicht automatisch auf Rohwerte angewendet.",
   };
 }
 
