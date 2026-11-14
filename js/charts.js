@@ -585,7 +585,9 @@ const activitySeriesMeta = {
     power: { label: 'Leistung', unit: 'W', color: '#a78bfa', min: 0 },
     cadence: { label: 'Frequenz', unit: '/min', color: '#fbbf24', min: 0 },
     altitude: { label: 'Höhe', unit: 'm', color: '#34d399' },
-    distance: { label: 'Distanz', unit: 'km', color: '#60a5fa', min: 0 }
+    distance: { label: 'Distanz', unit: 'km', color: '#60a5fa', min: 0 },
+    respirationRate: { label: 'Atemfrequenz', unit: '/min', color: '#2dd4bf', min: 4, max: 80 },
+    bodyBattery: { label: 'Body Battery', unit: 'Punkte', color: '#a3e635', min: 0, max: 100 }
 };
 
 export function getActivityTelemetrySeries(act) {
@@ -599,7 +601,9 @@ export function getActivityTelemetrySeries(act) {
         power: [telem.power, fields.power],
         cadence: [telem.cadence, fields.cadence],
         altitude: [telem.altitude, fields.altitude, fields.enhanced_altitude],
-        distance: [telem.distance, fields.distance]
+        distance: [telem.distance, fields.distance],
+        respirationRate: [telem.respirationRate],
+        bodyBattery: [telem.bodyBattery]
     };
     const result = [];
     for (const [key, sources] of Object.entries(aliases)) {
