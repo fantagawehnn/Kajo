@@ -71,6 +71,9 @@ assert.deepEqual(context.trainingLoad.documentedSessionRpeByDay, [
 ]);
 assert.deepEqual(context.trainingLoad.loadCoverageByActivityType.map(item => [item.type, item.activityCount, item.loadAvailableCount, item.sessionRpeAvailableCount, item.documentedSessionRpeLoadAU]), [['Kayaking', 1, 1, 0, null], ['Run', 1, 0, 1, 175]]);
 assert.equal(context.scope.allSportsContributeToTotalLoadAndRecovery, false);
+assert.equal(context.scope.allSportsSessionRpeSummaryAvailable, true);
+assert.equal(context.scope.allSportsDailyLoadCompletenessEstablished, false);
+assert.equal(context.scope.sessionRpeSeparateFromGarminLoad, true);
 assert.equal(context.scope.loadCompletenessMustBeChecked, true);
 assert.equal(context.scope.medicalDiagnosis, false);
 
