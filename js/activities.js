@@ -1051,8 +1051,7 @@ function initializeActivityDetailTabs() {
         return element;
     };
 
-    move('activity-training-stimulus', overviewPanel);
-    const stimulusPanel = overviewPanel.querySelector('#activity-training-stimulus')?.closest('.activity-stimulus-panel');
+    const stimulusPanel = content.querySelector('.activity-stimulus-panel');
     if (stimulusPanel) overviewPanel.appendChild(stimulusPanel);
 
     move('activity-telemetry-panel', loadPanel);
