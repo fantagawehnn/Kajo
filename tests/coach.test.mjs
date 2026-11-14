@@ -148,4 +148,28 @@ assert.match(activityDetailReply, /Aktivitäten der letzten 28 Tage/);
 assert.ok(activityDetailReply.includes('Kanu-Performance: 1 Einheiten; 1,0 h dokumentiert bei 1/1 Einheiten'));
 assert.ok(activityDetailReply.includes('Ergänzende Sportarten: 1 Einheiten; 0,5 h dokumentiert bei 1/1 Einheiten'));
 assert.match(activityDetailReply, /weder eine Belastungssumme/);
-console.log('Coach intent, load-window and activity-volume tests passed.');
+
+const modelTrendReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    trainingLoad: { selectedSource: 'garmin-native', timeline: fullTimeline.map((day, index) => ({
+        ...day, ctl: 40 + index, atl: 45 + index * 2, tsb: -5 - index
+    })) },
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(modelTrendReply, /Modellveränderung über 7 Tage .*CTL \+7,0, ATL \+14,0, TSB -7,0/);
+assert.match(modelTrendReply, /kein direkt gemessener Ermüdungs- oder Formwert/);
+
+const modelGapTimeline = fullTimeline.map(day => day.date === '2026-11-10'
+    ? { ...day, ctl: null, atl: null, tsb: null, load: null, dataStatus: 'unknown' }
+    : day);
+const modelGapReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    trainingLoad: { selectedSource: 'garmin-native', timeline: modelGapTimeline },
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(modelGapReply, /CTL-\/-ATL-\/-TSB-Veränderung über 7 Tage nicht ausgewiesen/);
+console.log('Coach intent, load-window, model-trend and activity-volume tests passed.');
