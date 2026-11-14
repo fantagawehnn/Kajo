@@ -68,7 +68,7 @@ assert.ok(html.includes('id="health-timeline-selection"'), 'health timeline has 
 assert.ok(analysisUI.includes('onClick: (_event, elements) =>'), 'health timeline supports selecting a day');
 assert.ok(analysisUI.includes('Kein Krankheits- oder Verletzungseintrag dokumentiert'), 'missing health entries are not interpreted as healthy days');
 assert.ok(analysisUI.includes("weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'"), 'selected health day displays its full date');
-assert.ok(analysisUI.includes("latestCheckin('hrv')"), 'recovery uses a raw HRV measurement rather than a composite score');
+assert.ok(analysisUI.includes("['HRV', 'hrv', 'ms', 1]") && analysisUI.includes('const entry = latestCheckin(key)'), 'recovery exposes the latest raw HRV measurement as a separate metric');
 assert.ok(analysisUI.includes('Es wird kein künstlicher Recovery-Gesamtscore gebildet'), 'recovery does not add a synthetic overall score');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
