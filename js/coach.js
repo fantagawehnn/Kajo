@@ -219,16 +219,17 @@ function summarizeLoadRecoveryPairs(context) {
                 || typeof provenance.metric !== 'string' || !provenance.metric
                 || typeof provenance.unit !== 'string' || !provenance.unit
                 || !loadDay || !['complete', 'confirmed-rest'].includes(loadDay.dataStatus)
-                || !Number.isFinite(loadDay.load) || !loadDay.loadMode) return [];
+                || !Number.isFinite(loadDay.load) || !loadDay.loadMode
+                || typeof loadDay.loadUnit !== 'string' || !loadDay.loadUnit) return [];
             return [{
                 date: checkin.date, previousDate, load: loadDay.load,
-                loadMode: loadDay.loadMode, value, provenance
+                loadMode: loadDay.loadMode, loadUnit: loadDay.loadUnit, value, provenance
             }];
         });
         if (pairs.length < 2) return [];
         const first = pairs[0];
         const compatible = pairs.every(pair =>
-            pair.loadMode === first.loadMode
+            pair.loadMode === first.loadMode && pair.loadUnit === first.loadUnit
             && pair.provenance.source === first.provenance.source
             && pair.provenance.metric === first.provenance.metric
             && pair.provenance.unit === first.provenance.unit
@@ -239,7 +240,7 @@ function summarizeLoadRecoveryPairs(context) {
         return [{
             label, count: pairs.length,
             firstDate: pairs[0].date, lastDate: pairs[pairs.length - 1].date,
-            loadMode: first.loadMode, recoverySource: first.provenance.source,
+            loadMode: first.loadMode, loadUnit: first.loadUnit, recoverySource: first.provenance.source,
             unit: first.provenance.unit,
             loadMin: Math.min(...loads), loadMax: Math.max(...loads),
             valueMin: Math.min(...values), valueMax: Math.max(...values)
@@ -285,7 +286,7 @@ function buildRecoveryReply(context) {
         if (paired.length) {
             lines.push('Belastung am Vortag und Check-in am Folgetag – dokumentierte Wertebereiche, keine statistische Zusammenhangsanalyse:');
             for (const item of paired) {
-                lines.push(`• ${item.label}: ${item.count} passende Tage (${item.firstDate} bis ${item.lastDate}); Vortagesbelastung ${formatNumber(item.loadMin, 1)}–${formatNumber(item.loadMax, 1)} (${item.loadMode}); Check-in-Werte ${formatNumber(item.valueMin, 2)}–${formatNumber(item.valueMax, 2)} ${item.unit} (Quelle: ${item.recoverySource}).`);
+                lines.push(`• ${item.label}: ${item.count} passende Tage (${item.firstDate} bis ${item.lastDate}); Vortagesbelastung ${formatNumber(item.loadMin, 1)}–${formatNumber(item.loadMax, 1)} ${item.loadUnit} (${item.loadMode}); Check-in-Werte ${formatNumber(item.valueMin, 2)}–${formatNumber(item.valueMax, 2)} ${item.unit} (Quelle: ${item.recoverySource}).`);
             }
             lines.push('Die Gegenüberstellung beschreibt nur zeitlich zugeordnete Messwerte. Sie weist keine Korrelation, Ursache oder individuelle Belastungsreaktion nach.');
         } else {
