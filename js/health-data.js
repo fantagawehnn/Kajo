@@ -113,7 +113,7 @@ function metricCards() {
       return `<button type="button" class="kajo-health-data-card ${noData?'is-empty':''}" onclick="openGarminHealthMetric('${metric.key}')" style="--health-metric-color:${metric.color}">
         <span class="kajo-health-data-icon"><i data-lucide="${metric.icon}"></i></span>
         <span class="kajo-health-data-copy"><strong>${metric.short}</strong><small>${metric.label}</small><em>${status}</em></span>
-        <span class="kajo-health-data-value"><b>${latest?format(latest.value,metric):'—'}</b><small>${latest?metric.unit:'Keine Tageswerte gespeichert'}</small></span>
+        <span class="kajo-health-data-value"><b>${latest?format(latest.value,metric):'—'}</b><small>${latest?metric.unit:'Keine Tageswerte in KAJO'}</small></span>
       </button>`;
     }).join('');
     return `<section class="kajo-health-data-group"><h2>${group}</h2><div class="kajo-health-data-grid">${cards}</div></section>`;
@@ -131,6 +131,8 @@ function renderRangeControls() {
 function renderDetail() {
   const metric=METRICS.find(item=>item.key===selectedMetric);
   if (!metric) return;
+  const today=todayKey();
+  ['kajo-health-from','kajo-health-to'].forEach(id=>{ const input=document.getElementById(id); if(input) input.max=today; });
   const window=rangeWindow();
   const dates=dateRange(window.from,window.to);
   const values=dates.map(day=>metricValue(state.dailyCheckins?.[day],metric.key));
@@ -191,9 +193,9 @@ export function setGarminHealthRange(range) {
 export function applyGarminHealthCustomRange() {
   const from=document.getElementById('kajo-health-from')?.value;
   const to=document.getElementById('kajo-health-to')?.value;
-  if (!from || !to || from>to) {
+  if (!from || !to || from>to || to>todayKey()) {
     const note=document.getElementById('kajo-health-detail-count');
-    if (note) note.textContent='Bitte wähle einen gültigen Zeitraum.';
+    if (note) note.textContent='Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
     return;
   }
   selectedRange='custom';
