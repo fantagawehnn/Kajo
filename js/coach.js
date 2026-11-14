@@ -359,6 +359,11 @@ function buildActivitiesReply(context) {
             lines.push('Aktivitäten der letzten 28 Tage (' + window.startDate + ' bis ' + window.endDate + '):');
             lines.push(formatActivityGroup('Kanu-Performance', window.canoe));
             lines.push(formatActivityGroup('Ergänzende Sportarten', window.complementary));
+            const coverage = context.trainingLoad.loadCoverageByActivityType || [];
+            if (coverage.length) {
+                lines.push('Belastungsdaten nach Aktivitätstyp im betrachteten 90-Tage-Kontext (ausgewählte Quelle: ' + (context.trainingLoad.resolvedMode || context.trainingLoad.selectedSource || 'nicht angegeben') + '):');
+                coverage.forEach(item => lines.push('• ' + item.type + (item.isCanoePerformanceActivity ? ' (Kanu-Performance)' : ' (ergänzend)') + ': Belastungswert für ' + item.loadAvailableCount + '/' + item.activityCount + ' Einheiten vorhanden; ' + item.loadMissingCount + ' ohne Wert.'));
+            }
             lines.push('• Die dokumentierten Stunden beschreiben nur die erfasste Dauer. Sie sind weder eine Belastungssumme noch ein Nachweis für vollständige Trainingsdokumentation.');
         }
     }
