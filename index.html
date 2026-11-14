@@ -555,7 +555,7 @@
   <div id="readiness-details" class="space-y-2"><p class="text-xs text-slate-500">Die Readiness wird berechnet, sobald genügend objektive und subjektive Daten vorliegen.</p></div>
   <div class="kajo-insight-block"><h3 class="kajo-insight-title">Datenbasierte Einordnung</h3><div id="analysis-recovery-insight"></div></div>
 </div>
-<div id="view-health-data" class="space-y-4">
+<div id="view-health-data" class="space-y-4 hidden">
             <section class="kajo-recovery-group" aria-labelledby="recovery-trend-heading">
               <div class="kajo-recovery-group-heading">
                 <div><p class="kajo-analysis-eyebrow">VERLAUF</p><h2 id="recovery-trend-heading">Recovery im Zeitverlauf</h2></div>
@@ -568,17 +568,6 @@
                   <button type="button" data-history-kind="health" data-history-range="custom" onclick="setHistoryRange('custom')" class="more-subnav-button">Individuell</button>
                 </div>
               </div>
-              <nav id="health-metric-tabs" class="kajo-health-subareas" aria-label="Recovery-Messwert auswählen">
-                <button type="button" data-history-metric="hrv" onclick="setHistoryMetric('health','hrv')" class="more-subnav-button">HRV</button>
-                <button type="button" data-history-metric="rhr" onclick="setHistoryMetric('health','rhr')" class="more-subnav-button">Ruhepuls</button>
-                <button type="button" data-history-metric="sleepDuration" onclick="setHistoryMetric('health','sleepDuration')" class="more-subnav-button">Schlafdauer</button>
-                <button type="button" data-history-metric="sleepScore" onclick="setHistoryMetric('health','sleepScore')" class="more-subnav-button">Sleep Score</button>
-                <button type="button" data-history-metric="sleepQuality" onclick="setHistoryMetric('health','sleepQuality')" class="more-subnav-button">Schlafqualität</button>
-                <button type="button" data-history-metric="fatigue" onclick="setHistoryMetric('health','fatigue')" class="more-subnav-button">Müdigkeit</button>
-                <button type="button" data-history-metric="soreness" onclick="setHistoryMetric('health','soreness')" class="more-subnav-button">Muskelkater</button>
-                <button type="button" data-history-metric="motivation" onclick="setHistoryMetric('health','motivation')" class="more-subnav-button">Motivation</button>
-                <button type="button" data-history-metric="stress" onclick="setHistoryMetric('health','stress')" class="more-subnav-button">Stress</button>
-              </nav>
               <div id="health-history-custom-range" class="hidden flex flex-wrap items-end gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
                 <label class="text-xs text-slate-400">Von <input type="date" id="health-history-from" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
                 <label class="text-xs text-slate-400">Bis <input type="date" id="health-history-to" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
