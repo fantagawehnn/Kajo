@@ -7257,3 +7257,5 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
   #view-calendar .activity-list-date { flex-basis:38px; width:38px; font-size:9px; }
   #view-calendar .activity-list-metrics { font-size:8px; }
 }
+
+#view-calendar #activity-list-items > * + * { margin-top:0 !important; }
