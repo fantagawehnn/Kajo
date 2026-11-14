@@ -216,3 +216,57 @@ const modelGapReply = buildLocalCoachReply({
 }, 'Wie ist meine Trainingsbelastung?');
 assert.ok(modelGapReply.includes('CTL-/ATL-/TSB-Veränderung über 7 Tage nicht ausgewiesen'));
 console.log('Coach intent, load-window, model-trend and activity-volume tests passed.');
+
+const pairedTimeline = [];
+for (let offset = -10; offset <= 0; offset++) {
+    pairedTimeline.push({
+        date: dateOffset('2026-11-14', offset),
+        load: offset % 2 === 0 ? 20 : 40,
+        loadMode: 'garmin-native',
+        dataStatus: 'complete',
+        ctl: 40, atl: 45, tsb: -5
+    });
+}
+const pairedRecoveryContext = {
+    asOfDate: '2026-11-14',
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    trainingLoad: { selectedSource: 'garmin-native', timeline: pairedTimeline },
+    recovery: {
+        checkins: [
+            { date: '2026-11-10', values: { hrv: 60 }, provenance: { hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' } }},
+            { date: '2026-11-12', values: { hrv: 65 }, provenance: { hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' } }},
+            { date: '2026-11-14', values: { hrv: 58 }, provenance: { hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' } }}
+        ],
+        healthEvents: []
+    },
+    season: { races: [], plannedActivities: [] }
+};
+const pairedRecoveryReply = buildLocalCoachReply(pairedRecoveryContext, 'Wie ist meine Erholung?');
+assert.match(pairedRecoveryReply, /Belastung am Vortag und Check-in am Folgetag/);
+assert.match(pairedRecoveryReply, /HRV: 3 passende Tage/);
+assert.match(pairedRecoveryReply, /keine statistische Zusammenhangsanalyse/);
+assert.match(pairedRecoveryReply, /weist keine Korrelation, Ursache/);
+
+const pairedGapContext = {
+    ...pairedRecoveryContext,
+    trainingLoad: {
+        selectedSource: 'garmin-native',
+        timeline: pairedTimeline.filter(day => day.date !== '2026-11-11')
+    }
+};
+const pairedGapReply = buildLocalCoachReply(pairedGapContext, 'Wie ist meine Erholung?');
+assert.match(pairedGapReply, /Keine belastbare Gegenüberstellung von Vortagesbelastung/);
+assert.doesNotMatch(pairedGapReply, /HRV: 3 passende Tage/);
+
+const pairedMixedSourceContext = {
+    ...pairedRecoveryContext,
+    recovery: {
+        ...pairedRecoveryContext.recovery,
+        checkins: pairedRecoveryContext.recovery.checkins.map((item, index) => index === 2
+            ? { ...item, provenance: { hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' } } }
+            : item)
+    }
+};
+const pairedMixedSourceReply = buildLocalCoachReply(pairedMixedSourceContext, 'Wie ist meine Erholung?');
+assert.match(pairedMixedSourceReply, /Keine belastbare Gegenüberstellung von Vortagesbelastung/);
+assert.doesNotMatch(pairedMixedSourceReply, /HRV: 3 passende Tage/);
