@@ -1043,6 +1043,58 @@ async function downloadGarminFitTelemetry(activityId) {
     };
 }
 
+
+async function reloadSelectedActivityHeartRate() {
+    const activity = state.selectedActivityForModal;
+    const status = document.getElementById('activity-hr-series-status');
+    const button = document.getElementById('activity-hr-reload-button');
+    const id = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
+    if (!activity || id == null || !/^\\d+$/.test(String(id))) {
+        if (status) status.textContent = 'Für diese Aktivität ist keine Garmin-Aktivitäts-ID hinterlegt.';
+        return;
+    }
+    if (button?.disabled) return;
+    if (button) button.disabled = true;
+    if (status) status.textContent = 'Garmin-HF-Zeitreihe wird für diese Aktivität abgerufen …';
+    try {
+        const detail = await downloadGarminFitTelemetry(String(id));
+        const hr = Array.isArray(detail?.telemetry?.hr) ? detail.telemetry.hr : [];
+        const time = Array.isArray(detail?.telemetry?.time) ? detail.telemetry.time : [];
+        const validCount = hr.reduce((count, value, index) => {
+            const bpm = Number(value), seconds = Number(time[index]);
+            return count + (Number.isFinite(bpm) && bpm >= 30 && bpm <= 250
+                && Number.isFinite(seconds) && seconds >= 0 ? 1 : 0);
+        }, 0);
+        if (hr.length < 2 || time.length !== hr.length || validCount < 2) {
+            throw new Error('Die Garmin-FIT-Datei enthält keine ausreichende Herzfrequenz-Zeitreihe.');
+        }
+
+        const previousTelemetry = activity.garminTelemetry;
+        activity.garminTelemetry = {
+            ...(previousTelemetry && typeof previousTelemetry === 'object' ? previousTelemetry : {}),
+            hr: [...hr],
+            time: [...time]
+        };
+        if (saveDataToLocalStorage() === false) {
+            activity.garminTelemetry = previousTelemetry;
+            throw new Error('Die HF-Zeitreihe konnte nicht lokal gespeichert werden.');
+        }
+        initEngine();
+        openCSVDetailsModal(encodeURIComponent(String(activity.id)));
+        const refreshedStatus = document.getElementById('activity-hr-series-status');
+        if (refreshedStatus) {
+            refreshedStatus.textContent = 'HF-Zeitreihe nachgeladen · ' + validCount.toLocaleString('de-DE') + ' Messpunkte';
+            refreshedStatus.className = 'rounded-lg border border-sky-800/50 bg-sky-950/20 px-3 py-2 text-xs text-sky-300';
+        }
+    } catch (error) {
+        console.error('Manuelles Nachladen der Garmin-HF-Zeitreihe fehlgeschlagen:', error);
+        if (status) status.textContent = 'Nachladen fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
+    } finally {
+        const currentButton = document.getElementById('activity-hr-reload-button');
+        if (currentButton) currentButton.disabled = false;
+    }
+}
+
 async function importSelectedGarminActivities() {
     const status = document.getElementById('garmin-connection-status');
     const inputs = Array.from(document.querySelectorAll('#garmin-activity-preview [data-garmin-activity-id]:checked'));
@@ -1880,6 +1932,7 @@ Object.assign(window, {
     connectGarmin,
     previewGarminActivities,
     syncGarminSelectedRange,
+    reloadSelectedActivityHeartRate,
     loadGarminSyncHistory,
     selectAllGarminActivities,
     importSelectedGarminActivities,
