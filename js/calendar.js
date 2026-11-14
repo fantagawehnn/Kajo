@@ -224,7 +224,7 @@ function calendarDayTime(value) {
     return match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
 }
 function calendarDayHasCheckin(checkin) {
-    return ['sleepQuality','soreness','fatigue','motivation','stress','hrv','rhr','sleepDuration','sleepScore','bodyBattery','bodyBatteryAtWake','bodyBatteryMorning']
+    return ['sleepQuality','soreness','fatigue','motivation','stress','hrv','rhr','sleepDuration','sleepScore','bodyBattery','bodyBatteryAtWake','bodyBatteryMorning','note']
         .some(key => checkin?.[key] !== null && checkin?.[key] !== undefined && checkin?.[key] !== '');
 }
 function calendarDayEvent(label, detail, time, kind) {
@@ -263,6 +263,7 @@ function renderCalendarDayDetail(date, target) {
     if (calendarDayHasCheckin(checkin)) {
         events.push(calendarDayEvent('Tages-Check-in', 'Recovery- und Self-Monitoring-Daten erfasst', '', 'checkin'));
     }
+    if (String(checkin.note || '').trim()) events.push(calendarDayEvent('Tagesnotiz', 'Persönliche Reflexion hinterlegt', '', 'note'));
     if (health?.status) {
         const healthLabel = health.status === 'sick' ? 'Krankheit dokumentiert' : health.status === 'injured' ? 'Verletzung dokumentiert' : 'Gesundheitsstatus dokumentiert';
         events.push(calendarDayEvent(healthLabel, health.diagnosis || 'Gesundheitsereignis', '', 'health'));
@@ -357,6 +358,8 @@ function renderCalendarDayDetail(date, target) {
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup +
             (health?.status ? '<p class="calendar-day-health-note">Gesundheitsstatus: ' + escapeHtml(health.status === 'sick' ? 'Krankheit' : 'Verletzung') + (health.diagnosis ? ' · ' + escapeHtml(health.diagnosis) : '') + '</p>' : '') +
             '<div class="calendar-day-events">' + calendarEventIcons(date) + '</div></section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesreflexion</h3><button type="button" onclick="openDailyNote(\'' + escapeHtml(date) + '\')">' + (String(checkin.note || '').trim() ? 'Notiz bearbeiten' : 'Notiz hinzufügen') + '</button></div>' +
+            (String(checkin.note || '').trim() ? '<p class="calendar-day-note-preview">' + escapeHtml(checkin.note) + '</p>' : '<div class="calendar-empty-state">Noch keine Tagesnotiz hinterlegt.</div>') + '</section>' +
         '<div class="calendar-day-edit-row"><span>' + escapeHtml(dayLabel) + '</span><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Tagesdaten bearbeiten</button></div>';
 }
 export function openCalendarDay(date, keepMonth = false) {
