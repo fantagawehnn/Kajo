@@ -127,4 +127,25 @@ const missingSourceReply = buildLocalCoachReply({
 assert.match(missingSourceReply, /7 Tage .*unvollständig/);
 assert.match(missingSourceReply, /keine vollständige Belastungssumme ausgewiesen/);
 
-console.log('Coach intent and load-window tests passed.');
+
+const activityDetailReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    performanceContext: {
+        allActivities: [
+            { date: '2026-11-01', type: 'C1', name: 'C1 Einheit', isCanoePerformanceActivity: true, durationMinutes: 60 },
+            { date: '2026-11-03', type: 'Run', name: 'Lauf', isCanoePerformanceActivity: false, durationMinutes: 30 },
+            { date: '2026-10-01', type: 'C1', isCanoePerformanceActivity: true, durationMinutes: 50 }
+        ],
+        canoeActivities: [
+            { date: '2026-11-01', type: 'C1', name: 'C1 Einheit', isCanoePerformanceActivity: true, durationMinutes: 60 }
+        ]
+    },
+    trainingLoad: { selectedSource: 'garmin', timeline: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Zeig meine Aktivitäten');
+assert.match(activityDetailReply, /Aktivitäten der letzten 28 Tage/);
+assert.match(activityDetailReply, /Kanu-Performance: 1 Einheiten; 1,0 h dokumentiert bei 1\\/1 Einheiten/);
+assert.match(activityDetailReply, /Ergänzende Sportarten: 1 Einheiten; 0,5 h dokumentiert bei 1\\/1 Einheiten/);
+assert.match(activityDetailReply, /weder eine Belastungssumme/);
+console.log('Coach intent, load-window and activity-volume tests passed.');
