@@ -38,7 +38,9 @@ for (const domain of ['load', 'recovery', 'performance', 'health']) {
 assert.ok(css.includes('one centered, consistently sized hero metric'), 'analysis pages share the centered hero layout');
 
 assert.ok(css.includes('#analysis-subpage-load > #analysis-load-section { order: 2; }'), 'training load trend precedes supporting metric rows');
-assert.ok(css.includes('#analysis-subpage-recovery > #view-health-data { order: 3; }'), 'recovery metric history precedes supporting metric rows');
+assert.ok(css.includes('#analysis-subpage-recovery > #recovery-objective-group { order:2; }'), 'objective recovery metrics follow the hero');
+assert.ok(css.includes('#analysis-subpage-recovery > #recovery-subjective-group { order:3; }'), 'subjective recovery metrics follow objective metrics');
+assert.ok(css.includes('#analysis-subpage-recovery > #view-health-data { order:5; }'), 'recovery history follows the summary sections');
 assert.ok(html.includes('id="analysis-health-timeline-panel"'), 'health timeline has a stable analysis section target');
 
 assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar'), 'adaptive personal baseline is not fabricated without an agreed method and data basis');
