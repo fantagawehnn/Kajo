@@ -4,7 +4,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
@@ -126,10 +126,90 @@ async function diagnoseGarminActivityJson() {
     }
 }
 
+
+async function importGarminActivityJsonTelemetry() {
+    const output = document.getElementById('garmin-json-import-output');
+    const button = document.getElementById('garmin-json-import-run');
+    const activity = state.selectedActivityForModal;
+    if (!output || !button || !activity) return;
+    const activityId = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id ?? '').replace(/^garmin-/, '');
+    if (activityId !== '25077002341') {
+        output.textContent = 'Der JSON-Import ist ausschließlich für Prague Kajakfahren vom 14.11.2026 freigegeben.';
+        output.hidden = false;
+        return;
+    }
+    if (activity.garminJsonImportedAt) {
+        output.textContent = 'Diese Aktivität wurde bereits aus Garmin-JSON importiert. Es wurde nichts erneut geschrieben.';
+        output.hidden = false;
+        return;
+    }
+    if (activity.garminFitImported === true
+        || (activity.garminTelemetry && Object.keys(activity.garminTelemetry).some(key => Array.isArray(activity.garminTelemetry[key]) && activity.garminTelemetry[key].length))) {
+        output.textContent = 'Für diese Aktivität ist bereits eine Garmin-Zeitreihe vorhanden. Zum Schutz vorhandener Daten wurde der JSON-Import abgebrochen.';
+        output.hidden = false;
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Garmin-JSON wird importiert …';
+    output.textContent = 'Rufe die Zeitreihe für genau diese Aktivität ab …';
+    output.hidden = false;
+    try {
+        const { supabase } = await import('./supabase-client.js');
+        if (!supabase) throw new Error('Supabase ist in dieser Sitzung nicht verfügbar.');
+        const { data, error } = await supabase.functions.invoke('garmin-personal', {
+            body: { action: 'import-activity-json', activityId: '25077002341' }
+        });
+        if (error) throw error;
+        const telemetry = data?.telemetry;
+        if (data?.ok !== true || data?.activityId !== '25077002341'
+            || !Array.isArray(telemetry?.time) || !Array.isArray(telemetry?.hr)
+            || telemetry.time.length < 2 || telemetry.time.length !== telemetry.hr.length
+            || !telemetry.time.every((value, index) => Number.isFinite(Number(value))
+                && (index === 0 || Number(value) > Number(telemetry.time[index - 1])))) {
+            throw new Error(data?.error || 'Die zurückgelieferte Garmin-Zeitreihe ist unvollständig oder nicht plausibel.');
+        }
+        if (state.selectedActivityForModal !== activity) {
+            throw new Error('Die geöffnete Aktivität hat sich während des Imports geändert. Es wurde nichts gespeichert.');
+        }
+
+        const previousTelemetry = activity.garminTelemetry;
+        const previousImportedAt = activity.garminJsonImportedAt;
+        activity.garminTelemetry = telemetry;
+        activity.garminJsonImportedAt = new Date().toISOString();
+        activity.garminJsonSource = 'garmin-activity-details-json';
+        if (!saveActivitiesToLocalStorage()) {
+            activity.garminTelemetry = previousTelemetry;
+            if (previousImportedAt == null) delete activity.garminJsonImportedAt;
+            else activity.garminJsonImportedAt = previousImportedAt;
+            delete activity.garminJsonSource;
+            throw new Error('Die Aktivität konnte nicht im angemeldeten Benutzerspeicher gesichert werden.');
+        }
+        refreshAll();
+        renderActivityTelemetryChart(activity);
+        renderActivityDataQuality(activity);
+        const fields = ['hr', 'altitude', 'distance', 'respirationRate', 'bodyBattery']
+            .filter(key => Array.isArray(telemetry[key]) && telemetry[key].filter(value => value != null).length >= 2);
+        output.textContent = 'Import erfolgreich.\n'
+            + 'Aktivität: Prague Kajakfahren · 14.11.2026\n'
+            + 'Messpunkte: ' + telemetry.sampleCount + '\n'
+            + 'Dauer der Zeitreihe: ' + Math.floor(telemetry.durationSeconds / 60) + ':' + String(Math.round(telemetry.durationSeconds % 60)).padStart(2, '0') + ' min\n'
+            + 'Übernommene Messreihen: ' + fields.join(', ') + '\n'
+            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\n'
+            + 'Quelle: Garmin Activity Details JSON · kein FIT-Import.';
+    } catch (error) {
+        output.textContent = 'JSON-Import fehlgeschlagen: ' + (error?.message || String(error));
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Garmin-JSON-Zeitreihe für diese Aktivität importieren';
+    }
+}
+
 if (typeof document.addEventListener === 'function') {
     document.addEventListener('click', event => {
         if (event.target?.closest?.('#activity-telemetry-diagnose')) diagnoseSelectedActivityTelemetry();
         if (event.target?.closest?.('#garmin-json-diagnostic-run')) diagnoseGarminActivityJson();
+        if (event.target?.closest?.('#garmin-json-import-run')) importGarminActivityJsonTelemetry();
     });
 }
 
