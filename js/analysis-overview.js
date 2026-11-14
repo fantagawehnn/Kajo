@@ -115,8 +115,9 @@ function renderTrendChart() {
       backgroundColor: item.color,
       borderWidth: 2.2,
       tension: .22,
-      pointRadius: dates.length > 90 ? 0 : 2,
-      pointHoverRadius: 5,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      pointHitRadius: 0,
       spanGaps: false,
       fill: false,
       hidden: !selectedMetrics.has(item.key)
