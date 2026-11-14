@@ -730,27 +730,24 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 const fetchedSeries = {};
                 for (const [key, metric] of Object.entries(metricSeries)) {
                     if (!metric || !Array.isArray(metric.values)) continue;
-                    fetchedSeries[key] = {
-                        ...metric,
-                        time: Array.isArray(metric.time) ? metric.time : telemetry.time
-                    };
+                    fetchedSeries[key] = { ...metric };
                 }
                 const mergedSeries = { ...fetchedSeries, ...previousSeries };
                 // Legacy JSON series may not yet have their own time array. Attach
                 // the existing axis only when its length demonstrably matches.
                 for (const [key, metric] of Object.entries(mergedSeries)) {
                     if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
-                    const fetchedAxis = fetchedSeries[key]?.time;
-                    const fallback = Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length
-                        ? fetchedAxis
-                        : Array.isArray(previous.time) && previous.time.length === metric.values.length
-                            ? previous.time : null;
-                    if (fallback) mergedSeries[key] = { ...metric, time: fallback };
+                    const fetchedAxis = telemetry.metricSeriesTime || telemetry.time;
+                    if (Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length) {
+                        mergedSeries[key] = { ...metric, time: fetchedAxis };
+                    }
                 }
 
                 activity.garminTelemetry = {
                     ...previous,
                     ...(!Array.isArray(previous.time) || previous.time.length < 2 ? { time: telemetry.time } : {}),
+                    ...(!Array.isArray(previous.metricSeriesTime) && Array.isArray(telemetry.metricSeriesTime)
+                        ? { metricSeriesTime: telemetry.metricSeriesTime } : {}),
                     ...(!Array.isArray(previous.hr) && Array.isArray(telemetry.hr) ? { hr: telemetry.hr } : {}),
                     ...(!Array.isArray(previous.altitude) && Array.isArray(telemetry.altitude) ? { altitude: telemetry.altitude } : {}),
                     ...(!Array.isArray(previous.distance) && Array.isArray(telemetry.distance) ? { distance: telemetry.distance } : {}),
