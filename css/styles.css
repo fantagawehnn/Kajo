@@ -5032,3 +5032,30 @@ html[data-theme="light"] .kajo-analysis-overview-panel{background:var(--kajo-sur
 
 /* Explicit visibility utility: keeps inactive analysis subpages out of the overview. */
 .hidden{display:none!important}
+
+
+/* KAJO V2 – Training Load analysis hierarchy */
+.kajo-load-model-nav{display:flex;align-items:center;gap:5px;overflow-x:auto;padding:4px;border:1px solid var(--color-border,#293644);border-radius:11px;background:var(--color-surface-subtle,#1c2835);scrollbar-width:none}
+.kajo-load-model-nav::-webkit-scrollbar{display:none}
+.kajo-load-model-nav button{flex:0 0 auto;min-height:34px;padding:7px 11px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--color-text-secondary,#a9b5c2);font-size:10px;font-weight:700;white-space:nowrap}
+.kajo-load-model-nav button.active{border-color:var(--color-border,#293644);background:var(--color-surface-raised,#17212c);color:var(--color-text-primary,#f4f7fa)}
+.kajo-load-model-nav button:disabled{opacity:.42;cursor:not-allowed}
+.kajo-load-chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;color:var(--color-text-secondary,#a9b5c2);font-size:10px}
+.kajo-load-chart-legend span{display:inline-flex;align-items:center;gap:6px}
+.kajo-load-chart-legend i{display:inline-block;width:15px;height:3px;border-radius:3px}
+.kajo-load-chart-legend i.atl{background:#D64A4A}
+.kajo-load-chart-legend i.ctl{background:#6DA8F7}
+.kajo-training-load-chart-wrap-compact{height:clamp(160px,25vw,215px)}
+.kajo-training-load-volume-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.kajo-training-load-volume-label{margin:0 0 7px;color:var(--color-text-secondary,#a9b5c2);font-size:10px;font-weight:700}
+.kajo-training-load-volume-chart{position:relative;height:150px;min-width:0}
+#training-load-standard-analysis .kajo-training-load-panel{min-width:0}
+#training-load-compare-analysis .kajo-training-load-panel{min-width:0}
+@media(max-width:560px){
+ .kajo-load-model-nav button{padding:7px 9px;font-size:9px}
+ .kajo-training-load-volume-grid{grid-template-columns:1fr;gap:12px}
+ .kajo-training-load-volume-chart{height:135px}
+}
+html[data-theme="light"] .kajo-load-model-nav,html.theme-light .kajo-load-model-nav{background:#eef2f7;border-color:#d8e0ea}
+html[data-theme="light"] .kajo-load-model-nav button,html.theme-light .kajo-load-model-nav button{color:#64748b}
+html[data-theme="light"] .kajo-load-model-nav button.active,html.theme-light .kajo-load-model-nav button.active{background:#fff;border-color:#d8e0ea;color:#172033}
