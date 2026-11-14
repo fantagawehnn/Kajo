@@ -1,10 +1,10 @@
 /* KAJO V2 – Analyseübersicht
- * Nutzt vorhandene Kennzahlen und Bewertungslogiken. Keine neuen
- * Belastungs-, Fitness-, Recovery- oder Gesundheits-Scores.
+ * Präsentationsschicht: nutzt vorhandene Werte und Datenquellen.
+ * Keine neuen Belastungs-, Fitness-, Recovery- oder Health-Scores.
  */
 import { state } from './state.js';
-import { getSportsCatalog } from './utils.js';
-import { historyRingColor } from './dashboard.js';
+import { getSportsCatalog, escapeHtml } from './utils.js';
+import { renderHeartRateZoneDistribution } from './charts.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -16,84 +16,22 @@ const todayKey = () => {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
 const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
-const dateLabel = key => {
-  const d = new Date(key + 'T12:00:00');
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-};
+const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
 let trendChart = null;
 let activityChart = null;
-let selectedMetric = 'load';
+let selectedMetrics = new Set(['load', 'recovery', 'performance', 'health']);
+let activityMeasure = 'duration';
 
 function sourceHero(domain) {
   const value = document.getElementById('analysis-' + domain + '-hero-value')?.textContent?.trim() || '—';
   const unit = document.getElementById('analysis-' + domain + '-hero-unit')?.textContent?.trim() || '';
-  const ring = document.getElementById(domain + '-hero-ring');
-  return { value, unit, tone: ring?.dataset?.status || 'neutral' };
+  return { value, unit };
 }
 function renderCircle(domain) {
   const data = sourceHero(domain);
   setText('analysis-overview-' + domain + '-value', data.value);
   setText('analysis-overview-' + domain + '-unit', data.unit);
-  const ring = document.getElementById('overview-' + domain + '-ring');
-  if (ring) ring.dataset.status = data.tone;
-}
-function latestCheckin(key) {
-  const entries = Object.entries(state.dailyCheckins || {}).sort(([a], [b]) => b.localeCompare(a));
-  for (const [date, row] of entries) if (valid(row?.[key])) return { date, value: Number(row[key]) };
-  return null;
-}
-function toneFromCssColor(color) {
-  const value = String(color || '');
-  if (value.includes('status-good')) return 'good';
-  if (value.includes('status-attention')) return 'attention';
-  if (value.includes('status-critical')) return 'critical';
-  return 'neutral';
-}
-function renderCircleStatus(domain, label, tone) {
-  const ring = document.getElementById('overview-' + domain + '-ring');
-  const status = document.getElementById('analysis-overview-' + domain + '-status');
-  if (ring) ring.dataset.status = tone || 'neutral';
-  if (status) {
-    status.textContent = label;
-    status.dataset.status = tone || 'neutral';
-  }
-}
-function renderShortStatuses() {
-  const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
-  const latestLoad = timeline[timeline.length - 1] || null;
-  let loadLabel = 'Nicht bewertbar', loadTone = 'neutral';
-  if (latestLoad && valid(latestLoad.atl) && latestLoad.load != null) {
-    const labels = {
-      'Hohe Ermüdung': ['Ermüdet', 'critical'],
-      'Belastung': ['Belastet', 'attention'],
-      'Ausgeglichen': ['Ausgeglichen', 'good'],
-      'Frisch': ['Frisch', 'good'],
-      'Tapering': ['Tapering', 'neutral']
-    };
-    const mapped = labels[latestLoad.statusLabel];
-    if (mapped && !['srpe', 'garmin-unavailable'].includes(latestLoad.loadMode)) [loadLabel, loadTone] = mapped;
-    else if (latestLoad.statusLabel === 'Modellwert') loadLabel = 'Modellwert';
-    else if (latestLoad.statusLabel === 'Keine Load-Quelle') loadLabel = 'Keine Load-Quelle';
-    else if (latestLoad.statusLabel === 'Keine relative Basis') loadLabel = 'Keine Basis';
-  } else if (latestLoad?.dataStatus === 'unknown' || latestLoad?.dataStatus === 'incomplete-activity-load') {
-    loadLabel = 'Datenlücke';
-  }
-  renderCircleStatus('load', loadLabel, loadTone);
-
-  const hrv = latestCheckin('hrv');
-  let recoveryLabel = hrv ? 'Keine Basis' : 'Nicht erfasst';
-  let recoveryTone = 'neutral';
-  if (hrv) {
-    recoveryTone = toneFromCssColor(historyRingColor('hrv', hrv.value, hrv.date));
-    recoveryLabel = ({ good: 'Stabil', attention: 'Abweichung', critical: 'Auffällig', neutral: 'Keine Basis' })[recoveryTone];
-  }
-  renderCircleStatus('recovery', recoveryLabel, recoveryTone);
-
-  renderCircleStatus('performance', latestCheckin('vo2max') ? 'Importwert · Quelle offen' : 'Nicht erfasst', 'neutral');
-
-  // Health availability is not yet calculated from matched planned and completed
-  // training time. Illness/injury log entries alone are not an availability score.
-  renderCircleStatus('health', 'Nicht berechenbar', 'neutral');
 }
 function currentRange() {
   const to = todayKey();
@@ -121,180 +59,212 @@ function rangeDates(range) {
 function cssColor(token, fallback) {
   return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
 }
+function buildSeries(dates) {
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const load = dates.map(date => {
+    const day = timeline.get(date);
+    return day && day.load != null && valid(day.atl) ? Number(day.atl) : null;
+  });
+  const recovery = dates.map(date => valid(checkins[date]?.hrv) ? Number(checkins[date].hrv) : null);
+  const performance = dates.map(date => valid(checkins[date]?.vo2max) ? Number(checkins[date].vo2max) : null);
+  // Health availability is deliberately not inferred from illness/injury logs.
+  // No continuous availability series exists in the current data model.
+  const health = dates.map(() => null);
+  return [
+    { key: 'load', label: 'Load · ATL', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
+    { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
+    { key: 'performance', label: 'Fitness · VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance },
+    { key: 'health', label: 'Health · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
+  ];
+}
+function toRelativeIndex(raw) {
+  const baseline = raw.find(value => valid(value) && Number(value) > 0);
+  if (!valid(baseline)) return { values: raw.map(() => null), baseline: null };
+  return {
+    baseline: Number(baseline),
+    values: raw.map(value => valid(value) ? Number((Number(value) / Number(baseline) * 100).toFixed(2)) : null)
+  };
+}
 function updateMetricSwitch() {
   document.querySelectorAll('[data-overview-metric]').forEach(button => {
-    const active = button.dataset.overviewMetric === selectedMetric;
+    const key = button.dataset.overviewMetric;
+    const active = selectedMetrics.has(key);
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
+    button.classList.toggle('is-unavailable', key === 'health');
   });
 }
 function renderTrendChart() {
   const canvas = document.getElementById('analysis-overview-trend-chart');
   if (!canvas || typeof Chart !== 'function') return;
   if (trendChart) trendChart.destroy();
-  const range = currentRange();
-  const dates = rangeDates(range);
+  const dates = rangeDates(currentRange());
   const labels = dates.map(dateLabel);
-  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
-  const checkins = state.dailyCheckins || {};
-  const health = state.healthLogs || {};
-  const lastLoad = (state.dailyTimeline || []).slice(-1)[0];
-  let dataset;
-  let note = '';
-  let yTitle = '';
-  let hasValues = false;
-
-  if (selectedMetric === 'load') {
-    const values = dates.map(date => {
-      const day = timeline.get(date);
-      return day && day.load != null && valid(day.atl) ? Number(day.atl) : null;
-    });
-    hasValues = values.some(valid);
-    const unit = lastLoad?.loadUnit || 'Load-Punkte';
-    dataset = { label: 'ATL · kurzfristige Belastung', data: values, borderColor: '#6DA8F7', backgroundColor: 'rgba(109,168,247,.10)', borderWidth: 2.2, tension: .25, pointRadius: dates.length > 90 ? 0 : 2, pointHoverRadius: 5, spanGaps: false };
-    yTitle = unit;
-    note = 'ATL · kurzfristige Belastung. Quelle und Einheit richten sich nach der aktiven Belastungsberechnungsbasis.';
-  } else if (selectedMetric === 'recovery') {
-    const values = dates.map(date => valid(checkins[date]?.hrv) ? Number(checkins[date].hrv) : null);
-    hasValues = values.some(valid);
-    dataset = { label: 'HRV', data: values, borderColor: '#6DA8F7', backgroundColor: 'rgba(109,168,247,.10)', borderWidth: 2.2, tension: .25, pointRadius: dates.length > 90 ? 0 : 2, pointHoverRadius: 5, spanGaps: false };
-    yTitle = 'ms';
-    note = 'Gespeicherte HRV-Messwerte. Unterschiedliche Messquellen werden nicht nachträglich vereinheitlicht; fehlende Messungen bleiben Lücken.';
-  } else if (selectedMetric === 'performance') {
-    const values = dates.map(date => valid(checkins[date]?.vo2max) ? Number(checkins[date].vo2max) : null);
-    hasValues = values.some(valid);
-    dataset = { label: 'VO₂max', data: values, borderColor: '#6DA8F7', backgroundColor: 'rgba(109,168,247,.10)', borderWidth: 2.2, tension: .25, pointRadius: dates.length > 90 ? 0 : 3, pointHoverRadius: 6, spanGaps: false };
-    yTitle = 'ml/kg/min';
-    note = 'Importierte Wellnesswerte. Messart und diagnostische Herkunft sind im Datenfeld nicht getrennt ausgewiesen; keine Gleichsetzung mit direkter Leistungsdiagnostik.';
-  } else {
-    const values = dates.map(date => {
-      const entry = health[date];
-      return entry?.status === 'sick' || entry?.status === 'injured' ? 1 : null;
-    });
-    hasValues = values.some(valid);
-    dataset = {
-      label: 'Dokumentierte Gesundheitsereignisse',
-      data: values,
-      showLine: false,
-      pointRadius: values.map(value => value === null ? 0 : 5),
-      pointHoverRadius: 7,
-      pointStyle: dates.map(date => health[date]?.status === 'injured' ? 'rectRot' : 'triangle'),
-      pointBackgroundColor: dates.map(date => health[date]?.status === 'injured' ? cssColor('--kajo-status-attention', '#F2B84B') : cssColor('--kajo-status-critical', '#F16B6B')),
-      pointBorderColor: dates.map(date => health[date]?.status === 'injured' ? cssColor('--kajo-status-attention', '#F2B84B') : cssColor('--kajo-status-critical', '#F16B6B'))
+  const series = buildSeries(dates);
+  const datasets = series.map(item => {
+    const indexed = toRelativeIndex(item.raw);
+    return {
+      label: item.label,
+      data: indexed.values,
+      rawValues: item.raw,
+      baseline: indexed.baseline,
+      unit: item.unit,
+      borderColor: item.color,
+      backgroundColor: item.color,
+      borderWidth: 2.2,
+      tension: .22,
+      pointRadius: dates.length > 90 ? 0 : 2,
+      pointHoverRadius: 5,
+      spanGaps: false,
+      fill: false,
+      hidden: !selectedMetrics.has(item.key)
     };
-    yTitle = '';
-    note = 'Nur dokumentierte Krankheits- und Verletzungseinträge. Die Darstellung ist keine medizinische Bewertung.';
-  }
+  });
+  const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
-  const gridColor = 'rgba(148,163,184,.12)';
-  const isHealth = selectedMetric === 'health';
   trendChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: { labels, datasets: [dataset] },
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        title: { display: !hasValues, text: 'Keine passenden Daten im gewählten Zeitraum', color: textColor, font: { size: 11, weight: 'normal' } },
+        title: { display: !hasValues, text: 'Keine auswertbaren Messwerte im gewählten Zeitraum', color: textColor, font: { size: 11, weight: 'normal' } },
         tooltip: { callbacks: {
           title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '',
           label: context => {
-            if (isHealth) {
-              const entry = health[dates[context.dataIndex]];
-              return entry ? (entry.status === 'sick' ? 'Krankheit' : 'Verletzung') + (entry.diagnosis ? ': ' + entry.diagnosis : '') : 'Kein Eintrag';
-            }
-            return dataset.label + ': ' + (context.parsed.y == null ? '—' : fmt(context.parsed.y) + (yTitle ? ' ' + yTitle : ''));
+            const dataset = context.dataset;
+            const raw = dataset.rawValues?.[context.dataIndex];
+            const index = context.parsed.y;
+            if (!valid(raw) || !valid(index)) return dataset.label + ': keine Messung';
+            const change = Number(index) - 100;
+            const sign = change > 0 ? '+' : '';
+            return dataset.label + ': ' + fmt(raw) + (dataset.unit ? ' ' + dataset.unit : '') +
+              ' · ' + sign + fmt(change) + ' % zum ersten Messwert';
           }
         } }
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
-        y: isHealth
-          ? { display: false, min: 0, max: 2, grid: { display: false } }
-          : { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 5 }, title: { display: true, text: yTitle, color: textColor, font: { size: 9 } } }
+        y: { grid: { color: 'rgba(148,163,184,.12)' }, ticks: { color: textColor, maxTicksLimit: 5 }, title: { display: true, text: 'Index · erster Messwert = 100', color: textColor, font: { size: 9 } } }
       }
     }
   });
-  setText('analysis-overview-trend-note', note);
+  const healthNote = 'Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
+  setText('analysis-overview-trend-note',
+    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. ' + healthNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
   if (!['load', 'recovery', 'performance', 'health'].includes(metric)) return;
-  selectedMetric = metric;
+  if (selectedMetrics.has(metric)) {
+    if (selectedMetrics.size === 1) return;
+    selectedMetrics.delete(metric);
+  } else selectedMetrics.add(metric);
   renderTrendChart();
+}
+function getActivitiesInRange(dates) {
+  const source = Array.isArray(state.rawActivities) ? state.rawActivities : [];
+  const seen = new Set();
+  return source.filter(item => {
+    const date = String(item?.date || '').slice(0, 10);
+    if (!date || date < dates[0] || date > dates[dates.length - 1]) return false;
+    const stableId = item.garminActivityId || item.externalId || item.id;
+    const key = stableId != null && stableId !== '' ? 'id:' + stableId :
+      [date, item.type, item.startTime || item.startTimeLocal || '', item.name || '', item.duration ?? ''].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+function updateActivitySwitch() {
+  document.querySelectorAll('[data-overview-activity-measure]').forEach(button => {
+    const active = button.dataset.overviewActivityMeasure === activityMeasure;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+export function setAnalysisOverviewActivityMeasure(measure) {
+  if (!['duration', 'sessions'].includes(measure)) return;
+  activityMeasure = measure;
+  renderActivityChart();
 }
 function renderActivityChart() {
   const canvas = document.getElementById('analysis-overview-activity-chart');
   if (!canvas || typeof Chart !== 'function') return;
   if (activityChart) activityChart.destroy();
   const dates = rangeDates(currentRange());
-  const labels = dates.map(dateLabel);
-  const source = Array.isArray(state.rawActivities) ? state.rawActivities : [];
-  const seen = new Set();
-  const activities = source.filter(item => {
-    const date = String(item?.date || '').slice(0, 10);
-    if (!date || date < dates[0] || date > dates[dates.length - 1]) return false;
-    const stableId = item.garminActivityId || item.externalId || item.id;
-    const key = stableId != null && stableId !== '' ? 'id:' + stableId : [date, item.type, item.startTime || item.startTimeLocal || '', item.name || '', item.duration ?? ''].join('|');
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-  const byDate = new Map();
-  activities.forEach(item => {
-    const date = String(item.date).slice(0, 10);
-    if (!byDate.has(date)) byDate.set(date, []);
-    byDate.get(date).push(item);
-  });
+  const activities = getActivitiesInRange(dates);
   const catalog = getSportsCatalog();
-  const sports = [...new Set(activities.map(item => item.type || 'Other'))];
-  const validDuration = item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) >= 0;
-  const completeDates = new Set([...byDate.entries()].filter(([, items]) => items.every(validDuration)).map(([date]) => date));
-  const datasets = sports.map(type => ({
-    label: catalog[type]?.label || type || 'Weitere',
-    data: dates.map(date => {
-      const items = byDate.get(date);
-      if (!items?.length || !completeDates.has(date)) return null;
-      return items.filter(item => (item.type || 'Other') === type).reduce((sum, item) => sum + Number(item.duration), 0);
-    }),
-    backgroundColor: catalog[type]?.color || catalog.Other?.color || '#64748b',
-    borderRadius: 3,
-    maxBarThickness: 18,
-    stack: 'duration'
-  }));
-  const minutes = activities.filter(item => completeDates.has(String(item.date).slice(0, 10)) && validDuration(item)).reduce((sum, item) => sum + Number(item.duration), 0);
-  const incompleteCount = [...byDate.keys()].filter(date => !completeDates.has(date)).length;
-  const note = activities.length
-    ? activities.length + ' Aktivitäten · ' + fmt(minutes / 60) + ' h mit vollständiger Dauer' + (incompleteCount ? ' · Dauer an ' + incompleteCount + ' Tagen unvollständig' : '')
-    : 'Keine gespeicherten Aktivitäten im gewählten Zeitraum.';
-  setText('analysis-overview-activity-note', note + ' · Sportartenfarben kennzeichnen die Aktivität; fehlende Dauern werden nicht als 0 dargestellt.');
+  const bySport = new Map();
+  activities.forEach(item => {
+    const key = item.type || 'Other';
+    if (!bySport.has(key)) bySport.set(key, []);
+    bySport.get(key).push(item);
+  });
+  const validDuration = item => item.duration !== null && item.duration !== undefined &&
+    item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0;
+  const entries = [...bySport.entries()].map(([key, items]) => {
+    const complete = items.every(validDuration);
+    return {
+      key, items, complete,
+      label: catalog[key]?.label || key,
+      color: catalog[key]?.color || catalog.Other?.color || '#64748b',
+      minutes: complete ? items.reduce((sum, item) => sum + Number(item.duration), 0) : null,
+      sessions: items.length
+    };
+  }).filter(item => activityMeasure === 'sessions' || item.complete);
+  const values = entries.map(item => activityMeasure === 'sessions' ? item.sessions : Number((item.minutes / 60).toFixed(2)));
+  const labels = entries.map(item => item.label);
+  const colors = entries.map(item => item.color);
+  const totalSessions = activities.length;
+  const completeSports = entries.length;
+  const incompleteSports = [...bySport.values()].filter(items => !items.every(validDuration)).length;
+  const totalDuration = entries.reduce((sum, item) => sum + (item.minutes || 0), 0);
+  const note = !activities.length ? 'Keine gespeicherten Aktivitäten im gewählten Zeitraum.' :
+    activityMeasure === 'sessions'
+      ? totalSessions + ' dokumentierte Einheiten · Verteilung nach Anzahl der Aktivitäten.'
+      : fmt(totalDuration / 60) + ' h · vollständige Dauern aus ' + completeSports + ' Sportarten' +
+        (incompleteSports ? ' · ' + incompleteSports + ' Sportarten wegen fehlender Dauer nicht in der Verteilung' : '');
+  setText('analysis-overview-activity-note', note);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   activityChart = new Chart(canvas.getContext('2d'), {
-    type: 'bar',
-    data: { labels, datasets },
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 3 }] },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
       plugins: {
-        legend: { display: sports.length > 1, position: 'bottom', labels: { color: textColor, boxWidth: 9, boxHeight: 9, font: { size: 9 }, padding: 12 } },
-        title: { display: !activities.length, text: 'Noch keine Trainingsaktivitäten erfasst', color: textColor, font: { size: 11, weight: 'normal' } },
-        tooltip: { callbacks: { label: context => context.dataset.label + ': ' + fmt(context.parsed.y) + ' min' } }
-      },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
-        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,.12)' }, ticks: { color: textColor, maxTicksLimit: 5 }, title: { display: true, text: 'Trainingsdauer · min', color: textColor, font: { size: 9 } } }
+        legend: { display: false },
+        title: { display: !values.length, text: activityMeasure === 'duration' && activities.length ? 'Keine vollständigen Dauern verfügbar' : 'Noch keine Trainingsaktivitäten erfasst', color: textColor, font: { size: 11, weight: 'normal' } },
+        tooltip: { callbacks: { label: context => context.label + ': ' + fmt(context.parsed) + (activityMeasure === 'sessions' ? ' Einheiten' : ' h') } }
       }
     }
   });
+  const legend = document.getElementById('analysis-overview-activity-legend');
+  if (legend) legend.innerHTML = entries.map(item => {
+    const value = activityMeasure === 'sessions' ? item.sessions + ' Einheiten' : fmt(item.minutes / 60) + ' h';
+    return '<div class="kajo-analysis-distribution-row"><span class="kajo-analysis-distribution-label"><i style="background:' +
+      escapeHtml(item.color) + '"></i>' + escapeHtml(item.label) + '</span><strong>' + value + '</strong></div>';
+  }).join('') || '<p class="kajo-analysis-chart-note">Für diese Darstellung liegen keine auswertbaren Werte vor.</p>';
+  updateActivitySwitch();
+}
+function renderIntensityDistribution() {
+  const dates = rangeDates(currentRange());
+  const activities = getActivitiesInRange(dates);
+  renderHeartRateZoneDistribution(activities, {
+    canvasId: 'analysis-overview-intensity-chart',
+    noteId: 'analysis-overview-intensity-note',
+    summaryId: 'analysis-overview-intensity-summary',
+    fromDate: dates[0],
+    toDate: dates[dates.length - 1],
+    chartKey: 'analysisOverviewZoneChartInstance'
+  });
 }
 export function renderAnalysisOverview() {
-  for (const domain of ['load', 'recovery', 'performance']) renderCircle(domain);
-  const health = sourceHero('health');
-  const hasAvailability = valid(health.value) && health.value !== '—';
-  setText('analysis-overview-health-value', hasAvailability ? health.value : '—');
-  setText('analysis-overview-health-unit', hasAvailability ? health.unit : '');
-  renderShortStatuses();
+  for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderTrendChart();
   renderActivityChart();
+  renderIntensityDistribution();
 }
