@@ -1122,8 +1122,12 @@
             <section id="activity-route-map-panel" class="hidden activity-detail-panel"></section>
 
             <section id="activity-telemetry-diagnostic-source" class="activity-detail-panel" aria-label="Zeitreihen-Diagnose">
-                <div><button id="activity-telemetry-diagnose" type="button" class="activity-series-switch">Zeitreihen-Diagnose ausführen</button></div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="activity-telemetry-diagnose" type="button" class="activity-series-switch">Zeitreihen-Diagnose ausführen</button>
+                    <button id="garmin-json-diagnostic-run" type="button" class="activity-series-switch">Garmin-JSON-Diagnose für diese Aktivität ausführen</button>
+                </div>
                 <pre id="activity-telemetry-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
+                <pre id="garmin-json-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
             </section>
             <div class="activity-detail-grid">
                 <div class="activity-detail-primary">
