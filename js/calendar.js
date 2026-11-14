@@ -464,15 +464,25 @@ function calendarYearBuildPhaseSuggestions(year, weeks) {
     const races = (state.races || []).filter(item => item?.date >= year + '-01-01' && item?.date <= year + '-12-31')
         .sort((a, b) => a.date.localeCompare(b.date));
     if (races.length) {
-        const startDate = new Date(races[0].date + 'T12:00:00');
-        const endDate = new Date(races[races.length - 1].date + 'T12:00:00');
-        startDate.setDate(startDate.getDate() - 7);
-        endDate.setDate(endDate.getDate() + 2);
-        const start = toLocalDateString(startDate) < year + '-01-01' ? year + '-01-01' : toLocalDateString(startDate);
-        const end = toLocalDateString(endDate) > year + '-12-31' ? year + '-12-31' : toLocalDateString(endDate);
-        suggestions.push({
-            id: 'race-' + start + '-' + end, name: 'Wettkampfphase', type: 'competition',
-            start, end, reason: 'Aus den dokumentierten Wettkampfterminen abgeleitet. Bitte Zeitraum und sportliche Bedeutung prüfen.'
+        const clusters = [];
+        races.forEach(race => {
+            const current = clusters[clusters.length - 1];
+            const raceDate = new Date(race.date + 'T12:00:00');
+            const gap = current ? Math.round((raceDate - new Date(current.end + 'T12:00:00')) / 86400000) : Infinity;
+            if (!current || gap > 14) clusters.push({ start: race.date, end: race.date, count: 1 });
+            else { current.end = race.date; current.count++; }
+        });
+        clusters.forEach((cluster, index) => {
+            const startDate = new Date(cluster.start + 'T12:00:00');
+            const endDate = new Date(cluster.end + 'T12:00:00');
+            startDate.setDate(startDate.getDate() - 7);
+            endDate.setDate(endDate.getDate() + 2);
+            const start = toLocalDateString(startDate) < year + '-01-01' ? year + '-01-01' : toLocalDateString(startDate);
+            const end = toLocalDateString(endDate) > year + '-12-31' ? year + '-12-31' : toLocalDateString(endDate);
+            suggestions.push({
+                id: 'race-' + start + '-' + end, name: 'Wettkampfphase' + (clusters.length > 1 ? ' ' + (index + 1) : ''), type: 'competition',
+                start, end, reason: cluster.count + ' dokumentierte Wettkampf' + (cluster.count === 1 ? 'stermin' : 'stermine') + ' in diesem Zeitraum. Die vorgeschlagene Phase umfasst sieben Tage davor und zwei Tage danach; bitte prüfen.'
+            });
         });
     }
     const completeWeeks = weeks.filter(week => week.loadStatus === 'complete' && Number.isFinite(week.loadValue));
@@ -654,7 +664,7 @@ export function renderYearView() {
             (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle" title="Menstruation erfasst"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'sick') ? '<i data-lucide="thermometer" class="calendar-year-event calendar-event-sick" title="Krankheit"></i>' : '') +
             (week.health.some(item => item[1]?.status === 'injured') ? '<i data-lucide="bandage" class="calendar-year-event calendar-event-injured" title="Verletzung"></i>' : '');
-        const loadColor = week.loadStatus === 'unknown' ? 'var(--color-surface-subtle,#1c2835)' : calendarYearLoadColor(week.loadValue, thresholds);
+        const loadColor = week.loadStatus === 'complete' ? calendarYearLoadColor(week.loadValue, thresholds) : 'var(--color-surface-subtle,#1c2835)';
         const loadClass = week.loadStatus === 'partial' ? 'is-partial' : week.loadStatus === 'unknown' ? 'is-unknown' : 'is-complete';
         const loadTitle = week.loadStatus === 'unknown' ? 'Training Load nicht vollständig berechenbar' : calendarYearLoadLabel(week.loadMode, week.loadUnit) + ': ' + (week.loadStatus === 'partial' ? 'bisher ' : '') + week.loadValue.toFixed(1);
         return '<button type="button" class="calendar-year-week-cell ' + loadClass + '" data-week-start="' + week.start + '" style="--calendar-load-color:' + loadColor + '" title="KW ' + week.weekNo + ' · ' + week.start + ' bis ' + week.end + ' · ' + escapeHtml(loadTitle) + ' · Trainingszeit ' + hours + '" onclick="openCalendarWeek(\'' + week.start + '\')">' +
