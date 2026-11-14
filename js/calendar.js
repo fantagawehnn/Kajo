@@ -218,52 +218,124 @@ function calendarRaceRow(race) {
         '<span class="calendar-activity-accent"></span><span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label) + '</span><strong>' + escapeHtml(race.name || 'Wettkampf') + '</strong>' +
         '<small>' + escapeHtml(race.location || '') + '</small></span><span class="calendar-entry-status is-event">Wettkampf</span></button>';
 }
+function calendarDayTime(value) {
+    const raw = String(value || '');
+    const match = raw.match(/(?:T|\s)?(\d{1,2}):(\d{2})/);
+    return match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
+}
+function calendarDayHasCheckin(checkin) {
+    return ['sleepQuality','soreness','fatigue','motivation','stress','hrv','rhr','sleepDuration','sleepScore','bodyBattery','bodyBatteryAtWake','bodyBatteryMorning']
+        .some(key => checkin?.[key] !== null && checkin?.[key] !== undefined && checkin?.[key] !== '');
+}
+function calendarDayEvent(label, detail, time, kind) {
+    return { label, detail, time: time || '', kind: kind || 'event' };
+}
 function renderCalendarDayDetail(date, target) {
     const root = typeof target === 'string' ? document.getElementById(target) : target;
     if (!root) return;
     const data = calendarDateData(date);
-    const readiness = calculateReadiness(date);
     const checkin = state.dailyCheckins?.[date] || {};
-    const units = [];
-    data.activities.forEach(item => units.push(calendarActivityRow(item, false)));
-    data.planned.forEach(item => units.push(calendarActivityRow(item, true)));
-    data.races.forEach(item => units.push(calendarRaceRow(item)));
-    const trainingMarkup = units.length ? units.join('') : '<div class="calendar-empty-state">Keine Trainingseinheiten oder Wettkämpfe dokumentiert.</div>';
-    const loadTone = data.loadValue === null ? 'info' : calendarLoadTone(data.timeline);
-    const durationText = data.durationTotal === null ? '—' : (data.durationComplete ? '' : '∼') + calendarFormatMinutes(data.durationTotal);
+    const health = state.healthLogs?.[date] || null;
+    const readiness = calculateReadiness(date);
+    const completed = [...data.activities].sort((a, b) => calendarDayTime(a.startTime || a.startTimeLocal || a.time).localeCompare(calendarDayTime(b.startTime || b.startTimeLocal || b.time)));
+    const planned = [...data.planned].sort((a, b) => calendarDayTime(a.startTime || a.startTimeLocal || a.time).localeCompare(calendarDayTime(b.startTime || b.startTimeLocal || b.time)));
+    const strength = (state.strengthLogs || []).filter(item => item.date === date);
+    const actualDurationKnown = data.durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
+    const actualDuration = data.activities.length === 0 ? 0 : actualDurationKnown;
+    const durationComplete = data.activities.length === 0 || data.durationComplete;
+    const durationText = data.activities.length === 0 ? '0 min' : (durationComplete ? '' : '≈') + calendarFormatMinutes(actualDuration);
     const durationCoverage = data.activities.length
-        ? (data.durationRecords.length + '/' + data.activities.length + ' Einheiten mit Dauer')
-        : 'Keine absolvierten Einheiten dokumentiert';
-    const priorDates = [];
-    for (let i = 1; i <= 7; i++) { const d = new Date(date + 'T12:00:00'); d.setDate(d.getDate() - i); priorDates.push(toLocalDateString(d)); }
-    const priorActivities = (state.rawActivities || []).filter(item => priorDates.includes(item.date));
-    const priorDurationRecords = priorActivities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
-    const priorByDate = {};
-    priorActivities.forEach(item => { (priorByDate[item.date] ||= []).push(item); });
-    const priorCompleteDays = Object.values(priorByDate).filter(items => items.length && items.every(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0));
-    const priorAverage = priorCompleteDays.length ? priorCompleteDays.reduce((sum, items) => sum + items.reduce((daySum, item) => daySum + Number(item.duration), 0), 0) / priorCompleteDays.length : null;
-    const priorCoverage = priorCompleteDays.length + ' vollständig dokumentierte Trainingstage';
-    const todayComparable = data.durationComplete ? data.durationTotal : null;
-    const comparisonMax = Math.max(todayComparable || 0, priorAverage || 0, 1);
-    const todayBar = todayComparable === null ? '' : '<div class="calendar-time-bar-row"><span>Ausgewählter Tag</span><span class="calendar-time-bar-track"><i style="width:' + (todayComparable / comparisonMax * 100) + '%"></i></span><b>' + calendarFormatMinutes(todayComparable) + '</b></div>';
-    const priorBar = priorAverage === null ? '' : '<div class="calendar-time-bar-row"><span>Ø vorherige 7 Tage</span><span class="calendar-time-bar-track"><i style="width:' + (priorAverage / comparisonMax * 100) + '%"></i></span><b>' + calendarFormatMinutes(priorAverage) + '</b></div>';
-    const recovery = [];
-    recovery.push(calendarRing(readiness.score, 'Readiness', '/100', readiness.score === null ? 'info' : calendarReadinessTone(readiness.score)));
-    if (checkin.sleepScore !== null && checkin.sleepScore !== undefined && checkin.sleepScore !== '') recovery.push(calendarRing(Math.round(Number(checkin.sleepScore)), 'Schlafscore', '/100', 'info'));
-    if (checkin.hrv !== null && checkin.hrv !== undefined && checkin.hrv !== '') recovery.push(calendarRing(Number(checkin.hrv).toFixed(0), 'HRV', 'ms', 'info'));
-    if (checkin.rhr !== null && checkin.rhr !== undefined && checkin.rhr !== '') recovery.push(calendarRing(Math.round(Number(checkin.rhr)), 'Ruhepuls', 'bpm', 'info'));
-    const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
-    if (sleepDuration !== null && sleepDuration !== undefined) recovery.push(calendarRing(Number(sleepDuration).toFixed(1), 'Schlaf', 'h', 'info'));
-    const bodyBattery = checkin.bodyBattery ?? checkin.bodyBatteryAtWake ?? checkin.bodyBatteryMorning;
-    if (bodyBattery !== null && bodyBattery !== undefined && bodyBattery !== '') recovery.push(calendarRing(Math.round(Number(bodyBattery)), 'Body Battery', '/100', 'info'));
-    if (checkin.stress !== null && checkin.stress !== undefined && checkin.stress !== '') recovery.push(calendarRing(Math.round(Number(checkin.stress)), 'Stress', '', 'info'));
-    root.innerHTML = '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Trainingseinheiten</h3><span>' + (data.activities.length + data.planned.length + data.races.length) + '</span></div><div class="calendar-day-activity-list">' + trainingMarkup + '</div></section>' +
-        '<section class="calendar-detail-section"><h3>Training Load & Trainingszeit</h3><div class="calendar-day-load-time">' +
-        calendarRing(data.loadValue === null ? null : Number(data.loadValue).toFixed(0), 'Training Load', data.timeline?.loadUnit || '', loadTone) +
-        '<div class="calendar-time-summary"><div class="calendar-time-primary"><span>Trainingszeit</span><strong>' + durationText + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
-        '<div class="calendar-time-comparison"><span>Trainingszeit-Vergleich</span><small>' + escapeHtml(durationCoverage) + '</small><div class="calendar-time-bars">' + (todayBar + priorBar || '<small>Für den Vergleich fehlen vollständige Dauerangaben.</small>') + '</div><small>' + escapeHtml(priorCoverage) + '</small></div></div></div></section>' +
-        '<section class="calendar-detail-section"><h3>Recovery</h3><div class="calendar-recovery-rings">' + (recovery.length ? recovery.join('') : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>') + '</div></section>' +
-        '<div class="calendar-day-edit-row"><span>' + escapeHtml(calendarDateLabel(date)) + '</span><span class="calendar-day-events">' + calendarEventIcons(date) + '</span><button type="button" onclick="openDayEditor(\'' + date + '\')">Tagesdaten bearbeiten</button></div>';
+        ? data.durationRecords.length + '/' + data.activities.length + ' Einheiten mit Dauer'
+        : 'Keine absolvierten Einheiten';
+    const loadTone = data.loadValue === null ? 'info' : calendarLoadTone(data.timeline);
+    const loadText = data.loadValue === null ? '—' : Number(data.loadValue).toFixed(0);
+    const completedCount = data.activities.length;
+    const readinessText = readiness.score === null ? '—' : String(readiness.score);
+    const dayLabel = calendarDateLabel(date);
+    const today = toLocalDateString();
+    const actualMarkup = completed.length
+        ? completed.map(item => calendarActivityRow(item, false)).join('')
+        : '<div class="calendar-empty-state">Noch keine absolvierte Trainingseinheit dokumentiert.</div>';
+    const plannedMarkup = planned.length
+        ? planned.map(item => calendarActivityRow(item, true)).join('')
+        : '<div class="calendar-empty-state">Keine Trainingseinheit für diesen Tag geplant.</div>';
+    const events = [];
+    if (calendarDayHasCheckin(checkin)) {
+        events.push(calendarDayEvent('Tages-Check-in', 'Recovery- und Self-Monitoring-Daten erfasst', '', 'checkin'));
+    }
+    if (health?.status) {
+        const healthLabel = health.status === 'sick' ? 'Krankheit dokumentiert' : health.status === 'injured' ? 'Verletzung dokumentiert' : 'Gesundheitsstatus dokumentiert';
+        events.push(calendarDayEvent(healthLabel, health.diagnosis || 'Gesundheitsereignis', '', 'health'));
+    }
+    data.activities.forEach(item => events.push(calendarDayEvent(item.name || 'Trainingseinheit', calendarSport(item.type).label + (item.raceFormat ? ' · ' + item.raceFormat : ''), calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'completed')));
+    data.planned.forEach(item => events.push(calendarDayEvent(item.name || 'Geplante Einheit', calendarSport(item.type).label, calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'planned')));
+    data.races.forEach(item => events.push(calendarDayEvent(item.name || 'Wettkampf', item.location || 'Wettkampf', calendarDayTime(item.startTime || item.time), 'race')));
+    strength.forEach(item => events.push(calendarDayEvent(item.exercise || 'Krafttraining', 'Kraftprotokoll', calendarDayTime(item.startTime || item.time), 'strength')));
+    events.sort((a, b) => {
+        if (a.time && b.time) return a.time.localeCompare(b.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return 0;
+    });
+    const timelineMarkup = events.length ? '<div class="calendar-day-timeline">' + events.map(item =>
+        '<div class="calendar-day-timeline-item is-' + item.kind + '">' +
+        '<span class="calendar-day-timeline-time">' + (item.time ? escapeHtml(item.time) : '—') + '</span>' +
+        '<span class="calendar-day-timeline-dot" aria-hidden="true"></span>' +
+        '<span class="calendar-day-timeline-copy"><strong>' + escapeHtml(item.label) + '</strong><small>' + escapeHtml(item.detail) + '</small></span></div>'
+    ).join('') + '</div>' : '<div class="calendar-empty-state">Für diesen Tag sind noch keine Ereignisse dokumentiert.</div>';
+
+    const recoveryMetrics = [];
+    const addRecovery = (label, value, unit) => {
+        if (value === null || value === undefined || value === '') return;
+        recoveryMetrics.push('<div class="calendar-day-recovery-metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + (unit ? ' <small>' + escapeHtml(unit) + '</small>' : '') + '</strong></div>');
+    };
+    addRecovery('Schlaf', checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null), 'h');
+    addRecovery('HRV', checkin.hrv, 'ms');
+    addRecovery('Ruhepuls', checkin.rhr, 'bpm');
+    addRecovery('Schlafscore', checkin.sleepScore, '/100');
+    addRecovery('Body Battery', checkin.bodyBattery ?? checkin.bodyBatteryAtWake ?? checkin.bodyBatteryMorning, '/100');
+    addRecovery('Schlafqualität', checkin.sleepQuality, '/5');
+    const subjective = [
+        ['Müdigkeit', checkin.fatigue], ['Muskelkater', checkin.soreness],
+        ['Motivation', checkin.motivation], ['Stress', checkin.stress]
+    ].filter(([, value]) => value !== null && value !== undefined && value !== '');
+    const subjectiveMarkup = subjective.length
+        ? '<div class="calendar-day-subjective">' + subjective.map(([label, value]) => '<span>' + escapeHtml(label) + ' <b>' + escapeHtml(value) + '/5</b></span>').join('') + '</div>'
+        : '';
+    const recoveryMarkup = recoveryMetrics.length || readiness.score !== null || subjective.length
+        ? '<div class="calendar-day-recovery-summary">' +
+            '<div class="calendar-day-readiness"><span>Readiness</span><strong>' + escapeHtml(readinessText) + (readiness.score !== null ? '<small>/100</small>' : '') + '</strong><small>' + escapeHtml(readiness.dataQuality || 'Keine ausreichende Datengrundlage') + '</small></div>' +
+            '<div class="calendar-day-recovery-metrics">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup +
+            '<details class="calendar-day-recovery-details"><summary>Recovery-Details und Datenbasis</summary><p>' + escapeHtml(readiness.dataMode || 'Keine Recovery-Daten verfügbar') + '</p>' +
+            '<p>Objektive Werte: ' + readiness.objectiveCount + ' · Subjektive Werte: ' + readiness.subjectiveCount + '</p></details></div>'
+        : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>';
+
+    const loadMarkup = '<div class="calendar-day-load-grid">' +
+        '<div><span>Absolvierter Training Load</span><strong>' + escapeHtml(loadText) + (data.loadValue !== null && data.timeline?.loadUnit ? ' <small>' + escapeHtml(data.timeline.loadUnit) + '</small>' : '') + '</strong><small>' + (data.loadValue === null ? 'Nicht zuverlässig berechenbar' : 'Quelle: ' + escapeHtml(data.timeline?.loadMode || 'Tages-Timeline')) + '</small></div>' +
+        '<div><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong><small>' + escapeHtml(durationCoverage) + '</small></div>' +
+        '<div><span>Abgeschlossene Einheiten</span><strong>' + completedCount + '</strong><small>Geplante Einheiten nicht eingerechnet</small></div>' +
+        '<div><span>Geplante Einheiten</span><strong>' + planned.length + '</strong><small>Getrennt von tatsächlicher Belastung</small></div></div>';
+
+    root.innerHTML =
+        '<section class="calendar-day-heading">' +
+            '<div><p class="calendar-day-eyebrow">Tagesübersicht</p><h3>' + escapeHtml(dayLabel) + '</h3></div>' +
+            '<div class="calendar-day-date-actions"><button type="button" onclick="openCalendarDay(\'' + escapeHtml(today) + '\')" ' + (date === today ? 'disabled' : '') + '>Heute</button><input type="date" aria-label="Datum auswählen" value="' + escapeHtml(date) + '" onchange="if(this.value)openCalendarDay(this.value)"></div>' +
+        '</section>' +
+        '<section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
+            '<div class="calendar-day-kpi"><span>Training Load</span><strong>' + escapeHtml(loadText) + '</strong><small>' + (data.loadValue === null ? 'Keine vollständige Datenbasis' : escapeHtml(data.timeline?.loadUnit || 'Belastung')) + '</small></div>' +
+            '<div class="calendar-day-kpi"><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong><small>Absolviert</small></div>' +
+            '<div class="calendar-day-kpi"><span>Einheiten</span><strong>' + completedCount + '</strong><small>Abgeschlossen</small></div>' +
+            '<div class="calendar-day-kpi"><span>Recovery</span><strong>' + escapeHtml(readinessText) + '</strong><small>' + (readiness.score === null ? 'Nicht berechenbar' : '/100 Readiness') + '</small></div>' +
+        '</section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3><span>' + events.length + ' Ereignisse</span></div>' + timelineMarkup + '</section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3><span>' + completed.length + '</span></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3><span>' + planned.length + '</span></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>' +
+        (data.races.length ? '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Wettkämpfe</h3><span>' + data.races.length + '</span></div><div class="calendar-day-activity-list">' + data.races.map(calendarRaceRow).join('') + '</div></section>' : '') +
+        '<section class="calendar-detail-section"><h3>Belastungsanalyse</h3>' + loadMarkup + '</section>' +
+        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Daten bearbeiten</button></div>' + recoveryMarkup +
+            (health?.status ? '<p class="calendar-day-health-note">Gesundheitsstatus: ' + escapeHtml(health.status === 'sick' ? 'Krankheit' : 'Verletzung') + (health.diagnosis ? ' · ' + escapeHtml(health.diagnosis) : '') + '</p>' : '') +
+            '<div class="calendar-day-events">' + calendarEventIcons(date) + '</div></section>' +
+        '<div class="calendar-day-edit-row"><span>' + escapeHtml(dayLabel) + '</span><button type="button" onclick="openDayEditor(\'' + escapeHtml(date) + '\')">Tagesdaten bearbeiten</button></div>';
 }
 export function openCalendarDay(date, keepMonth = false) {
     if (!date) return;
