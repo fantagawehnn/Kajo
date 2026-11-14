@@ -62,7 +62,7 @@ function sanitizePlanned(planned = []) {
 }
 
 function sanitizeStrength(records = []) {
-    const omit = new Set(['id', 'userId', 'user_id', 'telemetry', 'gps', 'route', 'cycle', 'weight']);
+    const omit = new Set(['id', 'userId', 'user_id', 'telemetry', 'gps', 'route', 'cycle']);
     const walk = (value, depth = 0) => {
         if (depth > 5 || value == null || typeof value !== 'object') {
             return typeof value === 'function' ? undefined : value;
