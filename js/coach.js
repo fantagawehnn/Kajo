@@ -165,6 +165,22 @@ function buildLoadReply(context) {
     }
 
     lines.push(`• Ausgewählte Belastungsquelle: ${context.trainingLoad.selectedSource || 'nicht angegeben'}.`);
+    const sessionRpeDays = context.trainingLoad.documentedSessionRpeByDay || [];
+    const recentRpeDays = sessionRpeDays.slice(-7);
+    if (recentRpeDays.length) {
+        lines.push('Zusätzliche sportartenübergreifende sRPE-Dokumentation (Dauer in Minuten × subjektive Belastung 1–10; separate Skala, nicht mit Garmin Load addiert):');
+        for (const day of recentRpeDays) {
+            if (day.documentedLoadAU === null) {
+                lines.push(`• ${day.date}: kein gültiger sRPE-Wert für ${day.recordedActivityCount} dokumentierte Einheit(en); Belastung unbekannt.`);
+            } else {
+                const status = day.allRecordedActivitiesHaveSessionRpe
+                    ? 'alle dokumentierten Einheiten bewertet'
+                    : day.activitiesMissingSessionRpe + ' dokumentierte Einheit(en) ohne sRPE';
+                lines.push(`• ${day.date}: ${formatNumber(day.documentedLoadAU, 1)} AU aus ${day.activitiesWithSessionRpe}/${day.recordedActivityCount} dokumentierten Einheiten; ${status}.`);
+            }
+        }
+        lines.push('Diese Werte bilden nur die dokumentierten Einheiten ab. Auch bei vollständigem sRPE für die erfassten Einheiten ist damit nicht bewiesen, dass alle tatsächlich absolvierten Einheiten erfasst wurden. Daraus werden keine CTL-/ATL-/TSB-Werte berechnet.');
+    }
     lines.push('Belastungssummen und Modellveränderungen werden nur bei vollständigen Tageswerten und einheitlicher Quelle ausgewiesen. CTL und ATL sind rechnerische, quellenabhängige EWMA-Modellwerte; TSB ist ihre Differenz und kein direkt gemessener Ermüdungs- oder Formwert. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
     return lines.join('\n');
 }
