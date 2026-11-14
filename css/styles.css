@@ -7958,3 +7958,86 @@ html[data-theme="light"] #view-routes .kajo-route-water-list > article { backgro
 }
 #view-routes .kajo-route-manager-inline .kajo-route-water-list { margin-top:13px; }
 html[data-theme="light"] #view-routes .kajo-route-manager-inline { background:#fff; }
+
+
+/* Gesundheitsdaten: kompakte Messwertübersicht und persönliche Verlaufsansicht */
+#view-garmin-health .kajo-health-data-intro {
+  display:flex; align-items:flex-start; gap:11px; padding:13px 14px;
+  border:1px solid var(--kajo-border,#263449); border-radius:13px;
+  background:var(--kajo-surface,#111827);
+}
+#view-garmin-health .kajo-health-data-intro svg { width:19px; height:19px; flex:0 0 auto; color:#38bdf8; margin-top:1px; }
+#view-garmin-health .kajo-health-data-intro p { color:var(--kajo-muted,#9ca3af); font-size:.72rem; line-height:1.5; }
+#view-garmin-health .kajo-health-data-group { display:flex; flex-direction:column; gap:9px; }
+#view-garmin-health .kajo-health-data-group > h2 {
+  color:var(--kajo-text,#fff); font-size:.84rem; font-weight:750;
+}
+#view-garmin-health .kajo-health-data-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+#view-garmin-health .kajo-health-data-card {
+  display:grid; grid-template-columns:35px minmax(0,1fr) auto; align-items:center; gap:10px;
+  width:100%; min-height:76px; padding:11px 12px; text-align:left;
+  border:1px solid var(--kajo-border,#263449); border-radius:12px;
+  background:var(--kajo-surface,#111827); cursor:pointer;
+  transition:border-color .16s ease,background .16s ease;
+}
+#view-garmin-health .kajo-health-data-card:hover,
+#view-garmin-health .kajo-health-data-card:focus-visible {
+  border-color:color-mix(in srgb,var(--health-metric-color) 60%,var(--kajo-border,#263449));
+  outline:none; background:color-mix(in srgb,var(--health-metric-color) 7%,var(--kajo-surface,#111827));
+}
+#view-garmin-health .kajo-health-data-icon {
+  display:grid; place-items:center; width:35px; height:35px; border-radius:10px;
+  color:var(--health-metric-color); background:color-mix(in srgb,var(--health-metric-color) 13%,transparent);
+}
+#view-garmin-health .kajo-health-data-icon svg { width:18px; height:18px; }
+#view-garmin-health .kajo-health-data-copy { display:flex; flex-direction:column; min-width:0; gap:2px; }
+#view-garmin-health .kajo-health-data-copy strong { color:var(--kajo-text,#fff); font-size:.78rem; font-weight:750; }
+#view-garmin-health .kajo-health-data-copy small { color:var(--kajo-muted,#9ca3af); font-size:.64rem; line-height:1.3; }
+#view-garmin-health .kajo-health-data-copy em { color:var(--kajo-muted,#8793a4); font-size:.59rem; font-style:normal; line-height:1.3; }
+#view-garmin-health .kajo-health-data-value { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+#view-garmin-health .kajo-health-data-value b { color:var(--kajo-text,#fff); font-size:1.02rem; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+#view-garmin-health .kajo-health-data-value small { color:var(--kajo-muted,#9ca3af); font-size:.58rem; white-space:nowrap; }
+#view-garmin-health .kajo-health-data-card.is-empty { opacity:.65; }
+#view-garmin-health .kajo-health-data-footnote { color:var(--kajo-muted,#8793a4); font-size:.65rem; line-height:1.5; }
+#view-garmin-health .kajo-health-detail-panel {
+  padding:15px; border:1px solid var(--kajo-border,#263449); border-radius:15px;
+  background:var(--kajo-surface,#111827); display:flex; flex-direction:column; gap:15px;
+}
+#view-garmin-health .kajo-health-detail-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
+#view-garmin-health .kajo-health-detail-heading h2 { color:var(--kajo-text,#fff); font-size:1.05rem; font-weight:800; margin-top:3px; }
+#view-garmin-health .kajo-health-detail-count { color:var(--kajo-muted,#9ca3af); font-size:.64rem; }
+#view-garmin-health .kajo-health-data-range { display:flex; gap:4px; overflow-x:auto; padding:3px; border-radius:10px; background:rgba(100,116,139,.10); }
+#view-garmin-health .kajo-health-data-range button {
+  flex:1 0 auto; min-width:42px; padding:7px 10px; border:0; border-radius:7px;
+  color:var(--kajo-muted,#9ca3af); background:transparent; font-size:.68rem; font-weight:650;
+}
+#view-garmin-health .kajo-health-data-range button.is-active { color:#fff; background:#087f9e; }
+#view-garmin-health .kajo-health-custom-range { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
+#view-garmin-health .kajo-health-custom-range label { display:flex; flex-direction:column; gap:4px; color:var(--kajo-muted,#9ca3af); font-size:.65rem; }
+#view-garmin-health .kajo-health-custom-range input { min-height:34px; padding:6px 8px; color:var(--kajo-text,#fff); background:#0b1220; border:1px solid var(--kajo-border,#334155); border-radius:8px; }
+#view-garmin-health .kajo-health-custom-range button { min-height:34px; padding:7px 12px; border-radius:8px; color:#fff; background:#087f9e; font-size:.68rem; font-weight:700; }
+#view-garmin-health .kajo-health-detail-current { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:12px; align-items:center; }
+#view-garmin-health .kajo-health-detail-current > div:first-child { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px; }
+#view-garmin-health .kajo-health-detail-current > div:first-child strong { color:var(--kajo-text,#fff); font-size:2.1rem; font-weight:850; line-height:1; font-variant-numeric:tabular-nums; }
+#view-garmin-health .kajo-health-detail-current > div:first-child span { color:var(--kajo-muted,#9ca3af); font-size:.7rem; }
+#view-garmin-health .kajo-health-detail-current > div:first-child small { flex-basis:100%; color:var(--kajo-muted,#9ca3af); font-size:.62rem; margin-top:3px; }
+#view-garmin-health .kajo-health-detail-baseline { display:flex; flex-direction:column; gap:3px; padding-left:12px; border-left:1px solid var(--kajo-border,#334155); }
+#view-garmin-health .kajo-health-detail-baseline span { color:var(--kajo-muted,#9ca3af); font-size:.61rem; }
+#view-garmin-health .kajo-health-detail-baseline strong { color:var(--kajo-text,#fff); font-size:.88rem; font-weight:750; }
+#view-garmin-health .kajo-health-detail-baseline small { color:var(--kajo-muted,#9ca3af); font-size:.62rem; line-height:1.4; }
+#view-garmin-health .kajo-health-detail-chart { position:relative; width:100%; height:260px; }
+html[data-theme="light"] #view-garmin-health .kajo-health-data-intro,
+html[data-theme="light"] #view-garmin-health .kajo-health-data-card,
+html[data-theme="light"] #view-garmin-health .kajo-health-detail-panel { background:#fff; }
+html[data-theme="light"] #view-garmin-health .kajo-health-data-copy strong,
+html[data-theme="light"] #view-garmin-health .kajo-health-detail-heading h2,
+html[data-theme="light"] #view-garmin-health .kajo-health-detail-current strong,
+html[data-theme="light"] #view-garmin-health .kajo-health-detail-baseline strong { color:#182431; }
+html[data-theme="light"] #view-garmin-health .kajo-health-custom-range input { color:#182431; background:#fff; }
+@media(max-width:620px) {
+  #view-garmin-health .kajo-health-data-grid { grid-template-columns:minmax(0,1fr); }
+  #view-garmin-health .kajo-health-data-card { min-height:70px; }
+  #view-garmin-health .kajo-health-detail-current { grid-template-columns:minmax(0,1fr); }
+  #view-garmin-health .kajo-health-detail-baseline { padding:10px 0 0; border-left:0; border-top:1px solid var(--kajo-border,#334155); }
+  #view-garmin-health .kajo-health-detail-chart { height:230px; }
+}
