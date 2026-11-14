@@ -4,7 +4,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=2';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
@@ -133,35 +133,34 @@ async function importGarminActivityJsonTelemetry() {
     const activity = state.selectedActivityForModal;
     if (!output || !button || !activity) return;
     const activityId = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id ?? '').replace(/^garmin-/, '');
-    if (activityId !== '25077002341') {
-        output.textContent = 'Der JSON-Import ist ausschließlich für Prague Kajakfahren vom 14.11.2026 freigegeben.';
-        output.hidden = false;
-        return;
-    }
-    if (activity.garminFitImported === true) {
-        output.textContent = 'Für diese Aktivität liegt bereits ein FIT-Import vor. Zum Schutz dieser Daten wurde die JSON-Erweiterung abgebrochen.';
+    if (!/^\d+$/.test(activityId) || !(activity.source === 'garmin' || activity.sourceRefs?.garminActivityId != null || activity.garminData?.activityId != null)) {
+        output.textContent = 'Für diese Aktivität ist keine gültige Garmin-Aktivitäts-ID hinterlegt.';
         output.hidden = false;
         return;
     }
 
     button.disabled = true;
     button.textContent = 'Garmin-JSON wird importiert …';
-    output.textContent = 'Rufe die Zeitreihe für genau diese Aktivität ab …';
+    output.textContent = 'Rufe alle verfügbaren numerischen Messreihen dieser Garmin-Aktivität ab …';
     output.hidden = false;
     try {
         const { supabase } = await import('./supabase-client.js');
         if (!supabase) throw new Error('Supabase ist in dieser Sitzung nicht verfügbar.');
         const { data, error } = await supabase.functions.invoke('garmin-personal', {
-            body: { action: 'import-activity-json', activityId: '25077002341' }
+            body: { action: 'import-activity-json', activityId }
         });
         if (error) throw error;
         const telemetry = data?.telemetry;
-        if (data?.ok !== true || data?.activityId !== '25077002341'
-            || !Array.isArray(telemetry?.time) || !Array.isArray(telemetry?.hr)
-            || telemetry.time.length < 2 || telemetry.time.length !== telemetry.hr.length
+        const metricSeries = telemetry?.metricSeries && typeof telemetry.metricSeries === 'object'
+            ? telemetry.metricSeries : {};
+        const usableSeries = Object.values(metricSeries).filter(metric => Array.isArray(metric?.values)
+            && metric.values.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value))).length >= 2).length;
+        if (data?.ok !== true || data?.activityId !== activityId
+            || !Array.isArray(telemetry?.time) || telemetry.time.length < 2 || usableSeries < 1
             || !telemetry.time.every((value, index) => Number.isFinite(Number(value))
                 && (index === 0 || Number(value) > Number(telemetry.time[index - 1])))) {
-            throw new Error(data?.error || 'Die zurückgelieferte Garmin-Zeitreihe ist unvollständig oder nicht plausibel.');
+            throw new Error(data?.error || 'Garmin hat keine ausreichend lange Zeitreihe mit numerischen Messreihen geliefert.');
         }
         if (state.selectedActivityForModal !== activity) {
             throw new Error('Die geöffnete Aktivität hat sich während des Imports geändert. Es wurde nichts gespeichert.');
@@ -170,16 +169,35 @@ async function importGarminActivityJsonTelemetry() {
         const previousTelemetry = activity.garminTelemetry;
         const previousImportedAt = activity.garminJsonImportedAt;
         const previousSource = activity.garminJsonSource;
+        const previousSyncStatus = activity.garminJsonSyncStatus;
+        const previousAttemptedAt = activity.garminJsonSyncAttemptedAt;
         const previousSeries = previousTelemetry?.metricSeries && typeof previousTelemetry.metricSeries === 'object'
             ? previousTelemetry.metricSeries : {};
-        // Keep every already stored field/series; add only previously missing raw Garmin metrics.
+        const fetchedSeries = Object.fromEntries(Object.entries(metricSeries).map(([key, metric]) => [
+            key, { ...metric }
+        ]));
+        const mergedSeries = { ...fetchedSeries, ...previousSeries };
+        for (const [key, metric] of Object.entries(mergedSeries)) {
+            if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
+            const fetchedAxis = telemetry.metricSeriesTime || telemetry.time;
+            const previousAxis = previousTelemetry?.metricSeriesTime;
+            const matchingAxis = Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length
+                ? fetchedAxis
+                : Array.isArray(previousAxis) && previousAxis.length === metric.values.length
+                    ? previousAxis : null;
+            if (matchingAxis) mergedSeries[key] = { ...metric, time: matchingAxis };
+        }
+        // Preserve FIT fields and all existing series; store the JSON time axis once per activity.
         activity.garminTelemetry = {
             ...(telemetry || {}),
             ...(previousTelemetry || {}),
-            metricSeries: { ...(telemetry.metricSeries || {}), ...previousSeries }
+            metricSeriesTime: telemetry.metricSeriesTime || previousTelemetry?.metricSeriesTime || telemetry.time,
+            metricSeries: mergedSeries
         };
         activity.garminJsonImportedAt = new Date().toISOString();
         activity.garminJsonSource = 'garmin-activity-details-json';
+        activity.garminJsonSyncStatus = 'complete';
+        activity.garminJsonSyncAttemptedAt = activity.garminJsonImportedAt;
         if (!saveActivitiesToLocalStorage()) {
             if (previousTelemetry == null) delete activity.garminTelemetry;
             else activity.garminTelemetry = previousTelemetry;
@@ -187,6 +205,10 @@ async function importGarminActivityJsonTelemetry() {
             else activity.garminJsonImportedAt = previousImportedAt;
             if (previousSource == null) delete activity.garminJsonSource;
             else activity.garminJsonSource = previousSource;
+            if (previousSyncStatus == null) delete activity.garminJsonSyncStatus;
+            else activity.garminJsonSyncStatus = previousSyncStatus;
+            if (previousAttemptedAt == null) delete activity.garminJsonSyncAttemptedAt;
+            else activity.garminJsonSyncAttemptedAt = previousAttemptedAt;
             throw new Error('Die Aktivität konnte nicht im angemeldeten Benutzerspeicher gesichert werden.');
         }
         refreshAll();
@@ -196,19 +218,19 @@ async function importGarminActivityJsonTelemetry() {
             .filter(key => Array.isArray(activity.garminTelemetry[key]) && activity.garminTelemetry[key].filter(value => value != null).length >= 2);
         const rawSeriesCount = Object.keys(activity.garminTelemetry.metricSeries || {}).length;
         output.textContent = 'Telemetrie-Erweiterung erfolgreich.\n'
-            + 'Aktivität: Prague Kajakfahren · 14.11.2026\n'
+            + 'Aktivität: ' + (activity.name || activity.garminData?.activityName || 'Garmin-Aktivität') + ' · ' + String(activity.date || '').slice(0, 10) + '\n'
             + 'Messpunkte: ' + telemetry.sampleCount + '\n'
             + 'Dauer der Zeitreihe: ' + Math.floor(telemetry.durationSeconds / 60) + ':' + String(Math.round(telemetry.durationSeconds % 60)).padStart(2, '0') + ' min\n'
             + 'Standard-Messreihen: ' + fields.join(', ') + '\n'
             + 'Zusätzliche Garmin-Rohmessreihen: ' + rawSeriesCount + '\n'
             + 'Alle verfügbaren numerischen Metriken werden mit Einheit-/Skalierungsmetadaten gespeichert; Rohwerte bleiben unverändert.\n'
-            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\n'
+            + 'Speicherung: kontogebundener lokaler Speicher; vollständige Rohmessreihen separat in IndexedDB\n'
             + 'Quelle: Garmin Activity Details JSON · kein FIT-Import.';
     } catch (error) {
         output.textContent = 'JSON-Import fehlgeschlagen: ' + (error?.message || String(error));
     } finally {
         button.disabled = false;
-        button.textContent = 'Garmin-Telemetrie vollständig ergänzen';
+        button.textContent = 'Garmin-Telemetrie für diese Aktivität ergänzen';
     }
 }
 
@@ -244,9 +266,14 @@ function renderActivityDataQuality(activity) {
     const series = getActivityTelemetrySeries(activity);
     const sampleCount = series.reduce((max, item) => Math.max(max, item.values.length), 0);
     const time = Array.isArray(telemetry.time) ? telemetry.time : [];
-    const hasTimeAxis = sampleCount >= 2 && time.length === sampleCount
-        && time.every(value => Number.isFinite(Number(value)))
-        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
+    const hasTimeAxis = series.some(item => {
+        const axis = Array.isArray(item.time) ? item.time
+            : Array.isArray(telemetry.metricSeriesTime) && telemetry.metricSeriesTime.length === item.values.length
+                ? telemetry.metricSeriesTime : time;
+        return item.values.length >= 2 && axis.length === item.values.length
+            && axis.every(value => Number.isFinite(Number(value)))
+            && axis.slice(1).every((value, index) => Number(value) > Number(axis[index]));
+    });
     const fields = activity?.garminFitData?.recordFields || {};
     const lat = telemetry.latitude || telemetry.lat || telemetry.position_lat || fields.position_lat || fields.latitude;
     const lon = telemetry.longitude || telemetry.lon || telemetry.position_long || fields.position_long || fields.longitude;

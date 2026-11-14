@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=2';
+import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=3';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
@@ -21,20 +21,20 @@ import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=1';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure } from './training-load-view.js';
-import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=2';
-import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=31';
-import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=1';
-import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=2';
-import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=74';
-import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js';
-import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js';
-import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=3';
-import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js';
+import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=3';
+import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=32';
+import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=3';
+import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=5';
+import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=75';
+import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js?v=1';
+import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
+import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
+import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
 import { sendAICoachMessage } from './coach.js';
-import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js';
-import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=2';
-import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js';
+import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js?v=1';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js?v=2';
+import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
+import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js?v=1';
 import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=1';
 
 // Externe UI-Bibliotheken dürfen die Kontoaktivierung nicht blockieren.
@@ -439,13 +439,17 @@ function setGarminSyncIndicator(state, label) {
     const text = document.getElementById('garmin-sync-indicator-text');
     if (!indicator || !dot || !text) return;
     const connected = state !== 'error';
-    dot.className = 'inline-block h-2.5 w-2.5 rounded-full ' + (connected ? 'bg-emerald-400' : 'bg-rose-500');
-    text.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
-    indicator.title = connected ? 'Garmin verbunden' : 'Garmin nicht verbunden';
-    indicator.setAttribute('aria-label', 'Garmin-Status: ' + (connected ? 'Verbunden' : 'Nicht verbunden'));
+    const displayLabel = label || (connected ? 'Verbunden' : 'Nicht verbunden');
+    const dotColor = state === 'error' ? 'bg-rose-500'
+        : state === 'partial' ? 'bg-amber-400'
+        : state === 'syncing' ? 'bg-cyan-400' : 'bg-emerald-400';
+    dot.className = 'inline-block h-2.5 w-2.5 rounded-full ' + dotColor;
+    text.textContent = displayLabel;
+    indicator.title = 'Garmin-Status: ' + displayLabel;
+    indicator.setAttribute('aria-label', 'Garmin-Status: ' + displayLabel);
     const settingsStatus = document.getElementById('settings-garmin-status');
     const settingsDot = document.getElementById('settings-garmin-status-dot');
-    if (settingsStatus) settingsStatus.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
+    if (settingsStatus) settingsStatus.textContent = displayLabel;
     if (settingsDot) {
         settingsDot.classList.toggle('is-connected', connected);
         settingsDot.classList.toggle('is-error', !connected);
@@ -648,6 +652,157 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     }
     if (imported > 0) initEngine();
     return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors };
+}
+
+
+/**
+ * Lädt alle verfügbaren Garmin-Activity-Details-Zeitreihen ergänzend zu FIT-Daten.
+ * Der Abruf läuft konto-authentifiziert und speichert ausschließlich im lokalen
+ * Aktivitätsspeicher. Bestehende FIT-/Garmin-Werte und bereits vorhandene Reihen
+ * bleiben erhalten; jede JSON-Messreihe behält ihre eigene Zeitachse.
+ */
+async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null) {
+    const syncUserId = activeAppUserId;
+    if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
+    const now = Date.now();
+    const cooldowns = {
+        no_data: 30 * 24 * 60 * 60 * 1000,
+        error: 6 * 60 * 60 * 1000,
+        rate_limited: 5 * 60 * 1000
+    };
+    const pending = state.rawActivities.filter(activity => {
+        const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
+        const id = String(rawId ?? '').replace(/^garmin-/, '');
+        const date = String(activity.date || '').slice(0, 10);
+        if (!/^\d+$/.test(id) || date < startDate || date > endDate) return false;
+        const existingMetricSeries = activity.garminTelemetry?.metricSeries || {};
+        const existingMetricSeriesCount = Object.keys(existingMetricSeries).length;
+        const hasMetricTimeAxis = Array.isArray(activity.garminTelemetry?.metricSeriesTime)
+            || Object.values(existingMetricSeries).some(metric => Array.isArray(metric?.time));
+        // Ältere JSON-Imports ohne vollständige Rohmessreihen-Zeitachse werden
+        // einmalig erneut abgerufen und auf das aktuelle Datenmodell erweitert.
+        if (activity.garminJsonImportedAt && existingMetricSeriesCount > 0 && hasMetricTimeAxis) return false;
+        const lastAttempt = Date.parse(activity.garminJsonSyncAttemptedAt || '');
+        const cooldown = cooldowns[activity.garminJsonSyncStatus] || 0;
+        return !(Number.isFinite(lastAttempt) && cooldown > 0 && now - lastAttempt < cooldown);
+    });
+
+    let imported = 0, noData = 0, failed = 0, rawSeries = 0, rateLimited = false;
+    const errors = [];
+    for (let index = 0; index < pending.length; index++) {
+        if (activeAppUserId !== syncUserId || !appUserReady) {
+            return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+        }
+        const activity = pending[index];
+        const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
+        const id = String(rawId).replace(/^garmin-/, '');
+        const message = status?.querySelector('#garmin-sync-progress-message');
+        const progress = 'Garmin-Rohtelemetrie: ' + (index + 1) + '/' + pending.length;
+        if (message) message.textContent = progress;
+        setGarminSyncIndicator('syncing', progress);
+
+        try {
+            let response = null;
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    response = await callGarminFunction({ action: 'import-activity-json', activityId: id });
+                    lastError = null;
+                    break;
+                } catch (error) {
+                    lastError = error;
+                    if (!/HTTP 429|rate.?limit/i.test(error?.message || '') || attempt === 1) break;
+                    const match = String(error.message).match(/retryInSeconds["\s:=]+(\d+)/i);
+                    const waitSeconds = Math.max(30, Number(match?.[1] || 30));
+                    if (message) message.textContent = 'Garmin-Abruflimit: automatische Fortsetzung in ' + waitSeconds + ' Sekunden …';
+                    await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                }
+            }
+            if (activeAppUserId !== syncUserId || !appUserReady) {
+                return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+            }
+            if (lastError) throw lastError;
+
+            const telemetry = response?.telemetry;
+            const metricSeries = telemetry?.metricSeries && typeof telemetry.metricSeries === 'object'
+                ? telemetry.metricSeries : {};
+            const usableSeries = Object.values(metricSeries).filter(metric => Array.isArray(metric?.values)
+                && metric.values.filter(value => value !== null && value !== undefined
+                    && value !== '' && Number.isFinite(Number(value))).length >= 2).length;
+            if (!Array.isArray(telemetry?.time) || telemetry.time.length < 2 || usableSeries < 1) {
+                activity.garminJsonSyncStatus = 'no_data';
+                activity.garminJsonSyncAttemptedAt = new Date().toISOString();
+                noData++;
+            } else {
+                const previous = activity.garminTelemetry && typeof activity.garminTelemetry === 'object'
+                    ? activity.garminTelemetry : {};
+                const previousSeries = previous.metricSeries && typeof previous.metricSeries === 'object'
+                    ? previous.metricSeries : {};
+                const fetchedSeries = {};
+                for (const [key, metric] of Object.entries(metricSeries)) {
+                    if (!metric || !Array.isArray(metric.values)) continue;
+                    fetchedSeries[key] = { ...metric };
+                }
+                const mergedSeries = { ...fetchedSeries, ...previousSeries };
+                // Legacy JSON series may not yet have their own time array. Attach
+                // the existing axis only when its length demonstrably matches.
+                for (const [key, metric] of Object.entries(mergedSeries)) {
+                    if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
+                    const fetchedAxis = telemetry.metricSeriesTime || telemetry.time;
+                    const previousAxis = previous.metricSeriesTime;
+                    const matchingAxis = Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length
+                        ? fetchedAxis
+                        : Array.isArray(previousAxis) && previousAxis.length === metric.values.length
+                            ? previousAxis : null;
+                    if (matchingAxis) mergedSeries[key] = { ...metric, time: matchingAxis };
+                }
+
+                activity.garminTelemetry = {
+                    ...previous,
+                    ...(!Array.isArray(previous.time) || previous.time.length < 2 ? { time: telemetry.time } : {}),
+                    ...(Array.isArray(telemetry.metricSeriesTime)
+                        ? { metricSeriesTime: telemetry.metricSeriesTime }
+                        : Array.isArray(previous.metricSeriesTime) ? { metricSeriesTime: previous.metricSeriesTime } : {}),
+                    ...(!Array.isArray(previous.hr) && Array.isArray(telemetry.hr) ? { hr: telemetry.hr } : {}),
+                    ...(!Array.isArray(previous.altitude) && Array.isArray(telemetry.altitude) ? { altitude: telemetry.altitude } : {}),
+                    ...(!Array.isArray(previous.distance) && Array.isArray(telemetry.distance) ? { distance: telemetry.distance } : {}),
+                    ...(!Array.isArray(previous.respirationRate) && Array.isArray(telemetry.respirationRate) ? { respirationRate: telemetry.respirationRate } : {}),
+                    ...(!Array.isArray(previous.bodyBattery) && Array.isArray(telemetry.bodyBattery) ? { bodyBattery: telemetry.bodyBattery } : {}),
+                    metricSeries: mergedSeries
+                };
+                activity.garminJsonImportedAt = new Date().toISOString();
+                activity.garminJsonSource = 'garmin-activity-details-json';
+                activity.garminJsonSyncStatus = 'complete';
+                activity.garminJsonSyncAttemptedAt = activity.garminJsonImportedAt;
+                activity.garminJsonMetricSeriesCount = Object.keys(mergedSeries).length;
+                activity.garminJsonSampleCount = telemetry.sampleCount || telemetry.time.length;
+                imported++;
+                rawSeries += usableSeries;
+            }
+        } catch (error) {
+            if (activeAppUserId !== syncUserId || !appUserReady) {
+                return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+            }
+            const errorMessage = error?.message || 'Unbekannter Garmin-JSON-Fehler';
+            const limited = /HTTP 429|rate.?limit/i.test(errorMessage);
+            activity.garminJsonSyncStatus = limited ? 'rate_limited' : 'error';
+            activity.garminJsonSyncAttemptedAt = new Date().toISOString();
+            failed++;
+            errors.push(id + ': ' + errorMessage);
+            if (limited) rateLimited = true;
+        }
+
+        if ((index + 1) % 5 === 0 || index === pending.length - 1 || rateLimited) {
+            if (saveActivitiesToLocalStorage() === false) {
+                throw new Error('Garmin-Rohtelemetrie konnte nicht im lokalen Aktivitätsspeicher gesichert werden.');
+            }
+        }
+        if (rateLimited) break;
+        if (index < pending.length - 1) await new Promise(resolve => setTimeout(resolve, 650));
+    }
+
+    if (imported > 0) initEngine();
+    return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors };
 }
 
 function recordGarminActivityCoverageRange(startDate, endDate) {
@@ -877,12 +1032,16 @@ async function syncGarminSelectedRange() {
         const message = status.querySelector('#garmin-sync-progress-message');
         if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
         const telemetrySummary = await syncMissingGarminTelemetry(startDate, endDate, status);
+        const jsonTelemetrySummary = await syncMissingGarminJsonTelemetry(startDate, endDate, status);
         status.removeAttribute('aria-busy');
         const activitiesText = activitySummary
             ? (activitySummary.stored || 0) + ' Aktivitäten gespeichert'
             : 'Aktivitäten bereits in einem vorherigen Teilabruf verarbeitet';
         const telemetryText = 'FIT-Daten: ' + telemetrySummary.imported + '/' + telemetrySummary.total + ' Aktivitäten; HF in ' + telemetrySummary.withHr + ', Geschwindigkeit in ' + telemetrySummary.withSpeed + ', Kadenz/Schlagfrequenz in ' + telemetrySummary.withCadence + '; ' + telemetrySummary.laps + ' Runden, ' + telemetrySummary.sets + ' Kraft-Sätze, ' + telemetrySummary.workoutSteps + ' Trainingsschritte und ' + telemetrySummary.recordFields + ' Messfeldtypen erfasst' +
-            (telemetrySummary.failed ? ', ' + telemetrySummary.failed + ' fehlgeschlagen' : '');
+            (telemetrySummary.failed ? ', ' + telemetrySummary.failed + ' fehlgeschlagen' : '') +
+            '. Garmin-JSON-Rohreihen: ' + jsonTelemetrySummary.imported + '/' + jsonTelemetrySummary.total + ' Aktivitäten, ' + jsonTelemetrySummary.rawSeries + ' Messreihen ergänzt' +
+            (jsonTelemetrySummary.noData ? ', ' + jsonTelemetrySummary.noData + ' ohne Zeitreihendaten' : '') +
+            (jsonTelemetrySummary.failed ? ', ' + jsonTelemetrySummary.failed + ' fehlgeschlagen' : '');
         status.textContent = 'Synchronisierung abgeschlossen: ' + totalDays + '/' + totalDays + ' Tage. ' +
             activitiesText + '. ' + telemetryText + '. Garmin-Gesundheitswerte in Check-ins übernommen: ' +
             healthImportSummary.values + ' Werte an ' + healthImportSummary.days +
@@ -1797,15 +1956,36 @@ async function syncGarminTodayOnOpen(userId) {
         } catch (telemetryError) {
             console.warn('KAJO: FIT-Zeitreihen des heutigen Tages konnten nicht vollständig ergänzt werden:', telemetryError);
         }
+        let jsonTelemetry = { failed: 0, rateLimited: false };
+        try {
+            // Beim automatischen Tagesabgleich werden auch ältere Garmin-Aktivitäten
+            // ohne JSON-Rohtelemetrie schrittweise nachgeladen.
+            jsonTelemetry = await syncMissingGarminJsonTelemetry('0000-01-01', date, null);
+            console.info('KAJO: Automatische Garmin-Rohtelemetrie abgeschlossen:', jsonTelemetry);
+        } catch (jsonTelemetryError) {
+            jsonTelemetry = { failed: 1, rateLimited: false };
+            console.warn('KAJO: Garmin-Rohtelemetrie konnte nicht vollständig ergänzt werden:', jsonTelemetryError);
+        }
 
         if (activeAppUserId !== userId || !appUserReady) return;
-        if (health?.status === 'partial' || Number(health?.failed || 0) > 0) {
-            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Endpunkte können beim nächsten Öffnen erneut abgerufen werden.', health);
+        const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
+            || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true;
+        if (partial) {
+            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
+            setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
+            if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0) {
+                const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
+                setTimeout(() => {
+                    if (activeAppUserId === userId && appUserReady && !garminDailySyncCompleted.has(runKey)) {
+                        void syncGarminTodayOnOpen(userId);
+                    }
+                }, retryDelay);
+            }
         } else {
             garminDailySyncCompleted.add(runKey);
-            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health);
+            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry);
+            setGarminSyncIndicator('current', 'Verbunden');
         }
-        setGarminSyncIndicator('current', 'Verbunden');
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
         if (activeAppUserId === userId && appUserReady) setGarminSyncIndicator('current', 'Verbunden');

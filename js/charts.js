@@ -636,6 +636,10 @@ export function getActivityTelemetrySeries(act) {
             key,
             label: canonicalRawAliases.has(key) ? label + ' (Rohwert)' : label,
             unit: typeof metric.unit === 'string' ? metric.unit : '',
+            time: Array.isArray(metric.time) && metric.time.length === metric.values.length
+                ? metric.time
+                : Array.isArray(telem.metricSeriesTime) && telem.metricSeriesTime.length === metric.values.length
+                    ? telem.metricSeriesTime : null,
             color: sportColor,
             values: metric.values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
@@ -715,7 +719,7 @@ export function renderActivityTelemetryChart(act) {
         ? Math.floor(Math.round(Number(value)) / 60) + ':' + String(Math.round(Number(value)) % 60).padStart(2, '0')
         : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
     const telem = getActivityTelemetry(act) || {};
-    const times = Array.isArray(telem.time) ? telem.time : [];
+    const times = Array.isArray(selected.time) ? selected.time : Array.isArray(telem.time) ? telem.time : [];
     const hasElapsedTime = times.length === selected.values.length
         && times.every(value => Number.isFinite(Number(value)))
         && times.slice(1).every((value, index) => Number(value) > Number(times[index]));

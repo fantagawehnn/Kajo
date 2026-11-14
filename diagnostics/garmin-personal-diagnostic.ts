@@ -893,7 +893,6 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
     return values.filter(value => value !== null).length >= 2 ? values : null;
   };
   const hr = collect("directHeartRate", value => value >= 30 && value <= 250);
-  if (!hr) throw new Error("Garmin-JSON enthält keine ausreichende Herzfrequenz-Zeitreihe.");
   const altitude = collect("directElevation", value => value >= -500 && value <= 9000);
   const distance = collect("sumDistance", value => value >= 0, value => value / 1000);
   const respirationRate = collect("directRespirationRate", value => value >= 4 && value <= 80);
@@ -928,7 +927,8 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
   return {
     source: "garmin-activity-details-json",
     time,
-    hr,
+    metricSeriesTime: time,
+    ...(hr ? { hr } : {}),
     ...(altitude ? { altitude } : {}),
     ...(distance ? { distance } : {}),
     ...(respirationRate ? { respirationRate } : {}),
@@ -1400,9 +1400,10 @@ Deno.serve(async (req) => {
 
     if (action === "import-activity-json") {
       const activityId = typeof body.activityId === "string" ? body.activityId : String(body.activityId ?? "");
-      // Import ist bewusst auf die eine ausdrücklich freigegebene Aktivität begrenzt.
-      if (activityId !== "25077002341") {
-        return json(403, { error: "Dieser JSON-Import ist auf die freigegebene Aktivität beschränkt." });
+      // Authentifizierte Nutzer können ausschließlich Aktivitäten ihres eigenen
+      // verbundenen Garmin-Kontos abrufen. Die ID muss numerisch sein.
+      if (!/^\d+$/.test(activityId)) {
+        return json(400, { error: "Ungültige Garmin-Aktivitäts-ID." });
       }
       const { data: credential, error: credentialError } = await admin
         .from("garmin_personal_credentials")
