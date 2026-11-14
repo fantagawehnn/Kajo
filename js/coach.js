@@ -71,7 +71,7 @@ function summarizeLoadWindow(timeline, endDate, days) {
         && Number.isFinite(day.load)
     )).length;
     const complete = rows.length === days && validRows.length === days
-        && modes.length === 1;
+        && validRows.every(day => Boolean(day.loadMode)) && modes.length === 1;
 
     return {
         days,
