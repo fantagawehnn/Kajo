@@ -399,17 +399,20 @@ export function renderSportDistribution(records) {
     });
 }
 
-export function renderHeartRateZoneDistribution(records) {
-    const canvas = document.getElementById('heartRateZonesChart');
-    const note = document.getElementById('heart-rate-zone-note');
-    const summary = document.getElementById('heart-rate-zone-summary');
+export function renderHeartRateZoneDistribution(records, options = {}) {
+    const canvas = document.getElementById(options.canvasId || 'heartRateZonesChart');
+    const note = document.getElementById(options.noteId || 'heart-rate-zone-note');
+    const summary = document.getElementById(options.summaryId || 'heart-rate-zone-summary');
+    const chartKey = options.chartKey || 'zoneChartInstance';
     if (!canvas) return;
 
     const catalog = getSportsCatalog();
     const totals = {};
     const rangeEl = document.getElementById('sport-range');
     const days = rangeEl ? rangeEl.value : '7';
-    if (days !== 'all') {
+    if (options.fromDate && options.toDate) {
+        records = (records || []).filter(activity => activity?.date >= options.fromDate && activity?.date <= options.toDate);
+    } else if (days !== 'all') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - (Number(days) - 1));
         const from = toLocalDateString(cutoff);
@@ -479,10 +482,10 @@ export function renderHeartRateZoneDistribution(records) {
         if (activityHasValidSample) usable++;
     }
 
-    if (state.zoneChartInstance) state.zoneChartInstance.destroy();
+    if (state[chartKey]) state[chartKey].destroy();
     const keys = Object.keys(totals);
     if (!keys.length) {
-        state.zoneChartInstance = new Chart(canvas.getContext('2d'), {
+        state[chartKey] = new Chart(canvas.getContext('2d'), {
             type: 'bar', data: { labels: [], datasets: [] },
             options: { responsive: true, maintainAspectRatio: false, plugins: {
                 legend: { display: false },
@@ -500,7 +503,7 @@ export function renderHeartRateZoneDistribution(records) {
         data: keys.map(key => Number((totals[key][index] / 3600).toFixed(2))),
         backgroundColor: color
     }));
-    state.zoneChartInstance = new Chart(canvas.getContext('2d'), {
+    state[chartKey] = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: { labels: keys.map(key => catalog[key]?.label || key), datasets },
         options: {
