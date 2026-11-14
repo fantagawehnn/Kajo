@@ -186,9 +186,19 @@ function isoWeekKey(dateString) {
 }
 function renderVolumeCharts() {
   const buckets = new Map();
+  const today = new Date();
+  const todayKey = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
+  const range = state.activeTimeframe || '3m';
+  let from = periodCounts[range] ? new Date(today) : null;
+  if (from) from.setDate(from.getDate() - periodCounts[range] + 1);
+  const fromKey = from ? [from.getFullYear(), String(from.getMonth() + 1).padStart(2, '0'), String(from.getDate()).padStart(2, '0')].join('-') : '';
+  const customFrom = document.getElementById('date-from')?.value;
+  const customTo = document.getElementById('date-to')?.value;
+  const startKey = range === 'custom' && customFrom && customTo && customFrom <= customTo ? customFrom : fromKey;
+  const endKey = range === 'custom' && customFrom && customTo && customFrom <= customTo ? customTo : todayKey;
   (state.rawActivities || []).forEach(activity => {
     const date = activityDate(activity);
-    if (!date) return;
+    if (!date || (startKey && date < startKey) || (endKey && date > endKey)) return;
     const week = isoWeekKey(date);
     if (!buckets.has(week)) buckets.set(week, { minutes: 0, durationComplete: true, sessions: 0 });
     const item = buckets.get(week);
@@ -197,7 +207,7 @@ function renderVolumeCharts() {
     else item.minutes += duration;
     item.sessions++;
   });
-  const sorted = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-8);
+  const sorted = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b));
   const labels = sorted.map(([week]) => {
     const date = new Date(week + 'T12:00:00');
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
