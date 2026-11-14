@@ -1087,14 +1087,6 @@ export function renderWeekView() {
     globalThis.lucide?.createIcons?.();
 }
 
-export function toggleActivitySportFilter() {
-    const panel = document.getElementById('activity-sport-filter-panel');
-    const button = document.getElementById('activity-sport-filter-button');
-    const opening = panel?.classList.contains('hidden');
-    panel?.classList.toggle('hidden', !opening);
-    button?.setAttribute('aria-expanded', String(Boolean(opening)));
-}
-
 export function setActivitySportFilter(sport, checked) {
     if (checked) selectedActivitySports.add(sport);
     else selectedActivitySports.delete(sport);
@@ -1109,8 +1101,8 @@ export function clearActivitySportFilter() {
 export function renderListView() {
     const sportCatalog = getSportsCatalog();
     const container = document.getElementById('activity-list-items');
-    const options = document.getElementById('activity-sport-filter-options');
-    if (!container || !options) return;
+    const chips = document.getElementById('activity-sport-filter-chips');
+    if (!container || !chips) return;
     renderCalendarLegend();
     document.getElementById('calendar-period-title').textContent = 'Aktivitäten';
     const activities = [...(state.rawActivities || [])].sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')));
@@ -1118,25 +1110,19 @@ export function renderListView() {
         const al = sportCatalog[a]?.label || a, bl = sportCatalog[b]?.label || b;
         return al.localeCompare(bl, 'de');
     });
-    options.innerHTML = sports.length ? sports.map(sport => {
-        const label = sportCatalog[sport]?.label || sport;
-        const checked = selectedActivitySports.has(sport) ? ' checked' : '';
-        return '<label class="activity-filter-option"><input type="checkbox" value="' + escapeHtml(sport) + '"' + checked + ' onchange="setActivitySportFilter(this.value,this.checked)"><span>' + escapeHtml(label) + '</span></label>';
-    }).join('') : '<p class="text-xs text-slate-500">Noch keine Sportarten vorhanden.</p>';
+    chips.innerHTML = '<button type="button" class="activity-filter-chip ' + (selectedActivitySports.size ? '' : 'is-active') + '" aria-pressed="' + (!selectedActivitySports.size) + '" onclick="clearActivitySportFilter()">Alle</button>' +
+        sports.map(sport => {
+            const label = sportCatalog[sport]?.label || sport;
+            const active = selectedActivitySports.has(sport);
+            return '<button type="button" class="activity-filter-chip ' + (active ? 'is-active' : '') + '" aria-pressed="' + active + '" onclick="setActivitySportFilter(\'' + escapeHtml(sport).replace(/'/g, '&#39;') + '\',' + !active + ')">' + escapeHtml(label) + '</button>';
+        }).join('');
     const filtered = selectedActivitySports.size
         ? activities.filter(act => selectedActivitySports.has(act.type || 'Workout'))
         : activities;
     const count = document.getElementById('activity-list-count');
     if (count) count.textContent = filtered.length + ' von ' + activities.length + ' Aktivitäten';
-    const button = document.getElementById('activity-sport-filter-button');
-    if (button) {
-        const activeCount = selectedActivitySports.size;
-        const span = button.querySelector('span');
-        if (span) span.textContent = activeCount ? 'Sportart (' + activeCount + ')' : 'Sportart filtern';
-        button.classList.toggle('is-filtered', activeCount > 0);
-    }
     if (!filtered.length) {
-        container.innerHTML = '<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center text-xs text-slate-500">' +
+        container.innerHTML = '<div class="activity-list-empty">' +
             (activities.length ? 'Keine Aktivitäten für die ausgewählten Sportarten.' : 'Keine Aktivitäten in der Datenbank vorhanden.') + '</div>';
         globalThis.lucide?.createIcons?.();
         return;
@@ -1153,15 +1139,17 @@ export function renderListView() {
         const hrValues = [];
         if (act.hr != null && Number.isFinite(Number(act.hr))) hrValues.push('Ø ' + Math.round(Number(act.hr)) + ' bpm');
         if (maxHr != null) hrValues.push('max. ' + maxHr + ' bpm');
-        const hrHtml = hrValues.length ? '<div class="text-slate-400">HF ' + hrValues.join(' · ') + '</div>' : '';
+        const hrHtml = hrValues.length ? '<span>HF ' + hrValues.join(' · ') + '</span>' : '';
         const distanceHtml = !isStrength && act.distance != null && Number.isFinite(Number(act.distance)) ? ' · ' + formatKm(act.distance) + ' km' : '';
         const loadHtml = act.tss != null && Number.isFinite(Number(act.tss)) ? '<strong>' + Math.round(Number(act.tss)) + ' Load</strong>' : '';
         const durationHtml = act.duration != null && Number.isFinite(Number(act.duration)) ? '<span>' + Math.round(Number(act.duration)) + ' min' + distanceHtml + '</span>' : (distanceHtml ? '<span>' + distanceHtml.slice(3) + '</span>' : '');
-        const metricsHtml = [loadHtml, durationHtml, hrHtml].filter(Boolean).join('');
         const id = encodeURIComponent(String(act.id)).replace(/'/g, '%27');
         return '<button type="button" onclick="openCSVDetailsModal(\'' + id + '\')" class="activity-list-row" style="--activity-color:' + activityColor + '">' +
-            '<span class="activity-list-dot"></span><span class="activity-list-main"><span class="activity-list-date">' + formatDateDDMMYY(act.date) + ' · ' + escapeHtml(sportCatalog[act.type]?.label || act.type || 'Training') + '</span>' +
-            '<strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong></span><span class="activity-list-metrics">' + metricsHtml + '</span></button>';
+            '<span class="activity-list-accent" aria-hidden="true"></span>' +
+            '<span class="activity-list-date">' + formatDateDDMMYY(act.date) + '</span>' +
+            '<span class="activity-list-main"><strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong>' +
+            (durationHtml ? '<span class="activity-list-subline">' + durationHtml + '</span>' : '') + '</span>' +
+            '<span class="activity-list-metrics">' + hrHtml + loadHtml + '</span></button>';
     }).join('');
     globalThis.lucide?.createIcons?.();
 }
