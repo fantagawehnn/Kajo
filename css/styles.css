@@ -5743,3 +5743,11 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
     flex-basis:96px; width:96px; height:96px;
   }
 }
+
+
+/* Recovery page ordering after grouping the metric rows. */
+#analysis-subpage-recovery > .kajo-analysis-hero { order:1; }
+#analysis-subpage-recovery > #recovery-objective-group { order:2; }
+#analysis-subpage-recovery > #recovery-subjective-group { order:3; }
+#analysis-subpage-recovery > #analysis-regeneration-section { order:4; }
+#analysis-subpage-recovery > #view-health-data { order:5; }
