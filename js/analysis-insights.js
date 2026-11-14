@@ -4,7 +4,7 @@
  * Die Einordnungen beschreiben ausschließlich bereits gespeicherte Daten.
  * ============================================================ */
 import { state } from './state.js';
-import { calculateReadiness } from './dashboard.js';
+import { calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { escapeHtml, formatDateDDMMYY } from './utils.js';
 
 const todayKey = () => {
@@ -132,13 +132,35 @@ function setRecoveryText(id, value) {
     if (node) node.textContent = value;
 }
 
-function recoveryMetric(label, value, detail = '') {
-    return '<div class="kajo-analysis-metric">' +
-        '<span>' + escapeHtml(label) + '</span>' +
-        '<strong>' + escapeHtml(String(value)) + '</strong>' +
+function recoveryMetric(key, label, value, detail = '') {
+    return '<button type="button" class="kajo-recovery-metric" data-recovery-metric="' + escapeHtml(key) +
+        '" aria-pressed="false" onclick="toggleRecoveryMetric(\'' + escapeHtml(key) + '\')">' +
+        '<span class="kajo-recovery-metric-circle"><strong>' + escapeHtml(String(value)) + '</strong></span>' +
+        '<span class="kajo-recovery-metric-label">' + escapeHtml(label) + '</span>' +
         (detail ? '<small>' + escapeHtml(detail) + '</small>' : '') +
-        '</div>';
+        '</button>';
 }
+
+let selectedRecoveryMetric = null;
+export function toggleRecoveryMetric(key) {
+    const supported = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'];
+    if (!supported.includes(key)) return;
+    selectedRecoveryMetric = selectedRecoveryMetric === key ? null : key;
+    document.querySelectorAll('[data-recovery-metric]').forEach(button => {
+        const active = button.dataset.recoveryMetric === selectedRecoveryMetric;
+        button.classList.toggle('is-selected', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+    const history = document.getElementById('view-health-data');
+    if (!history) return;
+    history.classList.toggle('hidden', !selectedRecoveryMetric);
+    if (selectedRecoveryMetric) {
+        state.healthHistoryMetric = selectedRecoveryMetric;
+        state.metricHistoryRange = state.metricHistoryRange || '28d';
+        renderMetricHistory('health');
+    }
+}
+if (typeof window !== 'undefined') window.toggleRecoveryMetric = toggleRecoveryMetric;
 
 function renderRecoveryInsight() {
     const today = todayKey();
@@ -168,25 +190,13 @@ function renderRecoveryInsight() {
         (readiness.dataQuality || 'Keine ausreichende Datengrundlage') +
         ' · ' + (readiness.totalCount || 0) + ' berücksichtigte Messgrößen. Die Einordnung ersetzt keine Tagesformprüfung.');
 
-    const objectiveCards = [];
-    const hrv = findObjective('hrv');
-    if (valid(current.hrv)) objectiveCards.push(recoveryMetric('HRV', formatValue(current.hrv) + ' ms',
-        hrv && valid(hrv.baseline) ? 'Persönliche Baseline: ' + formatValue(hrv.baseline) + ' ms' : 'Baseline noch nicht verfügbar'));
-    const rhr = findObjective('rhr');
-    if (valid(current.rhr)) objectiveCards.push(recoveryMetric('Ruheherzfrequenz', formatValue(current.rhr) + ' bpm',
-        rhr && valid(rhr.baseline) ? 'Persönliche Baseline: ' + formatValue(rhr.baseline) + ' bpm' : 'Baseline noch nicht verfügbar'));
-    const sleepDuration = findObjective('sleepDuration');
-    const duration = current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null);
-    if (valid(duration)) objectiveCards.push(recoveryMetric('Schlafdauer', formatValue(duration) + ' h',
-        sleepDuration && valid(sleepDuration.baseline) ? 'Persönlicher Median: ' + formatValue(sleepDuration.baseline) + ' h' : 'Persönlicher Vergleich noch nicht verfügbar'));
-    if (valid(current.sleepScore)) objectiveCards.push(recoveryMetric('Sleep Score', formatValue(current.sleepScore, 0) + ' / 100',
-        'Wearable-Messwert'));
-    if (valid(current.bodyBattery)) objectiveCards.push(recoveryMetric('Body Battery', formatValue(current.bodyBattery, 0) + ' / 100',
-        'Garmin-Messwert'));
-
-    setPanel('recovery-analysis-metrics', objectiveCards.length
-        ? objectiveCards.join('')
-        : note('Für heute liegen keine der dargestellten objektiven Recovery-Messgrößen vor.'));
+    const objectiveCards = [
+        recoveryMetric('hrv', 'HRV', valid(current.hrv) ? formatValue(current.hrv) : '—', 'ms'),
+        recoveryMetric('rhr', 'Ruhepuls', valid(current.rhr) ? formatValue(current.rhr) : '—', 'bpm'),
+        recoveryMetric('sleepDuration', 'Schlafdauer', formatValue(current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null)), 'Stunden'),
+        recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100')
+    ];
+    setPanel('recovery-analysis-metrics', objectiveCards.join(''));
     setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte');
 
     const subjectiveLabels = [
@@ -196,14 +206,18 @@ function renderRecoveryInsight() {
         ['motivation', 'Motivation', false],
         ['stress', 'Stress', true]
     ];
-    const subjectiveCards = subjectiveLabels
-        .filter(([key]) => valid(current[key]))
-        .map(([key, label, reverse]) => recoveryMetric(label, formatValue(current[key]) + ' / 10',
-            reverse ? 'Subjektive Einschätzung · höher = stärker ausgeprägt' : 'Subjektive Einschätzung'));
-    setPanel('recovery-subjective-metrics', subjectiveCards.length
-        ? subjectiveCards.join('')
-        : note('Für heute liegt noch kein subjektiver Check-in vor.'));
+    const subjectiveCards = subjectiveLabels.map(([key, label, reverse]) =>
+        recoveryMetric(key, label, valid(current[key]) ? formatValue(current[key]) : '—',
+            reverse ? 'Skala 1–10 · höher = mehr' : 'Skala 1–10'));
+    setPanel('recovery-subjective-metrics', subjectiveCards.join(''));
     setRecoveryText('recovery-subjective-count', subjectiveCards.length + ' Angaben');
+    selectedRecoveryMetric = null;
+    const historyPanel = document.getElementById('view-health-data');
+    if (historyPanel) historyPanel.classList.add('hidden');
+    document.querySelectorAll('[data-recovery-metric]').forEach(button => {
+        button.classList.remove('is-selected');
+        button.setAttribute('aria-pressed', 'false');
+    });
 
     const avgFor = key => mean(checkins.map(([, entry]) => entry?.[key]).filter(valid));
     const weeklySleep = avgFor('sleepQuality');
