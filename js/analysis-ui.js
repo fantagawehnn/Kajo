@@ -101,6 +101,7 @@ function renderRecovery() {
     ['Body Battery', 'bodyBattery', '', 0]
   ];
   renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
+    if (key === 'bodyBattery') return metric(label, '—', 'Garmin-Import noch nicht angebunden');
     const entry = latestCheckin(key);
     return metric(label,
       entry ? fmt(entry.value, digits) + (unit ? ' ' + unit : '') : '—',
