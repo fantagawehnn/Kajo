@@ -197,7 +197,7 @@ assert.match(activityDetailReply, /Aktivitäten der letzten 28 Tage/);
 assert.ok(activityDetailReply.includes('Kanu-Performance: 1 Einheiten; 1,0 h dokumentiert bei 1/1 Einheiten'));
 assert.ok(activityDetailReply.includes('Ergänzende Sportarten: 1 Einheiten; 0,5 h dokumentiert bei 1/1 Einheiten'));
 assert.match(activityDetailReply, /weder eine Belastungssumme/);
-assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 1\\/1 Einheiten vorhanden/);
+assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 1\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 0\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /sRPE dokumentiert für 1\/1 Einheiten \(360,0 AU\)/);
 assert.match(activityDetailReply, /175,0 AU aus 1\/1 dokumentierten Einheiten/);
