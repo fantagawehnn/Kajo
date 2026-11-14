@@ -414,6 +414,12 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     }
     const recTitleEl = document.getElementById('home-training-recommendation');
     const recDetailEl = document.getElementById('home-training-recommendation-detail');
+    const recommendationAvailable = Boolean(
+        (recommendation && !['Noch keine Grundlage', 'Noch keine Empfehlung', 'Noch keine belastbare Empfehlung'].includes(recommendation))
+        || dailyNote
+    );
+    const recommendationCard = recTitleEl?.closest('.kajo-home-recommendation');
+    recommendationCard?.classList.toggle('hidden', !recommendationAvailable);
     if (recTitleEl) recTitleEl.textContent = recommendationTitle;
     if (recDetailEl) recDetailEl.textContent = recommendationDetail;
     const recContext = document.getElementById('home-training-recommendation-context');
