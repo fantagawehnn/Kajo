@@ -44,6 +44,49 @@ const recoveryReply = buildLocalCoachReply(context, 'Wie ist meine Erholung?');
 assert.match(recoveryReply, /Schlafdauer 8,0 h/);
 assert.match(recoveryReply, /HRV 72/);
 assert.match(recoveryReply, /keine medizinische Beurteilung/);
+assert.match(recoveryReply, /Noch kein zeitlicher Vergleich/);
+
+const comparableRecoveryReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    trainingLoad: { selectedSource: 'garmin-native', timeline: [] },
+    recovery: {
+        checkins: [
+            { date: '2026-11-01', values: { hrv: 60, rhr: 52, sleepDuration: 7 }, provenance: {
+                hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' },
+                rhr: { source: 'garmin', metric: 'resting-heart-rate', unit: 'bpm' },
+                sleepDuration: { source: 'garmin', metric: 'sleep-duration', unit: 'h' }
+            }},
+            { date: '2026-11-08', values: { hrv: 65, rhr: 50, sleepDuration: 8 }, provenance: {
+                hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' },
+                rhr: { source: 'garmin', metric: 'resting-heart-rate', unit: 'bpm' },
+                sleepDuration: { source: 'garmin', metric: 'sleep-duration', unit: 'h' }
+            }}
+        ],
+        healthEvents: []
+    },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Erholung?');
+assert.match(comparableRecoveryReply, /HRV: 60,00 → 65,00 ms/);
+assert.match(comparableRecoveryReply, /Ruhepuls: 52,00 → 50,00 bpm/);
+assert.match(comparableRecoveryReply, /Schlafdauer: 7,00 → 8,00 h/);
+assert.match(comparableRecoveryReply, /rein deskriptiv/);
+
+const incompatibleRecoveryReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    trainingLoad: { selectedSource: 'garmin-native', timeline: [] },
+    recovery: {
+        checkins: [
+            { date: '2026-11-01', values: { hrv: 60 }, provenance: { hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' } }},
+            { date: '2026-11-08', values: { hrv: 65 }, provenance: { hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' } }}
+        ],
+        healthEvents: []
+    },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Erholung?');
+assert.match(incompatibleRecoveryReply, /Noch kein zeitlicher Vergleich/);
+assert.doesNotMatch(incompatibleRecoveryReply, /HRV: 60,00 → 65,00/);
 
 const raceReply = buildLocalCoachReply(context, 'Was steht als nächster Wettkampf an?');
 assert.match(raceReply, /Testwettkampf am 2026-12-01 \(Priorität A\)/);
