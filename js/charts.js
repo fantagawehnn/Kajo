@@ -612,16 +612,41 @@ export function getActivityTelemetrySeries(act) {
         ).length >= 2);
         if (!values) continue;
         const meta = activitySeriesMeta[key];
-        const valid = values.filter(value => value !== null && value !== undefined && value !== ''
-            && Number.isFinite(Number(value)) && (meta.min == null || Number(value) >= meta.min)
-            && (meta.max == null || Number(value) <= meta.max));
-        if (valid.length < 2) continue;
         const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
         result.push({ key, label: meta.label, unit: meta.unit, color: sportColor, values: values.map(value =>
             value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
                 || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
                 ? null : Number(value)
         ) });
+    }
+
+    // Add every additional Garmin JSON descriptor as a selectable raw series.
+    // Do not apply quality thresholds or scale factors here; that cleanup is a later step.
+    const rawSeries = telem.metricSeries && typeof telem.metricSeries === 'object' ? telem.metricSeries : {};
+    const canonicalRawAliases = {
+        directHeartRate: 'hr',
+        directElevation: 'altitude',
+        sumDistance: 'distance',
+        directRespirationRate: 'respirationRate',
+        directBodyBattery: 'bodyBattery'
+    };
+    const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
+    for (const [key, metric] of Object.entries(rawSeries)) {
+        if (!metric || !Array.isArray(metric.values)) continue;
+        if (canonicalRawAliases[key] && result.some(item => item.key === canonicalRawAliases[key])) continue;
+        const numericCount = metric.values.filter(value => value !== null && value !== undefined
+            && value !== '' && Number.isFinite(Number(value))).length;
+        if (numericCount < 2) continue;
+        const label = typeof metric.label === 'string' && metric.label.trim()
+            ? metric.label : key.replace(/^direct/, '').replace(/^sum/, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        result.push({
+            key,
+            label,
+            unit: typeof metric.unit === 'string' ? metric.unit : '',
+            color: sportColor,
+            values: metric.values.map(value => value === null || value === undefined || value === ''
+                || !Number.isFinite(Number(value)) ? null : Number(value))
+        });
     }
     return result;
 }
