@@ -668,9 +668,10 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
         const id = String(rawId ?? '').replace(/^garmin-/, '');
         const date = String(activity.date || '').slice(0, 10);
         if (!/^\d+$/.test(id) || date < startDate || date > endDate) return false;
-        if (activity.garminJsonImportedAt) return false;
-        if (activity.garminJsonSource === 'garmin-activity-details-json'
-            && Object.keys(activity.garminTelemetry?.metricSeries || {}).length) return false;
+        const existingMetricSeriesCount = Object.keys(activity.garminTelemetry?.metricSeries || {}).length;
+        // Ältere JSON-Imports mit nur den bisherigen Standardfeldern müssen
+        // einmalig auf den vollständigen Descriptor-Umfang erweitert werden.
+        if (activity.garminJsonImportedAt && existingMetricSeriesCount > 0) return false;
         const lastAttempt = Date.parse(activity.garminJsonSyncAttemptedAt || '');
         const cooldown = cooldowns[activity.garminJsonSyncStatus] || 0;
         return !(Number.isFinite(lastAttempt) && cooldown > 0 && now - lastAttempt < cooldown);
