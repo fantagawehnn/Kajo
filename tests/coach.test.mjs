@@ -145,7 +145,7 @@ const activityDetailReply = buildLocalCoachReply({
     season: { races: [], plannedActivities: [] }
 }, 'Zeig meine Aktivitäten');
 assert.match(activityDetailReply, /Aktivitäten der letzten 28 Tage/);
-assert.match(activityDetailReply, /Kanu-Performance: 1 Einheiten; 1,0 h dokumentiert bei 1\\/1 Einheiten/);
-assert.match(activityDetailReply, /Ergänzende Sportarten: 1 Einheiten; 0,5 h dokumentiert bei 1\\/1 Einheiten/);
+assert.ok(activityDetailReply.includes('Kanu-Performance: 1 Einheiten; 1,0 h dokumentiert bei 1/1 Einheiten'));
+assert.ok(activityDetailReply.includes('Ergänzende Sportarten: 1 Einheiten; 0,5 h dokumentiert bei 1/1 Einheiten'));
 assert.match(activityDetailReply, /weder eine Belastungssumme/);
 console.log('Coach intent, load-window and activity-volume tests passed.');
