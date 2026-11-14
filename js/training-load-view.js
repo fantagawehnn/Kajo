@@ -102,7 +102,7 @@ function renderRings(timeline) {
     ? 'Modellstand ' + new Date(last.date + 'T12:00:00').toLocaleDateString('de-DE') + (last.isProvisional ? ' · vorläufig' : '')
     : 'Kein berechenbarer Modellstand');
   setVisible('training-load-no-data', !last);
-  setVisible('training-load-content', Boolean(last));
+  setVisible('training-load-content', true);
 }
 function renderPrimaryCharts(timeline) {
   const points = filteredRows(timeline);
@@ -128,7 +128,7 @@ function renderPrimaryCharts(timeline) {
       ...chartOptions(points, (label, value) => label + ': ' + fmt(value)),
       plugins: { ...chartOptions(points, (label, value) => label + ': ' + fmt(value)).plugins, legend: { display: false } },
       scales: { ...chartOptions(points, (label, value) => label + ': ' + fmt(value)).scales,
-        y: { ...chartOptions(points, (label, value) => label + ': ' + fmt(value)).scales.y, grid: { color: 'rgba(148,163,184,.10)' }, ticks: { color: '#7d8a98' } } }
+        y: { ...chartOptions(points, (label, value) => label + ': ' + fmt(value)).scales.y, grid: { color: context => context.tick.value === 0 ? 'rgba(215,166,74,.55)' : 'rgba(148,163,184,.10)', lineWidth: context => context.tick.value === 0 ? 1.5 : 1 }, ticks: { color: '#7d8a98' } } }
     }
   });
   renderDailyChart(timeline);
@@ -200,7 +200,7 @@ function renderVolumeCharts() {
   const sorted = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-8);
   const labels = sorted.map(([week]) => {
     const date = new Date(week + 'T12:00:00');
-    return 'KW ' + String(Math.ceil((((date - new Date(date.getFullYear(), 0, 1)) / 86400000) + new Date(date.getFullYear(), 0, 1).getDay() + 1) / 7)).padStart(2, '0');
+    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   });
   const hours = sorted.map(([, item]) => item.durationComplete ? Number((item.minutes / 60).toFixed(1)) : null);
   const sessions = sorted.map(([, item]) => item.sessions);
@@ -323,17 +323,11 @@ export function renderTrainingLoadView() {
   setVisible('training-load-compare-analysis', compare);
   if (compare) {
     renderCompareCharts();
-    renderVolumeCharts();
     return;
   }
   const model = selectedModel === 'srpe' ? 'srpe' : 'primary';
   const timeline = computeModelTimeline(model);
   renderRings(timeline);
-  if (!latestModelDay(timeline)) {
-    ['atlCtl', 'tsb', 'daily', 'weeklyHours', 'weeklySessions'].forEach(destroyChart);
-    setVisible('training-load-standard-analysis', true);
-    return;
-  }
   renderPrimaryCharts(timeline);
   renderVolumeCharts();
   const source = getSource(latestModelDay(timeline));
