@@ -110,7 +110,7 @@ assert.ok(activities.includes("event.target?.closest?.('#activity-telemetry-diag
 assert.ok(html.includes('id="training-subnav-strength"'), 'strength is reachable from the training subnavigation');
 assert.ok(main.includes("strength: { parent: 'training', view: 'strength', sub: 'strength' }"), 'strength route belongs to the training area');
 assert.ok(!html.includes('onclick="switchTab(\'strength\')"><span class="kajo-area-icon"'), 'strength is no longer listed under More');
-assert.ok(main.includes("['activities', 'planning', 'strength'].forEach"), 'training subnavigation highlights the active strength section');
+assert.ok(main.includes("['activities', 'planning', 'competitions', 'strength'].forEach"), 'training subnavigation highlights the active competitions and strength sections');
 console.log('KAJO navigation and analysis UI smoke tests passed.');
 
 
