@@ -5440,3 +5440,147 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
     height:56px;
   }
 }
+
+
+/* Analyseübersicht – finale mobile Anordnung nach Dashboard-Vorbild */
+#analysis-subpage-overview .kajo-analysis-circles {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:start;
+  gap:4px;
+}
+#analysis-subpage-overview .kajo-analysis-circle-item {
+  min-width:0;
+  width:100%;
+  padding:3px 0;
+  gap:4px;
+}
+#analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] {
+  width:clamp(48px,6.5vw,68px);
+  height:clamp(48px,6.5vw,68px);
+  flex:0 0 clamp(48px,6.5vw,68px);
+  border-width:4px;
+}
+#analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] strong {
+  font-size:clamp(.78rem,1.15vw,1rem);
+}
+#analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] small {
+  font-size:.46rem;
+}
+#analysis-subpage-overview .kajo-analysis-circle-item>strong {
+  font-size:.62rem;
+  line-height:1.15;
+}
+#analysis-subpage-overview .kajo-analysis-trend-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  margin-bottom:5px;
+}
+#analysis-subpage-overview .kajo-analysis-trend-heading h2 {
+  flex:0 0 auto;
+  margin:0;
+}
+#analysis-subpage-overview #analysis-shared-period {
+  display:flex;
+  justify-content:flex-end;
+  flex:0 1 auto;
+  min-width:0;
+  margin:0;
+}
+#analysis-subpage-overview #analysis-shared-period #analysis-period-buttons {
+  width:auto;
+  max-width:100%;
+  flex-wrap:nowrap;
+  justify-content:flex-end;
+  gap:3px;
+}
+#analysis-subpage-overview #analysis-shared-period #analysis-period-buttons button {
+  min-width:0;
+  min-height:26px!important;
+  flex:0 0 auto;
+  padding:3px 7px!important;
+  font-size:.58rem!important;
+  white-space:nowrap;
+}
+#analysis-subpage-overview .kajo-analysis-sport-distribution {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:5px;
+}
+#analysis-subpage-overview .kajo-analysis-bar-wrap {
+  width:100%;
+  min-width:0;
+}
+#analysis-subpage-overview #analysis-overview-activity-legend {
+  width:100%;
+  min-width:0;
+}
+#analysis-subpage-overview #analysis-overview-activity-legend .kajo-analysis-distribution-row {
+  padding:2px 0;
+  gap:6px;
+  font-size:.58rem;
+  line-height:1.15;
+}
+#analysis-subpage-overview #analysis-overview-activity-legend .kajo-analysis-distribution-row strong,
+#analysis-subpage-overview #analysis-overview-activity-legend .kajo-analysis-distribution-label {
+  font-size:.58rem;
+}
+@media(max-width:640px) {
+  #analysis-subpage-overview .kajo-analysis-circles {
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:2px;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] {
+    width:clamp(46px,13vw,58px);
+    height:clamp(46px,13vw,58px);
+    flex-basis:clamp(46px,13vw,58px);
+    border-width:3px;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] strong {
+    font-size:clamp(.72rem,3.2vw,.9rem);
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] small {
+    font-size:.4rem;
+  }
+  #analysis-subpage-overview .kajo-analysis-circle-item>strong {
+    font-size:.56rem;
+  }
+  #analysis-subpage-overview .kajo-analysis-trend-heading {
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:5px;
+  }
+  #analysis-subpage-overview #analysis-shared-period {
+    flex:0 1 auto;
+    justify-content:flex-end;
+  }
+  #analysis-subpage-overview #analysis-shared-period #analysis-period-buttons {
+    width:auto;
+    flex-wrap:nowrap;
+    justify-content:flex-end;
+    gap:2px;
+  }
+  #analysis-subpage-overview #analysis-shared-period #analysis-period-buttons button {
+    min-height:24px!important;
+    padding:2px 5px!important;
+    font-size:.53rem!important;
+  }
+}
+@media(max-width:360px) {
+  #analysis-subpage-overview .kajo-analysis-circle-item .kajo-analysis-hero-ring[data-domain] {
+    width:44px;
+    height:44px;
+    flex-basis:44px;
+  }
+  #analysis-subpage-overview .kajo-analysis-trend-heading {
+    gap:3px;
+  }
+  #analysis-subpage-overview #analysis-shared-period #analysis-period-buttons button {
+    padding:2px 4px!important;
+    font-size:.5rem!important;
+  }
+}
