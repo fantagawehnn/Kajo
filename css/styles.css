@@ -5029,3 +5029,6 @@ html[data-theme="light"] .kajo-analysis-overview-panel{background:var(--kajo-sur
 
 #analysis-overview-metric-switch button:disabled{opacity:.42;cursor:not-allowed}
 #analysis-overview-metric-switch button:disabled::before{opacity:.65}
+
+/* Explicit visibility utility: keeps inactive analysis subpages out of the overview. */
+.hidden{display:none!important}
