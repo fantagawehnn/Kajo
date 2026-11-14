@@ -6491,3 +6491,28 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
 /* Training-Unterbereich: Kraftleistungen nutzt dieselbe Subnavigation wie Aktivitäten und Planung. */
 #training-subnav-strength { white-space:nowrap; }
 #training-subnav-strength.is-active { color:var(--kajo-text,#fff); }
+
+/* Aktivitätsdetail: vollständig über globaler Kopfzeile und Navigationsleisten anzeigen. */
+#csv-details-modal:not(.hidden) {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483200 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  display:flex !important;
+}
+#csv-details-modal > .activity-detail-shell {
+  position:relative;
+  z-index:1;
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  max-height:100% !important;
+  margin:0 !important;
+  padding-top:env(safe-area-inset-top) !important;
+  border-radius:0 !important;
+}
