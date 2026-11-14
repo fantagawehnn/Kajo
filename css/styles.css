@@ -7120,3 +7120,5 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
   .kajo-training-subnav .kajo-subnav-item { gap:3px; padding-left:1px; padding-right:1px; font-size:9px; }
   .kajo-training-subnav .kajo-subnav-item i { width:12px; height:12px; flex-basis:12px; }
 }
+
+.kajo-training-subnav.hidden { display:none !important; }
