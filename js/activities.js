@@ -180,15 +180,18 @@ async function importGarminActivityJsonTelemetry() {
         for (const [key, metric] of Object.entries(mergedSeries)) {
             if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
             const fetchedAxis = telemetry.metricSeriesTime || telemetry.time;
-            if (Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length) {
-                mergedSeries[key] = { ...metric, time: fetchedAxis };
-            }
+            const previousAxis = previousTelemetry?.metricSeriesTime;
+            const matchingAxis = Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length
+                ? fetchedAxis
+                : Array.isArray(previousAxis) && previousAxis.length === metric.values.length
+                    ? previousAxis : null;
+            if (matchingAxis) mergedSeries[key] = { ...metric, time: matchingAxis };
         }
         // Preserve FIT fields and all existing series; store the JSON time axis once per activity.
         activity.garminTelemetry = {
             ...(telemetry || {}),
             ...(previousTelemetry || {}),
-            metricSeriesTime: previousTelemetry?.metricSeriesTime || telemetry.metricSeriesTime || telemetry.time,
+            metricSeriesTime: telemetry.metricSeriesTime || previousTelemetry?.metricSeriesTime || telemetry.time,
             metricSeries: mergedSeries
         };
         activity.garminJsonImportedAt = new Date().toISOString();
