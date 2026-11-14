@@ -28,7 +28,7 @@ function conditionDetails(activity) {
   const level = numberOrNull(water.level);
   const discharge = numberOrNull(water.discharge);
   const distance = numberOrNull(activity?.distance);
-  const comparable = route !== null && route !== '' && Boolean(water.type)
+  const comparable = FORMATS.has(activity?.raceFormat) && route !== null && route !== '' && Boolean(water.type)
     && distance !== null && distance > 0
     && (water.type !== 'wildwater' || (level !== null && discharge !== null));
   const key = [
