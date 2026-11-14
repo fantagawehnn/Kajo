@@ -127,25 +127,100 @@ function renderFitnessInsight(timeline) {
         '</div>' + note(modelNote));
 }
 
+function setRecoveryText(id, value) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+}
+
+function recoveryMetric(label, value, detail = '') {
+    return '<div class="kajo-analysis-metric">' +
+        '<span>' + escapeHtml(label) + '</span>' +
+        '<strong>' + escapeHtml(String(value)) + '</strong>' +
+        (detail ? '<small>' + escapeHtml(detail) + '</small>' : '') +
+        '</div>';
+}
+
 function renderRecoveryInsight() {
     const today = todayKey();
-    const checkins = Object.entries(state.dailyCheckins || {}).filter(([date]) => date >= daysAgoKey(6) && date <= today);
+    const current = (state.dailyCheckins || {})[today] || {};
+    const checkins = Object.entries(state.dailyCheckins || {})
+        .filter(([date]) => date >= daysAgoKey(6) && date <= today);
     const readiness = calculateReadiness();
+    const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
+    const subjective = Array.isArray(readiness.subjective) ? readiness.subjective : [];
+    const findObjective = key => objective.find(item => item.key === key);
+    const formatValue = (value, digits = 1) => valid(value)
+        ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: digits })
+        : '—';
+
+    const scoreAvailable = readiness.enoughData && valid(readiness.score);
+    const ring = document.getElementById('recovery-hero-ring');
+    if (ring) {
+        ring.dataset.status = !scoreAvailable ? 'neutral'
+            : readiness.score >= 80 ? 'good'
+            : readiness.score >= 40 ? 'attention' : 'critical';
+    }
+    setRecoveryText('analysis-recovery-hero-value', scoreAvailable ? readiness.score : '—');
+    setRecoveryText('analysis-recovery-hero-unit', scoreAvailable ? '/ 100' : 'Keine Bewertung');
+    setRecoveryText('analysis-recovery-hero-status', scoreAvailable
+        ? readiness.score >= 80 ? 'Günstige Readiness' : readiness.score >= 40 ? 'Mittlere Readiness' : 'Niedrige Readiness'
+        : 'Readiness nicht ausreichend beurteilbar');
+    setRecoveryText('recovery-hero-note',
+        (readiness.dataQuality || 'Keine ausreichende Datengrundlage') +
+        ' · ' + (readiness.totalCount || 0) + ' berücksichtigte Messgrößen. Die Einordnung ersetzt keine Tagesformprüfung.');
+
+    const objectiveCards = [];
+    const hrv = findObjective('hrv');
+    if (valid(current.hrv)) objectiveCards.push(recoveryMetric('HRV', formatValue(current.hrv) + ' ms',
+        hrv && valid(hrv.baseline) ? 'Persönliche Baseline: ' + formatValue(hrv.baseline) + ' ms' : 'Baseline noch nicht verfügbar'));
+    const rhr = findObjective('rhr');
+    if (valid(current.rhr)) objectiveCards.push(recoveryMetric('Ruheherzfrequenz', formatValue(current.rhr) + ' bpm',
+        rhr && valid(rhr.baseline) ? 'Persönliche Baseline: ' + formatValue(rhr.baseline) + ' bpm' : 'Baseline noch nicht verfügbar'));
+    const sleepDuration = findObjective('sleepDuration');
+    const duration = current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null);
+    if (valid(duration)) objectiveCards.push(recoveryMetric('Schlafdauer', formatValue(duration) + ' h',
+        sleepDuration && valid(sleepDuration.baseline) ? 'Persönlicher Median: ' + formatValue(sleepDuration.baseline) + ' h' : 'Persönlicher Vergleich noch nicht verfügbar'));
+    if (valid(current.sleepScore)) objectiveCards.push(recoveryMetric('Sleep Score', formatValue(current.sleepScore, 0) + ' / 100',
+        'Wearable-Messwert'));
+    if (valid(current.bodyBattery)) objectiveCards.push(recoveryMetric('Body Battery', formatValue(current.bodyBattery, 0) + ' / 100',
+        'Garmin-Messwert'));
+
+    setPanel('recovery-analysis-metrics', objectiveCards.length
+        ? objectiveCards.join('')
+        : note('Für heute liegen keine der dargestellten objektiven Recovery-Messgrößen vor.'));
+    setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte');
+
+    const subjectiveLabels = [
+        ['sleepQuality', 'Schlafqualität', false],
+        ['fatigue', 'Müdigkeit', true],
+        ['soreness', 'Muskelkater', true],
+        ['motivation', 'Motivation', false],
+        ['stress', 'Stress', true]
+    ];
+    const subjectiveCards = subjectiveLabels
+        .filter(([key]) => valid(current[key]))
+        .map(([key, label, reverse]) => recoveryMetric(label, formatValue(current[key]) + ' / 10',
+            reverse ? 'Subjektive Einschätzung · höher = stärker ausgeprägt' : 'Subjektive Einschätzung'));
+    setPanel('recovery-subjective-metrics', subjectiveCards.length
+        ? subjectiveCards.join('')
+        : note('Für heute liegt noch kein subjektiver Check-in vor.'));
+    setRecoveryText('recovery-subjective-count', subjectiveCards.length + ' Angaben');
+
     const avgFor = key => mean(checkins.map(([, entry]) => entry?.[key]).filter(valid));
-    const sleep = avgFor('sleepQuality');
-    const fatigue = avgFor('fatigue');
-    const soreness = avgFor('soreness');
-    const readinessText = readiness.enoughData ? readiness.score + ' / 100' : 'Noch nicht ausreichend';
+    const weeklySleep = avgFor('sleepQuality');
+    const weeklyFatigue = avgFor('fatigue');
+    const weeklySoreness = avgFor('soreness');
+    const readinessText = scoreAvailable ? readiness.score + ' / 100' : 'Noch nicht ausreichend';
     const entries = [
-        metric('Readiness heute', readinessText, readiness.enoughData ? 'Ausreichende Angaben' : 'Noch zu wenige Angaben'),
+        metric('Readiness heute', readinessText, readiness.dataQuality),
         metric('Check-ins / 7 Tage', checkins.length),
-        metric('Schlafqualität', sleep === null ? '—' : fmt(sleep) + ' / 10'),
-        metric('Müdigkeit', fatigue === null ? '—' : fmt(fatigue) + ' / 10'),
-        metric('Muskelkater', soreness === null ? '—' : fmt(soreness) + ' / 10')
+        metric('Ø Schlafqualität', weeklySleep === null ? '—' : fmt(weeklySleep) + ' / 10'),
+        metric('Ø Müdigkeit', weeklyFatigue === null ? '—' : fmt(weeklyFatigue) + ' / 10'),
+        metric('Ø Muskelkater', weeklySoreness === null ? '—' : fmt(weeklySoreness) + ' / 10')
     ];
     const interpretation = !checkins.length
         ? 'Keine Check-ins in den letzten 7 Tagen.'
-        : 'Mittelwerte der vorhandenen Check-ins.';
+        : 'Mittelwerte der vorhandenen Check-ins. Fehlende Tage werden nicht als neutrale oder erholte Tage gewertet.';
     setPanel('analysis-recovery-insight', '<div class="kajo-insight-grid">' + entries.join('') + '</div>' +
         note(interpretation));
 }
