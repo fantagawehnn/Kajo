@@ -9,10 +9,10 @@ import { state } from './state.js';
 import { buildAthleteContext } from './athlete-context.js';
 
 const INTENT_KEYWORDS = {
-    load: /\\b(belastung|trainingslast|training load|ctl|atl|tsb|umfang|intensität|intensitaet|belastungssteuerung)\\b/i,
-    recovery: /\\b(erholung|regeneration|recovery|schlaf|müdigkeit|muedigkeit|疲労|hrv|ruhepuls|krank|verletz|recovery|wellness)\\b/i,
-    competition: /\\b(wettkampf|rennen|competition|wettkampfvorbereitung|taper|peaking|priorität|prioritaet|a-race|b-race)\\b/i,
-    activities: /\\b(aktivitäten|aktivitaeten|trainingseinheiten|einheiten|trainingstagebuch|historie|trainingshistorie|kanu|k1|c1|c2|paddeln)\\b/i
+    load: /\b(belastung|trainingslast|training load|ctl|atl|tsb|umfang|intensität|intensitaet|belastungssteuerung)\b/i,
+    recovery: /\b(erholung|regeneration|recovery|schlaf|müdigkeit|muedigkeit|疲労|hrv|ruhepuls|krank|verletz|recovery|wellness)\b/i,
+    competition: /\b(wettkampf|rennen|competition|wettkampfvorbereitung|taper|peaking|priorität|prioritaet|a-race|b-race)\b/i,
+    activities: /\b(aktivitäten|aktivitaeten|trainingseinheiten|einheiten|trainingstagebuch|historie|trainingshistorie|kanu|k1|c1|c2|paddeln)\b/i
 };
 
 export function classifyCoachIntent(message) {
