@@ -172,6 +172,7 @@ const performanceActivityMetric = (key, label, unit) => {
   }).filter(Boolean);
   return matches.length ? matches[matches.length-1] : null;
 };
+const performanceEscape = value => String(value).replace(/[&<>\"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[char]));
 const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-info)') =>
   '<button type="button" class="kajo-recovery-metric kajo-performance-metric" data-performance-metric="' + key +
   '" aria-pressed="false" style="--recovery-metric-color:' + color + '" onclick="togglePerformanceMetric(\'' + key.replace(/'/g,"\\'") + '\')">' +
@@ -207,7 +208,7 @@ function renderPerformance() {
   renderMetrics('performance-strength-metrics', strengthEntries.length
     ? strengthEntries.map(([exercise,records]) => {
         const latest = [...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
-        const key = 'strength:' + exercise;
+        const key = 'strength:' + encodeURIComponent(exercise);
         return performanceCircle(key,exercise,fmt(latest.weight,1),'kg × '+latest.reps,
           records.length+' Einträge','var(--kajo-status-info)');
       })
@@ -240,7 +241,7 @@ function renderPerformanceTrend(key) {
     explanation = 'Verlauf der importierten Garmin-Wellnesswerte. Garmin-Schätzwert, keine direkte Spiroergometrie oder Labordiagnostik.';
     color = '#f97316';
   } else if (key.startsWith('strength:')) {
-    const exercise = key.slice(9);
+    const exercise = decodeURIComponent(key.slice(9));
     const entries = (state.strengthPBs || []).filter(row => String(row.exercise)===exercise && valid(row.weight) && row.date)
       .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     labels = entries.map(row=>dateLabel(row.date));
