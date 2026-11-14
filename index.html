@@ -1280,6 +1280,7 @@
                     <section id="activity-telemetry-panel" class="activity-detail-panel activity-telemetry-panel">
                         <div class="activity-detail-section-heading"><div><h3>Verlauf</h3></div></div>
                         <div id="activity-telemetry-switch" class="activity-series-switches" role="group" aria-label="Messgröße auswählen"></div><div id="activity-hr-series-status" class="activity-detail-data-status" aria-live="polite">Messreihen werden geprüft …</div>
+                        <button type="button" id="activity-hr-reload-button" onclick="reloadSelectedActivityHeartRate()" class="hidden mt-2 rounded-lg border border-sky-800/60 bg-sky-950/30 px-3 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-950/60 disabled:cursor-wait disabled:opacity-50">HF-Zeitreihe von Garmin nachladen</button>
                         <div class="activity-telemetry-chart-wrap"><canvas id="activityTelemetryChart"></canvas></div><div id="activity-telemetry-point" class="activity-telemetry-point" aria-live="polite" hidden></div>
                     </section>
                     <section id="activity-fit-data-panel" class="hidden activity-detail-panel activity-detail-dynamic-panel"></section>
@@ -1583,7 +1584,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js"></script>
-    <script type="module" src="js/main.js?v=80"></script>
+    <script type="module" src="js/main.js?v=81"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
