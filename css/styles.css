@@ -5882,3 +5882,71 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
 #analysis-subpage-recovery .kajo-recovery-metric.is-selected .kajo-recovery-metric-label {
   color:var(--recovery-metric-color,var(--kajo-text));
 }
+
+
+/* Performance: compact selectable circles with separate aerobic, paddling and strength groups. */
+#analysis-subpage-performance .kajo-performance-group { min-width:0; }
+#analysis-subpage-performance .kajo-performance-group-heading,
+#analysis-subpage-performance .kajo-performance-trend-heading {
+  display:flex; align-items:center; justify-content:space-between; gap:.7rem; margin:.2rem 0 .45rem;
+}
+#analysis-subpage-performance .kajo-performance-group-heading h2,
+#analysis-subpage-performance .kajo-performance-trend-heading h2 {
+  color:var(--kajo-text); font-size:.84rem; font-weight:750; line-height:1.25;
+}
+#analysis-subpage-performance .kajo-performance-group-heading span {
+  color:var(--kajo-muted); font-size:.62rem; text-align:right;
+}
+#analysis-subpage-performance .kajo-performance-metric-row {
+  display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); align-items:start;
+  justify-items:center; gap:.5rem; width:100%; margin:.3rem 0 .8rem;
+}
+#analysis-subpage-performance .kajo-performance-metric {
+  width:100%; max-width:116px; min-height:0; padding:.25rem .1rem; border:0;
+  background:transparent; color:var(--kajo-text); text-align:center;
+}
+#analysis-subpage-performance .kajo-performance-metric .kajo-recovery-metric-circle {
+  width:clamp(58px,6.2vw,78px); height:clamp(58px,6.2vw,78px);
+  border-color:var(--recovery-metric-color); background:color-mix(in srgb,var(--recovery-metric-color) 10%,var(--kajo-surface));
+}
+#analysis-subpage-performance .kajo-performance-metric.is-selected .kajo-recovery-metric-circle {
+  width:clamp(68px,7vw,90px); height:clamp(68px,7vw,90px);
+  border-width:3px; background:color-mix(in srgb,var(--recovery-metric-color) 17%,var(--kajo-surface));
+}
+#analysis-subpage-performance .kajo-performance-metric .kajo-recovery-metric-label {
+  min-height:2.2em; display:flex; align-items:center; justify-content:center; text-wrap:balance;
+}
+#analysis-subpage-performance .kajo-performance-metric small {
+  min-height:1em; text-align:center; color:var(--kajo-muted); font-size:.56rem;
+}
+#analysis-subpage-performance .kajo-performance-empty {
+  grid-column:1/-1; color:var(--kajo-muted); font-size:.7rem; padding:.5rem 0;
+}
+#analysis-subpage-performance .kajo-performance-trend {
+  border:1px solid var(--kajo-border); border-radius:var(--kajo-radius);
+  background:var(--kajo-surface); padding:1rem; margin-top:.25rem;
+}
+#analysis-subpage-performance .kajo-performance-range { display:flex; gap:.25rem; flex-wrap:wrap; }
+#analysis-subpage-performance .kajo-performance-range button {
+  padding:.3rem .5rem; border:1px solid var(--kajo-border); border-radius:8px;
+  color:var(--kajo-muted); font-size:.62rem;
+}
+#analysis-subpage-performance .kajo-performance-range button.is-active {
+  color:var(--kajo-text); border-color:var(--kajo-blue); background:color-mix(in srgb,var(--kajo-blue) 12%,transparent);
+}
+#analysis-subpage-performance .kajo-performance-chart-wrap { position:relative; height:250px; width:100%; margin-top:.65rem; }
+#analysis-subpage-performance .kajo-performance-note { margin-top:.65rem; color:var(--kajo-muted); font-size:.67rem; line-height:1.45; }
+@media(max-width:640px) {
+  #analysis-subpage-performance .kajo-performance-metric-row { grid-template-columns:repeat(5,minmax(0,1fr)); gap:.12rem; }
+  #analysis-subpage-performance .kajo-performance-metric { max-width:none; padding:.15rem 0; gap:.2rem; }
+  #analysis-subpage-performance .kajo-performance-metric .kajo-recovery-metric-circle { width:min(17vw,64px); height:min(17vw,64px); padding:.15rem; }
+  #analysis-subpage-performance .kajo-performance-metric.is-selected .kajo-recovery-metric-circle { width:min(19vw,70px); height:min(19vw,70px); }
+  #analysis-subpage-performance .kajo-performance-metric .kajo-recovery-metric-circle strong { font-size:.78rem; }
+  #analysis-subpage-performance .kajo-performance-metric .kajo-recovery-metric-label { font-size:.55rem; line-height:1.15; min-height:2.3em; }
+  #analysis-subpage-performance .kajo-performance-metric small { display:none; }
+  #analysis-subpage-performance .kajo-performance-trend-heading { align-items:flex-start; flex-direction:column; }
+  #analysis-subpage-performance .kajo-performance-range { width:100%; }
+  #analysis-subpage-performance .kajo-performance-range button { flex:1; }
+}
+html[data-theme="light"] #analysis-subpage-performance .kajo-performance-trend,
+html.theme-light #analysis-subpage-performance .kajo-performance-trend { background:#fff; border-color:#d8e0ea; }
