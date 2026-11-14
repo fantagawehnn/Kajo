@@ -104,6 +104,8 @@ assert.ok(activities.includes("['overview', 'Übersicht']") && activities.includ
 assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('metricColor'), 'activity overview uses sport-aware metric circles');
 assert.ok(css.includes('.activity-detail-tabs') && css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'activity tabs and metric circles have mobile styling');
 assert.ok(activities.includes('activity-data-quality') && activities.includes('activity-telemetry-diagnostic-output'), 'data quality and diagnostics remain accessible in the data tab');
+assert.ok(html.includes('id="activity-telemetry-diagnostic-source"'), 'telemetry diagnostics originate outside the chart panel so missing data cannot remove the controls');
+assert.ok(activities.includes("event.target?.closest?.('#activity-telemetry-diagnose')"), 'telemetry diagnostic button has a delegated click handler');
 
 assert.ok(html.includes('id="training-subnav-strength"'), 'strength is reachable from the training subnavigation');
 assert.ok(main.includes("strength: { parent: 'training', view: 'strength', sub: 'strength' }"), 'strength route belongs to the training area');
@@ -185,7 +187,7 @@ assert.ok(calendar.includes('calendar-week-agenda-day') && calendar.includes('ca
 assert.ok(calendar.includes('selectCalendarWeekDay') && calendar.includes('scrollIntoView'), 'horizontal day selection focuses the matching agenda section');
 assert.ok(calendar.includes('openPlannedCalendarDetail') && calendar.includes('openCSVDetailsModal'), 'completed and planned weekly sessions open their respective detail views');
 assert.ok(calendar.includes('Number(timeline.activityCount) === Number(timeline.loadActivityCount)'), 'daily training load is shown only with complete activity coverage');
-assert.ok(calendar.includes('data.durationComplete') && calendar.includes('durationCoverage'), 'daily training time exposes incomplete duration coverage without adding an unagreed comparison panel');
+assert.ok(calendar.includes('data.durationComplete') && calendar.includes('data.durationTotal'), 'daily training time exposes incomplete duration coverage without adding an unagreed comparison panel');
 assert.ok(!calendar.includes('getTrainingLoadData'), 'calendar reuses central daily timeline rather than recalculating load');
 assert.ok(css.includes('.calendar-year-matrix') && css.includes('.calendar-day-load-time') && css.includes('.calendar-time-bar-row'), 'calendar uses compact shared visual components');
 assert.ok(css.includes('var(--color-surface') && css.includes('var(--color-background'), 'calendar styling follows shared theme tokens');
