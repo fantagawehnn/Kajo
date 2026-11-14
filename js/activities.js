@@ -11,7 +11,6 @@ import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, isGarminActivity } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
-import { supabase } from './supabase-client.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
 // Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
@@ -105,16 +104,15 @@ async function diagnoseGarminActivityJson() {
         output.hidden = false;
         return;
     }
-    if (!supabase) {
-        output.textContent = 'Supabase ist in dieser Sitzung nicht verfügbar.';
-        output.hidden = false;
-        return;
-    }
     button.disabled = true;
     button.textContent = 'JSON-Diagnose läuft …';
     output.textContent = 'Prüfe gespeicherte JSON-Daten und frage Garmin einmal gezielt ab …';
     output.hidden = false;
     try {
+        // Erst beim tatsächlichen Klick laden: hält Browser-CDN-Abhängigkeiten
+        // aus den Node-basierten Regressionstests heraus.
+        const { supabase } = await import('./supabase-client.js');
+        if (!supabase) throw new Error('Supabase ist in dieser Sitzung nicht verfügbar.');
         const { data, error } = await supabase.functions.invoke('garmin-personal', {
             body: { action: 'diagnose-activity-json', activityId: '25077002341' }
         });
