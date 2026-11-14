@@ -42,7 +42,7 @@ assert.ok(css.includes('#analysis-subpage-load > #analysis-load-section { order:
 assert.ok(css.includes('#analysis-subpage-recovery > #recovery-objective-group { order:2; }'), 'objective recovery metrics follow the hero');
 assert.ok(css.includes('#analysis-subpage-recovery > #recovery-subjective-group { order:3; }'), 'subjective recovery metrics follow objective metrics');
 assert.ok(css.includes('#analysis-subpage-recovery > #view-health-data { order:5; }'), 'recovery history follows the summary sections');
-assert.ok(html.includes('id="analysis-health-timeline-panel"'), 'health timeline has a stable analysis section target');
+assert.ok(html.includes('id="health-trend-panel"'), 'Health detail trend has a stable analysis section target');
 
 assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar'), 'adaptive personal baseline is not fabricated without an agreed method and data basis');
 
