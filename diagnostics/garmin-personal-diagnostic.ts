@@ -1402,7 +1402,7 @@ Deno.serve(async (req) => {
       const activityId = typeof body.activityId === "string" ? body.activityId : String(body.activityId ?? "");
       // Authentifizierte Nutzer können ausschließlich Aktivitäten ihres eigenen
       // verbundenen Garmin-Kontos abrufen. Die ID muss numerisch sein.
-      if (!/^\\d+$/.test(activityId)) {
+      if (!/^\d+$/.test(activityId)) {
         return json(400, { error: "Ungültige Garmin-Aktivitäts-ID." });
       }
       const { data: credential, error: credentialError } = await admin
