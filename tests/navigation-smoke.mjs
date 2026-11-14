@@ -165,7 +165,10 @@ assert.ok(calendar.includes('calendarEventIcons(date)'), 'calendar shows distinc
 assert.ok(calendar.includes('item?.cycle?.period === true'), 'calendar shows recorded menstruation days only');
 assert.ok(calendar.includes('calendar-year-week-cell') && calendar.includes('calendar-year-month-label') && calendar.includes('calendar-year-sport-segment'), 'year view is a month and calendar-week matrix with sport-specific bars');
 assert.ok(calendar.includes('calendar-year-planned-segment'), 'year view distinguishes planned sessions from completed training time');
-assert.ok(calendar.includes('calendar-week-day') && calendar.includes('calendar-week-activity'), 'week view is a seven-column training calendar grid');
+assert.ok(calendar.includes('calendar-week-strip') && calendar.includes('calendar-week-dot'), 'week view includes a seven-day horizontal overview with activity and health markers');
+assert.ok(calendar.includes('calendar-week-agenda-day') && calendar.includes('calendar-week-agenda'), 'week view keeps all seven days in a vertical agenda');
+assert.ok(calendar.includes('selectCalendarWeekDay') && calendar.includes('scrollIntoView'), 'horizontal day selection focuses the matching agenda section');
+assert.ok(calendar.includes('openPlannedCalendarDetail') && calendar.includes('openCSVDetailsModal'), 'completed and planned weekly sessions open their respective detail views');
 assert.ok(calendar.includes('Number(timeline.activityCount) === Number(timeline.loadActivityCount)'), 'daily training load is shown only with complete activity coverage');
 assert.ok(calendar.includes('data.durationComplete') && calendar.includes('priorCompleteDays'), 'training time comparison exposes incomplete duration coverage');
 assert.ok(!calendar.includes('getTrainingLoadData'), 'calendar reuses central daily timeline rather than recalculating load');
