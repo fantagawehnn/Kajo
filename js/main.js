@@ -655,6 +655,8 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
  * bleiben erhalten; jede JSON-Messreihe behält ihre eigene Zeitachse.
  */
 async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null) {
+    const syncUserId = activeAppUserId;
+    if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
     const now = Date.now();
     const cooldowns = {
         no_data: 30 * 24 * 60 * 60 * 1000,
@@ -677,6 +679,9 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
     let imported = 0, noData = 0, failed = 0, rawSeries = 0, rateLimited = false;
     const errors = [];
     for (let index = 0; index < pending.length; index++) {
+        if (activeAppUserId !== syncUserId || !appUserReady) {
+            return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+        }
         const activity = pending[index];
         const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
         const id = String(rawId).replace(/^garmin-/, '');
@@ -696,11 +701,14 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 } catch (error) {
                     lastError = error;
                     if (!/HTTP 429|rate.?limit/i.test(error?.message || '') || attempt === 1) break;
-                    const match = String(error.message).match(/retryInSeconds["\\s:=]+(\d+)/i);
+                    const match = String(error.message).match(/retryInSeconds["\s:=]+(\d+)/i);
                     const waitSeconds = Math.max(30, Number(match?.[1] || 30));
                     if (message) message.textContent = 'Garmin-Abruflimit: automatische Fortsetzung in ' + waitSeconds + ' Sekunden …';
                     await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
                 }
+            }
+            if (activeAppUserId !== syncUserId || !appUserReady) {
+                return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
             }
             if (lastError) throw lastError;
 
@@ -757,6 +765,9 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 rawSeries += usableSeries;
             }
         } catch (error) {
+            if (activeAppUserId !== syncUserId || !appUserReady) {
+                return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+            }
             const errorMessage = error?.message || 'Unbekannter Garmin-JSON-Fehler';
             const limited = /HTTP 429|rate.?limit/i.test(errorMessage);
             activity.garminJsonSyncStatus = limited ? 'rate_limited' : 'error';
@@ -1933,7 +1944,7 @@ async function syncGarminTodayOnOpen(userId) {
         try {
             // Beim automatischen Tagesabgleich werden auch ältere Garmin-Aktivitäten
             // ohne JSON-Rohtelemetrie schrittweise nachgeladen.
-            const jsonTelemetry = await syncMissingGarminJsonTelemetry('2020-01-01', date, null);
+            const jsonTelemetry = await syncMissingGarminJsonTelemetry('0000-01-01', date, null);
             console.info('KAJO: Automatische Garmin-Rohtelemetrie abgeschlossen:', jsonTelemetry);
         } catch (jsonTelemetryError) {
             console.warn('KAJO: Garmin-Rohtelemetrie konnte nicht vollständig ergänzt werden:', jsonTelemetryError);
