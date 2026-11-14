@@ -738,16 +738,20 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 for (const [key, metric] of Object.entries(mergedSeries)) {
                     if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
                     const fetchedAxis = telemetry.metricSeriesTime || telemetry.time;
-                    if (Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length) {
-                        mergedSeries[key] = { ...metric, time: fetchedAxis };
-                    }
+                    const previousAxis = previous.metricSeriesTime;
+                    const matchingAxis = Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length
+                        ? fetchedAxis
+                        : Array.isArray(previousAxis) && previousAxis.length === metric.values.length
+                            ? previousAxis : null;
+                    if (matchingAxis) mergedSeries[key] = { ...metric, time: matchingAxis };
                 }
 
                 activity.garminTelemetry = {
                     ...previous,
                     ...(!Array.isArray(previous.time) || previous.time.length < 2 ? { time: telemetry.time } : {}),
-                    ...(!Array.isArray(previous.metricSeriesTime) && Array.isArray(telemetry.metricSeriesTime)
-                        ? { metricSeriesTime: telemetry.metricSeriesTime } : {}),
+                    ...(Array.isArray(telemetry.metricSeriesTime)
+                        ? { metricSeriesTime: telemetry.metricSeriesTime }
+                        : Array.isArray(previous.metricSeriesTime) ? { metricSeriesTime: previous.metricSeriesTime } : {}),
                     ...(!Array.isArray(previous.hr) && Array.isArray(telemetry.hr) ? { hr: telemetry.hr } : {}),
                     ...(!Array.isArray(previous.altitude) && Array.isArray(telemetry.altitude) ? { altitude: telemetry.altitude } : {}),
                     ...(!Array.isArray(previous.distance) && Array.isArray(telemetry.distance) ? { distance: telemetry.distance } : {}),
