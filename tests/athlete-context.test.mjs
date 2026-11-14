@@ -62,7 +62,9 @@ assert.equal(context.season.races.length, 2);
 assert.equal(context.season.races[0].priority, 'B');
 assert.equal(context.season.races[1].priority, null);
 assert.equal(context.season.plannedActivities.length, 1);
-assert.equal(context.scope.allSportsContributeToTotalLoadAndRecovery, true);
+assert.equal(context.scope.allSportsActivityHistoryIncluded, true);
+assert.equal(context.scope.allSportsContributeToTotalLoadAndRecovery, false);
+assert.equal(context.scope.loadCompletenessMustBeChecked, true);
 assert.equal(context.scope.medicalDiagnosis, false);
 
 const empty = buildAthleteContext({}, { asOfDate: '2026-11-14' });
