@@ -1060,7 +1060,21 @@ function initializeActivityDetailTabs() {
     move('activity-intervals-panel', intervalPanel);
     ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel'].forEach(id => move(id, sportPanel));
     ['activity-rpe-panel', 'activity-zone-panel', 'activity-benefit-profile', 'activity-recovery-panel', 'activity-efficiency-panel', 'activity-load-context-panel', 'activity-comparison-panel'].forEach(id => move(id, insightPanel));
-    ['activity-fit-data-panel', 'activity-data-quality', 'activity-hr-series-status', 'activity-telemetry-diagnose', 'activity-telemetry-diagnostic-output'].forEach(id => move(id, dataPanel));
+    ['activity-fit-data-panel', 'activity-data-quality', 'activity-hr-series-status'].forEach(id => move(id, dataPanel));
+
+    // Diagnosezugang bewusst außerhalb der Tabs platzieren: Er muss auch dann
+    // erreichbar bleiben, wenn für die Aktivität keine Messreihe vorhanden ist.
+    const diagnosticPanel = document.createElement('section');
+    diagnosticPanel.className = 'activity-detail-panel';
+    diagnosticPanel.setAttribute('aria-label', 'Zeitreihen-Diagnose');
+    const diagnosticHeading = document.createElement('div');
+    diagnosticHeading.className = 'activity-detail-section-heading';
+    diagnosticHeading.innerHTML = '<div><p class="activity-detail-kicker">FEHLERSUCHE</p><h3>Zeitreihen-Diagnose</h3></div>';
+    diagnosticPanel.appendChild(diagnosticHeading);
+    const diagnosticButton = document.getElementById('activity-telemetry-diagnose');
+    const diagnosticOutput = document.getElementById('activity-telemetry-diagnostic-output');
+    if (diagnosticButton) diagnosticPanel.appendChild(diagnosticButton);
+    if (diagnosticOutput) diagnosticPanel.appendChild(diagnosticOutput);
 
     const dataHeading = document.createElement('div');
     dataHeading.className = 'activity-detail-section-heading';
@@ -1073,6 +1087,7 @@ function initializeActivityDetailTabs() {
 
     const oldGrid = content.querySelector('.activity-detail-grid');
     oldGrid?.remove();
+    content.insertBefore(diagnosticPanel, overview);
     overview.after(nav, panels);
     modal.dataset.activityTabsReady = 'true';
 
