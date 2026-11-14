@@ -7651,3 +7651,55 @@ html[data-theme="light"] #intervals-sync-modal select{background:#f7f9fb;color:#
   }
 }
 
+
+
+/* Settings redesign: four color-coded entry cards and matching detail accents */
+.kajo-settings-overview {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin:4px 0 22px;
+}
+.kajo-settings-category {
+  --settings-accent:#75BFFF;
+  --settings-tint:rgba(88,166,255,.10);
+  display:flex; align-items:center; gap:12px; width:100%; min-width:0;
+  min-height:94px; padding:15px;
+  border:1px solid color-mix(in srgb,var(--settings-accent) 28%,#293644);
+  border-radius:15px; text-align:left; cursor:pointer;
+  background:linear-gradient(135deg,var(--settings-tint),rgba(17,24,32,.94) 72%);
+  transition:border-color .16s ease,transform .16s ease,background .16s ease;
+}
+.kajo-settings-category[data-tone="blue"] { --settings-accent:#75BFFF; --settings-tint:rgba(76,157,235,.13); }
+.kajo-settings-category[data-tone="mint"] { --settings-accent:#75E0C0; --settings-tint:rgba(52,190,151,.12); }
+.kajo-settings-category[data-tone="violet"] { --settings-accent:#D0A5FF; --settings-tint:rgba(164,111,224,.13); }
+.kajo-settings-category[data-tone="amber"] { --settings-accent:#F4CA78; --settings-tint:rgba(221,166,66,.12); }
+.kajo-settings-category:hover,.kajo-settings-category:focus-visible {
+  border-color:var(--settings-accent); transform:translateY(-1px); outline:none;
+}
+.kajo-settings-category-icon {
+  display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px;
+  border-radius:12px; color:var(--settings-accent); background:var(--settings-tint);
+  border:1px solid color-mix(in srgb,var(--settings-accent) 26%,transparent);
+}
+.kajo-settings-category-icon svg { width:20px; height:20px; }
+.kajo-settings-category-copy { display:grid; gap:5px; min-width:0; flex:1; }
+.kajo-settings-category-copy strong { color:#F4F7FA; font-size:13px; font-weight:800; line-height:1.25; }
+.kajo-settings-category-copy small { color:#A9B5C2; font-size:10px; line-height:1.45; }
+.kajo-settings-category-chevron { flex:0 0 auto; width:17px; height:17px; color:var(--settings-accent); }
+.kajo-settings-group[data-settings-page="training"] .kajo-settings-group-icon { color:#75BFFF; border-color:rgba(117,191,255,.28); background:rgba(76,157,235,.10); }
+.kajo-settings-group[data-settings-page="performance"] .kajo-settings-group-icon { color:#75E0C0; border-color:rgba(117,224,192,.28); background:rgba(52,190,151,.10); }
+.kajo-settings-group[data-settings-page="app"] .kajo-settings-group-icon { color:#D0A5FF; border-color:rgba(208,165,255,.28); background:rgba(164,111,224,.10); }
+.kajo-settings-group[data-settings-page="notifications"] .kajo-settings-group-icon { color:#F4CA78; border-color:rgba(244,202,120,.28); background:rgba(221,166,66,.10); }
+.kajo-settings-group[data-settings-page="performance"] .kajo-settings-card { border-top-color:rgba(117,224,192,.35); }
+.kajo-settings-group[data-settings-page="notifications"] .kajo-settings-section-icon { color:#F4CA78; }
+@media(max-width:700px) {
+  .kajo-settings-overview { grid-template-columns:1fr; gap:9px; }
+  .kajo-settings-category { min-height:78px; padding:12px; }
+}
+html[data-theme="light"] .kajo-settings-category {
+  background:linear-gradient(135deg,var(--settings-tint),#FFFFFF 78%);
+  border-color:color-mix(in srgb,var(--settings-accent) 34%,#DCE3EA);
+}
+html[data-theme="light"] .kajo-settings-category-copy strong { color:#17212B; }
+html[data-theme="light"] .kajo-settings-category-copy small { color:#718091; }
