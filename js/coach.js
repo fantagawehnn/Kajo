@@ -45,20 +45,96 @@ function formatLoadDay(day, selectedSource) {
     return lines.join('\\n');
 }
 
-function buildLoadReply(context) {
-    const timeline = context.trainingLoad.timeline;
-    const recent = timeline.slice(-7);
-    const latest = getLatest(recent);
-    const unknown = recent.filter(day => day.load === null
-        || ['unknown', 'incomplete-activity-load'].includes(day.dataStatus)).length;
-    const lines = ['Deine Trainingsbelastung:'];
-    lines.push(formatLoadDay(latest, context.trainingLoad.selectedSource));
-    lines.push(`• Im betrachteten Ausschnitt sind ${recent.length} Tage mit Timeline-Eintrag enthalten; davon ${unknown} mit unbekannter oder unvollständiger Belastung.`);
-    lines.push(`• Ausgewählte Belastungsquelle: ${context.trainingLoad.selectedSource || 'nicht angegeben'}.`);
-    lines.push('Ein Trend oder eine Belastungssteigerung wird hier nicht behauptet: Dafür müssen Zeitraum, Datenabdeckung und dieselbe Belastungsquelle vergleichbar sein.');
-    return lines.join('\\n');
+function dateKeyOffset(dateKey, offset) {
+    const date = new Date(dateKey + 'T12:00:00Z');
+    if (!Number.isFinite(date.getTime())) return null;
+    date.setUTCDate(date.getUTCDate() + offset);
+    return date.toISOString().slice(0, 10);
 }
 
+function summarizeLoadWindow(timeline, endDate, days) {
+    const startDate = dateKeyOffset(endDate, -(days - 1));
+    const byDate = new Map(timeline.map(day => [day.date, day]));
+    const rows = [];
+    for (let offset = 0; offset < days; offset++) {
+        const date = dateKeyOffset(startDate, offset);
+        rows.push(byDate.get(date) || null);
+    }
+
+    const validRows = rows.filter(day => day
+        && ['complete', 'confirmed-rest'].includes(day.dataStatus)
+        && Number.isFinite(day.load));
+    const modes = [...new Set(validRows.map(day => day.loadMode).filter(Boolean))];
+    const missingDays = rows.filter(day => !day).length;
+    const unknownDays = rows.filter(day => day && !(
+        ['complete', 'confirmed-rest'].includes(day.dataStatus)
+        && Number.isFinite(day.load)
+    )).length;
+    const complete = rows.length === days && validRows.length === days
+        && modes.length === 1;
+
+    return {
+        days,
+        startDate,
+        endDate,
+        validDays: validRows.length,
+        missingDays,
+        unknownDays,
+        source: modes.length === 1 ? modes[0] : null,
+        complete,
+        totalLoad: complete ? validRows.reduce((sum, day) => sum + day.load, 0) : null,
+        latestModel: [...validRows].reverse().find(day =>
+            Number.isFinite(day.ctl) && Number.isFinite(day.atl) && Number.isFinite(day.tsb)
+        ) || null
+    };
+}
+
+function formatLoadWindow(label, summary) {
+    const completeness = summary.complete
+        ? 'vollständig'
+        : `unvollständig: ${summary.validDays}/${summary.days} Tage mit auswertbarer Belastung, ${summary.missingDays} ohne Timeline-Eintrag, ${summary.unknownDays} unbekannt/unvollständig`;
+    const source = summary.source || 'keine einheitliche Quelle';
+    const total = summary.complete
+        ? `Belastungssumme ${formatNumber(summary.totalLoad, 1)} (Quelle: ${source})`
+        : 'keine vollständige Belastungssumme ausgewiesen';
+    const model = summary.latestModel
+        ? ` | letzter Modellstand CTL ${formatNumber(summary.latestModel.ctl, 1)}, ATL ${formatNumber(summary.latestModel.atl, 1)}, TSB ${formatNumber(summary.latestModel.tsb, 1)}`
+        : '';
+    return `• ${label} (${summary.startDate} bis ${summary.endDate}): ${completeness}; ${total}${model}.`;
+}
+
+function buildLoadReply(context) {
+    const timeline = context.trainingLoad.timeline;
+    const latest = getLatest(timeline);
+    const endDate = context.asOfDate || latest?.date;
+    const lines = ['Deine Trainingsbelastung:'];
+    lines.push(formatLoadDay(latest, context.trainingLoad.selectedSource));
+
+    if (endDate) {
+        const windows = [7, 28, 90].map(days => summarizeLoadWindow(timeline, endDate, days));
+        lines.push('Belastungsübersicht über verschiedene Zeiträume:');
+        lines.push(formatLoadWindow('7 Tage', windows[0]));
+        lines.push(formatLoadWindow('28 Tage', windows[1]));
+        lines.push(formatLoadWindow('90 Tage', windows[2]));
+
+        const previousEnd = dateKeyOffset(endDate, -7);
+        const previous = summarizeLoadWindow(timeline, previousEnd, 7);
+        const current = windows[0];
+        if (current.complete && previous.complete && current.source === previous.source) {
+            const delta = current.totalLoad - previous.totalLoad;
+            const direction = delta > 0 ? 'höher' : delta < 0 ? 'niedriger' : 'gleich';
+            lines.push(`• Vergleich der letzten 7 Tage mit den 7 Tagen davor: ${formatNumber(Math.abs(delta), 1)} Belastungseinheiten ${direction} (gleiche Quelle: ${current.source}). Das beschreibt nur die erfasste Belastung, nicht automatisch eine Leistungs- oder Gesundheitsveränderung.`);
+        } else {
+            lines.push('• Ein Vergleich mit den vorherigen 7 Tagen ist nicht belastbar möglich: Beide Zeiträume müssen vollständig und mit derselben Belastungsquelle vorliegen.');
+        }
+    } else {
+        lines.push('• Für eine zeitliche Einordnung fehlt ein gültiges Bezugsdatum.');
+    }
+
+    lines.push(`• Ausgewählte Belastungsquelle: ${context.trainingLoad.selectedSource || 'nicht angegeben'}.`);
+    lines.push('Die Belastungssummen sind nur bei vollständig erfassten Zeiträumen und einheitlicher Quelle ausgewiesen. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
+    return lines.join('\\n');
+}
 function buildRecoveryReply(context) {
     const lines = ['Deine Erholungsdaten:'];
     const checkins = context.recovery.checkins;
