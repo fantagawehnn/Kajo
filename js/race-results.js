@@ -9,7 +9,7 @@ export function normalizeRaceResults(results) {
     const format = RACE_RESULT_FORMATS.includes(item.format) ? item.format : null;
     const placement = item.placement === '' || item.placement == null ? null : Number(item.placement);
     const timeSeconds = item.timeSeconds === '' || item.timeSeconds == null ? null : Number(item.timeSeconds);
-    if (!discipline || !format) return null;
+    if (!discipline || !format || (placement === null && timeSeconds === null)) return null;
     if (placement !== null && (!Number.isInteger(placement) || placement < 1)) return null;
     if (timeSeconds !== null && (!Number.isFinite(timeSeconds) || timeSeconds <= 0)) return null;
     return {
