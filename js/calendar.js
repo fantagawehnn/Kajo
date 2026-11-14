@@ -1088,6 +1088,7 @@ export function renderWeekView() {
 }
 
 export function setActivitySportFilter(sport, checked) {
+    sport = decodeURIComponent(sport);
     if (checked) selectedActivitySports.add(sport);
     else selectedActivitySports.delete(sport);
     renderListView();
@@ -1114,7 +1115,7 @@ export function renderListView() {
         sports.map(sport => {
             const label = sportCatalog[sport]?.label || sport;
             const active = selectedActivitySports.has(sport);
-            return '<button type="button" class="activity-filter-chip ' + (active ? 'is-active' : '') + '" aria-pressed="' + active + '" onclick="setActivitySportFilter(\'' + escapeHtml(sport).replace(/'/g, '&#39;') + '\',' + !active + ')">' + escapeHtml(label) + '</button>';
+            return '<button type="button" class="activity-filter-chip ' + (active ? 'is-active' : '') + '" aria-pressed="' + active + '" onclick="setActivitySportFilter(\'' + encodeURIComponent(sport).replace(/'/g, '%27') + '\',' + !active + ')">' + escapeHtml(label) + '</button>';
         }).join('');
     const filtered = selectedActivitySports.size
         ? activities.filter(act => selectedActivitySports.has(act.type || 'Workout'))
