@@ -224,7 +224,7 @@ async function importGarminActivityJsonTelemetry() {
             + 'Standard-Messreihen: ' + fields.join(', ') + '\n'
             + 'Zusätzliche Garmin-Rohmessreihen: ' + rawSeriesCount + '\n'
             + 'Alle verfügbaren numerischen Metriken werden mit Einheit-/Skalierungsmetadaten gespeichert; Rohwerte bleiben unverändert.\n'
-            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\n'
+            + 'Speicherung: kontogebundener lokaler Speicher; vollständige Rohmessreihen separat in IndexedDB\n'
             + 'Quelle: Garmin Activity Details JSON · kein FIT-Import.';
     } catch (error) {
         output.textContent = 'JSON-Import fehlgeschlagen: ' + (error?.message || String(error));
