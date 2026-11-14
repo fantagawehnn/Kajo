@@ -7,6 +7,7 @@ globalThis.localStorage = {
     setItem: (key, value) => store.set(key, value)
 };
 globalThis.document = {
+    addEventListener() {},
     getElementById(id) {
         return elements[id] ||= {
             value: '', textContent: '', className: '', checked: false,
