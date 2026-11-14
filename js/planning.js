@@ -20,8 +20,11 @@ export function renderPlannedWorkouts() {
     const end=toLocalDateString(sunday);
     const todayKey=toLocalDateString(today);
     const list=[...state.plannedActivities].filter(p=>p.date>=todayKey&&p.date<=end).sort((a,b)=>a.date.localeCompare(b.date));
-    section.classList.toggle('hidden',list.length===0);
-    if(!list.length)return;
+    section.classList.remove('hidden');
+    if(!list.length){
+        el.innerHTML='<p class="rounded-xl border border-dashed border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-400">Für diese Woche sind noch keine Trainingseinheiten geplant. Lege deine nächste Einheit über „+ Einheit planen“ an.</p>';
+        return;
+    }
     list.forEach(p=>{
         const cat=categories[p.category||'ga']||categories.ga;
         const sport=(sports[p.type]||sports.Workout).label;
