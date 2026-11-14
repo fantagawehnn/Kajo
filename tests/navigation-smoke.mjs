@@ -99,6 +99,11 @@ assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'")
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
+assert.ok(activities.includes('initializeActivityDetailTabs'), 'activity details initialize the shared tab layout');
+assert.ok(activities.includes("['overview', 'Übersicht']") && activities.includes("['sport', 'Sportanalyse']"), 'activity details expose the six agreed analysis areas');
+assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('metricColor'), 'activity overview uses sport-aware metric circles');
+assert.ok(css.includes('.activity-detail-tabs') && css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'activity tabs and metric circles have mobile styling');
+assert.ok(activities.includes('activity-data-quality') && activities.includes('activity-telemetry-diagnostic-output'), 'data quality and diagnostics remain accessible in the data tab');
 console.log('KAJO navigation and analysis UI smoke tests passed.');
 
 
