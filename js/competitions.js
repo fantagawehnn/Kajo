@@ -271,6 +271,7 @@ export function saveRaceResults() {
         if (timeSeconds !== null && (!Number.isFinite(timeSeconds) || timeSeconds <= 0)) {
             alert('Die Ergebniszeit muss größer als 0 Sekunden sein.'); timeInput.focus(); return;
         }
+        if (placement === null && timeSeconds === null) continue;
         results.push({ id: 'result-' + Date.now() + '-' + index, discipline: discipline.value, format: format.value, placement, timeSeconds });
     }
     race.results = normalizeRaceResults(results);
