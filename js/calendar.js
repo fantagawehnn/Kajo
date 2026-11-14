@@ -313,7 +313,7 @@ function renderCalendarDayDetail(date, target) {
     const recoveryMarkup = '<div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup;
 
     const note = String(checkin.note || '').trim();
-    const diaryButton = '<button type="button" class="calendar-day-diary-button" title="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" aria-label="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" onclick="openDailyNote(\\'' + escapeHtml(date) + '\\')"><i data-lucide="book-heart"></i></button>';
+    const diaryButton = '<button type="button" class="calendar-day-diary-button" title="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" aria-label="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" onclick="openDailyNote(\'' + escapeHtml(date) + '\')"><i data-lucide="book-heart"></i></button>';
     const plannedSection = planned.length
         ? '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Geplantes Training</h3></div><div class="calendar-day-activity-list">' + plannedMarkup + '</div></section>'
         : '';
