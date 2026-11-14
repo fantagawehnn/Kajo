@@ -54,3 +54,63 @@ assert.match(activityReply, /Aktivitäten im betrachteten Zeitraum: 2/);
 assert.match(activityReply, /Kanu-Performanceeinheiten .*: 1/);
 
 console.log('Coach intent tests passed.');
+
+
+// Load windows must be complete and use one consistent source before totals/comparisons are shown.
+function dateOffset(dateKey, offset) {
+    const date = new Date(dateKey + 'T12:00:00Z');
+    date.setUTCDate(date.getUTCDate() + offset);
+    return date.toISOString().slice(0, 10);
+}
+const fullTimeline = [];
+for (let offset = -96; offset <= 0; offset++) {
+    fullTimeline.push({
+        date: dateOffset('2026-11-14', offset),
+        load: offset >= -6 ? 20 : 10,
+        loadMode: 'garmin-native',
+        loadUnit: 'AU',
+        dataStatus: 'complete',
+        ctl: 40,
+        atl: 45,
+        tsb: -5
+    });
+}
+const fullLoadReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    trainingLoad: { selectedSource: 'garmin-native', timeline: fullTimeline },
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(fullLoadReply, /7 Tage .*vollständig/);
+assert.match(fullLoadReply, /Belastungssumme 140,0/);
+assert.match(fullLoadReply, /28 Tage .*vollständig/);
+assert.match(fullLoadReply, /90 Tage .*vollständig/);
+assert.match(fullLoadReply, /Vergleich der letzten 7 Tage mit den 7 Tagen davor: 70,0 Belastungseinheiten höher/);
+
+const gapTimeline = fullTimeline.filter(day => day.date !== '2026-11-10');
+const gapReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    trainingLoad: { selectedSource: 'garmin-native', timeline: gapTimeline },
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(gapReply, /7 Tage .*unvollständig/);
+assert.match(gapReply, /keine vollständige Belastungssumme ausgewiesen/);
+assert.match(gapReply, /Vergleich mit den vorherigen 7 Tagen ist nicht belastbar möglich/);
+assert.doesNotMatch(gapReply, /Belastungssumme 130,0/);
+
+const mixedSourceTimeline = fullTimeline.map(day => day.date >= '2026-11-08'
+    ? { ...day, loadMode: day.date === '2026-11-08' ? 'srpe' : 'garmin-native' }
+    : day);
+const mixedSourceReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    trainingLoad: { selectedSource: 'garmin-native', timeline: mixedSourceTimeline },
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(mixedSourceReply, /7 Tage .*unvollständig/);
+assert.match(mixedSourceReply, /keine einheitliche Quelle/);
+assert.match(mixedSourceReply, /Vergleich mit den vorherigen 7 Tagen ist nicht belastbar möglich/);
