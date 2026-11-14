@@ -231,7 +231,7 @@ function renderCanoePerformanceSummary() {
   if (comparisonRoot) {
     comparisonRoot.replaceChildren();
     const groups = summary.comparableGroups.filter(group => group.comparable &&
-      (group.averageSpeedKmh.count || group.averagePowerW.count || group.strokeRatePerMinute.count || group.averageHeartRateBpm.count));
+      (group.averageSpeedKmh.count || group.averagePowerW.count || group.cadencePerMinute.count || group.averageHeartRateBpm.count));
     if (!groups.length) {
       const empty = document.createElement('p');
       empty.className = 'kajo-performance-note';
@@ -248,7 +248,7 @@ function renderCanoePerformanceSummary() {
         const metrics = [];
         if (group.averageSpeedKmh.count) metrics.push('Ø Geschwindigkeit ' + format(group.averageSpeedKmh.mean) + ' km/h (n=' + group.averageSpeedKmh.count + ')');
         if (group.averagePowerW.count) metrics.push('Ø Leistung ' + format(group.averagePowerW.mean) + ' W (n=' + group.averagePowerW.count + ')');
-        if (group.strokeRatePerMinute.count) metrics.push('Schlagfrequenz ' + format(group.strokeRatePerMinute.mean) + '/min (n=' + group.strokeRatePerMinute.count + ')');
+        if (group.cadencePerMinute.count) metrics.push('Kadenz (Garmin-FIT) ' + format(group.cadencePerMinute.mean) + '/min (n=' + group.cadencePerMinute.count + ')');
         if (group.averageHeartRateBpm.count) metrics.push('Ø HF ' + format(group.averageHeartRateBpm.mean) + ' bpm (n=' + group.averageHeartRateBpm.count + ')');
         detail.textContent = metrics.join(' · ');
         row.append(heading, detail);
