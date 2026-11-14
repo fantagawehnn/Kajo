@@ -7122,3 +7122,138 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
 }
 
 .kajo-training-subnav.hidden { display:none !important; }
+
+
+/* KAJO activity history: open compact rows with a full-height sport accent. */
+#view-calendar .activity-list-toolbar {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  gap:10px;
+  padding:2px 0 8px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+#view-calendar .activity-list-heading { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+#view-calendar .activity-list-heading h3 { margin:0; }
+#view-calendar .activity-list-heading p { margin:0; white-space:nowrap; }
+#view-calendar .activity-filter-chips {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  width:100%;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:0 0 3px;
+  white-space:nowrap;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+#view-calendar .activity-filter-chips::-webkit-scrollbar { display:none; }
+#view-calendar .activity-filter-chip {
+  flex:0 0 auto;
+  min-height:29px;
+  padding:5px 12px;
+  border:1px solid #344154;
+  border-radius:999px;
+  background:transparent;
+  color:#aebaca;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:600;
+}
+#view-calendar .activity-filter-chip.is-active {
+  border-color:#ff8585;
+  background:rgba(255,133,133,.12);
+  color:#ffb0b0;
+}
+#view-calendar .activity-list-row {
+  display:flex;
+  align-items:stretch;
+  gap:9px;
+  width:100%;
+  min-width:0;
+  padding:8px 0;
+  border:0;
+  border-bottom:1px solid rgba(148,163,184,.14);
+  border-radius:0;
+  background:transparent;
+  text-align:left;
+  cursor:pointer;
+}
+#view-calendar .activity-list-row:hover { background:rgba(148,163,184,.035); }
+#view-calendar .activity-list-accent {
+  display:block;
+  flex:0 0 3px;
+  width:3px;
+  align-self:stretch;
+  min-height:34px;
+  border-radius:999px;
+  background:var(--activity-color,#64748b);
+}
+#view-calendar .activity-list-date {
+  flex:0 0 42px;
+  width:42px;
+  padding-top:2px;
+  color:#9aa8bb;
+  font-size:10px;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+}
+#view-calendar .activity-list-main {
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  justify-content:center;
+  gap:3px;
+  min-width:0;
+}
+#view-calendar .activity-list-main strong {
+  color:#f8fafc;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:600;
+  overflow-wrap:anywhere;
+}
+#view-calendar .activity-list-subline {
+  display:flex;
+  min-width:0;
+  color:#9aa8bb;
+  font-size:10px;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+}
+#view-calendar .activity-list-metrics {
+  display:flex;
+  flex:0 0 auto;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:3px;
+  min-width:0;
+  color:#9aa8bb;
+  font-family:ui-monospace,monospace;
+  font-size:9px;
+  line-height:1.25;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+#view-calendar .activity-list-metrics strong {
+  color:#ff9a9a;
+  font-size:10px;
+  font-weight:600;
+}
+#view-calendar .activity-list-empty {
+  padding:18px 0;
+  color:#64748b;
+  font-size:11px;
+  text-align:center;
+}
+@media(max-width:380px) {
+  #view-calendar .activity-list-row { gap:7px; }
+  #view-calendar .activity-list-date { flex-basis:38px; width:38px; font-size:9px; }
+  #view-calendar .activity-list-metrics { font-size:8px; }
+}
