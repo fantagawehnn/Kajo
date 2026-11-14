@@ -53,7 +53,6 @@ const activityReply = buildLocalCoachReply(context, 'Zeig meine Aktivitäten');
 assert.match(activityReply, /Aktivitäten im betrachteten Zeitraum: 2/);
 assert.match(activityReply, /Kanu-Performanceeinheiten .*: 1/);
 
-console.log('Coach intent tests passed.');
 
 
 // Load windows must be complete and use one consistent source before totals/comparisons are shown.
@@ -114,3 +113,18 @@ const mixedSourceReply = buildLocalCoachReply({
 assert.match(mixedSourceReply, /7 Tage .*unvollständig/);
 assert.match(mixedSourceReply, /keine einheitliche Quelle/);
 assert.match(mixedSourceReply, /Vergleich mit den vorherigen 7 Tagen ist nicht belastbar möglich/);
+
+const missingSourceTimeline = fullTimeline.map(day => day.date === '2026-11-12'
+    ? { ...day, loadMode: null }
+    : day);
+const missingSourceReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    trainingLoad: { selectedSource: 'garmin-native', timeline: missingSourceTimeline },
+    performanceContext: { allActivities: [], canoeActivities: [] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Wie ist meine Trainingsbelastung?');
+assert.match(missingSourceReply, /7 Tage .*unvollständig/);
+assert.match(missingSourceReply, /keine vollständige Belastungssumme ausgewiesen/);
+
+console.log('Coach intent and load-window tests passed.');
