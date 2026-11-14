@@ -173,8 +173,8 @@ export function buildAthleteContext(state, options = {}) {
 
     const plannedActivities = plannedDays > 0 ? planned
         .filter(item => {
-            const age = daysBetween(item?.date, asOfDate);
-            return age !== null && age >= 0 && age <= plannedDays;
+            const daysUntil = daysBetween(item?.date, asOfDate);
+            return daysUntil !== null && daysUntil <= 0 && daysUntil >= -plannedDays;
         })
         .sort((a, b) => String(a.date).localeCompare(String(b.date)))
         .map(item => ({
@@ -197,7 +197,10 @@ export function buildAthleteContext(state, options = {}) {
         generatedAt: new Date().toISOString(),
         asOfDate,
         scope: {
-            allSportsContributeToTotalLoadAndRecovery: true,
+            allSportsActivityHistoryIncluded: true,
+            allSportsContributeToTotalLoadAndRecovery: false,
+            trainingLoadReflectsSelectedLoadSource: true,
+            loadCompletenessMustBeChecked: true,
             canoePerformanceActivitiesOnly: true,
             canoeActivityTypes: [...CANOE_ACTIVITY_TYPES],
             medicalDiagnosis: false,
