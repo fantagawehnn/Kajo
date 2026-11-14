@@ -195,14 +195,14 @@ async function importGarminActivityJsonTelemetry() {
         const fields = ['hr', 'altitude', 'distance', 'respirationRate', 'bodyBattery']
             .filter(key => Array.isArray(activity.garminTelemetry[key]) && activity.garminTelemetry[key].filter(value => value != null).length >= 2);
         const rawSeriesCount = Object.keys(activity.garminTelemetry.metricSeries || {}).length;
-        output.textContent = 'Telemetrie-Erweiterung erfolgreich.\\n'
-            + 'Aktivität: Prague Kajakfahren · 14.11.2026\\n'
-            + 'Messpunkte: ' + telemetry.sampleCount + '\\n'
-            + 'Dauer der Zeitreihe: ' + Math.floor(telemetry.durationSeconds / 60) + ':' + String(Math.round(telemetry.durationSeconds % 60)).padStart(2, '0') + ' min\\n'
-            + 'Standard-Messreihen: ' + fields.join(', ') + '\\n'
-            + 'Zusätzliche Garmin-Rohmessreihen: ' + rawSeriesCount + '\\n'
-            + 'Alle verfügbaren numerischen Metriken werden mit Einheit-/Skalierungsmetadaten gespeichert; Rohwerte bleiben unverändert.\\n'
-            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\\n'
+        output.textContent = 'Telemetrie-Erweiterung erfolgreich.\n'
+            + 'Aktivität: Prague Kajakfahren · 14.11.2026\n'
+            + 'Messpunkte: ' + telemetry.sampleCount + '\n'
+            + 'Dauer der Zeitreihe: ' + Math.floor(telemetry.durationSeconds / 60) + ':' + String(Math.round(telemetry.durationSeconds % 60)).padStart(2, '0') + ' min\n'
+            + 'Standard-Messreihen: ' + fields.join(', ') + '\n'
+            + 'Zusätzliche Garmin-Rohmessreihen: ' + rawSeriesCount + '\n'
+            + 'Alle verfügbaren numerischen Metriken werden mit Einheit-/Skalierungsmetadaten gespeichert; Rohwerte bleiben unverändert.\n'
+            + 'Speicherung: lokale Aktivitätssammlung des angemeldeten Kontos (localStorage + IndexedDB)\n'
             + 'Quelle: Garmin Activity Details JSON · kein FIT-Import.';
     } catch (error) {
         output.textContent = 'JSON-Import fehlgeschlagen: ' + (error?.message || String(error));
