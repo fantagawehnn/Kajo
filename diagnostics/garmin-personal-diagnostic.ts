@@ -855,16 +855,25 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
   const rows = Array.isArray(details.activityDetailMetrics)
     ? details.activityDetailMetrics.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
     : [];
-  const indexes = new Map<string, number>();
+  const descriptorByKey = new Map<string, { index: number; unitKey: string | null; factor: number | null; label: string | null }>();
   for (const descriptor of descriptors) {
     const key = typeof descriptor.key === "string" ? descriptor.key : "";
     const index = Number(descriptor.metricsIndex);
-    if (key && Number.isInteger(index) && index >= 0) indexes.set(key, index);
+    if (!key || !Number.isInteger(index) || index < 0) continue;
+    const unit = descriptor.unit && typeof descriptor.unit === "object"
+      ? descriptor.unit as Record<string, unknown>
+      : {};
+    descriptorByKey.set(key, {
+      index,
+      unitKey: typeof unit.key === "string" ? unit.key : null,
+      factor: typeof unit.factor === "number" ? unit.factor : null,
+      label: typeof descriptor.label === "string" ? descriptor.label : null,
+    });
   }
   const read = (row: Record<string, unknown>, key: string): number | null => {
-    const index = indexes.get(key);
+    const descriptor = descriptorByKey.get(key);
     const values = Array.isArray(row.metrics) ? row.metrics : [];
-    const value = index == null ? null : values[index];
+    const value = descriptor ? values[descriptor.index] : null;
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   };
   const samples = rows.map(row => ({ row, timestamp: read(row, "directTimestamp") }))
@@ -886,11 +895,36 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
   const hr = collect("directHeartRate", value => value >= 30 && value <= 250);
   if (!hr) throw new Error("Garmin-JSON enthält keine ausreichende Herzfrequenz-Zeitreihe.");
   const altitude = collect("directElevation", value => value >= -500 && value <= 9000);
-  // Garmin liefert die kumulierte Distanz in diesem Datensatz bereits als Meter.
-  // Die beobachteten Werte (0 bis ca. 8.67 km) widersprechen einer Multiplikation mit 100.
   const distance = collect("sumDistance", value => value >= 0, value => value / 1000);
   const respirationRate = collect("directRespirationRate", value => value >= 4 && value <= 80);
   const bodyBattery = collect("directBodyBattery", value => value >= 0 && value <= 100);
+
+  // Preserve every additional numeric Garmin metric as raw values. Unit factors are
+  // metadata only; no scaling, plausibility filtering, smoothing, or quality cleanup
+  // is applied to these raw series at this stage.
+  const metricSeries: Record<string, {
+    label: string;
+    unit: string | null;
+    scaleFactor: number | null;
+    values: Array<number | null>;
+    nonNullCount: number;
+  }> = {};
+  for (const [key, descriptor] of descriptorByKey.entries()) {
+    if (key === "directTimestamp" || !/^[A-Za-z0-9_-]+$/.test(key)) continue;
+    const values = samples.map(item => read(item.row, key));
+    const nonNullCount = values.filter(value => value !== null).length;
+    if (nonNullCount === 0) continue;
+    const readableKey = key.replace(/^direct/, "").replace(/^sum/, "")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/_/g, " ");
+    metricSeries[key] = {
+      label: descriptor.label || readableKey || key,
+      unit: descriptor.unitKey,
+      scaleFactor: descriptor.factor,
+      values,
+      nonNullCount,
+    };
+  }
+
   return {
     source: "garmin-activity-details-json",
     time,
@@ -899,6 +933,8 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
     ...(distance ? { distance } : {}),
     ...(respirationRate ? { respirationRate } : {}),
     ...(bodyBattery ? { bodyBattery } : {}),
+    metricSeries,
+    metricSeriesCount: Object.keys(metricSeries).length,
     sampleCount: samples.length,
     startTimeIso: new Date(startMs).toISOString(),
     endTimeIso: new Date(samples[samples.length - 1].timestamp).toISOString(),
@@ -906,7 +942,6 @@ function buildGarminJsonTelemetry(details: Record<string, unknown>) {
     importedAt: new Date().toISOString(),
   };
 }
-
 
 function prepareActivityTimeSeries(details: Record<string, unknown>) {
   const descriptors = Array.isArray(details.metricDescriptors)
