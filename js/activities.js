@@ -200,6 +200,8 @@ export function openCSVDetailsModal(id) {
     if (!act) { console.warn('Aktivität nicht gefunden:', id); return; }
     const modal = document.getElementById('csv-details-modal');
     if (!modal) { console.error('Aktivitätsansicht fehlt im Dokument.'); return; }
+    initializeActivityDetailTabs();
+    activateActivityDetailTab('overview');
     const wasClosed = modal.classList.contains('hidden') || getComputedStyle(modal).display === 'none';
     if (wasClosed) activityDetailReturnFocus = document.activeElement;
     state.selectedActivityForModal = act;
@@ -280,6 +282,7 @@ export function openCSVDetailsModal(id) {
     try { renderActivityRouteMap(analysisActivity); } catch (error) { console.error('GPS-Strecke konnte nicht gerendert werden:', error); }
     try { renderActivityStrengthAnalysis(act); } catch (error) { console.error('Kraftanalyse konnte nicht gerendert werden:', error); }
     try { renderActivityComparisons(act); } catch (error) { console.error('Aktivitätsvergleich konnte nicht gerendert werden:', error); }
+    try { renderActivityDetailTabEmptyStates(); } catch (_) {}
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
 }
 
@@ -385,7 +388,17 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         container.innerHTML = '<p class="col-span-full text-xs text-slate-500">Für diese Aktivität sind noch keine auswertbaren Kennzahlen hinterlegt.</p>';
         return;
     }
-    container.innerHTML = metrics.map(metric => `<div><span>${metric.label}</span><div>${metric.value}</div></div>`).join('');
+    const metricColor = label => {
+        if (/Herzfrequenz|Puls/i.test(label)) return '#fb7185';
+        if (/Pace|Geschwindigkeit|Distanz|Höhenmeter/i.test(label)) return '#38bdf8';
+        if (/Leistung|Volumen|Sätze|Übungen/i.test(label)) return '#a78bfa';
+        if (/Schlag|Trittfrequenz|SWOLF/i.test(label)) return '#34d399';
+        return getSportsCatalog()[type]?.color || '#d64a4a';
+    };
+    container.innerHTML = metrics.map(metric => {
+        const color = metricColor(metric.label);
+        return `<div class="activity-metric-circle-card" style="--activity-metric-color:${color}"><div class="activity-metric-circle"><strong>${String(metric.value)}</strong></div><span>${metric.label}</span></div>`;
+    }).join('');
     container.className = 'activity-detail-metrics';
 }
 
@@ -978,6 +991,150 @@ export function saveManualSportCorrection() {
     refreshAll();
     openCSVDetailsModal(encodeURIComponent(String(act.id)));
     document.getElementById('activity-edit-panel')?.classList.add('hidden');
+}
+
+function initializeActivityDetailTabs() {
+    const modal = document.getElementById('csv-details-modal');
+    const content = modal?.querySelector('.activity-detail-content');
+    const overview = document.getElementById('activity-overview');
+    if (!modal || !content || !overview) return;
+    if (modal.dataset.activityTabsReady === 'true') return;
+
+    const definitions = [
+        ['overview', 'Übersicht'],
+        ['load', 'Belastung'],
+        ['intervals', 'Intervalle'],
+        ['sport', 'Sportanalyse'],
+        ['insights', 'Einordnung'],
+        ['data', 'Daten']
+    ];
+    const nav = document.createElement('nav');
+    nav.className = 'activity-detail-tabs';
+    nav.setAttribute('aria-label', 'Aktivitätsanalyse');
+    nav.setAttribute('role', 'tablist');
+    const panels = document.createElement('div');
+    panels.className = 'activity-detail-tab-panels';
+    const panelMap = new Map();
+    definitions.forEach(([key, label], index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'activity-detail-tab' + (index === 0 ? ' is-active' : '');
+        button.id = 'activity-tab-' + key;
+        button.dataset.activityTab = key;
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+        button.setAttribute('aria-controls', 'activity-panel-' + key);
+        button.tabIndex = index === 0 ? 0 : -1;
+        button.textContent = label;
+        nav.appendChild(button);
+
+        const panel = document.createElement('section');
+        panel.className = 'activity-detail-tab-panel' + (index === 0 ? ' is-active' : '');
+        panel.id = 'activity-panel-' + key;
+        panel.dataset.activityPanel = key;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', button.id);
+        panel.hidden = index !== 0;
+        panels.appendChild(panel);
+        panelMap.set(key, panel);
+    });
+
+    const overviewPanel = panelMap.get('overview');
+    const loadPanel = panelMap.get('load');
+    const intervalPanel = panelMap.get('intervals');
+    const sportPanel = panelMap.get('sport');
+    const insightPanel = panelMap.get('insights');
+    const dataPanel = panelMap.get('data');
+    const move = (id, target) => {
+        const element = document.getElementById(id);
+        if (element && target) target.appendChild(element);
+        return element;
+    };
+
+    move('activity-training-stimulus', overviewPanel);
+    const stimulusPanel = overviewPanel.querySelector('#activity-training-stimulus')?.closest('.activity-stimulus-panel');
+    if (stimulusPanel) overviewPanel.appendChild(stimulusPanel);
+
+    move('activity-telemetry-panel', loadPanel);
+    move('activity-intervals-panel', intervalPanel);
+    ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel'].forEach(id => move(id, sportPanel));
+    ['activity-rpe-panel', 'activity-zone-panel', 'activity-benefit-profile', 'activity-recovery-panel', 'activity-efficiency-panel', 'activity-load-context-panel', 'activity-comparison-panel'].forEach(id => move(id, insightPanel));
+    ['activity-fit-data-panel', 'activity-data-quality', 'activity-hr-series-status', 'activity-telemetry-diagnose', 'activity-telemetry-diagnostic-output'].forEach(id => move(id, dataPanel));
+
+    const dataHeading = document.createElement('div');
+    dataHeading.className = 'activity-detail-section-heading';
+    dataHeading.innerHTML = '<div><p class="activity-detail-kicker">HERKUNFT & VOLLSTÄNDIGKEIT</p><h3>Datenqualität und Quellen</h3></div>';
+    dataPanel.prepend(dataHeading);
+    const quality = dataPanel.querySelector('#activity-data-quality');
+    if (quality) quality.classList.add('activity-data-quality-card');
+    const diagnostic = dataPanel.querySelector('#activity-telemetry-diagnostic-output');
+    if (diagnostic) diagnostic.classList.add('activity-data-diagnostic');
+
+    const oldGrid = content.querySelector('.activity-detail-grid');
+    oldGrid?.remove();
+    overview.after(nav, panels);
+    modal.dataset.activityTabsReady = 'true';
+
+    nav.addEventListener('click', event => {
+        const button = event.target.closest('[data-activity-tab]');
+        if (!button) return;
+        activateActivityDetailTab(button.dataset.activityTab);
+    });
+    nav.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const buttons = [...nav.querySelectorAll('[data-activity-tab]')];
+        const current = buttons.indexOf(document.activeElement);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
+            : (current + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+        event.preventDefault();
+        buttons[next]?.focus();
+        activateActivityDetailTab(buttons[next]?.dataset.activityTab);
+    });
+    renderActivityDetailTabEmptyStates();
+}
+
+function activateActivityDetailTab(key) {
+    const modal = document.getElementById('csv-details-modal');
+    if (!modal) return;
+    modal.querySelectorAll('[data-activity-tab]').forEach(button => {
+        const active = button.dataset.activityTab === key;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+        button.tabIndex = active ? 0 : -1;
+    });
+    modal.querySelectorAll('[data-activity-panel]').forEach(panel => {
+        const active = panel.dataset.activityPanel === key;
+        panel.hidden = !active;
+        panel.classList.toggle('is-active', active);
+    });
+    if (key === 'load' && state.selectedActivityForModal) {
+        requestAnimationFrame(() => {
+            try { renderActivityTelemetryChart({ ...state.selectedActivityForModal, telemetry: getActivityTelemetry(state.selectedActivityForModal) }); } catch (_) {}
+            if (state.activityRouteMap) state.activityRouteMap.invalidateSize?.();
+        });
+    }
+}
+
+function renderActivityDetailTabEmptyStates() {
+    const messages = {
+        load: 'Für diese Aktivität sind keine auswertbaren Messreihen vorhanden.',
+        intervals: 'Für diese Aktivität sind keine Runden oder Intervallabschnitte dokumentiert.',
+        sport: 'Für diese Sportart liegen in dieser Aktivität keine zusätzlichen Detaildaten vor.',
+        insights: 'Eine weitergehende Einordnung ist mit den vorhandenen Daten noch nicht möglich.'
+    };
+    ['load', 'intervals', 'sport', 'insights'].forEach(key => {
+        const panel = document.querySelector('[data-activity-panel="' + key + '"]');
+        if (!panel) return;
+        let empty = panel.querySelector('.activity-tab-empty');
+        const meaningful = [...panel.children].some(child => !child.classList.contains('activity-tab-empty')
+            && !child.classList.contains('hidden') && (child.textContent || '').trim().length > 0);
+        if (!meaningful && !empty) {
+            empty = document.createElement('p');
+            empty.className = 'activity-tab-empty';
+            empty.textContent = messages[key];
+            panel.appendChild(empty);
+        } else if (meaningful && empty) empty.remove();
+    });
 }
 
 function renderActivityDetailNavigation(act) {
