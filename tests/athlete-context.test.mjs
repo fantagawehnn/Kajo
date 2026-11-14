@@ -65,6 +65,10 @@ assert.equal(context.season.races[1].priority, null);
 assert.equal(context.season.plannedActivities.length, 1);
 assert.equal(context.scope.allSportsActivityHistoryIncluded, true);
 assert.equal(context.trainingLoad.resolvedMode, 'garmin-native');
+assert.deepEqual(context.trainingLoad.documentedSessionRpeByDay, [
+  { date: '2026-11-12', recordedActivityCount: 1, activitiesWithSessionRpe: 1, activitiesMissingSessionRpe: 0, documentedLoadAU: 175, allRecordedActivitiesHaveSessionRpe: true },
+  { date: '2026-11-13', recordedActivityCount: 1, activitiesWithSessionRpe: 0, activitiesMissingSessionRpe: 1, documentedLoadAU: null, allRecordedActivitiesHaveSessionRpe: false }
+]);
 assert.deepEqual(context.trainingLoad.loadCoverageByActivityType.map(item => [item.type, item.activityCount, item.loadAvailableCount]), [['Kayaking', 1, 1], ['Run', 1, 0]]);
 assert.equal(context.scope.allSportsContributeToTotalLoadAndRecovery, false);
 assert.equal(context.scope.loadCompletenessMustBeChecked, true);
