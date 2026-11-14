@@ -253,7 +253,7 @@ function renderCalendarDayDetail(date, target) {
     const actualDurationKnown = data.durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
     const actualDuration = data.activities.length === 0 ? 0 : actualDurationKnown;
     const durationComplete = data.activities.length === 0 || data.durationComplete;
-    const durationText = (durationComplete ? '' : '≈') + calendarDayDurationValue(actualDuration);
+    const durationText = data.activities.length > 0 && data.durationRecords.length === 0 ? '—' : (durationComplete ? '' : '≈') + calendarDayDurationValue(actualDuration);
     const loadText = data.loadValue === null ? '—' : Number(data.loadValue).toFixed(0);
     const completedCount = data.activities.length;
     const readinessText = readiness.score === null ? '—' : String(readiness.score);
