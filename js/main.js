@@ -25,7 +25,7 @@ import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDa
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, toggleActivitySportFilter, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=30';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=1';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=2';
-import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=74';
+import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=75';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=3';
@@ -1051,13 +1051,27 @@ function mergeGarminActivity(existing, incoming) {
     return changed;
 }
 function selectAllGarminActivities(){document.querySelectorAll('#garmin-activity-preview [data-garmin-activity-id]:not(:disabled)').forEach(e=>{e.checked=true;});}
+let fitParserModulePromise = null;
+
 async function downloadGarminFitTelemetry(activityId) {
-    if (!window.JSZip || typeof FitParser !== 'function') throw new Error('FIT-Parser oder ZIP-Bibliothek ist nicht verfügbar.');
+    if (!window.JSZip) throw new Error('ZIP-Bibliothek ist nicht verfügbar.');
+    fitParserModulePromise ??= import('https://esm.sh/fit-file-parser@1.21.0?bundle');
+    let fitParserModule;
+    try {
+        fitParserModule = await fitParserModulePromise;
+    } catch (error) {
+        fitParserModulePromise = null;
+        throw new Error('FIT-Parser konnte nicht geladen werden: ' + (error?.message || 'CDN nicht erreichbar'));
+    }
+    const FitParser = fitParserModule.default?.default || fitParserModule.default || fitParserModule.FitParser;
+    if (typeof FitParser !== 'function') {
+        throw new Error('FIT-Parser wurde geladen, stellt aber keine verwendbare FitParser-Funktion bereit.');
+    }
     const result = await callGarminFunction({ action: 'download-fit', activityId: String(activityId) });
     const binary = atob(result.zipBase64 || '');
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const zip = await JSZip.loadAsync(bytes);
+    const zip = await window.JSZip.loadAsync(bytes);
     const fitFile = Object.values(zip.files).find(file => !file.dir && /\.fit$/i.test(file.name));
     if (!fitFile) throw new Error('In der Garmin-Datei wurde keine FIT-Datei gefunden.');
     const buffer = await fitFile.async('arraybuffer');
