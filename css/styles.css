@@ -6297,3 +6297,7 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
     #view-calendar .calendar-year-section-heading { gap:6px; }
     #view-calendar .calendar-year-section-heading h3 { font-size:12px; }
 }
+
+#view-calendar .calendar-year-week-cell.is-unknown small { color:var(--color-text-muted,#8b98a7); }
+#view-calendar .calendar-year-week-cell.is-partial small { color:var(--color-text-secondary,#b7c2cd); }
+#view-calendar .calendar-year-week-cell.is-complete small { color:#26352f; }
