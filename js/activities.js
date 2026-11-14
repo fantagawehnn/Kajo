@@ -174,20 +174,21 @@ async function importGarminActivityJsonTelemetry() {
         const previousSeries = previousTelemetry?.metricSeries && typeof previousTelemetry.metricSeries === 'object'
             ? previousTelemetry.metricSeries : {};
         const fetchedSeries = Object.fromEntries(Object.entries(metricSeries).map(([key, metric]) => [
-            key, { ...metric, time: Array.isArray(metric.time) ? metric.time : telemetry.time }
+            key, { ...metric }
         ]));
         const mergedSeries = { ...fetchedSeries, ...previousSeries };
         for (const [key, metric] of Object.entries(mergedSeries)) {
             if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
-            const fetchedAxis = fetchedSeries[key]?.time;
+            const fetchedAxis = telemetry.metricSeriesTime || telemetry.time;
             if (Array.isArray(fetchedAxis) && fetchedAxis.length === metric.values.length) {
                 mergedSeries[key] = { ...metric, time: fetchedAxis };
             }
         }
-        // Preserve FIT fields and all existing series; add missing JSON metrics with their own time axis.
+        // Preserve FIT fields and all existing series; store the JSON time axis once per activity.
         activity.garminTelemetry = {
             ...(telemetry || {}),
             ...(previousTelemetry || {}),
+            metricSeriesTime: previousTelemetry?.metricSeriesTime || telemetry.metricSeriesTime || telemetry.time,
             metricSeries: mergedSeries
         };
         activity.garminJsonImportedAt = new Date().toISOString();
@@ -263,7 +264,9 @@ function renderActivityDataQuality(activity) {
     const sampleCount = series.reduce((max, item) => Math.max(max, item.values.length), 0);
     const time = Array.isArray(telemetry.time) ? telemetry.time : [];
     const hasTimeAxis = series.some(item => {
-        const axis = Array.isArray(item.time) ? item.time : time;
+        const axis = Array.isArray(item.time) ? item.time
+            : Array.isArray(telemetry.metricSeriesTime) && telemetry.metricSeriesTime.length === item.values.length
+                ? telemetry.metricSeriesTime : time;
         return item.values.length >= 2 && axis.length === item.values.length
             && axis.every(value => Number.isFinite(Number(value)))
             && axis.slice(1).every((value, index) => Number(value) > Number(axis[index]));
