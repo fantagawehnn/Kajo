@@ -399,6 +399,19 @@
 
 <section id="training-load-overview" class="kajo-training-load-view space-y-4" aria-label="Training Load Übersicht">
  <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Training Load</h2><p id="training-load-model-date" class="kajo-training-load-muted">Modellstand wird geladen …</p></div><span id="training-load-period-label" class="kajo-analysis-period">Letzte 90 Tage</span></div>
+ <div id="analysis-period-buttons" class="analysis-period-buttons flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs" aria-label="Analysezeitraum">
+  <button type="button" onclick="setTimeframe('7d')" id="tf-7d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">7T</button>
+  <button type="button" onclick="setTimeframe('28d')" id="tf-28d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">28T</button>
+  <button type="button" onclick="setTimeframe('3m')" id="tf-3m" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-semibold">90T</button>
+  <button type="button" onclick="setTimeframe('6m')" id="tf-6m" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">6M</button>
+  <button type="button" onclick="setTimeframe('1y')" id="tf-1y" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">1J</button>
+  <button type="button" onclick="toggleCustomDatePicker()" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">Individuell</button>
+ </div>
+ <div id="custom-date-box" class="hidden flex flex-wrap items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+  <label class="text-slate-400">Von <input type="date" id="date-from" class="bg-slate-900 border border-slate-700 text-white px-2 py-1 rounded-lg ml-1"></label>
+  <label class="text-slate-400">Bis <input type="date" id="date-to" class="bg-slate-900 border border-slate-700 text-white px-2 py-1 rounded-lg ml-1"></label>
+  <button type="button" onclick="applyCustomDateRange()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg">Anwenden</button>
+ </div>
  <nav id="training-load-model-switch" class="kajo-load-model-nav" aria-label="Belastungsmodell auswählen">
   <button type="button" data-training-load-model="primary" onclick="setTrainingLoadModel('primary')" aria-pressed="true" class="active">Belastungsbilanz</button>
   <button type="button" data-training-load-model="srpe" onclick="setTrainingLoadModel('srpe')" aria-pressed="false">sRPE-Load</button>
@@ -438,7 +451,7 @@
      <div><p class="kajo-training-load-volume-label">Einheiten · Anzahl</p><div class="kajo-training-load-volume-chart"><canvas id="training-load-weekly-sessions-chart" aria-label="Trainingseinheiten pro Woche"></canvas></div></div>
     </div>
    </section>
-   <section class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h3>Belastungsanalyse</h3></div></div><div id="training-load-insight"></div></section>
+   <section id="training-load-insight-panel" class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h3>Belastungsanalyse</h3></div></div><div id="training-load-insight"></div></section>
    <p class="kajo-training-load-method">Die Belastungszeitreihe wird über die zentrale KAJO-Berechnung erstellt. Fehlende Daten werden nicht als Ruhetage oder Nullwerte interpretiert. Garmin-eigene Belastung und KAJO-HF-Zonenindex werden im Garmin-Pfad anhand der vorhandenen Abdeckung ausgewählt und nicht miteinander addiert.</p>
   </div>
  </div>
