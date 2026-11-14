@@ -6973,3 +6973,44 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   height:clamp(30px,5.8vw,58px) !important;
 }
 #view-calendar .calendar-footer { margin-top:8px; }
+
+
+/* KAJO day view cleanup: sport color is carried by the outline only. */
+#view-calendar .calendar-day-activity-row {
+  border:1px solid var(--activity-color) !important;
+  background:var(--color-surface-raised,#17212c) !important;
+}
+#view-calendar .calendar-day-activity-row.is-planned {
+  border-style:dashed !important;
+}
+#view-calendar .calendar-day-activity-row.is-completed {
+  border-style:solid !important;
+}
+#view-calendar .calendar-day-activity-row .calendar-activity-accent {
+  display:none !important;
+}
+#view-calendar .calendar-day-activity-sport {
+  color:var(--activity-color) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#view-calendar .calendar-day-recovery-rings {
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  grid-auto-flow:row !important;
+  width:100%;
+  min-width:0;
+  gap:4px 2px;
+  justify-items:center;
+  align-items:start;
+}
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring-wrap {
+  width:100%;
+  min-width:0;
+  flex:none;
+}
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring {
+  width:clamp(30px,5.8vw,58px) !important;
+  height:clamp(30px,5.8vw,58px) !important;
+}
+#view-calendar .calendar-day-health-rings { display:none !important; }
