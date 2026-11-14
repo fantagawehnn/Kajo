@@ -6516,3 +6516,60 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   padding-top:env(safe-area-inset-top) !important;
   border-radius:0 !important;
 }
+
+
+/* Kalender: vier Ansichten immer in einer einzigen Reihe */
+#view-calendar .calendar-topbar .calendar-view-switch,
+#view-calendar .calendar-view-switch {
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  grid-auto-flow:column;
+  width:100%;
+  min-width:0;
+}
+#view-calendar .calendar-view-switch > .calendar-view-button {
+  min-width:0 !important;
+  width:100%;
+  flex:0 0 auto !important;
+  white-space:nowrap;
+}
+
+/* Tageskennzahlen als kompakte, gleichmäßig angeordnete Kreise */
+#view-calendar .calendar-day-kpis {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:start;
+  justify-items:center;
+  gap:clamp(3px,1vw,12px);
+  padding:8px 2px 10px;
+}
+#view-calendar .calendar-day-kpis > .calendar-kpi-ring-wrap {
+  width:100%;
+  gap:6px;
+}
+#view-calendar .calendar-day-kpis .calendar-kpi-ring {
+  width:clamp(54px,8vw,72px);
+  height:clamp(54px,8vw,72px);
+  font-size:clamp(11px,1.5vw,15px);
+}
+#view-calendar .calendar-day-kpis .calendar-kpi-label {
+  max-width:100%;
+  font-size:clamp(8px,1vw,10px);
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+#view-calendar .calendar-day-kpis .calendar-kpi-label small {
+  text-align:center;
+  font-size:clamp(7px,.85vw,9px);
+}
+@media(max-width:480px) {
+  #view-calendar .calendar-day-kpis { gap:2px; }
+  #view-calendar .calendar-day-kpis .calendar-kpi-ring {
+    width:clamp(48px,15vw,62px);
+    height:clamp(48px,15vw,62px);
+    border-width:2px;
+    font-size:11px;
+  }
+  #view-calendar .calendar-day-kpis .calendar-kpi-label { font-size:8px; }
+  #view-calendar .calendar-day-kpis .calendar-kpi-label small { font-size:7px; }
+}
