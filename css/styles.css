@@ -5751,3 +5751,42 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
 #analysis-subpage-recovery > #recovery-subjective-group { order:3; }
 #analysis-subpage-recovery > #analysis-regeneration-section { order:4; }
 #analysis-subpage-recovery > #view-health-data { order:5; }
+
+
+/* Recovery: compact selectable metric circles with an inline trend panel. */
+#analysis-subpage-recovery .kajo-analysis-metric-row {
+  display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.45rem;
+  margin:.45rem 0 .9rem;
+}
+.kajo-recovery-metric {
+  min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  gap:.3rem; padding:.25rem .15rem; border:0; background:transparent; color:var(--kajo-text);
+  cursor:pointer; text-align:center; border-radius:14px; transition:transform .16s ease, background .16s ease;
+}
+.kajo-recovery-metric-circle {
+  width:76px; height:76px; max-width:100%; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--kajo-border); background:var(--kajo-surface); padding:.35rem;
+  transition:width .16s ease,height .16s ease,border-color .16s ease,background .16s ease;
+}
+.kajo-recovery-metric-circle strong { font-size:1rem; line-height:1.1; font-weight:750; overflow-wrap:anywhere; }
+.kajo-recovery-metric-label { font-size:.68rem; line-height:1.2; color:var(--kajo-muted); }
+.kajo-recovery-metric small { font-size:.56rem; color:var(--kajo-muted); line-height:1.15; }
+.kajo-recovery-metric.is-selected .kajo-recovery-metric-circle {
+  width:94px; height:94px; border-color:var(--kajo-blue); background:color-mix(in srgb,var(--kajo-blue) 10%,var(--kajo-surface));
+}
+.kajo-recovery-metric.is-selected .kajo-recovery-metric-circle strong { font-size:1.18rem; }
+.kajo-recovery-metric.is-selected .kajo-recovery-metric-label { color:var(--kajo-text); font-weight:700; }
+.kajo-recovery-metric:focus-visible { outline:2px solid var(--kajo-blue); outline-offset:3px; }
+#analysis-subpage-recovery #view-health-data { margin-top:.2rem; }
+#analysis-subpage-recovery #view-health-data .kajo-recovery-group-heading { align-items:center; }
+#analysis-subpage-recovery #health-history-range-controls { display:flex !important; }
+#analysis-subpage-recovery #health-metric-tabs { display:none !important; }
+@media(max-width:640px) {
+  #analysis-subpage-recovery .kajo-analysis-metric-row { grid-template-columns:repeat(5,minmax(0,1fr)); gap:.12rem; }
+  .kajo-recovery-metric-circle { width:58px; height:58px; padding:.2rem; }
+  .kajo-recovery-metric-circle strong { font-size:.78rem; }
+  .kajo-recovery-metric.is-selected .kajo-recovery-metric-circle { width:68px; height:68px; }
+  .kajo-recovery-metric.is-selected .kajo-recovery-metric-circle strong { font-size:.9rem; }
+  .kajo-recovery-metric-label { font-size:.55rem; }
+  .kajo-recovery-metric small { display:none; }
+}
