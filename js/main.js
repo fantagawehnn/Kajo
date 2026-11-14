@@ -401,6 +401,14 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
         }
         if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
 
+        const measurementSources = { ...(existing.measurementSources || {}) };
+        const garminMeasurementMeta = {
+            hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' },
+            rhr: { source: 'garmin', metric: 'resting-heart-rate', unit: 'bpm' },
+            sleepDuration: { source: 'garmin', metric: 'sleep-duration', unit: 'h' },
+            sleepScore: { source: 'garmin', metric: 'sleep-score', unit: 'score-0-100' },
+            respiration: { source: 'garmin', metric: 'respiration-rate', unit: 'breaths/min' }
+        };
         for (const [key, value] of Object.entries(candidates)) {
             if (value === null || !Number.isFinite(value)) continue;
             if (key === 'hrv' && value <= 0) continue;
@@ -412,10 +420,15 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
             // Bestehende Check-in-Werte haben Vorrang: manuelle Einträge werden nie überschrieben.
             if (existing[key] !== null && existing[key] !== undefined && existing[key] !== '') continue;
             updates[key] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            if (garminMeasurementMeta[key]) measurementSources[key] = garminMeasurementMeta[key];
         }
         const keys = Object.keys(updates);
         if (!keys.length) continue;
-        state.dailyCheckins[date] = { ...existing, ...updates };
+        state.dailyCheckins[date] = {
+            ...existing,
+            ...updates,
+            ...(Object.keys(measurementSources).length ? { measurementSources } : {})
+        };
         importedValues += keys.length;
         changedDays++;
     }
