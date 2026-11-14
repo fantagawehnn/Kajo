@@ -9,6 +9,7 @@ const main = readFileSync('js/main.js', 'utf8');
 const calendar = readFileSync('js/calendar.js', 'utf8');
 const state = readFileSync('js/state.js', 'utf8');
 const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
+const analysisInsights = readFileSync('js/analysis-insights.js', 'utf8');
 const charts = readFileSync('js/charts.js', 'utf8');
 const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
@@ -81,7 +82,7 @@ assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'E
 assert.ok(!html.includes('id="training-history-title"'), 'Performance no longer embeds the training-load history panel');
 assert.ok(analysisUI.includes("openTrainingMetric('fitness')"), 'CTL opens the existing fitness detail view');
 assert.ok(analysisUI.includes("openTrainingMetric('form')"), 'training balance opens the existing balance detail view');
-assert.ok(analysisUI.includes('toggleRecoveryMetric') && analysisUI.includes('renderMetricHistory(\'health\')'), 'recovery metric circles open their existing detail history');
+assert.ok(analysisInsights.includes('toggleRecoveryMetric') && analysisInsights.includes('renderMetricHistory(\'health\')'), 'recovery metric circles open their existing detail history');
 assert.ok(analysisUI.includes('kajo-analysis-metric-link'), 'supported analysis metrics are keyboard-accessible buttons');
 
 assert.ok(analysisUI.includes('Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt'), 'legacy HRV values remain unclassified');
