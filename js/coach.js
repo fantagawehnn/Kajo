@@ -42,7 +42,7 @@ function formatLoadDay(day, selectedSource) {
     if (day.ctl !== null || day.atl !== null || day.tsb !== null) {
         lines.push(`  CTL: ${formatNumber(day.ctl, 1)} | ATL: ${formatNumber(day.atl, 1)} | TSB: ${formatNumber(day.tsb, 1)}.`);
     }
-    return lines.join('\\n');
+    return lines.join('\n');
 }
 
 function dateKeyOffset(dateKey, offset) {
@@ -134,7 +134,7 @@ function buildLoadReply(context) {
 
     lines.push(`• Ausgewählte Belastungsquelle: ${context.trainingLoad.selectedSource || 'nicht angegeben'}.`);
     lines.push('Die Belastungssummen sind nur bei vollständig erfassten Zeiträumen und einheitlicher Quelle ausgewiesen. Ergänzende Sportarten werden in der Aktivitätshistorie berücksichtigt; eine Aufteilung der Tagesbelastung auf Kanu- und andere Sportarten ist aus den vorliegenden Tageswerten nicht zuverlässig möglich.');
-    return lines.join('\\n');
+    return lines.join('\n');
 }
 function buildRecoveryReply(context) {
     const lines = ['Deine Erholungsdaten:'];
@@ -166,7 +166,7 @@ function buildRecoveryReply(context) {
         ? `• Dokumentierte Gesundheitsereignisse: ${events.map(e => `${e.date}: ${e.status === 'sick' ? 'Krankheit' : 'Verletzung'}`).join('; ')}.`
         : '• Im betrachteten Zeitraum sind keine Krankheit oder Verletzung als Ereignis dokumentiert.');
     lines.push('Das ist eine Datenübersicht, keine medizinische Beurteilung. Fehlende Einträge sind kein Nachweis für Beschwerdefreiheit.');
-    return lines.join('\\n');
+    return lines.join('\n');
 }
 
 function buildCompetitionReply(context) {
@@ -184,7 +184,7 @@ function buildCompetitionReply(context) {
         ? `• Nächste geplante Einheiten: ${planned.map(item => `${item.date}: ${item.name || item.type || 'Training'}`).join('; ')}.`
         : '• Im Planungshorizont sind keine geplanten Einheiten hinterlegt.');
     lines.push('Eine Taper- oder Wettkampfempfehlung leite ich daraus noch nicht ab: Dafür fehlen hier unter anderem bestätigte Wettkampfziele, individuelle Reaktionsdaten und ein validiertes Planungsmodell.');
-    return lines.join('\\n');
+    return lines.join('\n');
 }
 
 function summarizeActivityWindow(activities, asOfDate, days) {
@@ -231,7 +231,7 @@ function buildActivitiesReply(context) {
         }
     }
     lines.push('Die Anzahl erfasster Aktivitäten ist nicht gleichbedeutend mit vollständiger Trainingsdokumentation.');
-    return lines.join('\\n');
+    return lines.join('\n');
 }
 
 function buildOverviewReply(context) {
@@ -250,7 +250,7 @@ function buildOverviewReply(context) {
         ? `• Nächster eingetragener Wettkampf: ${race.name || 'ohne Namen'} am ${race.date}${race.priority ? ` (Priorität ${race.priority})` : ''}.`
         : '• Kein zukünftiger Wettkampf im Kalender eingetragen.');
     lines.push('Du kannst gezielt nach Belastung, Erholung, Wettkämpfen oder deiner Trainingshistorie fragen.');
-    return lines.join('\\n');
+    return lines.join('\n');
 }
 
 export function buildLocalCoachReply(context, message = '') {
