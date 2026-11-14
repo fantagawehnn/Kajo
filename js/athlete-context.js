@@ -75,9 +75,11 @@ function summarizeCheckins(checkins, asOfDate, lookbackDays) {
             date,
             values: pickDefined(values, CHECKIN_FIELDS),
             provenance: {
-                hrv: values.hrvSource ?? values.hrvProvenance ?? null,
-                rhr: values.rhrSource ?? null,
-                sleep: values.sleepSource ?? null
+                hrv: values.measurementSources?.hrv ?? values.hrvSource ?? values.hrvProvenance ?? null,
+                rhr: values.measurementSources?.rhr ?? values.rhrSource ?? null,
+                sleepDuration: values.measurementSources?.sleepDuration ?? values.sleepSource ?? null,
+                sleepScore: values.measurementSources?.sleepScore ?? null,
+                respiration: values.measurementSources?.respiration ?? null
             }
         }));
 }
