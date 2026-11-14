@@ -43,9 +43,9 @@ function computeModelTimeline(model) {
   return computePerformanceTimeline(state.rawActivities, settings, state.profile);
 }
 function latestModelDay(timeline) {
-  return [...(timeline || [])].reverse().find(row =>
-    ['ctl', 'atl', 'tsb'].every(key => valid(row[key]))
-    && ['complete', 'confirmed-rest'].includes(row.dataStatus)
+  return [...(timeline || [])].reverse().find(x =>
+    ['ctl', 'atl', 'tsb'].every(key => valid(x[key]))
+    && ['complete', 'confirmed-rest'].includes(x.dataStatus)
   ) || null;
 }
 function getSource(day) {
