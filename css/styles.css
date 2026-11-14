@@ -7934,3 +7934,27 @@ html[data-theme="light"] #view-routes .kajo-route-form-heading h2,
 html[data-theme="light"] #view-routes .kajo-route-manager-toggle strong,
 html[data-theme="light"] #view-routes .kajo-route-details strong { color:#182431; }
 html[data-theme="light"] #view-routes .kajo-route-water-list > article { background:#fff; }
+
+
+/* Streckenverwaltung: Gewässer-Editor über Stift neben der Listenüberschrift */
+#view-routes .kajo-route-list-heading > div { display:flex; align-items:center; gap:12px; }
+#view-routes .kajo-route-manager-toggle {
+  display:grid; place-items:center; flex:0 0 32px; width:32px; height:32px;
+  padding:0; border:1px solid var(--kajo-border,#334155); border-radius:9px;
+  color:#43b9d0; background:transparent; cursor:pointer;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+#view-routes .kajo-route-manager-toggle:hover,
+#view-routes .kajo-route-manager-toggle:focus-visible,
+#view-routes .kajo-route-manager-toggle.is-open {
+  color:#7ddff0; border-color:rgba(67,185,208,.55);
+  background:rgba(67,185,208,.10); outline:none;
+}
+#view-routes .kajo-route-manager-toggle svg { width:16px; height:16px; }
+#view-routes .kajo-route-manager-inline {
+  margin:2px 0 14px; padding:14px;
+  border:1px solid var(--kajo-border,#334155); border-radius:13px;
+  background:var(--kajo-surface,#111827);
+}
+#view-routes .kajo-route-manager-inline .kajo-route-water-list { margin-top:13px; }
+html[data-theme="light"] #view-routes .kajo-route-manager-inline { background:#fff; }
