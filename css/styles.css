@@ -6573,3 +6573,103 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
   #view-calendar .calendar-day-kpis .calendar-kpi-label { font-size:8px; }
   #view-calendar .calendar-day-kpis .calendar-kpi-label small { font-size:7px; }
 }
+
+
+/* Kalender: Kreis-Darstellung in Belastungsanalyse, Recovery und Gesundheit */
+#view-calendar .calendar-day-load-rings,
+#view-calendar .calendar-day-recovery-rings,
+#view-calendar .calendar-day-health-rings {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:14px 18px;
+}
+#view-calendar .calendar-day-load-rings .calendar-kpi-ring-wrap,
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring-wrap,
+#view-calendar .calendar-day-health-rings .calendar-kpi-ring-wrap {
+  flex:0 0 86px;
+  width:86px;
+  min-width:0;
+}
+#view-calendar .calendar-day-load-rings .calendar-kpi-ring,
+#view-calendar .calendar-day-recovery-rings .calendar-kpi-ring,
+#view-calendar .calendar-day-health-rings .calendar-kpi-ring {
+  width:64px;
+  height:64px;
+}
+#view-calendar .calendar-day-recovery-rings { padding:2px 0; }
+
+/* Wochenansicht: keine feste Mindestbreite, auch nicht auf kleinen Displays */
+#view-calendar #cal-format-week {
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  overflow-x:hidden;
+  box-sizing:border-box;
+}
+#view-calendar .calendar-week-layout,
+#view-calendar .calendar-week-agenda,
+#view-calendar .calendar-week-agenda-day {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+#view-calendar .calendar-week-strip {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  box-sizing:border-box;
+}
+#view-calendar .calendar-week-agenda-day { overflow:hidden; }
+#view-calendar .calendar-week-activity {
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  border-left:2px solid color-mix(in srgb,var(--activity-color) 58%,var(--color-border,#293644));
+  overflow:hidden;
+}
+#view-calendar .calendar-week-activity.is-planned {
+  border-left-style:dashed;
+}
+#view-calendar .calendar-week-activity-main { min-width:0; overflow:hidden; }
+#view-calendar .calendar-week-activity-main strong {
+  display:flex;
+  min-width:0;
+  align-items:center;
+  gap:6px;
+  color:var(--color-text-primary,#f4f7fa);
+  overflow-wrap:anywhere;
+}
+#view-calendar .calendar-week-activity-dot {
+  display:inline-block;
+  flex:0 0 7px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--activity-color);
+}
+#view-calendar .calendar-week-activity.is-planned .calendar-week-activity-dot {
+  background:transparent;
+  border:1.5px solid var(--activity-color);
+}
+#view-calendar .calendar-week-source { display:none !important; }
+@media(max-width:640px) {
+  #view-calendar .calendar-week-agenda-day { padding:10px; }
+  #view-calendar .calendar-week-activity { gap:7px; padding:8px; }
+  #view-calendar .calendar-week-activity-main strong { font-size:10px; }
+  #view-calendar .calendar-week-activity-main small { font-size:9px; overflow-wrap:anywhere; }
+  #view-calendar .calendar-entry-status { font-size:8px; padding:3px 5px; }
+  #view-calendar .calendar-day-load-rings,
+  #view-calendar .calendar-day-recovery-rings,
+  #view-calendar .calendar-day-health-rings { gap:10px 8px; }
+  #view-calendar .calendar-day-load-rings .calendar-kpi-ring-wrap,
+  #view-calendar .calendar-day-recovery-rings .calendar-kpi-ring-wrap,
+  #view-calendar .calendar-day-health-rings .calendar-kpi-ring-wrap { flex-basis:76px; width:76px; }
+  #view-calendar .calendar-day-load-rings .calendar-kpi-ring,
+  #view-calendar .calendar-day-recovery-rings .calendar-kpi-ring,
+  #view-calendar .calendar-day-health-rings .calendar-kpi-ring { width:58px; height:58px; }
+}
