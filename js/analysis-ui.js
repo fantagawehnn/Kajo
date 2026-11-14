@@ -415,6 +415,7 @@ export function setPerformanceRange(range) {
     button.classList.toggle('is-active',button.dataset.performanceRange===range));
   if (selectedPerformanceMetric && ['vo2max','speed','hr','power','cadence'].includes(selectedPerformanceMetric))
     renderPerformanceTrend(selectedPerformanceMetric);
+  renderCanoePerformanceSummary();
 }
 if (typeof window !== 'undefined') {
   window.togglePerformanceMetric = togglePerformanceMetric;
