@@ -237,7 +237,7 @@ for (const metric of ['ctl', 'atl', 'tsb']) {
   assert.ok(html.includes('data-training-load-metric="' + metric + '"'), 'Training Load metric is directly selectable: ' + metric);
   assert.ok(trainingLoadView.includes(metric + ": ["), 'Training Load detail metadata exists: ' + metric);
 }
-assert.ok(main.includes("from './training-load-view.js'"), 'Training Load view module is wired into main navigation');
+assert.ok(main.includes("from './training-load-view.js"), 'Training Load view module is wired into main navigation');
 assert.ok(main.includes('kajoRenderTrainingLoadView: renderTrainingLoadView'), 'Training Load view refresh is exposed to shared timeframe controls');
 assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared analysis timeframe refreshes the Training Load chart');
 assert.ok(trainingLoadView.includes('computePerformanceTimeline(state.rawActivities, settings, state.profile)'), 'Training Load builds each selected model from the centralized performance timeline');
