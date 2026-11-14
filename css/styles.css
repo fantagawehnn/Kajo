@@ -5276,3 +5276,38 @@ html[data-theme="light"] #training-load-no-data {
   background:var(--kajo-surface);
   border-color:var(--kajo-border);
 }
+
+
+/* Die ergänzenden Load-Auswertungen nutzen dieselben Analyseflächen und Typografiestufen. */
+#load-supporting-analysis .kajo-training-load-panel {
+  min-width:0;
+  padding:clamp(12px,2vw,18px);
+  border:1px solid var(--kajo-border);
+  border-radius:var(--kajo-radius);
+  background:var(--kajo-surface);
+  box-shadow:none;
+}
+#load-supporting-analysis .kajo-training-load-heading h2,
+#load-supporting-analysis .kajo-training-load-panel h3 {
+  color:var(--kajo-text);
+  font-size:.92rem;
+  font-weight:750;
+}
+#load-supporting-analysis .kajo-training-load-muted,
+#load-supporting-analysis .text-\\[10px\\] {
+  color:var(--kajo-muted);
+}
+#load-supporting-analysis .kajo-training-load-panel select {
+  border:1px solid var(--kajo-border);
+  border-radius:8px;
+  background:var(--kajo-surface-raised);
+  color:var(--kajo-text-secondary);
+}
+#load-supporting-analysis .h-56 { height:clamp(175px,24vw,220px); }
+@media(max-width:640px) {
+  #load-supporting-analysis .kajo-training-load-panel { padding:11px; }
+}
+html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
+  background:var(--kajo-surface);
+  border-color:var(--kajo-border);
+}
