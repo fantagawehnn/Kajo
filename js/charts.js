@@ -623,17 +623,10 @@ export function getActivityTelemetrySeries(act) {
     // Add every additional Garmin JSON descriptor as a selectable raw series.
     // Do not apply quality thresholds or scale factors here; that cleanup is a later step.
     const rawSeries = telem.metricSeries && typeof telem.metricSeries === 'object' ? telem.metricSeries : {};
-    const canonicalRawAliases = {
-        directHeartRate: 'hr',
-        directElevation: 'altitude',
-        sumDistance: 'distance',
-        directRespirationRate: 'respirationRate',
-        directBodyBattery: 'bodyBattery'
-    };
+    const canonicalRawAliases = new Set(['directHeartRate', 'directElevation', 'sumDistance', 'directRespirationRate', 'directBodyBattery']);
     const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
     for (const [key, metric] of Object.entries(rawSeries)) {
         if (!metric || !Array.isArray(metric.values)) continue;
-        if (canonicalRawAliases[key] && result.some(item => item.key === canonicalRawAliases[key])) continue;
         const numericCount = metric.values.filter(value => value !== null && value !== undefined
             && value !== '' && Number.isFinite(Number(value))).length;
         if (numericCount < 2) continue;
@@ -641,7 +634,7 @@ export function getActivityTelemetrySeries(act) {
             ? metric.label : key.replace(/^direct/, '').replace(/^sum/, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
         result.push({
             key,
-            label,
+            label: canonicalRawAliases.has(key) ? label + ' (Rohwert)' : label,
             unit: typeof metric.unit === 'string' ? metric.unit : '',
             color: sportColor,
             values: metric.values.map(value => value === null || value === undefined || value === ''
