@@ -1,0 +1,1122 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://kajo.fantagawehn.workers.dev",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function fromBase64(value: string): Uint8Array {
+  return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+}
+
+function toBase64(value: Uint8Array): string {
+  let binary = "";
+  value.forEach((byte) => binary += String.fromCharCode(byte));
+  return btoa(binary);
+}
+
+async function encryptionKey(): Promise<CryptoKey> {
+  const raw = Deno.env.get("GARMIN_ENCRYPTION_KEY");
+  if (!raw) throw new Error("GARMIN_ENCRYPTION_KEY fehlt in den Edge-Function-Secrets.");
+  const bytes = fromBase64(raw);
+  if (bytes.length !== 32) throw new Error("GARMIN_ENCRYPTION_KEY muss Base64-kodiert genau 32 Bytes enthalten.");
+  return await crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+async function encryptSecret(value: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await encryptionKey();
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(value));
+  return { ciphertext: toBase64(new Uint8Array(encrypted)), iv: toBase64(iv) };
+}
+
+async function decryptSecret(ciphertext: string, iv: string): Promise<string> {
+  const key = await encryptionKey();
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: fromBase64(iv) },
+    key,
+    fromBase64(ciphertext),
+  );
+  return new TextDecoder().decode(decrypted);
+}
+
+// Garmin Personal API allows limited request bursts. Serialize calls and
+// keep a conservative 450 ms gap to avoid repeatedly crossing its 100/30 s limit.
+let lastGarminRequestAt = 0;
+let garminRequestQueue: Promise<void> = Promise.resolve();
+async function waitForGarminRequestSlot(): Promise<void> {
+  const slot = garminRequestQueue.then(async () => {
+    const waitMs = Math.max(0, 450 - (Date.now() - lastGarminRequestAt));
+    if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+    lastGarminRequestAt = Date.now();
+  });
+  garminRequestQueue = slot.catch(() => {});
+  await slot;
+}
+
+async function garminGet(token: string, path: string): Promise<unknown> {
+  await waitForGarminRequestSlot();
+  const response = await fetch(`https://personal.connectapi.garmin.com${path}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Garmin-Datenabruf fehlgeschlagen (HTTP ${response.status}). ${detail.slice(0, 250)}`);
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function isEmptyGarminPayload(payload: unknown): boolean {
+  if (payload == null) return true;
+  if (Array.isArray(payload)) return payload.length === 0;
+  if (typeof payload === "object") return Object.keys(payload as Record<string, unknown>).length === 0;
+  return false;
+}
+
+async function syncGarminHealthDay(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  date: string,
+  forceRefresh = false,
+) {
+  const { data: credential, error: credentialError } = await admin
+    .from("garmin_personal_credentials")
+    .select("encrypted_api_key, encryption_iv")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (credentialError) throw credentialError;
+  if (!credential) throw new Error("Für dieses Konto ist kein Garmin-Schlüssel hinterlegt.");
+
+  const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+  const token = await garminToken(apiKey);
+  const endpoints = [
+    { type: "menstrual_cycle_summary", path: `/periodichealth-service/menstrualcycle/summary/${date}` },
+    { type: "menstrual_cycle_day_view", path: `/periodichealth-service/menstrualcycle/dayview/${date}?todayDate=${new Date().toISOString().slice(0, 10)}` },
+    { type: "daily_summary", path: `/usersummary-service/v2/dailysummaries?startDate=${date}&endDate=${date}` },
+    { type: "heart_rate", path: `/wellness-service/wellness/dailyHeartRate?date=${date}` },
+    { type: "hrv_daily", path: `/hrv-service/hrv/daily/${date}/${date}` },
+    { type: "hrv_detail", path: `/hrv-service/hrv/${date}` },
+    { type: "sleep_detail", path: `/sleep-service/sleep/dailySleep?date=${date}` },
+    { type: "sleep_summaries", path: `/sleep-service/sleep/dailySleepSummariesByDate?startDate=${date}&endDate=${date}` },
+    { type: "stress", path: `/usersummary-service/stats/stress/daily/${date}/${date}` },
+    { type: "steps", path: `/usersummary-service/stats/steps/daily/${date}/${date}` },
+    { type: "hydration", path: `/usersummary-service/stats/hydration/daily/${date}/${date}` },
+    { type: "body_battery", path: `/wellness-service/wellness/bodyBattery/reports/daily?startDate=${date}&endDate=${date}` },
+    { type: "spo2", path: `/wellness-service/wellness/daily/spo2acclimation/${date}` },
+    { type: "weight", path: `/weight-service/weight/range/${date}/${date}?includeAll=true` },
+    { type: "fitness_age", path: `/fitnessage-service/fitnessage/v2/${date}` },
+    { type: "wellness_activity", path: `/wellnessactivity-service/activity/summary/range/${date}/${date}` },
+    { type: "nutrition", path: `/nutrition-service/food/logs/${date}` },
+  ];
+
+  const results: Array<Record<string, unknown>> = [];
+  for (const endpoint of endpoints) {
+    try {
+      // Do not spend Garmin API calls on endpoints already imported successfully.
+      // The no_data marker is deliberately retried so data that becomes available
+      // later (including cycle data) can still be picked up.
+      const { data: existing, error: existingError } = await admin
+        .from("garmin_health_records")
+        .select("payload")
+        .eq("user_id", userId)
+        .eq("data_type", endpoint.type)
+        .eq("record_date", date)
+        .eq("record_key", "daily")
+        .maybeSingle();
+      if (existingError) throw existingError;
+      if (!forceRefresh && existing?.payload && !isEmptyGarminPayload(existing.payload) &&
+          JSON.stringify(existing.payload) !== JSON.stringify({ no_data: true })) {
+        results.push({ dataType: endpoint.type, status: "already_saved" });
+        continue;
+      }
+
+      let payload: unknown;
+      try {
+        payload = await garminGet(token, endpoint.path);
+      } catch (firstError) {
+        const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
+        if (!/HTTP 520/.test(firstMessage)) throw firstError;
+        // Cloudflare 520 is often transient; make one delayed retry.
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        payload = await garminGet(token, endpoint.path);
+      }
+      const hasData = !isEmptyGarminPayload(payload);
+      const now = new Date().toISOString();
+
+      // An empty response must never erase a previously stored, meaningful payload.
+      if (!hasData && existing?.payload && !isEmptyGarminPayload(existing.payload) &&
+          JSON.stringify(existing.payload) !== JSON.stringify({ no_data: true })) {
+        results.push({ dataType: endpoint.type, status: "preserved_existing_data" });
+        continue;
+      }
+
+      const { error } = await admin.from("garmin_health_records").upsert({
+        user_id: userId,
+        data_type: endpoint.type,
+        record_date: date,
+        record_key: "daily",
+        source_endpoint: endpoint.path,
+        payload: hasData ? payload : { no_data: true },
+        fetched_at: now,
+        updated_at: now,
+      }, { onConflict: "user_id,data_type,record_date,record_key" });
+      if (error) throw error;
+      results.push({ dataType: endpoint.type, status: hasData ? "saved" : "no_data" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
+      const isRateLimited = /HTTP 429/.test(message);
+      const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
+      results.push({
+        dataType: endpoint.type,
+        status: isRateLimited ? "rate_limited" : "error",
+        error: isRateLimited
+          ? "Garmin hat eine Abrufpause angefordert. Die Synchronisierung wartet automatisch und versucht es erneut."
+          : message.slice(0, 220),
+        ...(isRateLimited ? { retryInSeconds: retryMatch ? Number(retryMatch[1]) : 30 } : {}),
+      });
+      // Garmin has rate-limited this account: stop immediately instead of
+      // sending the remaining endpoint requests and making the limit worse.
+      if (isRateLimited) break;
+    }
+  }
+
+  const failed = results.filter((item) => item.status === "error" || item.status === "rate_limited").length;
+  const rateLimited = results.some((item) => item.status === "rate_limited");
+  const retryInSeconds = Number(results.find((item) => item.status === "rate_limited")?.retryInSeconds || 0);
+  if (!failed) {
+    const { error } = await admin.from("garmin_connections").update({
+      last_health_sync_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+    if (error) throw error;
+  }
+  return {
+    date,
+    status: rateLimited ? "rate_limited" : failed ? "partial" : "complete",
+    rateLimited,
+    retryInSeconds,
+    totalEndpoints: endpoints.length,
+    saved: results.filter((item) => item.status === "saved" || item.status === "preserved_existing_data" || item.status === "already_saved").length,
+    noData: results.filter((item) => item.status === "no_data").length,
+    failed,
+    results,
+  };
+}
+
+function addUtcDays(date: string, days: number): string {
+  const value = new Date(`${date}T00:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+async function syncGarminHealthHistoryBatch(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  startDate: string,
+  endDate: string,
+  rescanCompleted = false,
+  forceRefresh = false,
+) {
+  const syncType = "health_history";
+  let { data: state, error: stateError } = await admin
+    .from("garmin_sync_state")
+    .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
+    .eq("user_id", userId)
+    .eq("sync_type", syncType)
+    .maybeSingle();
+  if (stateError) throw stateError;
+
+  if (!state) {
+    const { data: created, error: createError } = await admin
+      .from("garmin_sync_state")
+      .insert({
+        user_id: userId,
+        sync_type: syncType,
+        cursor_date: startDate,
+        range_start_date: startDate,
+        range_end_date: endDate,
+        status: "pending",
+        cursor_offset: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
+      .single();
+    if (createError) throw createError;
+    state = created;
+  } else if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
+    const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
+      .update({
+        cursor_date: startDate,
+        range_start_date: startDate,
+        range_end_date: endDate,
+        cursor_offset: 0,
+        status: "pending",
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("sync_type", syncType)
+      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
+      .single();
+    if (resetError) throw resetError;
+    state = resetState;
+  }
+
+  let cursorDate = state.cursor_date ?? startDate;
+  if (state.status === "completed" && cursorDate > endDate) {
+    if (!rescanCompleted) {
+      return { status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
+        message: "Der ausgewählte Garmin-Zeitraum ist bereits vollständig importiert." };
+    }
+    // Manual range syncs may rescan completed dates: successful health records
+    // are skipped per endpoint, while missing/no-data records can be retried.
+    const { data: restarted, error: restartError } = await admin.from("garmin_sync_state")
+      .update({
+        cursor_date: startDate,
+        status: "pending",
+        cursor_offset: 0,
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("sync_type", syncType)
+      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
+      .single();
+    if (restartError) throw restartError;
+    state = restarted;
+    cursorDate = startDate;
+  }
+
+  const { error: runningError } = await admin.from("garmin_sync_state").update({
+    status: "running",
+    last_started_at: new Date().toISOString(),
+    last_error: null,
+    updated_at: new Date().toISOString(),
+  }).eq("user_id", userId).eq("sync_type", syncType);
+  if (runningError) throw runningError;
+
+  const batchLimit = 2;
+  const processed: Array<Record<string, unknown>> = [];
+  let failed = false;
+  let rateLimited = false;
+  let retryInSeconds = 0;
+  for (let index = 0; index < batchLimit && cursorDate <= endDate; index++) {
+    const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);
+    processed.push(dayResult);
+    if (dayResult.failed !== 0) {
+      failed = true;
+      rateLimited = dayResult.status === "rate_limited";
+      retryInSeconds = Number(dayResult.retryInSeconds || 0);
+      const { error } = await admin.from("garmin_sync_state").update({
+        status: "error",
+        last_error: `Abruffehler am ${cursorDate}; derselbe Tag wird beim nächsten Lauf erneut versucht.`,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", userId).eq("sync_type", syncType);
+      if (error) throw error;
+      break;
+    }
+    cursorDate = addUtcDays(cursorDate, 1);
+    const finished = cursorDate > endDate;
+    const { error } = await admin.from("garmin_sync_state").update({
+      cursor_date: cursorDate,
+      status: finished ? "completed" : "running",
+      last_success_at: new Date().toISOString(),
+      last_error: null,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("sync_type", syncType);
+    if (error) throw error;
+    if (finished) break;
+  }
+  const remainingDays = cursorDate > endDate ? 0 :
+    Math.floor((new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${cursorDate}T00:00:00Z`).getTime()) / 86400000) + 1;
+  return {
+    status: rateLimited ? "rate_limited" : failed ? "partial" : remainingDays === 0 ? "complete" : "in_progress",
+    rateLimited,
+    retryInSeconds,
+    startDate, endDate, nextDate: cursorDate, processedDays: processed.length,
+    remainingDays, batchLimit, results: processed,
+  };
+}
+
+function activityRows(payload: unknown): Record<string, unknown>[] {
+  if (Array.isArray(payload)) return payload.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"));
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    for (const key of ["activities", "activityList", "data"]) {
+      if (Array.isArray(record[key])) {
+        return (record[key] as unknown[]).filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"));
+      }
+    }
+  }
+  throw new Error("Garmin hat eine unerwartete Antwortstruktur für die Aktivitätenliste geliefert.");
+}
+
+async function probeGarminEndpoint(label: string, token: string, path: string) {
+  try {
+    const response = await fetch(`https://personal.connectapi.garmin.com${path}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    const raw = await response.text();
+    let payload: unknown = null;
+    if (raw) {
+      try { payload = JSON.parse(raw); } catch { payload = raw; }
+    }
+    let dataShape = "leer";
+    let itemCount: number | null = null;
+    if (Array.isArray(payload)) {
+      itemCount = payload.length;
+      dataShape = payload.length ? "Array mit Daten" : "leeres Array";
+    } else if (payload && typeof payload === "object") {
+      const record = payload as Record<string, unknown>;
+      const arrays = Object.entries(record).filter(([, value]) => Array.isArray(value));
+      if (arrays.length) {
+        itemCount = arrays.reduce((sum, [, value]) => sum + (value as unknown[]).length, 0);
+        dataShape = itemCount ? "Objekt mit Datensätzen" : "Objekt mit leeren Listen";
+      } else {
+        dataShape = Object.keys(record).length ? "Objekt" : "leeres Objekt";
+      }
+    } else if (typeof payload === "string" && payload.length) {
+      dataShape = "Nicht-JSON-Antwort";
+    }
+    return { label, status: response.status, ok: response.ok, dataShape, itemCount };
+  } catch {
+    return { label, status: 0, ok: false, dataShape: "Verbindungsfehler", itemCount: null };
+  }
+}
+
+function safeActivityPreview(item: Record<string, unknown>) {
+  const type = item.activityType && typeof item.activityType === "object"
+    ? (item.activityType as Record<string, unknown>).typeKey ?? (item.activityType as Record<string, unknown>).type
+    : item.activityType;
+  return {
+    activityId: item.activityId ?? item.id ?? null,
+    activityName: item.activityName ?? item.name ?? "Garmin-Aktivität",
+    startTimeLocal: item.startTimeLocal ?? item.startTime ?? null,
+    startTimeGMT: item.startTimeGMT ?? null,
+    duration: item.duration ?? item.elapsedDuration ?? null,
+    distance: item.distance ?? null,
+    averageHR: item.averageHR ?? item.avgHeartRate ?? null,
+    maxHR: item.maxHR ?? item.maxHeartRate ?? null,
+    trainingLoad: item.trainingLoad ?? item.activityTrainingLoad ?? item.aerobicTrainingLoad ?? null,
+    aerobicTrainingEffect: item.aerobicTrainingEffect ?? item.trainingEffect ?? null,
+    anaerobicTrainingEffect: item.anaerobicTrainingEffect ?? null,
+    activityType: type ?? null,
+  };
+}
+
+async function garminDownloadFit(token: string, activityId: string): Promise<string> {
+  const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/zip, application/octet-stream, */*" },
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Garmin-FIT-Download fehlgeschlagen (HTTP ${response.status}). ${detail.slice(0, 200)}`);
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length) throw new Error("Garmin hat eine leere Aktivitätsdatei geliefert.");
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+
+async function garminDownloadFitFile(token: string, activityId: string): Promise<{ bytes: Uint8Array; extension: "zip" | "fit"; contentType: string }> {
+  const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/zip, application/octet-stream, */*" },
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Garmin-FIT-Download fehlgeschlagen (HTTP ${response.status}). ${detail.slice(0, 200)}`);
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length) throw new Error("Garmin hat eine leere Aktivitätsdatei geliefert.");
+  if (bytes.length > 50 * 1024 * 1024) throw new Error("Die FIT-Datei überschreitet das konfigurierte Speicherlimit von 50 MB.");
+
+  const isZip = bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b &&
+    ((bytes[2] === 0x03 && bytes[3] === 0x04) || (bytes[2] === 0x05 && bytes[3] === 0x06) || (bytes[2] === 0x07 && bytes[3] === 0x08));
+  const isFit = bytes.length >= 12 && bytes[8] === 0x2e && bytes[9] === 0x46 && bytes[10] === 0x49 && bytes[11] === 0x54;
+  if (!isZip && !isFit) throw new Error("Garmin hat eine Datei mit unbekanntem Format geliefert. Es wurde nichts gespeichert.");
+
+  return {
+    bytes,
+    extension: isZip ? "zip" : "fit",
+    contentType: isZip ? "application/zip" : "application/fit",
+  };
+}
+
+async function syncActivityFilesBatch(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  batchSize = 5,
+) {
+  const { data: activities, error: activitiesError } = await admin
+    .from("garmin_activities")
+    .select("garmin_activity_id, start_time")
+    .eq("user_id", userId)
+    .order("start_time", { ascending: false })
+    .limit(1000);
+  if (activitiesError) throw activitiesError;
+
+  const { data: detailRows, error: detailRowsError } = await admin
+    .from("garmin_activity_details")
+    .select("garmin_activity_id, detail_synced_at, workouts_synced_at, fit_synced_at")
+    .eq("user_id", userId);
+  if (detailRowsError) throw detailRowsError;
+
+  const detailById = new Map(
+    (detailRows ?? []).map((row) => [String(row.garmin_activity_id), row]),
+  );
+  const pending = (activities ?? []).filter((activity) => {
+    const saved = detailById.get(String(activity.garmin_activity_id));
+    return !saved?.detail_synced_at || !saved?.workouts_synced_at || !saved?.fit_synced_at;
+  });
+  const selected = pending.slice(0, batchSize);
+
+  if (!selected.length) {
+    return {
+      status: "complete",
+      totalActivities: activities?.length ?? 0,
+      pendingActivities: 0,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      remaining: 0,
+      results: [],
+    };
+  }
+
+  const { data: credential, error: credentialError } = await admin
+    .from("garmin_personal_credentials")
+    .select("encrypted_api_key, encryption_iv")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (credentialError) throw credentialError;
+  if (!credential) throw new Error("Für dieses Konto ist kein Garmin-Schlüssel hinterlegt.");
+
+  const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+  const token = await garminToken(apiKey);
+  const results = [];
+
+  for (const activity of selected) {
+    const activityId = String(activity.garmin_activity_id);
+    const saved = detailById.get(activityId);
+    const result: Record<string, unknown> = {
+      activityId,
+      details: saved?.detail_synced_at ? "already_saved" : "pending",
+      workouts: saved?.workouts_synced_at ? "already_saved" : "pending",
+      fit: saved?.fit_synced_at ? "already_saved" : "pending",
+      errors: [],
+    };
+    const errors: string[] = [];
+    const now = new Date().toISOString();
+
+    if (!saved?.detail_synced_at) {
+      try {
+        const detail = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}`);
+        if (detail == null) throw new Error("Keine Aktivitätsdetails von Garmin erhalten.");
+        const { error } = await admin.from("garmin_activity_details").upsert({
+          user_id: userId,
+          garmin_activity_id: activityId,
+          activity_detail: detail,
+          detail_synced_at: now,
+          updated_at: now,
+        }, { onConflict: "user_id,garmin_activity_id" });
+        if (error) throw error;
+        result.details = "saved";
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Details.";
+        errors.push(`Details: ${message.slice(0, 220)}`);
+        result.details = "error";
+      }
+    }
+
+    if (!saved?.workouts_synced_at) {
+      try {
+        const workouts = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}/workouts`);
+        const { error } = await admin.from("garmin_activity_details").upsert({
+          user_id: userId,
+          garmin_activity_id: activityId,
+          activity_workouts: workouts,
+          workouts_synced_at: now,
+          updated_at: now,
+        }, { onConflict: "user_id,garmin_activity_id" });
+        if (error) throw error;
+        result.workouts = workouts == null ? "no_data" : "saved";
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Workouts.";
+        errors.push(`Workouts: ${message.slice(0, 220)}`);
+        result.workouts = "error";
+      }
+    }
+
+    if (!saved?.fit_synced_at) {
+      try {
+        const fitFile = await garminDownloadFitFile(token, activityId);
+        const objectPath = `${userId}/${activityId}.${fitFile.extension}`;
+        const { error: uploadError } = await admin.storage.from("garmin-fit").upload(
+          objectPath,
+          fitFile.bytes,
+          { contentType: fitFile.contentType, upsert: true },
+        );
+        if (uploadError) throw uploadError;
+        const { error: pathSaveError } = await admin.from("garmin_activity_details").upsert({
+          user_id: userId,
+          garmin_activity_id: activityId,
+          fit_object_path: objectPath,
+          fit_synced_at: now,
+          updated_at: now,
+        }, { onConflict: "user_id,garmin_activity_id" });
+        if (pathSaveError) throw pathSaveError;
+        result.fit = "saved";
+        result.fileType = fitFile.extension;
+        result.fileSizeBytes = fitFile.bytes.length;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unbekannter Fehler beim FIT-Download.";
+        errors.push(`FIT: ${message.slice(0, 220)}`);
+        result.fit = "error";
+      }
+    }
+
+    if (errors.length) {
+      result.errors = errors;
+      await admin.from("garmin_activity_details").upsert({
+        user_id: userId,
+        garmin_activity_id: activityId,
+        last_error: errors.join(" | ").slice(0, 1000),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,garmin_activity_id" });
+    } else {
+      await admin.from("garmin_activity_details").update({
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", userId).eq("garmin_activity_id", activityId);
+      result.errors = [];
+    }
+    results.push(result);
+  }
+
+  const failed = results.filter((item) => item.details === "error" || item.workouts === "error" || item.fit === "error").length;
+  const { data: refreshedDetails, error: refreshedError } = await admin
+    .from("garmin_activity_details")
+    .select("garmin_activity_id, detail_synced_at, workouts_synced_at, fit_synced_at")
+    .eq("user_id", userId);
+  if (refreshedError) throw refreshedError;
+  const refreshedById = new Map(
+    (refreshedDetails ?? []).map((row) => [String(row.garmin_activity_id), row]),
+  );
+  const remaining = (activities ?? []).filter((activity) => {
+    const row = refreshedById.get(String(activity.garmin_activity_id));
+    return !row?.detail_synced_at || !row?.workouts_synced_at || !row?.fit_synced_at;
+  }).length;
+
+  return {
+    status: failed ? "partial" : remaining ? "in_progress" : "complete",
+    totalActivities: activities?.length ?? 0,
+    pendingActivities: pending.length,
+    processed: selected.length,
+    succeeded: selected.length - failed,
+    failed,
+    remaining,
+    results,
+  };
+}
+
+async function syncSingleActivityFiles(admin: ReturnType<typeof createClient>, userId: string) {
+  const { data: activity, error: activityError } = await admin
+    .from("garmin_activities")
+    .select("garmin_activity_id, start_time")
+    .eq("user_id", userId)
+    .order("start_time", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (activityError) throw activityError;
+  if (!activity) throw new Error("Für dieses Konto wurde noch keine Garmin-Aktivität synchronisiert.");
+
+  const activityId = String(activity.garmin_activity_id);
+  const { data: credential, error: credentialError } = await admin
+    .from("garmin_personal_credentials")
+    .select("encrypted_api_key, encryption_iv")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (credentialError) throw credentialError;
+  if (!credential) throw new Error("Für dieses Konto ist kein Garmin-Schlüssel hinterlegt.");
+
+  const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+  const token = await garminToken(apiKey);
+
+  const [activityDetail, activityWorkouts, fitFile] = await Promise.all([
+    garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}`),
+    garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}/workouts`),
+    garminDownloadFitFile(token, activityId),
+  ]);
+  if (activityDetail == null) throw new Error("Garmin hat keine Aktivitätsdetails geliefert. Es wurde nichts gespeichert.");
+
+  const now = new Date().toISOString();
+  const { error: detailSaveError } = await admin.from("garmin_activity_details").upsert({
+    user_id: userId,
+    garmin_activity_id: activityId,
+    activity_detail: activityDetail,
+    activity_workouts: activityWorkouts,
+    detail_synced_at: now,
+    workouts_synced_at: now,
+    updated_at: now,
+  }, { onConflict: "user_id,garmin_activity_id" });
+  if (detailSaveError) throw detailSaveError;
+
+  const objectPath = `${userId}/${activityId}.${fitFile.extension}`;
+  const { error: uploadError } = await admin.storage.from("garmin-fit").upload(
+    objectPath,
+    fitFile.bytes,
+    { contentType: fitFile.contentType, upsert: true },
+  );
+  if (uploadError) throw uploadError;
+
+  const { error: pathSaveError } = await admin.from("garmin_activity_details").update({
+    fit_object_path: objectPath,
+    fit_synced_at: now,
+    last_error: null,
+    updated_at: now,
+  }).eq("user_id", userId).eq("garmin_activity_id", activityId);
+  if (pathSaveError) throw pathSaveError;
+
+  return {
+    status: "ok",
+    activityId,
+    detailStored: true,
+    workoutsStored: activityWorkouts != null,
+    fitStored: true,
+    fileType: fitFile.extension,
+    fileSizeBytes: fitFile.bytes.length,
+    storagePathSaved: true,
+  };
+}
+
+async function garminToken(apiKey: string): Promise<string> {
+  const response = await fetch(
+    "https://personal.connectapi.garmin.com/personalapitoken-service/personal-api/personal-api-key/token",
+    { method: "POST", headers: { Authorization: `ApiKey ${apiKey}` } },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Garmin hat den Schlüssel nicht bestätigt (HTTP ${response.status}). ${detail.slice(0, 250)}`);
+  }
+  // Garmin may return the access token as plain text rather than a JSON object.
+  const responseBody = (await response.text()).trim();
+  let token = responseBody;
+  try {
+    const payload = JSON.parse(responseBody);
+    if (typeof payload === "string") {
+      token = payload;
+    } else if (payload && typeof payload === "object") {
+      token = payload.access_token ?? payload.accessToken ?? payload.token ?? "";
+    }
+  } catch {
+    // A raw JWT is expected to be plain text and is handled below.
+  }
+  if (typeof token !== "string" || !token.trim()) {
+    throw new Error("Garmin-Antwort enthält kein erkanntes Zugriffstoken.");
+  }
+  return token.trim();
+}
+
+async function syncGarminActivitiesForUser(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  startDate: string,
+  endDate: string,
+  onlyMissingDays = false,
+) {
+  const { data: credential, error: credentialError } = await admin
+    .from("garmin_personal_credentials")
+    .select("encrypted_api_key, encryption_iv")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (credentialError) throw credentialError;
+  if (!credential) return { userId, status: "skipped", reason: "no_credential", fetched: 0, stored: 0 };
+
+  const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+  const token = await garminToken(apiKey);
+  const rows: Record<string, unknown>[] = [];
+  let syncRanges = [{ startDate, endDate }];
+  let skippedDays = 0;
+
+  if (onlyMissingDays) {
+    // Use the activity's local start date where available so midnight UTC
+    // offsets do not cause an already-imported local day to be fetched again.
+    const broadStart = addUtcDays(startDate, -1);
+    const broadEnd = addUtcDays(endDate, 1);
+    const { data: existingActivities, error: existingActivitiesError } = await admin
+      .from("garmin_activities")
+      .select("start_time,activity")
+      .eq("user_id", userId)
+      .gte("start_time", `${broadStart}T00:00:00.000Z`)
+      .lte("start_time", `${broadEnd}T23:59:59.999Z`);
+    if (existingActivitiesError) throw existingActivitiesError;
+
+    const existingDates = new Set((existingActivities ?? []).map((row) => {
+      const activity = row.activity && typeof row.activity === "object"
+        ? row.activity as Record<string, unknown>
+        : {};
+      const localStart = typeof activity.startTimeLocal === "string" ? activity.startTimeLocal : "";
+      const storedStart = typeof row.start_time === "string" ? row.start_time : "";
+      return /^\d{4}-\d{2}-\d{2}/.test(localStart)
+        ? localStart.slice(0, 10)
+        : storedStart.slice(0, 10);
+    }).filter((date) => date >= startDate && date <= endDate));
+
+    const missingDates: string[] = [];
+    for (let date = startDate; date <= endDate; date = addUtcDays(date, 1)) {
+      if (!existingDates.has(date)) missingDates.push(date);
+    }
+    skippedDays = (Math.floor((new Date(`${endDate}T00:00:00Z`).getTime() -
+      new Date(`${startDate}T00:00:00Z`).getTime()) / 86400000) + 1) - missingDates.length;
+    syncRanges = missingDates.map((date) => ({ startDate: date, endDate: date }));
+  }
+
+  const pageSize = 100;
+  const maxPages = 20;
+  for (const range of syncRanges) {
+    for (let page = 0; page < maxPages; page++) {
+      const params = new URLSearchParams({
+        start: String(page * pageSize),
+        limit: String(pageSize),
+        startDate: range.startDate,
+        endDate: range.endDate,
+      });
+      const payload = await garminGet(token, `/activitylist-service/activities/search/activities?${params.toString()}`);
+      const pageRows = activityRows(payload);
+      rows.push(...pageRows);
+      if (pageRows.length < pageSize) break;
+      if (page === maxPages - 1) {
+        throw new Error(`Der Aktivitätstag ${range.startDate} enthält mehr als 2.000 Einträge.`);
+      }
+    }
+  }
+
+  const now = new Date().toISOString();
+  const records = rows.map((item) => {
+    const activity = safeActivityPreview(item);
+    const activityId = activity.activityId == null ? "" : String(activity.activityId);
+    if (!/^\d+$/.test(activityId)) return null;
+    const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
+    const parsedStart = rawStart ? new Date(String(rawStart)) : null;
+    const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
+    const duration = Number(activity.duration);
+    const distance = Number(activity.distance);
+    return {
+      user_id: userId,
+      garmin_activity_id: activityId,
+      activity,
+      start_time: startTime,
+      activity_type: activity.activityType == null ? null : String(activity.activityType),
+      duration_seconds: Number.isFinite(duration) && duration > 0 ? duration : null,
+      distance_meters: Number.isFinite(distance) && distance > 0 ? distance : null,
+      last_seen_at: now,
+      updated_at: now,
+    };
+  }).filter((row) => row !== null);
+
+  for (let offset = 0; offset < records.length; offset += 100) {
+    const { error: upsertError } = await admin.from("garmin_activities").upsert(records.slice(offset, offset + 100), {
+      onConflict: "user_id,garmin_activity_id",
+      ignoreDuplicates: false,
+    });
+    if (upsertError) throw upsertError;
+  }
+  const { error: statusError } = await admin.from("garmin_connections").update({
+    last_activity_sync_at: now,
+    last_error: null,
+    updated_at: now,
+  }).eq("user_id", userId);
+  if (statusError) throw statusError;
+  return {
+    userId, status: "ok", fetched: rows.length, stored: records.length,
+    skippedDays, startDate, endDate,
+    ...(onlyMissingDays ? { checkedOnlyMissingDays: true } : {}),
+  };
+}
+
+function summarizeActivityJson(payload: unknown) {
+  const arrayPaths: Array<{ path: string; length: number }> = [];
+  const matchingPaths: string[] = [];
+  const seen = new Set<object>();
+  const walk = (value: unknown, path = "$", depth = 0) => {
+    if (depth > 8 || value == null || typeof value !== "object") return;
+    if (seen.has(value as object)) return;
+    seen.add(value as object);
+    if (Array.isArray(value)) {
+      arrayPaths.push({ path, length: value.length });
+      if (/(sample|record|detail|heart.?rate|hr|time|timestamp)/i.test(path)) matchingPaths.push(path);
+      value.slice(0, 3).forEach((item, index) => walk(item, `${path}[${index}]`, depth + 1));
+      return;
+    }
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      const childPath = `${path}.${key}`;
+      if (/(sample|record|detail|heart.?rate|timestamp|start.?time|elapsed.?time)/i.test(key)) matchingPaths.push(childPath);
+      walk(child, childPath, depth + 1);
+    }
+  };
+  walk(payload);
+  return {
+    present: payload != null,
+    topLevelType: Array.isArray(payload) ? "array" : typeof payload,
+    topLevelKeys: payload && typeof payload === "object" && !Array.isArray(payload)
+      ? Object.keys(payload as Record<string, unknown>)
+      : [],
+    arrays: arrayPaths,
+    relevantPaths: [...new Set(matchingPaths)].slice(0, 100),
+  };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json(405, { error: "Method not allowed" });
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !anonKey || !serviceKey) throw new Error("Supabase-Umgebungsvariablen sind unvollständig.");
+
+    const body = await req.json();
+    const action = body?.action;
+    const admin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    // Server-to-server entry point for Supabase Cron. The shared secret is
+    // stored only in Edge Function secrets and Supabase Vault, never in the app.
+    if (action === "background-sync") {
+      const expectedSecret = Deno.env.get("GARMIN_CRON_SECRET");
+      const suppliedSecret = req.headers.get("x-garmin-cron-secret") ?? "";
+      if (!expectedSecret || suppliedSecret.length < 32 || suppliedSecret !== expectedSecret) {
+        return json(401, { error: "Nicht autorisierter Hintergrundabruf." });
+      }
+      const { data: connections, error: connectionError } = await admin
+        .from("garmin_connections").select("user_id").eq("status", "connected");
+      if (connectionError) throw connectionError;
+      const results = [];
+      for (const connection of connections ?? []) {
+        try {
+          results.push(await syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10)));
+        } catch (syncError) {
+          const message = syncError instanceof Error ? syncError.message.slice(0, 300) : "Unbekannter Fehler.";
+          await admin.from("garmin_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", connection.user_id);
+          results.push({ userId: connection.user_id, status: "error", error: message });
+        }
+      }
+      return json(200, { ok: true, processed: results.length, results });
+    }
+
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) return json(401, { error: "Anmeldung erforderlich." });
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    if (userError || !userData.user) return json(401, { error: "Sitzung ungültig. Bitte erneut anmelden." });
+    const userId = userData.user.id;
+
+    if (action === "connect") {
+      const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+      if (apiKey.length < 20 || apiKey.length > 500) return json(400, { error: "Der Garmin-Schlüssel hat ein unerwartetes Format." });
+
+      // Validate first; never persist a key that Garmin did not accept.
+      await garminToken(apiKey);
+      const encrypted = await encryptSecret(apiKey);
+      const { error: saveError } = await admin.from("garmin_personal_credentials").upsert({
+        user_id: userId,
+        encrypted_api_key: encrypted.ciphertext,
+        encryption_iv: encrypted.iv,
+        key_version: 1,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+      if (saveError) throw saveError;
+
+      const { error: registryError } = await admin.from("garmin_connections").upsert({
+        user_id: userId,
+        status: "connected",
+        connected_at: new Date().toISOString(),
+        last_error: null,
+      }, { onConflict: "user_id" });
+      if (registryError) throw registryError;
+      return json(200, { ok: true, status: "connected", message: "Garmin-Schlüssel wurde geprüft und verschlüsselt gespeichert." });
+    }
+
+    if (action === "sync-today") {
+      const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : "";
+      if (!date) return json(400, { error: "Für den Garmin-Tagesabgleich wurde kein gültiges lokales Datum übergeben." });
+      const activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false);
+      // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
+      // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
+      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, true);
+      return json(200, { ok: true, sync: { date, activitySync, healthSync } });
+    }
+
+    if (action === "sync-range") {
+      const startDate = typeof body.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.startDate) ? body.startDate : "";
+      const endDate = typeof body.endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.endDate) ? body.endDate : "";
+      const today = new Date().toISOString().slice(0, 10);
+      if (!startDate || !endDate || startDate > endDate || endDate > today) {
+        return json(400, { error: "Bitte wähle einen gültigen Zeitraum bis einschließlich heute." });
+      }
+      const onlyMissingDays = body.onlyMissingDays === true;
+      const activitySync = body.includeActivities === false
+        ? null
+        : await syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays);
+      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, onlyMissingDays);
+      return json(200, { ok: true, sync: { startDate, endDate, activitySync, healthSync } });
+    }
+
+    if (action === "sync-health-history-batch") {
+      const result = await syncGarminHealthHistoryBatch(admin, userId, "2020-01-01", new Date().toISOString().slice(0, 10));
+      return json(200, { ok: true, sync: result });
+    }
+
+    if (action === "sync-activities") {
+      const endDate = new Date().toISOString().slice(0, 10);
+      const startDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+      const result = await syncGarminActivitiesForUser(admin, userId, startDate, endDate);
+      return json(200, { ok: true, sync: result });
+    }
+
+    if (action === "preview-activities") {
+      const { data: credential, error: credentialError } = await admin
+        .from("garmin_personal_credentials")
+        .select("encrypted_api_key, encryption_iv")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (credentialError) throw credentialError;
+      if (!credential) return json(409, { error: "Für dieses Konto ist kein Garmin-Schlüssel hinterlegt." });
+
+      const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+      const token = await garminToken(apiKey);
+
+      const today = new Date();
+      const endDate = typeof body.endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.endDate)
+        ? body.endDate
+        : today.toISOString().slice(0, 10);
+      const defaultStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const startDate = typeof body.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.startDate)
+        ? body.startDate
+        : defaultStart;
+      if (startDate > endDate) return json(400, { error: "Der Starttermin liegt nach dem Endtermin." });
+
+      const params = new URLSearchParams({ start: "0", limit: "100", startDate, endDate });
+      const payload = await garminGet(token, `/activitylist-service/activities/search/activities?${params.toString()}`);
+      const rows = activityRows(payload);
+      const activities = rows.slice(0, 100).map(safeActivityPreview);
+      return json(200, {
+        ok: true,
+        preview: {
+          startDate,
+          endDate,
+          count: activities.length,
+          hasMore: activities.length === 100,
+          activities,
+        },
+      });
+    }
+
+    if (action === "diagnose-activity-json") {
+      const activityId = typeof body.activityId === "string" ? body.activityId : String(body.activityId ?? "");
+      // This diagnostic is intentionally restricted to the single activity
+      // explicitly approved for inspection. It performs no database writes.
+      if (activityId !== "25077002341") {
+        return json(403, { error: "Diese Nur-Lese-Diagnose ist auf die freigegebene Aktivität beschränkt." });
+      }
+
+      const { data: stored, error: storedError } = await admin
+        .from("garmin_activity_details")
+        .select("activity_detail, detail_synced_at, fit_object_path")
+        .eq("user_id", userId)
+        .eq("garmin_activity_id", activityId)
+        .maybeSingle();
+      if (storedError) throw storedError;
+
+      const { data: credential, error: credentialError } = await admin
+        .from("garmin_personal_credentials")
+        .select("encrypted_api_key, encryption_iv")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (credentialError) throw credentialError;
+      if (!credential) return json(409, { error: "Für dieses Konto ist kein Garmin-Schlüssel hinterlegt." });
+
+      const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+      const token = await garminToken(apiKey);
+      const remote = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}`);
+
+      return json(200, {
+        ok: true,
+        readOnly: true,
+        activityId,
+        database: {
+          rowFound: Boolean(stored),
+          detailSyncedAt: stored?.detail_synced_at ?? null,
+          fitObjectPathPresent: Boolean(stored?.fit_object_path),
+          summary: summarizeActivityJson(stored?.activity_detail ?? null),
+        },
+        garmin: { summary: summarizeActivityJson(remote) },
+        note: "Es wurden keine Daten geschrieben und keine FIT-Datei abgerufen.",
+      });
+    }
+
+    if (action === "download-fit") {
+      const activityId = typeof body.activityId === "string" ? body.activityId : String(body.activityId ?? "");
+      if (!/^\d+$/.test(activityId)) return json(400, { error: "Ungültige Garmin-Aktivitäts-ID." });
+      const { data: credential, error: credentialError } = await admin
+        .from("garmin_personal_credentials")
+        .select("encrypted_api_key, encryption_iv")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (credentialError) throw credentialError;
+      if (!credential) return json(409, { error: "Für dieses Konto ist kein Garmin-Schlüssel hinterlegt." });
+      const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
+      const token = await garminToken(apiKey);
+      const zipBase64 = await garminDownloadFit(token, activityId);
+      return json(200, { ok: true, activityId, zipBase64 });
+    }
+
+    if (action === "disconnect") {
+      const { error: deleteError } = await admin.from("garmin_personal_credentials").delete().eq("user_id", userId);
+      if (deleteError) throw deleteError;
+      const { error: updateError } = await admin.from("garmin_connections").upsert({
+        user_id: userId, status: "disconnected", last_error: null,
+      }, { onConflict: "user_id" });
+      if (updateError) throw updateError;
+      return json(200, { ok: true, status: "disconnected" });
+    }
+
+    if (action === "status") {
+      const { data, error } = await admin.from("garmin_connections")
+        .select("status, connected_at, last_activity_sync_at, last_health_sync_at, last_error")
+        .eq("user_id", userId).maybeSingle();
+      if (error) throw error;
+      const { data: syncState, error: syncStateError } = await admin.from("garmin_sync_state")
+        .select("status, cursor_date, range_end_date, last_success_at, last_error")
+        .eq("user_id", userId).eq("sync_type", "health_history").maybeSingle();
+      if (syncStateError) throw syncStateError;
+      return json(200, {
+        ok: true,
+        connection: data ?? { status: "disconnected" },
+        syncState: syncState ?? null,
+      });
+    }
+
+    return json(400, { error: "Unbekannte Aktion." });
+  } catch (error) {
+    return json(400, { error: error instanceof Error ? error.message : "Unbekannter Fehler." });
+  }
+});
