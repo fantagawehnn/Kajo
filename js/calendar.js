@@ -834,6 +834,49 @@ export function renderYearView() {
         '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Saison-Timeline</h3><p>Wettkämpfe, Gesundheitsereignisse und bestätigte Trainingsphasen</p></div></div><div class="calendar-year-timeline">' + (timelineMarkup || '<p class="calendar-year-empty">Für dieses Kalenderjahr sind noch keine Ereignisse dokumentiert.</p>') + '</div></section>';
     globalThis.lucide?.createIcons?.();
 }
+function renderCalendarMonthSummary(date, target) {
+    const root = typeof target === 'string' ? document.getElementById(target) : target;
+    if (!root) return;
+    const data = calendarDateData(date);
+    const actualMinutes = data.durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
+    const durationText = data.activities.length === 0
+        ? '0 min'
+        : (data.durationComplete ? '' : '≈') + calendarFormatMinutes(actualMinutes);
+    const loadText = data.loadValue === null ? '—' : Math.round(data.loadValue);
+    const activityRows = (items, planned) => items.slice(0, 3).map(item => {
+        const sport = calendarSport(item.type);
+        return '<div class="calendar-month-summary-entry ' + (planned ? 'is-planned' : 'is-completed') + '">' +
+            '<span class="calendar-month-summary-dot" style="--activity-color:' + (sport.color || '#64748b') + '"></span>' +
+            '<span class="calendar-month-summary-entry-copy"><strong>' + escapeHtml(item.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
+            '<small>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</small></span>' +
+            '<span class="calendar-month-summary-status">' + (planned ? 'Geplant' : 'Abgeschlossen') + '</span></div>';
+    }).join('') + (items.length > 3 ? '<p class="calendar-month-summary-more">+' + (items.length - 3) + ' weitere Einheiten</p>' : '');
+    const health = state.healthLogs?.[date];
+    const hasPeriod = state.dailyCheckins?.[date]?.cycle?.period === true;
+    const eventLabels = [
+        ...data.races.map(item => 'Wettkampf: ' + (item.name || 'Wettkampf')),
+        ...(health?.status ? [health.status === 'sick' ? 'Krankheit dokumentiert' : 'Verletzung dokumentiert'] : []),
+        ...(hasPeriod ? ['Menstruation dokumentiert'] : [])
+    ];
+    root.innerHTML =
+        '<div class="calendar-month-summary-heading"><div><p class="calendar-month-summary-eyebrow">Tageszusammenfassung</p><h3>' + escapeHtml(calendarDateLabel(date)) + '</h3></div>' +
+        '<button type="button" class="calendar-month-summary-open" onclick="openCalendarDay(\'' + escapeHtml(date) + '\')">Tagesansicht <i data-lucide="arrow-right"></i></button></div>' +
+        '<div class="calendar-month-summary-metrics">' +
+            '<div><span>Absolviert</span><strong>' + data.activities.length + '</strong></div>' +
+            '<div><span>Trainingszeit</span><strong>' + escapeHtml(durationText) + '</strong></div>' +
+            '<div><span>Load</span><strong>' + escapeHtml(loadText) + '</strong><small>' + (data.loadValue === null ? 'Nicht vollständig berechenbar' : escapeHtml(data.timeline?.loadUnit || 'Tagesbelastung')) + '</small></div>' +
+            '<div><span>Geplant</span><strong>' + data.planned.length + '</strong></div>' +
+        '</div>' +
+        ((data.activities.length || data.planned.length) ?
+            '<div class="calendar-month-summary-lists">' +
+                (data.activities.length ? '<div><p>Absolviertes Training</p>' + activityRows(data.activities, false) + '</div>' : '') +
+                (data.planned.length ? '<div><p>Geplantes Training</p>' + activityRows(data.planned, true) + '</div>' : '') +
+            '</div>' : '<p class="calendar-month-summary-empty">Für diesen Tag sind keine Trainingseinheiten dokumentiert oder geplant.</p>') +
+        (eventLabels.length ? '<div class="calendar-month-summary-events">' + eventLabels.map(label => '<span>' + escapeHtml(label) + '</span>').join('') + '</div>' : '');
+    root.classList.remove('hidden');
+    globalThis.lucide?.createIcons?.();
+}
+
 export function renderMonthView() {
     const catalog = getSportsCatalog();
     const year = state.currentCalendarDate.getFullYear();
@@ -865,7 +908,7 @@ export function renderMonthView() {
     if (detail) {
         const sameMonth = selectedDate && selectedDate.slice(0, 7) === year + '-' + String(month + 1).padStart(2, '0');
         detail.classList.toggle('hidden', !sameMonth);
-        if (sameMonth) renderCalendarDayDetail(selectedDate, detail);
+        if (sameMonth) renderCalendarMonthSummary(selectedDate, detail);
         else detail.innerHTML = '';
     }
     globalThis.lucide?.createIcons?.();
