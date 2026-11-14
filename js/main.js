@@ -15,6 +15,7 @@ import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { canAutomaticallySyncCloudSnapshot } from './cloud-sync-policy.js';
 import { computePerformanceTimeline } from './calculations.js';
 import { sanitizeGarminActivityTelemetry } from './data-source.js';
 import { renderAnalysisInsights } from './analysis-insights.js';
@@ -1564,6 +1565,10 @@ function scheduleCloudSync(userId) {
         });
         return;
     }
+    if (!canAutomaticallySyncCloudSnapshot(cloudInitialTransferState)) {
+        setCloudSyncStatus('Noch keine automatische Cloud-Speicherung: Bitte bestätige zuerst den Erstupload ausdrücklich.');
+        return;
+    }
     if (cloudSyncBlocked) {
         setCloudSyncStatus('Synchronisierung angehalten: zuerst muss ein Cloud-Konflikt geklärt werden.');
         return;
@@ -1577,6 +1582,10 @@ function scheduleCloudSync(userId) {
 
 async function flushCloudSync() {
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return;
+    if (!canAutomaticallySyncCloudSnapshot(cloudInitialTransferState)) {
+        setCloudSyncStatus('Noch keine automatische Cloud-Speicherung: Bitte bestätige zuerst den Erstupload ausdrücklich.');
+        return;
+    }
     if (cloudSyncInFlight) {
         cloudSyncPending = true;
         return;
@@ -1833,6 +1842,7 @@ async function handleAuthSession(session) {
         cloudSyncPending = false;
         cloudSyncBlocked = false;
         cloudSyncAwaitingReadyUserId = null;
+        cloudInitialTransferState = 'unknown';
         // Ein noch laufender Request darf seinen Status selbst abschließen.
         deactivateUserStorage();
         return;
@@ -1846,6 +1856,7 @@ async function handleAuthSession(session) {
     cloudSyncPending = false;
     cloudSyncBlocked = false;
     cloudSyncAwaitingReadyUserId = null;
+    cloudInitialTransferState = 'checking';
 
     // Bei einem Accountwechsel zuerst den vorherigen Zustand aus dem Speicher
     // entfernen. Legacy-Daten werden weder gelesen noch automatisch übernommen.
@@ -1868,6 +1879,7 @@ async function handleAuthSession(session) {
             }
             cloudSyncUserId = userId;
             cloudSyncVersion = cloudSnapshot.version;
+            cloudInitialTransferState = cloudSnapshot.data === null ? 'empty' : 'exists';
             cloudSyncBlocked = false;
             cloudSyncPending = false;
             if (cloudSnapshot.data !== null) {
