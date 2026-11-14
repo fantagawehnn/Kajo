@@ -71,7 +71,10 @@ assert.ok(analysisUI.includes('onClick: (_event, elements) =>'), 'health timelin
 assert.ok(analysisUI.includes('Kein Krankheits- oder Verletzungseintrag dokumentiert'), 'missing health entries are not interpreted as healthy days');
 assert.ok(analysisUI.includes("weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'"), 'selected health day displays its full date');
 assert.ok(analysisUI.includes("['HRV', 'hrv', 'ms', 1]") && analysisUI.includes('const entry = latestCheckin(key)'), 'recovery exposes the latest raw HRV measurement as a separate metric');
-assert.ok(analysisUI.includes('const readiness = calculateReadiness(todayKey())') && analysisUI.includes('const score = readiness.enoughData ? readiness.score : null'), 'recovery overview uses the existing daily readiness calculation rather than a second score model');
+assert.ok(analysisUI.includes('const readiness = calculateReadiness(todayKey())') && analysisUI.includes('const score = readiness.enoughData ? readiness.score : null'), 'aggregate recovery value reuses the existing calculation for the analysis overview');
+assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes('id="recovery-hero-note" class="kajo-analysis-hero-note"'), 'Recovery detail does not display a readiness summary');
+assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'), 'each recovery circle uses the existing metric-specific status classification');
+assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
 assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
