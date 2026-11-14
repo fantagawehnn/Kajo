@@ -169,6 +169,16 @@ function calendarRing(value, label, unit, tone) {
     const color = 'var(--kajo-status-' + (tone || 'info') + ')';
     return '<div class="calendar-kpi-ring-wrap"><div class="calendar-kpi-ring" style="--calendar-ring-color:' + color + '"><span>' + display + '</span></div><div class="calendar-kpi-label">' + escapeHtml(label) + (unit ? '<small>' + escapeHtml(unit) + '</small>' : '') + '</div></div>';
 }
+function calendarDayRing(value, label, tone) {
+    const display = value === null || value === undefined || value === '' ? '—' : escapeHtml(value);
+    const color = 'var(--kajo-status-' + (tone || 'info') + ')';
+    return '<div class="calendar-kpi-ring-wrap"><div class="calendar-kpi-ring" style="--calendar-ring-color:' + color + '"><span>' + display + '</span></div><div class="calendar-kpi-label">' + escapeHtml(label) + '</div></div>';
+}
+function calendarDayDurationValue(minutes) {
+    if (!Number.isFinite(Number(minutes))) return '—';
+    const value = Math.max(0, Number(minutes));
+    return value < 60 ? String(Math.round(value)) : (value / 60).toFixed(2).replace('.', ',');
+}
 function calendarFormatMinutes(value) {
     if (!Number.isFinite(Number(value))) return '—';
     const minutes = Math.round(Number(value));
@@ -243,15 +253,10 @@ function renderCalendarDayDetail(date, target) {
     const actualDurationKnown = data.durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
     const actualDuration = data.activities.length === 0 ? 0 : actualDurationKnown;
     const durationComplete = data.activities.length === 0 || data.durationComplete;
-    const durationText = data.activities.length === 0 ? '0 min' : (durationComplete ? '' : '≈') + calendarFormatMinutes(actualDuration);
-    const durationCoverage = data.activities.length
-        ? data.durationRecords.length + '/' + data.activities.length + ' Einheiten mit Dauer'
-        : 'Keine absolvierten Einheiten';
+    const durationText = (durationComplete ? '' : '≈') + calendarDayDurationValue(actualDuration);
     const loadText = data.loadValue === null ? '—' : Number(data.loadValue).toFixed(0);
     const completedCount = data.activities.length;
     const readinessText = readiness.score === null ? '—' : String(readiness.score);
-    const dayLabel = calendarDateLabel(date);
-    const today = toLocalDateString();
     const actualMarkup = completed.length
         ? completed.map(item => calendarActivityRow(item, false)).join('')
         : '<div class="calendar-empty-state">Noch keine absolvierte Trainingseinheit dokumentiert.</div>';
@@ -286,49 +291,42 @@ function renderCalendarDayDetail(date, target) {
     ).join('') + '</div>' : '<div class="calendar-empty-state">Für diesen Tag sind noch keine Ereignisse dokumentiert.</div>';
 
     const recoveryMetrics = [];
-    const addRecovery = (label, value, unit) => {
+    const addRecovery = (label, value, tone = 'info') => {
         if (value === null || value === undefined || value === '') return;
-        recoveryMetrics.push(calendarRing(String(value), label, unit, 'info'));
+        recoveryMetrics.push(calendarDayRing(String(value), label, tone));
     };
-    addRecovery('Schlaf', checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null), 'h');
-    addRecovery('HRV', checkin.hrv, 'ms');
-    addRecovery('Ruhepuls', checkin.rhr, 'bpm');
-    addRecovery('Schlafscore', checkin.sleepScore, '/100');
-    addRecovery('Body Battery', checkin.bodyBattery ?? checkin.bodyBatteryAtWake ?? checkin.bodyBatteryMorning, '/100');
-    addRecovery('Schlafqualität', checkin.sleepQuality, '/5');
+    const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
+    const bodyBattery = checkin.bodyBattery ?? checkin.bodyBatteryAtWake ?? checkin.bodyBatteryMorning;
+    const sleepHours = Number(sleepDuration), sleepScore = Number(checkin.sleepScore), batteryScore = Number(bodyBattery);
+    addRecovery('Schlaf', sleepDuration, Number.isFinite(sleepHours) ? (sleepHours >= 7 && sleepHours <= 9 ? 'good' : sleepHours < 7 ? 'critical' : 'attention') : 'info');
+    addRecovery('HRV', checkin.hrv);
+    addRecovery('Ruhepuls', checkin.rhr);
+    addRecovery('Schlafscore', checkin.sleepScore, Number.isFinite(sleepScore) ? (sleepScore >= 90 ? 'good' : sleepScore >= 80 ? 'attention' : 'critical') : 'info');
+    addRecovery('Body Battery', bodyBattery, Number.isFinite(batteryScore) ? (batteryScore >= 70 ? 'good' : batteryScore >= 40 ? 'attention' : 'critical') : 'info');
     const subjective = [
-        ['Müdigkeit', checkin.fatigue], ['Muskelkater', checkin.soreness],
-        ['Motivation', checkin.motivation], ['Stress', checkin.stress]
+        ['Schlafqualität', checkin.sleepQuality], ['Müdigkeit', checkin.fatigue],
+        ['Muskelkater', checkin.soreness], ['Motivation', checkin.motivation], ['Stress', checkin.stress]
     ].filter(([, value]) => value !== null && value !== undefined && value !== '');
     const subjectiveMarkup = subjective.length
-        ? '<div class="calendar-day-subjective">' + subjective.map(([label, value]) => '<span>' + escapeHtml(label) + ' <b>' + escapeHtml(value) + '/5</b></span>').join('') + '</div>'
+        ? '<div class="calendar-day-subjective">' + subjective.map(([label, value]) => '<span>' + escapeHtml(label) + ' <b>' + escapeHtml(value) + '</b></span>').join('') + '</div>'
         : '';
-    const recoveryMarkup = recoveryMetrics.length || readiness.score !== null || subjective.length
-        ? '<div class="calendar-day-recovery-summary">' +
-            '<div class="calendar-day-recovery-rings">' +
-            calendarRing(readinessText, 'Readiness', readiness.score === null ? 'nicht berechenbar' : '/100', calendarReadinessTone(readiness.score)) +
-            recoveryMetrics.join('') + '</div>' + subjectiveMarkup +
-            '<details class="calendar-day-recovery-details"><summary>Recovery-Details und Datenbasis</summary><p>' + escapeHtml(readiness.dataMode || 'Keine Recovery-Daten verfügbar') + '</p>' +
-            '<p>Objektive Werte: ' + readiness.objectiveCount + ' · Subjektive Werte: ' + readiness.subjectiveCount + '</p></details></div>'
+    const recoveryMarkup = recoveryMetrics.length || subjective.length
+        ? '<div class="calendar-day-recovery-summary"><div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup + '</div>'
         : '<div class="calendar-empty-state">Keine Recovery-Daten für diesen Tag vorhanden.</div>';
 
     const loadMarkup = '<div class="calendar-day-load-rings">' +
-        calendarRing(loadText, 'Training Load', data.loadValue === null ? 'nicht vollständig' : (data.timeline?.loadUnit || 'Belastung'), calendarLoadTone(data.timeline)) +
-        calendarRing(durationText, 'Trainingszeit', durationCoverage, 'info') +
-        calendarRing(String(completedCount), 'Abgeschlossen', 'Einheiten', 'good') +
-        calendarRing(String(planned.length), 'Geplant', 'Einheiten', 'info') +
+        calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
+        calendarDayRing(durationText, 'Dauer', 'info') +
+        calendarDayRing(String(completedCount), 'Abgeschlossen', 'good') +
+        calendarDayRing(String(planned.length), 'Geplant', 'info') +
         '</div>';
 
     root.innerHTML =
-        '<section class="calendar-day-heading">' +
-            '<div><p class="calendar-day-eyebrow">Tagesübersicht</p><h3>' + escapeHtml(dayLabel) + '</h3></div>' +
-            '<div class="calendar-day-date-actions"><button type="button" aria-label="Vorheriger Tag" onclick="openCalendarDay(\'' + escapeHtml(calendarShiftDate(date, -1)) + '\')">‹</button><button type="button" onclick="openCalendarDay(\'' + escapeHtml(today) + '\')" ' + (date === today ? 'disabled' : '') + '>Heute</button><button type="button" aria-label="Nächster Tag" onclick="openCalendarDay(\'' + escapeHtml(calendarShiftDate(date, 1)) + '\')">›</button><input type="date" aria-label="Datum auswählen" value="' + escapeHtml(date) + '" onchange="if(this.value)openCalendarDay(this.value)"></div>' +
-        '</section>' +
         '<section class="calendar-day-kpis" aria-label="Tageskennzahlen">' +
-            calendarRing(loadText, 'Training Load', data.loadValue === null ? 'nicht vollständig' : (data.timeline?.loadUnit || 'Belastung'), calendarLoadTone(data.timeline)) +
-            calendarRing(durationText, 'Trainingszeit', 'absolviert', 'info') +
-            calendarRing(String(completedCount), 'Einheiten', 'abgeschlossen', 'good') +
-            calendarRing(readinessText, 'Recovery', readiness.score === null ? 'nicht berechenbar' : '/100 Readiness', calendarReadinessTone(readiness.score)) +
+            calendarDayRing(loadText, 'Load', calendarLoadTone(data.timeline)) +
+            calendarDayRing(durationText, 'Dauer', 'info') +
+            calendarDayRing(String(completedCount), 'Einheiten', 'good') +
+            calendarDayRing(readinessText, 'Recovery', calendarReadinessTone(readiness.score)) +
         '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3><span>' + events.length + ' Ereignisse</span></div>' + timelineMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3><span>' + completed.length + '</span></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
@@ -464,6 +462,44 @@ function renderCalendarLegend() {
     globalThis.lucide?.createIcons?.();
 }
 
+function updateCalendarPeriodTitle(format) {
+    const title = document.getElementById('calendar-period-title');
+    const picker = document.getElementById('calendar-period-picker');
+    if (!title) return;
+    const date = new Date(state.currentCalendarDate);
+    if (format === 'day') title.textContent = new Intl.DateTimeFormat('de-DE', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(date);
+    else if (format === 'week') {
+        const monday = new Date(date);
+        monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+        const thursday = new Date(monday); thursday.setDate(monday.getDate() + 3);
+        const jan4 = new Date(thursday.getFullYear(), 0, 4, 12), firstMonday = new Date(jan4);
+        firstMonday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+        const weekNo = Math.floor((thursday - firstMonday) / 604800000) + 1;
+        const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+        const fmt = value => String(value.getDate()).padStart(2,'0') + '.' + String(value.getMonth()+1).padStart(2,'0');
+        title.textContent = 'KW ' + weekNo + ' · ' + fmt(monday) + '–' + fmt(sunday) + '.' + sunday.getFullYear();
+    } else if (format === 'month') title.textContent = new Intl.DateTimeFormat('de-DE', { month:'long', year:'numeric' }).format(date);
+    else if (format === 'year') title.textContent = String(date.getFullYear());
+    else title.textContent = 'Aktivitäten';
+    if (picker) picker.disabled = format === 'activities';
+}
+export function openCalendarPeriodPicker() {
+    const picker = document.getElementById('calendar-period-picker');
+    if (!picker || state.activeCalendarFormat === 'activities') return;
+    picker.value = toLocalDateString(state.currentCalendarDate);
+    try { if (typeof picker.showPicker === 'function') picker.showPicker(); else { picker.focus(); picker.click(); } }
+    catch { picker.focus(); picker.click(); }
+}
+export function applyCalendarPeriodDate(value) {
+    if (!value) return;
+    const selected = new Date(value + 'T12:00:00');
+    if (!Number.isFinite(selected.getTime())) return;
+    if (state.activeCalendarFormat === 'week') selected.setDate(selected.getDate() - ((selected.getDay() + 6) % 7));
+    state.currentCalendarDate = selected;
+    state.selectedCalendarDay = state.activeCalendarFormat === 'day' ? value : null;
+    renderCalendar();
+}
+
 export function renderCalendar() {
     const formats = ['day', 'week', 'month', 'year', 'activities'];
     const format = formats.includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'week';
@@ -491,6 +527,7 @@ export function renderCalendar() {
     else if (format === 'month') renderMonthView();
     else if (format === 'year') renderYearView();
     else renderListView();
+    updateCalendarPeriodTitle(format);
 }
 
 function calendarYearPhaseStore() {
