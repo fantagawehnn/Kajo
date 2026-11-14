@@ -5868,3 +5868,17 @@ html[data-theme="light"] #load-supporting-analysis .kajo-training-load-panel {
   font-size:.65rem;
   line-height:1.4;
 }
+
+
+/* Recovery metric rings reflect each metric's own status, not a combined readiness score. */
+#analysis-subpage-recovery .kajo-recovery-metric-circle {
+  border-color:var(--recovery-metric-color,var(--kajo-status-info));
+  background:color-mix(in srgb,var(--recovery-metric-color,var(--kajo-status-info)) 9%,var(--kajo-surface));
+}
+#analysis-subpage-recovery .kajo-recovery-metric.is-selected .kajo-recovery-metric-circle {
+  border-color:var(--recovery-metric-color,var(--kajo-status-info));
+  background:color-mix(in srgb,var(--recovery-metric-color,var(--kajo-status-info)) 16%,var(--kajo-surface));
+}
+#analysis-subpage-recovery .kajo-recovery-metric.is-selected .kajo-recovery-metric-label {
+  color:var(--recovery-metric-color,var(--kajo-text));
+}
