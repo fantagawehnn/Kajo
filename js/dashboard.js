@@ -658,8 +658,8 @@ let dashboardDateWasManuallyChanged = false;
 
 let dailyNoteEditingDate = null;
 
-export function openDailyNote() {
-    const dateKey = selectedDashboardDate || localTodayKey();
+export function openDailyNote(requestedDate = null) {
+    const dateKey = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(requestedDate || '')) ? String(requestedDate) : (selectedDashboardDate || localTodayKey());
     dailyNoteEditingDate = dateKey;
     const modal = document.getElementById('daily-note-modal');
     const textarea = document.getElementById('daily-note-text');
