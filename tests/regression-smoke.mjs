@@ -159,4 +159,5 @@ activities.updateActivityRPE(8);
 assert.equal(editable.perceivedEffort, 8);
 assert.equal(editable.sRpeLoad, 480);
 await import('./athlete-context.test.mjs');
+await import('./coach.test.mjs');
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load, backup restore and athlete context.');
