@@ -970,8 +970,20 @@ export function renderWeekView() {
     const loadTotal = loadComplete ? loadDays.reduce((sum, data) => sum + data.loadValue, 0) : null;
     const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
     const durationTotal = durationRecords.length ? durationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
+    const sportDurations = new Map();
+    durationRecords.forEach(item => {
+        const sport = calendarSport(item.type);
+        const key = String(item.type || 'Workout');
+        const current = sportDurations.get(key) || { label: sport.label, color: sport.color || '#64748b', minutes: 0 };
+        current.minutes += Number(item.duration);
+        sportDurations.set(key, current);
+    });
+    const sportSegments = durationTotal ? [...sportDurations.values()].map(sport => {
+        const width = sport.minutes / durationTotal * 100;
+        return '<span class="calendar-week-load-segment" style="width:' + width.toFixed(2) + '%;--sport-color:' + sport.color + '" title="' + escapeHtml(sport.label + ': ' + calendarFormatMinutes(sport.minutes)) + '" aria-label="' + escapeHtml(sport.label + ': ' + calendarFormatMinutes(sport.minutes)) + '"></span>';
+    }).join('') : '';
     const summary = document.getElementById('calendar-week-summary');
-    if (summary) summary.innerHTML = '<span><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></span><span><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : (durationComplete ? '' : '∼') + calendarFormatMinutes(durationTotal)) + '</strong><em>' + (activities.length ? durationRecords.length + '/' + activities.length + ' Dauern erfasst' : 'Keine Einheiten dokumentiert') + '</em></span>';
+    if (summary) summary.innerHTML = '<div class="calendar-week-load"><div class="calendar-week-load-value"><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></div><div class="calendar-week-load-track" role="img" aria-label="Sportarten-Anteile nach erfasster Trainingszeit">' + sportSegments + '</div></div><div class="calendar-week-duration"><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : (durationComplete ? '' : '∼') + calendarFormatMinutes(durationTotal)) + '</strong></div>';
 
     const today = toLocalDateString();
     const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
