@@ -38,3 +38,45 @@ test('formats result times in seconds and minutes', () => {
   assert.equal(formatRaceResultTime(59.2), '59.20 s');
   assert.equal(formatRaceResultTime(null), '');
 });
+
+test('builds season comparisons by year, boat class and race format', async () => {
+  const { buildCompetitionSeasonSummary } = await import('../js/race-results.js');
+  const summary = buildCompetitionSeasonSummary([
+    { date: '2025-05-10', results: [
+      { discipline: 'C1', format: 'Classic', placement: 2, timeSeconds: 180 },
+      { discipline: 'C1', format: 'Sprint', placement: 4, timeSeconds: 75 }
+    ] },
+    { date: '2025-06-01', results: [
+      { discipline: 'C1', format: 'Classic', placement: 6, timeSeconds: null },
+      { discipline: 'C2', format: 'Sprint', placement: 3, timeSeconds: 80 }
+    ] },
+    { date: '2026-05-01', results: [{ discipline: 'C1', format: 'Classic', placement: 1, timeSeconds: 175 }] },
+    { date: '2026-05-02', results: [{ discipline: 'K1', format: 'Sprint', placement: null, timeSeconds: 70 }] },
+    { date: 'not-a-date', results: [{ discipline: 'C1', format: 'Classic', placement: 1 }] },
+    { date: '2025-05-11' }
+  ]);
+  assert.equal(summary.racesWithResults, 4);
+  assert.equal(summary.totalStarts, 6);
+  const c1Classic2025 = summary.rows.find(row => row.season === 2025 && row.discipline === 'C1' && row.format === 'Classic');
+  assert.equal(c1Classic2025.starts, 2);
+  assert.equal(c1Classic2025.averagePlacement, 4);
+  assert.equal(c1Classic2025.bestPlacement, 2);
+  assert.equal(c1Classic2025.podiums, 1);
+  assert.equal(c1Classic2025.timesRecorded, 1);
+  const k1Sprint2026 = summary.rows.find(row => row.season === 2026 && row.discipline === 'K1');
+  assert.equal(k1Sprint2026.averagePlacement, null);
+  assert.equal(k1Sprint2026.bestPlacement, null);
+});
+
+test('does not mix seasons, boat classes or formats', async () => {
+  const { buildCompetitionSeasonSummary } = await import('../js/race-results.js');
+  const summary = buildCompetitionSeasonSummary([
+    { date: '2024-01-01', results: [{ discipline: 'C1', format: 'Classic', placement: 1 }] },
+    { date: '2025-01-01', results: [{ discipline: 'C1', format: 'Sprint', placement: 2 }] },
+    { date: '2025-01-02', results: [{ discipline: 'C2', format: 'Classic', placement: 3 }] }
+  ]);
+  assert.equal(summary.rows.length, 3);
+  assert.deepEqual(summary.rows.map(row => [row.season, row.discipline, row.format]), [
+    [2025, 'C2', 'Classic'], [2025, 'C1', 'Sprint'], [2024, 'C1', 'Classic']
+  ]);
+});
