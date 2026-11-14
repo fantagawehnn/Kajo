@@ -330,6 +330,16 @@ export function renderTrainingLoadView() {
   renderRings(timeline);
   renderPrimaryCharts(timeline);
   renderVolumeCharts();
-  const source = getSource(latestModelDay(timeline));
+  const last = latestModelDay(timeline);
+  const source = getSource(last);
   setText('training-load-selected-model-label', selectedModel === 'srpe' ? 'sRPE-Load' : 'Belastungsbilanz · ' + source[0]);
+  const primaryInsight = selectedModel === 'primary'
+    && latestModelDay(state.dailyTimeline)?.loadMode === last?.loadMode;
+  setVisible('training-load-insight-panel', Boolean(primaryInsight));
+  if (primaryInsight) {
+    renderAnalysisInsights();
+    const sourceInsight = document.getElementById('analysis-load-insight');
+    const targetInsight = document.getElementById('training-load-insight');
+    if (sourceInsight && targetInsight) targetInsight.innerHTML = sourceInsight.innerHTML;
+  }
 }
