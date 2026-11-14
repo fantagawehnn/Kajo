@@ -7408,3 +7408,60 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
 #settings-modal .kajo-settings-card{border-color:rgba(148,163,184,.16);background:linear-gradient(145deg,rgba(24,37,55,.96),rgba(14,24,38,.98));padding:13px}
 #settings-modal .kajo-settings-section-icon{background:rgba(112,183,255,.13);border-color:rgba(112,183,255,.25);color:#70b7ff}
 @media(max-width:700px){#settings-modal .kajo-settings-overview{grid-template-columns:1fr;gap:8px}#settings-modal .kajo-settings-overview-group{padding:10px 12px}#settings-modal .kajo-settings-overview-heading{margin-bottom:4px}#settings-modal .kajo-settings-overview-row{padding:8px 2px}}
+
+
+/* KAJO · Data sources and synchronization surfaces */
+#view-data.kajo-sync-overview{gap:13px;max-width:980px}
+#view-data .kajo-sync-source-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+#view-data .kajo-sync-source-card{--sync-accent:#77b8ff;--sync-tint:rgba(96,165,250,.13);display:flex;flex-direction:column;min-width:0;padding:14px;border:1px solid color-mix(in srgb,var(--sync-accent) 27%,var(--kajo-border));border-radius:15px;background:linear-gradient(145deg,var(--sync-tint),var(--kajo-surface) 68%);gap:8px}
+#view-data .kajo-sync-source-card[data-source="garmin"]{--sync-accent:#ff9298;--sync-tint:rgba(244,100,110,.13)}
+#view-data .kajo-sync-source-card[data-source="intervals"]{--sync-accent:#7dbbff;--sync-tint:rgba(59,130,246,.14)}
+#view-data .kajo-sync-source-card[data-source="cloud"]{--sync-accent:#70dfbd;--sync-tint:rgba(16,185,129,.13)}
+#view-data .kajo-sync-source-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#view-data .kajo-sync-source-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:var(--sync-tint);color:var(--sync-accent)}
+#view-data .kajo-sync-source-icon svg{width:19px;height:19px}
+#view-data .kajo-sync-source-type{color:var(--sync-accent);font-size:8px;font-weight:850;letter-spacing:.11em}
+#view-data .kajo-sync-source-card h2{margin:2px 0 0;color:var(--kajo-text);font-size:.9rem;font-weight:800}
+#view-data .kajo-sync-source-card p{min-height:2.5em;color:var(--kajo-muted);font-size:.67rem;line-height:1.45}
+#view-data .kajo-sync-source-card>button{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:auto;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--sync-accent) 20%,transparent);color:var(--sync-accent);font-size:.66rem;font-weight:750;text-align:left}
+#view-data .kajo-sync-source-card>button svg{width:14px;height:14px;flex:0 0 auto}
+#view-data .kajo-sync-history-section{border-left:3px solid #ff9298}
+#view-data .kajo-sync-tools{border-left:3px solid #70dfbd}
+.kajo-sync-modal .kajo-modal-sheet{border:1px solid rgba(148,163,184,.2);background:#0b1420;box-shadow:0 24px 80px rgba(0,0,0,.48)}
+.kajo-sync-modal .kajo-modal-header{padding:15px 17px;border-bottom:1px solid rgba(148,163,184,.14)}
+.kajo-sync-modal .kajo-modal-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(96,165,250,.14);color:#8bc5ff}
+.kajo-sync-modal-garmin .kajo-modal-icon{background:rgba(244,100,110,.14);color:#ff9298}
+.kajo-sync-modal .kajo-modal-content{padding:14px 16px 18px;gap:12px}
+#garmin-connection-modal #garmin-connection-status{border-color:rgba(255,146,152,.25);background:rgba(244,100,110,.07);border-radius:12px}
+#garmin-connection-modal .kajo-modal-content>section,
+#intervals-sync-modal .intervals-sync-scroll>div,
+#intervals-sync-modal .intervals-sync-scroll>section{border:1px solid rgba(148,163,184,.16)!important;border-radius:13px!important;background:rgba(19,31,47,.82)!important;padding:13px!important}
+#garmin-connection-modal h3,#intervals-sync-modal h3{font-size:.78rem;font-weight:800;letter-spacing:.01em}
+#garmin-connection-modal label,#intervals-sync-modal label{font-size:.66rem;line-height:1.4}
+#garmin-connection-modal input,#garmin-connection-modal select,
+#intervals-sync-modal input,#intervals-sync-modal select{min-height:39px;border-radius:9px;border-color:#34465c;background:#0b1420;color:#f1f5f9;font-size:.72rem}
+#garmin-sync-range-button{background:#e56f7a;color:#fff;border-radius:10px;min-height:40px;font-size:.72rem;font-weight:800}
+#garmin-disconnect-button{border:1px solid rgba(148,163,184,.18);border-radius:9px}
+#intervals-sync-modal .intervals-sync-dialog{border:1px solid rgba(125,187,255,.24);border-radius:17px;background:#0b1420;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:0;overflow:hidden}
+#intervals-sync-modal .intervals-sync-scroll{padding:17px 17px 8px}
+#intervals-sync-modal .intervals-sync-scroll>h3{color:#f8fafc;font-size:1rem}
+#intervals-sync-modal .intervals-sync-scroll>p{font-size:.7rem;line-height:1.45}
+#intervals-sync-modal .intervals-sync-actions{padding:12px 17px 15px;border-color:rgba(148,163,184,.14);background:#0b1420}
+#intervals-sync-modal .intervals-sync-actions button:last-child{background:#438ee0;border-radius:10px;font-weight:800}
+#cloud-sync-modal #cloud-sync-panel{border-color:rgba(112,223,189,.26);background:linear-gradient(145deg,rgba(16,185,129,.09),#101a28 58%);box-shadow:0 24px 80px rgba(0,0,0,.48)}
+#cloud-sync-modal #cloud-sync-status{padding:11px 12px;border:1px solid rgba(112,223,189,.2);border-radius:11px;background:rgba(16,185,129,.07)}
+#cloud-sync-modal #cloud-sync-initial-button{background:#159b78;border-radius:10px;font-weight:800}
+html[data-theme="light"] #view-data .kajo-sync-source-card{background:linear-gradient(145deg,var(--sync-tint),#fff 70%);border-color:color-mix(in srgb,var(--sync-accent) 30%,#dce3ea)}
+html[data-theme="light"] #view-data .kajo-sync-source-card h2{color:#17212b}
+html[data-theme="light"] .kajo-sync-modal .kajo-modal-sheet,
+html[data-theme="light"] #intervals-sync-modal .intervals-sync-dialog{background:#f6f8fb;color:#17212b}
+html[data-theme="light"] .kajo-sync-modal .kajo-modal-header,
+html[data-theme="light"] #intervals-sync-modal .intervals-sync-actions{background:#f6f8fb;border-color:#dce3ea}
+html[data-theme="light"] #garmin-connection-modal .kajo-modal-content>section,
+html[data-theme="light"] #intervals-sync-modal .intervals-sync-scroll>div,
+html[data-theme="light"] #intervals-sync-modal .intervals-sync-scroll>section{background:#fff!important;border-color:#dce3ea!important}
+html[data-theme="light"] #garmin-connection-modal input,
+html[data-theme="light"] #garmin-connection-modal select,
+html[data-theme="light"] #intervals-sync-modal input,
+html[data-theme="light"] #intervals-sync-modal select{background:#f7f9fb;color:#17212b;border-color:#d5dee8}
+@media(max-width:700px){#view-data .kajo-sync-source-grid{grid-template-columns:1fr;gap:9px}#view-data .kajo-sync-source-card{padding:12px;display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:10px;row-gap:4px}#view-data .kajo-sync-source-top{grid-row:1/4;align-items:start;justify-content:flex-start}#view-data .kajo-sync-source-type{display:none}#view-data .kajo-sync-source-card h2{align-self:end;margin:0}#view-data .kajo-sync-source-card p{min-height:0}#view-data .kajo-sync-source-card>button{grid-column:2;margin-top:4px;padding-top:8px}#intervals-sync-modal .intervals-sync-dialog{max-height:94dvh}#intervals-sync-modal .intervals-sync-scroll{max-height:calc(94dvh - 76px);overflow-y:auto}}
