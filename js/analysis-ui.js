@@ -130,6 +130,17 @@ function renderRecovery() {
       '/10', entry?.date || '', true);
   }));
 
+  const objectiveRoot = document.getElementById('recovery-analysis-metrics');
+  if (objectiveRoot) {
+    let availabilityNote = document.getElementById('recovery-garmin-availability-note');
+    if (!availabilityNote) {
+      availabilityNote = document.createElement('p');
+      availabilityNote.id = 'recovery-garmin-availability-note';
+      availabilityNote.className = 'kajo-recovery-data-note';
+      objectiveRoot.insertAdjacentElement('afterend', availabilityNote);
+    }
+    availabilityNote.textContent = 'Body Battery – Garmin-Import noch nicht angebunden. Garmin-Stress und SpO₂ werden als Garmin-Datensätze gespeichert, sind aber noch nicht als tägliche Recovery-Verläufe integriert.';
+  }
   const objective = document.getElementById('recovery-objective-count');
   const subjective = document.getElementById('recovery-subjective-count');
   if (objective) objective.textContent = objectiveEntries.length + ' Messwerte';
