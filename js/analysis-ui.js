@@ -180,13 +180,25 @@ const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-
   '" aria-pressed="false" style="--recovery-metric-color:' + color + '" onclick="togglePerformanceMetric(\'' + performanceEscape(key) + '\')">' +
   '<span class="kajo-recovery-metric-circle"><strong>' + performanceEscape(value) + '</strong></span>' +
   '<span class="kajo-recovery-metric-label">' + performanceEscape(label) + '</span><small>' + performanceEscape(unit || detail || 'Nicht erfasst') + '</small></button>';
-function renderPerformance() {
+function renderFitness() {
   const vo2 = latestCheckin('vo2max');
   const vo2Color = vo2 ? historyRingColor('vo2max', vo2.value, vo2.date) : 'var(--kajo-status-info)';
   const vo2Circle = performanceCircle('vo2max','VO₂max',vo2 ? fmt(vo2.value,1) : '—','ml/kg/min',
     vo2 ? 'Garmin-Schätzwert' : 'Nicht erfasst',vo2Color);
-  renderMetrics('performance-aerobic-metrics',[vo2Circle]);
-
+  renderMetrics('fitness-aerobic-metrics',[vo2Circle]);
+  const overview = document.getElementById('fitness-overview-view');
+  const detail = document.getElementById('performance-detail-view');
+  if (overview) overview.classList.remove('hidden');
+  if (detail) detail.classList.add('hidden');
+  selectedPerformanceMetric = null;
+  document.querySelectorAll('[data-performance-metric]').forEach(button => {
+    button.classList.remove('is-selected'); button.setAttribute('aria-pressed','false');
+  });
+  const panel = document.getElementById('performance-trend-panel');
+  if (panel) panel.classList.add('hidden');
+  if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
+}
+function renderPerformanceDetail() {
   const paddleDefs = [
     ['speed','Geschwindigkeit','km/h'],
     ['hr','Herzfrequenz','bpm'],
@@ -225,6 +237,33 @@ function renderPerformance() {
   if (panel) panel.classList.add('hidden');
   if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
 }
+
+export function openPerformanceDetail() {
+  const overview = document.getElementById('fitness-overview-view');
+  const detail = document.getElementById('performance-detail-view');
+  if (!overview || !detail) return;
+  overview.classList.add('hidden');
+  detail.classList.remove('hidden');
+  renderPerformanceDetail();
+}
+export function closePerformanceDetail() {
+  const overview = document.getElementById('fitness-overview-view');
+  const detail = document.getElementById('performance-detail-view');
+  if (overview) overview.classList.remove('hidden');
+  if (detail) detail.classList.add('hidden');
+  selectedPerformanceMetric = null;
+  document.querySelectorAll('[data-performance-metric]').forEach(button => {
+    button.classList.remove('is-selected'); button.setAttribute('aria-pressed','false');
+  });
+  const panel = document.getElementById('performance-trend-panel');
+  if (panel) panel.classList.add('hidden');
+  if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
+}
+if (typeof window !== 'undefined') {
+  window.openPerformanceDetail = openPerformanceDetail;
+  window.closePerformanceDetail = closePerformanceDetail;
+}
+
 function renderPerformanceTrend(key) {
   const panel = document.getElementById('performance-trend-panel');
   const canvas = document.getElementById('performance-trend-chart');
@@ -439,7 +478,7 @@ export function renderAnalysisPageUI(subpage = 'load') {
   setupSharedPeriod();
   renderLoad();
   renderRecovery();
-  renderPerformance();
+  renderFitness();
   renderHealth();
   const note = document.getElementById('health-history-baseline-note');
   if (note) note.textContent = 'Persönlicher Normalbereich noch nicht verfügbar: Neue Intervals-Wellnesswerte werden als RMSSD und manuelle HRV-Eingaben als eigene Quelle gekennzeichnet. Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt und werden nicht nachträglich zugeordnet. Manuelle HRV-Werte haben keine bestätigte Messmethode; nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich für eine ln(RMSSD)-Reihe. Eine adaptive Baseline benötigt zusätzlich eine verbindlich festgelegte Statistik und Mindestdatenbasis.';
