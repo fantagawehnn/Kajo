@@ -6175,3 +6175,24 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
     padding-inline:1px;
   }
 }
+
+
+/* Keep the weekly day selector visible while the agenda scrolls. */
+#view-calendar .calendar-week-layout {
+  position:relative;
+  overflow:visible;
+}
+#view-calendar .calendar-week-strip {
+  position:-webkit-sticky !important;
+  position:sticky !important;
+  top:0;
+  z-index:120;
+  align-self:stretch;
+  isolation:isolate;
+}
+@media(max-width:640px) {
+  /* Clear the fixed KAJO header and the device safe area. */
+  #view-calendar .calendar-week-strip {
+    top:calc(5.1rem + env(safe-area-inset-top));
+  }
+}
