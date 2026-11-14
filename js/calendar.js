@@ -1017,10 +1017,12 @@ export function renderWeekView() {
         if (day.cycle) eventLabels.push('<span class="calendar-week-event-label calendar-event-cycle"><i data-lucide="droplet"></i> Menstruation</span>');
         const dayName = calendarDateLabel(date);
         const entries = activityItems + planItems;
+        const hasDayMetrics = data.durationTotal !== null && data.durationTotal !== undefined || data.loadValue !== null && data.loadValue !== undefined;
         return '<section id="calendar-week-day-' + date + '" class="calendar-week-agenda-day ' + (date === today ? 'is-today ' : '') + (date === activeDate ? 'is-selected' : '') + '"><button type="button" class="calendar-week-agenda-heading" onclick="selectCalendarWeekDay(\'' + date + '\')"><span><small>' + dayNames[day.index] + '</small><strong>' + d.getDate() + '. ' + monthShort[d.getMonth()] + '</strong></span><span class="calendar-week-agenda-title">' + escapeHtml(dayName) + '</span><i data-lucide="chevron-down"></i></button>' +
             (eventLabels.length ? '<div class="calendar-week-event-labels">' + eventLabels.join('') + '</div>' : '') +
-            '<div class="calendar-week-agenda-entries">' + (entries || '<p class="calendar-week-empty">Keine Einträge</p>') + '</div>' +
-            '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? 'Trainingszeit —' : (data.durationComplete ? '' : '∼') + calendarFormatMinutes(data.durationTotal)) + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div></section>';
+            (entries ? '<div class="calendar-week-agenda-entries">' + entries + '</div>' : '') +
+            (hasDayMetrics ? '<div class="calendar-week-day-totals">' + (data.durationTotal !== null && data.durationTotal !== undefined ? '<span>' + (data.durationComplete ? '' : '∼') + calendarFormatMinutes(data.durationTotal) + '</span>' : '') + (data.loadValue !== null && data.loadValue !== undefined ? '<span>Load ' + Math.round(data.loadValue) + '</span>' : '') + '</div>' : '') +
+            '</section>';
     }).join('');
     container.classList.remove('grid-cols-1', 'grid-cols-7', 'min-w-[900px]');
     container.innerHTML = strip + '<div class="calendar-week-agenda">' + sections + '</div>';
