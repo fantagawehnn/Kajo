@@ -192,7 +192,7 @@ function switchTab(requestedTab) {
     }
 
     if (view === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); refreshSportAnalytics(); renderAnalysisInsights(); }
-    if (view === 'analyses') { renderAnalysisPageUI(sub || 'overview'); if (sub === 'recovery') renderMetricHistory('health'); if (sub === 'performance') renderMetricHistory('training'); }
+    if (view === 'analyses') { renderAnalysisPageUI(sub || 'overview'); if (sub === 'recovery') renderMetricHistory('health'); }
     const overviewContent = document.getElementById('analysis-overview-content');
     if (overviewContent) overviewContent.classList.toggle('hidden', view !== 'analyses' || sub !== 'overview');
     if (view === 'analyses' && sub === 'overview') renderAnalysisOverview();
