@@ -206,7 +206,7 @@ assert.ok(calendar.includes('calendar-day-kpis') && calendar.includes('calendar-
 assert.ok(calendar.includes('Absolviertes Training') && calendar.includes('Geplantes Training'), 'day view separates completed and planned sessions');
 assert.ok(calendar.includes('calendar-day-recovery-rings') && calendar.includes('subjectiveMarkup'), 'day view keeps recovery compact with documented recovery rings and subjective metrics');
 assert.ok(calendar.includes("Tagesreflexion") && calendar.includes("openDailyNote(") && dashboard.includes("openDailyNote(requestedDate = null)"), "day view reuses date-specific daily notes for reflection");
-assert.ok(calendar.includes('calendar-day-date-actions') && calendar.includes('openCalendarDay(this.value)'), 'day view supports direct date selection and today navigation');
+assert.ok(calendar.includes('export function openCalendarDay(date, keepMonth = false)') && calendar.includes("state.currentCalendarDate = new Date(date + 'T12:00:00')"), 'day view opens the selected date and updates the calendar period');
 assert.ok(dayDetail.includes('Vorheriger Tag') && dayDetail.includes('Nächster Tag'), 'day view supports previous and next day navigation');
 assert.ok(css.includes('.calendar-day-timeline-item') && css.includes('.calendar-day-kpis'), 'day cockpit has responsive timeline and KPI styling');
 
