@@ -32,7 +32,7 @@ import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, 
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js';
 import { sendAICoachMessage } from './coach.js';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=2';
 import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js';
 
@@ -647,6 +647,138 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors };
 }
 
+
+/**
+ * Lädt alle verfügbaren Garmin-Activity-Details-Zeitreihen ergänzend zu FIT-Daten.
+ * Der Abruf läuft konto-authentifiziert und speichert ausschließlich im lokalen
+ * Aktivitätsspeicher. Bestehende FIT-/Garmin-Werte und bereits vorhandene Reihen
+ * bleiben erhalten; jede JSON-Messreihe behält ihre eigene Zeitachse.
+ */
+async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null) {
+    const now = Date.now();
+    const cooldowns = {
+        no_data: 30 * 24 * 60 * 60 * 1000,
+        error: 6 * 60 * 60 * 1000,
+        rate_limited: 5 * 60 * 1000
+    };
+    const pending = state.rawActivities.filter(activity => {
+        const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
+        const id = String(rawId ?? '').replace(/^garmin-/, '');
+        const date = String(activity.date || '').slice(0, 10);
+        if (!/^\d+$/.test(id) || date < startDate || date > endDate) return false;
+        if (activity.garminJsonImportedAt) return false;
+        if (activity.garminJsonSource === 'garmin-activity-details-json'
+            && Object.keys(activity.garminTelemetry?.metricSeries || {}).length) return false;
+        const lastAttempt = Date.parse(activity.garminJsonSyncAttemptedAt || '');
+        const cooldown = cooldowns[activity.garminJsonSyncStatus] || 0;
+        return !(Number.isFinite(lastAttempt) && cooldown > 0 && now - lastAttempt < cooldown);
+    });
+
+    let imported = 0, noData = 0, failed = 0, rawSeries = 0, rateLimited = false;
+    const errors = [];
+    for (let index = 0; index < pending.length; index++) {
+        const activity = pending[index];
+        const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
+        const id = String(rawId).replace(/^garmin-/, '');
+        const message = status?.querySelector('#garmin-sync-progress-message');
+        const progress = 'Garmin-Rohtelemetrie: ' + (index + 1) + '/' + pending.length;
+        if (message) message.textContent = progress;
+        setGarminSyncIndicator('syncing', progress);
+
+        try {
+            let response = null;
+            let lastError = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    response = await callGarminFunction({ action: 'import-activity-json', activityId: id });
+                    lastError = null;
+                    break;
+                } catch (error) {
+                    lastError = error;
+                    if (!/HTTP 429|rate.?limit/i.test(error?.message || '') || attempt === 1) break;
+                    const match = String(error.message).match(/retryInSeconds["\\s:=]+(\d+)/i);
+                    const waitSeconds = Math.max(30, Number(match?.[1] || 30));
+                    if (message) message.textContent = 'Garmin-Abruflimit: automatische Fortsetzung in ' + waitSeconds + ' Sekunden …';
+                    await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                }
+            }
+            if (lastError) throw lastError;
+
+            const telemetry = response?.telemetry;
+            const metricSeries = telemetry?.metricSeries && typeof telemetry.metricSeries === 'object'
+                ? telemetry.metricSeries : {};
+            const usableSeries = Object.values(metricSeries).filter(metric => Array.isArray(metric?.values)
+                && metric.values.filter(value => value !== null && value !== undefined
+                    && value !== '' && Number.isFinite(Number(value))).length >= 2).length;
+            if (!Array.isArray(telemetry?.time) || telemetry.time.length < 2 || usableSeries < 1) {
+                activity.garminJsonSyncStatus = 'no_data';
+                activity.garminJsonSyncAttemptedAt = new Date().toISOString();
+                noData++;
+            } else {
+                const previous = activity.garminTelemetry && typeof activity.garminTelemetry === 'object'
+                    ? activity.garminTelemetry : {};
+                const previousSeries = previous.metricSeries && typeof previous.metricSeries === 'object'
+                    ? previous.metricSeries : {};
+                const fetchedSeries = {};
+                for (const [key, metric] of Object.entries(metricSeries)) {
+                    if (!metric || !Array.isArray(metric.values)) continue;
+                    fetchedSeries[key] = {
+                        ...metric,
+                        time: Array.isArray(metric.time) ? metric.time : telemetry.time
+                    };
+                }
+                const mergedSeries = { ...fetchedSeries, ...previousSeries };
+                // Legacy JSON series may not yet have their own time array. Attach
+                // the existing axis only when its length demonstrably matches.
+                for (const [key, metric] of Object.entries(mergedSeries)) {
+                    if (Array.isArray(metric?.time) || !Array.isArray(metric?.values)) continue;
+                    const fallback = Array.isArray(previous.time) && previous.time.length === metric.values.length
+                        ? previous.time : null;
+                    if (fallback) mergedSeries[key] = { ...metric, time: fallback };
+                }
+
+                activity.garminTelemetry = {
+                    ...previous,
+                    ...(!Array.isArray(previous.time) || previous.time.length < 2 ? { time: telemetry.time } : {}),
+                    ...(!Array.isArray(previous.hr) && Array.isArray(telemetry.hr) ? { hr: telemetry.hr } : {}),
+                    ...(!Array.isArray(previous.altitude) && Array.isArray(telemetry.altitude) ? { altitude: telemetry.altitude } : {}),
+                    ...(!Array.isArray(previous.distance) && Array.isArray(telemetry.distance) ? { distance: telemetry.distance } : {}),
+                    ...(!Array.isArray(previous.respirationRate) && Array.isArray(telemetry.respirationRate) ? { respirationRate: telemetry.respirationRate } : {}),
+                    ...(!Array.isArray(previous.bodyBattery) && Array.isArray(telemetry.bodyBattery) ? { bodyBattery: telemetry.bodyBattery } : {}),
+                    metricSeries: mergedSeries
+                };
+                activity.garminJsonImportedAt = new Date().toISOString();
+                activity.garminJsonSource = 'garmin-activity-details-json';
+                activity.garminJsonSyncStatus = 'complete';
+                activity.garminJsonSyncAttemptedAt = activity.garminJsonImportedAt;
+                activity.garminJsonMetricSeriesCount = Object.keys(mergedSeries).length;
+                activity.garminJsonSampleCount = telemetry.sampleCount || telemetry.time.length;
+                imported++;
+                rawSeries += usableSeries;
+            }
+        } catch (error) {
+            const errorMessage = error?.message || 'Unbekannter Garmin-JSON-Fehler';
+            const limited = /HTTP 429|rate.?limit/i.test(errorMessage);
+            activity.garminJsonSyncStatus = limited ? 'rate_limited' : 'error';
+            activity.garminJsonSyncAttemptedAt = new Date().toISOString();
+            failed++;
+            errors.push(id + ': ' + errorMessage);
+            if (limited) rateLimited = true;
+        }
+
+        if ((index + 1) % 5 === 0 || index === pending.length - 1 || rateLimited) {
+            if (saveActivitiesToLocalStorage() === false) {
+                throw new Error('Garmin-Rohtelemetrie konnte nicht im lokalen Aktivitätsspeicher gesichert werden.');
+            }
+        }
+        if (rateLimited) break;
+        if (index < pending.length - 1) await new Promise(resolve => setTimeout(resolve, 650));
+    }
+
+    if (imported > 0) initEngine();
+    return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors };
+}
+
 function recordGarminActivityCoverageRange(startDate, endDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || '')
         || !/^\d{4}-\d{2}-\d{2}$/.test(endDate || '')
@@ -874,12 +1006,16 @@ async function syncGarminSelectedRange() {
         const message = status.querySelector('#garmin-sync-progress-message');
         if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
         const telemetrySummary = await syncMissingGarminTelemetry(startDate, endDate, status);
+        const jsonTelemetrySummary = await syncMissingGarminJsonTelemetry(startDate, endDate, status);
         status.removeAttribute('aria-busy');
         const activitiesText = activitySummary
             ? (activitySummary.stored || 0) + ' Aktivitäten gespeichert'
             : 'Aktivitäten bereits in einem vorherigen Teilabruf verarbeitet';
         const telemetryText = 'FIT-Daten: ' + telemetrySummary.imported + '/' + telemetrySummary.total + ' Aktivitäten; HF in ' + telemetrySummary.withHr + ', Geschwindigkeit in ' + telemetrySummary.withSpeed + ', Kadenz/Schlagfrequenz in ' + telemetrySummary.withCadence + '; ' + telemetrySummary.laps + ' Runden, ' + telemetrySummary.sets + ' Kraft-Sätze, ' + telemetrySummary.workoutSteps + ' Trainingsschritte und ' + telemetrySummary.recordFields + ' Messfeldtypen erfasst' +
-            (telemetrySummary.failed ? ', ' + telemetrySummary.failed + ' fehlgeschlagen' : '');
+            (telemetrySummary.failed ? ', ' + telemetrySummary.failed + ' fehlgeschlagen' : '') +
+            '. Garmin-JSON-Rohreihen: ' + jsonTelemetrySummary.imported + '/' + jsonTelemetrySummary.total + ' Aktivitäten, ' + jsonTelemetrySummary.rawSeries + ' Messreihen ergänzt' +
+            (jsonTelemetrySummary.noData ? ', ' + jsonTelemetrySummary.noData + ' ohne Zeitreihendaten' : '') +
+            (jsonTelemetrySummary.failed ? ', ' + jsonTelemetrySummary.failed + ' fehlgeschlagen' : '');
         status.textContent = 'Synchronisierung abgeschlossen: ' + totalDays + '/' + totalDays + ' Tage. ' +
             activitiesText + '. ' + telemetryText + '. Garmin-Gesundheitswerte in Check-ins übernommen: ' +
             healthImportSummary.values + ' Werte an ' + healthImportSummary.days +
@@ -1793,6 +1929,14 @@ async function syncGarminTodayOnOpen(userId) {
             await syncMissingGarminTelemetry(date, date, null);
         } catch (telemetryError) {
             console.warn('KAJO: FIT-Zeitreihen des heutigen Tages konnten nicht vollständig ergänzt werden:', telemetryError);
+        }
+        try {
+            // Beim automatischen Tagesabgleich werden auch ältere Garmin-Aktivitäten
+            // ohne JSON-Rohtelemetrie schrittweise nachgeladen.
+            const jsonTelemetry = await syncMissingGarminJsonTelemetry('2020-01-01', date, null);
+            console.info('KAJO: Automatische Garmin-Rohtelemetrie abgeschlossen:', jsonTelemetry);
+        } catch (jsonTelemetryError) {
+            console.warn('KAJO: Garmin-Rohtelemetrie konnte nicht vollständig ergänzt werden:', jsonTelemetryError);
         }
 
         if (activeAppUserId !== userId || !appUserReady) return;
