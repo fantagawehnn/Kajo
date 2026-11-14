@@ -240,7 +240,8 @@ for (const metric of ['ctl', 'atl', 'tsb']) {
 assert.ok(main.includes("from './training-load-view.js'"), 'Training Load view module is wired into main navigation');
 assert.ok(main.includes('kajoRenderTrainingLoadView: renderTrainingLoadView'), 'Training Load view refresh is exposed to shared timeframe controls');
 assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared analysis timeframe refreshes the Training Load chart');
-assert.ok(trainingLoadView.includes("['complete', 'confirmed-rest'].includes(x.dataStatus)"), 'only complete or confirmed-rest days supply the current model value');
+assert.ok(trainingLoadView.includes('computePerformanceTimeline(state.rawActivities, settings, state.profile)'), 'Training Load builds each selected model from the centralized performance timeline');
+assert.ok(trainingLoadView.includes("['complete', 'confirmed-rest'].includes(row.dataStatus)"), 'only complete or confirmed-rest days supply the current model value');
 assert.ok(trainingLoadView.includes('spanGaps: false'), 'unknown or incomplete days remain visible as chart gaps');
 assert.ok(!trainingLoadView.includes('monotony') && !trainingLoadView.includes('training strain'), 'unsupported load metrics are not fabricated');
 
