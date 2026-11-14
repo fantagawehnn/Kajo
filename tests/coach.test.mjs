@@ -213,6 +213,26 @@ assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 
 assert.match(activityDetailReply, /Belastungswert der ausgewählten Quelle für 0\/1 Einheiten vorhanden/);
 assert.match(activityDetailReply, /sRPE dokumentiert für 1\/1 Einheiten \(360,0 AU\)/);
 assert.match(activityDetailReply, /kein gültiger sRPE-Wert für 1 Einheiten dokumentiert/);
+const partialRpeCoverageReply = buildLocalCoachReply({
+    asOfDate: '2026-11-14',
+    performanceContext: {
+        allActivities: [
+            { date: '2026-11-01', type: 'C1', isCanoePerformanceActivity: true, durationMinutes: 60 },
+            { date: '2026-11-02', type: 'C1', isCanoePerformanceActivity: true, durationMinutes: 45 }
+        ],
+        canoeActivities: [
+            { date: '2026-11-01', type: 'C1', isCanoePerformanceActivity: true, durationMinutes: 60 },
+            { date: '2026-11-02', type: 'C1', isCanoePerformanceActivity: true, durationMinutes: 45 }
+        ]
+    },
+    trainingLoad: { selectedSource: 'garmin-native', resolvedMode: 'garmin-native', timeline: [], loadCoverageByActivityType: [
+        { type: 'C1', isCanoePerformanceActivity: true, activityCount: 2, loadAvailableCount: 2, loadMissingCount: 0, sessionRpeAvailableCount: 1, sessionRpeMissingCount: 1, documentedSessionRpeLoadAU: 360 }
+    ] },
+    recovery: { checkins: [], healthEvents: [] },
+    season: { races: [], plannedActivities: [] }
+}, 'Zeig meine Aktivitäten');
+assert.match(partialRpeCoverageReply, /sRPE dokumentiert für 1\/2 Einheiten \(360,0 AU\); 1 ohne sRPE/);
+
 
 const modelTrendReply = buildLocalCoachReply({
     asOfDate: '2026-11-14',
