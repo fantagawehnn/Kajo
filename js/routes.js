@@ -273,20 +273,93 @@ export function deleteTrainingSection(id) {
   found.water.sections = found.water.sections.filter(item => String(item.id) !== String(id));
   saveDataToLocalStorage(); renderRoutesView();
 }
+let trainingRouteFilter = 'all';
+
+export function setTrainingRouteFilter(filter) {
+  trainingRouteFilter = ['all','training','competition'].includes(filter) ? filter : 'all';
+  renderRoutesView();
+}
+
+export function toggleTrainingRouteForm(show = true) {
+  const panel = document.getElementById('route-form-panel');
+  if (!panel) return;
+  const shouldShow = typeof show === 'boolean' ? show : panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !shouldShow);
+  if (shouldShow) {
+    panel.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('route-name')?.focus({ preventScroll: true });
+  }
+}
+
+export function toggleTrainingWatersManager() {
+  const panel = document.getElementById('route-water-manager');
+  const button = document.querySelector('.kajo-route-manager-toggle');
+  if (!panel) return;
+  const opening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !opening);
+  button?.setAttribute('aria-expanded', String(opening));
+  button?.classList.toggle('is-open', opening);
+}
+
 export function renderRoutesView() {
   renderWatersManager();
   const list = document.getElementById('training-routes-list');
   if (!list) return;
   const routes = getTrainingRoutes();
-  list.innerHTML = routes.length ? routes.map(route => {
-    const count = (state.rawActivities || []).filter(activity => getActivityRouteAssignments(activity).some(item => item.routeId === String(route.id))).length;
-    const type = route.type === 'both' ? 'Training & Wettkampf' : route.type === 'competition' ? 'Wettkampfstrecke' : 'Trainingsstrecke';
-    return '<article class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">'
-      +'<div class="flex items-start justify-between gap-3"><div class="min-w-0"><div class="text-sm font-semibold text-white">'+escapeHtml(route.name)+'</div><div class="text-xs text-slate-400">'+escapeHtml([route.river,route.section].filter(Boolean).join(' · '))+'</div><div class="text-[10px] text-cyan-300 mt-1">'+type+' · '+count+' zugeordnete Aktivitäten</div></div>'
-      +'<div class="flex gap-2 shrink-0"><button type="button" onclick="editTrainingRoute(\''+String(route.id).replace(/'/g,'')+'\')" class="text-xs text-cyan-300">Bearbeiten</button><button type="button" onclick="deleteTrainingRoute(\''+String(route.id).replace(/'/g,'')+'\')" class="text-xs text-rose-400">Löschen</button></div></div>'
-      +(route.aliases?.length ? '<p class="text-[10px] text-slate-500">Namensvarianten: '+escapeHtml(route.aliases.join(', '))+'</p>' : '')
-      +(route.notes ? '<p class="text-xs text-slate-400">'+escapeHtml(route.notes)+'</p>' : '')+'</article>';
-  }).join('') : '<p class="text-sm text-slate-500">Noch keine Strecken angelegt. Lege zuerst Flüsse und Abschnitte an.</p>';
+  const waters = getTrainingWaters();
+  const sections = waters.reduce((sum, water) => sum + (water.sections || []).length, 0);
+  const summary = {
+    waters: document.getElementById('route-summary-waters'),
+    sections: document.getElementById('route-summary-sections'),
+    routes: document.getElementById('route-summary-routes')
+  };
+  if (summary.waters) summary.waters.textContent = String(waters.length);
+  if (summary.sections) summary.sections.textContent = String(sections);
+  if (summary.routes) summary.routes.textContent = String(routes.length);
+
+  document.querySelectorAll('[data-route-filter]').forEach(button => {
+    const active = button.dataset.routeFilter === trainingRouteFilter;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+
+  const filtered = routes.filter(route => trainingRouteFilter === 'all'
+    || (trainingRouteFilter === 'training' && (route.type === 'training' || route.type === 'both'))
+    || (trainingRouteFilter === 'competition' && (route.type === 'competition' || route.type === 'both')));
+  const countLabel = document.getElementById('route-filter-count');
+  if (countLabel) countLabel.textContent = filtered.length + (filtered.length === 1 ? ' Eintrag' : ' Einträge');
+
+  if (!filtered.length) {
+    const message = routes.length
+      ? 'Für diesen Filter sind noch keine Strecken angelegt.'
+      : 'Noch keine Strecken angelegt. Füge eine Strecke hinzu oder lege zuerst ein Gewässer mit Flussabschnitt an.';
+    list.innerHTML = '<p class="kajo-route-empty">' + message + '</p>';
+  } else {
+    const grouped = waters.map(water => ({
+      water,
+      sections: (water.sections || []).map(section => ({
+        section,
+        routes: filtered.filter(route => String(route.sectionId || '') === String(section.id)
+          || (!route.sectionId && normalize(route.river) === normalize(water.name) && normalize(route.section) === normalize(section.name)))
+      })).filter(group => group.routes.length)
+    })).filter(group => group.sections.length);
+
+    list.innerHTML = grouped.map(group => '<section class="kajo-route-water-group">'
+      + '<div class="kajo-route-water-heading"><i data-lucide="waves"></i><h3>' + escapeHtml(group.water.name) + '</h3></div>'
+      + group.sections.map(sectionGroup => '<div class="kajo-route-section-group"><div class="kajo-route-section-heading"><i data-lucide="map-pin"></i><span>' + escapeHtml(sectionGroup.section.name) + '</span></div>'
+        + '<div class="kajo-route-items">' + sectionGroup.routes.map(route => {
+          const count = (state.rawActivities || []).filter(activity => getActivityRouteAssignments(activity).some(item => item.routeId === String(route.id))).length;
+          const id = String(route.id).replace(/'/g, '');
+          const typeLabel = route.type === 'both' ? 'Training & Wettkampf' : route.type === 'competition' ? 'Wettkampf' : 'Training';
+          const typeClass = route.type === 'competition' ? 'is-competition' : route.type === 'both' ? 'is-both' : 'is-training';
+          const details = (route.aliases?.length || route.notes) ? '<details class="kajo-route-details"><summary>Details</summary>'
+            + (route.aliases?.length ? '<p><strong>Suchbegriffe:</strong> ' + escapeHtml(route.aliases.join(', ')) + '</p>' : '')
+            + (route.notes ? '<p>' + escapeHtml(route.notes) + '</p>' : '') + '</details>' : '';
+          return '<article class="kajo-route-item"><div class="kajo-route-item-main"><div class="kajo-route-item-title"><strong>' + escapeHtml(route.name) + '</strong><span class="kajo-route-type ' + typeClass + '">' + typeLabel + '</span></div><span class="kajo-route-usage">' + count + (count === 1 ? ' Aktivität' : ' Aktivitäten') + '</span>' + details + '</div>'
+            + '<div class="kajo-route-item-actions"><button type="button" onclick="editTrainingRoute(\'' + id + '\')" aria-label="Strecke bearbeiten"><i data-lucide="pencil"></i></button><button type="button" onclick="deleteTrainingRoute(\'' + id + '\')" aria-label="Strecke löschen"><i data-lucide="trash-2"></i></button></div></article>';
+        }).join('') + '</div></div>').join('') + '</section>').join('');
+    try { globalThis.lucide?.createIcons?.(); } catch (error) { console.warn('Strecken-Icons konnten nicht initialisiert werden:', error); }
+  }
   populateRaceRouteSelect();
 }
 export function editTrainingRoute(id) {
@@ -299,6 +372,7 @@ export function editTrainingRoute(id) {
   document.getElementById('route-aliases').value = (route.aliases || []).join(', ');
   document.getElementById('route-notes').value = route.notes || '';
   document.getElementById('route-form-title').textContent = 'Strecke bearbeiten';
+  toggleTrainingRouteForm(true);
   document.getElementById('route-cancel-edit').classList.remove('hidden');
   document.getElementById('route-name').focus();
 }
@@ -308,6 +382,7 @@ export function resetTrainingRouteForm() {
   const type=document.getElementById('route-type'); if(type) type.value='training';
   const title=document.getElementById('route-form-title'); if(title) title.textContent='Neue Strecke anlegen';
   document.getElementById('route-cancel-edit')?.classList.add('hidden');
+  toggleTrainingRouteForm(false);
 }
 export function saveTrainingRoute() {
   const name = document.getElementById('route-name')?.value.trim();
