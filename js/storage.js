@@ -8,7 +8,7 @@
 
 import { state } from './state.js';
 import { toLocalDateString } from './utils.js';
-import { createUserStorage } from './user-storage.js';
+import { createUserStorage } from './user-storage.js?v=2';
 
 let activeUserStorage = null;
 let activeUserId = null;
