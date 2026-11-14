@@ -6,7 +6,6 @@
  * ============================================================ */
 
 import { state } from './state.js';
-import { escapeHtml } from './utils.js';
 import { buildAthleteContext } from './athlete-context.js';
 
 function formatNumber(value, digits = 0) {
