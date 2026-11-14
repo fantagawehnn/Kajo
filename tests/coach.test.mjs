@@ -271,3 +271,16 @@ const pairedMixedSourceContext = {
 const pairedMixedSourceReply = buildLocalCoachReply(pairedMixedSourceContext, 'Wie ist meine Erholung?');
 assert.match(pairedMixedSourceReply, /Keine belastbare Gegenüberstellung von Vortagesbelastung/);
 assert.doesNotMatch(pairedMixedSourceReply, /HRV: 3 passende Tage/);
+
+const pairedMixedLoadUnitContext = {
+    ...pairedRecoveryContext,
+    trainingLoad: {
+        selectedSource: 'garmin-native',
+        timeline: pairedTimeline.map(day => day.date === '2026-11-13'
+            ? { ...day, loadUnit: 'EA-HF-Punkte' }
+            : day)
+    }
+};
+const pairedMixedLoadUnitReply = buildLocalCoachReply(pairedMixedLoadUnitContext, 'Wie ist meine Erholung?');
+assert.match(pairedMixedLoadUnitReply, /Keine belastbare Gegenüberstellung von Vortagesbelastung/);
+assert.doesNotMatch(pairedMixedLoadUnitReply, /HRV: 3 passende Tage/);
