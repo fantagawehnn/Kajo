@@ -527,6 +527,37 @@ export function renderMonthView() {
     globalThis.lucide?.createIcons?.();
 }
 
+export function selectCalendarWeekDay(date) {
+    if (!date) return;
+    state.selectedCalendarDay = date;
+    renderWeekView();
+    document.getElementById('calendar-week-day-' + date)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+}
+
+export function openPlannedCalendarDetail(id) {
+    const item = (state.plannedActivities || []).find(entry => String(entry.id) === String(id));
+    if (!item) return;
+    const sport = calendarSport(item.type);
+    let modal = document.getElementById('calendar-planned-detail-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'calendar-planned-detail-modal';
+        modal.className = 'fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 p-3';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<section class="calendar-planned-detail-card"><div class="flex items-center justify-between gap-3"><div><p class="text-xs text-slate-400">Geplante Trainingseinheit</p><h2 class="text-lg font-bold">' + escapeHtml(item.name || 'Geplante Einheit') + '</h2></div><button type="button" class="calendar-planned-detail-close" aria-label="Schließen" onclick="closePlannedCalendarDetail()"><i data-lucide="x"></i></button></div>' +
+        '<div class="calendar-planned-detail-sport" style="--activity-color:' + (sport.color || '#64748b') + '">' + escapeHtml(sport.label) + '</div>' +
+        '<dl><div><dt>Datum</dt><dd>' + escapeHtml(calendarDateLabel(item.date)) + '</dd></div><div><dt>Dauer</dt><dd>' + (item.duration == null ? '—' : escapeHtml(item.duration) + ' min') + '</dd></div><div><dt>Ziel-Load</dt><dd>' + (item.targetTss == null ? '—' : escapeHtml(item.targetTss)) + '</dd></div><div><dt>Trainingsform</dt><dd>' + escapeHtml(item.category || '—') + '</dd></div></dl>' +
+        (item.desc ? '<p class="calendar-planned-detail-description">' + escapeHtml(item.desc) + '</p>' : '') +
+        '<div class="flex justify-end"><button type="button" class="calendar-planned-detail-action" onclick="closePlannedCalendarDetail();switchTab(\'training-planning\')">Zur Trainingsplanung</button></div></section>';
+    globalThis.lucide?.createIcons?.();
+}
+export function closePlannedCalendarDetail() {
+    document.getElementById('calendar-planned-detail-modal')?.remove();
+}
+
 export function renderWeekView() {
     const container = document.getElementById('cal-format-week');
     if (!container) return;
@@ -537,9 +568,13 @@ export function renderWeekView() {
     for (let i = 0; i < 7; i++) { const date = new Date(current); date.setDate(current.getDate() + i); weekDates.push(toLocalDateString(date)); }
     const endDate = weekDates[6];
     const monthShort = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    document.getElementById('calendar-period-title').textContent = 'KW ' + (() => { const d = new Date(weekDates[3] + 'T12:00:00'); const jan4 = new Date(d.getFullYear(),0,4,12); const monday = new Date(jan4); monday.setDate(jan4.getDate()-((jan4.getDay()+6)%7)); return Math.floor((d-monday)/604800000)+1; })() + ' · ' + new Date(weekDates[0] + 'T12:00:00').getDate() + '. ' + monthShort[new Date(weekDates[0] + 'T12:00:00').getMonth()] + ' – ' + new Date(endDate + 'T12:00:00').getDate() + '. ' + monthShort[new Date(endDate + 'T12:00:00').getMonth()];
+    const weekNumberDate = new Date(weekDates[3] + 'T12:00:00');
+    const jan4 = new Date(weekNumberDate.getFullYear(), 0, 4, 12);
+    const firstMonday = new Date(jan4);
+    firstMonday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+    const weekNo = Math.floor((weekNumberDate - firstMonday) / 604800000) + 1;
+    document.getElementById('calendar-period-title').textContent = 'KW ' + weekNo + ' · ' + new Date(weekDates[0] + 'T12:00:00').getDate() + '. ' + monthShort[new Date(weekDates[0] + 'T12:00:00').getMonth()] + ' – ' + new Date(endDate + 'T12:00:00').getDate() + '. ' + monthShort[new Date(endDate + 'T12:00:00').getMonth()];
     const activities = (state.rawActivities || []).filter(item => item.date >= weekDates[0] && item.date <= endDate);
-    const planned = (state.plannedActivities || []).filter(item => item.date >= weekDates[0] && item.date <= endDate);
     const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
     const loadDays = weekDates.map(date => calendarDateData(date)).filter(data => data.activities.length);
     const loadComplete = loadDays.length > 0 && loadDays.every(data => data.loadValue !== null);
@@ -548,29 +583,58 @@ export function renderWeekView() {
     const durationTotal = durationRecords.length ? durationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
     const summary = document.getElementById('calendar-week-summary');
     if (summary) summary.innerHTML = '<span><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></span><span><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : (durationComplete ? '' : '∼') + calendarFormatMinutes(durationTotal)) + '</strong><em>' + (activities.length ? durationRecords.length + '/' + activities.length + ' Dauern erfasst' : 'Keine Einheiten dokumentiert') + '</em></span>';
-    container.classList.remove('grid-cols-1', 'grid-cols-7', 'min-w-[900px]');
-    container.innerHTML = '';
+
     const today = toLocalDateString();
-    weekDates.forEach(date => {
+    const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    const dayData = weekDates.map((date, index) => {
         const data = calendarDateData(date);
+        const health = state.healthLogs?.[date];
+        const cycle = state.dailyCheckins?.[date]?.cycle?.period === true;
+        const markers = [
+            ...data.activities.map(item => ({ color: calendarSport(item.type).color || '#64748b', title: calendarSport(item.type).label, kind: 'training' })),
+            ...data.planned.map(item => ({ color: calendarSport(item.type).color || '#64748b', title: calendarSport(item.type).label + ' · geplant', kind: 'planned' })),
+            ...(data.races.length ? [{ color: 'var(--kajo-status-info,#63a9ee)', title: 'Wettkampf', kind: 'race' }] : []),
+            ...(health?.status === 'sick' ? [{ color: 'var(--kajo-status-warning,#e5a43b)', title: 'Krankheit', kind: 'sick' }] : []),
+            ...(health?.status === 'injured' ? [{ color: 'var(--kajo-status-critical,#e36b6b)', title: 'Verletzung', kind: 'injured' }] : []),
+            ...(cycle ? [{ color: '#d78aa8', title: 'Menstruation (erfasst)', kind: 'cycle' }] : [])
+        ];
+        return { date, index, data, markers, health, cycle };
+    });
+    const activeDate = weekDates.includes(state.selectedCalendarDay) ? state.selectedCalendarDay : today >= weekDates[0] && today <= endDate ? today : weekDates[0];
+    state.selectedCalendarDay = activeDate;
+    const strip = '<nav class="calendar-week-strip" aria-label="Wochentage">' + dayData.map(day => {
+        const d = new Date(day.date + 'T12:00:00');
+        const dots = day.markers.slice(0, 8).map(marker => '<span class="calendar-week-dot ' + (marker.kind === 'planned' ? 'is-planned' : '') + '" style="--marker-color:' + marker.color + '" title="' + escapeHtml(marker.title) + '"></span>').join('');
+        return '<button type="button" class="calendar-week-strip-day ' + (day.date === today ? 'is-today ' : '') + (day.date === activeDate ? 'is-selected' : '') + '" aria-pressed="' + (day.date === activeDate) + '" onclick="selectCalendarWeekDay(\'' + day.date + '\')"><span>' + dayNames[day.index] + '</span><strong>' + d.getDate() + '</strong><span class="calendar-week-strip-dots">' + dots + '</span></button>';
+    }).join('') + '</nav>';
+
+    const sections = dayData.map(day => {
+        const { date, data } = day;
         const d = new Date(date + 'T12:00:00');
-        const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
         const activityItems = data.activities.map(item => {
             const sport = calendarSport(item.type);
-            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + sport.color + '" onclick="openCSVDetailsModal(\'' + encodeURIComponent(String(item.id)).replace(/'/g, '%27') + '\')"><span></span><strong>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</strong><small>' + escapeHtml(item.name || 'Training') + '</small><small class="calendar-week-source">' + escapeHtml(calendarActivitySourceLabel(item)) + '</small></button>';
+            const id = encodeURIComponent(String(item.id || '')).replace(/'/g, '%27');
+            return '<button type="button" class="calendar-week-activity is-completed" style="--activity-color:' + (sport.color || '#64748b') + '" onclick="openCSVDetailsModal(\'' + id + '\')"><span class="calendar-week-activity-accent"></span><span class="calendar-week-activity-main"><strong>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</strong><small>' + escapeHtml(item.name || 'Trainingseinheit') + '</small><small class="calendar-week-source">' + escapeHtml(calendarActivitySourceLabel(item)) + '</small></span><span class="calendar-entry-status is-completed">Abgeschlossen</span></button>';
         }).join('');
         const planItems = data.planned.map(item => {
             const sport = calendarSport(item.type);
-            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + sport.color + '" onclick="switchTab(\'training-planning\')"><span></span><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplant') + '</small></button>';
+            const id = encodeURIComponent(String(item.id || '')).replace(/'/g, '%27');
+            return '<button type="button" class="calendar-week-activity is-planned" style="--activity-color:' + (sport.color || '#64748b') + '" onclick="openPlannedCalendarDetail(decodeURIComponent(\'' + id + '\'))"><span class="calendar-week-activity-accent"></span><span class="calendar-week-activity-main"><strong>' + escapeHtml(sport.label) + '</strong><small>' + escapeHtml(item.name || 'Geplante Einheit') + '</small><small>' + (item.duration == null ? 'Dauer —' : escapeHtml(item.duration) + ' min') + '</small></span><span class="calendar-entry-status is-planned">Geplant</span></button>';
         }).join('');
-        const eventIcons = calendarEventIcons(date);
-        const cell = document.createElement('section');
-        cell.className = 'calendar-week-day ' + (date === today ? 'is-today ' : '') + (state.selectedCalendarDay === date ? 'is-selected' : '');
-        cell.innerHTML = '<button type="button" class="calendar-week-day-head" onclick="openCalendarDay(\'' + date + '\')"><span>' + dayNames[d.getDay()] + '</span><strong>' + d.getDate() + '</strong><span class="calendar-week-day-events">' + eventIcons + '</span></button>' +
-            '<div class="calendar-week-activities">' + (activityItems + planItems || '<span class="calendar-week-empty">—</span>') + '</div>' +
-            '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? '—' : (data.durationComplete ? '' : '∼') + Math.round(data.durationTotal) + ' min') + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div>';
-        container.appendChild(cell);
-    });
+        const eventLabels = [];
+        if (data.races.length) eventLabels.push('<span class="calendar-week-event-label calendar-event-race"><i data-lucide="trophy"></i> Wettkampf</span>');
+        if (day.health?.status === 'sick') eventLabels.push('<span class="calendar-week-event-label calendar-event-sick"><i data-lucide="thermometer"></i> Krankheit</span>');
+        if (day.health?.status === 'injured') eventLabels.push('<span class="calendar-week-event-label calendar-event-injured"><i data-lucide="bandage"></i> Verletzung</span>');
+        if (day.cycle) eventLabels.push('<span class="calendar-week-event-label calendar-event-cycle"><i data-lucide="droplet"></i> Menstruation</span>');
+        const dayName = calendarDateLabel(date);
+        const entries = activityItems + planItems;
+        return '<section id="calendar-week-day-' + date + '" class="calendar-week-agenda-day ' + (date === today ? 'is-today ' : '') + (date === activeDate ? 'is-selected' : '') + '"><button type="button" class="calendar-week-agenda-heading" onclick="selectCalendarWeekDay(\'' + date + '\')"><span><small>' + dayNames[day.index] + '</small><strong>' + d.getDate() + '. ' + monthShort[d.getMonth()] + '</strong></span><span class="calendar-week-agenda-title">' + escapeHtml(dayName) + '</span><i data-lucide="chevron-down"></i></button>' +
+            (eventLabels.length ? '<div class="calendar-week-event-labels">' + eventLabels.join('') + '</div>' : '') +
+            '<div class="calendar-week-agenda-entries">' + (entries || '<p class="calendar-week-empty">Keine Einträge</p>') + '</div>' +
+            '<div class="calendar-week-day-totals"><span>' + (data.durationTotal === null ? 'Trainingszeit —' : (data.durationComplete ? '' : '∼') + calendarFormatMinutes(data.durationTotal)) + '</span><span>' + (data.loadValue === null ? 'Load —' : 'Load ' + Math.round(data.loadValue)) + '</span></div></section>';
+    }).join('');
+    container.classList.remove('grid-cols-1', 'grid-cols-7', 'min-w-[900px]');
+    container.innerHTML = strip + '<div class="calendar-week-agenda">' + sections + '</div>';
     globalThis.lucide?.createIcons?.();
 }
 
