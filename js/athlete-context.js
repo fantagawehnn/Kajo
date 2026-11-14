@@ -9,7 +9,7 @@
 const CANOE_ACTIVITY_TYPES = new Set(['Kayaking', 'C1', 'C2']);
 const CHECKIN_FIELDS = [
     'sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress',
-    'hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration', 'weight'
+    'hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration'
 ];
 
 function validDateKey(value) {
@@ -106,7 +106,9 @@ function summarizeHealthEvents(healthLogs, asOfDate, lookbackDays) {
  *                   authorized AI request.
  */
 export function buildAthleteContext(state, options = {}) {
-    const asOfDate = validDateKey(options.asOfDate) || new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const localToday = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    const asOfDate = validDateKey(options.asOfDate) || localToday;
     const activityDays = Number.isInteger(options.activityDays) ? Math.max(1, options.activityDays) : 90;
     const checkinDays = Number.isInteger(options.checkinDays) ? Math.max(1, options.checkinDays) : 28;
     const healthDays = Number.isInteger(options.healthDays) ? Math.max(1, options.healthDays) : 180;
