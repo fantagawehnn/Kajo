@@ -7259,3 +7259,49 @@ body.kajo-training-competitions-view #planned-this-week-section { display:none !
 }
 
 #view-calendar #activity-list-items > * + * { margin-top:0 !important; }
+
+
+/* KAJO compact viewport spacing and unframed account actions. */
+.kajo-desktop-header-actions { gap:.35rem; }
+.kajo-home-icon-button {
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.kajo-home-icon-button:hover { background:rgba(148,163,184,.08) !important; }
+@media (max-width:640px) {
+  .kajo-mobile-header {
+    height:calc(3.25rem + env(safe-area-inset-top)) !important;
+    padding:calc(.3rem + env(safe-area-inset-top)) .75rem .3rem !important;
+    gap:.4rem !important;
+    box-shadow:0 3px 12px rgb(0 0 0 / .12) !important;
+  }
+  .kajo-mobile-header .kajo-mobile-account {
+    width:2.25rem !important;
+    min-width:2.25rem !important;
+    max-width:2.25rem !important;
+    height:2.25rem !important;
+    min-height:2.25rem !important;
+    max-height:2.25rem !important;
+    flex-basis:2.25rem !important;
+    margin:0 !important;
+    border:0 !important;
+    border-radius:50% !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+  .kajo-mobile-header .kajo-mobile-notifications { margin-left:auto !important; }
+  .kajo-mobile-header .kajo-account-button { margin-left:0 !important; }
+  .kajo-mobile-header .kajo-mobile-account:hover { background:rgba(148,163,184,.1) !important; }
+  #app-main {
+    padding-top:calc(3.45rem + env(safe-area-inset-top)) !important;
+    padding-bottom:calc(.55rem + env(safe-area-inset-bottom)) !important;
+  }
+  body { padding-bottom:calc(3.9rem + env(safe-area-inset-bottom)) !important; }
+  #app-navigation > div > div { height:3.15rem !important; }
+  #app-navigation > div { padding-top:.2rem !important; }
+  #app-navigation .kajo-mobile-nav-item { padding:3px 2px !important; gap:2px !important; }
+}
+@media (min-width:641px) {
+  #app-main { padding-bottom:.75rem !important; }
+}
