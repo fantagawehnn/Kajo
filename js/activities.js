@@ -86,7 +86,7 @@ function diagnoseSelectedActivityTelemetry() {
         lines.push('AUFFÄLLIGKEIT: Die Zeitachse hat nicht dieselbe Länge wie die angezeigte Messreihe.');
     }
 
-    output.textContent = lines.join('\\n');
+    output.textContent = lines.join('\n');
     output.hidden = false;
 }
 
