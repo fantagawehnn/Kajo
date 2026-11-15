@@ -33,7 +33,8 @@ const sections = [
   {
     id: 'performance', title: 'Leistungsprofil', subtitle: 'Referenzwerte, Stärken und Entwicklungsfelder', icon: 'activity',
     fields: [
-      { key: 'maxHr', label: 'Maximale Herzfrequenz (bpm)', type: 'number', min: 80, max: 240, step: 1 },
+      { key: 'maxHr', label: 'Maximale Herzfrequenz (bpm)', type: 'number', min: 100, max: 240, step: 1 },
+      { key: 'restingHr', label: 'Ruheherzfrequenz – Profil-Fallback (bpm)', type: 'number', min: 30, max: 120, step: 1 },
       { key: 'thresholdHr', label: 'Schwellenherzfrequenz (bpm)', type: 'number', min: 60, max: 220, step: 1 },
       { key: 'vo2max', label: 'VO₂max (ml/kg/min)', type: 'number', min: 10, max: 100, step: 0.1 },
       { key: 'vo2maxDate', label: 'Datum der VO₂max-Messung', type: 'date' },
