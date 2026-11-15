@@ -14,6 +14,13 @@ import { getTrainingLoadData } from './training-load.js';
 import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
 
+/* Chart.js: Touchbewegungen innerhalb eines Diagramms wie Hover behandeln.
+   touchmove aktualisiert onHover kontinuierlich beim Verschieben des Fingers. */
+if (typeof Chart !== 'undefined' && Chart.defaults) {
+    Chart.defaults.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'];
+}
+
+
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
     if (!note) return;
