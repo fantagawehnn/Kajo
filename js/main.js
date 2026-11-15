@@ -33,7 +33,7 @@ import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengt
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=9';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
-import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=1';
+import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=2';
 
 /* Selten genutzte Bereiche werden erst bei Bedarf geladen.
    Die Promise-Caches verhindern parallele Mehrfachimporte. */
@@ -824,6 +824,29 @@ function applyGarminFitDetail(activity, detail) {
     if ((activity.anaerobicTrainingEffect == null || !Number.isFinite(Number(activity.anaerobicTrainingEffect)) || Number(activity.anaerobicTrainingEffect) < 0) && Number.isFinite(anaerobicEffect) && anaerobicEffect >= 0) activity.anaerobicTrainingEffect = anaerobicEffect;
 }
 
+async function persistGarminTelemetryBatch(activities, userId) {
+    if (!userId || activeAppUserId !== userId || !appUserReady) {
+        throw new Error('Garmin-Telemetrie kann keinem aktiven Benutzerkonto zugeordnet werden.');
+    }
+    const records = (Array.isArray(activities) ? activities : []).map(activity => {
+        const rawId = activity?.sourceRefs?.garminActivityId
+            ?? activity?.garminData?.activityId
+            ?? activity?.id;
+        const activityId = String(rawId ?? '').replace(/^garmin-/, '');
+        const telemetry = activity?.garminTelemetry;
+        return /^\d+$/.test(activityId) && telemetry && typeof telemetry === 'object'
+            && Object.keys(telemetry).length
+            ? { garmin_activity_id: activityId, telemetry }
+            : null;
+    }).filter(Boolean);
+    if (!records.length) return { uploaded: 0, candidates: 0, verified: 0 };
+    const result = await uploadMissingGarminTelemetry(supabase, userId, records);
+    if (result.verified !== records.length) {
+        throw new Error('Garmin-Telemetrie wurde nicht vollständig in der Cloud bestätigt.');
+    }
+    return result;
+}
+
 async function syncMissingGarminTelemetry(startDate, endDate, status) {
     const pending = state.rawActivities.filter(activity => {
         const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
@@ -834,6 +857,7 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     let imported = 0, failed = 0, withHr = 0, withSpeed = 0, withCadence = 0;
     let laps = 0, sets = 0, workoutSteps = 0, recordFields = 0;
     const errors = [];
+    let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
         const activity = pending[index];
         const id = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId);
@@ -868,8 +892,14 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
         }
         if ((index + 1) % 5 === 0 || index === pending.length - 1) {
             if (saveDataToLocalStorage() === false) throw new Error('Garmin-Zeitreihen konnten nicht im lokalen Datenspeicher gesichert werden.');
-            // Bereits gespeicherte FIT-Daten sofort in Load/Performance einrechnen,
-            // statt bis zum Ende des gesamten historischen Imports zu warten.
+            const batch = pending.slice(persistedThrough, index + 1);
+            const cloudResult = await persistGarminTelemetryBatch(batch, activeAppUserId);
+            persistedThrough = index + 1;
+            if (status) {
+                const message = status.querySelector('#garmin-sync-progress-message');
+                if (message) message.textContent = 'FIT-Telemetrie in der Cloud gesichert: ' + cloudResult.verified + ' Datensätze bestätigt.';
+            }
+            // Erst bestätigte FIT-Daten in Load/Performance einrechnen.
             initEngine();
         }
         // Sequential requests with a short gap reduce the risk of triggering Garmin rate limits.
@@ -914,6 +944,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
 
     let imported = 0, noData = 0, failed = 0, rawSeries = 0, rateLimited = false;
     const errors = [];
+    let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
         if (activeAppUserId !== syncUserId || !appUserReady) {
             return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
@@ -1022,7 +1053,13 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
             if (saveActivitiesToLocalStorage() === false) {
                 throw new Error('Garmin-Rohtelemetrie konnte nicht im lokalen Aktivitätsspeicher gesichert werden.');
             }
-            // Neue Rohmessreihen sofort in die abgeleiteten Anzeigen übernehmen.
+            const batch = pending.slice(persistedThrough, index + 1);
+            const cloudResult = await persistGarminTelemetryBatch(batch, syncUserId);
+            persistedThrough = index + 1;
+            if (message && cloudResult.verified) {
+                message.textContent = 'Rohtelemetrie in der Cloud gesichert: ' + cloudResult.verified + ' Datensätze bestätigt.';
+            }
+            // Neue Rohmessreihen erst nach bestätigter Cloud-Speicherung übernehmen.
             initEngine();
         }
         if (rateLimited) break;
