@@ -219,11 +219,11 @@ export function saveCheckin() {
         return;
     }
     const manualFields = [
-        ['input-hrv', 'hrv', value => value > 0],
-        ['input-rhr', 'rhr', value => value > 0],
-        ['input-sleep-duration', 'sleepDuration', value => value > 0 && value <= 24],
-        ['input-sleep-score', 'sleepScore', value => value >= 0 && value <= 100],
-        ['input-respiration', 'respiration', value => value >= 4 && value <= 60]
+        ['input-hrv', 'hrv', value => value > 0, 'ms'],
+        ['input-rhr', 'rhr', value => value > 0, 'bpm'],
+        ['input-sleep-duration', 'sleepDuration', value => value > 0 && value <= 24, 'h'],
+        ['input-sleep-score', 'sleepScore', value => value >= 0 && value <= 100, 'points'],
+        ['input-respiration', 'respiration', value => value >= 4 && value <= 60, 'Atemzüge/min']
     ];
     const wearableUpdates = {};
     for (const [inputId, key, isValid] of manualFields) {
@@ -245,8 +245,13 @@ export function saveCheckin() {
     const existing = state.dailyCheckins[todayStr] || {};
     
     const measurementSources = { ...(existing.measurementSources || {}) };
-    if (Object.prototype.hasOwnProperty.call(wearableUpdates, 'hrv')) {
-        measurementSources.hrv = { source: 'manual', metric: 'unspecified', unit: 'ms' };
+    manualFields.forEach(([, key, , unit]) => {
+        if (Object.prototype.hasOwnProperty.call(wearableUpdates, key)) {
+            measurementSources[key] = { source: 'manual', metric: 'unspecified', unit };
+        }
+    });
+    if (weightEnabled && Number.isFinite(weightVal)) {
+        measurementSources.weight = { source: 'manual', metric: 'unspecified', unit: 'kg' };
     }
     const checkin = {
         ...existing,
