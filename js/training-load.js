@@ -28,27 +28,34 @@ export function calculateGarminZoneLoad(activity, settings, profile) {
         && zones.every(v => v != null && Number.isFinite(Number(v)) && Number(v) >= 40 && Number(v) <= 240)
         && zones.every((v, i) => i === 0 || Number(v) > Number(zones[i - 1]));
     if (!validZones) return null;
-    const intervals = [];
-    for (let i = 0; i < time.length - 1; i++) {
-        const delta = Number(time[i + 1]) - Number(time[i]);
-        if (Number.isFinite(delta) && delta > 0 && delta <= 30) intervals.push(delta);
-    }
-    if (!intervals.length) return null;
-    const sorted = [...intervals].sort((a,b)=>a-b);
-    const medianInterval = sorted[Math.floor(sorted.length / 2)];
     const secondsByZone = [0,0,0,0,0];
-    for (let i = 0; i < hr.length; i++) {
+    let excludedIntervalCount = 0;
+    let excludedIntervalSeconds = 0;
+    // Jeder Messpunkt gilt nur bis zum folgenden Zeitstempel. Der letzte
+    // Messpunkt markiert das Ende der aufgezeichneten Zeitreihe und erhält
+    // keine künstliche Nachlaufzeit.
+    for (let i = 0; i < hr.length - 1; i++) {
         const bpm = Number(hr[i]);
+        const seconds = Number(time[i + 1]) - Number(time[i]);
+        if (!Number.isFinite(seconds) || seconds <= 0) continue;
+        if (seconds > 30) {
+            excludedIntervalCount++;
+            excludedIntervalSeconds += seconds;
+            continue;
+        }
         if (!Number.isFinite(bpm) || bpm < 30 || bpm > 250) continue;
-        const seconds = i < time.length - 1 ? Number(time[i + 1]) - Number(time[i]) : medianInterval;
-        if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 30) continue;
         const zone = bpm <= zones[0] ? 0 : bpm <= zones[1] ? 1 : bpm <= zones[2] ? 2 : bpm <= zones[3] ? 3 : 4;
         secondsByZone[zone] += seconds;
     }
     const totalSeconds = secondsByZone.reduce((sum,value)=>sum+value,0);
     if (totalSeconds < 60) return null;
     const points = secondsByZone.reduce((sum,seconds,index)=>sum + seconds / 60 * (index + 1),0);
-    return { value: Number(points.toFixed(1)), unit: 'Punkte', method: 'Gewichtete HF-Zonenzeit', zoneSource, secondsByZone, totalSeconds };
+    return {
+        value: Number(points.toFixed(1)), unit: 'Punkte', method: 'Gewichtete HF-Zonenzeit',
+        zoneSource, zones: [...zones].map(Number), secondsByZone, totalSeconds,
+        excludedIntervalCount, excludedIntervalSeconds,
+        recordedSeconds: Number(time[time.length - 1]) - Number(time[0])
+    };
 }
 
 function calculateSessionRpeLoad(activity) {
