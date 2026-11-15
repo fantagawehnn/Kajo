@@ -465,20 +465,29 @@ function setGarminSyncIndicator(state, label) {
     }
 }
 
-function renderGarminSyncProgress(completedDays, totalDays) {
+function renderGarminSyncProgress(completedDays, totalDays, phase = 'Aktivitäts- und Gesundheitsdaten werden abgeglichen') {
     const status = document.getElementById('garmin-connection-status');
     if (!status) return;
     const total = Math.max(1, Number(totalDays) || 1);
     const completed = Math.max(0, Math.min(total, Number(completedDays) || 0));
     const percent = Math.round(completed / total * 100);
     status.innerHTML = `
-        <div class="mb-2 text-xs font-medium text-slate-200" id="garmin-sync-progress-message"></div>
-        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-label="Garmin-Synchronisierung" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+        <div class="mb-2 flex items-center justify-between gap-3 text-xs">
+            <span class="font-semibold text-slate-100" id="garmin-sync-progress-message">Garmin-Synchronisierung</span>
+            <span class="shrink-0 tabular-nums text-cyan-300" id="garmin-sync-progress-count"></span>
+        </div>
+        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-label="Garmin-Tagesfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
             <div id="garmin-sync-progress-bar" class="h-full rounded-full bg-cyan-400 transition-all duration-500" style="width:${percent}%"></div>
-        </div>`;
+        </div>
+        <p class="mt-2 text-[10px] leading-relaxed text-slate-400" id="garmin-sync-progress-phase"></p>`;
     status.setAttribute('aria-busy', 'true');
-    status.querySelector('#garmin-sync-progress-message').textContent =
-        'Synchronisierung läuft – Tag ' + completed + '/' + total;
+    status.querySelector('#garmin-sync-progress-count').textContent = completed + ' / ' + total + ' Tage · ' + percent + '%';
+    status.querySelector('#garmin-sync-progress-phase').textContent = phase;
+}
+
+function setGarminSyncProgressPhase(phase) {
+    const node = document.getElementById('garmin-sync-progress-phase');
+    if (node) node.textContent = phase;
 }
 
 async function loadGarminSyncHistory() {
@@ -589,6 +598,8 @@ function applyGarminFitDetail(activity, detail) {
         recordFieldCounts: detail.recordFieldCounts || {},
         messageGroups: detail.messageGroups || {},
         lapCount: detail.lapCount || 0,
+        // Roh-Lap-Messages bleiben erhalten; die normalisierten Zeiten sind direkt auswertbar.
+        laps: Array.isArray(detail.lapSummaries) ? detail.lapSummaries : [],
         setCount: detail.setCount || 0,
         workoutStepCount: detail.workoutStepCount || 0,
         importedAt: new Date().toISOString()
@@ -626,7 +637,8 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
         const activity = pending[index];
         const id = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId);
         const message = status?.querySelector('#garmin-sync-progress-message');
-        if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen: ' + (index + 1) + '/' + pending.length;
+        if (message) message.textContent = 'Lade FIT-Aktivität ' + (index + 1) + '/' + pending.length;
+        setGarminSyncProgressPhase('FIT-Zeitreihen und strukturierte Runden-/Trainingsdaten werden importiert.');
         try {
             let detail;
             for (let attempt = 0; attempt < 2; attempt++) {
@@ -708,6 +720,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
         const message = status?.querySelector('#garmin-sync-progress-message');
         const progress = 'Garmin-Rohtelemetrie: ' + (index + 1) + '/' + pending.length;
         if (message) message.textContent = progress;
+        setGarminSyncProgressPhase('Garmin-Rohmessreihen werden ergänzt und anschließend in der Aktivität gespeichert.');
         setGarminSyncIndicator('syncing', progress);
 
         try {
@@ -1012,8 +1025,22 @@ async function syncGarminSelectedRange() {
                 }
             }
             remainingDays = Number(health.remainingDays ?? 0);
-            const completedDays = Math.max(0, totalDays - remainingDays);
-            renderGarminSyncProgress(completedDays, totalDays);
+            const completedDays = Math.max(0, Math.min(totalDays, totalDays - remainingDays));
+            const dayResults = Array.isArray(health.results) ? health.results : [];
+            const datesInBatch = dayResults
+                .map(day => String(day?.date || day?.record_date || day?.day || '').slice(0, 10))
+                .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date));
+            const lastProcessedDate = datesInBatch.length ? datesInBatch[datesInBatch.length - 1] : null;
+            const dateLabel = lastProcessedDate
+                ? new Date(lastProcessedDate + 'T00:00:00Z').toLocaleDateString('de-DE', { timeZone: 'UTC' })
+                : null;
+            renderGarminSyncProgress(
+                completedDays,
+                totalDays,
+                dateLabel
+                    ? 'Zuletzt verarbeitet: ' + dateLabel + ' · ' + (health.processedDays || datesInBatch.length) + ' Tage in diesem Abruf'
+                    : 'Tagesdaten verarbeitet: ' + completedDays + ' von ' + totalDays + ' · weitere Tage werden bei Bedarf automatisch abgerufen'
+            );
 
             if (health.rateLimited || health.status === 'rate_limited') {
                 consecutiveRateLimits++;
@@ -1021,6 +1048,7 @@ async function syncGarminSelectedRange() {
                 const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + Math.min(30, (consecutiveRateLimits - 1) * 5);
                 const message = status.querySelector('#garmin-sync-progress-message');
                 if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden (' + completedDays + '/' + totalDays + ' Tage verarbeitet).';
+                setGarminSyncProgressPhase('Warte auf Garmin-Freigabe · der bisherige Tagesfortschritt bleibt erhalten.');
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
                 batch++;
                 continue;
@@ -1040,6 +1068,7 @@ async function syncGarminSelectedRange() {
         healthImportSummary = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
         const message = status.querySelector('#garmin-sync-progress-message');
         if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
+        setGarminSyncProgressPhase('Tagesabgleich abgeschlossen · FIT-Dateien und Aktivitätsdetails werden ergänzt.');
         const telemetrySummary = await syncMissingGarminTelemetry(startDate, endDate, status);
         const jsonTelemetrySummary = await syncMissingGarminJsonTelemetry(startDate, endDate, status);
         status.removeAttribute('aria-busy');
@@ -1210,6 +1239,16 @@ function mergeGarminActivity(existing, incoming) {
     const nextSources = Array.from(new Set([...priorSources, existing.source || 'local', 'garmin']));
     if (nextSources.length !== priorSources.length) { existing.sources = nextSources; changed = true; }
     if (!existing.source) { existing.source = 'garmin'; changed = true; }
+    if (incoming.garminFitData && typeof incoming.garminFitData === 'object') {
+        const oldFitCount = Number(existing.garminFitData?.recordCount || 0);
+        const newFitCount = Number(incoming.garminFitData.recordCount || 0);
+        const oldLapCount = Number(existing.garminFitData?.lapCount || 0);
+        const newLapCount = Number(incoming.garminFitData.lapCount || 0);
+        if (!existing.garminFitData || newFitCount > oldFitCount || newLapCount > oldLapCount) {
+            existing.garminFitData = incoming.garminFitData;
+            changed = true;
+        }
+    }
     if (incoming.garminTelemetry) {
         const merged = mergeTelemetryData(existing.garminTelemetry, incoming.garminTelemetry);
         existing.garminTelemetry = merged.value;
@@ -1308,10 +1347,22 @@ async function downloadGarminFitTelemetry(activityId) {
     const workoutSteps = Array.isArray(fit.workout_steps) ? fit.workout_steps
         : (Array.isArray(parsedMessages.workout_step) ? parsedMessages.workout_step : []);
     messageGroups.structured = { laps, sets, workoutSteps };
+    const lapSummaries = laps.map((lap, index) => ({
+        lapNumber: index + 1,
+        startTime: lap.start_time ?? lap.timestamp ?? null,
+        totalElapsedTimeSeconds: numberOrNull(lap.total_elapsed_time ?? lap.elapsed_time),
+        totalTimerTimeSeconds: numberOrNull(lap.total_timer_time),
+        distanceKm: numberOrNull(lap.total_distance),
+        averageSpeedKmh: numberOrNull(lap.avg_speed ?? lap.average_speed),
+        maxSpeedKmh: numberOrNull(lap.max_speed),
+        averageHeartRate: numberOrNull(lap.avg_heart_rate ?? lap.average_heart_rate),
+        maxHeartRate: numberOrNull(lap.max_heart_rate),
+        calories: numberOrNull(lap.total_calories ?? lap.calories)
+    }));
     return {
         telemetry, session, hrCount, speedCount, cadenceCount,
         recordFields, recordFieldCounts, recordCount: valid.length,
-        messageGroups, lapCount: laps.length, setCount: sets.length,
+        messageGroups, lapSummaries, lapCount: laps.length, setCount: sets.length,
         workoutStepCount: workoutSteps.length
     };
 }
