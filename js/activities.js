@@ -418,6 +418,40 @@ export function openCSVDetailsModal(id) {
     const rpeSlider = document.getElementById('activity-rpe-slider');
     if (rpeSlider) rpeSlider.value = rpeValue;
     updateActivityRPEDisplay(act);
+    const noteEditor = document.getElementById('activity-note-editor');
+    const notePreview = document.getElementById('activity-note-preview');
+    const noteToggle = document.getElementById('activity-note-toggle');
+    const savedNote = String(act.perceivedNote || '');
+    if (noteEditor) { noteEditor.value = savedNote; noteEditor.hidden = true; }
+    if (notePreview) { notePreview.textContent = savedNote; notePreview.hidden = !savedNote.trim(); }
+    if (noteToggle) {
+        noteToggle.classList.toggle('has-note', !!savedNote.trim());
+        noteToggle.setAttribute('aria-label', savedNote.trim() ? 'Trainingsnotiz bearbeiten' : 'Trainingsnotiz hinzufügen');
+        if (noteToggle.dataset.bound !== 'true') {
+            noteToggle.addEventListener('click', () => {
+                const editor = document.getElementById('activity-note-editor');
+                if (!editor) return;
+                editor.hidden = !editor.hidden;
+                if (!editor.hidden) { editor.focus(); editor.setSelectionRange(editor.value.length, editor.value.length); }
+            });
+            noteToggle.dataset.bound = 'true';
+        }
+    }
+    if (noteEditor && noteEditor.dataset.bound !== 'true') {
+        noteEditor.addEventListener('change', () => {
+            const current = state.selectedActivityForModal;
+            if (!current) return;
+            const note = noteEditor.value.trim().slice(0, 2000);
+            if (note) current.perceivedNote = note; else delete current.perceivedNote;
+            saveDataToLocalStorage();
+            if (notePreview) { notePreview.textContent = note; notePreview.hidden = !note; }
+            if (noteToggle) {
+                noteToggle.classList.toggle('has-note', !!note);
+                noteToggle.setAttribute('aria-label', note ? 'Trainingsnotiz bearbeiten' : 'Trainingsnotiz hinzufügen');
+            }
+        });
+        noteEditor.dataset.bound = 'true';
+    }
     document.getElementById('activity-edit-panel')?.classList.add('hidden');
 
     // Die Detailansicht wird explizit eingeblendet; so kann die Tailwind-Klasse
@@ -482,7 +516,11 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         if (!Number.isFinite(seconds) || seconds <= 0) return null;
         return Math.floor(seconds / 60) + ':' + String(Math.round(seconds % 60)).padStart(2, '0') + (unit === '100m' ? ' min/100 m' : ' min/km');
     };
-    add('Dauer', Number.isFinite(Number(act.duration)) && Number(act.duration) > 0 ? Math.round(Number(act.duration)) + ' min' : null);
+    const durationMinutes = Number(act.duration);
+    const durationLabel = Number.isFinite(durationMinutes) && durationMinutes > 0
+        ? Math.floor(durationMinutes / 60) + ':' + String(Math.round(durationMinutes % 60)).padStart(2, '0')
+        : null;
+    add('Dauer', durationLabel);
     if (!isStrength && Number.isFinite(Number(act.distance)) && Number(act.distance) > 0) add('Distanz', formatKm(act.distance) + ' km');
     const avgHr = firstNumber(act.hr, act.avgHr, act.averageHr, act.averageHeartRate);
     const maxHr = firstNumber(act.maxHr, act.maxHR, act.maxHeartRate);
@@ -539,18 +577,27 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         container.innerHTML = '<p class="col-span-full text-xs text-slate-500">Für diese Aktivität sind noch keine auswertbaren Kennzahlen hinterlegt.</p>';
         return;
     }
-    const metricColor = label => {
-        if (/Herzfrequenz|Puls/i.test(label)) return '#fb7185';
-        if (/Pace|Geschwindigkeit|Distanz|Höhenmeter/i.test(label)) return '#38bdf8';
-        if (/Leistung|Volumen|Sätze|Übungen/i.test(label)) return '#a78bfa';
-        if (/Schlag|Trittfrequenz|SWOLF/i.test(label)) return '#34d399';
-        return getSportsCatalog()[type]?.color || '#d64a4a';
-    };
-    container.innerHTML = metrics.map(metric => {
-        const color = metricColor(metric.label);
-        return `<div class="activity-metric-circle-card" style="--activity-metric-color:${color}"><div class="activity-metric-circle"><strong>${String(metric.value)}</strong></div><span>${metric.label}</span></div>`;
+    const primaryLabels = ['Dauer', 'Distanz', 'Ø Herzfrequenz'];
+    const primary = primaryLabels.map(label => metrics.find(metric => metric.label === label)).filter(Boolean);
+    const secondary = metrics.filter(metric => !primaryLabels.includes(metric.label));
+    const colors = { 'Dauer': '#35b7a5', 'Distanz': '#4297df', 'Ø Herzfrequenz': '#e46d79' };
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const ringClass = metric => metric.label === 'Dauer' ? ' is-duration' : metric.label === 'Distanz' ? ' is-distance' : ' is-heart-rate';
+    const ringMarkup = primary.map(metric =>
+        '<div class="activity-metric-circle-card' + ringClass(metric) + '" style="--activity-metric-color:' + colors[metric.label] + '">'
+        + '<div class="activity-metric-circle"><strong>' + escapeHtml(metric.value) + '</strong><span>' + escapeHtml(metric.label) + '</span></div></div>'
+    ).join('');
+    const secondaryMarkup = secondary.map(metric => {
+        const color = /Herzfrequenz|Puls/i.test(metric.label) ? '#e46d79'
+            : /Pace|Geschwindigkeit|Distanz|Höhenmeter/i.test(metric.label) ? '#4297df'
+            : /Leistung|Volumen|Sätze|Übungen/i.test(metric.label) ? '#a78bfa'
+            : /Schlag|Trittfrequenz|SWOLF/i.test(metric.label) ? '#34d399'
+            : getSportsCatalog()[type]?.color || '#94a3b8';
+        return '<div class="activity-metric-secondary" style="--activity-metric-color:' + color + '"><span>' + escapeHtml(metric.label) + '</span><strong>' + escapeHtml(metric.value) + '</strong></div>';
     }).join('');
-    container.className = 'activity-detail-metrics';
+    container.innerHTML = (ringMarkup ? '<div class="activity-metric-rings">' + ringMarkup + '</div>' : '')
+        + (secondaryMarkup ? '<div class="activity-metric-secondary-grid">' + secondaryMarkup + '</div>' : '');
+    container.className = 'activity-detail-metrics activity-detail-metrics-redesigned';
 }
 
 export function addActivityStrengthSet() {
@@ -1149,169 +1196,71 @@ function initializeActivityDetailTabs() {
     const modal = document.getElementById('csv-details-modal');
     const content = modal?.querySelector('.activity-detail-content');
     const overview = document.getElementById('activity-overview');
-    if (!modal || !content || !overview) return;
-    if (modal.dataset.activityTabsReady === 'true') return;
+    if (!modal || !content || !overview || modal.dataset.activityTabsReady === 'true') return;
 
-    const definitions = [
-        ['overview', 'Übersicht'],
-        ['load', 'Belastung'],
-        ['intervals', 'Intervalle'],
-        ['sport', 'Sportanalyse'],
-        ['insights', 'Einordnung'],
-        ['data', 'Daten']
-    ];
-    const nav = document.createElement('nav');
-    nav.className = 'activity-detail-tabs';
-    nav.setAttribute('aria-label', 'Aktivitätsanalyse');
-    nav.setAttribute('role', 'tablist');
-    const panels = document.createElement('div');
-    panels.className = 'activity-detail-tab-panels';
-    const panelMap = new Map();
-    definitions.forEach(([key, label], index) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'activity-detail-tab' + (index === 0 ? ' is-active' : '');
-        button.id = 'activity-tab-' + key;
-        button.dataset.activityTab = key;
-        button.setAttribute('role', 'tab');
-        button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
-        button.setAttribute('aria-controls', 'activity-panel-' + key);
-        button.tabIndex = index === 0 ? 0 : -1;
-        button.textContent = label;
-        nav.appendChild(button);
+    // Die Detailansicht ist ein durchgehender Bericht statt mehrerer Registerkarten.
+    const removeIds = ['activity-data-quality', 'activity-fit-data-panel', 'activity-telemetry-diagnostic-source'];
+    removeIds.forEach(id => document.getElementById(id)?.remove());
+    document.getElementById('activity-hr-series-status')?.remove();
+    content.querySelector('.activity-detail-grid')?.remove();
 
-        const panel = document.createElement('section');
-        panel.className = 'activity-detail-tab-panel' + (index === 0 ? ' is-active' : '');
-        panel.id = 'activity-panel-' + key;
-        panel.dataset.activityPanel = key;
-        panel.setAttribute('role', 'tabpanel');
-        panel.setAttribute('aria-labelledby', button.id);
-        panel.hidden = index !== 0;
-        panels.appendChild(panel);
-        panelMap.set(key, panel);
-    });
+    const rpe = document.getElementById('activity-rpe-panel');
+    const metrics = document.getElementById('activity-sport-metrics');
+    if (rpe && metrics) metrics.after(rpe);
 
-    const overviewPanel = panelMap.get('overview');
-    const loadPanel = panelMap.get('load');
-    const intervalPanel = panelMap.get('intervals');
-    const sportPanel = panelMap.get('sport');
-    const insightPanel = panelMap.get('insights');
-    const dataPanel = panelMap.get('data');
-    const move = (id, target) => {
-        const element = document.getElementById(id);
-        if (element && target) target.appendChild(element);
-        return element;
+    const telemetry = document.getElementById('activity-telemetry-panel');
+    const zones = document.getElementById('activity-zone-panel');
+    if (telemetry && !overview.contains(telemetry)) overview.appendChild(telemetry);
+    if (zones) overview.appendChild(zones);
+
+    const createAccordion = (id, title, panelIds) => {
+        const details = document.createElement('details');
+        details.className = 'activity-detail-accordion';
+        details.dataset.activityAccordion = id;
+        const summary = document.createElement('summary');
+        summary.innerHTML = '<span>' + title + '</span><i data-lucide="chevron-down" aria-hidden="true"></i>';
+        const body = document.createElement('div');
+        body.className = 'activity-detail-accordion-body';
+        panelIds.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if (panel) body.appendChild(panel);
+        });
+        details.append(summary, body);
+        content.appendChild(details);
+        return details;
     };
 
-    const stimulusPanel = content.querySelector('.activity-stimulus-panel');
-    if (stimulusPanel) overviewPanel.appendChild(stimulusPanel);
+    createAccordion('load', 'Trainingsbelastung', ['activity-training-stimulus', 'activity-benefit-profile', 'activity-load-context-panel']);
+    createAccordion('intervals', 'Intervalle & Runden', ['activity-intervals-panel']);
+    createAccordion('sport', 'Sportartspezifische Analyse', ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel']);
+    createAccordion('diagnostics', 'Weitere Leistungsanalysen', ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel']);
 
-    move('activity-telemetry-panel', loadPanel);
-    move('activity-intervals-panel', intervalPanel);
-    ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel'].forEach(id => move(id, sportPanel));
-    ['activity-rpe-panel', 'activity-zone-panel', 'activity-benefit-profile', 'activity-recovery-panel', 'activity-efficiency-panel', 'activity-load-context-panel', 'activity-comparison-panel'].forEach(id => move(id, insightPanel));
-    ['activity-fit-data-panel', 'activity-data-quality', 'activity-hr-series-status'].forEach(id => move(id, dataPanel));
-
-    // Diagnosezugang bewusst außerhalb der Tabs platzieren: Er muss auch dann
-    // erreichbar bleiben, wenn für die Aktivität keine Messreihe vorhanden ist.
-    const diagnosticPanel = document.createElement('section');
-    diagnosticPanel.className = 'activity-detail-panel';
-    diagnosticPanel.setAttribute('aria-label', 'Zeitreihen-Diagnose');
-    const diagnosticHeading = document.createElement('div');
-    diagnosticHeading.className = 'activity-detail-section-heading';
-    diagnosticHeading.innerHTML = '<div><p class="activity-detail-kicker">FEHLERSUCHE</p><h3>Zeitreihen-Diagnose</h3></div>';
-    diagnosticPanel.appendChild(diagnosticHeading);
-    const diagnosticSource = document.getElementById('activity-telemetry-diagnostic-source');
-    const diagnosticButton = document.getElementById('activity-telemetry-diagnose');
-    const diagnosticOutput = document.getElementById('activity-telemetry-diagnostic-output');
-    if (diagnosticButton) diagnosticPanel.appendChild(diagnosticButton);
-    if (diagnosticOutput) diagnosticPanel.appendChild(diagnosticOutput);
-    const garminDiagnosticButton = document.getElementById('garmin-json-diagnostic-run');
-    const garminDiagnosticOutput = document.getElementById('garmin-json-diagnostic-output');
-    if (garminDiagnosticButton) diagnosticPanel.appendChild(garminDiagnosticButton);
-    if (garminDiagnosticOutput) diagnosticPanel.appendChild(garminDiagnosticOutput);
-    const garminImportButton = document.getElementById('garmin-json-import-run');
-    const garminImportOutput = document.getElementById('garmin-json-import-output');
-    if (garminImportButton) diagnosticPanel.appendChild(garminImportButton);
-    if (garminImportOutput) diagnosticPanel.appendChild(garminImportOutput);
-    diagnosticSource?.remove();
-
-    const dataHeading = document.createElement('div');
-    dataHeading.className = 'activity-detail-section-heading';
-    dataHeading.innerHTML = '<div><p class="activity-detail-kicker">HERKUNFT & VOLLSTÄNDIGKEIT</p><h3>Datenqualität und Quellen</h3></div>';
-    dataPanel.prepend(dataHeading);
-    const quality = dataPanel.querySelector('#activity-data-quality');
-    if (quality) quality.classList.add('activity-data-quality-card');
-    const diagnostic = dataPanel.querySelector('#activity-telemetry-diagnostic-output');
-    if (diagnostic) diagnostic.classList.add('activity-data-diagnostic');
-
-    const oldGrid = content.querySelector('.activity-detail-grid');
-    oldGrid?.remove();
-    content.insertBefore(diagnosticPanel, overview);
-    overview.after(nav, panels);
+    // Bearbeitung bleibt außerhalb der Analysebereiche und wird über den Stift im Kopf geöffnet.
+    const editPanel = document.getElementById('activity-edit-panel');
+    if (editPanel && !content.contains(editPanel)) content.appendChild(editPanel);
     modal.dataset.activityTabsReady = 'true';
-
-    nav.addEventListener('click', event => {
-        const button = event.target.closest('[data-activity-tab]');
-        if (!button) return;
-        activateActivityDetailTab(button.dataset.activityTab);
-    });
-    nav.addEventListener('keydown', event => {
-        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-        const buttons = [...nav.querySelectorAll('[data-activity-tab]')];
-        const current = buttons.indexOf(document.activeElement);
-        const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
-            : (current + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
-        event.preventDefault();
-        buttons[next]?.focus();
-        activateActivityDetailTab(buttons[next]?.dataset.activityTab);
-    });
-    renderActivityDetailTabEmptyStates();
+    try { globalThis.lucide?.createIcons?.(); } catch (_) {}
 }
 
-function activateActivityDetailTab(key) {
-    const modal = document.getElementById('csv-details-modal');
-    if (!modal) return;
-    modal.querySelectorAll('[data-activity-tab]').forEach(button => {
-        const active = button.dataset.activityTab === key;
-        button.classList.toggle('is-active', active);
-        button.setAttribute('aria-selected', active ? 'true' : 'false');
-        button.tabIndex = active ? 0 : -1;
-    });
-    modal.querySelectorAll('[data-activity-panel]').forEach(panel => {
-        const active = panel.dataset.activityPanel === key;
-        panel.hidden = !active;
-        panel.classList.toggle('is-active', active);
-    });
-    if (key === 'load' && state.selectedActivityForModal) {
-        requestAnimationFrame(() => {
-            try { renderActivityTelemetryChart({ ...state.selectedActivityForModal, telemetry: getActivityTelemetry(state.selectedActivityForModal) }); } catch (_) {}
-        });
-    }
-    if (key === 'sport' && state.activityRouteMap) {
-        requestAnimationFrame(() => state.activityRouteMap?.invalidateSize?.());
-    }
+function activateActivityDetailTab() {
+    // Rückwärtskompatibler No-op: Die neue Ansicht besitzt keine Tabs mehr.
 }
 
 function renderActivityDetailTabEmptyStates() {
-    const messages = {
-        load: 'Für diese Aktivität sind keine auswertbaren Messreihen vorhanden.',
-        intervals: 'Für diese Aktivität sind keine Runden oder Intervallabschnitte dokumentiert.',
-        sport: 'Für diese Sportart liegen in dieser Aktivität keine zusätzlichen Detaildaten vor.',
-        insights: 'Eine weitergehende Einordnung ist mit den vorhandenen Daten noch nicht möglich.'
+    const groups = {
+        load: ['activity-training-stimulus', 'activity-benefit-profile', 'activity-load-context-panel'],
+        intervals: ['activity-intervals-panel'],
+        sport: ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel'],
+        diagnostics: ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel']
     };
-    ['load', 'intervals', 'sport', 'insights'].forEach(key => {
-        const panel = document.querySelector('[data-activity-panel="' + key + '"]');
-        if (!panel) return;
-        let empty = panel.querySelector('.activity-tab-empty');
-        const meaningful = [...panel.children].some(child => !child.classList.contains('activity-tab-empty')
-            && !child.classList.contains('hidden') && (child.textContent || '').trim().length > 0);
-        if (!meaningful && !empty) {
-            empty = document.createElement('p');
-            empty.className = 'activity-tab-empty';
-            empty.textContent = messages[key];
-            panel.appendChild(empty);
-        } else if (meaningful && empty) empty.remove();
+    Object.entries(groups).forEach(([key, ids]) => {
+        const details = document.querySelector('[data-activity-accordion="' + key + '"]');
+        if (!details) return;
+        const hasContent = ids.some(id => {
+            const panel = document.getElementById(id);
+            return panel && !panel.classList.contains('hidden') && (panel.textContent || '').trim().length > 0;
+        });
+        details.hidden = !hasContent;
     });
 }
 
