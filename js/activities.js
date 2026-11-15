@@ -965,9 +965,10 @@ function renderOptionalActivityViews(act) {
     } else {
         const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
         const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
+        const escapeStep = value => String(value ?? '').replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[ch]));
         const workoutStepHtml = workoutSteps.length
             ? '<h5 class="text-xs font-semibold text-cyan-300 mb-2">Garmin-Trainingsintervalle / Workout-Schritte (' + workoutSteps.length + ')</h5>'
-                + workoutSteps.map((step, index) => '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + Object.entries(step || {}).map(([key, value]) => escapeHtml(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ') + '</div></div>').join('')
+                + workoutSteps.map((step, index) => '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + Object.entries(step || {}).map(([key, value]) => escapeStep(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ') + '</div></div>').join('')
             : '';
         setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', workoutStepHtml);
     }
