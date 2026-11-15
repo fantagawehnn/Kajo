@@ -7,7 +7,7 @@ import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=3';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
-import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=3';
+import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
@@ -489,6 +489,57 @@ function calculateActivityZoneTime(activity, zoneConfig = getActivityZoneConfig(
 
 let activityDetailReturnFocus = null;
 
+async function loadGarminTelemetryWhenActivityOpened(activity) {
+    if (!activity || activity.garminTelemetryLoading || getGarminHeartRateSeries(activity)?.hr?.length >= 2) return;
+    const isGarmin = activity.source === 'garmin' || activity.sourceRefs?.garminActivityId != null
+        || activity.garminData?.activityId != null || activity.garminFitImported === true
+        || (Array.isArray(activity.sources) && activity.sources.includes('garmin'));
+    if (!isGarmin) return;
+    const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
+    const activityId = String(rawId ?? '').replace(/^garmin-/, '');
+    if (!/^\\d+$/.test(activityId)) return;
+    activity.garminTelemetryLoading = true;
+    try {
+        const [{ supabase }, telemetryModule] = await Promise.all([
+            import('./supabase-client.js'),
+            import('./garmin-cloud-telemetry.js?v=6')
+        ]);
+        if (!supabase) return;
+        const { data: auth, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        const userId = auth?.user?.id;
+        if (!userId) return;
+        const records = await telemetryModule.loadGarminTelemetryForActivityIds(supabase, userId, [activityId]);
+        if (!records.length || state.selectedActivityForModal !== activity) return;
+        const incoming = records[0].telemetry || {};
+        const current = activity.garminTelemetry || {};
+        activity.garminTelemetry = {
+            ...current, ...incoming,
+            metricSeries: { ...(current.metricSeries || {}), ...(incoming.metricSeries || {}) },
+            metricSeriesTime: incoming.metricSeriesTime || current.metricSeriesTime || undefined
+        };
+        const summary = buildGarminActivityAnalysis(activity, state.settings, state.profile, state.dailyCheckins);
+        if (summary) {
+            activity.garminAnalysis = summary;
+            saveDataToLocalStorage();
+        }
+        if (state.selectedActivityForModal !== activity) return;
+        const analysisActivity = { ...activity, telemetry: getActivityTelemetry(activity) };
+        renderActivityHeartRateSeriesStatus(analysisActivity);
+        renderActivityDataQuality(analysisActivity);
+        renderActivityTelemetryChart(analysisActivity);
+        renderActivityTrainingInsights(analysisActivity);
+        const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
+        const loadItem = loadData.records.find(item => String(item.activity.id) === String(activity.id));
+        renderSportSpecificActivityMetrics(activity, loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}` : '—');
+        try { renderActivityDetailTabEmptyStates(); } catch (_) {}
+    } catch (error) {
+        console.warn('KAJO: Aktivitätstelemetrie konnte beim Öffnen nicht geladen werden:', error);
+    } finally {
+        activity.garminTelemetryLoading = false;
+    }
+}
+
 
 export function openCSVDetailsModal(id) {
     let decodedId = String(id ?? '');
@@ -629,6 +680,7 @@ export function openCSVDetailsModal(id) {
     if (detailShell) detailShell.scrollTop = 0;
     try { renderActivityTelemetryChart(analysisActivity); } catch (error) { console.error('Telemetrie konnte nicht gerendert werden:', error); }
     try { renderActivityTrainingInsights(analysisActivity); } catch (error) { console.error('Trainingsanalyse konnte nicht gerendert werden:', error); }
+    void loadGarminTelemetryWhenActivityOpened(act);
     try { renderOptionalActivityViews(analysisActivity); } catch (error) { console.error('Zusatzansichten konnten nicht gerendert werden:', error); }
     try { renderActivityRouteMap(analysisActivity); } catch (error) { console.error('GPS-Strecke konnte nicht gerendert werden:', error); }
     try { renderActivityStrengthAnalysis(act); } catch (error) { console.error('Kraftanalyse konnte nicht gerendert werden:', error); }
