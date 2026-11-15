@@ -797,7 +797,7 @@ export function removeActivityStrengthSet(exerciseIndex, setIndex) {
     renderSportSpecificActivityMetrics(act, getActivityLoadSummary(act));
 }
 function getActivityLoadSummary(act) {
-    const data = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
+    const data = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
     const item = data.records.find(record => String(record.activity.id) === String(act.id));
     return item ? item.value.toFixed(1) + ' ' + data.unit : '—';
 }
@@ -845,7 +845,7 @@ function renderActivityTrainingInsights(act) {
     const zonePanel = document.getElementById('activity-zone-panel');
     const categoryLabels = { ga: 'Grundlagenausdauer', interval: 'Intervalle', race: 'Wettkampf', reg: 'Regeneration', strength: 'Kraft', tech: 'Technik' };
     const category = categoryLabels[act.category] || 'Nicht zugeordnet';
-    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
+    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
     const zoneLoad = calculateGarminZoneLoad(act, state.settings, state.profile, state.dailyCheckins);
     const srpeData = getTrainingLoadData([act], { ...(state.settings || {}), trainingLoadSource: 'srpe' }, state.profile, state.dailyCheckins);
@@ -1212,7 +1212,7 @@ function renderOptionalActivityViews(act) {
 
     // Belastungskontext aus derselben zentralen Berechnung wie die Belastungsübersicht.
     // Keine Mischung von Garmin Load, EA-HF-Punkten und externem TSS.
-    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
+    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
     const today = state.dailyTimeline.findIndex(d => d.date === act.date);
     const activityLoadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
     if (activityLoadItem && today >= 0) {
