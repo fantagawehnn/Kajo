@@ -1,7 +1,7 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=3';
 import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml } from './utils.js';
-import { getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=3';
+import { getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=4';
 
 
 const TELEMETRY_OPTIONS = {
@@ -301,7 +301,7 @@ export function saveSettings() {
   const sports = {}, categories = {};
   const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
   const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
-  if (!['auto', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
+  if (!['auto', 'kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
   // Legacy-Zonengrenzen bleiben für ältere Datensätze erhalten; die aktive
   // Berechnung verwendet ausschließlich das adaptive Herzfrequenzreserve-Modell.
   const zones = { ...(state.settings?.heartRateZones || {}) };
