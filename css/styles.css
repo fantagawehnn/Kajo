@@ -8099,3 +8099,29 @@ html[data-theme="light"] .kajo-pull-refresh {
   color:#fb923c !important;
   stroke:#fb923c !important;
 }
+
+
+/* Einheitliche, schlanke Datenpunktanzeige für Diagramme */
+.kajo-chart-point-readout {
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:5px 10px;
+  min-height:34px;
+  margin-top:7px;
+  padding:5px 2px 3px;
+  border:0;
+  border-top:1px solid var(--kajo-border,rgba(148,163,184,.18));
+  border-radius:0;
+  background:transparent;
+  color:var(--kajo-muted,#94a3b8);
+  font-size:.68rem;
+  line-height:1.35;
+  font-variant-numeric:tabular-nums;
+}
+.kajo-chart-point-readout[hidden] { display:none !important; }
+.kajo-chart-point-label { color:var(--kajo-muted,#94a3b8); }
+.kajo-chart-point-value { color:var(--kajo-text,#f8fafc); font-size:.88rem; font-weight:750; }
+.kajo-chart-point-time { margin-left:auto; color:var(--kajo-muted,#94a3b8); font-size:.65rem; }
+html[data-theme="light"] .kajo-chart-point-readout { border-top-color:rgba(71,85,105,.18); }
+html[data-theme="light"] .kajo-chart-point-value { color:#182431; }
