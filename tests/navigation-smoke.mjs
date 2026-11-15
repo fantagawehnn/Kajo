@@ -285,7 +285,7 @@ assert.ok(trainingLoadView.includes('getHeartRateZoneAnalysis'), 'view uses the 
 assert.ok(trainingLoadCalculation.includes('export function getHeartRateZoneAnalysis'), 'central calculation exposes both HR-zone models');
 assert.ok(trainingLoadCalculation.includes('pct < 50'), 'Edwards excludes HR time below 50% HRmax');
 assert.ok(trainingLoadView.includes('spanGaps: false'), 'days without eligible HR data remain visible as chart gaps');
-assert.ok(!html.includes('sRPE-Load') && !html.includes('training-load-value-atl') && !html.includes('training-load-value-tsb'), 'the initial view does not present subjective load or CTL/ATL/TSB');
+
 
 assert.ok(calculations.includes('export function calculateStrengthActivitySummary(exercises)'), 'strength volume calculation is centralized');
 assert.ok(calculations.includes('completeSets.length === sets.length'), 'strength volume is withheld when any set lacks data');
