@@ -2011,7 +2011,7 @@ async function syncGarminTodayOnOpen(userId) {
         if (partial) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
-            if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0) {
+            if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
                 const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
                     if (activeAppUserId === userId && appUserReady && !garminDailySyncCompleted.has(runKey)) {
