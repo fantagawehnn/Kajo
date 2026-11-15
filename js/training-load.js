@@ -11,11 +11,14 @@ export function calculateGarminZoneLoad(activity, settings, profile) {
     if (!isGarminActivity(activity)) return null;
     const heartRateSeries = getGarminHeartRateSeries(activity);
     const hr = heartRateSeries?.hr, time = heartRateSeries?.time;
-    let zones = settings?.heartRateZones?.[activity.type];
-    let zoneSource = 'sport-specific';
     const isValidZones = values => Array.isArray(values) && values.length === 4
         && values.every(v => v != null && Number.isFinite(Number(v)) && Number(v) >= 40 && Number(v) <= 240)
         && values.every((v, i) => i === 0 || Number(v) > Number(values[i - 1]));
+    const sportZones = settings?.heartRateZones?.[activity.type];
+    const globalZones = settings?.heartRateZones?.global;
+    let zones = isValidZones(sportZones) ? sportZones : globalZones;
+    let zoneSource = isValidZones(sportZones) ? 'sport-specific'
+        : isValidZones(globalZones) ? 'global' : 'maxhr-estimate';
     if (!isValidZones(zones)) {
         const maxHr = Number(profile?.maxHr);
         if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
