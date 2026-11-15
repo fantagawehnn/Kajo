@@ -32,7 +32,7 @@ import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, 
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
 import { sendAICoachMessage } from './coach.js';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js?v=1';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords } from './storage.js?v=3';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=3';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
 import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js?v=1';
 import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=2';
@@ -2126,11 +2126,24 @@ async function handleAuthSession(session) {
                     'Die Übertragung deiner Garmin-Telemetrie in die Cloud',
                     120000
                 );
+                const cloudIds = new Set(cloudTelemetry.records.map(record => String(record.garmin_activity_id)));
+                const missingAfterReadback = migrationCandidates
+                    .map(record => String(record.garmin_activity_id))
+                    .filter(activityId => !cloudIds.has(activityId));
+                if (missingAfterReadback.length > 0) {
+                    throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
+                }
+
+                // Cloud-Datensätze sind vollständig zurückgelesen. Sie bleiben im
+                // Arbeitsspeicher für die Diagramme; alte persistente lokale Kopien
+                // werden erst jetzt entfernt.
                 mergeGarminTelemetryRecords(cloudTelemetry.records);
+                await clearLocalGarminTelemetryCache();
                 console.info('KAJO: Garmin-Telemetrie-Cloudabgleich abgeschlossen:', {
                     uploaded: cloudTelemetry.uploaded,
                     existing: cloudTelemetry.existing,
-                    total: cloudTelemetry.total
+                    total: cloudTelemetry.total,
+                    localTelemetryCacheCleared: true
                 });
             } catch (telemetryMigrationError) {
                 // Die vorhandenen lokalen/Legacy-Daten bleiben im Arbeitsspeicher

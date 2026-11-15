@@ -93,8 +93,8 @@ assert.equal(store.get('endurance_checkins'), legacyCheckins);
 // Subsequent import checks run inside an isolated authenticated-user storage scope.
 await storage.loadStateForUser('smoke-test-user');
 
-// Full Garmin raw telemetry is kept in its own local collection and restored
-// without bloating the compact activity record.
+// Garmin raw telemetry remains available in memory for charts but is never
+// written to the persistent per-user activity or telemetry collections.
 state.rawActivities = [{
     id: 'garmin-123456',
     source: 'garmin',
@@ -110,10 +110,10 @@ state.rawActivities = [{
 assert.equal(storage.saveActivitiesToLocalStorage(), true);
 await new Promise(resolve => setImmediate(resolve));
 const compactActivity = JSON.parse(store.get('endurance:user:smoke-test-user:activities'))[0];
-assert.equal(compactActivity.garminTelemetry.metricSeries, undefined);
-await storage.loadStateForUser('smoke-test-user');
+assert.equal(compactActivity.garminTelemetry, undefined);
+assert.equal(store.get('endurance:user:smoke-test-user:garminTelemetry'), undefined);
 assert.deepEqual(state.rawActivities[0].garminTelemetry.metricSeries.directSpeed.values, [1.2, 1.4]);
-assert.deepEqual(state.rawActivities[0].garminTelemetry.metricSeriesTime, [0, 1]);
+assert.deepEqual(storage.getUserDataSnapshot().activities[0].garminTelemetry, undefined);
 
 // Wellness merge preserves manual values and does not replace fields absent from API.
 state.rawActivities = [];
