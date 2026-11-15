@@ -12,8 +12,8 @@ import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 
-// Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
-// Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
+// Read-only-Diagnose der geladenen Aktivität und ihres eigenen Cloud-Telemetriedatensatzes.
+// Es wird nur gelesen; Garmin wird nicht erneut abgefragt und es werden keine Daten verändert.
 async function diagnoseSelectedActivityTelemetry() {
     const activity = state.selectedActivityForModal;
     const output = document.getElementById('activity-telemetry-diagnostic-output');
