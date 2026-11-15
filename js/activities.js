@@ -912,13 +912,18 @@ function renderOptionalActivityViews(act) {
             const distance = distanceRaw === null || distanceRaw === undefined || distanceRaw === '' ? null : safe(distanceRaw);
             const speed = lap.durationUnit === 'seconds' && duration > 0 && distance > 0
                 ? distance / duration * 3.6 : null;
-            return { lap, index: i + 1, duration, distance, speed };
+            const paceSecondsPerKm = lap.durationUnit === 'seconds' && duration > 0 && distance > 0
+                ? duration / (distance / 1000) : null;
+            const pace = paceSecondsPerKm !== null && Number.isFinite(paceSecondsPerKm)
+                ? Math.floor(paceSecondsPerKm / 60) + ':' + String(Math.round(paceSecondsPerKm % 60)).padStart(2, '0') + ' min/km'
+                : null;
+            return { lap, index: i + 1, duration, distance, speed, pace };
         });
         const manualComparable = comparableLaps.filter(item => item.lap.kind === 'manual' && item.speed !== null);
         const manualSpeeds = manualComparable.map(item => item.speed);
         const fastestManual = manualSpeeds.length ? Math.max(...manualSpeeds) : null;
         const rows = comparableLaps.map(item => {
-            const { lap, index, duration, distance, speed } = item;
+            const { lap, index, duration, distance, speed, pace } = item;
             const label = escapeHtml(lap.name || lap.label || `Runde ${index}`);
             const kind = lap.kind === 'manual' ? 'Manuell markiert' : lap.kind === 'automatic' ? 'Automatisch' : 'Nicht zugeordnet';
             const durationText = duration !== null
@@ -934,6 +939,7 @@ function renderOptionalActivityViews(act) {
                 durationText,
                 distanceText,
                 speed !== null ? speed.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' km/h' : null,
+                pace,
                 avgHr !== null ? 'Ø ' + Math.round(avgHr) + ' bpm' : null,
                 maxHr !== null ? 'Max ' + Math.round(maxHr) + ' bpm' : null,
                 avgPower !== null ? 'Ø ' + Math.round(avgPower) + ' W' : null,
@@ -965,7 +971,7 @@ function renderOptionalActivityViews(act) {
     } else {
         const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
         const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
-        const escapeStep = value => String(value ?? '').replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[ch]));
+        const escapeStep = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
         const workoutStepHtml = workoutSteps.length
             ? '<h5 class="text-xs font-semibold text-cyan-300 mb-2">Garmin-Trainingsintervalle / Workout-Schritte (' + workoutSteps.length + ')</h5>'
                 + workoutSteps.map((step, index) => '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + Object.entries(step || {}).map(([key, value]) => escapeStep(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ') + '</div></div>').join('')
