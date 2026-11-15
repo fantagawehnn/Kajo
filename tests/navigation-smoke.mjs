@@ -107,6 +107,9 @@ assert.ok(main.includes("garminStress: findGarminNumber(records.stress"), 'Garmi
 assert.ok(main.includes("bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery'"), 'Body Battery extraction uses the named summary section');
 assert.ok(main.includes("spo2: findGarminNumber(records.spo2"), 'SpO2 is extracted from stored Garmin SpO2 records');
 assert.ok(main.includes("source: 'garmin', ...definition"), 'restored Garmin measurements retain explicit provenance');
+assert.ok(!main.includes("findGarminNumber(summaryPayload, ['avgValue'])"), 'SpO2 is not inferred from an ambiguous generic summary field');
+assert.ok(!main.includes("findGarminNumber(summaryPayload, ['value'])"), 'steps are not inferred from an ambiguous generic summary field');
+assert.ok(!main.includes("findGarminNumber(summaryPayload, ['avgLevel'])"), 'stress is not inferred from an ambiguous generic summary field');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
