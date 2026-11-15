@@ -497,7 +497,7 @@ async function loadGarminTelemetryWhenActivityOpened(activity) {
     if (!isGarmin) return;
     const rawId = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId ?? activity.id;
     const activityId = String(rawId ?? '').replace(/^garmin-/, '');
-    if (!/^\\d+$/.test(activityId)) return;
+    if (!/^\d+$/.test(activityId)) return;
     activity.garminTelemetryLoading = true;
     try {
         const [{ supabase }, telemetryModule] = await Promise.all([
@@ -582,8 +582,8 @@ export function openCSVDetailsModal(id) {
         const parsedStart = rawStart ? new Date(rawStart) : null;
         const parsedTime = parsedStart && Number.isFinite(parsedStart.getTime())
             ? parsedStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-            : (typeof rawStart === 'string' && /(?:^|T|\\s)(\\d{1,2}:\\d{2})(?::\\d{2})?/.test(rawStart)
-                ? rawStart.match(/(?:^|T|\\s)(\\d{1,2}:\\d{2})(?::\\d{2})?/)?.[1] || '' : '');
+            : (typeof rawStart === 'string' && /(?:^|T|\\s)(\d{1,2}:\d{2})(?::\d{2})?/.test(rawStart)
+                ? rawStart.match(/(?:^|T|\\s)(\d{1,2}:\d{2})(?::\d{2})?/)?.[1] || '' : '');
         dateEl.textContent = [formatDateDDMMYY(act.date), parsedTime ? parsedTime + ' Uhr' : ''].filter(Boolean).join(' · ');
     }
     const sportCatalog = getSportsCatalog();
