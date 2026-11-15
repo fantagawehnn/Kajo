@@ -235,7 +235,7 @@ assert.ok(activities.includes('getActivityTelemetrySeries(act).length > 0'), 'te
 
 assert.ok(activities.includes("function renderActivityComparisons(activity)"), "activity detail contains function renderActivityComparisons(activity)");
 assert.ok(activities.includes("getActivityTelemetrySeries(act).length > 0"), "activity detail contains getActivityTelemetrySeries(act).length > 0");
-assert.ok(activities.includes("calculateGarminZoneLoad(act, state.settings, state.profile)"), "activity detail contains calculateGarminZoneLoad(act, state.settings, state.profile)");
+assert.ok(activities.includes("calculateGarminZoneLoad(act, state.settings, state.profile, state.dailyCheckins)"), "activity detail contains calculateGarminZoneLoad(act, state.settings, state.profile)");
 assert.ok(activities.includes("['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']"), "activity detail contains ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']");
 assert.ok(activities.includes("panel.classList.add('hidden'); panel.innerHTML = ''; return;"), "activity detail contains panel.classList.add('hidden'); panel.innerHTML = ''; return;");
 
@@ -245,7 +245,7 @@ assert.ok(activities.includes("metricsContainer.style.setProperty('--activity-sp
 assert.ok(activities.includes('border-sky-800/50 bg-sky-950/20'), 'telemetry availability uses neutral information color, not positive status color');
 
 assert.ok(importer.includes("source:'fit',sources:['fit']"), 'manually imported FIT activities retain their file-import provenance');
-assert.ok(activities.includes("zoneLoad.zoneSource === 'maxhr-estimate'"), 'estimated HR-zone basis is explicitly identified in activity load details');
+assert.ok(activities.includes("zoneLoad.zoneSource === 'karvonen-adaptive'"), 'adaptive Karvonen HR-zone basis is explicitly identified in activity load details');
 
 assert.ok(activities.includes('function renderActivityRouteMap(activity)'), 'GPS map is only rendered from stored coordinate pairs');
 assert.ok(activities.includes('if (points.length < 2 || !globalThis.L)'), 'GPS map is hidden without valid points or map library');
