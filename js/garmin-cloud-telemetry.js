@@ -72,6 +72,45 @@ async function fetchAllRows(supabase, userId) {
     return rows;
 }
 
+export async function uploadMissingGarminTelemetry(supabase, userId, candidateRecords = []) {
+    const id = requireContext(supabase, userId);
+    const candidates = new Map();
+    for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
+        const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
+        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        candidates.set(activityId, record.telemetry);
+    }
+    const entries = Array.from(candidates.entries());
+    let uploaded = 0;
+    for (let offset = 0; offset < entries.length; offset += 100) {
+        const batch = entries.slice(offset, offset + 100);
+        const ids = batch.map(([activityId]) => activityId);
+        const { data, error } = await supabase
+            .from(TABLE)
+            .select('garmin_activity_id')
+            .eq('user_id', id)
+            .in('garmin_activity_id', ids);
+        if (error) throw error;
+        const existing = new Set((data || []).map(row => String(row.garmin_activity_id)));
+        for (const [activityId, telemetry] of batch) {
+            if (existing.has(activityId)) continue;
+            const { error: insertError } = await supabase
+                .from(TABLE)
+                .upsert({
+                    user_id: id,
+                    garmin_activity_id: activityId,
+                    telemetry
+                }, {
+                    onConflict: 'user_id,garmin_activity_id',
+                    ignoreDuplicates: true
+                });
+            if (insertError) throw insertError;
+            uploaded += 1;
+        }
+    }
+    return { uploaded, candidates: entries.length };
+}
+
 export async function syncGarminTelemetryToCloud(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
     const existingRows = await fetchAllRows(supabase, id);
