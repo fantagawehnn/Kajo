@@ -59,11 +59,12 @@ function calculateSessionRpeLoad(activity) {
 }
 export function getTrainingLoadData(records, settings, profile) {
     const list = Array.isArray(records) ? records : [];
-    if (settings?.trainingLoadSource === 'srpe') {
+    const srpeData = () => {
         const eligible = list.filter(activity => activity?.date);
         const srpeRecords = eligible.map(activity => ({ activity, value: calculateSessionRpeLoad(activity) })).filter(item => item.value !== null);
         return { mode: 'srpe', unit: 'AU', records: srpeRecords, coverage: { eligibleActivityCount: eligible.length, loadedActivityCount: srpeRecords.length, excludedActivityCount: eligible.length - srpeRecords.length } };
-    }
+    };
+    if (settings?.trainingLoadSource === 'srpe') return srpeData();
     const hasGarmin = list.some(activity => activity.source === 'garmin'
         || activity.sourceRefs?.garminActivityId != null
         || activity.garminData || activity.garminFitImported
@@ -103,9 +104,18 @@ export function getTrainingLoadData(records, settings, profile) {
                 }
             };
         }
-        return { mode: 'garmin-unavailable', unit: null, records: [] };
+        if (settings?.trainingLoadSource !== 'garmin') {
+            const subjective = srpeData();
+            if (subjective.records.length) return subjective;
+        }
+        return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
+    }
+    // In automatic mode, use sRPE when no Garmin-native or HR-zone load can be
+    // calculated. The two scales are never mixed within one time series.
+    if (settings?.trainingLoadSource !== 'garmin') {
+        const subjective = srpeData();
+        if (subjective.records.length) return subjective;
     }
     // External TSS is not an approved source for KAJO training-load calculations.
-    // Without Garmin load or manual sRPE, the value is unavailable.
     return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
 }

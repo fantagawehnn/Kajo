@@ -39,7 +39,7 @@ function filteredRows(timeline) {
   return count ? all.slice(-count) : all;
 }
 function computeModelTimeline(model) {
-  const settings = { ...(state.settings || {}), trainingLoadSource: model === 'srpe' ? 'srpe' : 'auto' };
+  const settings = { ...(state.settings || {}), trainingLoadSource: model === 'srpe' ? 'srpe' : model === 'garmin' ? 'garmin' : 'auto' };
   return computePerformanceTimeline(state.rawActivities, settings, state.profile);
 }
 function latestModelDay(timeline) {
@@ -102,6 +102,18 @@ function renderRings(timeline) {
     ? 'Modellstand ' + new Date(last.date + 'T12:00:00').toLocaleDateString('de-DE') + (last.isProvisional ? ' · vorläufig' : '')
     : 'Kein berechenbarer Modellstand');
   setVisible('training-load-no-data', !last);
+  if (!last) {
+    const hasSessionLoads = (timeline || []).some(row => row.dataStatus === 'activity-load-only' && valid(row.load));
+    const note = document.getElementById('training-load-no-data');
+    if (note) {
+      const heading = note.querySelector('strong');
+      const paragraph = note.querySelector('p');
+      if (heading) heading.textContent = hasSessionLoads ? 'Tagesload vorhanden · Trend noch nicht berechenbar' : 'Keine auswertbare Belastungszeitreihe';
+      if (paragraph) paragraph.textContent = hasSessionLoads
+        ? 'Die Load-Werte deiner erfassten Einheiten werden im Tagesdiagramm angezeigt. Für CTL, ATL und TSB fehlen bestätigte Aktivitätszeiträume; unbekannte Tage werden nicht als Ruhetage angenommen.'
+        : 'Für diese Berechnungsbasis liegen im ausgewählten Zeitraum keine vollständigen CTL-, ATL- und TSB-Werte vor. Prüfe die Datenabdeckung und die gewählte Modellbasis.';
+    }
+  }
   setVisible('training-load-content', true);
 }
 function renderPrimaryCharts(timeline) {
@@ -158,7 +170,7 @@ function renderDailyChart(timeline) {
   const points = filteredRows(timeline);
   const isDuration = dailyMeasure === 'duration';
   const values = isDuration ? aggregateDailyDuration(points) : points.map(row =>
-    ['complete', 'confirmed-rest'].includes(row.dataStatus) && valid(row.load) ? Number(row.load) : null
+    ['complete', 'confirmed-rest', 'activity-load-only'].includes(row.dataStatus) && valid(row.load) ? Number(row.load) : null
   );
   const labels = points.map(row => new Date(row.date + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }));
   const unit = isDuration ? 'h' : (points.find(row => valid(row.loadUnit))?.loadUnit || 'Load');

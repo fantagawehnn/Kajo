@@ -224,7 +224,7 @@ assert.ok(main.includes('confirmCalendarSeasonPhase,') && main.includes('saveCal
 
 assert.ok(charts.includes('export function getActivityTelemetrySeries(act)'), 'activity chart options are built from available telemetry and FIT series');
 assert.ok(charts.includes('export function setActivityTelemetryMetric(metric)'), 'activity chart exposes a single metric switch');
-assert.ok(charts.includes('state.activityTelemetryMetric = preferred'), 'activity chart retains a valid selected metric');
+assert.ok(charts.includes('state.activityTelemetryMetric = next[0]') && charts.includes('state.activityTelemetryMetrics = next'), 'activity chart retains valid selected telemetry metrics');
 assert.ok(html.includes('id="activity-telemetry-switch"'), 'activity detail has one central telemetry switch');
 assert.ok(!activities.includes('activityFitSeriesChart'), 'FIT diagnostic panel does not create a second time-series chart');
 assert.ok(activities.includes("getSportsCatalog()[act.type]?.color"), 'activity header uses the configured sport color');
@@ -262,7 +262,7 @@ assert.ok(main.includes('focusActivityLap,'), 'lap focus action is exposed to ac
 assert.ok(charts.includes('activity-lap-highlight'), 'selected timed laps are highlighted on the shared time-series chart');
 assert.ok(charts.includes('state.activitySelectedLap'), 'chart highlight uses the selected lap time range');
 
-assert.ok(charts.includes("const complete = hasElapsedTime && validCount === selected.values.length"), 'activity telemetry distinguishes complete from limited data');
+assert.ok(charts.includes("const hasElapsedTime = times.length === timeSource.values.length") && charts.includes("validCount.toLocaleString('de-DE')") && charts.includes('Messreihen gleichzeitig'), 'activity telemetry reports measured-value coverage and whether the time axis is reliable');
 assert.ok(activities.includes('grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left'), 'time-aligned laps are directly selectable without duplicate class attributes');
 
 assert.ok(activities.includes('Math.round(otherDistance * 100) === Math.round(distance * 100)'), 'comparisons use the same recorded distance rather than arbitrary duration bands');
@@ -331,8 +331,8 @@ assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-
 
 assert.ok(html.includes('id="activity-data-quality"'), 'activity overview exposes a compact data quality and provenance summary');
 assert.ok(html.includes('id="activity-telemetry-point"'), 'activity chart provides a selected-point readout');
-assert.ok(/showChartPointReadout\(canvas,\s*chart,\s*index/.test(charts) && /\.textContent\s*=\s*timeLabel/.test(charts), 'activity chart selection reports the exact time and value through the shared readout');
-assert.ok(charts.includes("selected.key === 'pace' ? 'min/km'") && charts.includes("selected.key === 'swimPace' ? 'min/100 m'"), 'pace charts use sport-appropriate display units');
+assert.ok(charts.includes('const timeLabel = labels[element.index]') && charts.includes('pointReadout.textContent = metric.label +'), 'activity chart selection reports the exact time and value through the shared readout');
+assert.ok(charts.includes("pace: { label: 'Pace', unit: 's/km'") && charts.includes("swimPace: { label: 'Pace', unit: 's/100 m'"), 'pace charts use sport-appropriate display units');
 assert.ok(charts.includes("getSportsCatalog()[act?.type]?.color"), 'telemetry series use the configured activity sport color');
 assert.ok(activities.includes('function renderActivityDataQuality(activity)'), 'activity details expose provenance and data completeness');
 assert.ok(activities.includes("container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'not-calculable'"), 'activity data quality distinguishes complete, limited and not calculable');

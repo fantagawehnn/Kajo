@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
+import { getTrainingLoadData } from '../js/training-load.js';
 import { getGarminTelemetry } from '../js/data-source.js';
 
 function dateKey(date) {
@@ -102,10 +103,13 @@ test('a day with multiple activities is incomplete if any activity lacks the sel
     assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
-test('without confirmed activity-list coverage no performance timeline is produced', () => {
+test('without confirmed activity-list coverage measured activity loads remain visible', () => {
     const records = [{ id: 'g-no-coverage', source: 'garmin', date: completedDay, garminTrainingLoad: 25 }];
     const timeline = computePerformanceTimeline(records, {}, {});
-    assert.deepEqual(timeline, []);
+    const day = timeline.find(item => item.date === completedDay);
+    assert.equal(day.load, 25);
+    assert.equal(day.dataStatus, 'activity-load-only');
+    assert.equal(day.ctl, null);
 });
 
 test('a day outside confirmed activity-list coverage remains unknown', () => {
@@ -143,4 +147,50 @@ test('an unknown day breaks the CTL model instead of carrying load across the ga
     assert.equal(gap.dataStatus, 'unknown');
     assert.equal(current.load, 40);
     assert.equal(current.ctl, Number((40 * (1 - Math.exp(-1 / 42))).toFixed(1)));
+});
+
+test('automatic model uses HR-zone load when native Garmin load is absent', () => {
+    const records = [{
+        id: 'g-hr-1', source: 'garmin', date: completedDay, duration: 60,
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
+    }];
+    const result = getTrainingLoadData(records, {}, { maxHr: 190 });
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.records.length, 1);
+    assert.ok(result.records[0].value > 0);
+});
+
+test('automatic model falls back to sRPE when no Garmin load can be calculated', () => {
+    const records = [{
+        id: 'g-rpe-1', source: 'garmin', date: completedDay,
+        duration: 60, perceivedEffort: 7
+    }];
+    const result = getTrainingLoadData(records, {}, {});
+    assert.equal(result.mode, 'srpe');
+    assert.equal(result.records[0].value, 420);
+});
+
+test('activity-day load remains visible without confirmed Garmin coverage', () => {
+    const records = [{
+        id: 'manual-rpe-1', source: 'manual', date: completedDay,
+        duration: 50, perceivedEffort: 6
+    }];
+    const timeline = computePerformanceTimeline(records, { trainingLoadSource: 'srpe' }, {});
+    const day = timeline.find(item => item.date === completedDay);
+    assert.equal(day.load, 300);
+    assert.equal(day.dataStatus, 'activity-load-only');
+    assert.equal(day.ctl, null);
+    assert.equal(day.atl, null);
+});
+
+test('automatic fallback never mixes HR-zone and sRPE values', () => {
+    const records = [
+        { id: 'g-hr-2', source: 'garmin', date: completedDay, duration: 60,
+          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } },
+        { id: 'g-rpe-2', source: 'garmin', date: completedDay, duration: 30, perceivedEffort: 8 }
+    ];
+    const result = getTrainingLoadData(records, {}, { maxHr: 190 });
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.records.length, 1);
+    assert.equal(result.records[0].activity.id, 'g-hr-2');
 });
