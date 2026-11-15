@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=133">
+    <link rel="stylesheet" href="css/styles.css?v=134">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1424,6 +1424,11 @@
             <span class="kajo-settings-category-copy"><strong>App &amp; Darstellung</strong><small>Farbschema und Datenschutz</small></span>
             <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
           </button>
+          <button type="button" class="kajo-settings-category" data-tone="cyan" onclick="kajoSettingsOpenPage('telemetry')">
+            <span class="kajo-settings-category-icon"><i data-lucide="chart-line" aria-hidden="true"></i></span>
+            <span class="kajo-settings-category-copy"><strong>Telemetrie</strong><small>Messwerte je Aktivitätsart auswählen</small></span>
+            <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
+          </button>
           <button type="button" class="kajo-settings-category" data-tone="amber" onclick="kajoSettingsOpenPage('notifications')">
             <span class="kajo-settings-category-icon"><i data-lucide="bell" aria-hidden="true"></i></span>
             <span class="kajo-settings-category-copy"><strong>Benachrichtigungen</strong><small>Push-Mitteilungen und persönliche Erinnerungen</small></span>
@@ -1463,6 +1468,14 @@
             <div id="settings-sports-list" class="space-y-2"></div>
           </div>
         </details><section id="settings-categories" class="kajo-settings-card space-y-2"><div class="flex items-center justify-between"><h3 class="text-sm font-bold text-white">Trainingslegenden</h3><button type="button" onclick="addCustomCategory()" class="text-xs text-cyan-400">+ Legende</button></div><div id="settings-categories-list" class="space-y-2"></div></section><section id="settings-load" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Trainingsbelastung</h3><p>Welche Datenquelle für die Belastungssteuerung verwendet wird.</p></div><span class="kajo-settings-section-icon"><i data-lucide="activity"></i></span></div><label class="block text-xs text-slate-300">Belastungsquelle für CTL / ATL<select id="training-load-source" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white"><option value="auto">Automatisch (Garmin)</option><option value="srpe">Session-RPE (Dauer × Gesamtanstrengung)</option></select></label><p class="text-[11px] text-slate-400">Bei automatischer Auswahl verwendet KAJO Garmin-Load oder den eigenen Index aus gewichteter Herzfrequenzzonenzeit. Externe TSS-Werte werden nicht verwendet.</p><p class="text-[11px] text-slate-400">Bewerte die gesamte Einheit möglichst etwa 30 Minuten nach Trainingsende. Load = Dauer in Minuten × RPE (1–10), angegeben in arbiträren Einheiten (AU). Bei Auswahl dieser Quelle werden ausschließlich bewertete Aktivitäten berücksichtigt; Garmin-Load und TSS werden nicht beigemischt. Die relative Belastungsbilanz ist ein Modellwert, keine validierte Trainingsfreigabe.</p></section></section>
+          <section id="settings-telemetry-group" class="kajo-settings-group" data-settings-page="telemetry">
+            <div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="chart-line"></i></span><div><p class="kajo-settings-eyebrow">AKTIVITÄTSDETAILS</p><h3>Telemetrie</h3><p>Lege für jede Aktivitätsart fest, welche Zeitreihen in der Aktivitätsübersicht angeboten werden.</p></div></div>
+            <section class="kajo-settings-card space-y-3">
+              <div class="kajo-settings-section-head"><div><h3>Messwerte je Aktivität</h3><p>Nur Messwerte, die in den importierten Daten tatsächlich vorhanden sind, werden angezeigt. Nicht verfügbare Werte bleiben automatisch ausgeblendet.</p></div><span class="kajo-settings-section-icon"><i data-lucide="sliders-horizontal"></i></span></div>
+              <p class="text-[11px] leading-relaxed text-slate-400">Standardmäßig sind alle für die jeweilige Sportart vorgesehenen Messwerte aktiviert. Deaktiviere Werte, die du nicht sehen möchtest. Garmin-Geschwindigkeit und -Leistung im Paddelsport bleiben als Gerätemesswerte gekennzeichnet. Rohdaten und Berechnungen werden durch diese Auswahl nicht verändert.</p>
+              <div id="settings-telemetry-list" class="space-y-2"></div>
+            </section>
+          </section>
           <section id="settings-performance-group" class="kajo-settings-group" data-settings-page="performance"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="heart-pulse"></i></span><div><p class="kajo-settings-eyebrow">INDIVIDUELLE TRAININGSBEREICHE</p><h3>Leistungsparameter</h3><p>Erkenne deine Herzfrequenzzonen automatisch und passe sie bei Bedarf manuell an.</p></div></div><section id="settings-zones" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Herzfrequenzzonen</h3><p>Ein gemeinsames, automatisch vorgeschlagenes und manuell anpassbares Zonenprofil.</p></div><span class="kajo-settings-section-icon"><i data-lucide="heart-pulse"></i></span></div><p class="text-[11px] text-slate-400">KAJO schlägt deine fünf Herzfrequenzzonen anhand der erkannten maximalen Herzfrequenz vor. Du kannst alle Zonengrenzen anschließend manuell anpassen. Die Erkennung ist eine Orientierung und ersetzt keine Leistungsdiagnostik.</p><div id="settings-zones-list" class="space-y-3"></div></section></section>
           <section id="settings-app" class="kajo-settings-group" data-settings-page="app"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="shield-check"></i></span><div><p class="kajo-settings-eyebrow">DARSTELLUNG UND DATENSCHUTZ</p><h3>App &amp; Datenschutz</h3><p>Passe die Darstellung an und erfahre, wie KAJO deine Daten verarbeitet.</p></div></div>
             <section class="kajo-settings-card kajo-theme-settings" aria-labelledby="kajo-theme-heading">
