@@ -464,7 +464,8 @@ function findGarminNumberInNamedSection(payload, sectionName, aliases) {
     return walk(payload);
 }
 
-async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
+async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options = {}) {
+    const dryRun = options.dryRun === true;
     if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich an, bevor du Garmin-Gesundheitsdaten wiederherstellst.');
     if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
 
@@ -550,18 +551,51 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
 
         const keys = Object.keys(updates);
         if (!keys.length) continue;
-        state.dailyCheckins[date] = { ...existing, ...updates };
+        if (!dryRun) state.dailyCheckins[date] = { ...existing, ...updates };
         importedValues += keys.length;
         changedDays++;
     }
 
-    if (importedValues > 0) {
+    if (!dryRun && importedValues > 0) {
         if (saveDataToLocalStorage() === false) {
             throw new Error('Die Werte wurden ermittelt, konnten aber nicht gespeichert werden. Bitte Kontoanmeldung prüfen.');
         }
         initEngine();
     }
     return { days: changedDays, values: importedValues, records: rows.length, dates: byDate.size };
+}
+
+async function previewGarminHealthRange() {
+    const startDate = document.getElementById('garmin-preview-start-date')?.value;
+    const endDate = document.getElementById('garmin-preview-end-date')?.value;
+    const button = document.getElementById('garmin-health-preview-button');
+    const status = document.getElementById('garmin-health-restore-status');
+    const today = new Date().toISOString().slice(0, 10);
+    if (!button || !status) return;
+    if (!startDate || !endDate || startDate > endDate || endDate > today) {
+        status.textContent = 'Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
+        return;
+    }
+    if (!appUserReady || !activeAppUserId) {
+        status.textContent = 'Bitte melde dich an, bevor du die Vorschau startest.';
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'Vorschau wird erstellt …';
+    status.textContent = 'Prüfe die vorhandenen Rohdaten, ohne Check-ins zu verändern …';
+    try {
+        const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate, { dryRun: true });
+        status.textContent = result.records === 0
+            ? 'Vorschau: Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
+            : 'Vorschau: ' + result.values + ' fehlende Werte an ' + result.days +
+                ' Tagen könnten ergänzt werden. Geprüft: ' + result.records + ' Rohdatensätze an ' +
+                result.dates + ' Tagen. Es wurde noch nichts verändert.';
+    } catch (error) {
+        status.textContent = 'Vorschau fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Vorschau berechnen';
+    }
 }
 
 async function restoreGarminHealthRange() {
@@ -2486,6 +2520,7 @@ Object.assign(window, {
     connectGarmin,
     previewGarminActivities,
     syncGarminSelectedRange,
+    previewGarminHealthRange,
     restoreGarminHealthRange,
     loadGarminSyncHistory,
     selectAllGarminActivities,
