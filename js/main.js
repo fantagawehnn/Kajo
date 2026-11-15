@@ -437,6 +437,33 @@ function findGarminSleepScore(payload) {
     return walk(payload);
 }
 
+function findGarminNumberInNamedSection(payload, sectionName, aliases) {
+    const visited = new Set();
+    function walk(value) {
+        if (!value || typeof value !== 'object' || visited.has(value)) return null;
+        visited.add(value);
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const found = walk(item);
+                if (found !== null) return found;
+            }
+            return null;
+        }
+        for (const [key, child] of Object.entries(value)) {
+            if (key.toLowerCase() === sectionName.toLowerCase()) {
+                const found = findGarminNumber(child, aliases);
+                if (found !== null) return found;
+            }
+        }
+        for (const child of Object.values(value)) {
+            const found = walk(child);
+            if (found !== null) return found;
+        }
+        return null;
+    }
+    return walk(payload);
+}
+
 async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
     if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich an, bevor du Garmin-Gesundheitsdaten wiederherstellst.');
     if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
@@ -480,7 +507,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
             respiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
             garminStress: findGarminNumber(records.stress, ['overallStressLevel', 'averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
             weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
-            bodyBattery: findGarminNumber(summaryPayload, ['latestValue']),
+            bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery', ['latestValue']),
             spo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
             steps: findGarminNumber(records.steps, ['totalSteps']),
             fitnessAge: findGarminNumber(records.fitness_age, ['fitnessAge'])
@@ -2459,6 +2486,7 @@ Object.assign(window, {
     connectGarmin,
     previewGarminActivities,
     syncGarminSelectedRange,
+    restoreGarminHealthRange,
     loadGarminSyncHistory,
     selectAllGarminActivities,
     importSelectedGarminActivities,
