@@ -19,7 +19,7 @@ export function showChartSummaryReadout(canvas, options = {}) {
   heading.className = 'kajo-chart-point-label';
   heading.textContent = options.title || '';
   node.appendChild(heading);
-  (options.items || []).filter(item => item && item.value !== null && item.value !== undefined && Number.isFinite(Number(item.value))).forEach(item => {
+  (options.items || []).filter(item => item && item.value !== null && item.value !== undefined && (typeof item.value === 'string' || Number.isFinite(Number(item.value)))).forEach(item => {
     const value = document.createElement('strong');
     value.className = 'kajo-chart-point-value';
     value.textContent = (item.label ? item.label + ' ' : '') + (item.format ? item.format(item.value) : Number(item.value).toLocaleString('de-DE',{maximumFractionDigits:2})) + (item.unit ? ' ' + item.unit : '');
