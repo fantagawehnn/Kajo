@@ -12,6 +12,7 @@ import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } 
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
 import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
+import { showChartPointReadout } from './chart-readout.js';
 
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
@@ -770,7 +771,7 @@ export function renderActivityTelemetryChart(act) {
     }
     const selected = series.find(item => item.key === preferred);
     const pointReadout = document.getElementById('activity-telemetry-point');
-    if (pointReadout) { pointReadout.hidden = true; pointReadout.textContent = ''; }
+    if (pointReadout) { pointReadout.hidden = true; pointReadout.textContent = ''; pointReadout.classList.add('kajo-chart-point-readout'); }
     const formatValue = value => (selected.key === 'pace' || selected.key === 'swimPace') && Number.isFinite(Number(value))
         ? Math.floor(Math.round(Number(value)) / 60) + ':' + String(Math.round(Number(value)) % 60).padStart(2, '0')
         : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
@@ -832,11 +833,7 @@ export function renderActivityTelemetryChart(act) {
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: context =>
-                    selected.label + ': ' + (context.parsed.y == null ? '—' :
-                    Number(context.parsed.y).toLocaleString('de-DE', { maximumFractionDigits: 2 })
-                    + (selected.unit ? ' ' + selected.unit : ''))
-                } }
+                tooltip: { enabled: false }
             },
             onClick(event, elements, chart) {
                 const active = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
@@ -845,9 +842,15 @@ export function renderActivityTelemetryChart(act) {
                 const value = selected.values[index];
                 if (value === null || value === undefined || !Number.isFinite(Number(value))) return;
                 const timeLabel = labels[index] ?? ('Messpunkt ' + (index + 1));
-                const shown = formatValue(value) + ((selected.key === 'pace' || selected.key === 'swimPace') ? '' : selected.unit ? ' ' + selected.unit : '');
-                pointReadout.textContent = timeLabel + ' · ' + selected.label + ': ' + shown;
-                pointReadout.hidden = false;
+                showChartPointReadout(canvas, chart, index, {
+                    title: selected.label,
+                    unit: (selected.key === 'pace' || selected.key === 'swimPace') ? '' : selected.unit,
+                    formatValue
+                });
+                const readout = canvas.parentElement?.nextElementSibling;
+                if (readout?.classList.contains('kajo-chart-point-readout')) {
+                    readout.querySelector('.kajo-chart-point-time').textContent = timeLabel;
+                }
             },
             scales: {
                 x: { title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
