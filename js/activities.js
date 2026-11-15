@@ -520,22 +520,40 @@ export function openCSVDetailsModal(id) {
     const dateEl = document.getElementById('modal-act-date');
     if (titleEl) titleEl.textContent = act.name || 'Trainingseinheit';
     if (dateEl) {
-        const start = act.startTime ? new Date(act.startTime) : null;
-        const timeLabel = start && Number.isFinite(start.getTime()) ? start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
-        const sourceLabel = act.source === 'garmin' || act.sourceRefs?.garminActivityId != null || act.garminData || act.sources?.includes?.('garmin') ? 'Garmin' : act.source === 'intervals' || act.sourceRefs?.intervalsActivityId != null || act.sources?.includes?.('intervals') ? 'Intervals.icu' : act.source === 'manual' || act.sources?.includes?.('manual') ? 'Manuell' : ['fit', 'csv', 'file', 'import'].includes(act.source) || act.garminFitImported ? 'Dateiimport' : 'Quelle nicht ausgewiesen';
-        dateEl.textContent = [formatDateDDMMYY(act.date), timeLabel, sourceLabel].filter(Boolean).join(' · ');
+        const rawStart = act.startTime || act.startTimeLocal || act.start_time_local || '';
+        const parsedStart = rawStart ? new Date(rawStart) : null;
+        const parsedTime = parsedStart && Number.isFinite(parsedStart.getTime())
+            ? parsedStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+            : (typeof rawStart === 'string' && /(?:^|T|\\s)(\\d{1,2}:\\d{2})(?::\\d{2})?/.test(rawStart)
+                ? rawStart.match(/(?:^|T|\\s)(\\d{1,2}:\\d{2})(?::\\d{2})?/)?.[1] || '' : '');
+        dateEl.textContent = [formatDateDDMMYY(act.date), parsedTime ? parsedTime + ' Uhr' : ''].filter(Boolean).join(' · ');
+    }
+    const sportCatalog = getSportsCatalog();
+    const sportConfig = sportCatalog[act.type] || {};
+    const sportColor = sportConfig.color || '#38bdf8';
+    const sportIcons = {
+        Kayaking: 'waves', C1: 'waves', C2: 'waves', PaddleErgo: 'activity',
+        Run: 'footprints', Ride: 'bike', Swim: 'waves', WeightTraining: 'dumbbell',
+        Workout: 'dumbbell'
+    };
+    const sportIcon = document.getElementById('modal-act-sport-icon');
+    if (sportIcon) {
+        sportIcon.style.setProperty('--activity-sport-color', sportColor);
+        const iconNode = sportIcon.querySelector('i');
+        if (iconNode) iconNode.setAttribute('data-lucide', sportIcons[act.type] || 'activity');
     }
     const metricsContainer = document.getElementById('activity-sport-metrics');
     if (metricsContainer) metricsContainer.style.setProperty('--activity-sport-color', getSportsCatalog()[act.type]?.color || '#38bdf8');
     const badge = document.getElementById('modal-act-type-badge');
     if (badge) {
-        const sports = { Kayaking: 'K1', C1: 'C1', C2: 'C2', PaddleErgo: 'Paddelergometer', Run: 'Laufen', Ride: 'Radfahren', Swim: 'Schwimmen', WeightTraining: 'Krafttraining' };
-        const categories = { ga: 'GA', interval: 'Intervalle', race: 'Wettkampf', reg: 'Regeneration', strength: 'Kraft', tech: 'Technik' };
-        badge.textContent = [sports[act.type] || act.type || 'Aktivität', act.raceFormat ? String(act.raceFormat).toUpperCase() : '', act.waterConditions?.type === 'wildwater' ? 'Wildwasser' : act.waterConditions?.type === 'flatwater' ? 'Flachwasser' : act.waterType || '', categories[act.category] || ''].filter(Boolean).join(' · ');
-        const sportColor = getSportsCatalog()[act.type]?.color || '#38bdf8';
+        const canoeDisciplines = { Kayaking: 'K1', C1: 'C1', C2: 'C2' };
+        const discipline = canoeDisciplines[act.type] || '';
+        badge.textContent = discipline;
+        badge.hidden = !discipline;
         badge.style.setProperty('--activity-sport-color', sportColor);
         badge.style.borderColor = sportColor + '88';
         badge.style.color = sportColor;
+        badge.style.backgroundColor = sportColor + '18';
     }
     const analysisActivity = { ...act, telemetry: getActivityTelemetry(act) };
     state.activityTelemetryMetric = null;
@@ -1476,8 +1494,6 @@ function renderActivityDetailNavigation(act) {
     );
     const index = ordered.findIndex(item => String(item.id) === String(act.id));
     const previous = ordered[index - 1], next = ordered[index + 1];
-    const label = document.getElementById('activity-detail-position');
-    if (label) label.textContent = ordered.length ? (index + 1) + ' / ' + ordered.length : '';
     const prev = document.getElementById('activity-detail-previous');
     const nxt = document.getElementById('activity-detail-next');
     if (prev) { prev.disabled = !previous; prev.onclick = () => previous && openCSVDetailsModal(encodeURIComponent(String(previous.id))); }
