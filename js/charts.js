@@ -657,6 +657,12 @@ export function getActivityTelemetrySeries(act) {
         if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor)) return 'cadence';
         if (/body.?battery/.test(descriptor)) return 'bodyBattery';
         if (/grade|steigung/.test(descriptor)) return 'grade';
+        if (/ground.?contact/.test(descriptor)) return 'groundcontacttime';
+        if (/vertical.?oscillation/.test(descriptor)) return 'verticaloscillation';
+        if (/stride.?length/.test(descriptor)) return 'stridelength';
+        if (/vertical.?ratio/.test(descriptor)) return 'verticalratio';
+        if (/swolf/.test(descriptor)) return 'swolf';
+        if (/stroke|swim.?style|schwimmstil/.test(descriptor)) return 'stroke';
         return descriptor.trim().replace(/\s+/g, ' ');
     };
     for (const [key, sources] of Object.entries(aliases)) {
@@ -713,6 +719,11 @@ export function getActivityTelemetrySeries(act) {
             values: metric.values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
         });
+    }
+    const selectedMetrics = state.settings?.telemetryMetrics?.[act?.type];
+    if (Array.isArray(selectedMetrics)) {
+        const selectedSet = new Set(selectedMetrics);
+        return result.filter(item => selectedSet.has(semanticFor(item.key, item.label)));
     }
     return result;
 }
