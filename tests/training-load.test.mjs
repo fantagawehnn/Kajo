@@ -491,3 +491,23 @@ test('each historical activity uses its own trailing adaptive resting-HR window'
     );
 });
 
+\n
+test('Garmin HR-zone load adapts Karvonen boundaries to each activity date RHR window', () => {
+    const activity = {
+        id: 'adaptive-rhr-load', source: 'garmin', type: 'C1', date: '2026-01-07',
+        garminTelemetry: { hr: [145, 150, 160, 170], time: [0, 20, 40, 60] }
+    };
+    const makeCheckins = value => Object.fromEntries(
+        Array.from({ length: 7 }, (_, index) => [offsetDate('2026-01-07', index - 6), { rhr: value }])
+    );
+    const profile = { maxHr: 200 };
+    const settings = { heartRateZoneSettings: { restingHrWindowDays: 7 } };
+    const rested = calculateGarminZoneLoad(activity, settings, profile, makeCheckins(50));
+    const elevated = calculateGarminZoneLoad(activity, settings, profile, makeCheckins(60));
+    assert.deepEqual(rested.zones, [140, 155, 170, 185]);
+    assert.equal(rested.adaptiveRestingHr, 50);
+    assert.equal(rested.restingHrSource, 'rolling-median');
+    assert.deepEqual(elevated.zones, [144, 158, 172, 186]);
+    assert.equal(elevated.adaptiveRestingHr, 60);
+});
+
