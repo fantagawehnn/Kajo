@@ -544,8 +544,9 @@ function renderSeasonView(){
     (state.rawActivities||[]).forEach(x=>add(x.date,'activity',x));(state.plannedActivities||[]).forEach(x=>add(x.date,'planned',x));(state.races||[]).forEach(x=>add(x.date,'race',x));
     Object.entries(state.healthLogs||{}).forEach(([date,x])=>add(date,x.status==='sick'?'sick':x.status==='injured'?'injured':null,x));
     Object.entries(state.dailyCheckins||{}).forEach(([date,x])=>{if(x.cycle?.period===true)add(date,'period',x);});
+    if(state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true){const cursor=new Date(from+'T12:00:00'),last=new Date(to+'T12:00:00');for(;cursor<=last;cursor.setDate(cursor.getDate()+1)){const date=toLocalDateString(cursor);if(periodCalendarMarker(date).includes('geschätzt'))add(date,'period-predicted',{});}}
     const fmt=d=>new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(d+'T12:00:00'));
-    const icons={activity:'activity',planned:'calendar-clock',race:'trophy',sick:'thermometer',injured:'bandage',period:'droplet'},labels={activity:'Training',planned:'Geplant',race:'Wettkampf',sick:'Krankheit',injured:'Verletzung',period:'Periode'};
+    const icons={activity:'activity',planned:'calendar-clock',race:'trophy',sick:'thermometer',injured:'bandage',period:'droplet','period-predicted':'droplet'},labels={activity:'Training',planned:'Geplant',race:'Wettkampf',sick:'Krankheit',injured:'Verletzung',period:'Periode','period-predicted':'Periode (Prognose)'};
     const grouped=new Map();[...events.keys()].sort().forEach(date=>{const key=date.slice(0,7),list=grouped.get(key)||[];list.push({date,items:events.get(date)});grouped.set(key,list);});
     const months=[...grouped.entries()].map(([key,days])=>{const [y,m]=key.split('-').map(Number);const title=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(new Date(y,m-1,1,12));return '<section class="calendar-season-month"><h3>'+title+'</h3>'+days.map(({date,items})=>'<div class="calendar-season-event"><time>'+fmt(date)+'</time><span>'+items.map(x=>'<i data-lucide="'+icons[x.type]+'" class="calendar-season-event-icon is-'+x.type+'"></i>'+labels[x.type]+(x.item?.name?' · '+escapeHtml(x.item.name):'')).join(' · ')+'</span></div>').join('')+'</section>';}).join('');
     const count=arr=>arr.filter(x=>x.date>=from&&x.date<=to).length;
@@ -553,7 +554,7 @@ function renderSeasonView(){
     globalThis.lucide?.createIcons?.();
 }
 let calendarGestureInstalled=false,calendarPinchStart=0,calendarWheelLocked=false;
-function calendarFormatZoomStep(direction){const sequence=['day','week','month','year'];const i=sequence.indexOf(state.activeCalendarFormat);if(i<0)return;const next=Math.max(0,Math.min(sequence.length-1,i+(direction>0?-1:1)));if(next!==i)setCalendarFormat(sequence[next]);}
+function calendarFormatZoomStep(direction){const sequence=['day','week','month','year'];if(calendarSeason())sequence.push('season');const i=sequence.indexOf(state.activeCalendarFormat);if(i<0)return;const next=Math.max(0,Math.min(sequence.length-1,i+(direction>0?-1:1)));if(next!==i)setCalendarFormat(sequence[next]);}
 function installCalendarGestures(){
     if(calendarGestureInstalled)return;const root=document.getElementById('view-calendar');if(!root)return;calendarGestureInstalled=true;
     root.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;calendarPinchStart=Math.hypot(dx,dy);}},{passive:true});
