@@ -9,7 +9,7 @@ import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profile = {}) {
     const days = Math.min(28, Math.max(3, Math.round(Number(windowDays) || 7)));
     const endKey = String(date || '').slice(0, 10);
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(endKey)) return null;
+    if (endKey.length !== 10 || endKey[4] !== '-' || endKey[7] !== '-') return null;
     const end = new Date(endKey + 'T12:00:00');
     if (!Number.isFinite(end.getTime())) return null;
     const start = new Date(end);
