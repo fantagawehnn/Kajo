@@ -8,7 +8,7 @@
 
 import { state } from './state.js';
 import { toLocalDateString } from './utils.js';
-import { createUserStorage } from './user-storage.js?v=2';
+import { createUserStorage } from './user-storage.js?v=3';
 
 let activeUserStorage = null;
 let activeUserId = null;
@@ -341,15 +341,13 @@ export function saveActivitiesToLocalStorage() {
         console.warn('Aktivitätsspeicherung übersprungen: Es ist kein authentifizierter Benutzer-Speicher aktiv.');
         return false;
     }
-    const split = splitGarminTelemetry(state.rawActivities);
-    state.garminTelemetryStore = split.telemetryStore;
-    activeUserStorage.setItem('activities', JSON.stringify(split.activities));
+    // Garmin-Rohtelemetrie bleibt ausschließlich im Arbeitsspeicher und in Supabase.
+    const activities = stripGarminTelemetryFromActivities(state.rawActivities);
+    state.garminTelemetryStore = {};
+    activeUserStorage.setItem('activities', JSON.stringify(activities));
     const storageForThisSave = activeUserStorage;
     indexedDbWriteQueue = indexedDbWriteQueue
-        .then(() => storageForThisSave.saveCollections({
-            activities: split.activities,
-            garminTelemetry: split.telemetryStore
-        }))
+        .then(() => storageForThisSave.saveCollections({ activities }))
         .catch(error => console.error('Benutzerbezogene Aktivitätssicherung fehlgeschlagen:', error));
     window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId, collection: 'activities' } }));
     return true;
@@ -361,28 +359,34 @@ export function saveDataToLocalStorage() {
         return false;
     }
 
-    const snapshot = getUserDataSnapshot({ includeGarminTelemetry: true });
-    const split = splitGarminTelemetry(snapshot.activities);
-    state.garminTelemetryStore = split.telemetryStore;
-    const localSnapshot = {
-        ...snapshot,
-        activities: split.activities,
-        garminTelemetry: split.telemetryStore
-    };
-
-    for (const [collection, value] of Object.entries(localSnapshot)) {
-        if (collection === 'garminTelemetry') continue;
+    // Alle Garmin-Rohzeitreihen werden aus der dauerhaften lokalen Ablage ausgeschlossen.
+    const snapshot = getUserDataSnapshot();
+    state.garminTelemetryStore = {};
+    for (const [collection, value] of Object.entries(snapshot)) {
         activeUserStorage.setItem(collection, JSON.stringify(value));
     }
 
     const storageForThisSave = activeUserStorage;
     indexedDbWriteQueue = indexedDbWriteQueue
-        .then(() => storageForThisSave.saveCollections(localSnapshot))
+        .then(() => storageForThisSave.saveCollections(snapshot))
         .catch(error => console.error('Benutzerbezogene IndexedDB-Sicherung fehlgeschlagen:', error));
 
-    // Zentraler Hinweis für die Cloud-Synchronisierung. Die App prüft zusätzlich,
-    // ob der angemeldete Nutzer bereits vollständig aktiviert ist.
     window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId } }));
+    return true;
+}
+
+/**
+ * Entfernt alte lokale Garmin-Rohtelemetrie erst nach erfolgreichem Cloud-Readback.
+ * Der aktive Arbeitsspeicher bleibt unangetastet, damit Diagramme weiter funktionieren.
+ */
+export async function clearLocalGarminTelemetryCache() {
+    if (!activeUserStorage || !activeUserId) throw new Error('Kein aktiver Benutzer-Speicher für die Telemetrie-Bereinigung.');
+    await indexedDbWriteQueue;
+    await activeUserStorage.removeCollection('garminTelemetry');
+    const compactActivities = stripGarminTelemetryFromActivities(state.rawActivities);
+    activeUserStorage.setItem('activities', JSON.stringify(compactActivities));
+    await activeUserStorage.saveCollections({ activities: compactActivities });
+    state.garminTelemetryStore = {};
     return true;
 }
 
