@@ -8247,3 +8247,97 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
         gap: 0;
     }
 }
+/* Activity KPI rings: triangular WHOOP-style composition, duration centered and on top. */
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+    position: relative;
+    display: block !important;
+    width: min(100%, 340px);
+    height: 184px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 0;
+    overflow: visible;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    flex: none;
+    transform: none;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-duration {
+    z-index: 5;
+    top: 0;
+    left: 50%;
+    width: 148px;
+    height: 148px;
+    transform: translateX(-50%);
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-distance {
+    z-index: 3;
+    top: 68px;
+    left: calc(50% - 150px);
+    width: 108px;
+    height: 108px;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-heart-rate {
+    z-index: 3;
+    top: 68px;
+    right: calc(50% - 150px);
+    width: 108px;
+    height: 108px;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned .activity-metric-circle {
+    width: 100%;
+    height: 100%;
+    border-width: 5px;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned .activity-metric-circle strong {
+    max-width: 88%;
+    font-size: clamp(15px, 4vw, 21px);
+    line-height: 1.05;
+    text-align: center;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned .activity-metric-circle span {
+    display: block;
+    max-width: 88%;
+    color: #aebbd0;
+    font-size: 10px;
+    line-height: 1.1;
+    text-align: center;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned .activity-metric-circle-card.is-duration .activity-metric-circle {
+    border-width: 7px;
+    box-shadow: 0 0 0 5px color-mix(in srgb, #35b7a5 13%, transparent), 0 10px 26px rgba(0,0,0,.24);
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned .activity-metric-circle-card.is-duration .activity-metric-circle strong {
+    font-size: clamp(22px, 6vw, 29px);
+}
+@media (max-width: 520px) {
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+        width: min(100%, 320px);
+        height: 168px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-duration {
+        width: 132px;
+        height: 132px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-distance {
+        top: 62px;
+        left: calc(50% - 140px);
+        width: 96px;
+        height: 96px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-heart-rate {
+        top: 62px;
+        right: calc(50% - 140px);
+        width: 96px;
+        height: 96px;
+    }
+}
