@@ -250,6 +250,10 @@ export function saveCheckin() {
             measurementSources[key] = { source: 'manual', metric: 'unspecified', unit };
         }
     });
+    // Explizite HRV-Zuordnung bleibt als gut prüfbare Datenqualitätsregel erhalten.
+    if (Object.prototype.hasOwnProperty.call(wearableUpdates, 'hrv')) {
+        measurementSources.hrv = { source: 'manual', metric: 'unspecified', unit: 'ms' };
+    }
     if (weightEnabled && Number.isFinite(weightVal)) {
         measurementSources.weight = { source: 'manual', metric: 'unspecified', unit: 'kg' };
     }
