@@ -2427,9 +2427,11 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (activeAppUserId !== userId || !appUserReady) return;
-        await loadGarminActivitiesFromCloud();
+        const activityCloudSync = await loadGarminActivitiesFromCloud();
         if (activeAppUserId !== userId || !appUserReady) return;
-
+        if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
+            void backfillGarminAnalysisOnOpen(userId, activationSequence);
+        }
 
         // Rohtelemetrie wird nicht mehr automatisch beim App-Start synchronisiert.
         // Vollständige Messreihen werden erst beim Öffnen der jeweiligen Aktivität geladen.
