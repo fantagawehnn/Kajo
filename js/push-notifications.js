@@ -86,7 +86,11 @@ export async function renderKajoPushSettings() {
     } else if (Notification.permission === "granted") {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setStatus(subscription ? "Dieses Gerät ist für KAJO-Push registriert." : "Benachrichtigungen sind erlaubt. Dieses Gerät ist noch nicht registriert.", subscription ? "is-ready" : "");
+      if (subscription && !hasMatchingVapidKey(subscription, base64ToUint8Array(KAJO_VAPID_PUBLIC_KEY))) {
+        setStatus("Dieses Gerät nutzt eine ältere Push-Registrierung. Tippe auf „Push auf diesem Gerät aktivieren“, um sie zu erneuern.", "is-error");
+      } else {
+        setStatus(subscription ? "Dieses Gerät ist für KAJO-Push registriert." : "Benachrichtigungen sind erlaubt. Dieses Gerät ist noch nicht registriert.", subscription ? "is-ready" : "");
+      }
     } else {
       setStatus("Noch nicht aktiviert. Du entscheidest, ob KAJO dich auf diesem Gerät benachrichtigen darf.");
     }
