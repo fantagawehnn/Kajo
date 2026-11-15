@@ -568,3 +568,37 @@ test('manual KAJO load source does not fall back to Garmin native load or sRPE w
     assert.equal(result.records.length, 0);
     assert.equal(result.coverage.excludedActivityCount, 1);
 });
+
+
+test('cached compact KAJO zone analysis supports load without raw telemetry', () => {
+    const cached = {
+        version: 1, durationMinutes: 60, maxHr: 190, restingHr: 50,
+        restingHrWindowDays: 14,
+        kajo: { value: 123.4, unit: 'Punkte', method: 'Gewichtete HF-Zonenzeit',
+            zoneSource: 'karvonen-adaptive', zones: [134, 148, 162, 176],
+            secondsByZone: [600, 600, 600, 600, 600], totalSeconds: 3000 }
+    };
+    const activity = {
+        id: 'g-cached-zone', source: 'garmin', date: completedDay, duration: 60,
+        garminAnalysis: cached
+    };
+    const load = calculateGarminZoneLoad(activity, {}, { maxHr: 190, restingHr: 50 });
+    assert.equal(load.value, 123.4);
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.records[0].value, 123.4);
+});
+
+test('cached Edwards zone analysis remains available without raw telemetry', () => {
+    const edwards = { value: 80, secondsByZone: [60, 120, 180, 240, 300],
+        totalSeconds: 900, below50Seconds: 0, maxHr: 190,
+        durationSource: 'heart-rate-time-axis', boundaries: [50, 60, 70, 80, 90] };
+    const activity = {
+        id: 'g-cached-edwards', source: 'garmin', date: completedDay, duration: 60,
+        garminAnalysis: { version: 1, durationMinutes: 60, maxHr: 190,
+            restingHr: 50, restingHrWindowDays: 14, edwards }
+    };
+    const result = getHeartRateZoneAnalysis([activity], {}, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.records.length, 1);
+    assert.equal(result.records[0].edwards.value, 80);
+});
