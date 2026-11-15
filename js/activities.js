@@ -510,8 +510,33 @@ async function loadGarminTelemetryWhenActivityOpened(activity) {
         const userId = auth?.user?.id;
         if (!userId) return;
         const records = await telemetryModule.loadGarminTelemetryForActivityIds(supabase, userId, [activityId]);
-        if (!records.length || state.selectedActivityForModal !== activity) return;
-        const incoming = records[0].telemetry || {};
+        if (state.selectedActivityForModal !== activity) return;
+        let incoming = records[0]?.telemetry || null;
+        if (!incoming || !Object.keys(incoming).length) {
+            // Fehlt der Cloud-Datensatz, wird Garmin erst jetzt – beim Öffnen
+            // genau dieser Aktivität – nach den verfügbaren Messreihen gefragt.
+            const { data, error } = await supabase.functions.invoke('garmin-personal', {
+                body: { action: 'import-activity-json', activityId }
+            });
+            if (error) throw error;
+            const telemetry = data?.telemetry;
+            const metricSeries = telemetry?.metricSeries && typeof telemetry.metricSeries === 'object'
+                ? telemetry.metricSeries : {};
+            const usableSeries = Object.values(metricSeries).filter(metric => Array.isArray(metric?.values)
+                && metric.values.filter(value => value != null && value !== ''
+                    && Number.isFinite(Number(value))).length >= 2).length;
+            if (data?.ok !== true || String(data?.activityId) !== activityId
+                || !Array.isArray(telemetry?.time) || telemetry.time.length < 2 || usableSeries < 1
+                || !telemetry.time.every((value, index) => Number.isFinite(Number(value))
+                    && (index === 0 || Number(value) > Number(telemetry.time[index - 1])))) {
+                throw new Error(data?.error || 'Für diese Aktivität sind aktuell keine vollständigen Garmin-Messreihen verfügbar.');
+            }
+            incoming = telemetry;
+            await telemetryModule.uploadMissingGarminTelemetry(supabase, userId, [{
+                garmin_activity_id: activityId, telemetry: incoming
+            }]);
+        }
+        if (state.selectedActivityForModal !== activity) return;
         const current = activity.garminTelemetry || {};
         activity.garminTelemetry = {
             ...current, ...incoming,
