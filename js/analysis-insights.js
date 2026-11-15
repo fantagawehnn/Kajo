@@ -192,7 +192,7 @@ function renderRecoveryInsight() {
 
     const objectiveCards = [
         recoveryMetric('hrv', 'HRV', valid(current.hrv) ? formatValue(current.hrv) : '—', 'ms'),
-        recoveryMetric('rhr', 'Ruhepuls', valid(current.rhr) ? formatValue(current.rhr) : '—', 'bpm'),
+        recoveryMetric('rhr', 'Ruhepuls', valid(current.garminRhr ?? current.rhr) ? formatValue(current.garminRhr ?? current.rhr) : '—', 'bpm'),
         recoveryMetric('sleepDuration', 'Schlafdauer', formatValue(current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null)), 'Stunden'),
         recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100'),
         recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min')
