@@ -80,7 +80,9 @@ export function calculateHeartRateReserveZones(maxHr, restingHr) {
 function getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins) {
     const maxHr = Number(profile?.maxHr);
     if (!Number.isFinite(maxHr) || maxHr < 100 || maxHr > 240) return null;
-    const windowDays = settings?.heartRateZoneSettings?.restingHrWindowDays ?? 14;
+    const zoneSettings = settings?.heartRateZoneSettings || {};
+    const windowDays = Number(zoneSettings.restingHrWindowVersion) >= 2
+        ? (zoneSettings.restingHrWindowDays ?? 14) : 14;
     const resting = getAdaptiveRestingHr(
         dailyCheckins,
         String(activity?.date || '').slice(0,10),
