@@ -103,7 +103,8 @@ assert.ok(activities.includes('initializeActivityDetailTabs'), 'activity details
 assert.ok(activities.includes("createAccordion('intervals', 'Intervalle & Runden'") && activities.includes("createAccordion('sport', 'Sportartspezifische Analyse'"), 'activity details expose the current accordion analysis areas');
 assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('colors[metric.label]'), 'activity overview uses sport-aware metric circles');
 assert.ok(css.includes('.activity-detail-tabs') && css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'activity tabs and metric circles have mobile styling');
-assert.ok(activities.includes('activity-data-quality') && activities.includes('activity-telemetry-diagnostic-output'), 'data quality and diagnostics remain accessible in the data tab');
+assert.ok(activities.includes('activity-data-quality') && activities.includes('activity-telemetry-diagnostic-output'), 'data quality and diagnostics remain available in activity details');
+assert.ok(activities.includes("createAccordion('data-quality', 'Datenqualität & Garmin-Diagnose'"), 'read-only Garmin diagnostics are reachable in their own activity accordion');
 assert.ok(html.includes('id="activity-telemetry-diagnostic-source"'), 'telemetry diagnostics originate outside the chart panel so missing data cannot remove the controls');
 assert.ok(activities.includes("event.target?.closest?.('#activity-telemetry-diagnose')"), 'telemetry diagnostic button has a delegated click handler');
 
