@@ -170,6 +170,7 @@ function renderRecoveryInsight() {
     const readiness = calculateReadiness();
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
     const findObjective = key => objective.find(item => item.key === key);
+    const rhrBaseline = findObjective('rhr');
     const formatValue = (value, digits = 1) => valid(value)
         ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: digits })
         : '—';
@@ -192,7 +193,7 @@ function renderRecoveryInsight() {
 
     const objectiveCards = [
         recoveryMetric('hrv', 'HRV', valid(current.hrv) ? formatValue(current.hrv) : '—', 'ms'),
-        recoveryMetric('rhr', 'Ruhepuls', valid(current.garminRhr ?? current.rhr) ? formatValue(current.garminRhr ?? current.rhr) : '—', 'bpm'),
+        recoveryMetric('rhr', 'Ruhepuls', valid(current.garminRhr ?? current.rhr) ? formatValue(current.garminRhr ?? current.rhr) : '—', rhrBaseline ? 'bpm · persönliche Basis ' + formatValue(rhrBaseline.baseline) : 'bpm'),
         recoveryMetric('sleepDuration', 'Schlafdauer', formatValue(current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null)), 'Stunden'),
         recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100'),
         recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min')
