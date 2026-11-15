@@ -868,6 +868,9 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
         }
         if ((index + 1) % 5 === 0 || index === pending.length - 1) {
             if (saveDataToLocalStorage() === false) throw new Error('Garmin-Zeitreihen konnten nicht im lokalen Datenspeicher gesichert werden.');
+            // Bereits gespeicherte FIT-Daten sofort in Load/Performance einrechnen,
+            // statt bis zum Ende des gesamten historischen Imports zu warten.
+            initEngine();
         }
         // Sequential requests with a short gap reduce the risk of triggering Garmin rate limits.
         if (index < pending.length - 1) await new Promise(resolve => setTimeout(resolve, 600));
@@ -1019,6 +1022,8 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
             if (saveActivitiesToLocalStorage() === false) {
                 throw new Error('Garmin-Rohtelemetrie konnte nicht im lokalen Aktivitätsspeicher gesichert werden.');
             }
+            // Neue Rohmessreihen sofort in die abgeleiteten Anzeigen übernehmen.
+            initEngine();
         }
         if (rateLimited) break;
         if (index < pending.length - 1) await new Promise(resolve => setTimeout(resolve, 650));
@@ -1134,6 +1139,8 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
                 throw new Error('Die HF-Zeitreihe konnte nicht lokal gespeichert werden.');
             }
             imported++;
+            // Jede erfolgreich gespeicherte HF-Zeitreihe aktualisiert die Load-Anzeige.
+            initEngine();
         } catch (error) {
             failed++;
             errors.push(id + ': ' + (error?.message || 'HF-Nachladen fehlgeschlagen'));
