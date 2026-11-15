@@ -516,10 +516,10 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         // Fallbacks aus der Tageszusammenfassung, wenn ein spezialisierter Datensatz fehlt.
         if (candidates.rhr === null) candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
         if (candidates.respiration === null) candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
-        if (candidates.garminStress === null) candidates.garminStress = findGarminNumber(summaryPayload, ['avgLevel']);
         if (candidates.bodyBattery === null) candidates.bodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
-        if (candidates.spo2 === null) candidates.spo2 = findGarminNumber(summaryPayload, ['avgValue']);
-        if (candidates.steps === null) candidates.steps = findGarminNumber(summaryPayload, ['value']);
+        // Stress, SpO₂ und Schritte werden nur aus ihren typisierten Tagesdatensätzen
+        // übernommen. Generische Schlüssel wie avgLevel, avgValue oder value können
+        // in einer verschachtelten Tageszusammenfassung zu anderen Messgrößen gehören.
 
         if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
 
