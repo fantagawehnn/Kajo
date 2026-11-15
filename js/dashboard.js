@@ -25,9 +25,9 @@ export function calculateReadiness(dateKey=localTodayKey()){
   const history=Object.entries(state.dailyCheckins).filter(([date])=>{const ms=new Date(date+'T12:00:00').getTime();return date<dateKey&&Number.isFinite(ms)&&dateMs>ms&&dateMs-ms<=90*86400000;});
   const objective=[];
   const addBaseline=(key,label,scoreFn)=>{
-    const raw=key==='sleepDuration'?(current.sleepDuration??(Number(current.sleep)>5?current.sleep:null)):current[key];
+    const raw=key==='sleepDuration'?(current.sleepDuration??(Number(current.sleep)>5?current.sleep:null)):key==='rhr'?(current.garminRhr??current.rhr):current[key];
     if(!validNumber(raw))return;
-    const vals=history.map(([,r])=>key==='sleepDuration'?(r.sleepDuration??(Number(r.sleep)>5?r.sleep:null)):r[key]).filter(validNumber).map(Number);
+    const vals=history.map(([,r])=>key==='sleepDuration'?(r.sleepDuration??(Number(r.sleep)>5?r.sleep:null)):key==='rhr'?(r.garminRhr??r.rhr):r[key]).filter(validNumber).map(Number);
     if(vals.length<5)return;
     const base=median(vals),value=Number(raw);
     if(!(base>0)||!(value>0))return;
@@ -458,7 +458,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     // Home zeigt bei fehlenden Tageswerten den letzten tatsächlich erfassten
     // Check-in bis einschließlich des ausgewählten Tages. Die Daten bleiben
     // datumsgebunden; es werden keine Werte aus der Zukunft übernommen.
-    const homeMetricKeys = ['rhr','hrv','sleepScore','sleepDuration','sleep','respiration','sleepQuality','soreness','fatigue','motivation','stress','weight'];
+    const homeMetricKeys = ['rhr','garminRhr','hrv','sleepScore','sleepDuration','sleep','respiration','sleepQuality','soreness','fatigue','motivation','stress','weight'];
     const hasHomeMetrics = record => Boolean(record && typeof record === 'object' &&
         homeMetricKeys.some(key => record[key] !== null && record[key] !== undefined && record[key] !== ''));
     const checkinEntries = Object.entries(state.dailyCheckins || {})
@@ -496,7 +496,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             valueEl.classList.add('kajo-wearable-value');
         }
     };
-    metric('home-wear-rhr','home-wear-rhr-ring',format(checkin.rhr,'rhr'),wearableState('rhr',checkin.rhr));
+    metric('home-wear-rhr','home-wear-rhr-ring',format(checkin.garminRhr ?? checkin.rhr,'rhr'),wearableState('rhr',checkin.garminRhr ?? checkin.rhr));
     metric('home-wear-hrv','home-wear-hrv-ring',format(checkin.hrv,'hrv'),wearableState('hrv',checkin.hrv));
     metric('home-wear-score','home-wear-score-ring',format(checkin.sleepScore,'sleepScore'),wearableState('sleepScore',checkin.sleepScore));
     metric('home-wear-duration','home-wear-duration-ring',validNumber(sleepDuration) ? historyDisplay(Number(sleepDuration),'sleepDuration').replace('.',',') + ' h' : '—',wearableState('sleepDuration',sleepDuration));
@@ -515,7 +515,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const color = ({[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor'})[colorHex] || 'neutral';
         metric(valueId,ringId,valid ? historyDisplay(Number(raw), key) + ' / 10' : '—',color);
     });
-    const wearableCount = [checkin.rhr,checkin.hrv,checkin.sleepScore,sleepDuration,checkin.respiration].filter(validNumber).length;
+    const wearableCount = [checkin.garminRhr ?? checkin.rhr,checkin.hrv,checkin.sleepScore,sleepDuration,checkin.respiration].filter(validNumber).length;
     const selfCount = subjective.filter(([key]) => validNumber(historyValue(checkin, key))).length;
     set('home-recovery-source',wearableCount + ' von 5 Wearable-Werten · ' + selfCount + ' von 5 Self-Monitoring-Angaben erfasst');
     state.homeReadinessDate = checkinDate || selectedDate;
@@ -930,7 +930,7 @@ function historyValue(checkin, key) {
         ? (checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null))
         : key === 'sleepQuality'
             ? (checkin.sleepQuality ?? (Number(checkin.sleep) >= 1 && Number(checkin.sleep) < 5 ? checkin.sleep : null))
-            : checkin[key];
+            : key === 'rhr' ? (checkin.garminRhr ?? checkin.rhr) : checkin[key];
     return validNumber(raw) ? Number(raw) : null;
 }
 function historyWindow(range, endKey = historyTodayKey()) {
