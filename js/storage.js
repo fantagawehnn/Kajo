@@ -90,6 +90,76 @@ function restoreGarminTelemetry(activities, telemetryStore) {
     });
 }
 
+/**
+ * Liefert alle derzeit vorhandenen Garmin-Telemetriedatensätze aus dem
+ * aktiven Kontozustand einschließlich der bisher separat gespeicherten Reihen.
+ * Wird für den einmaligen, verlustfreien Cloud-Transfer verwendet.
+ */
+export function getGarminTelemetryRecordsForCloud() {
+    const records = new Map();
+    for (const activity of Array.isArray(state.rawActivities) ? state.rawActivities : []) {
+        const id = getGarminActivityStorageId(activity);
+        if (!id) continue;
+        const current = activity?.garminTelemetry && typeof activity.garminTelemetry === 'object'
+            ? activity.garminTelemetry : {};
+        const separated = state.garminTelemetryStore?.[id] || {};
+        const telemetry = {
+            ...current,
+            ...(Object.keys(separated).length ? {
+                metricSeries: { ...(current.metricSeries || {}), ...(separated.metricSeries || {}) },
+                metricSeriesTime: current.metricSeriesTime || separated.metricSeriesTime || undefined
+            } : {})
+        };
+        if (Object.keys(telemetry).length) records.set(id, { garmin_activity_id: id, telemetry });
+    }
+    for (const [rawId, telemetry] of Object.entries(state.garminTelemetryStore || {})) {
+        const id = String(rawId).replace(/^garmin-/, '');
+        if (!/^\\d+$/.test(id) || records.has(id) || !telemetry || typeof telemetry !== 'object') continue;
+        if (Object.keys(telemetry).length) records.set(id, { garmin_activity_id: id, telemetry });
+    }
+    return Array.from(records.values());
+}
+
+/**
+ * Ergänzt geladene Cloud-Telemetrie im Arbeitsspeicher. Cloud-Werte haben
+ * Vorrang; vorhandene lokale Reihen bleiben erhalten, falls Cloud-Felder fehlen.
+ */
+export function mergeGarminTelemetryRecords(records) {
+    const byId = new Map((Array.isArray(records) ? records : []).map(record => [
+        String(record?.garmin_activity_id ?? ''),
+        record?.telemetry && typeof record.telemetry === 'object' ? record.telemetry : {}
+    ]));
+    if (!byId.size) return 0;
+    let merged = 0;
+    state.rawActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).map(activity => {
+        const id = getGarminActivityStorageId(activity);
+        const cloud = id ? byId.get(id) : null;
+        if (!cloud || !Object.keys(cloud).length) return activity;
+        const current = activity?.garminTelemetry && typeof activity.garminTelemetry === 'object'
+            ? activity.garminTelemetry : {};
+        merged += 1;
+        return {
+            ...activity,
+            garminTelemetry: {
+                ...current,
+                ...cloud,
+                metricSeries: { ...(current.metricSeries || {}), ...(cloud.metricSeries || {}) },
+                metricSeriesTime: cloud.metricSeriesTime || current.metricSeriesTime || undefined
+            }
+        };
+    });
+    return merged;
+}
+
+function stripGarminTelemetryFromActivities(activities) {
+    return (Array.isArray(activities) ? activities : []).map(activity => {
+        if (!activity?.garminTelemetry) return activity;
+        const compact = { ...activity };
+        delete compact.garminTelemetry;
+        return compact;
+    });
+}
+
 function migrateDailyCheckinScale() {
     const version = Number(state.settings?.dailyCheckinScaleVersion || 1);
     if (version >= 2) return false;
@@ -198,7 +268,7 @@ export function setUserLocalSetting(key, value) {
 
 export function getUserDataSnapshot() {
     return {
-        activities: state.rawActivities, planned: state.plannedActivities,
+        activities: stripGarminTelemetryFromActivities(state.rawActivities), planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
