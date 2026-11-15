@@ -912,10 +912,13 @@ function renderOptionalActivityViews(act) {
             const distance = distanceRaw === null || distanceRaw === undefined || distanceRaw === '' ? null : safe(distanceRaw);
             const speed = lap.durationUnit === 'seconds' && duration > 0 && distance > 0
                 ? distance / duration * 3.6 : null;
-            const paceSecondsPerKm = lap.durationUnit === 'seconds' && duration > 0 && distance > 0
-                ? duration / (distance / 1000) : null;
-            const pace = paceSecondsPerKm !== null && Number.isFinite(paceSecondsPerKm)
-                ? Math.floor(paceSecondsPerKm / 60) + ':' + String(Math.round(paceSecondsPerKm % 60)).padStart(2, '0') + ' min/km'
+            const durationSeconds = duration === null ? null
+                : lap.durationUnit === 'seconds' ? duration
+                : duration > 1000 ? duration / 1000 : duration;
+            const paceTotalSeconds = durationSeconds !== null && durationSeconds > 0 && distance > 0
+                ? Math.round(durationSeconds / (distance / 1000)) : null;
+            const pace = paceTotalSeconds !== null && Number.isFinite(paceTotalSeconds)
+                ? Math.floor(paceTotalSeconds / 60) + ':' + String(paceTotalSeconds % 60).padStart(2, '0') + ' min/km'
                 : null;
             return { lap, index: i + 1, duration, distance, speed, pace };
         });
