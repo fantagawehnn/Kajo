@@ -73,6 +73,39 @@ async function fetchAllRows(supabase, userId) {
     return rows;
 }
 
+async function fetchRowsByActivityIds(supabase, userId, activityIds) {
+    const uniqueIds = Array.from(new Set((Array.isArray(activityIds) ? activityIds : [])
+        .map(value => String(value ?? '').replace(/^garmin-/, ''))
+        .filter(value => /^\\d+$/.test(value))));
+    const rows = [];
+    const QUERY_BATCH_SIZE = 100;
+    for (let offset = 0; offset < uniqueIds.length; offset += QUERY_BATCH_SIZE) {
+        const idBatch = uniqueIds.slice(offset, offset + QUERY_BATCH_SIZE);
+        const { data, error } = await supabase
+            .from(TABLE)
+            .select('garmin_activity_id, telemetry')
+            .eq('user_id', userId)
+            .in('garmin_activity_id', idBatch);
+        if (error) throw error;
+        rows.push(...(Array.isArray(data) ? data : []));
+    }
+    return rows;
+}
+
+/**
+ * Lädt ausschließlich die Telemetrie der vom Aufrufer ausgewählten Aktivitäten.
+ * Die Aktivitäts-IDs werden aus dem 90-Tage-Fenster der geladenen Aktivitäten
+ * ermittelt; ältere Cloud-Messreihen werden dabei nicht angefragt.
+ */
+export async function loadGarminTelemetryForActivityIds(supabase, userId, activityIds = []) {
+    const id = requireContext(supabase, userId);
+    const rows = await fetchRowsByActivityIds(supabase, id, activityIds);
+    return rows.map(row => ({
+        garmin_activity_id: String(row.garmin_activity_id),
+        telemetry: row.telemetry
+    }));
+}
+
 export async function uploadMissingGarminTelemetry(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
     const candidates = new Map();
@@ -156,17 +189,15 @@ export async function syncGarminTelemetryToCloud(supabase, userId, candidateReco
     // Vorhandene Telemetrie wird dabei weder geladen noch überschrieben.
     const uploadResult = await uploadMissingGarminTelemetry(supabase, id, candidateRecords);
 
-    // Ein einmaliger Download ist weiterhin nötig, um den lokalen Cache nach
-    // erfolgreicher Migration mit den bereits gespeicherten Cloud-Daten aufzubauen.
-    // Im Gegensatz zum bisherigen Ablauf wird die komplette Tabelle nicht
-    // zusätzlich vor dem Upload geladen.
-    const cloudRows = await fetchAllRows(supabase, id);
-    const cloudIds = new Set(cloudRows.map(row => String(row.garmin_activity_id)));
+    // Nur die für diesen Transfer relevanten IDs zurücklesen. Ein Vollabruf
+    // der gesamten Telemetrie-Tabelle ist beim App-Start nicht erforderlich.
     const candidateIds = Array.from(new Set(
         (Array.isArray(candidateRecords) ? candidateRecords : [])
             .map(record => String(record?.garmin_activity_id ?? '').replace(/^garmin-/, ''))
             .filter(activityId => /^\d+$/.test(activityId))
     ));
+    const cloudRows = await fetchRowsByActivityIds(supabase, id, candidateIds);
+    const cloudIds = new Set(cloudRows.map(row => String(row.garmin_activity_id)));
     const missing = candidateIds.filter(activityId => !cloudIds.has(activityId));
     if (missing.length) {
         throw new Error('Cloud-Readback unvollständig: ' + missing.length + ' Telemetrie-Datensätze fehlen.');
