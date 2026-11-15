@@ -9,7 +9,7 @@ import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
 import { calculateStrengthActivitySummary } from './calculations.js';
-import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
+import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
@@ -120,9 +120,8 @@ async function diagnoseGarminCloudTelemetry() {
         const axis = series?.time
             || (Array.isArray(telemetry.metricSeriesTime) ? telemetry.metricSeriesTime : null)
             || (Array.isArray(telemetry.time) ? telemetry.time : null);
-        const monotonic = Array.isArray(axis) && axis.length > 1
-            && axis.every(value => value !== null && value !== '' && Number.isFinite(Number(value)))
-            && axis.slice(1).every((value, index) => Number(value) > Number(axis[index]));
+        const axisStats = summarizeTimeAxis(axis);
+        const monotonic = axisStats.valid;
         const timeKind = monotonic
             ? Number(axis[axis.length - 1]) > 100000000000 ? 'absolut wirkende Zeitstempel (ms)'
                 : Number(axis[axis.length - 1]) > 1000000000 ? 'absolut wirkende Zeitstempel (s)'
@@ -145,6 +144,16 @@ async function diagnoseGarminCloudTelemetry() {
             '  HF-Messpunkte: ' + hrCount + ' · plausibel: ' + validHr,
             '  Zeitwerte zur HF-Reihe: ' + (Array.isArray(series?.time) ? series.time.length : 0),
             '  Zeitachse: ' + timeKind,
+            '  Zeitabstände (unveränderte Quelleinheit): min ' + (axisStats.valid ? axisStats.minInterval : 'n/a')
+                + ' · Median ' + (axisStats.valid ? axisStats.medianInterval : 'n/a')
+                + ' · max ' + (axisStats.valid ? axisStats.maxInterval : 'n/a'),
+            '  Zeitliche Abdeckung (letzter minus erster Zeitwert): ' + (axisStats.valid ? axisStats.span : 'n/a')
+                + ' Quelleinheiten',
+            '  Import-Metadaten zur Zeiteinheit: ' + (telemetry.timeUnit || telemetry.time_unit
+                || telemetry.metricSeriesTimeUnit || telemetry.metric_series_time_unit || 'nicht vorhanden'),
+            '  Einheitenbewertung: ' + (axisStats.valid
+                ? 'nicht bestätigt; Statistik allein belegt keine Zeiteinheit'
+                : 'nicht bewertbar, da die Zeitachse ungültig ist'),
             '  metricSeries: ' + Object.keys(metricSeries).length + ' Reihen',
             ...metricLines,
             '  KAJO-HF-Load: ' + (load ? load.value + ' ' + load.unit + ' (' + load.method + ')' : 'nicht berechenbar')
