@@ -33,7 +33,7 @@ import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengt
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=9';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
-import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=2';
+import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=3';
 
 /* Selten genutzte Bereiche werden erst bei Bedarf geladen.
    Die Promise-Caches verhindern parallele Mehrfachimporte. */
