@@ -5,7 +5,7 @@
   --kajo-pro-cyan:#35c8e8;--kajo-pro-blue:#438ff0;--kajo-pro-green:#35d49a;
   --kajo-pro-violet:#a78bfa;--kajo-pro-pink:#f36b9a;--kajo-pro-orange:#f5a044;
 }
-#view-dashboard.kajo-dashboard-design{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem;align-items:stretch}
+#view-dashboard.kajo-dashboard-design:not(.hidden){display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem;align-items:stretch}
 .kajo-dashboard-design>*{min-width:0}
 .kajo-dashboard-topline{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.25rem .15rem .5rem}
 .kajo-dashboard-heading-copy{min-width:0}
@@ -81,4 +81,23 @@
  .kajo-dashboard-topline{gap:.5rem}
  .kajo-dashboard-sport-focus{letter-spacing:.03em}
  #view-dashboard .kajo-home-section-heading h2{font-size:.78rem}
+}
+
+/* Gleiche visuelle Sprache für Kalender, Training, Analyse, Gesundheit und Mehr */
+#view-calendar .calendar-topbar{border:1px solid var(--kajo-pro-border)!important;border-radius:16px!important;background:linear-gradient(145deg,#13243a,#0c192a)!important;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+#view-calendar .calendar-nav-arrow,#view-calendar .calendar-format-button{border:1px solid var(--kajo-pro-border);border-radius:10px;background:rgba(5,15,28,.45);color:var(--kajo-pro-text)}
+#view-calendar .calendar-nav-arrow:hover,#view-calendar .calendar-format-button:hover{border-color:rgba(53,200,232,.45);background:rgba(53,200,232,.08)}
+#view-more .kajo-area-card{border:1px solid var(--kajo-pro-border);border-radius:15px;background:linear-gradient(145deg,rgba(19,34,53,.96),rgba(10,21,35,.98));box-shadow:0 6px 18px rgba(0,0,0,.1);transition:transform .18s,border-color .18s}
+#view-more .kajo-area-card:hover{transform:translateY(-2px);border-color:rgba(53,200,232,.4)}
+#view-more .kajo-area-copy strong{color:var(--kajo-pro-text)}
+#view-more .kajo-area-copy small{color:var(--kajo-pro-muted)}
+#view-health-data .kajo-recovery-group{border:1px solid var(--kajo-pro-border);border-radius:16px;background:linear-gradient(145deg,rgba(19,34,53,.96),rgba(10,21,35,.98));padding:1rem}
+#view-health-data .kajo-recovery-group-heading h2{color:var(--kajo-pro-text);font-weight:800}
+#view-races>section,#view-strength>section{border-color:var(--kajo-pro-border)}
+#settings-modal .kajo-settings-card{border-color:var(--kajo-pro-border);border-radius:14px;background:linear-gradient(145deg,rgba(19,34,53,.96),rgba(10,21,35,.98))}
+#settings-modal .kajo-settings-group-heading h3{color:var(--kajo-pro-text)}
+#settings-modal .kajo-settings-field input,#settings-modal .kajo-settings-field select{border-color:var(--kajo-pro-border);border-radius:9px;background:#081525}
+@media(max-width:760px){
+ #view-calendar .calendar-topbar{padding:.75rem!important}
+ #view-health-data .kajo-recovery-group{padding:.75rem}
 }
