@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=132">
+    <link rel="stylesheet" href="css/styles.css?v=133">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1151,11 +1151,22 @@
             <button type="button" onclick="toggleActivityEdit()" title="Aktivität bearbeiten" aria-label="Aktivität bearbeiten" class="activity-detail-nav-button"><i data-lucide="pencil"></i></button>
         </header>
         <main class="activity-detail-content">
-            <section id="activity-overview" class="activity-detail-overview" aria-label="Kennzahlen der Aktivität">
+            <section id="activity-overview" class="activity-detail-overview" aria-label="Aktivitätsübersicht">
                 <div class="activity-detail-section-heading">
-                    <div><h3>Auf einen Blick</h3></div>
+                    <div><h3>Aktivitätsübersicht</h3></div>
                 </div>
-                <div id="activity-sport-metrics" class="activity-detail-metrics"></div><div id="activity-data-quality" class="activity-data-quality" aria-live="polite"></div>
+                <div id="activity-sport-metrics" class="activity-detail-metrics"></div>
+                <div id="activity-data-quality" class="activity-data-quality" aria-live="polite"></div>
+                <div class="activity-overview-analysis-grid">
+                    <section id="activity-telemetry-panel" class="activity-detail-panel activity-telemetry-panel">
+                        <div class="activity-detail-section-heading"><div><h3>Herzfrequenzverlauf</h3></div></div>
+                        <div id="activity-telemetry-switch" class="activity-series-switches" role="group" aria-label="Messgröße auswählen"></div>
+                        <div id="activity-hr-series-status" class="activity-detail-data-status" aria-live="polite">Messreihen werden geprüft …</div>
+                        <div class="activity-telemetry-chart-wrap"><canvas id="activityTelemetryChart"></canvas></div>
+                        <div id="activity-telemetry-point" class="activity-telemetry-point" aria-live="polite" hidden></div>
+                    </section>
+                    
+                </div>
             </section>
 
             <section id="activity-canoe-panel" class="activity-detail-panel activity-canoe-panel hidden" aria-labelledby="activity-canoe-heading">
@@ -1201,12 +1212,7 @@
             </section>
             <div class="activity-detail-grid">
                 <div class="activity-detail-primary">
-                    <section id="activity-telemetry-panel" class="activity-detail-panel activity-telemetry-panel">
-                        <div class="activity-detail-section-heading"><div><h3>Verlauf</h3></div></div>
-                        <div id="activity-telemetry-switch" class="activity-series-switches" role="group" aria-label="Messgröße auswählen"></div><div id="activity-hr-series-status" class="activity-detail-data-status" aria-live="polite">Messreihen werden geprüft …</div>
-                        
-                        <div class="activity-telemetry-chart-wrap"><canvas id="activityTelemetryChart"></canvas></div><div id="activity-telemetry-point" class="activity-telemetry-point" aria-live="polite" hidden></div>
-                    </section>
+                    
                     <section id="activity-fit-data-panel" class="hidden activity-detail-panel activity-detail-dynamic-panel"></section>
                     <section id="activity-intervals-panel" class="hidden activity-detail-panel activity-detail-dynamic-panel"></section>
                     <section id="activity-elevation-panel" class="hidden activity-detail-panel activity-detail-dynamic-panel"></section>
