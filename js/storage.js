@@ -352,7 +352,14 @@ export function saveActivitiesToLocalStorage() {
     const activities = stripGarminTelemetryFromActivities(state.rawActivities);
     // Der separate Garmin-Telemetrie-Cache bleibt im Arbeitsspeicher erhalten.
     // Er wird für Analyse und spätere Cloud-Synchronisierung benötigt.
-    activeUserStorage.setItem('activities', JSON.stringify(activities));
+    // localStorage ist nur ein kleiner Fallback. Bei voller Browser-Quote
+    // darf der synchrone Cache-Schreibversuch die IndexedDB-Sicherung nicht blockieren.
+    try {
+        activeUserStorage.setItem('activities', JSON.stringify(activities));
+    } catch (error) {
+        if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+        console.warn('Aktivitäten passen nicht mehr in localStorage; sichere sie stattdessen in IndexedDB.');
+    }
     const storageForThisSave = activeUserStorage;
     indexedDbWriteQueue = indexedDbWriteQueue
         .then(() => storageForThisSave.saveCollections({ activities }))
@@ -373,7 +380,12 @@ export function saveDataToLocalStorage() {
     // Garmin-Telemetrie-Cache zu leeren. Die Rohdaten werden nicht in den
     // kompakten lokalen Aktivitätssnapshot geschrieben.
     for (const [collection, value] of Object.entries(snapshot)) {
-        activeUserStorage.setItem(collection, JSON.stringify(value));
+        try {
+            activeUserStorage.setItem(collection, JSON.stringify(value));
+        } catch (error) {
+            if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+            console.warn(`Lokaler localStorage-Fallback für "${collection}" ist voll; IndexedDB übernimmt die Sicherung.`);
+        }
     }
 
     const storageForThisSave = activeUserStorage;
@@ -394,7 +406,12 @@ export async function clearLocalGarminTelemetryCache() {
     await indexedDbWriteQueue;
     await activeUserStorage.removeCollection('garminTelemetry');
     const compactActivities = stripGarminTelemetryFromActivities(state.rawActivities);
-    activeUserStorage.setItem('activities', JSON.stringify(compactActivities));
+    try {
+        activeUserStorage.setItem('activities', JSON.stringify(compactActivities));
+    } catch (error) {
+        if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+        console.warn('Aktivitäten-Fallback wegen voller localStorage-Quote übersprungen; IndexedDB wird verwendet.');
+    }
     await activeUserStorage.saveCollections({ activities: compactActivities });
     state.garminTelemetryStore = {};
     return true;
