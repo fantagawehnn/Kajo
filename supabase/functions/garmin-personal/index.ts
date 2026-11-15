@@ -134,10 +134,11 @@ async function syncGarminHealthDay(
         .maybeSingle();
       if (existingError) throw existingError;
       const isNoDataMarker = JSON.stringify(existing?.payload) === JSON.stringify({ no_data: true });
-      const noDataRetryStart = addUtcDays(new Date().toISOString().slice(0, 10), -14);
-      const shouldRetryRecentNoData = isNoDataMarker && date >= noDataRetryStart;
+      const noDataFetchedAt = typeof existing?.fetched_at === "string" ? Date.parse(existing.fetched_at) : NaN;
+      const noDataNeedsRetry = isNoDataMarker &&
+        (!Number.isFinite(noDataFetchedAt) || Date.now() - noDataFetchedAt >= 30 * 24 * 60 * 60 * 1000);
       if (!forceRefresh && existing?.payload && !isEmptyGarminPayload(existing.payload) &&
-          (!isNoDataMarker || !shouldRetryRecentNoData)) {
+          (!isNoDataMarker || !noDataNeedsRetry)) {
         results.push({ dataType: endpoint.type, status: "already_saved" });
         continue;
       }
@@ -768,7 +769,7 @@ async function syncGarminActivitiesForUser(
     if (coveredError) throw coveredError;
 
     const coveredDates = new Set((coveredRows ?? []).map((row) => String(row.sync_date).slice(0, 10)));
-    const recentRescanStart = addUtcDays(endDate, -scanWindowDays);
+    const recentRescanStart = addUtcDays(endDate, -(scanWindowDays - 1));
     const datesToScan: string[] = [];
     const totalDays = Math.floor(
       (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) / 86400000,
