@@ -165,7 +165,7 @@ export async function syncGarminTelemetryToCloud(supabase, userId, candidateReco
     const candidateIds = Array.from(new Set(
         (Array.isArray(candidateRecords) ? candidateRecords : [])
             .map(record => String(record?.garmin_activity_id ?? '').replace(/^garmin-/, ''))
-            .filter(activityId => /^\\d+$/.test(activityId))
+            .filter(activityId => /^\d+$/.test(activityId))
     ));
     const missing = candidateIds.filter(activityId => !cloudIds.has(activityId));
     if (missing.length) {
