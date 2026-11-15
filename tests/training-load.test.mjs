@@ -395,17 +395,17 @@ test('Edwards TRIMP uses fixed %HRmax bands and excludes time below 50%', () => 
     const activity = {
         id: 'edwards-fixture', source: 'garmin', type: 'Running', date: completedDay,
         garminTelemetry: {
-            hr: [90, 110, 130, 150, 170, 190],
-            time: [0, 20, 40, 60, 80, 100]
+            hr: [90, 110, 130, 150, 170, 190, 190],
+            time: [0, 20, 40, 60, 80, 100, 120]
         }
     };
     const result = getHeartRateZoneAnalysis([activity], {
         heartRateZones: { Running: [100, 120, 140, 160] }
     }, { maxHr: 200 });
     assert.equal(result.records.length, 1);
-    assert.deepEqual(result.records[0].edwards.secondsByZone, [20, 20, 20, 20, 20]);
+    assert.deepEqual(result.records[0].edwards.secondsByZone, [20, 20, 20, 20, 40]);
     assert.equal(result.records[0].edwards.below50Seconds, 20);
-    assert.equal(result.records[0].edwards.value, 5);
+    assert.equal(result.records[0].edwards.value, 6.7);
     assert.equal(result.records[0].kajo.value, 6.7);
     assert.equal(result.coverage.activitiesWithEdwards, 1);
 });
