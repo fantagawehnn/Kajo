@@ -470,54 +470,35 @@
   <label class="text-slate-400">Bis <input type="date" id="date-to" class="bg-slate-900 border border-slate-700 text-white px-2 py-1 rounded-lg ml-1"></label>
   <button type="button" onclick="applyCustomDateRange()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg">Anwenden</button>
  </div>
- <nav id="training-load-model-switch" class="kajo-analysis-switch kajo-load-model-nav" aria-label="Belastungsmodell auswählen">
-  <button type="button" data-training-load-model="primary" onclick="setTrainingLoadModel('primary')" aria-pressed="true" class="active">Belastungsbilanz</button>
-  <button type="button" data-training-load-model="srpe" onclick="setTrainingLoadModel('srpe')" aria-pressed="false">sRPE-Load</button>
+ <nav id="training-load-model-switch" class="kajo-analysis-switch kajo-load-model-nav" aria-label="Herzfrequenzmodell auswählen">
+  <button type="button" data-training-load-model="kajo" onclick="setTrainingLoadModel('kajo')" aria-pressed="true" class="active">KAJO-Zonen</button>
+  <button type="button" data-training-load-model="edwards" onclick="setTrainingLoadModel('edwards')" aria-pressed="false">Edwards TRIMP</button>
   <button type="button" data-training-load-model="compare" onclick="setTrainingLoadModel('compare')" aria-pressed="false">Vergleich</button>
-  <button type="button" disabled aria-disabled="true" title="Kein eigenständiges Edwards-TRIMP-Datenfeld nachgewiesen">Edwards TRIMP</button>
  </nav>
- <div id="training-load-no-data" class="kajo-training-load-panel hidden" role="status"><strong>Keine auswertbare Belastungszeitreihe</strong><p>Für diese Berechnungsbasis liegen im ausgewählten Zeitraum keine vollständigen CTL-, ATL- und TSB-Werte vor. Prüfe die Datenabdeckung und die gewählte Modellbasis.</p></div>
+ <div id="training-load-no-data" class="kajo-training-load-panel hidden" role="status"><strong>Keine auswertbaren Herzfrequenzdaten</strong><p>Für den ausgewählten Zeitraum liegen keine ausreichenden, verifizierten Garmin-HF-Zeitreihen für die Zonenberechnung vor.</p></div>
  <div id="training-load-standard-analysis" class="space-y-4">
   <div id="training-load-content" class="space-y-4">
-   <div class="kajo-analysis-circles kajo-training-load-rings" aria-label="Belastungskennzahlen">
-    <button type="button" data-training-load-metric="ctl" class="kajo-analysis-circle-item kajo-load-metric" onclick="openTrainingLoadMetric('ctl')"><span class="kajo-analysis-hero-ring kajo-load-ring"><span><strong id="training-load-value-ctl">—</strong></span></span><strong>CTL</strong><small>Langfristig</small></button>
-    <button type="button" data-training-load-metric="atl" class="kajo-analysis-circle-item kajo-load-metric" onclick="openTrainingLoadMetric('atl')"><span class="kajo-analysis-hero-ring kajo-load-ring"><span><strong id="training-load-value-atl">—</strong></span></span><strong>ATL</strong><small>Kurzfristig</small></button>
-    <button type="button" data-training-load-metric="tsb" class="kajo-analysis-circle-item kajo-load-metric" onclick="openTrainingLoadMetric('tsb')"><span class="kajo-analysis-hero-ring kajo-load-ring"><span><strong id="training-load-value-tsb">—</strong></span></span><strong>TSB</strong><small>CTL − ATL</small></button>
-   </div>
-   <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">AKTIVE BERECHNUNGSBASIS</p><h3 id="training-load-source-title">—</h3></div><p id="training-load-source-description" class="kajo-training-load-muted"></p><p id="training-load-coverage" class="kajo-training-load-coverage"></p></section>
    <section class="kajo-training-load-panel">
-    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">KURZ- UND LANGFRISTIGE ENTWICKLUNG</p><h3>ATL und CTL</h3></div></div>
-    <div class="kajo-training-load-chart-wrap"><canvas id="training-load-atl-ctl-chart" aria-label="ATL und CTL im zeitlichen Verlauf"></canvas></div>
-    <div class="kajo-load-chart-legend"><span><i class="atl"></i>ATL · kurzfristig</span><span><i class="ctl"></i>CTL · langfristig</span></div>
+    <div><p class="kajo-analysis-eyebrow">AKTIVE BERECHNUNGSBASIS</p><h3 id="training-load-source-title">KAJO-HF-Zonenindex</h3></div>
+    <p id="training-load-source-description" class="kajo-training-load-muted"></p>
+    <p id="training-load-coverage" class="kajo-training-load-coverage"></p>
+    <p id="training-load-edwards-maxhr-note" class="kajo-training-load-muted"></p>
    </section>
    <section class="kajo-training-load-panel">
-    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSBILANZ</p><h3>TSB</h3><p class="kajo-training-load-muted">Eigene Skala · Differenz zwischen CTL und ATL</p></div></div>
-    <div class="kajo-training-load-chart-wrap kajo-training-load-chart-wrap-compact"><canvas id="training-load-tsb-chart" aria-label="TSB im zeitlichen Verlauf mit Nulllinie"></canvas></div>
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">INTENSITÄTSVERTEILUNG</p><h3>Zeit in Herzfrequenzzonen</h3><p class="kajo-training-load-muted">Aufsummierte Minuten im ausgewählten Zeitraum</p></div></div>
+    <div class="kajo-training-load-chart-wrap"><canvas id="training-load-zone-chart" aria-label="Trainingszeit in den fünf Herzfrequenzzonen"></canvas></div>
+    <p id="training-load-zone-totals" class="kajo-training-load-coverage"></p>
    </section>
    <section class="kajo-training-load-panel">
-    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">TÄGLICHE BELASTUNG</p><h3>Belastung im Tagesverlauf</h3><p id="training-load-daily-unit" class="kajo-training-load-muted">Load-Punkte pro Tag</p></div></div>
-    <nav class="kajo-analysis-switch kajo-load-switch" aria-label="Tagesdiagramm auswählen">
-     <button type="button" data-training-load-daily-measure="load" onclick="setTrainingLoadDailyMeasure('load')" class="active" aria-pressed="true">Täglicher Load</button>
-     <button type="button" data-training-load-daily-measure="duration" onclick="setTrainingLoadDailyMeasure('duration')" aria-pressed="false">Trainingszeit</button>
-    </nav>
-    <div class="kajo-training-load-chart-wrap kajo-training-load-chart-wrap-compact"><canvas id="training-load-daily-chart" aria-label="Täglicher Load oder Trainingszeit als Balkendiagramm"></canvas></div>
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSVERLAUF</p><h3>Gewichteter HF-Zonenindex pro Tag</h3><p class="kajo-training-load-muted">Summe der gewichteten Zonenminuten je Tag · keine sRPE-Werte</p></div></div>
+    <div class="kajo-training-load-chart-wrap"><canvas id="training-load-daily-chart" aria-label="Täglicher gewichteter Herzfrequenzzonenindex"></canvas></div>
    </section>
    <section class="kajo-training-load-panel">
-    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">TRAININGSUMFANG</p><h3>Trainingszeit und Einheiten</h3><p class="kajo-training-load-muted">Wochenverlauf · getrennte Skalen</p></div></div>
-    <div class="kajo-training-load-volume-grid">
-     <div><p class="kajo-training-load-volume-label">Trainingszeit · Stunden</p><div class="kajo-training-load-volume-chart"><canvas id="training-load-weekly-hours-chart" aria-label="Trainingsstunden pro Woche"></canvas></div></div>
-     <div><p class="kajo-training-load-volume-label">Einheiten · Anzahl</p><div class="kajo-training-load-volume-chart"><canvas id="training-load-weekly-sessions-chart" aria-label="Trainingseinheiten pro Woche"></canvas></div></div>
-    </div>
+    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">AKTIVITÄTEN</p><h3>Berechnete Einheiten</h3><p class="kajo-training-load-muted">Die letzten zwölf Aktivitäten im gewählten Zeitraum</p></div></div>
+    <div id="training-load-activity-list" class="divide-y divide-slate-800"></div>
    </section>
-   <div id="analysis-load-insight" class="hidden" aria-hidden="true"></div>
-   <section id="training-load-insight-panel" class="kajo-training-load-panel"><div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">EINORDNUNG</p><h3>Belastungsanalyse</h3></div></div><div id="training-load-insight"></div></section>
-   <p class="kajo-training-load-method">Die Belastungszeitreihe wird über die zentrale KAJO-Berechnung erstellt. Fehlende Daten werden nicht als Ruhetage oder Nullwerte interpretiert. Garmin-eigene Belastung und KAJO-HF-Zonenindex werden im Garmin-Pfad anhand der vorhandenen Abdeckung ausgewählt und nicht miteinander addiert.</p>
+   <p id="training-load-zone-method-note" class="kajo-training-load-method"></p>
   </div>
- </div>
- <div id="training-load-compare-analysis" class="hidden space-y-4">
-  <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">MODELLVERGLEICH</p><h3>Garmin / HF-Zonenindex</h3></div><div class="kajo-training-load-chart-wrap"><canvas id="training-load-compare-garmin-chart" aria-label="ATL und CTL im Garmin- beziehungsweise HF-Zonenmodell"></canvas></div><p id="training-load-compare-garmin-chart-note" class="kajo-training-load-muted"></p></section>
-  <section class="kajo-training-load-panel"><div><p class="kajo-analysis-eyebrow">MODELLVERGLEICH</p><h3>sRPE-Load</h3></div><div class="kajo-training-load-chart-wrap"><canvas id="training-load-compare-srpe-chart" aria-label="ATL und CTL im sRPE-Modell"></canvas></div><p id="training-load-compare-srpe-chart-note" class="kajo-training-load-muted"></p></section>
-  <p class="kajo-training-load-method">Beide Modelle werden getrennt berechnet und mit jeweils eigener Skala dargestellt. Die absoluten Werte sind nicht direkt vergleichbar. Fehlende Werte oder unvollständige Datenabschnitte bleiben Lücken.</p>
  </div>
 </section>
 <section id="training-load-metric-detail" class="hidden space-y-4" aria-live="polite"><button type="button" onclick="closeTrainingLoadMetric()" class="kajo-back-link"><i data-lucide="arrow-left"></i><span>Training Load</span></button>
