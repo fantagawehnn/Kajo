@@ -118,6 +118,10 @@ export function summarizeTimeAxis(axis) {
         minInterval: intervals[0],
         medianInterval: median,
         maxInterval: intervals[intervals.length - 1],
-        span: values[values.length - 1] - values[0]
+        span: values[values.length - 1] - values[0],
+        intervalsAtMost30: intervals.filter(value => value <= 30).length,
+        intervalsOver30: intervals.filter(value => value > 30).length,
+        intervalSumAtMost30: intervals.filter(value => value <= 30).reduce((sum, value) => sum + value, 0),
+        intervalSumOver30: intervals.filter(value => value > 30).reduce((sum, value) => sum + value, 0)
     };
 }
