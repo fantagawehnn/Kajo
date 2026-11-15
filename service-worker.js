@@ -1,7 +1,7 @@
 /* KAJO: caches only the static app shell.
    Supabase requests, authentication, personal records and API responses are never cached. */
 const CACHE_PREFIX = "kajo-shell-";
-const CACHE_NAME = CACHE_PREFIX + "v2-5";
+const CACHE_NAME = CACHE_PREFIX + "v2-6";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -77,6 +77,20 @@ self.addEventListener("fetch", event => {
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+    const isNavigation = request.mode === "navigate";
+    const cached = await cache.match(request);
+
+    // Navigation bleibt network-first, damit Deployments sofort sichtbar werden.
+    // Statische App-Dateien werden cache-first ausgeliefert und im Hintergrund aktualisiert.
+    if (!isNavigation && cached) {
+      event.waitUntil(fetch(request).then(response => {
+        if (response && response.ok && response.type === "basic") {
+          return cache.put(request, response.clone());
+        }
+      }).catch(() => {}));
+      return cached;
+    }
+
     try {
       const response = await fetch(request);
       if (response && response.ok && response.type === "basic") {
@@ -84,9 +98,8 @@ self.addEventListener("fetch", event => {
       }
       return response;
     } catch (error) {
-      const cached = await cache.match(request);
       if (cached) return cached;
-      if (request.mode === "navigate") {
+      if (isNavigation) {
         return (await cache.match("./index.html")) || Response.error();
       }
       return Response.error();
