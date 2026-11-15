@@ -1,8 +1,8 @@
 /**
  * Cloud persistence for complete Garmin activity telemetry.
  *
- * Records are immutable per user/activity. The database primary key and
- * ignoreDuplicates writes ensure a retry never replaces an existing record.
+ * New telemetry is merged into existing activity records. This is important
+ * because Garmin FIT/JSON imports can enrich an activity after its first sync.
  */
 const TABLE = 'garmin_activity_telemetry';
 const PAGE_SIZE = 250;
@@ -72,75 +72,85 @@ async function fetchAllRows(supabase, userId) {
     return rows;
 }
 
+function mergeTelemetry(existing = {}, incoming = {}) {
+    const merged = { ...(existing || {}), ...(incoming || {}) };
+    // Never replace a populated series with an empty/partial retry.
+    for (const [key, value] of Object.entries(incoming || {})) {
+        if (Array.isArray(value) && value.length === 0 && Array.isArray(existing?.[key]) && existing[key].length > 0) {
+            merged[key] = existing[key];
+        }
+    }
+    const oldSeries = existing?.metricSeries && typeof existing.metricSeries === 'object'
+        ? existing.metricSeries : {};
+    const newSeries = incoming?.metricSeries && typeof incoming.metricSeries === 'object'
+        ? incoming.metricSeries : {};
+    merged.metricSeries = { ...oldSeries, ...newSeries };
+    for (const [key, metric] of Object.entries(newSeries)) {
+        if (!Array.isArray(metric?.values) || metric.values.length === 0) {
+            if (oldSeries[key]) merged.metricSeries[key] = oldSeries[key];
+        }
+    }
+    if ((!Array.isArray(incoming?.metricSeriesTime) || incoming.metricSeriesTime.length === 0)
+        && Array.isArray(existing?.metricSeriesTime)) {
+        merged.metricSeriesTime = existing.metricSeriesTime;
+    }
+    return merged;
+}
+
 export async function uploadMissingGarminTelemetry(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
     const candidates = new Map();
     for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
         const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
         candidates.set(activityId, record.telemetry);
     }
-    const entries = Array.from(candidates.entries());
+    const existingRows = await fetchAllRows(supabase, id);
+    const existingById = new Map(existingRows.map(row => [String(row.garmin_activity_id), row.telemetry || {}]));
     let uploaded = 0;
-    for (let offset = 0; offset < entries.length; offset += 100) {
-        const batch = entries.slice(offset, offset + 100);
-        const ids = batch.map(([activityId]) => activityId);
-        const { data, error } = await supabase
-            .from(TABLE)
-            .select('garmin_activity_id')
-            .eq('user_id', id)
-            .in('garmin_activity_id', ids);
+    for (const [activityId, telemetry] of candidates) {
+        const mergedTelemetry = mergeTelemetry(existingById.get(activityId) || {}, telemetry);
+        const { error } = await supabase.from(TABLE).upsert({
+            user_id: id,
+            garmin_activity_id: activityId,
+            telemetry: mergedTelemetry
+        }, { onConflict: 'user_id,garmin_activity_id' });
         if (error) throw error;
-        const existing = new Set((data || []).map(row => String(row.garmin_activity_id)));
-        for (const [activityId, telemetry] of batch) {
-            if (existing.has(activityId)) continue;
-            const { error: insertError } = await supabase
-                .from(TABLE)
-                .upsert({
-                    user_id: id,
-                    garmin_activity_id: activityId,
-                    telemetry
-                }, {
-                    onConflict: 'user_id,garmin_activity_id',
-                    ignoreDuplicates: true
-                });
-            if (insertError) throw insertError;
-            uploaded += 1;
-        }
+        uploaded++;
     }
-    return { uploaded, candidates: entries.length };
+    return { uploaded, candidates: candidates.size, updated: Array.from(candidates.keys()).filter(key => existingById.has(key)).length };
 }
 
 export async function syncGarminTelemetryToCloud(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
     const existingRows = await fetchAllRows(supabase, id);
-    const existingIds = new Set(existingRows.map(row => String(row.garmin_activity_id)));
+    const existingById = new Map(existingRows.map(row => [String(row.garmin_activity_id), row.telemetry || {}]));
     const uniqueCandidates = new Map();
 
     for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
         const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
-        if (!existingIds.has(activityId)) uniqueCandidates.set(activityId, {
-            user_id: id,
-            garmin_activity_id: activityId,
-            telemetry: record.telemetry
-        });
+        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        uniqueCandidates.set(activityId, mergeTelemetry(
+            existingById.get(activityId) || {},
+            record.telemetry
+        ));
     }
 
     let uploaded = 0;
-    // Small sequential writes avoid oversized requests and database statement timeouts.
-    for (const row of uniqueCandidates.values()) {
-        const { error } = await supabase
-            .from(TABLE)
-            .upsert(row, {
-                onConflict: 'user_id,garmin_activity_id',
-                ignoreDuplicates: true
-            });
+    for (const [activityId, telemetry] of uniqueCandidates) {
+        const { error } = await supabase.from(TABLE).upsert({
+            user_id: id,
+            garmin_activity_id: activityId,
+            telemetry
+        }, { onConflict: 'user_id,garmin_activity_id' });
         if (error) throw error;
-        uploaded += 1;
+        uploaded++;
     }
 
     const cloudRows = await fetchAllRows(supabase, id);
+    const cloudIds = new Set(cloudRows.map(row => String(row.garmin_activity_id)));
+    const missing = Array.from(uniqueCandidates.keys()).filter(activityId => !cloudIds.has(activityId));
+    if (missing.length) throw new Error('Cloud-Readback unvollständig: ' + missing.length + ' Telemetrie-Datensätze fehlen.');
     return {
         records: cloudRows.map(row => ({
             garmin_activity_id: String(row.garmin_activity_id),
