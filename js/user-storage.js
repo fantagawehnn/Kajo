@@ -9,7 +9,7 @@
  * Supabase user.id verwenden. Ein Accountwechsel benötigt eine neue Instanz.
  */
 
-import { getLocalCollection, putLocalCollections } from './local-db.js';
+import { getLocalCollection, putLocalCollections, deleteLocalCollection } from './local-db.js';
 
 function requireUserId(userId) {
     if (typeof userId !== 'string' || !userId.trim()) {
@@ -102,6 +102,12 @@ export function createUserStorage(userId) {
             }
 
             await putLocalCollections(indexedCollections);
+        },
+
+        async removeCollection(collection) {
+            const storageKey = getUserStorageKey(id, collection);
+            localStorage.removeItem(storageKey);
+            await deleteLocalCollection(storageKey);
         }
     };
 }
