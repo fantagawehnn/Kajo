@@ -8163,3 +8163,57 @@ canvas {
   .activity-overview-analysis-grid { grid-template-columns:minmax(0,1fr); }
   .activity-overview-analysis-grid .activity-telemetry-chart-wrap { height:230px; }
 }
+
+
+/* Aktivitätsansicht: WHOOP-inspirierte, überlappende Hauptkennzahlen. */
+.activity-detail-metrics-redesigned { display:flex; flex-direction:column; align-items:center; gap:13px; }
+.activity-metric-rings { display:flex; align-items:center; justify-content:center; width:100%; padding:7px 0 4px; }
+.activity-metric-circle-card { position:relative; display:flex; align-items:center; justify-content:center; flex:0 0 auto; width:clamp(104px,13vw,138px); aspect-ratio:1; margin-left:-17px; }
+.activity-metric-circle-card:first-child { margin-left:0; z-index:3; }
+.activity-metric-circle-card:nth-child(2) { z-index:2; }
+.activity-metric-circle-card:nth-child(3) { z-index:1; }
+.activity-metric-circle { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:100%; height:100%; padding:12px; border-radius:50%; border:5px solid var(--activity-metric-color); background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--activity-metric-color) 17%,#111827),#0b1220 72%); box-shadow:0 7px 22px rgba(0,0,0,.24),inset 0 0 0 1px rgba(255,255,255,.035); text-align:center; }
+.activity-metric-circle strong { color:#f8fafc; font-size:clamp(17px,2vw,24px); line-height:1; font-weight:850; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.activity-metric-circle span { color:#c3cfdd; font-size:clamp(8px,.75vw,10px); line-height:1.2; font-weight:650; }
+.activity-metric-circle-card.is-duration { width:clamp(124px,15vw,158px); z-index:4; }
+.activity-metric-circle-card.is-duration .activity-metric-circle { border-width:6px; }
+.activity-metric-circle-card.is-duration .activity-metric-circle strong { font-size:clamp(21px,2.5vw,29px); }
+.activity-metric-circle-card.is-distance { transform:translateY(7px); }
+.activity-metric-circle-card.is-heart-rate { transform:translateY(-5px); }
+.activity-metric-secondary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(115px,1fr)); width:100%; gap:7px; }
+.activity-metric-secondary { display:flex; flex-direction:column; gap:4px; min-width:0; padding:9px 11px; border:1px solid rgba(71,85,105,.35); border-radius:10px; background:rgba(15,23,42,.48); }
+.activity-metric-secondary span { color:#8998ac; font-size:9px; }
+.activity-metric-secondary strong { color:var(--activity-metric-color); font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.activity-detail-accordion { border:1px solid rgba(71,85,105,.38); border-radius:14px; background:rgba(14,22,35,.72); overflow:hidden; }
+.activity-detail-accordion[hidden] { display:none !important; }
+.activity-detail-accordion > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 17px; color:#e7edf5; font-size:13px; font-weight:750; cursor:pointer; list-style:none; }
+.activity-detail-accordion > summary::-webkit-details-marker { display:none; }
+.activity-detail-accordion > summary svg { width:16px; height:16px; color:#8796a9; transition:transform .18s ease; }
+.activity-detail-accordion[open] > summary svg { transform:rotate(180deg); }
+.activity-detail-accordion-body { display:flex; flex-direction:column; gap:12px; padding:0 13px 13px; }
+.activity-detail-accordion-body > .activity-detail-panel { background:rgba(8,15,26,.42); }
+.activity-rpe-actions { display:flex; align-items:center; gap:10px; }
+.activity-note-button { display:grid; place-items:center; width:34px; height:34px; border:1px solid rgba(148,163,184,.25); border-radius:10px; color:#9aa9bb; background:rgba(148,163,184,.07); }
+.activity-note-button svg { width:16px; height:16px; }
+.activity-note-button.has-note { color:#54c5b3; border-color:rgba(84,197,179,.5); background:rgba(84,197,179,.10); }
+.activity-note-preview { margin-top:8px; padding:9px 11px; border-left:2px solid #54c5b3; border-radius:0 8px 8px 0; background:rgba(84,197,179,.07); color:#cbd5e1; font-size:11px; line-height:1.5; white-space:pre-wrap; }
+.activity-note-preview[hidden], .activity-note-editor[hidden] { display:none !important; }
+.activity-note-editor { width:100%; margin-top:9px; padding:10px 11px; border:1px solid #34445a; border-radius:9px; color:#f1f5f9; background:#080f1c; font:inherit; font-size:11px; line-height:1.5; resize:vertical; }
+@media(max-width:520px) {
+  .activity-metric-circle-card { width:clamp(88px,28vw,112px); margin-left:-13px; }
+  .activity-metric-circle-card.is-duration { width:clamp(104px,32vw,128px); }
+  .activity-metric-circle { border-width:4px; padding:8px; }
+  .activity-metric-circle-card.is-duration .activity-metric-circle { border-width:5px; }
+  .activity-metric-circle strong { font-size:17px; }
+  .activity-metric-circle-card.is-duration .activity-metric-circle strong { font-size:22px; }
+  .activity-metric-circle span { font-size:8px; }
+  .activity-detail-accordion > summary { padding:13px 14px; }
+}
+html[data-theme="light"] .activity-metric-circle { background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--activity-metric-color) 13%,#fff),#f8fafc 72%); }
+html[data-theme="light"] .activity-metric-circle strong { color:#182431; }
+html[data-theme="light"] .activity-metric-circle span { color:#526174; }
+html[data-theme="light"] .activity-metric-secondary,
+html[data-theme="light"] .activity-detail-accordion { background:#fff; }
+html[data-theme="light"] .activity-detail-accordion > summary { color:#182431; }
+html[data-theme="light"] .activity-note-preview { color:#334155; }
+html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff; }
