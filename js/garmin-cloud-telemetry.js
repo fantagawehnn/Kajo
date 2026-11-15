@@ -6,7 +6,6 @@
  * or overwritten by this upload path.
  */
 const TABLE = 'garmin_activity_telemetry';
-const PAGE_SIZE = 250;
 
 function requireContext(supabase, userId) {
     if (!supabase) throw new Error('Supabase ist nicht verfügbar.');
@@ -54,23 +53,6 @@ export function extractGarminTelemetryRecords(activities, telemetryStore = {}) {
     }
 
     return Array.from(records.values());
-}
-
-async function fetchAllRows(supabase, userId) {
-    const rows = [];
-    for (let offset = 0; ; offset += PAGE_SIZE) {
-        const { data, error } = await supabase
-            .from(TABLE)
-            .select('garmin_activity_id, telemetry')
-            .eq('user_id', userId)
-            .order('garmin_activity_id', { ascending: true })
-            .range(offset, offset + PAGE_SIZE - 1);
-        if (error) throw error;
-        const page = Array.isArray(data) ? data : [];
-        rows.push(...page);
-        if (page.length < PAGE_SIZE) break;
-    }
-    return rows;
 }
 
 async function fetchRowsByActivityIds(supabase, userId, activityIds) {
