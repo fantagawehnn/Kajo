@@ -82,6 +82,11 @@ function renderTelemetrySettings() {
       </div>
     </details>`;
   }).join('');
+  box.insertAdjacentHTML('beforeend', `
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+      <p id="settings-telemetry-save-status" class="hidden text-[11px] text-emerald-400" role="status" aria-live="polite"></p>
+      <button type="button" onclick="saveTelemetrySettings()" class="w-full sm:w-auto rounded-lg bg-cyan-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-cyan-400">Telemetrie-Einstellungen speichern</button>
+    </div>`);
   box.querySelectorAll('[data-telemetry-all]').forEach(button => button.addEventListener('click', () => {
     const details = button.closest('[data-telemetry-sport]');
     details?.querySelectorAll('[data-telemetry-metric]').forEach(input => { input.checked = true; });
@@ -242,15 +247,19 @@ export function addCustomCategory() {
 }
 export function saveTelemetrySettings() {
   const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
-  document.querySelectorAll('#settings-telemetry-list [data-telemetry-sport]').forEach(card => {
+  const cards = [...document.querySelectorAll('#settings-telemetry-list [data-telemetry-sport]')];
+  if (!cards.length) {
+    alert('Die Telemetrie-Einstellungen konnten nicht gefunden werden. Bitte öffne die Einstellungen erneut.');
+    return;
+  }
+  cards.forEach(card => {
     const sport = card.dataset.telemetrySport;
     telemetryMetrics[sport] = [...card.querySelectorAll('[data-telemetry-metric]:checked')]
       .map(input => input.dataset.telemetryMetric);
   });
   state.settings = { ...state.settings, telemetryMetrics };
   saveDataToLocalStorage();
-  // Aktualisiere die Zähler direkt, ohne die gerade geöffnete Auswahl zu verwerfen.
-  document.querySelectorAll('#settings-telemetry-list [data-telemetry-sport]').forEach(card => {
+  cards.forEach(card => {
     const count = card.querySelectorAll('[data-telemetry-metric]:checked').length;
     const total = card.querySelectorAll('[data-telemetry-metric]').length;
     const summary = card.querySelector('summary small');
