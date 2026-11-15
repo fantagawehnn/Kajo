@@ -635,12 +635,13 @@ function isTelemetrySeriesAllowed(act, key, label = '') {
     return true;
 }
 
-function isMeaningfulRideSpeed(act, values) {
+function isMeaningfulRideSpeed(act, values, unit = 'km/h') {
     if (act?.type !== 'Ride') return true;
     const numeric = values.map(Number).filter(Number.isFinite);
     if (!numeric.length) return false;
     // Ergometer liefern teils nur Null- bzw. nahezu Null-Geschwindigkeit.
-    return Math.max(...numeric) > 1;
+    const threshold = /m\/s|m·s/i.test(String(unit)) ? 0.28 : 1;
+    return Math.max(...numeric) > threshold;
 }
 
 export function getActivityTelemetrySeries(act) {
@@ -686,7 +687,7 @@ export function getActivityTelemetrySeries(act) {
             && value !== '' && Number.isFinite(Number(value))).length;
         if (numericCount < 2) continue;
         if (/speed|geschwindigkeit/i.test(key + ' ' + label)
-            && !isMeaningfulRideSpeed(act, metric.values)) continue;
+            && !isMeaningfulRideSpeed(act, metric.values, metric.unit)) continue;
         result.push({
             key,
             label: canonicalRawAliases.has(key) ? label + ' (Rohwert)' : label,
