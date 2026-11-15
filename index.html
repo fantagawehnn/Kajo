@@ -655,17 +655,16 @@
                     <button type="button" id="calendar-period-next" onclick="navigateCalendarPeriod(1)" aria-label="Nächster Zeitraum" class="calendar-nav-arrow"><i data-lucide="chevron-right"></i></button>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="calendar-view-switch flex-1 grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800" role="group" aria-label="Kalenderansicht">
-                        <button type="button" onclick="setCalendarFormat('day')" id="btn-fmt-day" class="calendar-view-button" aria-label="Tagesansicht" title="Tag" aria-pressed="false"><i data-lucide="calendar"></i></button>
-                        <button type="button" onclick="setCalendarFormat('week')" id="btn-fmt-week" class="calendar-view-button active" aria-label="Wochenansicht" title="Woche" aria-pressed="true"><i data-lucide="calendar-range"></i></button>
-                        <button type="button" onclick="setCalendarFormat('month')" id="btn-fmt-month" class="calendar-view-button" aria-label="Monatsansicht" title="Monat" aria-pressed="false"><i data-lucide="calendar-days"></i></button>
-                        <button type="button" onclick="setCalendarFormat('year')" id="btn-fmt-year" class="calendar-view-button" aria-label="Jahresansicht" title="Jahr" aria-pressed="false"><i data-lucide="calendar-range"></i></button>
+                    <div class="relative flex-1">
+                        <button type="button" id="calendar-format-button" onclick="toggleCalendarFormatMenu()" class="calendar-format-button" aria-haspopup="menu" aria-expanded="false"><span id="calendar-format-label">Woche</span><i data-lucide="chevron-down"></i></button>
+                        <div id="calendar-format-menu" class="calendar-format-menu hidden" role="menu" aria-label="Kalenderzeitraum">
+                            <button type="button" data-calendar-format="day" onclick="setCalendarFormat('day')">Tag</button><button type="button" data-calendar-format="week" onclick="setCalendarFormat('week')">Woche</button><button type="button" data-calendar-format="month" onclick="setCalendarFormat('month')">Monat</button><button type="button" data-calendar-format="year" onclick="setCalendarFormat('year')">Jahr</button><button type="button" id="calendar-season-format-option" data-calendar-format="season" onclick="setCalendarFormat('season')">Saison</button>
+                        </div>
                     </div>
                     <div class="relative">
                         <button type="button" id="calendar-add-button" aria-label="Eintrag hinzufügen" title="Eintrag hinzufügen" onclick="toggleCalendarAddMenu()" class="calendar-add-button"><i data-lucide="plus"></i></button>
-                        <div id="calendar-add-menu" class="hidden absolute right-0 top-full mt-2 z-40 w-52 rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-2xl space-y-1">
-                            <button type="button" onclick="closeCalendarAddMenu();openCalendarTrainingCreate()" class="calendar-add-menu-item"><i data-lucide="dumbbell"></i> Training erstellen</button>
-                            <button type="button" onclick="closeCalendarAddMenu();openCalendarRaceCreate()" class="calendar-add-menu-item"><i data-lucide="trophy"></i> Wettkampf erstellen</button>
+                        <div id="calendar-add-menu" class="calendar-add-menu hidden" role="menu" aria-label="Eintrag hinzufügen">
+                            <button type="button" onclick="closeCalendarAddMenu();openCalendarTrainingCreate()" class="calendar-add-menu-item"><i data-lucide="dumbbell"></i> Training</button><button type="button" onclick="closeCalendarAddMenu();openCalendarRaceCreate()" class="calendar-add-menu-item"><i data-lucide="trophy"></i> Wettkampf</button><button type="button" onclick="closeCalendarAddMenu();openCalendarHealthCreate()" class="calendar-add-menu-item"><i data-lucide="thermometer"></i> Krankheit</button><button type="button" onclick="closeCalendarAddMenu();openCalendarPeriodCreate()" class="calendar-add-menu-item"><i data-lucide="droplet"></i> Periode</button>
                         </div>
                     </div>
                 </div>
@@ -674,6 +673,7 @@
             <div id="next-race-card" class="hidden"></div>
 
             <div id="cal-format-year" class="hidden"></div>
+            <section id="cal-format-season" class="hidden calendar-season-view"></section>
             <div id="cal-format-month" class="space-y-2">
                 <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400 py-1">
                     <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
@@ -1437,6 +1437,7 @@
             <span class="kajo-settings-category-copy"><strong>Telemetrie</strong><small>Messwerte je Aktivitätsart auswählen</small></span>
             <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
           </button>
+          <button type="button" class="kajo-settings-category" data-tone="blue" onclick="kajoSettingsOpenPage('calendar')"><span class="kajo-settings-category-icon"><i data-lucide="calendar-range"></i></span><span class="kajo-settings-category-copy"><strong>Kalender &amp; Saison</strong><small>Deinen Saisonzeitraum festlegen</small></span><i data-lucide="chevron-right" class="kajo-settings-category-chevron"></i></button>
           <button type="button" class="kajo-settings-category" data-tone="amber" onclick="kajoSettingsOpenPage('notifications')">
             <span class="kajo-settings-category-icon"><i data-lucide="bell" aria-hidden="true"></i></span>
             <span class="kajo-settings-category-copy"><strong>Benachrichtigungen</strong><small>Push-Mitteilungen und persönliche Erinnerungen</small></span>
@@ -1445,7 +1446,8 @@
         </nav>
         <div class="kajo-settings-content hidden" id="kajo-settings-subpages">
           <button type="button" id="kajo-settings-back" class="kajo-settings-back" onclick="kajoSettingsOpenPage('menu')" aria-label="Zurück zum Einstellungsmenü" title="Zurück zum Einstellungsmenü"><i data-lucide="arrow-left" aria-hidden="true"></i></button>
-          <section id="settings-notifications-group" class="kajo-settings-group" data-settings-page="notifications"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="bell-ring"></i></span><div><p class="kajo-settings-eyebrow">IMMER ZUM RICHTIGEN ZEITPUNKT</p><h3>Benachrichtigungen</h3><p>Erhalte persönliche Erinnerungen direkt auf dein Smartphone.</p></div></div><section id="settings-notifications" class="kajo-settings-card space-y-4">
+          <section id="settings-calendar-group" class="kajo-settings-group" data-settings-page="calendar"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="calendar-range"></i></span><div><p class="kajo-settings-eyebrow">DEIN TRAININGSJAHR</p><h3>Kalender &amp; Saison</h3><p>Lege den Zeitraum deiner Saison unabhängig vom Kalenderjahr fest.</p></div></div><section class="kajo-settings-card space-y-3"><div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><label class="kajo-settings-field">Saisonname<input id="calendar-season-name" type="text" maxlength="40" placeholder="z. B. Saison 2027"></label><label class="kajo-settings-field">Saisonstart<input id="calendar-season-start" type="date"></label><label class="kajo-settings-field">Saisonende<input id="calendar-season-end" type="date"></label></div><p id="calendar-season-status" class="text-xs text-slate-400">Noch keine Saison definiert. Die Saisonansicht bleibt ausgeblendet.</p><div class="flex flex-wrap justify-end gap-2"><button type="button" onclick="deleteCalendarSeason()" class="kajo-settings-secondary">Saison löschen</button><button type="button" onclick="saveCalendarSeason()" class="kajo-settings-primary">Saison speichern</button></div></section></section>
+           <section id="settings-notifications-group" class="kajo-settings-group" data-settings-page="notifications"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="bell-ring"></i></span><div><p class="kajo-settings-eyebrow">IMMER ZUM RICHTIGEN ZEITPUNKT</p><h3>Benachrichtigungen</h3><p>Erhalte persönliche Erinnerungen direkt auf dein Smartphone.</p></div></div><section id="settings-notifications" class="kajo-settings-card space-y-4">
            <div class="kajo-settings-section-head"><div><p class="kajo-settings-eyebrow">IMMER ZUM RICHTIGEN ZEITPUNKT</p><h3>Push-Benachrichtigungen</h3><p>Persönliche Erinnerungen direkt auf dein Smartphone – mit KAJO-Icon und eigenem Nachrichtentext.</p></div><span class="kajo-settings-section-icon"><i data-lucide="bell-ring"></i></span></div>
            <div id="kajo-push-status" class="kajo-push-status" role="status" aria-live="polite"><span class="kajo-push-status-dot"></span><span>Push-Status wird geprüft …</span></div>
            <div class="flex flex-wrap gap-2"><button type="button" id="kajo-enable-push" onclick="enableKajoPush()" class="kajo-settings-primary"><i data-lucide="smartphone"></i> Push auf diesem Gerät aktivieren</button><button type="button" onclick="sendKajoPushTest()" class="kajo-settings-secondary"><i data-lucide="send"></i> Darstellung testen</button><button type="button" onclick="disableKajoPush()" class="kajo-settings-secondary"><i data-lucide="bell-off"></i> Gerät abmelden</button></div>
@@ -1538,7 +1540,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=113"></script>
+    <script type="module" src="js/main.js?v=114"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
