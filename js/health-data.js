@@ -15,7 +15,7 @@ const METRICS = [
   { key:'bodyBattery', label:'Body Battery', short:'Body Battery', unit:'Punkte', group:'Regeneration', icon:'battery-full', color:'#34d399', decimals:0 },
   { key:'vo2max', label:'VO₂max', short:'VO₂max', unit:'ml/kg/min', group:'Leistungsfähigkeit', icon:'gauge', color:'#f97316', decimals:1 },
   { key:'spo2', label:'Sauerstoffsättigung', short:'SpO₂', unit:'%', group:'Atmung', icon:'droplets', color:'#60a5fa', decimals:1 },
-  { key:'stress', label:'Stresslevel', short:'Stress', unit:'Punkte', group:'Belastung', icon:'brain', color:'#f59e0b', decimals:0 },
+  { key:'garminStress', label:'Stresslevel (Garmin)', short:'Stress', unit:'Punkte', group:'Belastung', icon:'brain', color:'#f59e0b', decimals:0 },
   { key:'steps', label:'Schritte', short:'Schritte', unit:'', group:'Aktivität', icon:'footprints', color:'#84cc16', decimals:0 },
   { key:'fitnessAge', label:'Fitnessalter', short:'Fitnessalter', unit:'Jahre', group:'Leistungsfähigkeit', icon:'calendar-clock', color:'#c084fc', decimals:1 },
   { key:'weight', label:'Körpergewicht', short:'Gewicht', unit:'kg', group:'Körperwerte', icon:'scale', color:'#94a3b8', decimals:1 }
