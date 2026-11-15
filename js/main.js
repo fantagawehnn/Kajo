@@ -2282,7 +2282,7 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
             || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'));
         return isGarmin && /^\\d{4}-\\d{2}-\\d{2}$/.test(String(activity?.date || '').slice(0, 10));
     });
-    const expectedWindow = Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays ?? 14);
+    const expectedWindow = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 14));
     const isCacheCurrent = activity => {
         const cache = activity?.garminAnalysis;
         if (cache?.version !== 1) return false;
