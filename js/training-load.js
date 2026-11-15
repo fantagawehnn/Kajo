@@ -20,7 +20,8 @@ export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profil
         .map(([key, row]) => ({ date: key, value: Number(row.rhr) }))
         .filter(item => Number.isFinite(item.value) && item.value >= 30 && item.value <= 120)
         .sort((a,b) => a.date.localeCompare(b.date));
-    if (readings.length >= 3) {
+    const minimumReadings = Math.max(3, Math.ceil(days * 0.6));
+    if (readings.length >= minimumReadings) {
         const values = readings.map(item => item.value).sort((a,b) => a-b);
         const mid = Math.floor(values.length / 2);
         const median = values.length % 2 ? values[mid] : (values[mid-1] + values[mid]) / 2;
@@ -31,7 +32,7 @@ export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profil
             readingCount: readings.length,
             startDate: startKey,
             endDate: endKey,
-            quality: readings.length >= Math.ceil(days * 0.6) ? 'sufficient' : 'limited'
+            quality: 'sufficient'
         };
     }
     const fallback = Number(profile?.restingHr);
@@ -236,12 +237,22 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
         eligibleGarminCount++;
         const kajo = calculateGarminZoneLoad(activity, settings, profile, dailyCheckins);
         if (kajo) kajoCount++;
-        else missingAdaptiveRhrCount++;
 
         const maxHr = Number(profile?.maxHr);
+        const windowDays = settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+        const adaptiveRhr = getAdaptiveRestingHr(
+            dailyCheckins,
+            String(activity.date).slice(0, 10),
+            windowDays,
+            profile
+        );
+        const hasValidMaxHr = Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240;
+        if (!hasValidMaxHr) missingMaxHrCount++;
+        else if (!adaptiveRhr || !Number.isFinite(adaptiveRhr.value)) missingAdaptiveRhrCount++;
+
         let edwards = null;
-        if (!Number.isFinite(maxHr) || maxHr < 100 || maxHr > 240) {
-            missingMaxHrCount++;
+        if (!hasValidMaxHr) {
+            // Edwards requires HFmax; KAJO additionally requires an adaptive or profile resting-HR value.
         } else {
             const series = getGarminHeartRateSeries(activity);
             const hr = series?.hr;
