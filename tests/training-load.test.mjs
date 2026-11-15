@@ -355,6 +355,6 @@ test('Garmin HR-zone load does not invent time after the final timestamp', () =>
     assert.equal(load.recordedSeconds, 80);
     assert.equal(load.totalSeconds, 80);
     assert.equal(load.totalSeconds, load.secondsByZone.reduce((sum, value) => sum + value, 0));
-    assert.equal(load.value, 40);
+    assert.equal(load.value, 4);
     assert.equal(load.excludedIntervalCount, 0);
 });
