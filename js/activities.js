@@ -68,7 +68,7 @@ async function diagnoseSelectedActivityTelemetry() {
     try {
         const activityId = String(activity.sourceRefs?.garminActivityId
             ?? activity.garminData?.activityId ?? activity.id ?? '').replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(activityId) || !isGarminActivity(activity)) {
+        if (!/^\d+$/.test(activityId) || !isGarminActivity(activity)) {
             throw new Error('Für diese Aktivität ist keine gültige Garmin-Aktivitäts-ID hinterlegt.');
         }
         const { supabase } = await import('./supabase-client.js');
