@@ -34,6 +34,7 @@ assert.ok(html.includes('class="kajo-mobile-logo"'), 'mobile global top bar cont
 assert.ok(html.includes('class="kajo-desktop-header-actions"'), 'desktop global top bar contains notification and profile actions');
 assert.ok(pushNotifications.includes('function hasMatchingVapidKey(subscription, expectedKey)'), 'push registration can detect subscriptions created with an older VAPID key');
 assert.ok(pushNotifications.includes('registration.pushManager.getSubscription()') && pushNotifications.includes('!hasMatchingVapidKey(subscription, applicationServerKey)'), 'push activation reuses matching subscriptions and detects key rotation');
+assert.ok(pushNotifications.includes('Dieses Gerät nutzt eine ältere Push-Registrierung'), 'settings disclose when the browser subscription uses an outdated VAPID key');
 assert.ok(pushNotifications.includes('.delete().eq("endpoint", oldEndpoint).eq("user_id", user.id)'), 'old push endpoint is removed from the current account before replacement');
 assert.ok(pushNotifications.includes('const unsubscribed = await subscription.unsubscribe()'), 'old browser subscription is explicitly unsubscribed before replacement');
 assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does not duplicate the global brand and account actions');
