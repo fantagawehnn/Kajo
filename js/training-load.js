@@ -109,30 +109,50 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const adaptive = getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins);
     const zones = adaptive?.zones;
     if (!Array.isArray(zones)) return null;
-    if (!Array.isArray(hr) || hr.length < 2 || !Array.isArray(time) || time.length !== hr.length) return null;
+    if (!Array.isArray(hr) || hr.length < 2) return null;
     const validZones = Array.isArray(zones) && zones.length === 4
         && zones.every(v => v != null && Number.isFinite(Number(v)) && Number(v) >= 40 && Number(v) <= 240)
         && zones.every((v, i) => i === 0 || Number(v) > Number(zones[i - 1]));
     if (!validZones) return null;
     const secondsByZone = [0,0,0,0,0];
+    const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
+    const validTime = Array.isArray(time) && time.length === hr.length
+        && time.every(value => Number.isFinite(Number(value)))
+        && time.slice(1).every((value, index) => Number(value) > Number(time[index])
+            && Number(value) - Number(time[index]) <= 30);
+    // Gleiche Zeitgewichtung wie die Zonenverteilung in der Aktivitätenansicht:
+    // eine vollständig valide Zeitachse hat Vorrang; andernfalls wird die
+    // dokumentierte Aktivitätsdauer gleichmäßig auf die HF-Messpunkte verteilt.
+    // Keine Zeitachse wird aus nicht bestätigten Zeitstempeln rekonstruiert.
+    if (!validTime && durationSeconds === null) return null;
+    const intervals = validTime ? time.slice(1).map((value, index) => Number(value) - Number(time[index])) : [];
+    const sortedIntervals = [...intervals].sort((a, b) => a - b);
+    const medianInterval = sortedIntervals.length ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : 0;
+    const sampleDurations = hr.map((_, index) => {
+        if (!validTime) return durationSeconds / hr.length;
+        if (index < time.length - 1) return intervals[index];
+        return durationSeconds !== null
+            ? Math.max(0, durationSeconds - Number(time[index]))
+            : medianInterval;
+    });
     let excludedIntervalCount = 0;
     let excludedIntervalSeconds = 0;
-    // Jeder Messpunkt gilt nur bis zum folgenden Zeitstempel. Der letzte
-    // Messpunkt markiert das Ende der aufgezeichneten Zeitreihe und erhält
-    // keine künstliche Nachlaufzeit.
-    for (let i = 0; i < hr.length - 1; i++) {
-        const bpm = Number(hr[i]);
-        const seconds = Number(time[i + 1]) - Number(time[i]);
-        if (!Number.isFinite(seconds) || seconds <= 0) continue;
-        if (seconds > 30) {
-            excludedIntervalCount++;
-            excludedIntervalSeconds += seconds;
-            continue;
+    if (Array.isArray(time) && time.length === hr.length) {
+        for (let i = 0; i < time.length - 1; i++) {
+            const delta = Number(time[i + 1]) - Number(time[i]);
+            if (!Number.isFinite(delta) || delta <= 0 || delta > 30) {
+                excludedIntervalCount++;
+                if (Number.isFinite(delta) && delta > 0) excludedIntervalSeconds += delta;
+            }
         }
-        if (!Number.isFinite(bpm) || bpm < 30 || bpm > 250) continue;
+    }
+    hr.forEach((rawBpm, index) => {
+        const bpm = Number(rawBpm);
+        const seconds = Number(sampleDurations[index]);
+        if (!Number.isFinite(bpm) || bpm < 30 || bpm > 250 || !Number.isFinite(seconds) || seconds <= 0) return;
         const zone = bpm <= zones[0] ? 0 : bpm <= zones[1] ? 1 : bpm <= zones[2] ? 2 : bpm <= zones[3] ? 3 : 4;
         secondsByZone[zone] += seconds;
-    }
+    });
     const totalSeconds = secondsByZone.reduce((sum,value)=>sum+value,0);
     if (totalSeconds < 60) return null;
     const points = secondsByZone.reduce((sum,seconds,index)=>sum + seconds / 60 * (index + 1),0);
@@ -143,7 +163,8 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
         restingHrWindowDays: adaptive.restingHrWindowDays, restingHrReadingCount: adaptive.restingHrReadingCount,
         restingHrQuality: adaptive.restingHrQuality, heartRateReserve: adaptive.heartRateReserve,
         excludedIntervalCount, excludedIntervalSeconds,
-        recordedSeconds: Number(time[time.length - 1]) - Number(time[0])
+        durationSource: validTime ? 'heart-rate-time-axis' : 'activity-duration-estimate',
+        recordedSeconds: validTime ? Number(time[time.length - 1]) - Number(time[0]) : totalSeconds
     };
 }
 
@@ -257,42 +278,46 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
             const series = getGarminHeartRateSeries(activity);
             const hr = series?.hr;
             const time = series?.time;
-            if (Array.isArray(hr) && hr.length >= 2 && Array.isArray(time) && time.length === hr.length) {
+            const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
+            const validTime = Array.isArray(time) && time.length === hr?.length
+                && time.every(value => Number.isFinite(Number(value)))
+                && time.slice(1).every((value, index) => Number(value) > Number(time[index])
+                    && Number(value) - Number(time[index]) <= 30);
+            if (Array.isArray(hr) && hr.length >= 2 && (validTime || durationSeconds !== null)) {
+                const intervals = validTime ? time.slice(1).map((value, index) => Number(value) - Number(time[index])) : [];
+                const sortedIntervals = [...intervals].sort((a,b) => a-b);
+                const medianInterval = sortedIntervals.length ? sortedIntervals[Math.floor(sortedIntervals.length/2)] : 0;
+                const sampleDurations = hr.map((_, index) => !validTime ? durationSeconds / hr.length
+                    : index < time.length - 1 ? intervals[index]
+                    : durationSeconds !== null ? Math.max(0, durationSeconds - Number(time[index])) : medianInterval);
                 const secondsByZone = [0, 0, 0, 0, 0];
                 let excludedIntervalCount = 0;
                 let excludedIntervalSeconds = 0;
                 let below50Seconds = 0;
-                for (let i = 0; i < hr.length - 1; i++) {
-                    const bpm = Number(hr[i]);
-                    const seconds = Number(time[i + 1]) - Number(time[i]);
-                    if (!Number.isFinite(seconds) || seconds <= 0) continue;
-                    if (seconds > 30) {
-                        excludedIntervalCount++;
-                        excludedIntervalSeconds += seconds;
-                        continue;
+                if (Array.isArray(time) && time.length === hr.length) {
+                    for (let i=0;i<time.length-1;i++) {
+                        const delta=Number(time[i+1])-Number(time[i]);
+                        if (!Number.isFinite(delta) || delta<=0 || delta>30) {
+                            excludedIntervalCount++;
+                            if (Number.isFinite(delta) && delta>0) excludedIntervalSeconds+=delta;
+                        }
                     }
-                    if (!Number.isFinite(bpm) || bpm < 30 || bpm > 250) continue;
-                    const pct = bpm / maxHr * 100;
-                    if (pct < 50) {
-                        below50Seconds += seconds;
-                        continue;
-                    }
-                    const zone = pct < 60 ? 0 : pct < 70 ? 1 : pct < 80 ? 2 : pct < 90 ? 3 : 4;
-                    secondsByZone[zone] += seconds;
                 }
-                const totalSeconds = secondsByZone.reduce((sum, value) => sum + value, 0);
-                if (totalSeconds >= 60) {
-                    const value = secondsByZone.reduce((sum, seconds, index) => sum + seconds / 60 * (index + 1), 0);
-                    edwards = {
-                        value: Number(value.toFixed(1)),
-                        secondsByZone,
-                        totalSeconds,
-                        below50Seconds,
-                        excludedIntervalCount,
-                        excludedIntervalSeconds,
-                        maxHr,
-                        boundaries: [50, 60, 70, 80, 90]
-                    };
+                hr.forEach((rawBpm,index) => {
+                    const bpm=Number(rawBpm), seconds=Number(sampleDurations[index]);
+                    if (!Number.isFinite(bpm) || bpm<30 || bpm>250 || !Number.isFinite(seconds) || seconds<=0) return;
+                    const pct=bpm/maxHr*100;
+                    if (pct<50) { below50Seconds+=seconds; return; }
+                    const zone=pct<60?0:pct<70?1:pct<80?2:pct<90?3:4;
+                    secondsByZone[zone]+=seconds;
+                });
+                const totalSeconds=secondsByZone.reduce((sum,value)=>sum+value,0);
+                if (totalSeconds>=60) {
+                    const value=secondsByZone.reduce((sum,seconds,index)=>sum+seconds/60*(index+1),0);
+                    edwards={value:Number(value.toFixed(1)),secondsByZone,totalSeconds,below50Seconds,
+                        excludedIntervalCount,excludedIntervalSeconds,maxHr,
+                        durationSource:validTime?'heart-rate-time-axis':'activity-duration-estimate',
+                        boundaries:[50,60,70,80,90]};
                     edwardsCount++;
                 }
             }
