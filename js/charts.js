@@ -572,6 +572,14 @@ const activitySeriesMeta = {
     altitude: { label: 'Höhe', unit: 'm', color: '#34d399' },
     distance: { label: 'Distanz', unit: 'km', color: '#60a5fa', min: 0 },
     respirationRate: { label: 'Atemfrequenz', unit: '/min', color: '#2dd4bf', min: 4, max: 80 },
+    temperature: { label: 'Temperatur', unit: '°C', color: '#f97316' },
+    grade: { label: 'Steigung', unit: '%', color: '#34d399' },
+    groundContactTime: { label: 'Bodenkontaktzeit', unit: 'ms', color: '#fbbf24', min: 0 },
+    verticalOscillation: { label: 'Vertikale Bewegung', unit: 'cm', color: '#38bdf8', min: 0 },
+    strideLength: { label: 'Schrittlänge', unit: 'cm', color: '#a78bfa', min: 0 },
+    verticalRatio: { label: 'Vertikales Verhältnis', unit: '%', color: '#2dd4bf', min: 0 },
+    swolf: { label: 'SWOLF', unit: 'Punkte', color: '#60a5fa', min: 0 },
+    stroke: { label: 'Schwimmstil / Zugtyp', unit: '', color: '#60a5fa' },
     bodyBattery: { label: 'Body Battery', unit: 'Punkte', color: '#a3e635', min: 0, max: 100 }
 };
 
@@ -640,8 +648,16 @@ export function getActivityTelemetrySeries(act) {
         power: [telem.power, fields.power],
         cadence: [telem.cadence, fields.cadence],
         altitude: [telem.altitude, fields.altitude, fields.enhanced_altitude],
-        respirationRate: [telem.respirationRate],
-        bodyBattery: [telem.bodyBattery]
+        respirationRate: [telem.respirationRate, fields.respiration_rate],
+        temperature: [telem.temperature, fields.temperature],
+        grade: [telem.grade, fields.grade],
+        groundContactTime: [telem.groundContactTime, fields.ground_contact_time],
+        verticalOscillation: [telem.verticalOscillation, fields.vertical_oscillation],
+        strideLength: [telem.strideLength, fields.stride_length],
+        verticalRatio: [telem.verticalRatio, fields.vertical_ratio],
+        swolf: [telem.swolf, fields.swolf],
+        stroke: [telem.stroke, fields.stroke_type, fields.swim_stroke],
+        bodyBattery: [telem.bodyBattery, fields.body_battery]
     };
     const result = [];
     const seenSemantics = new Set();
