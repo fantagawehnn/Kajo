@@ -17,6 +17,7 @@ const dataSource = readFileSync('js/data-source.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
 const healthData = readFileSync('js/health-data.js', 'utf8');
 const competitions = readFileSync('js/competitions.js', 'utf8');
+const pushNotifications = readFileSync('js/push-notifications.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -31,6 +32,10 @@ assert.ok(html.includes('id="kajo-mobile-notifications-button"'), 'mobile global
 assert.ok(html.includes('id="kajo-mobile-profile-button"'), 'mobile global top bar contains athlete profile');
 assert.ok(html.includes('class="kajo-mobile-logo"'), 'mobile global top bar contains KAJO logo');
 assert.ok(html.includes('class="kajo-desktop-header-actions"'), 'desktop global top bar contains notification and profile actions');
+assert.ok(pushNotifications.includes('function hasMatchingVapidKey(subscription, expectedKey)'), 'push registration can detect subscriptions created with an older VAPID key');
+assert.ok(pushNotifications.includes('registration.pushManager.getSubscription()') && pushNotifications.includes('!hasMatchingVapidKey(subscription, applicationServerKey)'), 'push activation reuses matching subscriptions and detects key rotation');
+assert.ok(pushNotifications.includes('.delete().eq("endpoint", oldEndpoint).eq("user_id", user.id)'), 'old push endpoint is removed from the current account before replacement');
+assert.ok(pushNotifications.includes('const unsubscribed = await subscription.unsubscribe()'), 'old browser subscription is explicitly unsubscribed before replacement');
 assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does not duplicate the global brand and account actions');
 
 for (const domain of ['load', 'recovery', 'performance', 'health']) {
