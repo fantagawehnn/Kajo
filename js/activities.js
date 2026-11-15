@@ -928,7 +928,23 @@ function renderOptionalActivityViews(act) {
     } else setPanel('activity-efficiency-panel', 'Effizienz und Belastungsverhältnis', '');
 
     // Runden getrennt ausweisen: automatische Runden dürfen keinen Intervallvergleich beeinflussen.
-    const laps = Array.isArray(act.laps) ? act.laps : Array.isArray(act.intervals) ? act.intervals : [];
+    // FIT-Runden liegen nach dem Garmin-Import unter garminFitData.laps und
+    // werden hier in das bestehende Anzeigeformat überführt.
+    const storedLaps = Array.isArray(act.laps) ? act.laps : Array.isArray(act.intervals) ? act.intervals : [];
+    const fitLaps = Array.isArray(act.garminFitData?.laps) ? act.garminFitData.laps : [];
+    const laps = storedLaps.length ? storedLaps : fitLaps.map((lap, index) => ({
+        name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
+        kind: 'automatic',
+        duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationUnit: 'seconds',
+        distance: Number.isFinite(Number(lap.distanceKm)) ? Number(lap.distanceKm) * 1000 : null,
+        avgHr: lap.averageHeartRate ?? null,
+        maxHr: lap.maxHeartRate ?? null,
+        avgSpeed: lap.averageSpeedKmh ?? null,
+        maxSpeed: lap.maxSpeedKmh ?? null,
+        startTime: lap.startTime ?? null
+    }));
     if (laps.length) {
         const manualCount = laps.filter(lap => lap.kind === 'manual').length;
         const automaticCount = laps.filter(lap => lap.kind === 'automatic').length;
@@ -943,13 +959,21 @@ function renderOptionalActivityViews(act) {
             const distance = distanceRaw === null || distanceRaw === undefined || distanceRaw === '' ? null : safe(distanceRaw);
             const speed = lap.durationUnit === 'seconds' && duration > 0 && distance > 0
                 ? distance / duration * 3.6 : null;
-            return { lap, index: i + 1, duration, distance, speed };
+            const durationSeconds = duration === null ? null
+                : lap.durationUnit === 'seconds' ? duration
+                : duration > 1000 ? duration / 1000 : duration;
+            const paceTotalSeconds = durationSeconds !== null && durationSeconds > 0 && distance > 0
+                ? Math.round(durationSeconds / (distance / 1000)) : null;
+            const pace = paceTotalSeconds !== null && Number.isFinite(paceTotalSeconds)
+                ? Math.floor(paceTotalSeconds / 60) + ':' + String(paceTotalSeconds % 60).padStart(2, '0') + ' min/km'
+                : null;
+            return { lap, index: i + 1, duration, distance, speed, pace };
         });
         const manualComparable = comparableLaps.filter(item => item.lap.kind === 'manual' && item.speed !== null);
         const manualSpeeds = manualComparable.map(item => item.speed);
         const fastestManual = manualSpeeds.length ? Math.max(...manualSpeeds) : null;
         const rows = comparableLaps.map(item => {
-            const { lap, index, duration, distance, speed } = item;
+            const { lap, index, duration, distance, speed, pace } = item;
             const label = escapeHtml(lap.name || lap.label || `Runde ${index}`);
             const kind = lap.kind === 'manual' ? 'Manuell markiert' : lap.kind === 'automatic' ? 'Automatisch' : 'Nicht zugeordnet';
             const durationText = duration !== null
@@ -965,6 +989,7 @@ function renderOptionalActivityViews(act) {
                 durationText,
                 distanceText,
                 speed !== null ? speed.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' km/h' : null,
+                pace,
                 avgHr !== null ? 'Ø ' + Math.round(avgHr) + ' bpm' : null,
                 maxHr !== null ? 'Max ' + Math.round(maxHr) + ' bpm' : null,
                 avgPower !== null ? 'Ø ' + Math.round(avgPower) + ' W' : null,
@@ -982,8 +1007,27 @@ function renderOptionalActivityViews(act) {
         const comparisonNote = manualSpeeds.length >= 2
             ? `<div class="text-[10px] text-slate-400 mt-2">Schnellster manuell markierter Abschnitt: ${fastestManual.toLocaleString('de-DE', { maximumFractionDigits: 2 })} km/h. Nur manuell markierte FIT-Runden mit eindeutiger Dauer- und Distanzangabe werden verglichen.</div>`
             : '<div class="text-[10px] text-slate-500 mt-2">Für einen Vergleich fehlen mindestens zwei manuell markierte Runden mit eindeutiger Dauer- und Distanzangabe. Automatische Runden werden nicht als Ersatz herangezogen.</div>';
-        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote);
-    } else setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', '');
+        const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
+        const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
+        const workoutStepHtml = workoutSteps.length
+            ? '<div class="mt-4 border-t border-slate-800 pt-3"><h5 class="text-xs font-semibold text-cyan-300 mb-2">Garmin-Trainingsintervalle / Workout-Schritte (' + workoutSteps.length + ')</h5>'
+                + workoutSteps.map((step, index) => {
+                    const entries = Object.entries(step || {}).filter(([, value]) => value !== null && value !== undefined && value !== '');
+                    const detail = entries.map(([key, value]) => escapeHtml(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ');
+                    return '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + detail + '</div></div>';
+                }).join('') + '</div>'
+            : '';
+        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote + workoutStepHtml);
+    } else {
+        const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
+        const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
+        const escapeStep = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        const workoutStepHtml = workoutSteps.length
+            ? '<h5 class="text-xs font-semibold text-cyan-300 mb-2">Garmin-Trainingsintervalle / Workout-Schritte (' + workoutSteps.length + ')</h5>'
+                + workoutSteps.map((step, index) => '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + Object.entries(step || {}).map(([key, value]) => escapeStep(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ') + '</div></div>').join('')
+            : '';
+        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', workoutStepHtml);
+    }
 
     // Höhenprofil nur anzeigen, wenn ein Höhenverlauf oder Höhengewinn gespeichert ist.
     const altitude = telemetry.altitude || telemetry.elevation || act.garminFitData?.recordFields?.altitude || act.garminFitData?.recordFields?.enhanced_altitude;

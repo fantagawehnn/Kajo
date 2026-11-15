@@ -100,8 +100,8 @@ assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
 assert.ok(activities.includes('initializeActivityDetailTabs'), 'activity details initialize the shared tab layout');
-assert.ok(activities.includes("['overview', 'Übersicht']") && activities.includes("['sport', 'Sportanalyse']"), 'activity details expose the six agreed analysis areas');
-assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('metricColor'), 'activity overview uses sport-aware metric circles');
+assert.ok(activities.includes("createAccordion('intervals', 'Intervalle & Runden'") && activities.includes("createAccordion('sport', 'Sportartspezifische Analyse'"), 'activity details expose the current accordion analysis areas');
+assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('colors[metric.label]'), 'activity overview uses sport-aware metric circles');
 assert.ok(css.includes('.activity-detail-tabs') && css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), 'activity tabs and metric circles have mobile styling');
 assert.ok(activities.includes('activity-data-quality') && activities.includes('activity-telemetry-diagnostic-output'), 'data quality and diagnostics remain accessible in the data tab');
 assert.ok(html.includes('id="activity-telemetry-diagnostic-source"'), 'telemetry diagnostics originate outside the chart panel so missing data cannot remove the controls');
@@ -338,7 +338,7 @@ assert.ok(activities.includes('function renderActivityDataQuality(activity)'), '
 assert.ok(activities.includes("container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'not-calculable'"), 'activity data quality distinguishes complete, limited and not calculable');
 assert.ok(activities.includes('candidate.trainingPartner !== activity.trainingPartner'), 'C2 comparisons require the same documented partner');
 assert.ok(activities.includes('escape(getActivitySourceLabel(candidate))'), 'comparison entries retain their source provenance');
-assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('metricColor'), 'activity metrics use sport-aware circular indicators with consistent metric colors');
+assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('colors[metric.label]'), 'activity metrics use sport-aware circular indicators with consistent metric colors');
 
 assert.ok(activities.includes('lat.reduce((count, rawLat, index)'), 'activity data quality counts only valid GPS coordinate pairs');
 
