@@ -6,7 +6,7 @@ import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
  * At least 60% of the window (minimum three observations) is required; otherwise a valid
  * profile restingHr may be used as an explicitly marked static fallback.
  */
-export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profile = {}) {
+export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 14, profile = {}) {
     const days = Math.min(28, Math.max(3, Math.round(Number(windowDays) || 7)));
     const endKey = String(date || '').slice(0, 10);
     if (endKey.length !== 10 || endKey[4] !== '-' || endKey[7] !== '-') return null;
@@ -80,7 +80,7 @@ export function calculateHeartRateReserveZones(maxHr, restingHr) {
 function getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins) {
     const maxHr = Number(profile?.maxHr);
     if (!Number.isFinite(maxHr) || maxHr < 100 || maxHr > 240) return null;
-    const windowDays = settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+    const windowDays = settings?.heartRateZoneSettings?.restingHrWindowDays ?? 14;
     const resting = getAdaptiveRestingHr(
         dailyCheckins,
         String(activity?.date || '').slice(0,10),
