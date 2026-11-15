@@ -50,3 +50,37 @@ export function getActivityTelemetry(activity) {
     const telemetry = activity?.telemetry;
     return telemetry && typeof telemetry === 'object' ? telemetry : null;
 }
+
+
+/**
+ * Return the Garmin heart-rate series in the normalized shape used by
+ * training-load and zone calculations. Garmin Activity Details JSON can store
+ * sensor streams under metricSeries (for example directHeartRate) rather than
+ * the legacy top-level hr/time arrays.
+ */
+export function getGarminHeartRateSeries(activity) {
+    const telemetry = getGarminTelemetry(activity);
+    if (!telemetry) return null;
+    const validValues = values => Array.isArray(values) && values.length >= 2
+        && values.some(value => Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250);
+    if (validValues(telemetry.hr)) {
+        const time = Array.isArray(telemetry.time) && telemetry.time.length === telemetry.hr.length
+            ? telemetry.time : null;
+        return { hr: telemetry.hr, time, source: 'hr' };
+    }
+    const metricSeries = telemetry.metricSeries && typeof telemetry.metricSeries === 'object'
+        ? telemetry.metricSeries : {};
+    for (const [key, metric] of Object.entries(metricSeries)) {
+        const descriptor = (String(key) + ' ' + String(metric?.label || '')).toLowerCase().replace(/[_-]+/g, ' ');
+        if (!/(heart.?rate|heartrate|(^|\\s)hr($|\\s)|puls|herzfrequenz)/.test(descriptor)
+            || !validValues(metric?.values)) continue;
+        const time = Array.isArray(metric.time) && metric.time.length === metric.values.length
+            ? metric.time
+            : Array.isArray(telemetry.metricSeriesTime) && telemetry.metricSeriesTime.length === metric.values.length
+                ? telemetry.metricSeriesTime
+                : Array.isArray(telemetry.time) && telemetry.time.length === metric.values.length
+                    ? telemetry.time : null;
+        return { hr: metric.values, time, source: 'metricSeries:' + key };
+    }
+    return null;
+}

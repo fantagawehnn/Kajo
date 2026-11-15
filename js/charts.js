@@ -11,7 +11,7 @@ import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
-import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
+import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
 
 /* Chart.js: Touchbewegungen innerhalb eines Diagramms wie Hover behandeln.
@@ -411,23 +411,29 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
 
     let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedActivities = 0;
     for (const activity of records || []) {
-        const telemetry = getGarminTelemetry(activity) || {};
-        const hr = telemetry.hr;
+        const heartRateSeries = getGarminHeartRateSeries(activity);
+        const hr = heartRateSeries?.hr;
         if (!Array.isArray(hr) || hr.length < 2) {
             missingTelemetry++;
             continue;
         }
-        const zones = state.settings?.heartRateZones?.[activity.type];
-        const validZones = Array.isArray(zones) && zones.length === 4
-            && zones.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 240)
-            && zones.every((value, index) => index === 0 || Number(value) > Number(zones[index - 1]));
-        if (!validZones) {
-            missingZones++;
-            continue;
+        let zones = state.settings?.heartRateZones?.[activity.type];
+        const validZones = values => Array.isArray(values) && values.length === 4
+            && values.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 240)
+            && values.every((value, index) => index === 0 || Number(value) > Number(values[index - 1]));
+        if (!validZones(zones)) {
+            const maxHr = Number(state.profile?.maxHr);
+            if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
+                zones = [0.73, 0.80, 0.87, 0.93].map(percent => Math.round(maxHr * percent));
+                estimatedActivities++;
+            } else {
+                missingZones++;
+                continue;
+            }
         }
 
         const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
-        const time = telemetry.time;
+        const time = heartRateSeries.time;
         const hasUsableTime = Array.isArray(time) && time.length === hr.length
             && time.every(value => Number.isFinite(Number(value)))
             && time.slice(1).every((value, index) => Number(value) > Number(time[index])

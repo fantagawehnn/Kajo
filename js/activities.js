@@ -9,7 +9,7 @@ import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
 import { calculateStrengthActivitySummary } from './calculations.js';
-import { getActivityTelemetry, isGarminActivity } from './data-source.js';
+import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
@@ -313,11 +313,11 @@ function getActivityZoneConfig(activity) {
 // Einheitliche Zeit-in-HF-Zonen-Berechnung für Zonenübersicht und Reizprofil.
 // Ohne Zeitstempel wird die dokumentierte Dauer gleichmäßig auf alle Samples verteilt.
 function calculateActivityZoneTime(activity, zoneConfig = getActivityZoneConfig(activity)) {
-    const telemetry = getActivityTelemetry(activity);
-    const hr = telemetry?.hr;
+    const heartRateSeries = getGarminHeartRateSeries(activity);
+    const hr = heartRateSeries?.hr;
     const zones = zoneConfig.zones;
     if (!Array.isArray(hr) || hr.length < 2 || !Array.isArray(zones) || zones.length !== 4) return null;
-    const time = telemetry?.time;
+    const time = heartRateSeries?.time;
     const hasTime = Array.isArray(time) && time.length === hr.length
         && time.every(value => Number.isFinite(Number(value)));
     const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
@@ -476,9 +476,9 @@ export function openCSVDetailsModal(id) {
 function renderActivityHeartRateSeriesStatus(activity) {
     const container = document.getElementById('activity-hr-series-status');
     if (!container) return;
-    const telemetry = getActivityTelemetry(activity);
-    const hr = Array.isArray(telemetry?.hr) ? telemetry.hr : [];
-    const time = Array.isArray(telemetry?.time) ? telemetry.time : [];
+    const heartRateSeries = getGarminHeartRateSeries(activity);
+    const hr = Array.isArray(heartRateSeries?.hr) ? heartRateSeries.hr : [];
+    const time = Array.isArray(heartRateSeries?.time) ? heartRateSeries.time : [];
     const validCount = hr.reduce((count, value, index) => {
         const bpm = Number(value);
         const timestamp = Number(time[index]);
@@ -490,7 +490,7 @@ function renderActivityHeartRateSeriesStatus(activity) {
         ? 'rounded-lg border border-sky-800/50 bg-sky-950/20 px-3 py-2 text-xs text-sky-300'
         : 'rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-400';
     container.textContent = hasSeries
-        ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte'
+        ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte' + (heartRateSeries.source !== 'hr' ? ' · Garmin-JSON' : '')
         : 'Keine HF-Zeitreihe vorhanden';
 }
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
 import { getTrainingLoadData } from '../js/training-load.js';
-import { getGarminTelemetry } from '../js/data-source.js';
+import { getGarminTelemetry, getGarminHeartRateSeries } from '../js/data-source.js';
 
 function dateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -193,4 +193,25 @@ test('automatic fallback never mixes HR-zone and sRPE values', () => {
     assert.equal(result.mode, 'garmin-zone');
     assert.equal(result.records.length, 1);
     assert.equal(result.records[0].activity.id, 'g-hr-2');
+});
+
+
+test('Garmin JSON metricSeries heart rate is normalized for load calculations', () => {
+    const activity = {
+        source: 'garmin', date: completedDay, duration: 60,
+        garminTelemetry: {
+            metricSeriesTime: [0, 20, 40, 60],
+            metricSeries: {
+                directHeartRate: { label: 'Heart Rate', values: [145, 155, 165, 175] }
+            }
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.deepEqual(series.hr, [145, 155, 165, 175]);
+    assert.deepEqual(series.time, [0, 20, 40, 60]);
+    assert.equal(series.source, 'metricSeries:directHeartRate');
+    const load = getTrainingLoadData([activity], {}, { maxHr: 190 });
+    assert.equal(load.mode, 'garmin-zone');
+    assert.equal(load.records.length, 1);
+    assert.ok(load.records[0].value > 0);
 });
