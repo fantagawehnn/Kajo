@@ -103,6 +103,9 @@ assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'")
 assert.ok(healthData.includes('if (identity === null) return null;'), 'personal baselines require documented measurement provenance');
 assert.ok(healthData.includes('measurementIdentity(row, key) === identity'), 'personal baselines compare only matching measurement identities');
 assert.ok(main.includes('importedValues += metricKeys.length;'), 'Garmin restore preview counts actual measurements, not metadata objects');
+assert.ok(main.includes('days: new Set(activityDates)'), 'Garmin activity history counts distinct activity days');
+assert.ok(main.includes('if (date) group.days.add(date)'), 'Garmin health history counts distinct days per data type');
+assert.ok(main.includes('Messtage = unterschiedliche Kalendertage'), 'Garmin history distinguishes record counts from day coverage without claiming completeness');
 assert.ok(main.includes("garminStress: findGarminNumber(records.stress"), 'Garmin stress is extracted from stored stress records');
 assert.ok(main.includes("bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery'"), 'Body Battery extraction uses the named summary section');
 assert.ok(main.includes("spo2: findGarminNumber(records.spo2"), 'SpO2 is extracted from stored Garmin SpO2 records');
