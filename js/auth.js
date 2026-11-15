@@ -1,6 +1,7 @@
 import { supabase } from './supabase-client.js';
 
 const authScreen = document.getElementById('auth-screen');
+const authBootScreen = document.getElementById('auth-boot-screen');
 const appNavigation = document.getElementById('app-navigation');
 const appMain = document.getElementById('app-main');
 const userBar = document.getElementById('auth-userbar');
@@ -36,18 +37,21 @@ function showApp(session) {
     currentAuthUserId = session?.user?.id || null;
     if (!signedIn) readyUserId = null;
     const ready = signedIn && readyUserId === currentAuthUserId;
-    authScreen.classList.toggle('hidden', ready);
+
+    // Ein bestätigter Login zeigt nie erneut das Anmeldeformular.
+    // Während die Kontodaten geladen werden, bleibt nur der neutrale Startbildschirm sichtbar.
+    authScreen.classList.toggle('hidden', signedIn);
+    authBootScreen?.classList.toggle('hidden', !signedIn || ready);
     appNavigation.classList.toggle('hidden', !ready);
     appMain.classList.toggle('hidden', !ready);
     userBar.classList.toggle('hidden', !ready);
-    if (signedIn) {
-        userEmail.textContent = session.user.email || 'Angemeldet';
-        if (!ready) setMessage('Deine persönlichen Daten werden sicher geladen …');
-    }
+    if (signedIn) userEmail.textContent = session.user.email || 'Angemeldet';
 }
 
 window.addEventListener('endurance:user-load-error', (event) => {
     const detail = event.detail || {};
+    authBootScreen?.classList.add('hidden');
+    authScreen.classList.remove('hidden');
     setMessage('Deine Kontodaten konnten nicht geladen werden: ' + (detail.message || 'Unbekannter Fehler') + ' Bitte lade die Seite neu. Deine gespeicherten Daten wurden nicht gelöscht.', true);
 });
 
