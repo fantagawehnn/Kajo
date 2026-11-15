@@ -180,40 +180,61 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         return { mode: 'srpe', unit: 'AU', records: srpeRecords, coverage: { eligibleActivityCount: eligible.length, loadedActivityCount: srpeRecords.length, excludedActivityCount: eligible.length - srpeRecords.length } };
     };
     if (settings?.trainingLoadSource === 'srpe') return srpeData();
-    const hasGarmin = list.some(activity => activity.source === 'garmin'
-        || activity.sourceRefs?.garminActivityId != null
+
+    const isGarminEligible = activity => activity?.date && (
+        activity.source === 'garmin' || activity.sourceRefs?.garminActivityId != null
         || activity.garminData || activity.garminFitImported
         || (Array.isArray(activity.sources) && activity.sources.includes('garmin'))
-        || activity.garminTrainingLoad != null);
+        || activity.garminTrainingLoad != null
+    );
+    const garminActivities = list.filter(isGarminEligible);
+    const hasGarmin = garminActivities.length > 0;
+
+    // Explizit gewähltes KAJO-Modell: ausschließlich gewichtete Zeit in den
+    // adaptiven HF-Reserve-Zonen verwenden. Garmin Native Load und sRPE werden
+    // in diesem Modus niemals als Ersatz oder Ergänzung beigemischt.
+    if (settings?.trainingLoadSource === 'kajo-zone') {
+        const zoneValues = garminActivities
+            .map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
+            .filter(item => item.load)
+            .map(item => ({ activity: item.activity, value: item.load.value }));
+        return {
+            mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
+            unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
+            records: zoneValues,
+            coverage: {
+                eligibleActivityCount: garminActivities.length,
+                loadedActivityCount: zoneValues.length,
+                excludedActivityCount: Math.max(0, garminActivities.length - zoneValues.length),
+                availableZoneActivities: zoneValues.length
+            }
+        };
+    }
+
     if (hasGarmin) {
-        const zoneValues = list.filter(activity => activity?.date).map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
+        const zoneValues = garminActivities.map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
             .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone' }));
         // Count all activities with native Garmin Load when comparing source
         // coverage; the chosen model will use this source exclusively.
-        const nativeValues = list
-            .filter(activity => activity?.date && activity.garminTrainingLoad != null
+        const nativeValues = garminActivities
+            .filter(activity => activity.garminTrainingLoad != null
                 && Number.isFinite(Number(activity.garminTrainingLoad))
                 && Number(activity.garminTrainingLoad) >= 0)
             .map(activity => ({ activity, value: Number(activity.garminTrainingLoad), sourceMode: 'garmin-native' }));
         // CTL/ATL require one consistent load scale across the time series.
-        // Never combine Garmin native Load with the Endurance-AI HR-zone index.
+        // Never combine Garmin native Load with the KAJO HR-zone index.
         const useZone = zoneValues.length > nativeValues.length;
         const selected = useZone ? zoneValues : nativeValues;
         if (selected.length) {
-            const eligibleCount = list.filter(activity => activity?.date && (
-                activity.source === 'garmin' || activity.sourceRefs?.garminActivityId != null
-                || activity.garminData || (Array.isArray(activity.sources) && activity.sources.includes('garmin'))
-                || activity.garminFitImported || activity.garminTrainingLoad != null
-            )).length;
             return {
                 mode: useZone ? 'garmin-zone' : 'garmin-native',
                 unit: useZone ? 'KAJO-HF-Punkte' : 'Garmin Load',
                 records: selected.map(({ activity, value }) => ({ activity, value })),
                 coverage: {
-                    eligibleActivityCount: eligibleCount,
+                    eligibleActivityCount: garminActivities.length,
                     loadedActivityCount: selected.length,
-                    excludedActivityCount: Math.max(0, eligibleCount - selected.length),
+                    excludedActivityCount: Math.max(0, garminActivities.length - selected.length),
                     availableZoneActivities: zoneValues.length,
                     availableNativeActivities: nativeValues.length
                 }
@@ -223,7 +244,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
             const subjective = srpeData();
             if (subjective.records.length) return subjective;
         }
-        return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
+        return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: garminActivities.length, loadedActivityCount: 0, excludedActivityCount: garminActivities.length } };
     }
     // In automatic mode, use sRPE when no Garmin-native or HR-zone load can be
     // calculated. The two scales are never mixed within one time series.
@@ -234,7 +255,6 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
     // External TSS is not an approved source for KAJO training-load calculations.
     return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
 }
-
 
 /**
  * Heart-rate-zone analysis for the KAJO comparison view.
