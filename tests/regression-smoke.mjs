@@ -151,6 +151,11 @@ assert.equal(disabledSummary.deactivated, 1);
 assert.equal(state.rawActivities.some(activity => activity.id === 'icu-only-1'), false);
 assert.equal(state.rawActivities.some(activity => activity.id === 'garmin-123456'), true);
 assert.equal(state.disabledIntervalsActivities[0].id, 'icu-only-1');
+globalThis.fetch = async url => url.includes('/activities')
+    ? { ok: true, json: async () => [] }
+    : { ok: true, json: async () => [{
+        id: '2026-11-10', sleepSecs: 28800, weight: null, restingHR: 48, hrv: 72, respiration: 15.2
+    }] };
 document.getElementById('icu-athlete-id').value = 'test-athlete';
 document.getElementById('icu-api-key').value = 'test-key';
 document.getElementById('icu-load-wellness').checked = true;
