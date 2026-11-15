@@ -647,7 +647,7 @@ export function getActivityTelemetrySeries(act) {
     const seenSemantics = new Set();
     const semanticFor = (key, label = '') => {
         const descriptor = (String(key) + ' ' + String(label)).toLowerCase().replace(/[_-]+/g, ' ');
-        if (/heart.?rate|heartrate|(^|\\s)hr($|\\s)|puls|herzfrequenz/.test(descriptor)) return 'hr';
+        if (/heart.?rate|heartrate|(^|\s)hr($|\s)|puls|herzfrequenz/.test(descriptor)) return 'hr';
         if (/respirat|breathing|atemfrequenz/.test(descriptor)) return 'respiration';
         if (/temperature|temperatur/.test(descriptor)) return 'temperature';
         if (/altitude|elevation|height|höhe/.test(descriptor)) return 'altitude';
@@ -657,7 +657,7 @@ export function getActivityTelemetrySeries(act) {
         if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor)) return 'cadence';
         if (/body.?battery/.test(descriptor)) return 'bodyBattery';
         if (/grade|steigung/.test(descriptor)) return 'grade';
-        return descriptor.trim().replace(/\\s+/g, ' ');
+        return descriptor.trim().replace(/\s+/g, ' ');
     };
     for (const [key, sources] of Object.entries(aliases)) {
         const meta = activitySeriesMeta[key];
