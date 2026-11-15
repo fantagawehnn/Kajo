@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
-import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis } from '../js/training-load.js';
+import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis, getAdaptiveRestingHr, calculateHeartRateReserveZones } from '../js/training-load.js';
 import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
 
 function dateKey(date) {
@@ -154,7 +154,7 @@ test('automatic model uses HR-zone load when native Garmin load is absent', () =
         id: 'g-hr-1', source: 'garmin', date: completedDay, duration: 60,
         garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
     }];
-    const result = getTrainingLoadData(records, {}, { maxHr: 190 });
+    const result = getTrainingLoadData(records, {}, { maxHr: 190, restingHr: 50 });
     assert.equal(result.mode, 'garmin-zone');
     assert.equal(result.records.length, 1);
     assert.ok(result.records[0].value > 0);
@@ -189,7 +189,7 @@ test('automatic fallback never mixes HR-zone and sRPE values', () => {
           garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } },
         { id: 'g-rpe-2', source: 'garmin', date: completedDay, duration: 30, perceivedEffort: 8 }
     ];
-    const result = getTrainingLoadData(records, {}, { maxHr: 190 });
+    const result = getTrainingLoadData(records, {}, { maxHr: 190, restingHr: 50 });
     assert.equal(result.mode, 'garmin-zone');
     assert.equal(result.records.length, 1);
     assert.equal(result.records[0].activity.id, 'g-hr-2');
@@ -210,7 +210,7 @@ test('Garmin JSON metricSeries heart rate is normalized for load calculations', 
     assert.deepEqual(series.hr, [145, 155, 165, 175]);
     assert.deepEqual(series.time, [0, 20, 40, 60]);
     assert.equal(series.source, 'metricSeries:directHeartRate');
-    const load = getTrainingLoadData([activity], {}, { maxHr: 190 });
+    const load = getTrainingLoadData([activity], {}, { maxHr: 190, restingHr: 50 });
     assert.equal(load.mode, 'garmin-zone');
     assert.equal(load.records.length, 1);
     assert.ok(load.records[0].value > 0);
@@ -350,12 +350,12 @@ test('Garmin HR-zone load does not invent time after the final timestamp', () =>
     };
     const load = calculateGarminZoneLoad(activity, {
         heartRateZones: { Kayaking: [100, 120, 140, 160] }
-    }, {});
+    }, { maxHr: 190, restingHr: 50 });
     assert.ok(load);
     assert.equal(load.recordedSeconds, 80);
     assert.equal(load.totalSeconds, 80);
     assert.equal(load.totalSeconds, load.secondsByZone.reduce((sum, value) => sum + value, 0));
-    assert.equal(load.value, 4);
+    assert.equal(load.value, 3);
     assert.equal(load.excludedIntervalCount, 0);
 });
 
@@ -367,10 +367,10 @@ test('global HR zones are used when no valid sport-specific zones exist', () => 
     };
     const load = calculateGarminZoneLoad(activity, {
         heartRateZones: { global: [100, 120, 140, 160] }
-    }, { maxHr: 190 });
+    }, { maxHr: 190, restingHr: 50 });
     assert.ok(load);
-    assert.equal(load.zoneSource, 'global');
-    assert.deepEqual(load.zones, [100, 120, 140, 160]);
+    assert.equal(load.zoneSource, 'karvonen-adaptive');
+    assert.deepEqual(load.zones, [134, 148, 162, 176]);
     assert.equal(load.totalSeconds, 80);
 });
 
@@ -384,10 +384,10 @@ test('valid sport-specific HR zones take precedence over global zones', () => {
             global: [100, 120, 140, 160],
             Kayaking: [105, 125, 145, 165]
         }
-    }, { maxHr: 190 });
+    }, { maxHr: 190, restingHr: 50 });
     assert.ok(load);
-    assert.equal(load.zoneSource, 'sport-specific');
-    assert.deepEqual(load.zones, [105, 125, 145, 165]);
+    assert.equal(load.zoneSource, 'karvonen-adaptive');
+    assert.deepEqual(load.zones, [134, 148, 162, 176]);
 });
 
 
@@ -401,12 +401,12 @@ test('Edwards TRIMP uses fixed %HRmax bands and excludes time below 50%', () => 
     };
     const result = getHeartRateZoneAnalysis([activity], {
         heartRateZones: { Running: [100, 120, 140, 160] }
-    }, { maxHr: 200 });
+    }, { maxHr: 200, restingHr: 50 });
     assert.equal(result.records.length, 1);
     assert.deepEqual(result.records[0].edwards.secondsByZone, [20, 20, 20, 20, 40]);
     assert.equal(result.records[0].edwards.below50Seconds, 20);
     assert.equal(result.records[0].edwards.value, 6.7);
-    assert.equal(result.records[0].kajo.value, 8.3);
+    assert.equal(result.records[0].kajo.value, 6);
     assert.equal(result.coverage.activitiesWithEdwards, 1);
 });
 
@@ -428,9 +428,66 @@ test('Edwards TRIMP excludes telemetry gaps longer than 30 seconds', () => {
             time: [0, 20, 60, 80, 100]
         }
     };
-    const result = getHeartRateZoneAnalysis([activity], {}, { maxHr: 200 });
+    const result = getHeartRateZoneAnalysis([activity], {}, { maxHr: 200, restingHr: 50 });
     assert.equal(result.records.length, 1);
     assert.equal(result.records[0].edwards.excludedIntervalCount, 1);
     assert.equal(result.records[0].edwards.excludedIntervalSeconds, 40);
     assert.equal(result.records[0].edwards.totalSeconds, 60);
 });
+
+
+test('adaptive resting HR uses the median of the trailing window and excludes future readings', () => {
+    const checkins = {
+        '2026-01-01': { rhr: 48 },
+        '2026-01-02': { rhr: 52 },
+        '2026-01-03': { rhr: 49 },
+        '2026-01-04': { rhr: 90 },
+        '2026-01-05': { rhr: 50 },
+        '2026-01-06': { rhr: 46 },
+        '2026-01-07': { rhr: 44 },
+        '2026-01-08': { rhr: 35 }
+    };
+    const result = getAdaptiveRestingHr(checkins, '2026-01-07', 7, {});
+    assert.equal(result.value, 49);
+    assert.equal(result.readingCount, 7);
+    assert.equal(result.source, 'rolling-median');
+    assert.equal(result.quality, 'sufficient');
+});
+
+test('Karvonen zones use HR reserve rather than fixed percentages of maximum HR', () => {
+    assert.deepEqual(calculateHeartRateReserveZones(200, 50), [140, 155, 170, 185]);
+    assert.deepEqual(calculateHeartRateReserveZones(200, 55), [142, 157, 171, 186]);
+    assert.equal(calculateHeartRateReserveZones(50, 200), null);
+});
+
+test('adaptive resting HR requires at least three readings unless profile fallback exists', () => {
+    const checkins = {
+        '2026-01-01': { rhr: 50 },
+        '2026-01-02': { rhr: 51 }
+    };
+    assert.equal(getAdaptiveRestingHr(checkins, '2026-01-02', 7, {}).value, null);
+    const fallback = getAdaptiveRestingHr(checkins, '2026-01-02', 7, { restingHr: 49 });
+    assert.equal(fallback.value, 49);
+    assert.equal(fallback.source, 'profile-fallback');
+    assert.equal(fallback.quality, 'limited');
+});
+
+test('each historical activity uses its own trailing adaptive resting-HR window', () => {
+    const checkins = {
+        '2026-01-01': { rhr: 50 },
+        '2026-01-02': { rhr: 50 },
+        '2026-01-03': { rhr: 50 },
+        '2026-01-04': { rhr: 60 },
+        '2026-01-05': { rhr: 60 },
+        '2026-01-06': { rhr: 60 }
+    };
+    const first = getAdaptiveRestingHr(checkins, '2026-01-03', 3, { maxHr: 200 });
+    const later = getAdaptiveRestingHr(checkins, '2026-01-06', 3, { maxHr: 200 });
+    assert.equal(first.value, 50);
+    assert.equal(later.value, 60);
+    assert.notDeepEqual(
+        calculateHeartRateReserveZones(200, first.value),
+        calculateHeartRateReserveZones(200, later.value)
+    );
+});
+
