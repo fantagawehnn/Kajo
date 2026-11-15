@@ -491,7 +491,6 @@ test('each historical activity uses its own trailing adaptive resting-HR window'
     );
 });
 
-\n
 test('Garmin HR-zone load adapts Karvonen boundaries to each activity date RHR window', () => {
     const activity = {
         id: 'adaptive-rhr-load', source: 'garmin', type: 'C1', date: '2026-01-07',
