@@ -8392,3 +8392,51 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
         height: 96px;
     }
 }
+
+/* KPI circles: equal bottom edge; side circles sit beside the center with only a slight rim overlap. */
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+    width: min(100%, 420px);
+    height: 148px;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-duration {
+    top: 0;
+    left: 50%;
+    width: 148px;
+    height: 148px;
+    transform: translateX(-50%);
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-distance {
+    top: 40px;
+    left: calc(50% - 180px);
+    width: 108px;
+    height: 108px;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-heart-rate {
+    top: 40px;
+    right: calc(50% - 180px);
+    width: 108px;
+    height: 108px;
+}
+@media (max-width: 520px) {
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+        width: min(100%, 360px);
+        height: 132px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-duration {
+        top: 0;
+        width: 132px;
+        height: 132px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-distance {
+        top: 36px;
+        left: calc(50% - 161px);
+        width: 96px;
+        height: 96px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-heart-rate {
+        top: 36px;
+        right: calc(50% - 161px);
+        width: 96px;
+        height: 96px;
+    }
+}
