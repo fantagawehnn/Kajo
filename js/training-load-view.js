@@ -108,7 +108,7 @@ function renderCoverage(analysis){
 }
 function renderActivityList(analysis){
  const node=document.getElementById('training-load-activity-list');if(!node)return;node.replaceChildren();
- const rows=[...analysis.records].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12);
+ const rows=analysis.records.filter(item=>selectedModel==='compare'?(item.kajo||item.edwards):Boolean(item[selectedModel])).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12);
  if(!rows.length){const empty=document.createElement('p');empty.className='text-xs text-slate-500';empty.textContent='Keine Aktivitäten mit auswertbaren Herzfrequenz-Zeitreihen im ausgewählten Zeitraum.';node.appendChild(empty);return;}
  rows.forEach(item=>{const row=document.createElement('div');row.className='flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 py-2 text-xs';const left=document.createElement('span');left.className='text-slate-300';left.textContent=item.date+' · '+item.sport;const right=document.createElement('span');right.className='text-slate-400 text-right';const values=[];if(item.kajo&&(selectedModel==='kajo'||selectedModel==='compare'))values.push('KAJO '+fmt(item.kajo.value));if(item.edwards&&(selectedModel==='edwards'||selectedModel==='compare'))values.push('Edwards '+fmt(item.edwards.value));right.textContent=values.join(' · ')||'Nicht berechenbar';row.append(left,right);node.appendChild(row);});
 }
@@ -127,7 +127,7 @@ export function renderTrainingLoadView(){
  renderRings(timeline);renderVolumeSummary(activities,range);renderLoadTrend(timeline,activities);
  const analysis=getHeartRateZoneAnalysis(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
  renderCoverage(analysis);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);
- const hasZones=analysis.records.length>0;setVisible('training-load-no-data',!hasZones);setVisible('training-load-zone-analysis',hasZones);
+ const hasZones=modelKeys().some(key=>analysis[key].daily.length>0);setVisible('training-load-no-data',!hasZones);setVisible('training-load-zone-analysis',hasZones);
  const note=document.getElementById('training-load-zone-method-note');
  if(note)note.textContent=selectedModel==='compare'?'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO nutzt adaptive HF-Reserve-Zonen; Edwards feste Prozentbereiche der HFmax. Werte nicht als identische Zonen vergleichen.':selectedModel==='edwards'?'Edwards verwendet feste Prozentbereiche der HFmax. Zeit unter 50 % HFmax wird nicht einer Zone zugeordnet.':'KAJO verwendet adaptive HF-Reserve-Zonen mit einer Ruhe-HF-Basis aus dem konfigurierten Rückblick; ein Profil-Fallback ist als eingeschränkte Datenbasis zu verstehen.';
  document.querySelectorAll('[data-training-load-model]').forEach(button=>{const active=button.dataset.trainingLoadModel===selectedModel;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
