@@ -1115,6 +1115,7 @@ export function renderWeekView() {
         if (day.health?.status === 'sick') eventLabels.push('<span class="calendar-week-event-label calendar-event-sick"><i data-lucide="thermometer"></i> Krankheit</span>');
         if (day.health?.status === 'injured') eventLabels.push('<span class="calendar-week-event-label calendar-event-injured"><i data-lucide="bandage"></i> Verletzung</span>');
         if (day.cycle) eventLabels.push('<span class="calendar-week-event-label calendar-event-cycle"><i data-lucide="droplet"></i> Menstruation</span>');
+        else if(periodCalendarMarker(date).includes('geschätzt'))eventLabels.push('<span class="calendar-week-event-label calendar-event-cycle calendar-event-cycle-predicted"><i data-lucide="droplet"></i> Periode (Prognose)</span>');
         const dayName = calendarDateLabel(date);
         const entries = activityItems + planItems;
         const hasDayMetrics = data.durationTotal !== null && data.durationTotal !== undefined || data.loadValue !== null && data.loadValue !== undefined;
