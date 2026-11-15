@@ -27,7 +27,7 @@ function renderLoadSourceNote(timeline) {
     const last = Array.isArray(timeline) && timeline.length ? timeline[timeline.length - 1] : null;
     const mode = last?.loadMode;
     const descriptions = {
-        'garmin-zone': 'Quelle: Garmin-FIT-Herzfrequenzdaten. Der angezeigte Wert ist ein Endurance-AI-Index aus gewichteter Zeit in HF-Zonen (Z1–Z5), kein TSS und kein Garmin-Training-Load. Es zählen nur Aktivitäten mit auswertbarer HF-Zeitreihe und gültigen HF-Zonen.',
+        'garmin-zone': 'Quelle: Garmin-FIT-Herzfrequenzdaten. Der angezeigte Wert ist ein KAJO-Index aus gewichteter Zeit in adaptiven Herzfrequenzreserve-Zonen (Z1–Z5), kein TSS und kein Garmin-Training-Load. Es zählen nur Aktivitäten mit auswertbarer HF-Zeitreihe und gültigen HF-Zonen.',
         'garmin-native': 'Quelle: Garmin-eigene Trainingsbelastung. Diese Werte werden nicht mit externem TSS oder dem Endurance-AI-HF-Zonenindex vermischt und sind nicht direkt mit ihnen vergleichbar.',
         'external-tss': 'Externe TSS-Werte werden nicht als Belastungsgrundlage verwendet.',
         'garmin-unavailable': 'Garmin-Daten erkannt, aber aktuell keine auswertbaren Garmin-Load-Werte vorhanden. Externe TSS-Werte werden in diesem Modus nicht beigemischt.'
@@ -541,10 +541,10 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
                 <div class="flex items-center justify-between gap-2"><strong class="text-xs text-white">${catalog[key]?.label || key}</strong><span class="text-[10px] text-slate-400">${duration(totalSeconds)} erfasst</span></div>
                 <div class="grid grid-cols-5 gap-1">${zoneSeconds.map((seconds, index) => {
                     const percent = totalSeconds > 0 ? seconds / totalSeconds * 100 : 0;
-                    const bounds = mixedZoneBounds[key] ? null : (zoneBounds[key] || []);
+                    const bounds = mixedZoneBounds[key] ? [] : (zoneBounds[key] || []);
                     const reserveLabels = ['≤ 60 % HF-Reserve', '60–70 %', '70–80 %', '80–90 %', '> 90 %'];
-                    const lower = index === 0 ? null : bounds[index - 1] + 1;
-                    const upper = index === 4 ? null : bounds[index];
+                    const lower = bounds.length && index > 0 ? bounds[index - 1] + 1 : null;
+                    const upper = bounds.length && index < 4 ? bounds[index] : null;
                     const rangeLabel = !bounds.length ? reserveLabels[index]
                         : lower === null ? `≤ ${upper} bpm`
                         : upper === null ? `> ${bounds[3]} bpm`
