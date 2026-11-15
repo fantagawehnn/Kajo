@@ -8135,3 +8135,12 @@ html[data-theme="light"] .kajo-chart-point-value { color:#182431; }
   overflow-wrap:anywhere;
 }
 .kajo-chart-point-value { color:var(--readout-series-color,var(--kajo-text,#f8fafc)); }
+
+
+/* Diagramme: horizontales Scrubbing per Finger ermöglichen,
+   vertikales Scrollen der Seite außerhalb der horizontalen Geste beibehalten. */
+canvas {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
