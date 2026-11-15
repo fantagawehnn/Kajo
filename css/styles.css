@@ -2353,7 +2353,7 @@ body.kajo-modal-open{overflow:hidden}
 #view-calendar .calendar-season-event time{flex:0 0 88px;color:#8292a8;font-variant-numeric:tabular-nums}
 #view-calendar .calendar-season-event span{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 #view-calendar .calendar-season-event-icon{width:13px;height:13px}
-#view-calendar .calendar-season-event-icon.is-race{color:#fbbf24}#view-calendar .calendar-season-event-icon.is-sick{color:#fb923c}#view-calendar .calendar-season-event-icon.is-injured{color:#facc15}#view-calendar .calendar-season-event-icon.is-period{color:#fb8caf}
+#view-calendar .calendar-season-event-icon.is-race{color:#fbbf24}#view-calendar .calendar-season-event-icon.is-sick{color:#fb923c}#view-calendar .calendar-season-event-icon.is-injured{color:#facc15}#view-calendar .calendar-season-event-icon.is-period,#view-calendar .calendar-season-event-icon.is-period-predicted{color:#fb8caf}#view-calendar .calendar-season-event-icon.is-period-predicted{opacity:.62;stroke-dasharray:2 2}
 #view-calendar .calendar-season-empty{padding:22px;text-align:center;color:#8292a8;font-size:.78rem}
 @media(max-width:767px){#view-calendar .calendar-season-heading{display:grid}#view-calendar .calendar-season-stats{gap:18px}#view-calendar .calendar-season-event time{flex-basis:76px}}
 /* KAJO Kalender – kompaktere Bedienleiste und besser lesbare Monatsübersicht */
