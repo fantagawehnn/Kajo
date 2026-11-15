@@ -82,7 +82,7 @@ export function getGarminHeartRateSeries(activity) {
         ? telemetry.metricSeries : {};
     for (const [key, metric] of Object.entries(metricSeries)) {
         const descriptor = (String(key) + ' ' + String(metric?.label || '')).toLowerCase().replace(/[_-]+/g, ' ');
-        if (!/(heart.?rate|heartrate|(^|\\s)hr($|\\s)|puls|herzfrequenz)/.test(descriptor)
+        if (!/(heart.?rate|heartrate|(^|\s)hr($|\s)|puls|herzfrequenz)/.test(descriptor)
             || !validValues(metric?.values)) continue;
         const axisCandidates = [metric.time, telemetry.metricSeriesTime, telemetry.time];
         const time = axisCandidates.find(axis => validTime(axis, metric.values.length)) || null;
