@@ -262,7 +262,9 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
         if (kajo) kajoCount++;
 
         const maxHr = Number(profile?.maxHr);
-        const windowDays = settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+        const zoneSettings = settings?.heartRateZoneSettings || {};
+        const windowDays = Number(zoneSettings.restingHrWindowVersion) >= 2
+            ? (zoneSettings.restingHrWindowDays ?? 14) : 14;
         const adaptiveRhr = getAdaptiveRestingHr(
             dailyCheckins,
             String(activity.date).slice(0, 10),
