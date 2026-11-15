@@ -186,7 +186,7 @@ test('activity-day load remains visible without confirmed Garmin coverage', () =
 test('automatic fallback never mixes HR-zone and sRPE values', () => {
     const records = [
         { id: 'g-hr-2', source: 'garmin', date: completedDay, duration: 60,
-          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 10, 20, 30] } },
+          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } },
         { id: 'g-rpe-2', source: 'garmin', date: completedDay, duration: 30, perceivedEffort: 8 }
     ];
     const result = getTrainingLoadData(records, {}, { maxHr: 190 });
