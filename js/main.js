@@ -29,7 +29,7 @@ import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, clo
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=2';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
-import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
+import { addStrengthSetRow, closeStrengthModal, closeStrengthWorkoutModal, deleteStrengthLog, deleteStrengthWorkoutLog, openStrengthModal, openStrengthWorkoutModal, renderStrengthView, renumberStrengthSetRows, saveStrengthWorkout, saveStrengthWorkoutLog } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=9';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
@@ -2728,6 +2728,12 @@ Object.assign(window, {
     openIntervalsSyncModal,
     openPlannedWorkoutModal,
     openStrengthModal,
+    openStrengthWorkoutModal,
+    closeStrengthWorkoutModal,
+    addStrengthSetRow,
+    renumberStrengthSetRows,
+    saveStrengthWorkoutLog,
+    deleteStrengthWorkoutLog,
     performIntervalsLiveSync,
     saveCheckin,
     saveDayEditor,
