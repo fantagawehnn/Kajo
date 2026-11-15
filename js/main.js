@@ -2595,7 +2595,6 @@ async function handleAuthSession(session) {
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
                 void syncGarminTodayOnOpen(userId);
-                void backfillGarminAnalysisOnOpen(userId, sequence);
                 initializeNutritionRemindersWhenIdle();
             } catch (renderError) {
                 console.error('Die App-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
@@ -2622,9 +2621,18 @@ async function handleAuthSession(session) {
                         throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
                     }
                     await clearLocalGarminTelemetryCache();
-                    // Nach dem Entfernen des lokalen Caches die bestätigten Cloud-Daten
-                    // wieder in den aktiven Arbeitsspeicher übernehmen.
-                    mergeGarminTelemetryRecords(cloudTelemetry.records);
+                    // Nach bestätigtem Cloud-Readback die Rohmessreihen auch aus dem
+                    // aktiven Aktivitätszustand entfernen. Die Detailansicht lädt sie
+                    // später gezielt für die jeweils geöffnete Aktivität.
+                    state.rawActivities = (state.rawActivities || []).map(activity => {
+                        if (!activity?.garminTelemetry) return activity;
+                        const compact = { ...activity };
+                        delete compact.garminTelemetry;
+                        return compact;
+                    });
+                    state.garminTelemetryStore = {};
+                    saveDataToLocalStorage();
+                    void backfillGarminAnalysisOnOpen(userId, sequence);
                     console.info('KAJO: Garmin-Telemetrie-Cloudabgleich abgeschlossen:', {
                         uploaded: cloudTelemetry.uploaded,
                         existing: cloudTelemetry.existing,
@@ -2634,6 +2642,7 @@ async function handleAuthSession(session) {
                 } catch (telemetryMigrationError) {
                     // Bei Fehlern bleiben lokale und Legacy-Telemetriedaten erhalten.
                     console.warn('KAJO: Garmin-Telemetrie-Cloudabgleich noch nicht vollständig:', telemetryMigrationError);
+                    void backfillGarminAnalysisOnOpen(userId, sequence);
                 }
             })();
 
