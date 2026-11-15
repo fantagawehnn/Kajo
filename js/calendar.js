@@ -53,7 +53,8 @@ function periodCalendarMarker(dateStr) {
  for(const date of periodDates){if(group.length&&Math.round((new Date(date+'T12:00:00')-new Date(group[group.length-1]+'T12:00:00'))/86400000)>1){groups.push(group);group=[];}group.push(date);}
  if(group.length)groups.push(group);
  const lengths=groups.map(g=>g.length).filter(n=>n>=2&&n<=10).sort((a,b)=>a-b);
- const periodLength=lengths.length?lengths[Math.floor(lengths.length/2)]:5;
+ if(!lengths.length)return '';
+ const periodLength=lengths[Math.floor(lengths.length/2)];
  const lastStart=new Date(starts[starts.length-1]+'T12:00:00');
  let nextStart=new Date(lastStart);nextStart.setDate(nextStart.getDate()+cycleLength);
  const todayDate=new Date(today+'T12:00:00');
