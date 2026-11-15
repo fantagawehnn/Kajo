@@ -1,8 +1,9 @@
 /**
  * Cloud persistence for complete Garmin activity telemetry.
  *
- * New telemetry is merged into existing activity records. This is important
- * because Garmin FIT/JSON imports can enrich an activity after its first sync.
+ * Existing cloud telemetry is immutable during incremental uploads.
+ * Only activity IDs are checked; existing measurement series are never re-read
+ * or overwritten by this upload path.
  */
 const TABLE = 'garmin_activity_telemetry';
 const PAGE_SIZE = 250;
@@ -105,40 +106,67 @@ export async function uploadMissingGarminTelemetry(supabase, userId, candidateRe
         if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
         candidates.set(activityId, record.telemetry);
     }
-    const existingRows = await fetchAllRows(supabase, id);
-    const existingById = new Map(existingRows.map(row => [String(row.garmin_activity_id), row.telemetry || {}]));
-    let uploaded = 0;
-    for (const [activityId, telemetry] of candidates) {
-        const mergedTelemetry = mergeTelemetry(existingById.get(activityId) || {}, telemetry);
-        const { error } = await supabase.from(TABLE).upsert({
-            user_id: id,
-            garmin_activity_id: activityId,
-            telemetry: mergedTelemetry
-        }, { onConflict: 'user_id,garmin_activity_id' });
-        if (error) throw error;
-        uploaded++;
-    }
 
-    // Jede Importcharge wird erst nach bestätigtem Cloud-Readback als gesichert behandelt.
     const candidateIds = Array.from(candidates.keys());
-    let verified = 0;
-    if (candidateIds.length) {
+    const existingIds = new Set();
+    const QUERY_BATCH_SIZE = 100;
+    const INSERT_BATCH_SIZE = 25;
+
+    // Beim Upload werden nur Aktivitäts-IDs abgefragt, niemals bereits gespeicherte Messreihen.
+    for (let offset = 0; offset < candidateIds.length; offset += QUERY_BATCH_SIZE) {
+        const idBatch = candidateIds.slice(offset, offset + QUERY_BATCH_SIZE);
         const { data, error } = await supabase
             .from(TABLE)
             .select('garmin_activity_id')
             .eq('user_id', id)
-            .in('garmin_activity_id', candidateIds);
+            .in('garmin_activity_id', idBatch);
         if (error) throw error;
-        const storedIds = new Set((Array.isArray(data) ? data : []).map(row => String(row.garmin_activity_id)));
-        verified = candidateIds.filter(activityId => storedIds.has(activityId)).length;
-        if (verified !== candidateIds.length) {
-            throw new Error('Cloud-Readback unvollständig: ' + (candidateIds.length - verified) + ' Telemetrie-Datensätze fehlen.');
+        for (const row of Array.isArray(data) ? data : []) {
+            existingIds.add(String(row.garmin_activity_id));
         }
     }
+
+    const missingRecords = candidateIds
+        .filter(activityId => !existingIds.has(activityId))
+        .map(activityId => ({
+            user_id: id,
+            garmin_activity_id: activityId,
+            telemetry: candidates.get(activityId)
+        }));
+
+    let uploaded = 0;
+    for (let offset = 0; offset < missingRecords.length; offset += INSERT_BATCH_SIZE) {
+        const batch = missingRecords.slice(offset, offset + INSERT_BATCH_SIZE);
+        const { error } = await supabase.from(TABLE).insert(batch);
+        if (error) throw error;
+        uploaded += batch.length;
+    }
+
+    // Bereits vorhandene IDs gelten als vorhanden; neue IDs werden separat bestätigt.
+    let verifiedNew = 0;
+    const insertedIds = missingRecords.map(record => record.garmin_activity_id);
+    for (let offset = 0; offset < insertedIds.length; offset += QUERY_BATCH_SIZE) {
+        const idBatch = insertedIds.slice(offset, offset + QUERY_BATCH_SIZE);
+        const { data, error } = await supabase
+            .from(TABLE)
+            .select('garmin_activity_id')
+            .eq('user_id', id)
+            .in('garmin_activity_id', idBatch);
+        if (error) throw error;
+        verifiedNew += new Set((Array.isArray(data) ? data : [])
+            .map(row => String(row.garmin_activity_id))).size;
+    }
+
+    const verified = existingIds.size + verifiedNew;
+    if (verified !== candidateIds.length) {
+        throw new Error('Cloud-Readback unvollständig: ' + (candidateIds.length - verified) + ' Telemetrie-Datensätze fehlen.');
+    }
+
     return {
         uploaded,
         candidates: candidates.size,
-        updated: Array.from(candidates.keys()).filter(key => existingById.has(key)).length,
+        skippedExisting: existingIds.size,
+        updated: 0,
         verified
     };
 }
