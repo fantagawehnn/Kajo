@@ -240,6 +240,29 @@ export function addCustomCategory() {
   box.insertAdjacentHTML('beforeend', `<div class="grid grid-cols-[1fr_76px_auto] gap-2 items-center" data-category-row data-key="${key}"><input data-label value="${escapeHtml(label.trim())}" class="min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"><input data-color type="color" value="${sportColorPalette[box.children.length % sportColorPalette.length]}" class="w-full h-9 bg-slate-950 border border-slate-700 rounded-lg"><button type="button" data-remove class="text-xs text-rose-400">×</button></div>`);
   box.lastElementChild.querySelector('[data-remove]').addEventListener('click',e=>e.currentTarget.closest('[data-category-row]').remove());
 }
+export function saveTelemetrySettings() {
+  const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
+  document.querySelectorAll('#settings-telemetry-list [data-telemetry-sport]').forEach(card => {
+    const sport = card.dataset.telemetrySport;
+    telemetryMetrics[sport] = [...card.querySelectorAll('[data-telemetry-metric]:checked')]
+      .map(input => input.dataset.telemetryMetric);
+  });
+  state.settings = { ...state.settings, telemetryMetrics };
+  saveDataToLocalStorage();
+  // Aktualisiere die Zähler direkt, ohne die gerade geöffnete Auswahl zu verwerfen.
+  document.querySelectorAll('#settings-telemetry-list [data-telemetry-sport]').forEach(card => {
+    const count = card.querySelectorAll('[data-telemetry-metric]:checked').length;
+    const total = card.querySelectorAll('[data-telemetry-metric]').length;
+    const summary = card.querySelector('summary small');
+    if (summary) summary.textContent = count + ' von ' + total + ' ausgewählt';
+  });
+  const status = document.getElementById('settings-telemetry-save-status');
+  if (status) {
+    status.textContent = 'Telemetrie-Einstellungen gespeichert.';
+    status.classList.remove('hidden');
+  }
+}
+
 export function saveSettings() {
   const sports = {}, categories = {};
   const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
