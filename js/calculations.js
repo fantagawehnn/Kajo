@@ -28,9 +28,9 @@ function isDateCovered(date, ranges) {
     return ranges.some(range => date >= range.startDate && date <= range.endDate);
 }
 
-export function computePerformanceTimeline(records, settings, profile) {
+export function computePerformanceTimeline(records, settings, profile, dailyCheckins = {}) {
     const list = Array.isArray(records) ? records : [];
-    const loadData = getTrainingLoadData(list, settings, profile);
+    const loadData = getTrainingLoadData(list, settings, profile, dailyCheckins);
 
     // Confirmed Garmin coverage allows empty days to count as rest days.
     // Without coverage, still expose measured activity-day loads, but leave
