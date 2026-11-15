@@ -3,6 +3,91 @@ import { saveDataToLocalStorage } from './storage.js?v=3';
 import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml } from './utils.js';
 
 
+const TELEMETRY_OPTIONS = {
+  Kayaking: [
+    ['hr', 'Herzfrequenz'], ['speed', 'Geschwindigkeit (Gerätemesswert)'],
+    ['power', 'Leistung (Gerätemesswert)'], ['cadence', 'Frequenz / Zugfrequenz'],
+    ['altitude', 'Höhe'], ['respiration', 'Atemfrequenz'],
+    ['temperature', 'Temperatur'], ['bodyBattery', 'Body Battery'], ['pace', 'Pace']
+  ],
+  C1: [
+    ['hr', 'Herzfrequenz'], ['speed', 'Geschwindigkeit (Gerätemesswert)'],
+    ['power', 'Leistung (Gerätemesswert)'], ['cadence', 'Frequenz / Zugfrequenz'],
+    ['altitude', 'Höhe'], ['respiration', 'Atemfrequenz'],
+    ['temperature', 'Temperatur'], ['bodyBattery', 'Body Battery'], ['pace', 'Pace']
+  ],
+  C2: [
+    ['hr', 'Herzfrequenz'], ['speed', 'Geschwindigkeit (Gerätemesswert)'],
+    ['power', 'Leistung (Gerätemesswert)'], ['cadence', 'Frequenz / Zugfrequenz'],
+    ['altitude', 'Höhe'], ['respiration', 'Atemfrequenz'],
+    ['temperature', 'Temperatur'], ['bodyBattery', 'Body Battery'], ['pace', 'Pace']
+  ],
+  PaddleErgo: [
+    ['hr', 'Herzfrequenz'], ['speed', 'Geschwindigkeit (Gerätemesswert)'],
+    ['power', 'Leistung (Gerätemesswert)'], ['cadence', 'Frequenz / Zugfrequenz'],
+    ['altitude', 'Höhe'], ['respiration', 'Atemfrequenz'],
+    ['temperature', 'Temperatur'], ['bodyBattery', 'Body Battery'], ['pace', 'Pace']
+  ],
+  Run: [
+    ['hr', 'Herzfrequenz'], ['pace', 'Pace'], ['speed', 'Geschwindigkeit'],
+    ['cadence', 'Schrittfrequenz'], ['altitude', 'Höhe'],
+    ['respiration', 'Atemfrequenz'], ['temperature', 'Temperatur'],
+    ['groundcontacttime', 'Bodenkontaktzeit'], ['verticaloscillation', 'Vertikale Bewegung'],
+    ['stridelength', 'Schrittlänge'], ['verticalratio', 'Vertikales Verhältnis']
+  ],
+  Ride: [
+    ['hr', 'Herzfrequenz'], ['speed', 'Geschwindigkeit'], ['power', 'Leistung'],
+    ['cadence', 'Trittfrequenz'], ['altitude', 'Höhe'],
+    ['respiration', 'Atemfrequenz'], ['temperature', 'Temperatur'], ['grade', 'Steigung']
+  ],
+  Swim: [
+    ['hr', 'Herzfrequenz'], ['pace', 'Pace'], ['cadence', 'Zugfrequenz'],
+    ['swolf', 'SWOLF'], ['stroke', 'Schwimmstil / Zugtyp'],
+    ['respiration', 'Atemfrequenz']
+  ],
+  WeightTraining: [
+    ['hr', 'Herzfrequenz'], ['respiration', 'Atemfrequenz'], ['bodyBattery', 'Body Battery']
+  ],
+  Workout: [
+    ['hr', 'Herzfrequenz'], ['speed', 'Geschwindigkeit'], ['power', 'Leistung'],
+    ['cadence', 'Frequenz'], ['altitude', 'Höhe'], ['respiration', 'Atemfrequenz'],
+    ['temperature', 'Temperatur'], ['bodyBattery', 'Body Battery']
+  ]
+};
+const TELEMETRY_SPORT_LABELS = {
+  Kayaking: 'K1', C1: 'C1', C2: 'C2', PaddleErgo: 'Paddelergometer',
+  Run: 'Laufen', Ride: 'Radfahren', Swim: 'Schwimmen',
+  WeightTraining: 'Krafttraining', Workout: 'Allg. Fitness'
+};
+
+function renderTelemetrySettings() {
+  const box = document.getElementById('settings-telemetry-list');
+  if (!box) return;
+  const saved = state.settings?.telemetryMetrics || {};
+  box.innerHTML = Object.entries(TELEMETRY_OPTIONS).map(([sport, options]) => {
+    const configured = Array.isArray(saved[sport]) ? new Set(saved[sport]) : null;
+    const selectedCount = configured ? options.filter(([key]) => configured.has(key)).length : options.length;
+    return `<details class="rounded-xl border border-slate-800 bg-slate-950/50 overflow-hidden" data-telemetry-sport="${sport}">
+      <summary class="flex items-center justify-between gap-3 px-3 py-3 cursor-pointer list-none">
+        <span class="min-w-0"><strong class="block text-xs text-white">${TELEMETRY_SPORT_LABELS[sport]}</strong>
+        <small class="block mt-1 text-[10px] text-slate-500">${configured ? selectedCount + ' von ' + options.length + ' ausgewählt' : 'Alle verfügbaren Werte'}</small></span>
+        <span class="text-[10px] text-slate-500">Anpassen ▾</span>
+      </summary>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3 pb-3">
+        ${options.map(([key, label]) => `<label class="flex items-center gap-2 rounded-lg bg-slate-900/70 px-2.5 py-2 text-[11px] text-slate-300">
+          <input type="checkbox" data-telemetry-metric="${key}" ${!configured || configured.has(key) ? 'checked' : ''} class="h-4 w-4 accent-cyan-500">
+          <span>${label}</span>
+        </label>`).join('')}
+        <button type="button" data-telemetry-all class="sm:col-span-2 justify-self-start text-[10px] text-cyan-400">Alle Werte dieser Sportart anzeigen</button>
+      </div>
+    </details>`;
+  }).join('');
+  box.querySelectorAll('[data-telemetry-all]').forEach(button => button.addEventListener('click', () => {
+    const details = button.closest('[data-telemetry-sport]');
+    details?.querySelectorAll('[data-telemetry-metric]').forEach(input => { input.checked = true; });
+  }));
+}
+
 const ZONE_METHODS = {
   manual: { label: 'Manuell' },
   maxhr_myprocoach: { label: '% HFmax – 5-Zonen-Modell' }
@@ -90,6 +175,7 @@ function renderRows() {
   const catBox = document.getElementById('settings-categories-list');
   const zoneBox = document.getElementById('settings-zones-list');
   if (!sportBox || !catBox || !zoneBox) return;
+  renderTelemetrySettings();
   const loadSource = document.getElementById('training-load-source');
   if (loadSource) loadSource.value = state.settings?.trainingLoadSource || 'auto';
   sportBox.innerHTML = Object.entries(sports).map(([key,v]) => `<div class="grid grid-cols-[auto_minmax(0,1fr)_minmax(145px,1fr)_auto] gap-2 items-center rounded-lg border border-slate-800 bg-slate-950/60 p-2" data-sport-row data-key="${key}"><input data-enabled type="checkbox" ${selectedSports.has(key) ? 'checked' : ''} aria-label="Sportart ${escapeHtml(v.label)} im Kalender verwenden" class="h-4 w-4 accent-sky-500"><input data-label value="${escapeHtml(v.label)}" class="min-w-0 w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">${sportColorEditor(v.color)}${key.startsWith('custom-') ? '<button type="button" data-remove class="text-xs text-rose-400" title="Entfernen">×</button>' : '<span class="text-[10px] text-slate-600">Standard</span>'}</div>`).join('');
@@ -153,6 +239,7 @@ export function addCustomCategory() {
 export function saveSettings() {
   const sports = {}, categories = {};
   const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
+  const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
   if (!['auto', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
   // Vorhandene Zonengrenzen übernehmen, damit eine einzelne Änderung
   // nicht die übrigen Werte derselben oder anderer Sportarten verwirft.
@@ -217,7 +304,13 @@ export function saveSettings() {
   Object.keys(zoneThresholds).forEach(key => { if (!sports[key]) delete zoneThresholds[key]; });
   const activeSportsForSelect = Object.fromEntries(Object.entries(sports).filter(([key]) => enabledSports.includes(key)));
   for(const [id,items] of [['modal-edit-sport-select',activeSportsForSelect],['plan-sport',activeSportsForSelect],['modal-edit-type-select',categories],['plan-category',categories]]){const select=document.getElementById(id);if(select){const current=select.value;select.innerHTML=Object.entries(items).map(([key,v])=>'<option value="'+escapeHtml(key)+'">'+escapeHtml(v.label)+'</option>').join('');if(items[current])select.value=current;}}
-  state.settings={...state.settings,sports,enabledSports,categories,heartRateZones:zones,heartRateZoneMethods:zoneMethods,heartRateThresholds:zoneThresholds,trainingLoadSource};
+  document.querySelectorAll('#settings-telemetry-list [data-telemetry-sport]').forEach(card => {
+    const sport = card.dataset.telemetrySport;
+    const selected = [...card.querySelectorAll('[data-telemetry-metric]:checked')]
+      .map(input => input.dataset.telemetryMetric);
+    telemetryMetrics[sport] = selected;
+  });
+  state.settings={...state.settings,sports,enabledSports,categories,heartRateZones:zones,heartRateZoneMethods:zoneMethods,heartRateThresholds:zoneThresholds,trainingLoadSource,telemetryMetrics};
   saveDataToLocalStorage();
   closeSettingsModal();
   refreshAll();
