@@ -123,7 +123,7 @@ function detectMaxHr() {
 
 export function previewHeartRateZones() {
   const maxHr = Number(document.getElementById('kajo-zone-maxhr')?.value);
-  const windowDays = Number(document.getElementById('kajo-zone-rhr-window')?.value) || 7;
+  const windowDays = Number(document.getElementById('kajo-zone-rhr-window')?.value) || 14;
   const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
   const resting = getAdaptiveRestingHr(state.dailyCheckins || {}, today, windowDays, state.profile || {});
   const zones = resting?.value != null ? calculateHeartRateReserveZones(maxHr, resting.value) : null;
@@ -131,7 +131,7 @@ export function previewHeartRateZones() {
   const preview = document.getElementById('kajo-zone-preview');
   if (status) status.textContent = resting?.value != null
     ? 'Adaptive Ruhe-HF: ' + resting.value + ' bpm · ' + resting.readingCount + '/' + resting.windowDays + ' Tageswerte'
-      + (resting.source === 'profile-fallback' ? ' · statischer Profil-Fallback' : ' · Median der letzten Tage')
+      + (resting.source === 'profile-fallback' ? ' · statischer Profil-Fallback' : ' · 14-Tage-Median (bzw. gewählter Rückblick)')
       + (resting.quality === 'limited' ? ' · eingeschränkte Datenbasis' : '')
     : 'Keine adaptive Ruhe-HF verfügbar. Mindestens 60 % der Tage (mindestens drei Messwerte) oder ein Profilwert sind erforderlich.';
   if (preview) preview.textContent = zones
@@ -184,7 +184,7 @@ function renderRows() {
   for (const id of ['modal-edit-type-select','plan-category']) { const select=document.getElementById(id); if(select){ const current=select.value; select.innerHTML=Object.entries(categories).map(([key,v])=>`<option value="${escapeHtml(key)}">${escapeHtml(v.label)}</option>`).join(''); if(current&&categories[current])select.value=current; } }
   const detected = detectMaxHr();
   const zoneSettings = state.settings?.heartRateZoneSettings || {};
-  const windowDays = Math.min(28, Math.max(3, Number(zoneSettings.restingHrWindowDays) || 7));
+  const windowDays = Math.min(28, Math.max(3, Number(zoneSettings.restingHrWindowDays) || 14));
   const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
   const adaptiveRhr = getAdaptiveRestingHr(state.dailyCheckins || {}, today, windowDays, state.profile || {});
   const adaptiveZones = adaptiveRhr?.value != null ? calculateHeartRateReserveZones(detected.value, adaptiveRhr.value) : null;
@@ -209,7 +209,7 @@ function renderRows() {
         <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Quelle: ${escapeHtml(detected.source)}. Die HFmax bleibt als stabiler Profilwert erhalten und wird nicht aus der Ruhe-HF abgeleitet.</p>
       </div>
       <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
-        <label for="kajo-zone-rhr-window" class="text-[11px] font-medium text-slate-300">Rückblick für adaptive Ruhe-HF</label>
+        <label for="kajo-zone-rhr-window" class="text-[11px] font-medium text-slate-300">Rückblick für stabile Trainingszonen</label>
         <div class="mt-2 flex items-center gap-2"><select id="kajo-zone-rhr-window" onchange="previewHeartRateZones()" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
           ${[7,10,14,21,28].map(days => `<option value="${days}" ${days===windowDays?'selected':''}>${days} Tage</option>`).join('')}
         </select><span class="text-xs text-slate-400">Tageswerte</span></div>
@@ -317,7 +317,7 @@ export function saveSettings() {
       return;
     }
   }
-  const windowDays = Number(document.getElementById('kajo-zone-rhr-window')?.value || state.settings?.heartRateZoneSettings?.restingHrWindowDays || 7);
+  const windowDays = Number(document.getElementById('kajo-zone-rhr-window')?.value || state.settings?.heartRateZoneSettings?.restingHrWindowDays || 14);
   if (!Number.isInteger(windowDays) || windowDays < 3 || windowDays > 28) {
     alert('Der Rückblick für die adaptive Ruhe-HF muss zwischen 3 und 28 Tagen liegen.');
     return;
