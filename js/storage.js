@@ -274,7 +274,7 @@ export function getUserDataSnapshot(options = {}) {
         ? state.rawActivities
         : stripGarminTelemetryFromActivities(state.rawActivities);
     return {
-        activities, disabledIntervalsActivities: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
+        activities, disabledIntervals: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
@@ -299,7 +299,7 @@ export function applyCloudDataSnapshot(snapshot) {
         }
     }
 
-    if (snapshot.disabledIntervalsActivities != null && !Array.isArray(snapshot.disabledIntervalsActivities)) {
+    if (snapshot.disabledIntervals != null && !Array.isArray(snapshot.disabledIntervals)) {
         throw new Error('Der Cloud-Datenstand enthält für "disabledIntervalsActivities" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
     }
     for (const key of ['activities', 'planned', 'races', 'strength', 'strengthPBs', 'supplements']) {
@@ -314,7 +314,7 @@ export function applyCloudDataSnapshot(snapshot) {
     }
 
     state.rawActivities = snapshot.activities;
-    state.disabledIntervalsActivities = Array.isArray(snapshot.disabledIntervalsActivities) ? snapshot.disabledIntervalsActivities : [];
+    state.disabledIntervalsActivities = Array.isArray(snapshot.disabledIntervals) ? snapshot.disabledIntervals : [];
     state.garminTelemetryStore = {};
     state.plannedActivities = snapshot.planned;
     state.dailyCheckins = snapshot.checkins;
@@ -400,7 +400,7 @@ export async function clearLocalGarminTelemetryCache() {
 export function exportDatabaseBackup() {
     const db = {
         activities: state.rawActivities,
-        disabledIntervalsActivities: state.disabledIntervalsActivities || [],
+        disabledIntervals: state.disabledIntervalsActivities || [],
         planned: state.plannedActivities,
         checkins: state.dailyCheckins,
         health: state.healthLogs,
