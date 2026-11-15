@@ -101,7 +101,7 @@ async function diagnoseGarminCloudTelemetry() {
     const rawId = activity.sourceRefs?.garminActivityId
         ?? activity.garminData?.activityId ?? activity.id;
     const activityId = String(rawId ?? '').replace(/^garmin-/, '');
-    if (!/^\\d+$/.test(activityId)) {
+    if (!/^\d+$/.test(activityId)) {
         output.textContent = 'Für diese Aktivität ist keine gültige Garmin-Aktivitäts-ID hinterlegt.';
         output.hidden = false;
         return;
@@ -183,10 +183,10 @@ async function diagnoseGarminCloudTelemetry() {
                 'Zeitreihenquelle lokal / Cloud: ' + (localSeries?.source || 'keine') + ' / ' + (cloudSeries?.source || 'keine'));
         }
         lines.push('', 'Hinweis: Es wurden keine Daten verändert und keine Messwerte ausgegeben.');
-        output.textContent = lines.join('\\n');
+        output.textContent = lines.join('\n');
     } catch (error) {
         output.textContent = 'Cloud-Diagnose fehlgeschlagen: ' + (error?.message || String(error))
-            + '\\nPrüfe, ob die Migration garmin_activity_telemetry aktiv ist und die angemeldete Sitzung Leserechte besitzt.';
+            + '\nPrüfe, ob die Migration garmin_activity_telemetry aktiv ist und die angemeldete Sitzung Leserechte besitzt.';
     } finally {
         button.disabled = false;
         button.textContent = 'Gespeicherte Garmin-Telemetrie prüfen (nur lesend)';
