@@ -12,7 +12,7 @@ import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } 
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
 import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
-import { showChartPointReadout } from './chart-readout.js';
+import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
 
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
@@ -75,32 +75,10 @@ export function renderMainLoadChart(timeline, timeframe) {
         ]},
         options:{
             responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-            onClick:(e,els)=>{if(els.length) inspectDay(filtered[els[0].index]);},
+            onClick:(e,els,chart)=>{const active=chart.getElementsAtEventForMode(e,'index',{intersect:false},true);if(!active.length)return;const index=active[0].index;const day=filtered[index];const items=chart.data.datasets.slice(0,3).map((dataset)=>({label:dataset.label.replace('Langfristige Belastung (CTL)','CTL').replace('Kurzfristige Belastung (ATL)','ATL').replace('Relativer Saldo (Garmin Load)','Saldo').replace('Relativer Saldo (EA-HF-Zonenindex)','Saldo').replace('Belastungsbilanz (sRPE)','Saldo'),value:dataset.data[index],unit:dataset.yAxisID==='y1'?(isGarmin?'%':'Punkte'):'',color:dataset.borderColor}));const acts=state.rawActivities.filter(a=>typeof a.date==='string'&&a.date.slice(0,10)===day.date);const details=acts.slice(0,4).map(act=>(act.name||act.type||'Aktivität')+' · '+(act.duration!=null?act.duration+' min':'Dauer —')+(act.hr!=null?' · Ø HF '+act.hr:'')+(act.perceivedEffort!=null?' · RPE '+act.perceivedEffort+'/10':''));if(acts.length>4)details.push('+'+(acts.length-4)+' weitere Einheiten');const healthLog=state.healthLogs[day.date];if(healthLog)details.push((healthLog.status==='sick'?'Krankheit':healthLog.status==='injured'?'Verletzung':'Gesundheit')+(healthLog.diagnosis?' · '+healthLog.diagnosis:''));showChartSummaryReadout(canvas,{title:'Belastungsverlauf',time:formatDateDDMMYY(day.date),items,details});inspectDay(day);},
             plugins:{
                 legend:{display:true,labels:{color:'#cbd5e1',usePointStyle:true,boxWidth:18,padding:12,font:{size:11},filter:item=>item.datasetIndex<3}},
-                tooltip:{
-                    backgroundColor:'rgba(15,23,42,.96)',titleColor:'#f8fafc',bodyColor:'#e2e8f0',borderWidth:0,cornerRadius:8,padding:10,
-                    callbacks:{
-                        title:items=>formatDateDDMMYY(filtered[items[0].dataIndex].date),
-                        label:item=>item.datasetIndex===3 ? 'Gesundheitseintrag' : item.dataset.label+': '+(item.parsed.y==null?'—':Number(item.parsed.y).toFixed(1)),
-                        afterBody:items=>{
-                            const day=filtered[items[0].dataIndex];
-                            const acts=state.rawActivities.filter(a=>typeof a.date==='string'&&a.date.slice(0,10)===day.date);
-                            const healthLog=state.healthLogs[day.date];
-                            const lines=acts.slice(0,4).map(act=>{
-                                const duration=act.duration!=null?act.duration+' min':'Dauer —';
-                                const distance=act.distance!=null?Number(act.distance).toFixed(1)+' km':'Distanz —';
-                                const hr=act.hr!=null?'Ø HF '+act.hr:'Ø HF —';
-                                const maxHr=act.maxHr!=null?' · Max '+act.maxHr:'';
-                                const rpe=act.perceivedEffort!=null?' · RPE '+act.perceivedEffort+'/10':'';
-                                return (act.name||act.type||'Aktivität')+': '+duration+' · '+distance+' · '+hr+maxHr+rpe;
-                            });
-                            if(acts.length>4) lines.push('+'+(acts.length-4)+' weitere Aktivitäten');
-                            if(healthLog) lines.push((healthLog.status==='sick'?'Krankheit':healthLog.status==='injured'?'Verletzung':'Gesundheit')+': '+(healthLog.diagnosis||healthLog.status||'Eintrag'));
-                            return lines;
-                        }
-                    }
-                }
+                tooltip:{enabled:false}
             },
             scales:{
                 x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:10,autoSkip:true,maxRotation:0}},
@@ -287,9 +265,15 @@ export function renderCanoeTrainingHours(records) {
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
+                onClick: (event, elements, chart) => {
+                    const active = chart.getElementsAtEventForMode(event, 'index', { intersect: false }, true);
+                    if (!active.length) return;
+                    const index = active[0].index;
+                    showChartSummaryReadout(canvas, {title:'Trainingsumfang',time:labels[index],items:chart.data.datasets.map(dataset=>({label:dataset.label,value:dataset.data[index],unit:'Std.',color:dataset.borderColor}))});
+                },
                 plugins: {
                     legend: { labels: { color: '#cbd5e1', usePointStyle: true } },
-                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' Std.' } }
+                    tooltip: { enabled: false }
                 },
                 scales: {
                     x: { ticks: { color: '#94a3b8', maxTicksLimit: 16, maxRotation: 0 }, grid: { color: '#1e293b' } },
@@ -369,7 +353,7 @@ export function renderSportDistribution(records) {
     state.pieChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${Number(ctx.parsed).toFixed(1)} Std.` } } } }
+        options: { responsive: true, maintainAspectRatio: false, onClick: (event,elements,chart) => { if(!elements.length)return; const index=elements[0].index; showChartSummaryReadout(chart.canvas,{title:'Sportverteilung',time:chart.data.labels[index],items:[{value:chart.data.datasets[0].data[index],unit:'Std.'}]}); }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
     });
 
     const legendEl = document.getElementById('sport-breakdown-legend');
@@ -516,19 +500,22 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         data: { labels: [''], datasets },
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            onClick: (event,elements,chart) => {
+                if(!elements.length)return;
+                const index=elements[0].datasetIndex;
+                const seconds=zoneTotals[index]||0;
+                const percent=totalZoneSeconds>0?seconds/totalZoneSeconds*100:0;
+                const minutes=Math.round(seconds/60);
+                const duration=Math.floor(minutes/60)+' h '+String(minutes%60).padStart(2,'0')+' min';
+                showChartSummaryReadout(canvas,{title:'Herzfrequenz-Zonen',time:chart.data.datasets[index].label,items:[{value:duration+' · '+percent.toFixed(1)+' %'}]});
+            },
             scales: {
                 x: { stacked: true, beginAtZero: true, max: totalZoneSeconds > 0 ? Number((totalZoneSeconds / 3600).toFixed(2)) : undefined, display: false, grid: { display: false }, ticks: { display: false } },
                 y: { stacked: true, display: false, grid: { display: false } }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: context => {
-                    const seconds = zoneTotals[context.datasetIndex] || 0;
-                    const percent = totalZoneSeconds > 0 ? seconds / totalZoneSeconds * 100 : 0;
-                    const minutes = Math.round(seconds / 60);
-                    const duration = Math.floor(minutes / 60) + ' h ' + String(minutes % 60).padStart(2, '0') + ' min';
-                    return context.dataset.label + ': ' + duration + ' · ' + percent.toFixed(1) + ' %';
-                } } }
+                tooltip: { enabled: false }
             }
         }
     });
