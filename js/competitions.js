@@ -208,7 +208,8 @@ export function addRace() {
     const name = document.getElementById('race-name')?.value.trim() || '';
     const date = document.getElementById('race-date')?.value || '';
     if (!name) { alert('Bitte gib einen Wettkampfnamen an.'); return; }
-    if (!date || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || Number.isNaN(parseLocalDate(date).getTime())) {
+    const parsedDate = parseLocalDate(date);
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || toLocalDateString(parsedDate) !== date) {
         alert('Bitte wähle ein gültiges Wettkampfdatum.'); return;
     }
     const location = document.getElementById('race-location')?.value.trim() || '';
