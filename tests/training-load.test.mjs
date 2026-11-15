@@ -406,7 +406,7 @@ test('Edwards TRIMP uses fixed %HRmax bands and excludes time below 50%', () => 
     assert.deepEqual(result.records[0].edwards.secondsByZone, [20, 20, 20, 20, 40]);
     assert.equal(result.records[0].edwards.below50Seconds, 20);
     assert.equal(result.records[0].edwards.value, 6.7);
-    assert.equal(result.records[0].kajo.value, 6.7);
+    assert.equal(result.records[0].kajo.value, 8.3);
     assert.equal(result.coverage.activitiesWithEdwards, 1);
 });
 
