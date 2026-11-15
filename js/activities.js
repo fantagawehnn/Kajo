@@ -1040,13 +1040,19 @@ function renderActivityComparisons(activity) {
     const currentSpeed = Number(activity.avgSpeed ?? activity.averageSpeed);
     const rows = matches.map(candidate => {
         const otherSpeed = Number(candidate.avgSpeed ?? candidate.averageSpeed);
-        const speedDiff = Number.isFinite(currentSpeed) && currentSpeed > 0 && Number.isFinite(otherSpeed)
+        // Ein gespeicherter Nullwert ist keine valide Vergleichsgeschwindigkeit:
+        // sonst würde die relative Differenz durch null geteilt.
+        const speedDiff = Number.isFinite(currentSpeed) && currentSpeed > 0
+            && Number.isFinite(otherSpeed) && otherSpeed > 0
             ? ((currentSpeed - otherSpeed) / otherSpeed * 100) : null;
-        const durationDiff = duration > 0 && Number(candidate.duration) > 0 ? Number(candidate.duration) - duration : null;
+        const candidateDuration = Number(candidate.duration);
+        const durationDiff = Number.isFinite(duration) && duration > 0
+            && Number.isFinite(candidateDuration) && candidateDuration > 0
+            ? candidateDuration - duration : null;
         return '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-slate-800 py-2 text-xs">'
             + '<div><strong class="text-slate-200">' + escape(candidate.name || 'Training') + '</strong><div class="text-[10px] text-slate-500">'
-            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + Math.round(Number(candidate.duration)) + ' min · ' + escape(getActivitySourceLabel(candidate))
-            + (candidate.distance ? ' · ' + formatKm(candidate.distance) + ' km' : '') + '</div></div>'
+            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + (Number.isFinite(candidateDuration) && candidateDuration > 0 ? Math.round(candidateDuration) + ' min' : 'Dauer nicht hinterlegt') + ' · ' + escape(getActivitySourceLabel(candidate))
+            + (Number.isFinite(Number(candidate.distance)) && Number(candidate.distance) > 0 ? ' · ' + formatKm(candidate.distance) + ' km' : '') + '</div></div>'
             + '<div class="text-right text-[10px] text-slate-400">'
             + (speedDiff !== null ? 'Geschwindigkeit: ' + (speedDiff > 0 ? '+' : '') + speedDiff.toFixed(1) + '%' : '')
             + (durationDiff !== null ? (speedDiff !== null ? '<br>' : '') + 'Dauer: ' + (durationDiff > 0 ? '+' : '') + Math.round(durationDiff) + ' min' : '')
