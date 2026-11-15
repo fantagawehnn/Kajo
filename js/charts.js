@@ -10,7 +10,7 @@
 import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
-import { getTrainingLoadData } from './training-load.js';
+import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js';
 import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
 
@@ -410,7 +410,8 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         records = (records || []).filter(activity => activity.date >= from && activity.date <= to);
     }
 
-    let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedDurationActivities = 0, estimatedZoneActivities = 0;
+    let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedDurationActivities = 0, profileRhrFallbackActivities = 0;
+    const mixedZoneBounds = {};
     for (const activity of records || []) {
         const heartRateSeries = getGarminHeartRateSeries(activity);
         const hr = heartRateSeries?.hr;
@@ -418,20 +419,22 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
             missingTelemetry++;
             continue;
         }
-        let zones = state.settings?.heartRateZones?.[activity.type];
-        const validZones = values => Array.isArray(values) && values.length === 4
-            && values.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 240)
-            && values.every((value, index) => index === 0 || Number(value) > Number(values[index - 1]));
-        if (!validZones(zones)) {
-            const maxHr = Number(state.profile?.maxHr);
-            if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
-                zones = [0.73, 0.80, 0.87, 0.93].map(percent => Math.round(maxHr * percent));
-                estimatedZoneActivities++;
-            } else {
-                missingZones++;
-                continue;
-            }
+        const maxHr = Number(state.profile?.maxHr);
+        const windowDays = state.settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+        const adaptiveRhr = getAdaptiveRestingHr(
+            state.dailyCheckins || {},
+            String(activity?.date || '').slice(0, 10),
+            windowDays,
+            state.profile || {}
+        );
+        const zones = adaptiveRhr?.value != null
+            ? calculateHeartRateReserveZones(maxHr, adaptiveRhr.value)
+            : null;
+        if (!Array.isArray(zones)) {
+            missingZones++;
+            continue;
         }
+        if (adaptiveRhr.source === 'profile-fallback') profileRhrFallbackActivities++;
 
         const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
         const time = heartRateSeries.time;
@@ -461,7 +464,8 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         });
 
         if (!totals[activity.type]) totals[activity.type] = [0, 0, 0, 0, 0];
-        zoneBounds[activity.type] = zones.map(Number);
+        if (!zoneBounds[activity.type]) zoneBounds[activity.type] = zones.map(Number);
+        else if (JSON.stringify(zoneBounds[activity.type]) !== JSON.stringify(zones)) mixedZoneBounds[activity.type] = true;
         let activityHasValidSample = false;
         hr.forEach((rawBpm, index) => {
             const bpm = Number(rawBpm);
@@ -537,10 +541,12 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
                 <div class="flex items-center justify-between gap-2"><strong class="text-xs text-white">${catalog[key]?.label || key}</strong><span class="text-[10px] text-slate-400">${duration(totalSeconds)} erfasst</span></div>
                 <div class="grid grid-cols-5 gap-1">${zoneSeconds.map((seconds, index) => {
                     const percent = totalSeconds > 0 ? seconds / totalSeconds * 100 : 0;
-                    const bounds = zoneBounds[key] || state.settings?.heartRateZones?.[key]?.map(Number) || [];
+                    const bounds = mixedZoneBounds[key] ? null : (zoneBounds[key] || []);
+                    const reserveLabels = ['≤ 60 % HF-Reserve', '60–70 %', '70–80 %', '80–90 %', '> 90 %'];
                     const lower = index === 0 ? null : bounds[index - 1] + 1;
                     const upper = index === 4 ? null : bounds[index];
-                    const rangeLabel = lower === null ? `≤ ${upper} bpm`
+                    const rangeLabel = !bounds.length ? reserveLabels[index]
+                        : lower === null ? `≤ ${upper} bpm`
                         : upper === null ? `> ${bounds[3]} bpm`
                         : `${lower}–${upper} bpm`;
                     return `<div class="min-w-0"><div class="text-[10px] font-semibold text-slate-300">Z${index + 1}</div><div class="text-[9px] text-slate-400 whitespace-nowrap">${rangeLabel}</div><div class="text-xs font-semibold text-white mt-1">${percent.toFixed(0)}%</div><div class="text-[9px] text-slate-500">${duration(seconds)}</div></div>`;
@@ -550,7 +556,7 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
         summary.innerHTML = rows.join('');
     }
 
-    if (note) note.textContent = usable + ' Einheiten ausgewertet · ' + (missingTelemetry + missingZones + missingDuration) + ' nicht auswertbar' + (estimatedDurationActivities ? ' · ' + estimatedDurationActivities + ' mit geschätzter Dauer' : '') + (estimatedZoneActivities ? ' · ' + estimatedZoneActivities + ' mit HFmax-Zonen-Näherung' : '') + '. Prozentwerte beziehen sich auf erfasste HF-Zeit.';
+    if (note) note.textContent = usable + ' Einheiten ausgewertet · ' + (missingTelemetry + missingZones + missingDuration) + ' nicht auswertbar' + (estimatedDurationActivities ? ' · ' + estimatedDurationActivities + ' mit geschätzter Dauer' : '') + (profileRhrFallbackActivities ? ' · ' + profileRhrFallbackActivities + ' mit statischem Ruhe-HF-Profil-Fallback' : '') + '. Die KAJO-Zonen basieren auf der Herzfrequenzreserve; bei wechselnder adaptiver Ruhe-HF werden die aggregierten Bereiche als Prozentanteile der HF-Reserve ausgewiesen.';
 }
 
 export function renderRaceTimeline(){
