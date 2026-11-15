@@ -8341,3 +8341,54 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
         height: 96px;
     }
 }
+
+/* Refined KPI rings: all three share one horizontal centerline; duration is layered in front. */
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+    width: min(100%, 340px);
+    height: 152px;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-duration {
+    top: 0;
+    left: 50%;
+    z-index: 10;
+    width: 148px;
+    height: 148px;
+    transform: translateX(-50%);
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-distance {
+    top: 20px;
+    left: calc(50% - 135px);
+    z-index: 2;
+    width: 108px;
+    height: 108px;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-heart-rate {
+    top: 20px;
+    right: calc(50% - 135px);
+    z-index: 2;
+    width: 108px;
+    height: 108px;
+}
+@media (max-width: 520px) {
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+        width: min(100%, 320px);
+        height: 136px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-duration {
+        top: 0;
+        width: 132px;
+        height: 132px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-distance {
+        top: 18px;
+        left: calc(50% - 118px);
+        width: 96px;
+        height: 96px;
+    }
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings > .activity-metric-circle-card.is-heart-rate {
+        top: 18px;
+        right: calc(50% - 118px);
+        width: 96px;
+        height: 96px;
+    }
+}
