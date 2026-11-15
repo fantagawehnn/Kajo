@@ -2174,9 +2174,8 @@ async function handleAuthSession(session) {
                 console.info('KAJO: Intervals.icu-Aktivitäten deaktiviert:', intervalsDeactivation);
             }
 
-            // Einmaliger Abgleich: lokale und ältere Snapshot-Telemetrie werden
-            // nur in noch nicht belegte Cloud-Datensätze übernommen. Vorhandene
-            // Cloud-Telemetrie bleibt unverändert.
+            // Lokale und ältere Snapshot-Telemetrie sofort in den Arbeitsspeicher
+            // übernehmen. Der zeitintensive Cloud-Abgleich läuft nach dem ersten Rendern.
             const migrationMap = new Map();
             for (const record of [
                 ...localTelemetryForMigration,
@@ -2185,36 +2184,6 @@ async function handleAuthSession(session) {
             ]) migrationMap.set(String(record.garmin_activity_id), record);
             const migrationCandidates = Array.from(migrationMap.values());
             mergeGarminTelemetryRecords(migrationCandidates);
-            try {
-                const cloudTelemetry = await withActivationTimeout(
-                    syncGarminTelemetryToCloud(supabase, userId, migrationCandidates),
-                    'Die Übertragung deiner Garmin-Telemetrie in die Cloud',
-                    120000
-                );
-                const cloudIds = new Set(cloudTelemetry.records.map(record => String(record.garmin_activity_id)));
-                const missingAfterReadback = migrationCandidates
-                    .map(record => String(record.garmin_activity_id))
-                    .filter(activityId => !cloudIds.has(activityId));
-                if (missingAfterReadback.length > 0) {
-                    throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
-                }
-
-                // Cloud-Datensätze sind vollständig zurückgelesen. Sie bleiben im
-                // Arbeitsspeicher für die Diagramme; alte persistente lokale Kopien
-                // werden erst jetzt entfernt.
-                mergeGarminTelemetryRecords(cloudTelemetry.records);
-                await clearLocalGarminTelemetryCache();
-                console.info('KAJO: Garmin-Telemetrie-Cloudabgleich abgeschlossen:', {
-                    uploaded: cloudTelemetry.uploaded,
-                    existing: cloudTelemetry.existing,
-                    total: cloudTelemetry.total,
-                    localTelemetryCacheCleared: true
-                });
-            } catch (telemetryMigrationError) {
-                // Die vorhandenen lokalen/Legacy-Daten bleiben im Arbeitsspeicher
-                // und in ihrem bisherigen Cache erhalten. Es wird nichts gelöscht.
-                console.warn('KAJO: Garmin-Telemetrie-Cloudabgleich noch nicht vollständig:', telemetryMigrationError);
-            }
 
             await domReady;
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
@@ -2240,6 +2209,37 @@ async function handleAuthSession(session) {
                     detail: { message: renderError?.message || 'Fehler beim Aufbau der App-Oberfläche.' }
                 }));
             }
+
+            // Der erste sichtbare App-Aufbau wartet nicht auf den Telemetrie-Upload.
+            // Daten werden erst nach erfolgreichem Cloud-Readback lokal bereinigt.
+            void (async () => {
+                try {
+                    const cloudTelemetry = await withActivationTimeout(
+                        syncGarminTelemetryToCloud(supabase, userId, migrationCandidates),
+                        'Die Übertragung deiner Garmin-Telemetrie in die Cloud',
+                        120000
+                    );
+                    if (sequence !== activationSequence || activeAppUserId !== userId) return;
+                    const cloudIds = new Set(cloudTelemetry.records.map(record => String(record.garmin_activity_id)));
+                    const missingAfterReadback = migrationCandidates
+                        .map(record => String(record.garmin_activity_id))
+                        .filter(activityId => !cloudIds.has(activityId));
+                    if (missingAfterReadback.length > 0) {
+                        throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
+                    }
+                    mergeGarminTelemetryRecords(cloudTelemetry.records);
+                    await clearLocalGarminTelemetryCache();
+                    console.info('KAJO: Garmin-Telemetrie-Cloudabgleich abgeschlossen:', {
+                        uploaded: cloudTelemetry.uploaded,
+                        existing: cloudTelemetry.existing,
+                        total: cloudTelemetry.total,
+                        localTelemetryCacheCleared: true
+                    });
+                } catch (telemetryMigrationError) {
+                    // Bei Fehlern bleiben lokale und Legacy-Telemetriedaten erhalten.
+                    console.warn('KAJO: Garmin-Telemetrie-Cloudabgleich noch nicht vollständig:', telemetryMigrationError);
+                }
+            })();
 
             await refreshCloudInitialTransferState(userId);
             await loadCloudProfile(session);
