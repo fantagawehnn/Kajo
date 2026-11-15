@@ -7,7 +7,7 @@ import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
  * profile restingHr may be used as an explicitly marked static fallback.
  */
 export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 14, profile = {}) {
-    const days = Math.min(28, Math.max(3, Math.round(Number(windowDays) || 7)));
+    const days = Math.min(28, Math.max(3, Math.round(Number(windowDays) || 14)));
     const endKey = String(date || '').slice(0, 10);
     if (endKey.length !== 10 || endKey[4] !== '-' || endKey[7] !== '-') return null;
     const end = new Date(endKey + 'T12:00:00');
