@@ -1461,17 +1461,44 @@ function mergeGarminActivity(existing, incoming) {
     return changed;
 }
 function selectAllGarminActivities(){document.querySelectorAll('#garmin-activity-preview [data-garmin-activity-id]:not(:disabled)').forEach(e=>{e.checked=true;});}
+let garminFitDependenciesPromise = null;
+async function getGarminFitDependencies() {
+    if (!garminFitDependenciesPromise) {
+        garminFitDependenciesPromise = (async () => {
+            // Die frühere jsDelivr-URL zeigte auf eine nicht vorhandene Paketversion
+            // (1.19.0). ESM-Imports laden die tatsächlich veröffentlichte 1.9.5-Version
+            // und vermeiden eine stille Abhängigkeit von globalen Script-Variablen.
+            const [zipModule, fitModule] = await Promise.all([
+                window.JSZip ? Promise.resolve(null) : import('https://esm.sh/jszip@3.10.1'),
+                import('https://esm.sh/fit-file-parser@1.9.5')
+            ]);
+            const ZipLibrary = window.JSZip || zipModule?.default || zipModule?.JSZip;
+            const FitParserClass = window.FitParser || fitModule?.default?.default || fitModule?.default || fitModule?.FitParser;
+            if (typeof ZipLibrary?.loadAsync !== 'function') {
+                throw new Error('ZIP-Bibliothek konnte nicht geladen werden (JSZip).');
+            }
+            if (typeof FitParserClass !== 'function') {
+                throw new Error('FIT-Parser konnte nicht geladen werden (fit-file-parser 1.9.5).');
+            }
+            return { ZipLibrary, FitParserClass };
+        })().catch(error => {
+            garminFitDependenciesPromise = null;
+            throw error;
+        });
+    }
+    return garminFitDependenciesPromise;
+}
 async function downloadGarminFitTelemetry(activityId) {
-    if (!window.JSZip || typeof FitParser !== 'function') throw new Error('FIT-Parser oder ZIP-Bibliothek ist nicht verfügbar.');
+    const { ZipLibrary, FitParserClass } = await getGarminFitDependencies();
     const result = await callGarminFunction({ action: 'download-fit', activityId: String(activityId) });
     const binary = atob(result.zipBase64 || '');
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const zip = await JSZip.loadAsync(bytes);
+    const zip = await ZipLibrary.loadAsync(bytes);
     const fitFile = Object.values(zip.files).find(file => !file.dir && /\.fit$/i.test(file.name));
     if (!fitFile) throw new Error('In der Garmin-Datei wurde keine FIT-Datei gefunden.');
     const buffer = await fitFile.async('arraybuffer');
-    const parser = new FitParser({ force: true, speedUnit: 'km/h', lengthUnit: 'km', elapsedRecordField: true, mode: 'both' });
+    const parser = new FitParserClass({ force: true, speedUnit: 'km/h', lengthUnit: 'km', elapsedRecordField: true, mode: 'both' });
     const fit = await new Promise((resolve, reject) => parser.parse(buffer, (err, data) => err ? reject(err) : resolve(data)));
     const records = Array.isArray(fit.records) ? fit.records : [];
     const parsedMessages = fit.messages && typeof fit.messages === 'object' ? fit.messages : {};
