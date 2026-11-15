@@ -168,8 +168,51 @@ function showIntervalsSyncToast(message = 'Intervals.icu-Synchronisierung läuft
     if (text) text.textContent = message;
     intervalsSyncToast.hidden = false;
 }
+function isGarminSyncConfigured() {
+    const configured = getUserLocalSetting('garmin_connected');
+    return configured !== 'false';
+}
+
+function intervalsSyncPauseMessage() {
+    return 'Intervals.icu-Aktivitätssynchronisierung ist pausiert, solange Garmin verbunden ist. Garmin bleibt die führende Aktivitätsquelle.';
+}
+
+/**
+ * Verschiebt reine Intervals.icu-Aktivitäten aus dem aktiven Trainingsbestand.
+ * Garmin-Datensätze mit zusätzlichem Intervals-Quellverweis bleiben erhalten.
+ * Die verschobenen Datensätze bleiben separat gespeichert und werden nicht gelöscht.
+ */
+export function deactivateIntervalsActivities() {
+    const isGarmin = activity => activity?.source === 'garmin'
+        || activity?.sourceRefs?.garminActivityId != null
+        || activity?.garminData?.activityId != null
+        || activity?.sources?.includes?.('garmin');
+    const isIntervals = activity => activity?.source === 'intervals'
+        || activity?.sourceRefs?.intervalsActivityId != null
+        || activity?.sources?.includes?.('intervals');
+    const disabled = [];
+    state.rawActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
+        if (isIntervals(activity) && !isGarmin(activity)) {
+            disabled.push(activity);
+            return false;
+        }
+        return true;
+    });
+    const prior = Array.isArray(state.disabledIntervalsActivities) ? state.disabledIntervalsActivities : [];
+    const byId = new Map(prior.map(activity => [String(activity.sourceRefs?.intervalsActivityId ?? activity.id), activity]));
+    disabled.forEach(activity => byId.set(String(activity.sourceRefs?.intervalsActivityId ?? activity.id), activity));
+    state.disabledIntervalsActivities = Array.from(byId.values());
+    if (disabled.length) saveDataToLocalStorage();
+    return { deactivated: disabled.length, retained: state.disabledIntervalsActivities.length };
+}
+
 export function openIntervalsSyncModal() {
     document.getElementById('intervals-sync-modal').classList.remove('hidden');
+    const status = document.getElementById('icu-sync-status');
+    if (isGarminSyncConfigured() && status) {
+        status.textContent = intervalsSyncPauseMessage();
+        status.className = 'text-xs font-semibold text-amber-400';
+    }
     if (getUserLocalSetting('icu_athlete_id')) {
         document.getElementById('icu-athlete-id').value = getUserLocalSetting('icu_athlete_id') || '';
     }
@@ -184,9 +227,16 @@ export function closeIntervalsSyncModal() {
 }
 
 export async function performIntervalsLiveSync() {
+    const statusEl = document.getElementById('icu-sync-status');
+    if (isGarminSyncConfigured()) {
+        if (statusEl) {
+            statusEl.textContent = intervalsSyncPauseMessage();
+            statusEl.className = 'text-xs font-semibold text-amber-400';
+        }
+        return;
+    }
     const athleteId = document.getElementById('icu-athlete-id').value.trim();
     const apiKey = document.getElementById('icu-api-key').value.trim();
-    const statusEl = document.getElementById('icu-sync-status');
     const loadActivities = document.getElementById('icu-load-activities')?.checked === true;
     const loadStreams = document.getElementById('icu-load-streams')?.checked === true;
     const loadWellness = document.getElementById('icu-load-wellness')?.checked === true;

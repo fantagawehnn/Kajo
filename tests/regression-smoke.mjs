@@ -128,6 +128,36 @@ globalThis.fetch = async url => url.includes('/activities')
         id: '2026-11-10', sleepSecs: 28800, weight: null, restingHR: 48, hrv: 72, respiration: 15.2
     }] };
 const importer = await import('../js/import.js');
+
+storage.setUserLocalSetting('garmin_connected', 'true');
+let intervalsFetchesWhileGarminConnected = 0;
+globalThis.fetch = async () => {
+    intervalsFetchesWhileGarminConnected++;
+    return { ok: true, json: async () => [] };
+};
+document.getElementById('icu-load-activities').checked = true;
+await importer.performIntervalsLiveSync();
+assert.equal(intervalsFetchesWhileGarminConnected, 0, 'Intervals sync must pause while Garmin is connected');
+
+state.rawActivities = [
+    { id: 'icu-only-1', source: 'intervals', sourceId: 'icu-only-1', name: 'Intervals only' },
+    { id: 'garmin-123456', source: 'garmin', sourceRefs: { garminActivityId: '123456', intervalsActivityId: 'icu-linked' }, name: 'Garmin canonical' },
+    { id: 'manual-1', source: 'manual', name: 'Manual activity' }
+];
+state.disabledIntervalsActivities = [];
+storage.setUserLocalSetting('garmin_connected', 'false');
+const disabledSummary = importer.deactivateIntervalsActivities();
+assert.equal(disabledSummary.deactivated, 1);
+assert.equal(state.rawActivities.some(activity => activity.id === 'icu-only-1'), false);
+assert.equal(state.rawActivities.some(activity => activity.id === 'garmin-123456'), true);
+assert.equal(state.disabledIntervalsActivities[0].id, 'icu-only-1');
+assert.equal(storage.getUserDataSnapshot().disabledIntervals[0].id, 'icu-only-1');
+assert.equal(JSON.parse(store.get('endurance:user:smoke-test-user:disabledIntervals'))[0].id, 'icu-only-1');
+globalThis.fetch = async url => url.includes('/activities')
+    ? { ok: true, json: async () => [] }
+    : { ok: true, json: async () => [{
+        id: '2026-11-10', sleepSecs: 28800, weight: null, restingHR: 48, hrv: 72, respiration: 15.2
+    }] };
 document.getElementById('icu-athlete-id').value = 'test-athlete';
 document.getElementById('icu-api-key').value = 'test-key';
 document.getElementById('icu-load-wellness').checked = true;

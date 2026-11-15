@@ -25,6 +25,7 @@ export function initializeIndexedDBPersistence() {
 
 const COLLECTION_KEYS = {
     activities: 'rawActivities',
+    disabledIntervals: 'disabledIntervalsActivities',
     garminTelemetry: 'garminTelemetryStore',
     planned: 'plannedActivities',
     checkins: 'dailyCheckins',
@@ -190,6 +191,7 @@ function migrateDailyCheckinScale() {
 
 function defaultUserState() {
     state.rawActivities = [];
+    state.disabledIntervalsActivities = [];
     state.garminTelemetryStore = {};
     state.plannedActivities = [];
     state.dailyCheckins = {};
@@ -229,6 +231,7 @@ export async function loadStateForUser(userId) {
         Array.isArray(loaded.rawActivities) ? loaded.rawActivities : [],
         state.garminTelemetryStore
     );
+    state.disabledIntervalsActivities = Array.isArray(loaded.disabledIntervalsActivities) ? loaded.disabledIntervalsActivities : [];
     state.plannedActivities = Array.isArray(loaded.plannedActivities) ? loaded.plannedActivities : [];
     state.dailyCheckins = loaded.dailyCheckins && typeof loaded.dailyCheckins === 'object' ? loaded.dailyCheckins : {};
     state.healthLogs = loaded.healthLogs && typeof loaded.healthLogs === 'object' ? loaded.healthLogs : {};
@@ -271,7 +274,7 @@ export function getUserDataSnapshot(options = {}) {
         ? state.rawActivities
         : stripGarminTelemetryFromActivities(state.rawActivities);
     return {
-        activities, planned: state.plannedActivities,
+        activities, disabledIntervals: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
@@ -296,6 +299,9 @@ export function applyCloudDataSnapshot(snapshot) {
         }
     }
 
+    if (snapshot.disabledIntervals != null && !Array.isArray(snapshot.disabledIntervals)) {
+        throw new Error('Der Cloud-Datenstand enthält für "disabledIntervals" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
+    }
     for (const key of ['activities', 'planned', 'races', 'strength', 'strengthPBs', 'supplements']) {
         if (!Array.isArray(snapshot[key])) {
             throw new Error('Der Cloud-Datenstand enthält für "' + key + '" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
@@ -308,6 +314,7 @@ export function applyCloudDataSnapshot(snapshot) {
     }
 
     state.rawActivities = snapshot.activities;
+    state.disabledIntervalsActivities = Array.isArray(snapshot.disabledIntervals) ? snapshot.disabledIntervals : [];
     state.garminTelemetryStore = {};
     state.plannedActivities = snapshot.planned;
     state.dailyCheckins = snapshot.checkins;
@@ -393,6 +400,7 @@ export async function clearLocalGarminTelemetryCache() {
 export function exportDatabaseBackup() {
     const db = {
         activities: state.rawActivities,
+        disabledIntervals: state.disabledIntervalsActivities || [],
         planned: state.plannedActivities,
         checkins: state.dailyCheckins,
         health: state.healthLogs,
