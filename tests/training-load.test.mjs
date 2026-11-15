@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
-import { calculateGarminZoneLoad, getTrainingLoadData } from '../js/training-load.js';
+import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis } from '../js/training-load.js';
 import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
 
 function dateKey(date) {
@@ -388,4 +388,49 @@ test('valid sport-specific HR zones take precedence over global zones', () => {
     assert.ok(load);
     assert.equal(load.zoneSource, 'sport-specific');
     assert.deepEqual(load.zones, [105, 125, 145, 165]);
+});
+
+
+test('Edwards TRIMP uses fixed %HRmax bands and excludes time below 50%', () => {
+    const activity = {
+        id: 'edwards-fixture', source: 'garmin', type: 'Running', date: completedDay,
+        garminTelemetry: {
+            hr: [90, 110, 130, 150, 170, 190],
+            time: [0, 20, 40, 60, 80, 100]
+        }
+    };
+    const result = getHeartRateZoneAnalysis([activity], {
+        heartRateZones: { Running: [100, 120, 140, 160] }
+    }, { maxHr: 200 });
+    assert.equal(result.records.length, 1);
+    assert.deepEqual(result.records[0].edwards.secondsByZone, [20, 20, 20, 20, 20]);
+    assert.equal(result.records[0].edwards.below50Seconds, 20);
+    assert.equal(result.records[0].edwards.value, 5);
+    assert.equal(result.records[0].kajo.value, 6.7);
+    assert.equal(result.coverage.activitiesWithEdwards, 1);
+});
+
+test('Edwards TRIMP is unavailable without a valid profile maximum heart rate', () => {
+    const activity = {
+        id: 'edwards-no-max', source: 'garmin', date: completedDay,
+        garminTelemetry: { hr: [120, 130, 140, 150], time: [0, 20, 40, 60] }
+    };
+    const result = getHeartRateZoneAnalysis([activity], {}, {});
+    assert.equal(result.records.length, 0);
+    assert.equal(result.coverage.activitiesWithoutUsableEdwardsMaxHr, 1);
+});
+
+test('Edwards TRIMP excludes telemetry gaps longer than 30 seconds', () => {
+    const activity = {
+        id: 'edwards-gap', source: 'garmin', date: completedDay,
+        garminTelemetry: {
+            hr: [110, 130, 150, 170, 190],
+            time: [0, 20, 60, 80, 100]
+        }
+    };
+    const result = getHeartRateZoneAnalysis([activity], {}, { maxHr: 200 });
+    assert.equal(result.records.length, 1);
+    assert.equal(result.records[0].edwards.excludedIntervalCount, 1);
+    assert.equal(result.records[0].edwards.excludedIntervalSeconds, 40);
+    assert.equal(result.records[0].edwards.totalSeconds, 60);
 });
