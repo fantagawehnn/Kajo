@@ -167,7 +167,8 @@ export async function saveKajoReminder(event) {
     if (error) throw error;
     resetKajoReminderForm();
     await renderKajoPushSettings();
-    setStatus("Deine Erinnerung wurde gespeichert. Für den Versand muss der KAJO-Pushdienst eingerichtet und aktiv sein.", "");
+    // renderKajoPushSettings() displays the actual browser push-registration state.
+    // Do not overwrite it with a generic message suggesting push must be activated.
   } catch (error) {
     setStatus(error.message || "Die Erinnerung konnte nicht gespeichert werden.", "is-error");
   }
