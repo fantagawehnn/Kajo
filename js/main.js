@@ -491,7 +491,6 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
 
     let importedValues = 0;
     let changedDays = 0;
-    let recordsWithPayload = 0;
     for (const [date, records] of byDate) {
         const existing = state.dailyCheckins[date] || {};
         const updates = {};
@@ -569,10 +568,15 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             }
         }
 
-        const keys = Object.keys(updates);
-        if (!keys.length) continue;
+        const metricKeys = Object.keys(candidates).filter(key => {
+            const targetKey = key === 'rhr' ? 'garminRhr' : key;
+            return Object.prototype.hasOwnProperty.call(updates, targetKey);
+        });
+        if (!metricKeys.length) continue;
         if (!dryRun) state.dailyCheckins[date] = { ...existing, ...updates };
-        importedValues += keys.length;
+        // Nur tatsächlich ergänzte Messwerte zählen, nicht das zusätzliche
+        // measurementSources-Metadatenobjekt.
+        importedValues += metricKeys.length;
         changedDays++;
     }
 
