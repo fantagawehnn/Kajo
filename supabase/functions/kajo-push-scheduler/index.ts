@@ -155,7 +155,17 @@ Deno.serve(async (request) => {
           delivered++;
           sent++;
         } catch (error) {
-          const status = (error as { response?: Response })?.response?.status;
+          const response = (error as { response?: Response })?.response;
+          const status = response?.status;
+          let responseBody = "";
+          if (response) {
+            try {
+              responseBody = await response.clone().text();
+            } catch {
+              responseBody = "Response body could not be read.";
+            }
+          }
+
           if (status === 404 || status === 410) {
             const { error: deleteError } = await supabase
               .from("kajo_push_subscriptions")
@@ -164,7 +174,12 @@ Deno.serve(async (request) => {
             if (deleteError) console.error("Could not remove expired subscription:", deleteError);
             else removed++;
           } else {
-            console.error("Push delivery failed for schedule:", schedule.id, error);
+            console.error("Push delivery failed:", {
+              scheduleId: schedule.id,
+              status,
+              statusText: response?.statusText,
+              responseBody,
+            });
           }
         }
       }
