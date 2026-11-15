@@ -33,7 +33,7 @@ import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengt
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=10';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
-import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=4';
+import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds } from './garmin-cloud-telemetry.js?v=5';
 
 /* Selten genutzte Bereiche werden erst bei Bedarf geladen.
    Die Promise-Caches verhindern parallele Mehrfachimporte. */
@@ -2264,6 +2264,54 @@ function getLocalCalendarDate(date = new Date()) {
     return local.toISOString().slice(0, 10);
 }
 
+/**
+ * Lädt beim Konto-Start die Cloud-Rohtelemetrie der letzten 90 Kalendertage.
+ * Die App-Oberfläche ist zu diesem Zeitpunkt bereits sichtbar; der Abruf
+ * läuft im Hintergrund und fragt nur IDs der tatsächlich geladenen Aktivitäten ab.
+ */
+async function loadRecentGarminTelemetryOnOpen(userId, sequence) {
+    if (!userId || activeAppUserId !== userId || !appUserReady) return;
+    const today = getLocalCalendarDate();
+    const cutoffDate = new Date(today + 'T12:00:00');
+    cutoffDate.setDate(cutoffDate.getDate() - 89);
+    const cutoff = getLocalCalendarDate(cutoffDate);
+    const activityIds = Array.from(new Set((state.rawActivities || [])
+        .filter(activity => {
+            const activityDate = String(activity?.date || activity?.startTime || '').slice(0, 10);
+            const isGarmin = activity?.source === 'garmin'
+                || activity?.sourceRefs?.garminActivityId != null
+                || activity?.garminData?.activityId != null
+                || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'));
+            return isGarmin && /^\\d{4}-\\d{2}-\\d{2}$/.test(activityDate)
+                && activityDate >= cutoff && activityDate <= today;
+        })
+        .map(activity => activity?.sourceRefs?.garminActivityId
+            ?? activity?.garminData?.activityId ?? activity?.id)
+        .map(value => String(value ?? '').replace(/^garmin-/, ''))
+        .filter(value => /^\\d+$/.test(value))));
+    if (!activityIds.length) {
+        console.info('KAJO: Keine Garmin-Aktivitäten im 90-Tage-Fenster für den Telemetrieabruf gefunden.');
+        return;
+    }
+    try {
+        const records = await loadGarminTelemetryForActivityIds(supabase, userId, activityIds);
+        if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
+        const merged = mergeGarminTelemetryRecords(records);
+        if (merged > 0) {
+            initEngine();
+        }
+        console.info('KAJO: Cloud-Telemetrie der letzten 90 Tage geladen:', {
+            requestedActivities: activityIds.length,
+            loadedSeries: records.length,
+            mergedActivities: merged,
+            from: cutoff,
+            to: today
+        });
+    } catch (error) {
+        console.warn('KAJO: Cloud-Telemetrie der letzten 90 Tage konnte nicht vollständig geladen werden:', error);
+    }
+}
+
 async function syncGarminTodayOnOpen(userId) {
     if (!userId || !appUserReady || activeAppUserId !== userId) return;
     const date = getLocalCalendarDate();
@@ -2506,6 +2554,7 @@ async function handleAuthSession(session) {
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
                 void syncGarminTodayOnOpen(userId);
+                void loadRecentGarminTelemetryOnOpen(userId, sequence);
                 initializeNutritionRemindersWhenIdle();
             } catch (renderError) {
                 console.error('Die App-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
