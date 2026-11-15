@@ -17,7 +17,7 @@ export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profil
     const startKey = [start.getFullYear(), String(start.getMonth()+1).padStart(2,'0'), String(start.getDate()).padStart(2,'0')].join('-');
     const readings = Object.entries(dailyCheckins || {})
         .filter(([key, row]) => key >= startKey && key <= endKey && row)
-        .map(([key, row]) => ({ date: key, value: Number(row.rhr) }))
+        .map(([key, row]) => ({ date: key, value: Number(row.garminRhr ?? row.rhr) }))
         .filter(item => Number.isFinite(item.value) && item.value >= 30 && item.value <= 120)
         .sort((a,b) => a.date.localeCompare(b.date));
     const minimumReadings = Math.max(3, Math.ceil(days * 0.6));
