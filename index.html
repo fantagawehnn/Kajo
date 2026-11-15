@@ -31,8 +31,16 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white">
 
     <!-- Top Navigation Bar -->
-        <!-- Supabase-Anmeldung: Die App bleibt bis zur Anmeldung verborgen. -->
-    <section id="auth-screen" class="min-h-screen flex items-center justify-center p-5">
+        <!-- Startzustand: erst Auth-Status prüfen, dann Login oder App anzeigen. -->
+    <section id="auth-boot-screen" class="min-h-screen flex items-center justify-center p-5" role="status" aria-live="polite">
+        <div class="text-center">
+            <img src="./icons/kajo-icon.svg" alt="" width="54" height="54" style="margin:0 auto 14px">
+            <p style="color:#cbd5e1;font-size:14px;font-weight:600">KAJO wird gestartet …</p>
+        </div>
+    </section>
+
+    <!-- Supabase-Anmeldung: Die App bleibt bis zur Anmeldung verborgen. -->
+    <section id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-5">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-7 shadow-2xl space-y-5">
             <div class="text-center space-y-2">
                 <img src="./branding/Herzschlag%20im%20Kajak-Wellenlogo.png?v=2" alt="KAJO – Herzschlag und Kajak auf einer Welle" class="w-full max-w-xs h-auto mx-auto object-contain">
@@ -1521,7 +1529,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js"></script>
-    <script type="module" src="js/main.js?v=104"></script>
+    <script type="module" src="js/main.js?v=105"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
