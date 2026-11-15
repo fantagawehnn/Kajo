@@ -58,7 +58,7 @@ export function extractGarminTelemetryRecords(activities, telemetryStore = {}) {
 async function fetchRowsByActivityIds(supabase, userId, activityIds) {
     const uniqueIds = Array.from(new Set((Array.isArray(activityIds) ? activityIds : [])
         .map(value => String(value ?? '').replace(/^garmin-/, ''))
-        .filter(value => /^\\d+$/.test(value))));
+        .filter(value => /^\d+$/.test(value))));
     const rows = [];
     const QUERY_BATCH_SIZE = 100;
     for (let offset = 0; offset < uniqueIds.length; offset += QUERY_BATCH_SIZE) {
