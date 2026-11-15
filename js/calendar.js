@@ -134,6 +134,7 @@ function calendarEventIcons(date) {
     let html = '';
     if (races.length) html += '<i data-lucide="trophy" class="calendar-event-icon calendar-event-race" title="Wettkampf" aria-label="Wettkampf"></i>';
     if (cycle) html += '<i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle" title="Menstruation (erfasst)" aria-label="Menstruation"></i>';
+    else html += periodCalendarMarker(date);
     if (health?.status === 'sick') html += '<i data-lucide="thermometer" class="calendar-event-icon calendar-event-sick" title="Krankheit" aria-label="Krankheit"></i>';
     if (health?.status === 'injured') html += '<i data-lucide="bandage" class="calendar-event-icon calendar-event-injured" title="Verletzung" aria-label="Verletzung"></i>';
     return html;
@@ -369,11 +370,17 @@ export function openCalendarRaceCreate() {
 
 export function toggleCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.toggle('hidden');}
 export function closeCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.add('hidden');}
+export function toggleCalendarFormatMenu(){const menu=document.getElementById('calendar-format-menu'),button=document.getElementById('calendar-format-button');const opening=menu?.classList.contains('hidden');menu?.classList.toggle('hidden');button?.setAttribute('aria-expanded',String(Boolean(opening)));}
+export function closeCalendarFormatMenu(){document.getElementById('calendar-format-menu')?.classList.add('hidden');document.getElementById('calendar-format-button')?.setAttribute('aria-expanded','false');}
+function calendarSeason(){const s=state.settings?.calendarSeason;return s&&/^\\d{4}-\\d{2}-\\d{2}$/.test(s.start||'')&&/^\\d{4}-\\d{2}-\\d{2}$/.test(s.end||'')&&s.start<=s.end?s:null;}
+export function openCalendarHealthCreate(){window.openHealthLogForDate?.(state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate));}
+export function openCalendarPeriodCreate(){const date=state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate);openDayEditor(date);document.getElementById('day-period')?.closest('label')?.scrollIntoView?.({behavior:'smooth',block:'center'});}
 
 export function setCalendarFormat(fmt) {
-    const nextFormat = ['day', 'week', 'month', 'year', 'activities'].includes(fmt) ? fmt : 'week';
+    const nextFormat = fmt==='season'&&calendarSeason()?'season':(['day','week','month','year','activities'].includes(fmt)?fmt:'week');
+    closeCalendarFormatMenu();
     state.activeCalendarFormat = nextFormat;
-    ['day', 'week', 'month', 'year', 'activities'].forEach(f => {
+    ['day', 'week', 'month', 'year', 'activities', 'season'].forEach(f => {
         const btn = document.getElementById(`btn-fmt-${f}`);
         if (btn) {
             const active = f === nextFormat;
@@ -385,6 +392,7 @@ export function setCalendarFormat(fmt) {
 }
 
 export function navigateCalendarPeriod(dir) {
+    if(state.activeCalendarFormat==='season')return;
     if (state.activeCalendarFormat === 'day') {
         state.currentCalendarDate.setDate(state.currentCalendarDate.getDate() + dir);
     } else if (state.activeCalendarFormat === 'week') {
@@ -470,8 +478,9 @@ function updateCalendarPeriodTitle(format) {
         title.textContent = 'KW ' + weekNo + ' · ' + fmt(monday) + '–' + fmt(sunday) + '.' + sunday.getFullYear();
     } else if (format === 'month') title.textContent = new Intl.DateTimeFormat('de-DE', { month:'long', year:'numeric' }).format(date);
     else if (format === 'year') title.textContent = String(date.getFullYear());
+    else if(format==='season'){const season=calendarSeason();title.textContent=season?(season.name||'Saison'):'Saison';}
     else title.textContent = 'Aktivitäten';
-    if (picker) picker.disabled = format === 'activities';
+    if (picker) picker.disabled = format === 'activities'||format==='season';
 }
 export function openCalendarPeriodPicker() {
     const picker = document.getElementById('calendar-period-picker');
@@ -491,7 +500,8 @@ export function applyCalendarPeriodDate(value) {
 }
 
 export function renderCalendar() {
-    const formats = ['day', 'week', 'month', 'year', 'activities'];
+    const formats = ['day', 'week', 'month', 'year', 'activities', 'season'];
+    if(state.activeCalendarFormat==='season'&&!calendarSeason())state.activeCalendarFormat='month';
     const format = formats.includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'week';
     state.activeCalendarFormat = format;
     formats.forEach(item => {
@@ -507,19 +517,50 @@ export function renderCalendar() {
     document.getElementById('cal-format-week')?.classList.toggle('hidden', format !== 'week');
     document.getElementById('calendar-week-summary')?.classList.toggle('hidden', format !== 'week');
     document.getElementById('cal-format-year')?.classList.toggle('hidden', format !== 'year');
+    document.getElementById('cal-format-season')?.classList.toggle('hidden', format !== 'season');
     document.getElementById('cal-format-list')?.classList.toggle('hidden', format !== 'activities');
+    const labels={day:'Tag',week:'Woche',month:'Monat',year:'Jahr',season:'Saison',activities:'Aktivitäten'};
+    const label=document.getElementById('calendar-format-label');if(label)label.textContent=labels[format]||'Woche';
+    const option=document.getElementById('calendar-season-format-option');if(option)option.classList.toggle('hidden',!calendarSeason());
+    document.querySelectorAll('[data-calendar-format]').forEach(button=>{const active=button.dataset.calendarFormat===format;button.classList.toggle('active',active);button.setAttribute('aria-checked',String(active));});
     const activities = format === 'activities';
-    ['calendar-period-prev', 'calendar-period-next'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', activities));
+    ['calendar-period-prev', 'calendar-period-next'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', activities||format==='season'));
     document.getElementById('calendar-add-button')?.classList.toggle('hidden', activities);
     renderCalendarLegend();
     if (format === 'day') renderCalendarDayDetail(toLocalDateString(state.currentCalendarDate), 'cal-format-day');
     else if (format === 'week') renderWeekView();
     else if (format === 'month') renderMonthView();
     else if (format === 'year') renderYearView();
+    else if(format==='season')renderSeasonView();
     else renderListView();
     updateCalendarPeriodTitle(format);
+    installCalendarGestures();
 }
 
+function renderSeasonView(){
+    const root=document.getElementById('cal-format-season'),season=calendarSeason();if(!root||!season)return;
+    const from=season.start,to=season.end,events=new Map();
+    const add=(date,type,item)=>{if(!date||date<from||date>to||!type)return;const list=events.get(date)||[];list.push({type,item});events.set(date,list);};
+    (state.rawActivities||[]).forEach(x=>add(x.date,'activity',x));(state.plannedActivities||[]).forEach(x=>add(x.date,'planned',x));(state.races||[]).forEach(x=>add(x.date,'race',x));
+    Object.entries(state.healthLogs||{}).forEach(([date,x])=>add(date,x.status==='sick'?'sick':x.status==='injured'?'injured':null,x));
+    Object.entries(state.dailyCheckins||{}).forEach(([date,x])=>{if(x.cycle?.period===true)add(date,'period',x);});
+    const fmt=d=>new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(d+'T12:00:00'));
+    const icons={activity:'activity',planned:'calendar-clock',race:'trophy',sick:'thermometer',injured:'bandage',period:'droplet'},labels={activity:'Training',planned:'Geplant',race:'Wettkampf',sick:'Krankheit',injured:'Verletzung',period:'Periode'};
+    const grouped=new Map();[...events.keys()].sort().forEach(date=>{const key=date.slice(0,7),list=grouped.get(key)||[];list.push({date,items:events.get(date)});grouped.set(key,list);});
+    const months=[...grouped.entries()].map(([key,days])=>{const [y,m]=key.split('-').map(Number);const title=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(new Date(y,m-1,1,12));return '<section class="calendar-season-month"><h3>'+title+'</h3>'+days.map(({date,items})=>'<div class="calendar-season-event"><time>'+fmt(date)+'</time><span>'+items.map(x=>'<i data-lucide="'+icons[x.type]+'" class="calendar-season-event-icon is-'+x.type+'"></i>'+labels[x.type]+(x.item?.name?' · '+escapeHtml(x.item.name):'')).join(' · ')+'</span></div>').join('')+'</section>';}).join('');
+    const count=arr=>arr.filter(x=>x.date>=from&&x.date<=to).length;
+    root.innerHTML='<div class="calendar-season-heading"><div><p>DEFINIERTER ZEITRAUM</p><h2>'+escapeHtml(season.name||'Saison')+'</h2><span>'+fmt(from)+' – '+fmt(to)+'</span></div><div class="calendar-season-stats"><span><strong>'+count(state.rawActivities||[])+'</strong>Training</span><span><strong>'+count(state.plannedActivities||[])+'</strong>Geplant</span><span><strong>'+count(state.races||[])+'</strong>Wettkämpfe</span></div></div>'+(months||'<p class="calendar-season-empty">In diesem Saisonzeitraum sind noch keine Ereignisse erfasst.</p>');
+    globalThis.lucide?.createIcons?.();
+}
+let calendarGestureInstalled=false,calendarPinchStart=0,calendarWheelLocked=false;
+function calendarFormatZoomStep(direction){const sequence=['day','week','month','year'];const i=sequence.indexOf(state.activeCalendarFormat);if(i<0)return;const next=Math.max(0,Math.min(sequence.length-1,i+(direction>0?-1:1)));if(next!==i)setCalendarFormat(sequence[next]);}
+function installCalendarGestures(){
+    if(calendarGestureInstalled)return;const root=document.getElementById('view-calendar');if(!root)return;calendarGestureInstalled=true;
+    root.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;calendarPinchStart=Math.hypot(dx,dy);}},{passive:true});
+    root.addEventListener('touchend',e=>{if(e.touches.length<2)calendarPinchStart=0;},{passive:true});
+    root.addEventListener('touchmove',e=>{if(e.touches.length!==2||!calendarPinchStart)return;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,scale=Math.hypot(dx,dy)/calendarPinchStart;if(scale>1.28){calendarPinchStart=0;calendarFormatZoomStep(1);}else if(scale<.78){calendarPinchStart=0;calendarFormatZoomStep(-1);}},{passive:true});
+    root.addEventListener('wheel',e=>{if(!e.ctrlKey||calendarWheelLocked)return;e.preventDefault();calendarWheelLocked=true;calendarFormatZoomStep(e.deltaY<0?1:-1);setTimeout(()=>calendarWheelLocked=false,350);},{passive:false});
+}
 function calendarYearPhaseStore() {
     if (!state.settings || typeof state.settings !== 'object') state.settings = { sports: {}, categories: {}, heartRateZones: {} };
     if (!Array.isArray(state.settings.calendarSeasonPhases)) state.settings.calendarSeasonPhases = [];
