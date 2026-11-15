@@ -315,7 +315,7 @@ export function renderSportDistribution(records) {
         records=records.filter(r=>{const date=typeof r?.date==='string'?r.date.slice(0,10):'';return date>=from&&date<=to;});
     }
     const sportCatalog = getSportsCatalog();
-    const loadData = getTrainingLoadData(records, state.settings, state.profile);
+    const loadData = getTrainingLoadData(records, state.settings, state.profile, state.dailyCheckins);
     const loadByActivity = new Map(loadData.records.map(item => [item.activity, item.value]));
     const totals = {};
     const loadCounts = {};
