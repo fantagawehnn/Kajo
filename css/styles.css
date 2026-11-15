@@ -8217,3 +8217,33 @@ html[data-theme="light"] .activity-detail-accordion { background:#fff; }
 html[data-theme="light"] .activity-detail-accordion > summary { color:#182431; }
 html[data-theme="light"] .activity-note-preview { color:#334155; }
 html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff; }
+
+/* Fix: die WHOOP-Kennzahlenkreise dürfen nicht durch ältere Grid-Regeln gestapelt werden. */
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 13px;
+    grid-template-columns: none;
+    width: 100%;
+    min-width: 0;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+}
+#csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-secondary-grid {
+    display: grid !important;
+    width: 100%;
+}
+@media (max-width: 520px) {
+    #csv-details-modal .activity-detail-metrics.activity-detail-metrics-redesigned > .activity-metric-rings {
+        gap: 0;
+    }
+}
