@@ -687,7 +687,7 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         ? Math.floor(durationMinutes / 60) + ':' + String(Math.round(durationMinutes % 60)).padStart(2, '0')
         : null;
     add('Dauer', durationLabel);
-    if (!isStrength && Number.isFinite(Number(act.distance)) && Number(act.distance) > 0) add('Distanz', formatKm(act.distance) + ' km');
+    if (!isStrength && Number.isFinite(Number(act.distance)) && Number(act.distance) > 0) add('Distanz', type === 'Swim' ? Math.round(Number(act.distance) * 1000).toLocaleString('de-DE') + ' m' : formatKm(act.distance) + ' km');
     const avgHr = firstNumber(act.hr, act.avgHr, act.averageHr, act.averageHeartRate);
     const maxHr = firstNumber(act.maxHr, act.maxHR, act.maxHeartRate);
     add('Ø Herzfrequenz', avgHr && avgHr > 0 ? Math.round(avgHr) + ' bpm' : null, 'text-rose-400');
@@ -727,11 +727,21 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         add('SWOLF', swolf !== null && swolf > 0 ? Math.round(swolf) : null);
         const strokes = firstNumber(act.strokeRate, act.avgStrokeRate);
         add('Schlagfrequenz', strokes !== null && strokes > 0 ? Math.round(strokes) + '/min' : null);
+        add('Schwimmstil', act.swimStroke || null);
+        const poolLength = firstNumber(act.poolLengthMeters);
+        add('Beckenlänge', poolLength !== null && poolLength > 0 ? poolLength + ' m' : null);
+        const lengthCount = firstNumber(act.swimLengthCount);
+        add('Bahnen / Längen', lengthCount !== null && lengthCount > 0 ? String(Math.round(lengthCount)) : null);
     }
 
     const elevation = firstNumber(act.elevationGain, act.totalAscent, act.ascent);
     add('Höhenmeter', elevation !== null && elevation > 0 ? Math.round(elevation) + ' m' : null);
     // Die aktive Load-Methode wird im Belastungsbereich separat mit ihrer Quelle ausgewiesen.
+    if (['Kayaking', 'C1', 'C2'].includes(type)) {
+        add('Rennformat', act.raceFormat === 'classic' ? 'Classic' : act.raceFormat === 'sprint' ? 'Sprint' : null);
+        const waterType = act.waterConditions?.type || act.waterType;
+        add('Gewässertyp', waterType === 'wildwater' ? 'Wildwasser' : waterType === 'flatwater' ? 'Flachwasser' : null);
+    }
     if (type === 'C2') add('Trainingspartner', act.trainingPartner || null, 'text-cyan-300');
     if (isStrength && Array.isArray(act.exercises) && act.exercises.length) {
         add('Übungen dokumentiert', String(act.exercises.length));
