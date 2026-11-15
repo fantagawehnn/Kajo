@@ -286,10 +286,10 @@ export function saveSettings() {
   const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
   const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
   if (!['auto', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
-  // Vorhandene Zonengrenzen übernehmen, damit eine einzelne Änderung
-  // nicht die übrigen Werte derselben oder anderer Sportarten verwirft.
+  // Legacy-Zonengrenzen bleiben für ältere Datensätze erhalten; die aktive
+  // Berechnung verwendet ausschließlich das adaptive Herzfrequenzreserve-Modell.
   const zones = { ...(state.settings?.heartRateZones || {}) };
-  const zoneMethods = {};
+  const zoneMethods = { ...(state.settings?.heartRateZoneMethods || {}), global: 'karvonen-adaptive' };
   const zoneThresholds = { ...(state.settings?.heartRateThresholds || {}) };
   let invalidSportColor = false;
   const enabledSports = [];
