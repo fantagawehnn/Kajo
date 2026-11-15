@@ -286,7 +286,18 @@ function renderCalendarDayDetail(date, target) {
     data.activities.forEach(item => events.push(calendarDayEvent(item.name || 'Trainingseinheit', calendarSport(item.type).label + (item.raceFormat ? ' · ' + item.raceFormat : ''), calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'completed')));
     data.planned.forEach(item => events.push(calendarDayEvent(item.name || 'Geplante Einheit', calendarSport(item.type).label, calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'planned')));
     data.races.forEach(item => events.push(calendarDayEvent(item.name || 'Wettkampf', item.location || 'Wettkampf', calendarDayTime(item.startTime || item.time), 'race')));
-    strength.forEach(item => events.push(calendarDayEvent(item.exercise || 'Krafttraining', 'Kraftprotokoll', calendarDayTime(item.startTime || item.time), 'strength')));
+    strength.forEach(item => {
+        const sets = Array.isArray(item.sets) ? item.sets : [];
+        let detail = 'Kraftprotokoll';
+        if (sets.length) {
+            const reps = sets.reduce((sum, set) => sum + (Number(set?.reps) || 0), 0);
+            const volume = sets.reduce((sum, set) => sum + (Number(set?.weight) || 0) * (Number(set?.reps) || 0), 0);
+            detail = sets.length + ' Sätze · ' + reps + ' Wdh. · ' + volume.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg Volumen';
+        } else if (Number(item.sets) > 0 && Number(item.reps) > 0) {
+            detail = item.sets + ' × ' + item.reps + (item.weight != null ? ' · ' + item.weight + ' kg' : '');
+        }
+        events.push(calendarDayEvent(item.exercise || 'Krafttraining', detail, calendarDayTime(item.startTime || item.time), 'strength'));
+    });
     events.sort((a, b) => {
         if (a.time && b.time) return a.time.localeCompare(b.time);
         if (a.time) return -1;
