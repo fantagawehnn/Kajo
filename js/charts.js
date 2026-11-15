@@ -670,7 +670,10 @@ export function getActivityTelemetrySeries(act) {
         if (seenSemantics.has(semantic)) continue;
         seenSemantics.add(semantic);
         const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
-        result.push({ key, label: meta.label, unit: meta.unit, color: sportColor, values: values.map(value =>
+        const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
+            && (key === 'speed' || key === 'power')
+            ? meta.label + ' (Gerätemesswert)' : meta.label;
+        result.push({ key, label: displayLabel, unit: meta.unit, color: sportColor, values: values.map(value =>
             value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
                 || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
                 ? null : Number(value)
@@ -695,9 +698,12 @@ export function getActivityTelemetrySeries(act) {
         // normalisierte Standardreihe, ansonsten die verfügbare Garmin-Rohreihe.
         if (seenSemantics.has(semantic)) continue;
         seenSemantics.add(semantic);
+        const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
+            && (semantic === 'speed' || semantic === 'power')
+            ? label + ' (Gerätemesswert)' : label;
         result.push({
             key,
-            label,
+            label: displayLabel,
             unit: typeof metric.unit === 'string' ? metric.unit : '',
             time: Array.isArray(metric.time) && metric.time.length === metric.values.length
                 ? metric.time
