@@ -96,7 +96,15 @@ export function createUserStorage(userId) {
                         try { localStorage.removeItem(storageKey); } catch (_) {}
                     }
                 } else {
-                    localStorage.setItem(storageKey, serialized);
+                    try {
+                        localStorage.setItem(storageKey, serialized);
+                    } catch (error) {
+                        if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+                        // localStorage ist nur Fallback; die vollständige Sammlung
+                        // wird direkt danach in IndexedDB gespeichert.
+                        try { localStorage.removeItem(storageKey); } catch (_) {}
+                        console.warn(`localStorage-Quote für "${collection}" erreicht; IndexedDB übernimmt.`);
+                    }
                 }
                 indexedCollections[storageKey] = value;
             }
