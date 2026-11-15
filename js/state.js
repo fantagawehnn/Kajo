@@ -14,6 +14,7 @@
 export const state = {
     // --- Persistente Daten (werden in storage.js gespeichert/geladen) ---
     rawActivities: [],
+    disabledIntervalsActivities: [],
     plannedActivities: [],
     dailyCheckins: {},
     healthLogs: {},
