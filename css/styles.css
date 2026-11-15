@@ -8144,3 +8144,22 @@ canvas {
   -webkit-user-select: none;
   user-select: none;
 }
+
+
+/* Aktivitätsübersicht: Kennzahlen, HF-Verlauf und Zonen direkt im ersten Ansichtsbereich. */
+.activity-overview-analysis-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.65fr) minmax(260px,.9fr);
+  align-items:start;
+  gap:14px;
+  margin-top:14px;
+}
+.activity-overview-analysis-grid > section { min-width:0; }
+.activity-overview-analysis-grid .activity-telemetry-chart-wrap {
+  height:clamp(210px,27vw,310px);
+}
+.activity-overview-analysis-grid .activity-zone-panel { height:100%; }
+@media (max-width:760px) {
+  .activity-overview-analysis-grid { grid-template-columns:minmax(0,1fr); }
+  .activity-overview-analysis-grid .activity-telemetry-chart-wrap { height:230px; }
+}
