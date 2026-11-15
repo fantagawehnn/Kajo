@@ -8442,3 +8442,83 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
         height: 96px;
     }
 }
+
+
+/* Aktivitätskopf – kompakte Ein-Zeilen-Anordnung mit Sportarten-Akzent */
+#csv-details-modal .activity-detail-toolbar{
+    display:grid;
+    grid-template-columns:38px minmax(0,1fr) auto;
+    align-items:center;
+    gap:12px;
+    min-height:76px;
+    padding:10px max(20px,env(safe-area-inset-left));
+}
+#csv-details-modal .activity-detail-toolbar-title{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:11px;
+    min-width:0;
+    text-align:left;
+}
+.activity-detail-sport-icon{
+    --activity-sport-color:#38bdf8;
+    display:grid;
+    place-items:center;
+    flex:0 0 44px;
+    width:44px;
+    height:44px;
+    border:1px solid color-mix(in srgb,var(--activity-sport-color) 35%,transparent);
+    border-radius:12px;
+    background:color-mix(in srgb,var(--activity-sport-color) 17%,#0b1422);
+    color:var(--activity-sport-color);
+}
+.activity-detail-sport-icon svg{width:21px;height:21px}
+.activity-detail-toolbar-copy{min-width:0;flex:1}
+.activity-detail-title-line{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.activity-detail-title-line h2{
+    min-width:0;
+    margin:0;
+    color:#f8fafc;
+    font-size:clamp(15px,2vw,20px);
+    font-weight:800;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+    text-align:left;
+}
+.activity-detail-toolbar-title p{margin-top:4px;text-align:left}
+.activity-detail-type-badge{
+    padding:3px 8px;
+    border:1px solid color-mix(in srgb,var(--activity-sport-color) 55%,transparent);
+    border-radius:6px;
+    background:color-mix(in srgb,var(--activity-sport-color) 12%,transparent);
+    color:var(--activity-sport-color);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.02em;
+    text-transform:none;
+    white-space:nowrap;
+}
+.activity-detail-toolbar-actions{display:flex;align-items:center;gap:8px}
+.activity-detail-toolbar-actions .activity-detail-stepper{gap:5px}
+@media(max-width:600px){
+    #csv-details-modal .activity-detail-toolbar{
+        grid-template-columns:34px minmax(0,1fr) auto;
+        gap:8px;
+        min-height:68px;
+        padding:8px 12px;
+    }
+    #csv-details-modal .activity-detail-nav-button{width:34px;height:34px;border-radius:10px}
+    .activity-detail-sport-icon{flex-basis:38px;width:38px;height:38px;border-radius:10px}
+    .activity-detail-toolbar-title{gap:8px}
+    .activity-detail-title-line h2{font-size:14px}
+    .activity-detail-toolbar-title p{font-size:10px}
+    .activity-detail-toolbar-actions{gap:5px}
+}
+@media(max-width:390px){
+    #csv-details-modal .activity-detail-toolbar{gap:6px;padding-inline:9px}
+    .activity-detail-toolbar-actions{gap:3px}
+    #csv-details-modal .activity-detail-nav-button{width:32px;height:32px}
+    .activity-detail-sport-icon{flex-basis:34px;width:34px;height:34px}
+    .activity-detail-title-line h2{font-size:13px}
+}
