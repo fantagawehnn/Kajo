@@ -60,7 +60,7 @@ function periodCalendarMarker(dateStr) {
  if(nextStart<=todayDate)return ''; // Bei überfälliger oder ausgebliebener Periode keine weitere Prognose fortschreiben.
  const expectedDay=Math.round((new Date(dateStr+'T12:00:00')-nextStart)/86400000)+1;
  if(expectedDay<1||expectedDay>periodLength)return '';
- return '<i data-lucide="droplet" title="Voraussichtlicher Periodentag '+expectedDay+' (geschätzt)" class="inline-block w-3 h-3 text-rose-300 ml-1 align-middle opacity-70"></i>';
+ return '<i data-lucide="droplet" title="Voraussichtlicher Periodentag '+expectedDay+' (geschätzt)" class="inline-block w-3 h-3 text-rose-300 ml-1 align-middle opacity-70 calendar-period-predicted"></i>';
 }
 function dayActivitySummary(dateStr){
  const out=[];
