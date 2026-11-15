@@ -1516,7 +1516,7 @@ function initEngine() {
     runInitStep('Check-in-Formular', () => loadCheckinInputs());
 
     const timeline = runInitStep('Trainingsbelastung berechnen', () =>
-        computePerformanceTimeline(state.rawActivities, state.settings, state.profile)
+        computePerformanceTimeline(state.rawActivities, state.settings, state.profile, state.dailyCheckins)
     );
     state.dailyTimeline = Array.isArray(timeline) ? timeline : [];
 
