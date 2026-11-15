@@ -2298,6 +2298,18 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
 
 async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
     if (!userId || activeAppUserId !== userId || !appUserReady) return;
+
+    // Historische Analysen erst in Leerlaufzeit starten, damit der erste
+    // sichtbare App-Aufbau nicht mit dem Backfill konkurriert.
+    await new Promise(resolve => {
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(() => resolve(), { timeout: 15000 });
+        } else {
+            window.setTimeout(resolve, 8000);
+        }
+    });
+    if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
+
     const activities = (state.rawActivities || []).filter(activity => {
         const isGarmin = activity?.source === 'garmin'
             || activity?.sourceRefs?.garminActivityId != null
@@ -2315,7 +2327,11 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
             state.dailyCheckins, String(activity.date).slice(0, 10), expectedWindow, state.profile
         );
         return {
-            version: 1, status: 'unavailable',
+            version: 1,
+            status: 'unavailable',
+            // Fehlende Telemetrie ist kein endgültiger Zustand: nach 24 Stunden
+            // erneut prüfen. Geänderte HR-Parameter invalidieren den Cache sofort.
+            retryAfter: Date.now() + 24 * 60 * 60 * 1000,
             durationMinutes: Number(activity.duration) || null,
             maxHr: Number(state.profile?.maxHr) || null,
             restingHr: adaptive?.value != null && Number.isFinite(Number(adaptive.value)) ? Number(adaptive.value) : null,
@@ -2332,26 +2348,36 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
             state.dailyCheckins, String(activity.date).slice(0, 10), expectedWindow, state.profile
         );
         const expectedResting = adaptive?.value != null && Number.isFinite(Number(adaptive.value)) ? Number(adaptive.value) : null;
-        return cache.restingHr === expectedResting;
+        if (cache.restingHr !== expectedResting) return false;
+        if (cache.status === 'unavailable') return Number(cache.retryAfter) > Date.now();
+        return Boolean(cache.kajo || cache.edwards);
     };
     const pending = [];
     let calculated = 0;
-    for (const activity of activities) {
-        if (isCacheCurrent(activity)) continue;
-        const series = getGarminHeartRateSeries(activity);
-        if (series?.hr?.length >= 2) {
-            const summary = buildGarminActivityAnalysis(activity, state.settings, state.profile, state.dailyCheckins);
-            activity.garminAnalysis = summary || unavailableCacheFor(activity);
-            calculated++;
-            continue;
+    for (let index = 0; index < activities.length; index++) {
+        const activity = activities[index];
+        if (!isCacheCurrent(activity)) {
+            const series = getGarminHeartRateSeries(activity);
+            if (series?.hr?.length >= 2) {
+                const summary = buildGarminActivityAnalysis(activity, state.settings, state.profile, state.dailyCheckins);
+                activity.garminAnalysis = summary || unavailableCacheFor(activity);
+                calculated++;
+            } else {
+                const rawId = activity?.sourceRefs?.garminActivityId
+                    ?? activity?.garminData?.activityId ?? activity?.id;
+                const id = String(rawId ?? '').replace(/^garmin-/, '');
+                if (/^\d+$/.test(id)) pending.push({ activity, id });
+                else activity.garminAnalysis = unavailableCacheFor(activity);
+            }
         }
-        const rawId = activity?.sourceRefs?.garminActivityId
-            ?? activity?.garminData?.activityId ?? activity?.id;
-        const id = String(rawId ?? '').replace(/^garmin-/, '');
-        if (/^\d+$/.test(id)) pending.push({ activity, id });
+        // Bei langen Verläufen regelmäßig an den Browser zurückgeben.
+        if (index > 0 && index % 100 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+            if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
+        }
     }
 
-    const BATCH_SIZE = 25;
+    const BATCH_SIZE = 10;
     for (let offset = 0; offset < pending.length; offset += BATCH_SIZE) {
         if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
         const batch = pending.slice(offset, offset + BATCH_SIZE);
@@ -2375,6 +2401,8 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
             // Nur kompakte Kennzahlen werden dauerhaft gespeichert; Rohtelemetrie
             // wird weder in den Aktivitätsdatensatz kopiert noch lokal gecacht.
             saveDataToLocalStorage();
+            // Kleine Pause zwischen Cloud-Abfragen verhindert Lastspitzen.
+            await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
             console.warn('KAJO: Historische Garmin-Analysewerte konnten für einen Datenblock nicht berechnet werden:', error);
         }
