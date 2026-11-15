@@ -5,6 +5,7 @@
  * ============================================================ */
 
 import { state } from './state.js';
+import { showChartPointReadout } from './chart-readout.js';
 
 const METRICS = [
   { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#38bdf8', decimals:0 },
@@ -155,7 +156,7 @@ function renderDetail() {
   if (canvas && typeof Chart==='function') {
     const datasets=[{label:metric.label,data:values,borderColor:metric.color,backgroundColor:metric.color+'20',fill:true,tension:.25,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:false}];
     if (baselineSeries.some(valid)) datasets.push({label:'Persönlicher Median (90 Tage)',data:baselineSeries,borderColor:'#94a3b8',backgroundColor:'transparent',borderDash:[5,5],fill:false,tension:0,borderWidth:1.5,pointRadius:0,spanGaps:false});
-    healthChart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:7,boxHeight:7}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+(item.parsed.y==null?'—':format(item.parsed.y,metric)+' '+metric.unit)}}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#94a3b8',maxTicksLimit:5}}}}});
+    healthChart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onClick:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'nearest',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:7,boxHeight:7}},tooltip:{enabled:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#94a3b8',maxTicksLimit:5}}}}});
   }
   renderRangeControls();
 }
