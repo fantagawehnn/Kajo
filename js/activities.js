@@ -138,8 +138,21 @@ async function diagnoseGarminCloudTelemetry() {
         const validHr = hrCount ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
             && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length : 0;
         const load = calculateGarminZoneLoad({ ...activity, garminTelemetry: telemetry }, state.settings, state.profile);
+        const durationSeconds = Number(telemetry.durationSeconds);
+        const axisEnd = axisStats.valid ? Number(axis[axis.length - 1]) : NaN;
+        const matchesDuration = Number.isFinite(durationSeconds) && Number.isFinite(axisEnd)
+            && Math.abs(axisEnd - durationSeconds) < 0.01;
+        const timeUnitAssessment = telemetry.source === 'garmin-activity-details-json' && matchesDuration
+            ? 'Sekunden bestätigt: Garmin-Zeitstempel wurden beim Import durch 1000 geteilt; Zeitachsenende stimmt mit durationSeconds überein'
+            : 'nicht bestätigt: Importquelle und durationSeconds-Abgleich reichen für diesen Datensatz nicht aus';
         return [
             label + ':',
+            '  Telemetriequelle: ' + (telemetry.source || 'nicht angegeben'),
+            '  Startzeit laut Import: ' + (telemetry.startTimeIso || 'nicht vorhanden'),
+            '  Endzeit laut Import: ' + (telemetry.endTimeIso || 'nicht vorhanden'),
+            '  durationSeconds laut Import: ' + (Number.isFinite(durationSeconds) ? durationSeconds : 'nicht vorhanden'),
+            '  Zeitachsenende stimmt mit durationSeconds überein: ' + (matchesDuration ? 'Ja' : 'Nein / nicht prüfbar'),
+            '  Zeiteinheitenbewertung: ' + timeUnitAssessment,
             '  HF-Reihe erkannt: ' + (series ? 'Ja (' + series.source + ')' : 'Nein'),
             '  HF-Messpunkte: ' + hrCount + ' · plausibel: ' + validHr,
             '  Zeitwerte zur HF-Reihe: ' + (Array.isArray(series?.time) ? series.time.length : 0),
