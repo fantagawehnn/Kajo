@@ -207,6 +207,10 @@ function renderRows() {
     </div>
     <p class="text-[10px] text-slate-500">Z5 beginnt oberhalb der Z4-Grenze. Alle vier Grenzen können manuell angepasst werden.</p>
     <p id="kajo-zone-note" class="text-[10px] text-slate-400">${legacyZoneValues.length ? 'Gespeicherte Zonengrenzen geladen.' : (automaticBoundaries?.length ? 'Automatischer Vorschlag anhand der erkannten HFmax. Bitte prüfen und bei Bedarf anpassen.' : 'Noch keine HFmax erkannt. Trage einen Wert ein und berechne die Zonen oder gib die Grenzen manuell ein.')}</p>
+    <div class="pt-2 border-t border-slate-800">
+      <p class="text-[10px] leading-relaxed text-slate-400 mb-2">Beim Speichern werden die neuen Grenzen rückwirkend für alle Aktivitäten mit auswertbaren Herzfrequenzdaten verwendet. Zeit-in-Zonen-Auswertungen und der KAJO-HF-Load werden neu berechnet; Garmin-Rohdaten bleiben unverändert.</p>
+      <button type="button" onclick="saveSettings()" class="w-full rounded-xl bg-sky-500 px-4 py-3 text-xs font-bold text-slate-950 hover:bg-sky-400">Herzfrequenzzonen speichern &amp; rückwirkend anwenden</button>
+    </div>
   </div>`;
   sportBox.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => btn.closest('[data-sport-row]').remove()));
   catBox.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => btn.closest('[data-category-row]').remove()));
@@ -288,13 +292,31 @@ export function saveSettings() {
       return;
     }
   }
+  const previousGlobal = Array.isArray(state.settings?.heartRateZones?.global)
+    ? state.settings.heartRateZones.global : null;
+  const zoneProfileChanged = entered.length > 0
+    && JSON.stringify(previousGlobal) !== JSON.stringify(enteredZones);
   if (entered.length) {
     zones.global = enteredZones;
-    // Bestehende Auswertungen arbeiten weiterhin mit sportbezogenen Schlüsseln.
-    // Das gemeinsame Profil wird deshalb für die vorhandenen Sportarten gespiegelt.
-    for (const key of Object.keys(sports)) zones[key] = [...enteredZones];
+    // Das gemeinsame Profil wird für sämtliche bekannten und tatsächlich
+    // verwendeten Aktivitätstypen gespiegelt, auch für ältere Aktivitäten,
+    // deren Sportart aktuell nicht im Kalender aktiviert ist.
+    const activityTypes = new Set([
+      ...Object.keys(sports),
+      ...(Array.isArray(state.rawActivities) ? state.rawActivities.map(activity => activity?.type).filter(Boolean) : [])
+    ]);
+    for (const key of activityTypes) zones[key] = [...enteredZones];
   } else {
     delete zones.global;
+  }
+  if (zoneProfileChanged) {
+    const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
+    const withHr = activities.filter(activity => {
+      const telemetry = activity?.garminTelemetry || activity?.telemetry || {};
+      return Array.isArray(telemetry.hr) && telemetry.hr.length >= 2;
+    }).length;
+    const message = `Die neuen Herzfrequenzzonen werden rückwirkend auf alle ${activities.length} gespeicherten Aktivitäten angewendet. Für ${withHr} Aktivitäten liegen mindestens zwei Herzfrequenz-Messpunkte vor. Zeit-in-Zonen-Auswertungen und – sofern berechenbar – der KAJO-HF-Load werden mit den neuen Grenzen neu berechnet. Garmin-Rohdaten und Garmin-native Load-Werte bleiben unverändert.\n\nMöchtest du fortfahren?`;
+    if (!confirm(message)) return;
   }
   if (zoneMaxHr !== null) state.profile = { ...state.profile, maxHr: zoneMaxHr };
   zoneMethods.global = entered.length ? 'manual' : 'maxhr_myprocoach';
