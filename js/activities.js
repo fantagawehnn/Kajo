@@ -149,6 +149,11 @@ async function diagnoseGarminCloudTelemetry() {
                 + ' · max ' + (axisStats.valid ? axisStats.maxInterval : 'n/a'),
             '  Zeitliche Abdeckung (letzter minus erster Zeitwert): ' + (axisStats.valid ? axisStats.span : 'n/a')
                 + ' Quelleinheiten',
+            '  Rohintervalle <= 30 Quelleinheiten: ' + (axisStats.valid ? axisStats.intervalsAtMost30 : 'n/a')
+                + ' · Summe: ' + (axisStats.valid ? axisStats.intervalSumAtMost30 : 'n/a'),
+            '  Rohintervalle > 30 Quelleinheiten: ' + (axisStats.valid ? axisStats.intervalsOver30 : 'n/a')
+                + ' · Summe: ' + (axisStats.valid ? axisStats.intervalSumOver30 : 'n/a'),
+            '  Load-Logik: Rohintervalle > 30 werden ausgeschlossen; letzter HF-Punkt erhält ersatzweise den Median der akzeptierten Intervalle.',
             '  Import-Metadaten zur Zeiteinheit: ' + (telemetry.timeUnit || telemetry.time_unit
                 || telemetry.metricSeriesTimeUnit || telemetry.metric_series_time_unit || 'nicht vorhanden'),
             '  Einheitenbewertung: ' + (axisStats.valid
