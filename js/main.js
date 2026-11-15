@@ -729,9 +729,10 @@ async function loadGarminSyncHistory() {
         for (const row of healthRows) {
             const type = String(row.data_type || 'other');
             const date = String(row.record_date || '').slice(0, 10);
-            if (!groups.has(type)) groups.set(type, { count: 0, first: date, last: date });
+            if (!groups.has(type)) groups.set(type, { count: 0, days: new Set(), first: date, last: date });
             const group = groups.get(type);
             group.count++;
+            if (date) group.days.add(date);
             if (date && (!group.first || date < group.first)) group.first = date;
             if (date && (!group.last || date > group.last)) group.last = date;
         }
@@ -744,6 +745,7 @@ async function loadGarminSyncHistory() {
         if (activityDates.length) {
             groups.set('activities', {
                 count: activityDates.length,
+                days: new Set(activityDates),
                 first: activityDates[0],
                 last: activityDates[activityDates.length - 1]
             });
@@ -782,17 +784,18 @@ async function loadGarminSyncHistory() {
         container.innerHTML = `
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px]">
-              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2 pr-2 font-medium">Datenfeld</th><th class="py-2 px-2 text-right font-medium">Anzahl</th><th class="py-2 pl-2 text-right font-medium">Zeitraum</th></tr></thead>
+              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2 pr-2 font-medium">Datenfeld</th><th class="py-2 px-2 text-right font-medium">Datensätze</th><th class="py-2 px-2 text-right font-medium">Messtage</th><th class="py-2 pl-2 text-right font-medium">Zeitraum</th></tr></thead>
               <tbody>${rows.map(([type, item]) => `
                 <tr class="border-b border-slate-800/70 last:border-0">
                   <td class="py-2 pr-2 text-slate-200">${String(labels[type] || type.replaceAll('_', ' ')).replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[char])}</td>
                   <td class="py-2 px-2 text-right tabular-nums text-white">${item.count.toLocaleString('de-DE')}</td>
+                  <td class="py-2 px-2 text-right tabular-nums text-slate-300">${(item.days?.size ?? 0).toLocaleString('de-DE')}</td>
                   <td class="py-2 pl-2 text-right whitespace-nowrap text-slate-400">${item.first || '–'} – ${item.last || '–'}</td>
                 </tr>`).join('')}
               </tbody>
             </table>
           </div>
-          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
+          <p class="pt-1 text-[10px] text-slate-500">Datensätze = gespeicherte Garmin-Einträge. Messtage = unterschiedliche Kalendertage mit mindestens einem Eintrag dieses Datenfelds. Das ist keine Aussage über eine lückenlose Synchronisierung.</p>`;
     } catch (error) {
         container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
     }
