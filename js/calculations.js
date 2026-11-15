@@ -32,7 +32,7 @@ export function computePerformanceTimeline(records, settings, profile) {
     // Without coverage, still expose measured activity-day loads, but leave
     // all unobserved days unknown and do not calculate CTL/ATL across them.
     const ranges = validCoverageRanges(settings);
-    const activityDates = list.map(activity => activityDateKey(activity?.date)).filter(Boolean);
+    const activityDates = loadData.records.map(item => activityDateKey(item.activity?.date)).filter(Boolean);
     const startKeys = [...ranges.map(range => range.startDate), ...activityDates].sort();
     if (!startKeys.length) return [];
     const start = new Date(startKeys[0] + 'T12:00:00');
