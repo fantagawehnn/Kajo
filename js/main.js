@@ -32,10 +32,11 @@ import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, 
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
 import { sendAICoachMessage } from './coach.js';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, previewHeartRateZones } from './settings.js?v=1';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js?v=2';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords } from './storage.js?v=3';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
 import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js?v=1';
 import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=2';
+import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=1';
 
 // Externe UI-Bibliotheken dürfen die Kontoaktivierung nicht blockieren.
 // Insbesondere kann das optionale Lucide-CDN vorübergehend nicht erreichbar sein.
@@ -1761,8 +1762,22 @@ async function flushCloudSync() {
     setCloudSyncStatus('Cloud-Speicherung läuft …');
 
     try {
-        // JSON-Kopie friert den zu übertragenden Stand ein, auch wenn während
-        // des Netzwerkrufs weitere Änderungen vorgenommen werden.
+        // Rohtelemetrie wird getrennt und nur dann übertragen, wenn die
+        // jeweilige Aktivität noch keinen Cloud-Datensatz besitzt.
+        let telemetryUpload = { uploaded: 0, failed: false };
+        try {
+            telemetryUpload = await uploadMissingGarminTelemetry(
+                supabase,
+                userId,
+                getGarminTelemetryRecordsForCloud()
+            );
+        } catch (telemetryError) {
+            telemetryUpload = { uploaded: 0, failed: true };
+            console.warn('Garmin-Telemetrie konnte nicht separat in der Cloud gesichert werden; lokale Daten bleiben erhalten:', telemetryError);
+        }
+
+        // Der versionierte user_data-Snapshot enthält bewusst keine großen
+        // Garmin-Rohzeitreihen mehr.
         const snapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
         const result = await saveCloudSnapshot(snapshot, cloudSyncVersion, userId);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
@@ -1777,7 +1792,9 @@ async function flushCloudSync() {
         }
 
         cloudSyncVersion = result.currentVersion;
-        setCloudSyncStatus('In Cloud gespeichert (Version ' + cloudSyncVersion + ')');
+        setCloudSyncStatus(telemetryUpload.failed
+            ? 'App-Daten in Cloud gespeichert; Garmin-Telemetrie wartet auf erneuten Versuch.'
+            : 'In Cloud gespeichert (Version ' + cloudSyncVersion + ')' + (telemetryUpload.uploaded ? ' · ' + telemetryUpload.uploaded + ' neue Telemetrie-Datensätze' : ''));
         if (cloudInitialTransferState === 'empty') {
             cloudInitialTransferState = 'exists';
             setCloudTransferMessage('Deine Daten wurden automatisch erstmals in der Cloud gespeichert (Version ' + cloudSyncVersion + ').');
@@ -2052,6 +2069,9 @@ async function handleAuthSession(session) {
         try {
             await withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000);
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            // Lokale Rohtelemetrie vor dem Laden des maßgeblichen Cloud-Snapshots
+            // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
+            const localTelemetryForMigration = getGarminTelemetryRecordsForCloud();
 
             // Ein vorhandener zentraler Datensatz ist die maßgebliche Datenquelle.
             // Der lokale, kontogebundene Speicher dient danach nur als Cache.
@@ -2064,6 +2084,9 @@ async function handleAuthSession(session) {
             cloudSyncVersion = cloudSnapshot.version;
             cloudSyncBlocked = false;
             cloudSyncPending = false;
+            const legacyCloudTelemetry = cloudSnapshot.data?.activities
+                ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
+                : [];
             if (cloudSnapshot.data !== null) {
                 applyCloudDataSnapshot(cloudSnapshot.data);
                 const indicator = document.getElementById('sync-status-indicator');
@@ -2072,6 +2095,35 @@ async function handleAuthSession(session) {
 
             try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
             catch (garminLoadError) { console.warn('Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', garminLoadError); }
+
+            // Einmaliger Abgleich: lokale und ältere Snapshot-Telemetrie werden
+            // nur in noch nicht belegte Cloud-Datensätze übernommen. Vorhandene
+            // Cloud-Telemetrie bleibt unverändert.
+            const migrationMap = new Map();
+            for (const record of [
+                ...localTelemetryForMigration,
+                ...legacyCloudTelemetry,
+                ...getGarminTelemetryRecordsForCloud()
+            ]) migrationMap.set(String(record.garmin_activity_id), record);
+            const migrationCandidates = Array.from(migrationMap.values());
+            mergeGarminTelemetryRecords(migrationCandidates);
+            try {
+                const cloudTelemetry = await withActivationTimeout(
+                    syncGarminTelemetryToCloud(supabase, userId, migrationCandidates),
+                    'Die Übertragung deiner Garmin-Telemetrie in die Cloud',
+                    120000
+                );
+                mergeGarminTelemetryRecords(cloudTelemetry.records);
+                console.info('KAJO: Garmin-Telemetrie-Cloudabgleich abgeschlossen:', {
+                    uploaded: cloudTelemetry.uploaded,
+                    existing: cloudTelemetry.existing,
+                    total: cloudTelemetry.total
+                });
+            } catch (telemetryMigrationError) {
+                // Die vorhandenen lokalen/Legacy-Daten bleiben im Arbeitsspeicher
+                // und in ihrem bisherigen Cache erhalten. Es wird nichts gelöscht.
+                console.warn('KAJO: Garmin-Telemetrie-Cloudabgleich noch nicht vollständig:', telemetryMigrationError);
+            }
 
             await domReady;
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
