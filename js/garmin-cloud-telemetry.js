@@ -102,7 +102,7 @@ export async function uploadMissingGarminTelemetry(supabase, userId, candidateRe
     const candidates = new Map();
     for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
         const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
         candidates.set(activityId, record.telemetry);
     }
     const existingRows = await fetchAllRows(supabase, id);
@@ -118,7 +118,29 @@ export async function uploadMissingGarminTelemetry(supabase, userId, candidateRe
         if (error) throw error;
         uploaded++;
     }
-    return { uploaded, candidates: candidates.size, updated: Array.from(candidates.keys()).filter(key => existingById.has(key)).length };
+
+    // Jede Importcharge wird erst nach bestätigtem Cloud-Readback als gesichert behandelt.
+    const candidateIds = Array.from(candidates.keys());
+    let verified = 0;
+    if (candidateIds.length) {
+        const { data, error } = await supabase
+            .from(TABLE)
+            .select('garmin_activity_id')
+            .eq('user_id', id)
+            .in('garmin_activity_id', candidateIds);
+        if (error) throw error;
+        const storedIds = new Set((Array.isArray(data) ? data : []).map(row => String(row.garmin_activity_id)));
+        verified = candidateIds.filter(activityId => storedIds.has(activityId)).length;
+        if (verified !== candidateIds.length) {
+            throw new Error('Cloud-Readback unvollständig: ' + (candidateIds.length - verified) + ' Telemetrie-Datensätze fehlen.');
+        }
+    }
+    return {
+        uploaded,
+        candidates: candidates.size,
+        updated: Array.from(candidates.keys()).filter(key => existingById.has(key)).length,
+        verified
+    };
 }
 
 export async function syncGarminTelemetryToCloud(supabase, userId, candidateRecords = []) {
@@ -129,7 +151,7 @@ export async function syncGarminTelemetryToCloud(supabase, userId, candidateReco
 
     for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
         const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
         uniqueCandidates.set(activityId, mergeTelemetry(
             existingById.get(activityId) || {},
             record.telemetry
