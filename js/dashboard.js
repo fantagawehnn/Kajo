@@ -8,6 +8,7 @@ import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog } from './util
 import { getTrainingLoadData } from './training-load.js';
 import { loadCheckinInputs } from './health.js';
 import { saveDataToLocalStorage } from './storage.js?v=2';
+import { showChartPointReadout } from './chart-readout.js';
 
 function localTodayKey() {
   const n = new Date();
@@ -1098,9 +1099,17 @@ function renderHistoryChart(kind, labels, values, definition, key, baselineValue
         options: {
             responsive: true, maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
+            onClick: (event, elements, chart) => {
+                const active = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true)
+                    .filter(item => item.datasetIndex === 0);
+                if (active.length) showChartPointReadout(canvas, chart, active[0].index, {
+                    title: definition.label, unit: definition.unit,
+                    formatValue: value => historyDisplay(value, key)
+                });
+            },
             plugins: {
                 legend: { display: datasets.length > 1, labels: { color: '#94a3b8', usePointStyle: true, boxWidth: 7, boxHeight: 7 } },
-                tooltip: { callbacks: { label: item => item.dataset.label + ': ' + (item.parsed.y == null ? '—' : historyDisplay(item.parsed.y, key) + ' ' + definition.unit) } }
+                tooltip: { enabled: false }
             },
             scales: {
                 x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 8, maxRotation: 0 } },
