@@ -2294,9 +2294,10 @@ async function syncGarminTodayOnOpen(userId) {
         }
         let jsonTelemetry = { failed: 0, rateLimited: false };
         try {
-            // Beim automatischen Tagesabgleich werden auch ältere Garmin-Aktivitäten
-            // ohne JSON-Rohtelemetrie schrittweise nachgeladen.
-            jsonTelemetry = await syncMissingGarminJsonTelemetry('0000-01-01', date, null);
+            // Der automatische Tagesabgleich ergänzt ausschließlich Rohtelemetrie
+            // für Aktivitäten des aktuellen Tages. Historische Zeitreihen werden
+            // nur bei einem ausdrücklich gestarteten Zeitraum-Import nachgeladen.
+            jsonTelemetry = await syncMissingGarminJsonTelemetry(date, date, null);
             console.info('KAJO: Automatische Garmin-Rohtelemetrie abgeschlossen:', jsonTelemetry);
         } catch (jsonTelemetryError) {
             jsonTelemetry = { failed: 1, rateLimited: false };
