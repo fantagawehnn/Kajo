@@ -731,6 +731,17 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
 
     const elevation = firstNumber(act.elevationGain, act.totalAscent, act.ascent);
     add('Höhenmeter', elevation !== null && elevation > 0 ? Math.round(elevation) + ' m' : null);
+    // Sportartspezifischer Kontext wird nur angezeigt, wenn er tatsächlich dokumentiert ist.
+    if (['Kayaking', 'C1', 'C2'].includes(type)) {
+        const raceFormatLabels = { sprint: 'Sprint', classic: 'Classic' };
+        add('Rennformat', raceFormatLabels[act.raceFormat] || null, 'text-cyan-300');
+        const water = act.waterConditions || {};
+        add('Gewässertyp', water.type === 'wildwater' ? 'Wildwasser' : water.type === 'flatwater' ? 'Flachwasser' : null, 'text-cyan-300');
+        const waterLevel = firstNumber(water.level);
+        add('Pegel', waterLevel !== null ? waterLevel.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' ' + (water.levelUnit === 'm' ? 'm' : 'cm') : null);
+        const discharge = firstNumber(water.discharge);
+        add('Abfluss', discharge !== null ? discharge.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' m³/s' : null);
+    }
     // Die aktive Load-Methode wird im Belastungsbereich separat mit ihrer Quelle ausgewiesen.
     if (type === 'C2') add('Trainingspartner', act.trainingPartner || null, 'text-cyan-300');
     if (isStrength && Array.isArray(act.exercises) && act.exercises.length) {
