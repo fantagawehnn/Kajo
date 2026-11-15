@@ -360,7 +360,7 @@ test('Garmin HR-zone load does not invent time after the final timestamp', () =>
 });
 
 
-test('global HR zones are used when no valid sport-specific zones exist', () => {
+test('legacy global HR zones do not override adaptive Karvonen zones', () => {
     const activity = {
         id: 'g-global-zones', source: 'garmin', type: 'Kayaking', date: completedDay,
         garminTelemetry: { hr: [90, 110, 150, 170, 200], time: [0, 20, 40, 60, 80] }
@@ -374,7 +374,7 @@ test('global HR zones are used when no valid sport-specific zones exist', () => 
     assert.equal(load.totalSeconds, 80);
 });
 
-test('valid sport-specific HR zones take precedence over global zones', () => {
+test('legacy sport-specific HR zones do not override adaptive Karvonen zones', () => {
     const activity = {
         id: 'g-sport-zones', source: 'garmin', type: 'Kayaking', date: completedDay,
         garminTelemetry: { hr: [90, 110, 150, 170, 200], time: [0, 20, 40, 60, 80] }
