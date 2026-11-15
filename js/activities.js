@@ -7,7 +7,7 @@ import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=3';
 import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
-import { getTrainingLoadData, calculateGarminZoneLoad } from './training-load.js';
+import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js';
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
@@ -143,7 +143,7 @@ async function diagnoseGarminCloudTelemetry() {
         const hrCount = Array.isArray(series?.hr) ? series.hr.length : 0;
         const validHr = hrCount ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
             && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length : 0;
-        const load = calculateGarminZoneLoad({ ...activity, garminTelemetry: telemetry }, state.settings, state.profile);
+        const load = calculateGarminZoneLoad({ ...activity, garminTelemetry: telemetry }, state.settings, state.profile, state.dailyCheckins);
         const timeUnitAssessment = secondsConfirmed
             ? 'Sekunden bestätigt: Garmin-Zeitstempel wurden beim Import durch 1000 geteilt; Zeitachsenende stimmt mit durationSeconds überein'
             : 'nicht bestätigt: Importquelle und durationSeconds-Abgleich reichen für diesen Datensatz nicht aus';
@@ -439,16 +439,23 @@ function renderActivityDataQuality(activity) {
 }
 
 function getActivityZoneConfig(activity) {
-    const saved = state.settings?.heartRateZones?.[activity.type];
-    const valid = values => Array.isArray(values) && values.length === 4
-        && values.every(v => v != null && v !== '' && Number.isFinite(Number(v)) && Number(v) >= 40 && Number(v) <= 240)
-        && values.every((v, i) => i === 0 || Number(v) > Number(values[i - 1]));
-    if (valid(saved)) return { zones: saved.map(Number), source: 'sport-specific' };
     const maxHr = Number(state.profile?.maxHr);
-    if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
-        return { zones: [0.73, 0.80, 0.87, 0.93].map(percent => Math.round(maxHr * percent)), source: 'maxhr-estimate' };
-    }
-    return { zones: null, source: null };
+    const windowDays = state.settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+    const resting = getAdaptiveRestingHr(
+        state.dailyCheckins || {},
+        String(activity?.date || '').slice(0, 10),
+        windowDays,
+        state.profile || {}
+    );
+    const zones = resting?.value != null ? calculateHeartRateReserveZones(maxHr, resting.value) : null;
+    return {
+        zones,
+        source: zones ? 'karvonen-adaptive' : null,
+        adaptiveRestingHr: resting?.value ?? null,
+        restingHrSource: resting?.source ?? 'unavailable',
+        restingHrWindowDays: resting?.windowDays ?? windowDays,
+        restingHrQuality: resting?.quality ?? 'unavailable'
+    };
 }
 
 // Einheitliche Zeit-in-HF-Zonen-Berechnung für Zonenübersicht und Reizprofil.
@@ -476,7 +483,7 @@ function calculateActivityZoneTime(activity, zoneConfig = getActivityZoneConfig(
         if (Number.isFinite(sampleSeconds) && sampleSeconds > 0) seconds[zone] += sampleSeconds;
     });
     const totalSeconds = seconds.reduce((sum, value) => sum + value, 0);
-    return totalSeconds > 0 ? { seconds, totalSeconds, hasTime, zoneSource: zoneConfig.source } : null;
+    return totalSeconds > 0 ? { seconds, totalSeconds, hasTime, zoneSource: zoneConfig.source, adaptiveRestingHr: zoneConfig.adaptiveRestingHr, restingHrSource: zoneConfig.restingHrSource, restingHrQuality: zoneConfig.restingHrQuality } : null;
 }
 
 
@@ -559,7 +566,7 @@ export function openCSVDetailsModal(id) {
     state.activityTelemetryMetric = null;
     state.activitySelectedLap = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
-    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
+    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
     const loadSummary = loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}` : '—';
     renderSportSpecificActivityMetrics(act, loadSummary);
@@ -840,8 +847,8 @@ function renderActivityTrainingInsights(act) {
     const category = categoryLabels[act.category] || 'Nicht zugeordnet';
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
-    const zoneLoad = calculateGarminZoneLoad(act, state.settings, state.profile);
-    const srpeData = getTrainingLoadData([act], { ...(state.settings || {}), trainingLoadSource: 'srpe' }, state.profile);
+    const zoneLoad = calculateGarminZoneLoad(act, state.settings, state.profile, state.dailyCheckins);
+    const srpeData = getTrainingLoadData([act], { ...(state.settings || {}), trainingLoadSource: 'srpe' }, state.profile, state.dailyCheckins);
     const srpeItem = srpeData.records[0];
     // The long-term model uses one consistent source, but an individual
     // activity may still show its own available load when it is not part of
