@@ -1992,9 +1992,22 @@ async function syncGarminTodayOnOpen(userId) {
             console.warn('KAJO: Garmin-Rohtelemetrie konnte nicht vollständig ergänzt werden:', jsonTelemetryError);
         }
 
+        let telemetryCloud = { uploaded: 0, failed: false };
+        try {
+            telemetryCloud = await uploadMissingGarminTelemetry(
+                supabase,
+                userId,
+                getGarminTelemetryRecordsForCloud()
+            );
+        } catch (telemetryCloudError) {
+            telemetryCloud = { uploaded: 0, failed: true };
+            console.warn('KAJO: Neue Garmin-Telemetrie konnte noch nicht in die Cloud übertragen werden:', telemetryCloudError);
+        }
+
         if (activeAppUserId !== userId || !appUserReady) return;
         const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
-            || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true;
+            || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
+            || telemetryCloud.failed;
         if (partial) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
@@ -2008,7 +2021,7 @@ async function syncGarminTodayOnOpen(userId) {
             }
         } else {
             garminDailySyncCompleted.add(runKey);
-            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry);
+            console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
             setGarminSyncIndicator('current', 'Verbunden');
         }
     } catch (error) {
