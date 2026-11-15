@@ -40,8 +40,8 @@
 #view-dashboard .kajo-home-status{padding:1rem;border:1px solid var(--kajo-pro-border);border-radius:18px;background:radial-gradient(ellipse at 14% 10%,rgba(53,200,232,.13),transparent 40%),linear-gradient(145deg,#14263d,#0c192a)}
 #view-dashboard .kajo-home-status>h2{margin-bottom:.75rem;color:var(--kajo-pro-muted);font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
 #view-dashboard .kajo-readiness-grid{gap:.75rem}
-#view-dashboard .kajo-ring-card{min-width:0;padding:.5rem;border:1px solid rgba(135,170,205,.14);border-radius:15px;background:rgba(5,15,28,.46);transition:transform .18s,border-color .18s}
-#view-dashboard .kajo-ring-card:hover{transform:translateY(-2px);border-color:rgba(53,200,232,.45)}
+#view-dashboard .kajo-ring-card{min-width:0;padding:.5rem;border:0;border-radius:0;background:transparent;box-shadow:none;transition:transform .18s}
+#view-dashboard .kajo-ring-card:hover{transform:translateY(-2px)}
 #view-dashboard .kajo-home-recommendation{display:grid;gap:.35rem;padding:1rem;text-align:left;color:var(--kajo-pro-text)}
 #view-dashboard .kajo-home-recommendation .kajo-home-section-heading{margin:0}
 #view-dashboard .kajo-home-recommendation>strong{font-size:1rem}
@@ -52,7 +52,7 @@
 #view-dashboard .kajo-home-race-main>svg{color:var(--kajo-pro-orange)}
 #view-dashboard .kajo-week-chart{min-height:90px}
 #view-dashboard .kajo-home-wearables .kajo-circle-grid{gap:.6rem}
-#view-dashboard .kajo-home-wearables .kajo-health-circle-item{padding:.5rem .25rem;border:1px solid rgba(135,170,205,.12);border-radius:13px;background:rgba(4,13,25,.35)}
+#view-dashboard .kajo-home-wearables .kajo-health-circle-item{padding:.5rem .25rem;border:0;border-radius:0;background:transparent;box-shadow:none}
 #view-dashboard .home-today-list{gap:.55rem}
 #view-dashboard .kajo-home-session-group{padding:.7rem;border-radius:13px;background:rgba(3,12,23,.32);border:1px solid rgba(135,170,205,.1)}
 #view-dashboard .kajo-home-subheading h3{font-size:.72rem}
