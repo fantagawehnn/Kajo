@@ -77,7 +77,7 @@ assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes
 assert.ok(!html.includes('id="health-hero-ring"') && !html.includes('id="health-availability-status"'), 'Health does not display an unsupported availability score');
 assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'), 'each recovery circle uses the existing metric-specific status classification');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
-assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
+assert.ok(analysisUI.includes('fließen derzeit noch nicht in die Recovery-Kennzahlen oder Readiness-Berechnung ein'), 'Garmin health metrics are documented separately from recovery calculations');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
 assert.ok(!html.includes('id="training-history-title"'), 'Performance no longer embeds the training-load history panel');
