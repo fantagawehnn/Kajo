@@ -1577,8 +1577,8 @@ function renderTrainingBenefitProfile(act) {
     const rpe = Number(act.perceivedEffort);
     const hasRpe = Number.isFinite(rpe) && rpe >= 1 && rpe <= 10;
     const rows = totalSeconds > 0 ? [
-        ['Aerob', zoneSeconds[0] + zoneSeconds[1]], ['Moderat', zoneSeconds[1] + zoneSeconds[2]],
-        ['Schwelle', zoneSeconds[2] + zoneSeconds[3]], ['Hochintensiv', zoneSeconds[3] + zoneSeconds[4]]
+        ['Niedrige Intensität', zoneSeconds[0] + zoneSeconds[1]], ['Mittlere Intensität', zoneSeconds[1] + zoneSeconds[2]],
+        ['Hohe Intensität', zoneSeconds[2] + zoneSeconds[3]], ['Sehr hohe Intensität', zoneSeconds[3] + zoneSeconds[4]]
     ] : [];
     const colors = ['#38bdf8', '#34d399', '#facc15', '#fb923c'];
     const profile = rows.map(([label, seconds], i) => {
