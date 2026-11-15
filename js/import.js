@@ -170,7 +170,7 @@ function showIntervalsSyncToast(message = 'Intervals.icu-Synchronisierung läuft
 }
 function isGarminSyncConfigured() {
     const configured = getUserLocalSetting('garmin_connected');
-    return configured === 'true';
+    return configured !== 'false';
 }
 
 function intervalsSyncPauseMessage() {
@@ -189,8 +189,7 @@ export function deactivateIntervalsActivities() {
         || activity?.sources?.includes?.('garmin');
     const isIntervals = activity => activity?.source === 'intervals'
         || activity?.sourceRefs?.intervalsActivityId != null
-        || (activity?.sourceId != null && String(activity.id) === String(activity.sourceId)
-            && /^\\d+$/.test(String(activity.sourceId)));
+        || activity?.sources?.includes?.('intervals');
     const disabled = [];
     state.rawActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
         if (isIntervals(activity) && !isGarmin(activity)) {
