@@ -72,7 +72,18 @@ function dayActivitySummary(dateStr){
  state.rawActivities.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Aktivität:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · '+(a.distance==null?'—':formatKm(a.distance))+' km · '+(a.hr??'—')+' bpm · '+(a.tss??'—')+' Load'+(a.perceivedEffort!=null?' · Empfinden '+a.perceivedEffort+'/10':'')+' · sRPE '+(a.sRpeLoad??'—')+'</div>'));
  state.plannedActivities.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Geplant:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · Ziel '+(a.targetTss??'—')+' Load</div>'));
  state.races.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Wettkampf:</b> '+escapeHtml(a.name)+' · Rang '+escapeHtml(a.prio||'—')+'</div>'));
- state.strengthLogs.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Kraft:</b> '+escapeHtml(a.exercise)+' · '+a.sets+' × '+a.reps+' · '+a.weight+' kg · RPE '+a.rpe+'</div>'));
+ state.strengthLogs.filter(x=>x.date===dateStr).forEach(a=>{
+  const sets=Array.isArray(a.sets)?a.sets:[];
+  if(sets.length){
+   const totalReps=sets.reduce((sum,set)=>sum+(Number(set?.reps)||0),0);
+   const volume=sets.reduce((sum,set)=>sum+(Number(set?.weight)||0)*(Number(set?.reps)||0),0);
+   out.push('<div><b>Kraft:</b> '+escapeHtml(a.exercise||'Übung')+' · '+sets.length+' Sätze · '+totalReps+' Wdh. · '+volume.toLocaleString('de-DE',{maximumFractionDigits:1})+' kg Volumen</div>');
+  }else{
+   const legacySets=Number(a.sets),legacyReps=Number(a.reps),legacyWeight=Number(a.weight);
+   const hasLegacy=Number.isFinite(legacySets)&&legacySets>0&&Number.isFinite(legacyReps)&&legacyReps>0&&Number.isFinite(legacyWeight)&&legacyWeight>=0;
+   out.push('<div><b>Kraft:</b> '+escapeHtml(a.exercise||'Übung')+(hasLegacy?' · '+legacySets+' × '+legacyReps+' · '+legacyWeight+' kg':' · Satzdetails nicht hinterlegt')+(a.rpe!=null?' · RPE '+escapeHtml(a.rpe):'')+'</div>');
+  }
+ });
  return out.length?out.join(''):'<span class="text-slate-500">Keine Aktivitäten oder Einheiten erfasst.</span>';
 }
 function dayNumber(value,min,max){if(value===''||value===null||value===undefined)return null;const n=Number(value);return Number.isFinite(n)&&n>=min&&n<=max?n:null;}
