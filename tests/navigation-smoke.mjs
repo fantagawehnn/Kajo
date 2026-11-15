@@ -18,6 +18,7 @@ const health = readFileSync('js/health.js', 'utf8');
 const healthData = readFileSync('js/health-data.js', 'utf8');
 const competitions = readFileSync('js/competitions.js', 'utf8');
 const pushNotifications = readFileSync('js/push-notifications.js', 'utf8');
+const pushTestFunction = readFileSync('supabase/functions/kajo-push-test/index.ts', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -37,6 +38,13 @@ assert.ok(pushNotifications.includes('registration.pushManager.getSubscription()
 assert.ok(pushNotifications.includes('Dieses Gerät nutzt eine ältere Push-Registrierung'), 'settings disclose when the browser subscription uses an outdated VAPID key');
 assert.ok(pushNotifications.includes('.delete().eq("endpoint", oldEndpoint).eq("user_id", user.id)'), 'old push endpoint is removed from the current account before replacement');
 assert.ok(pushNotifications.includes('const unsubscribed = await subscription.unsubscribe()'), 'old browser subscription is explicitly unsubscribed before replacement');
+assert.ok(html.includes('Push-Versand testen'), 'settings button clearly identifies a real push delivery test');
+assert.ok(pushNotifications.includes('supabase.functions.invoke("kajo-push-test")'), 'push test calls the authenticated server-side edge function');
+assert.ok(!pushNotifications.includes('registration.showNotification("KAJO · Alles bereit"'), 'push test no longer uses a local-only browser notification');
+assert.ok(pushTestFunction.includes('authClient.auth.getUser()'), 'server-side push test verifies the signed-in user');
+assert.ok(pushTestFunction.includes('.eq("user_id", userId)'), 'server-side push test only loads the current user subscriptions');
+assert.ok(pushTestFunction.includes('subscriber.pushTextMessage('), 'server-side push test sends through the Web Push provider');
+assert.ok(pushTestFunction.includes('status === 404 || status === 410'), 'server-side push test removes expired endpoints');
 assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does not duplicate the global brand and account actions');
 
 for (const domain of ['load', 'recovery', 'performance', 'health']) {
