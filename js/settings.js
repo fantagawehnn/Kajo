@@ -232,8 +232,23 @@ function renderRows() {
 }
 
 export function initializeSettings() { renderRows(); }
+export function renderCalendarSeasonSettings(){
+  const s=state.settings?.calendarSeason||{},name=document.getElementById('calendar-season-name'),start=document.getElementById('calendar-season-start'),end=document.getElementById('calendar-season-end'),status=document.getElementById('calendar-season-status');
+  if(name)name.value=s.name||'';if(start)start.value=s.start||'';if(end)end.value=s.end||'';
+  if(status)status.textContent=s.start&&s.end?'Aktiv: '+(s.name||'Saison')+' · '+s.start+' bis '+s.end:'Noch keine Saison definiert. Die Saisonansicht bleibt ausgeblendet.';
+}
+export function saveCalendarSeason(){
+  const name=document.getElementById('calendar-season-name')?.value.trim()||'Saison',start=document.getElementById('calendar-season-start')?.value||'',end=document.getElementById('calendar-season-end')?.value||'';
+  if(!start||!end){alert('Bitte lege Saisonstart und Saisonende fest.');return;}if(start>end){alert('Das Saisonende muss am oder nach dem Saisonstart liegen.');return;}
+  state.settings={...state.settings,calendarSeason:{name,start,end}};saveDataToLocalStorage();renderCalendarSeasonSettings();refreshAll();alert('Saisonzeitraum gespeichert. Die Saisonansicht ist jetzt im Kalender verfügbar.');
+}
+export function deleteCalendarSeason(){
+  if(!state.settings?.calendarSeason)return;if(!confirm('Möchtest du den definierten Saisonzeitraum wirklich löschen?'))return;
+  const settings={...state.settings};delete settings.calendarSeason;state.settings=settings;if(state.activeCalendarFormat==='season')state.activeCalendarFormat='month';
+  saveDataToLocalStorage();renderCalendarSeasonSettings();refreshAll();
+}
 export function openSettingsModal() {
-  renderRows();
+  renderRows();renderCalendarSeasonSettings();
   document.getElementById('settings-modal')?.classList.remove('hidden');
 }
 export function closeSettingsModal() { document.getElementById('settings-modal')?.classList.add('hidden'); }
