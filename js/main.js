@@ -2214,16 +2214,23 @@ async function handleAuthSession(session) {
 
     activationPromise = (async () => {
         try {
-            await withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000);
+            // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
+            // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
+            // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
+            const [loadedUserId, cloudSnapshot] = await Promise.all([
+                withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000),
+                withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000)
+            ]);
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
-            // Lokale Rohtelemetrie vor dem Laden des maßgeblichen Cloud-Snapshots
+            if (loadedUserId !== userId) {
+                throw new Error('Der lokale Datenspeicher gehört nicht mehr zum angemeldeten Konto.');
+            }
+            // Lokale Rohtelemetrie vor dem Anwenden des maßgeblichen Cloud-Snapshots
             // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
             const localTelemetryForMigration = getGarminTelemetryRecordsForCloud();
 
             // Ein vorhandener zentraler Datensatz ist die maßgebliche Datenquelle.
             // Der lokale, kontogebundene Speicher dient danach nur als Cache.
-            const cloudSnapshot = await withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000);
-            if (sequence !== activationSequence || activeAppUserId !== userId) return;
             if (cloudSnapshot.userId !== userId) {
                 throw new Error('Das angemeldete Konto stimmt nicht mit dem geladenen Cloud-Datensatz überein.');
             }
