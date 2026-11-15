@@ -350,7 +350,8 @@ export function saveActivitiesToLocalStorage() {
     }
     // Garmin-Rohtelemetrie bleibt ausschließlich im Arbeitsspeicher und in Supabase.
     const activities = stripGarminTelemetryFromActivities(state.rawActivities);
-    state.garminTelemetryStore = {};
+    // Der separate Garmin-Telemetrie-Cache bleibt im Arbeitsspeicher erhalten.
+    // Er wird für Analyse und spätere Cloud-Synchronisierung benötigt.
     activeUserStorage.setItem('activities', JSON.stringify(activities));
     const storageForThisSave = activeUserStorage;
     indexedDbWriteQueue = indexedDbWriteQueue
@@ -368,7 +369,9 @@ export function saveDataToLocalStorage() {
 
     // Alle Garmin-Rohzeitreihen werden aus der dauerhaften lokalen Ablage ausgeschlossen.
     const snapshot = getUserDataSnapshot();
-    state.garminTelemetryStore = {};
+    // Einstellungen und andere Stammdaten speichern, ohne den separat geladenen
+    // Garmin-Telemetrie-Cache zu leeren. Die Rohdaten werden nicht in den
+    // kompakten lokalen Aktivitätssnapshot geschrieben.
     for (const [collection, value] of Object.entries(snapshot)) {
         activeUserStorage.setItem(collection, JSON.stringify(value));
     }
