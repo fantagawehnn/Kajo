@@ -681,14 +681,20 @@ function renderActivityTrainingInsights(act) {
     const category = categoryLabels[act.category] || 'Nicht zugeordnet';
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
-    const load = loadItem ? loadItem.value.toFixed(1) + ' ' + loadData.unit : '—';
-    const loadLabel = loadData.mode === 'garmin-native' ? 'Garmin Training Load'
-        : loadData.mode === 'garmin-zone' ? 'KAJO HF-Zonen-Load'
-        : loadData.mode === 'srpe' ? 'sRPE-Load'
-        : loadData.mode === 'external-tss' ? 'Externes TSS' : 'Aktives Load-Modell';
     const zoneLoad = calculateGarminZoneLoad(act, state.settings, state.profile);
     const srpeData = getTrainingLoadData([act], { ...(state.settings || {}), trainingLoadSource: 'srpe' }, state.profile);
     const srpeItem = srpeData.records[0];
+    // The long-term model uses one consistent source, but an individual
+    // activity may still show its own available load when it is not part of
+    // that selected model (for example native Garmin load is missing).
+    const activityLoad = loadItem
+        ? { value: loadItem.value, unit: loadData.unit, label: loadData.mode === 'garmin-native' ? 'Garmin Training Load'
+            : loadData.mode === 'garmin-zone' ? 'KAJO HF-Zonen-Load' : 'sRPE-Load' }
+        : zoneLoad ? { value: zoneLoad.value, unit: zoneLoad.unit, label: 'KAJO HF-Zonen-Load' }
+        : srpeItem ? { value: srpeItem.value, unit: srpeData.unit, label: 'sRPE-Load' }
+        : null;
+    const load = activityLoad ? activityLoad.value.toFixed(1) + ' ' + activityLoad.unit : '—';
+    const loadLabel = activityLoad?.label || 'Load nicht berechenbar';
     const separateLoads = [
         act.garminTrainingLoad != null && Number.isFinite(Number(act.garminTrainingLoad)) ? ['Garmin Training Load', Number(act.garminTrainingLoad).toFixed(1)] : null,
         zoneLoad ? ['KAJO HF-Zonen-Load' + (zoneLoad.zoneSource === 'maxhr-estimate' ? ' · HFmax-Näherung' : ''), zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,

@@ -397,6 +397,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
 
     const catalog = getSportsCatalog();
     const totals = {};
+    const zoneBounds = {};
     const rangeEl = document.getElementById('sport-range');
     const days = rangeEl ? rangeEl.value : '7';
     if (options.fromDate && options.toDate) {
@@ -460,6 +461,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         });
 
         if (!totals[activity.type]) totals[activity.type] = [0, 0, 0, 0, 0];
+        zoneBounds[activity.type] = zones.map(Number);
         let activityHasValidSample = false;
         hr.forEach((rawBpm, index) => {
             const bpm = Number(rawBpm);
@@ -535,7 +537,7 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
                 <div class="flex items-center justify-between gap-2"><strong class="text-xs text-white">${catalog[key]?.label || key}</strong><span class="text-[10px] text-slate-400">${duration(totalSeconds)} erfasst</span></div>
                 <div class="grid grid-cols-5 gap-1">${zoneSeconds.map((seconds, index) => {
                     const percent = totalSeconds > 0 ? seconds / totalSeconds * 100 : 0;
-                    const bounds = state.settings.heartRateZones[key].map(Number);
+                    const bounds = zoneBounds[key] || state.settings?.heartRateZones?.[key]?.map(Number) || [];
                     const lower = index === 0 ? null : bounds[index - 1] + 1;
                     const upper = index === 4 ? null : bounds[index];
                     const rangeLabel = lower === null ? `≤ ${upper} bpm`

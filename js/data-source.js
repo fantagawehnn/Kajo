@@ -62,7 +62,7 @@ export function getGarminHeartRateSeries(activity) {
     const telemetry = getGarminTelemetry(activity);
     if (!telemetry) return null;
     const validValues = values => Array.isArray(values) && values.length >= 2
-        && values.some(value => Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250);
+        && values.filter(value => Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length >= 2;
     if (validValues(telemetry.hr)) {
         const time = Array.isArray(telemetry.time) && telemetry.time.length === telemetry.hr.length
             ? telemetry.time : null;
@@ -72,7 +72,7 @@ export function getGarminHeartRateSeries(activity) {
         ? telemetry.metricSeries : {};
     for (const [key, metric] of Object.entries(metricSeries)) {
         const descriptor = (String(key) + ' ' + String(metric?.label || '')).toLowerCase().replace(/[_-]+/g, ' ');
-        if (!/(heart.?rate|heartrate|(^|\\s)hr($|\\s)|puls|herzfrequenz)/.test(descriptor)
+        if (!/(heart.?rate|heartrate|(^|\s)hr($|\s)|puls|herzfrequenz)/.test(descriptor)
             || !validValues(metric?.values)) continue;
         const time = Array.isArray(metric.time) && metric.time.length === metric.values.length
             ? metric.time
