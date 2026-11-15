@@ -35,7 +35,7 @@ import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSpo
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot } from './storage.js?v=2';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
 import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js?v=1';
-import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=1';
+import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=2';
 
 // Externe UI-Bibliotheken dürfen die Kontoaktivierung nicht blockieren.
 // Insbesondere kann das optionale Lucide-CDN vorübergehend nicht erreichbar sein.
@@ -397,6 +397,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
             sleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
             sleepScore: findGarminSleepScore(sleepPayload),
             respiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
+            garminStress: findGarminNumber(records.stress, ['averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
             weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg'])
         };
         if (candidates.rhr === null) {
@@ -414,10 +415,17 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
             if (key === 'sleepDuration' && (value <= 0 || value > 24)) continue;
             if (key === 'sleepScore' && (value < 0 || value > 100)) continue;
             if (key === 'respiration' && (value < 4 || value > 60)) continue;
+            if (key === 'garminStress' && (value < 0 || value > 100)) continue;
             if (key === 'weight' && (value <= 0 || value > 400)) continue;
-            // Bestehende Check-in-Werte haben Vorrang: manuelle Einträge werden nie überschrieben.
-            if (existing[key] !== null && existing[key] !== undefined && existing[key] !== '') continue;
+            // Garmin-Stress bleibt als eigener Messwert getrennt vom subjektiven Check-in-Stress.
+            if (key !== 'garminStress' && existing[key] !== null && existing[key] !== undefined && existing[key] !== '') continue;
             updates[key] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            if (key === 'garminStress') {
+                updates.measurementSources = {
+                    ...(existing.measurementSources || {}),
+                    garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' }
+                };
+            }
         }
         const keys = Object.keys(updates);
         if (!keys.length) continue;
