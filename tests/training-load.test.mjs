@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
-import { getTrainingLoadData } from '../js/training-load.js';
+import { calculateGarminZoneLoad, getTrainingLoadData } from '../js/training-load.js';
 import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
 
 function dateKey(date) {
@@ -337,4 +337,24 @@ test('time-axis summary rejects nonnumeric, duplicate, and descending values', (
 
 test('time-axis summary does not fabricate statistics for a missing axis', () => {
     assert.deepEqual(summarizeTimeAxis(null), { valid: false, pointCount: 0, intervalCount: 0 });
+});
+
+
+test('Garmin HR-zone load does not invent time after the final timestamp', () => {
+    const activity = {
+        id: 'g-tail', source: 'garmin', type: 'Kayaking', date: completedDay,
+        garminTelemetry: {
+            hr: [90, 110, 150, 170, 200],
+            time: [0, 20, 40, 60, 80]
+        }
+    };
+    const load = calculateGarminZoneLoad(activity, {
+        heartRateZones: { Kayaking: [100, 120, 140, 160] }
+    }, {});
+    assert.ok(load);
+    assert.equal(load.recordedSeconds, 80);
+    assert.equal(load.totalSeconds, 80);
+    assert.equal(load.totalSeconds, load.secondsByZone.reduce((sum, value) => sum + value, 0));
+    assert.equal(load.value, 40);
+    assert.equal(load.excludedIntervalCount, 0);
 });
