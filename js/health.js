@@ -93,23 +93,25 @@ function updateCheckinSliderFills() {
 
 export function updateCheckin() {
     updateCheckinSliderFills();
-    const sleep = document.getElementById('input-sleep-quality').value;
-    const soreness = document.getElementById('input-soreness').value;
-    const fatigue = document.getElementById('input-fatigue').value;
-    const motivation = document.getElementById('input-motivation').value;
-    const stress = document.getElementById('input-stress').value;
 
-    document.getElementById('lbl-sleep').textContent = sleep;
-    document.getElementById('lbl-soreness').textContent = soreness;
-    document.getElementById('lbl-fatigue').textContent = fatigue;
-    document.getElementById('lbl-motivation').textContent = motivation;
-    document.getElementById('lbl-stress').textContent = stress;
-    const pain = document.getElementById('input-cycle-pain');
-    const impact = document.getElementById('input-cycle-impact');
-    const painLabel = document.getElementById('lbl-cycle-pain');
-    const impactLabel = document.getElementById('lbl-cycle-impact');
-    if (pain && painLabel) painLabel.textContent = pain.value;
-    if (impact && impactLabel) impactLabel.textContent = impact.value;
+    // Das Dashboard kann ohne geöffnetes bzw. vollständig gerendertes Check-in-Formular
+    // aktualisiert werden. Fehlende optionale Formularelemente dürfen die Initialisierung
+    // der übrigen App deshalb nicht abbrechen.
+    const valueLabels = [
+        ['input-sleep-quality', 'lbl-sleep'],
+        ['input-soreness', 'lbl-soreness'],
+        ['input-fatigue', 'lbl-fatigue'],
+        ['input-motivation', 'lbl-motivation'],
+        ['input-stress', 'lbl-stress'],
+        ['input-cycle-pain', 'lbl-cycle-pain'],
+        ['input-cycle-impact', 'lbl-cycle-impact']
+    ];
+
+    valueLabels.forEach(([inputId, labelId]) => {
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+        if (input && label) label.textContent = input.value;
+    });
 }
 
 export function toggleCheckinOptionalFields() {
