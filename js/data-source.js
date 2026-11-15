@@ -94,3 +94,30 @@ export function getGarminHeartRateSeries(activity) {
     // can still be calculated where the activity duration is valid.
     return candidates.find(candidate => candidate.time) || candidates[0] || null;
 }
+
+
+/** Structural statistics for a numeric time axis. Values are not converted and
+ * no unit is inferred: callers must confirm the unit from source metadata.
+ */
+export function summarizeTimeAxis(axis) {
+    if (!Array.isArray(axis) || axis.length < 2) {
+        return { valid: false, pointCount: Array.isArray(axis) ? axis.length : 0, intervalCount: 0 };
+    }
+    const values = axis.map(Number);
+    if (!values.every(Number.isFinite) || !values.slice(1).every((value, index) => value > values[index])) {
+        return { valid: false, pointCount: axis.length, intervalCount: 0 };
+    }
+    const intervals = values.slice(1).map((value, index) => value - values[index]).sort((a, b) => a - b);
+    const median = intervals.length % 2
+        ? intervals[Math.floor(intervals.length / 2)]
+        : (intervals[intervals.length / 2 - 1] + intervals[intervals.length / 2]) / 2;
+    return {
+        valid: true,
+        pointCount: values.length,
+        intervalCount: intervals.length,
+        minInterval: intervals[0],
+        medianInterval: median,
+        maxInterval: intervals[intervals.length - 1],
+        span: values[values.length - 1] - values[0]
+    };
+}
