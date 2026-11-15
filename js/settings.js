@@ -143,7 +143,7 @@ export function previewHeartRateZones() {
     ? 'Adaptive Ruhe-HF: ' + resting.value + ' bpm · ' + resting.readingCount + '/' + resting.windowDays + ' Tageswerte'
       + (resting.source === 'profile-fallback' ? ' · statischer Profil-Fallback' : ' · Median der letzten Tage')
       + (resting.quality === 'limited' ? ' · eingeschränkte Datenbasis' : '')
-    : 'Keine adaptive Ruhe-HF verfügbar. Mindestens drei gültige Tageswerte oder ein Profilwert sind erforderlich.';
+    : 'Keine adaptive Ruhe-HF verfügbar. Mindestens 60 % der Tage (mindestens drei Messwerte) oder ein Profilwert sind erforderlich.';
   if (preview) preview.textContent = zones
     ? 'Z1 bis ' + zones[0] + ' · Z2 bis ' + zones[1] + ' · Z3 bis ' + zones[2] + ' · Z4 bis ' + zones[3] + ' · Z5 darüber'
     : 'Aktuell nicht berechenbar: Bitte HFmax und Ruhe-HF-Daten prüfen.';
