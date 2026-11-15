@@ -2292,7 +2292,7 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
         const adaptive = getAdaptiveRestingHr(
             state.dailyCheckins, String(activity.date).slice(0, 10), expectedWindow, state.profile
         );
-        const expectedResting = Number.isFinite(Number(adaptive?.value)) ? Number(adaptive.value) : null;
+        const expectedResting = adaptive?.value != null && Number.isFinite(Number(adaptive.value)) ? Number(adaptive.value) : null;
         return cache.restingHr === expectedResting;
     };
     const pending = [];
