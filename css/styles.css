@@ -8041,3 +8041,50 @@ html[data-theme="light"] #view-garmin-health .kajo-health-custom-range input { c
   #view-garmin-health .kajo-health-detail-baseline { padding:10px 0 0; border-left:0; border-top:1px solid var(--kajo-border,#334155); }
   #view-garmin-health .kajo-health-detail-chart { height:230px; }
 }
+
+
+/* Mobile pull-to-refresh indicator; gesture is active only at the top of the app viewport. */
+.kajo-pull-refresh {
+  position: sticky;
+  top: 0;
+  z-index: 75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 0;
+  margin: 0 -0.75rem;
+  overflow: hidden;
+  color: #cbd5e1;
+  background: rgba(8, 15, 26, .96);
+  border-bottom: 1px solid transparent;
+  font-size: .72rem;
+  font-weight: 650;
+  transition: height .18s ease, border-color .18s ease;
+  pointer-events: none;
+}
+.kajo-pull-refresh.is-pulling,
+.kajo-pull-refresh.is-refreshing {
+  border-bottom-color: rgba(148, 163, 184, .16);
+}
+.kajo-pull-refresh-spinner {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border: 2px solid rgba(148, 163, 184, .35);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  opacity: .55;
+}
+.kajo-pull-refresh.is-refreshing .kajo-pull-refresh-spinner {
+  opacity: 1;
+  animation: kajo-pull-spin .75s linear infinite;
+}
+@keyframes kajo-pull-spin { to { transform: rotate(360deg); } }
+html[data-theme="light"] .kajo-pull-refresh {
+  color: #334155;
+  background: rgba(248, 250, 252, .98);
+}
+@media (min-width: 768px) {
+  .kajo-pull-refresh { display: none; }
+}
