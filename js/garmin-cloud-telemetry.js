@@ -20,7 +20,7 @@ export function getGarminTelemetryActivityId(activity) {
         ?? activity?.garminData?.activityId
         ?? activity?.id;
     const id = String(rawId ?? '').replace(/^garmin-/, '');
-    return /^\\d+$/.test(id) ? id : null;
+    return /^\d+$/.test(id) ? id : null;
 }
 
 export function extractGarminTelemetryRecords(activities, telemetryStore = {}) {
@@ -48,7 +48,7 @@ export function extractGarminTelemetryRecords(activities, telemetryStore = {}) {
 
     for (const [rawId, telemetry] of Object.entries(stored)) {
         const id = String(rawId).replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(id) || records.has(id) || !telemetry || typeof telemetry !== 'object') continue;
+        if (!/^\d+$/.test(id) || records.has(id) || !telemetry || typeof telemetry !== 'object') continue;
         if (Object.keys(telemetry).length) records.set(id, { garmin_activity_id: id, telemetry });
     }
 
@@ -80,7 +80,7 @@ export async function syncGarminTelemetryToCloud(supabase, userId, candidateReco
 
     for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
         const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
         if (!existingIds.has(activityId)) uniqueCandidates.set(activityId, {
             user_id: id,
             garmin_activity_id: activityId,
