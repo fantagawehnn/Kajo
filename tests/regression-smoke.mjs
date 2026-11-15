@@ -151,6 +151,8 @@ assert.equal(disabledSummary.deactivated, 1);
 assert.equal(state.rawActivities.some(activity => activity.id === 'icu-only-1'), false);
 assert.equal(state.rawActivities.some(activity => activity.id === 'garmin-123456'), true);
 assert.equal(state.disabledIntervalsActivities[0].id, 'icu-only-1');
+assert.equal(storage.getUserDataSnapshot().disabledIntervals[0].id, 'icu-only-1');
+assert.equal(JSON.parse(store.get('endurance:user:smoke-test-user:disabledIntervals'))[0].id, 'icu-only-1');
 globalThis.fetch = async url => url.includes('/activities')
     ? { ok: true, json: async () => [] }
     : { ok: true, json: async () => [{
