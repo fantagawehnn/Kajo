@@ -55,6 +55,7 @@ function renderCoverage(analysis) {
   setText('training-load-coverage', 'Garmin-Aktivitäten im Zeitraum: ' + c.garminActivityCount
     + ' · KAJO berechenbar: ' + c.activitiesWithKajoZones
     + ' · Edwards berechenbar: ' + c.activitiesWithEdwards
+    + (c.activitiesWithoutUsableAdaptiveRhr ? ' · KAJO ohne adaptive Ruhe-HF: ' + c.activitiesWithoutUsableAdaptiveRhr : '')
     + (c.activitiesWithoutUsableEdwardsMaxHr ? ' · Edwards ohne gültige HFmax/Zone: ' + c.activitiesWithoutUsableEdwardsMaxHr : ''));
   const maxHr = Number(state.profile?.maxHr);
   setText('training-load-edwards-maxhr-note', Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240
