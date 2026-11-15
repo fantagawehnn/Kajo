@@ -307,6 +307,13 @@ onHover:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(ev
     }
 }
 export function renderSportDistribution(records) {
+    // This legacy chart is not mounted in the current five-tab layout.
+    // Keep initialization safe when its optional canvas/legend are absent.
+    const canvas = document.getElementById('sportDistributionChart');
+    const legendEl = document.getElementById('sport-breakdown-legend');
+    if (!canvas || !legendEl || typeof canvas.getContext !== 'function') return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     const rangeEl=document.getElementById('sport-range');
     const days=rangeEl?rangeEl.value:'7';
     if(days!=='all'){
@@ -351,7 +358,6 @@ export function renderSportDistribution(records) {
         colors.push(conf.color);
     });
 
-    const ctx = document.getElementById('sportDistributionChart').getContext('2d');
     if (state.pieChartInstance) state.pieChartInstance.destroy();
 
     state.pieChartInstance = new Chart(ctx, {
@@ -360,7 +366,6 @@ export function renderSportDistribution(records) {
         options: { responsive: true, maintainAspectRatio: false, onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements[0].index;showChartSummaryReadout(chart.canvas,{title:'Sportverteilung',time:chart.data.labels[index],items:[{value:chart.data.datasets[0].data[index],unit:'Std.'}]});}, onClick:(event,elements,chart)=>{if(!elements.length)return;const index=elements[0].index;showChartSummaryReadout(chart.canvas,{title:'Sportverteilung',time:chart.data.labels[index],items:[{value:chart.data.datasets[0].data[index],unit:'Std.'}]});}, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
     });
 
-    const legendEl = document.getElementById('sport-breakdown-legend');
     legendEl.innerHTML = '';
 
     Object.keys(totals).forEach(k => {
