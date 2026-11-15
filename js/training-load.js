@@ -110,11 +110,14 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const adaptive = getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins);
     const zones = adaptive?.zones;
     const cached = activity?.garminAnalysis;
+    const sameOptionalNumber = (left, right) => left == null || left === ''
+        ? right == null || right === ''
+        : right != null && right !== '' && Number(left) === Number(right);
     const cachedMatches = cached?.version === 1
-        && Number(cached.durationMinutes) === Number(activity.duration)
-        && Number(cached.maxHr) === Number(profile?.maxHr)
-        && Number(cached.restingHr) === Number(adaptive?.restingHr)
-        && Number(cached.restingHrWindowDays) === Number(adaptive?.restingHrWindowDays);
+        && sameOptionalNumber(cached.durationMinutes, activity.duration)
+        && sameOptionalNumber(cached.maxHr, profile?.maxHr)
+        && sameOptionalNumber(cached.restingHr, adaptive?.restingHr)
+        && sameOptionalNumber(cached.restingHrWindowDays, adaptive?.restingHrWindowDays);
     if ((!Array.isArray(hr) || hr.length < 2) && cachedMatches && cached.kajo
         && Array.isArray(cached.kajo.secondsByZone)) return cached.kajo;
     if (!Array.isArray(zones)) return null;
@@ -302,7 +305,9 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
         let edwards = null;
         const cachedAnalysis = activity?.garminAnalysis;
         const cachedEdwardsMatches = cachedAnalysis?.version === 1
-            && Number(cachedAnalysis.durationMinutes) === Number(activity.duration)
+            && (cachedAnalysis.durationMinutes == null || activity.duration == null
+                ? cachedAnalysis.durationMinutes == null && activity.duration == null
+                : Number(cachedAnalysis.durationMinutes) === Number(activity.duration))
             && Number(cachedAnalysis.maxHr) === Number(maxHr);
         if (cachedEdwardsMatches && cachedAnalysis.edwards
             && !getGarminHeartRateSeries(activity)) {
