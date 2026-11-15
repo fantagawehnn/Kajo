@@ -1201,14 +1201,9 @@
             <section id="activity-route-map-panel" class="hidden activity-detail-panel"></section>
 
             <section id="activity-telemetry-diagnostic-source" class="activity-detail-panel" aria-label="Zeitreihen-Diagnose">
-                <div class="flex flex-wrap gap-2">
-                    <button id="activity-telemetry-diagnose" type="button" class="activity-series-switch">Zeitreihen-Diagnose ausführen</button>
-                    <button id="garmin-json-diagnostic-run" type="button" class="activity-series-switch">Garmin-JSON-Diagnose für diese Aktivität ausführen</button>
-                    <button id="garmin-json-import-run" type="button" class="activity-series-switch">Garmin-Telemetrie für diese Aktivität ergänzen</button>
-                </div>
+                <div class="activity-detail-section-heading"><div><h3>Garmin-Daten prüfen</h3><p>Nur lesende Prüfung der Telemetrie, die für diese Aktivität bereits in KAJO geladen ist. Es wird nichts importiert oder verändert.</p></div></div>
+                <button id="activity-telemetry-diagnose" type="button" class="activity-series-switch">Geladene Garmin-Daten analysieren</button>
                 <pre id="activity-telemetry-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
-                <pre id="garmin-json-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
-                <pre id="garmin-json-import-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
             </section>
             <div class="activity-detail-grid">
                 <div class="activity-detail-primary">
