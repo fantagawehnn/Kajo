@@ -358,3 +358,34 @@ test('Garmin HR-zone load does not invent time after the final timestamp', () =>
     assert.equal(load.value, 4);
     assert.equal(load.excludedIntervalCount, 0);
 });
+
+
+test('global HR zones are used when no valid sport-specific zones exist', () => {
+    const activity = {
+        id: 'g-global-zones', source: 'garmin', type: 'Kayaking', date: completedDay,
+        garminTelemetry: { hr: [90, 110, 150, 170, 200], time: [0, 20, 40, 60, 80] }
+    };
+    const load = calculateGarminZoneLoad(activity, {
+        heartRateZones: { global: [100, 120, 140, 160] }
+    }, { maxHr: 190 });
+    assert.ok(load);
+    assert.equal(load.zoneSource, 'global');
+    assert.deepEqual(load.zones, [100, 120, 140, 160]);
+    assert.equal(load.totalSeconds, 80);
+});
+
+test('valid sport-specific HR zones take precedence over global zones', () => {
+    const activity = {
+        id: 'g-sport-zones', source: 'garmin', type: 'Kayaking', date: completedDay,
+        garminTelemetry: { hr: [90, 110, 150, 170, 200], time: [0, 20, 40, 60, 80] }
+    };
+    const load = calculateGarminZoneLoad(activity, {
+        heartRateZones: {
+            global: [100, 120, 140, 160],
+            Kayaking: [105, 125, 145, 165]
+        }
+    }, { maxHr: 190 });
+    assert.ok(load);
+    assert.equal(load.zoneSource, 'sport-specific');
+    assert.deepEqual(load.zones, [105, 125, 145, 165]);
+});
