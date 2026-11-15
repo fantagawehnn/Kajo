@@ -120,8 +120,7 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
     const validTime = Array.isArray(time) && time.length === hr.length
         && time.every(value => Number.isFinite(Number(value)))
-        && time.slice(1).every((value, index) => Number(value) > Number(time[index])
-            && Number(value) - Number(time[index]) <= 30);
+        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
     // Gleiche Zeitgewichtung wie die Zonenverteilung in der Aktivitätenansicht:
     // eine vollständig valide Zeitachse hat Vorrang; andernfalls wird die
     // dokumentierte Aktivitätsdauer gleichmäßig auf die HF-Messpunkte verteilt.
@@ -132,19 +131,17 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const medianInterval = sortedIntervals.length ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : 0;
     const sampleDurations = hr.map((_, index) => {
         if (!validTime) return durationSeconds / hr.length;
-        if (index < time.length - 1) return intervals[index];
-        return durationSeconds !== null
-            ? Math.max(0, durationSeconds - Number(time[index]))
-            : medianInterval;
+        if (index < time.length - 1) return intervals[index] <= 30 ? intervals[index] : 0;
+        return 0;
     });
     let excludedIntervalCount = 0;
     let excludedIntervalSeconds = 0;
     if (Array.isArray(time) && time.length === hr.length) {
         for (let i = 0; i < time.length - 1; i++) {
             const delta = Number(time[i + 1]) - Number(time[i]);
-            if (!Number.isFinite(delta) || delta <= 0 || delta > 30) {
+            if (Number.isFinite(delta) && delta > 30) {
                 excludedIntervalCount++;
-                if (Number.isFinite(delta) && delta > 0) excludedIntervalSeconds += delta;
+                excludedIntervalSeconds += delta;
             }
         }
     }
@@ -285,15 +282,13 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
             const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
             const validTime = Array.isArray(time) && time.length === hr?.length
                 && time.every(value => Number.isFinite(Number(value)))
-                && time.slice(1).every((value, index) => Number(value) > Number(time[index])
-                    && Number(value) - Number(time[index]) <= 30);
+                && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
             if (Array.isArray(hr) && hr.length >= 2 && (validTime || durationSeconds !== null)) {
                 const intervals = validTime ? time.slice(1).map((value, index) => Number(value) - Number(time[index])) : [];
                 const sortedIntervals = [...intervals].sort((a,b) => a-b);
                 const medianInterval = sortedIntervals.length ? sortedIntervals[Math.floor(sortedIntervals.length/2)] : 0;
                 const sampleDurations = hr.map((_, index) => !validTime ? durationSeconds / hr.length
-                    : index < time.length - 1 ? intervals[index]
-                    : durationSeconds !== null ? Math.max(0, durationSeconds - Number(time[index])) : medianInterval);
+                    : index < time.length - 1 ? (intervals[index] <= 30 ? intervals[index] : 0) : 0);
                 const secondsByZone = [0, 0, 0, 0, 0];
                 let excludedIntervalCount = 0;
                 let excludedIntervalSeconds = 0;
@@ -301,9 +296,9 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
                 if (Array.isArray(time) && time.length === hr.length) {
                     for (let i=0;i<time.length-1;i++) {
                         const delta=Number(time[i+1])-Number(time[i]);
-                        if (!Number.isFinite(delta) || delta<=0 || delta>30) {
+                        if (Number.isFinite(delta) && delta>30) {
                             excludedIntervalCount++;
-                            if (Number.isFinite(delta) && delta>0) excludedIntervalSeconds+=delta;
+                            excludedIntervalSeconds+=delta;
                         }
                     }
                 }
