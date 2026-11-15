@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=140">
+    <link rel="stylesheet" href="css/styles.css?v=141">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1116,20 +1116,26 @@
     <div id="csv-details-modal" class="hidden fixed inset-0 bg-slate-950 z-[120] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modal-act-title">
     <div class="activity-detail-shell">
         <header class="activity-detail-toolbar">
-            <div class="activity-detail-toolbar-left">
-                <button type="button" onclick="closeCSVDetailsModal()" aria-label="Zurück zur letzten Ansicht" title="Zurück" class="activity-detail-nav-button"><i data-lucide="arrow-left"></i></button>
-                <div class="activity-detail-stepper">
-                    <button type="button" id="activity-detail-previous" aria-label="Vorherige Aktivität" title="Vorherige Aktivität" class="activity-detail-nav-button"><i data-lucide="chevron-left"></i></button>
-                    <span id="activity-detail-position" class="activity-detail-position">—</span>
-                    <button type="button" id="activity-detail-next" aria-label="Nächste Aktivität" title="Nächste Aktivität" class="activity-detail-nav-button"><i data-lucide="chevron-right"></i></button>
+            <button type="button" onclick="closeCSVDetailsModal()" aria-label="Zurück zur letzten Ansicht" title="Zurück" class="activity-detail-nav-button activity-detail-back">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="activity-detail-toolbar-title">
+                <span id="modal-act-sport-icon" class="activity-detail-sport-icon" aria-hidden="true"><i data-lucide="waves"></i></span>
+                <div class="activity-detail-toolbar-copy">
+                    <div class="activity-detail-title-line">
+                        <h2 id="modal-act-title">Aktivitätsdetails</h2>
+                        <span id="modal-act-type-badge" class="activity-detail-type-badge" hidden></span>
+                    </div>
+                    <p id="modal-act-date">—</p>
                 </div>
             </div>
-            <div class="activity-detail-toolbar-title">
-                <span id="modal-act-type-badge" class="activity-detail-type-badge">Aktivität</span>
-                <h2 id="modal-act-title">Aktivitätsdetails</h2>
-                <p id="modal-act-date">—</p>
+            <div class="activity-detail-toolbar-actions">
+                <div class="activity-detail-stepper">
+                    <button type="button" id="activity-detail-previous" aria-label="Vorherige Aktivität" title="Vorherige Aktivität" class="activity-detail-nav-button"><i data-lucide="chevron-left"></i></button>
+                    <button type="button" id="activity-detail-next" aria-label="Nächste Aktivität" title="Nächste Aktivität" class="activity-detail-nav-button"><i data-lucide="chevron-right"></i></button>
+                </div>
+                <button type="button" onclick="toggleActivityEdit()" title="Aktivität bearbeiten" aria-label="Aktivität bearbeiten" class="activity-detail-nav-button"><i data-lucide="pencil"></i></button>
             </div>
-            <button type="button" onclick="toggleActivityEdit()" title="Aktivität bearbeiten" aria-label="Aktivität bearbeiten" class="activity-detail-nav-button"><i data-lucide="pencil"></i></button>
         </header>
         <main class="activity-detail-content">
             <section id="activity-overview" class="activity-detail-overview" aria-label="Aktivitätsübersicht">
