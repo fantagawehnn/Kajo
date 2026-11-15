@@ -1,31 +1,113 @@
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 
+/**
+ * Adapted resting HR for a given activity date.
+ * Uses the median of valid daily RHR values in the configured trailing window.
+ * A minimum of three daily observations is required; otherwise a valid
+ * profile restingHr may be used as an explicitly marked static fallback.
+ */
+export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profile = {}) {
+    const days = Math.min(28, Math.max(3, Math.round(Number(windowDays) || 7)));
+    const endKey = String(date || '').slice(0, 10);
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(endKey)) return null;
+    const end = new Date(endKey + 'T12:00:00');
+    if (!Number.isFinite(end.getTime())) return null;
+    const start = new Date(end);
+    start.setDate(start.getDate() - days + 1);
+    const startKey = [start.getFullYear(), String(start.getMonth()+1).padStart(2,'0'), String(start.getDate()).padStart(2,'0')].join('-');
+    const readings = Object.entries(dailyCheckins || {})
+        .filter(([key, row]) => key >= startKey && key <= endKey && row)
+        .map(([key, row]) => ({ date: key, value: Number(row.rhr) }))
+        .filter(item => Number.isFinite(item.value) && item.value >= 30 && item.value <= 120)
+        .sort((a,b) => a.date.localeCompare(b.date));
+    if (readings.length >= 3) {
+        const values = readings.map(item => item.value).sort((a,b) => a-b);
+        const mid = Math.floor(values.length / 2);
+        const median = values.length % 2 ? values[mid] : (values[mid-1] + values[mid]) / 2;
+        return {
+            value: Number(median.toFixed(1)),
+            source: 'rolling-median',
+            windowDays: days,
+            readingCount: readings.length,
+            startDate: startKey,
+            endDate: endKey,
+            quality: readings.length >= Math.ceil(days * 0.6) ? 'sufficient' : 'limited'
+        };
+    }
+    const fallback = Number(profile?.restingHr);
+    if (Number.isFinite(fallback) && fallback >= 30 && fallback <= 120) {
+        return {
+            value: fallback,
+            source: 'profile-fallback',
+            windowDays: days,
+            readingCount: readings.length,
+            startDate: startKey,
+            endDate: endKey,
+            quality: 'limited'
+        };
+    }
+    return {
+        value: null,
+        source: 'unavailable',
+        windowDays: days,
+        readingCount: readings.length,
+        startDate: startKey,
+        endDate: endKey,
+        quality: 'unavailable'
+    };
+}
+
+/**
+ * Five operational zones based on heart-rate reserve (Karvonen).
+ * Boundaries are the upper limits of Z1–Z4 at 60/70/80/90% HRR;
+ * all lower heart rates remain in Z1.
+ */
+export function calculateHeartRateReserveZones(maxHr, restingHr) {
+    const maximum = Number(maxHr);
+    const resting = Number(restingHr);
+    if (!Number.isFinite(maximum) || maximum < 100 || maximum > 240
+        || !Number.isFinite(resting) || resting < 30 || resting > 120
+        || maximum <= resting + 20) return null;
+    const reserve = maximum - resting;
+    const zones = [0.60, 0.70, 0.80, 0.90].map(percent =>
+        Math.round(resting + reserve * percent)
+    );
+    if (!zones.every((value, index) => index === 0 || value > zones[index-1])) return null;
+    return zones;
+}
+
+function getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins) {
+    const maxHr = Number(profile?.maxHr);
+    if (!Number.isFinite(maxHr) || maxHr < 100 || maxHr > 240) return null;
+    const windowDays = settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+    const resting = getAdaptiveRestingHr(
+        dailyCheckins,
+        String(activity?.date || '').slice(0,10),
+        windowDays,
+        profile
+    );
+    if (!resting || !Number.isFinite(resting.value)) return null;
+    const zones = calculateHeartRateReserveZones(maxHr, resting.value);
+    if (!zones) return null;
+    return { zones, maxHr, restingHr: resting.value, restingHrSource: resting.source,
+        restingHrWindowDays: resting.windowDays, restingHrReadingCount: resting.readingCount,
+        restingHrQuality: resting.quality, heartRateReserve: maxHr - resting.value };
+}
+
 /* Garmin-only training-load calculation.
  * Weighted HR-zone minutes: Z1=1 ... Z5=5 points per minute.
  * This is an Endurance AI index, not TSS and not Garmin's native Training Load.
  */
-export function calculateGarminZoneLoad(activity, settings, profile) {
+export function calculateGarminZoneLoad(activity, settings, profile, dailyCheckins = {}) {
     // FIT-Zeitreihen können bei älteren/zusammengeführten Datensätzen bereits
     // vorhanden sein, auch wenn das Import-Flag fehlt. Nur Garmin-Aktivitäten
     // auswerten; beliebige lokale/Intervals-Telemetrie bleibt ausgeschlossen.
     if (!isGarminActivity(activity)) return null;
     const heartRateSeries = getGarminHeartRateSeries(activity);
     const hr = heartRateSeries?.hr, time = heartRateSeries?.time;
-    const isValidZones = values => Array.isArray(values) && values.length === 4
-        && values.every(v => v != null && Number.isFinite(Number(v)) && Number(v) >= 40 && Number(v) <= 240)
-        && values.every((v, i) => i === 0 || Number(v) > Number(values[i - 1]));
-    const sportZones = settings?.heartRateZones?.[activity.type];
-    const globalZones = settings?.heartRateZones?.global;
-    let zones = isValidZones(sportZones) ? sportZones : globalZones;
-    let zoneSource = isValidZones(sportZones) ? 'sport-specific'
-        : isValidZones(globalZones) ? 'global' : 'maxhr-estimate';
-    if (!isValidZones(zones)) {
-        const maxHr = Number(profile?.maxHr);
-        if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
-            zones = [0.73, 0.80, 0.87, 0.93].map(percent => Math.round(maxHr * percent));
-            zoneSource = 'maxhr-estimate';
-        }
-    }
+    const adaptive = getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins);
+    const zones = adaptive?.zones;
+    if (!Array.isArray(zones)) return null;
     if (!Array.isArray(hr) || hr.length < 2 || !Array.isArray(time) || time.length !== hr.length) return null;
     const validZones = Array.isArray(zones) && zones.length === 4
         && zones.every(v => v != null && Number.isFinite(Number(v)) && Number(v) >= 40 && Number(v) <= 240)
@@ -55,7 +137,10 @@ export function calculateGarminZoneLoad(activity, settings, profile) {
     const points = secondsByZone.reduce((sum,seconds,index)=>sum + seconds / 60 * (index + 1),0);
     return {
         value: Number(points.toFixed(1)), unit: 'Punkte', method: 'Gewichtete HF-Zonenzeit',
-        zoneSource, zones: [...zones].map(Number), secondsByZone, totalSeconds,
+        zoneSource: 'karvonen-adaptive', zones: [...zones].map(Number), secondsByZone, totalSeconds,
+        adaptiveRestingHr: adaptive.restingHr, restingHrSource: adaptive.restingHrSource,
+        restingHrWindowDays: adaptive.restingHrWindowDays, restingHrReadingCount: adaptive.restingHrReadingCount,
+        restingHrQuality: adaptive.restingHrQuality, heartRateReserve: adaptive.heartRateReserve,
         excludedIntervalCount, excludedIntervalSeconds,
         recordedSeconds: Number(time[time.length - 1]) - Number(time[0])
     };
@@ -67,7 +152,7 @@ function calculateSessionRpeLoad(activity) {
     if (!activity?.date || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(rpe) || rpe < 1 || rpe > 10) return null;
     return Number((duration * rpe).toFixed(1));
 }
-export function getTrainingLoadData(records, settings, profile) {
+export function getTrainingLoadData(records, settings, profile, dailyCheckins = {}) {
     const list = Array.isArray(records) ? records : [];
     const srpeData = () => {
         const eligible = list.filter(activity => activity?.date);
@@ -81,7 +166,7 @@ export function getTrainingLoadData(records, settings, profile) {
         || (Array.isArray(activity.sources) && activity.sources.includes('garmin'))
         || activity.garminTrainingLoad != null);
     if (hasGarmin) {
-        const zoneValues = list.filter(activity => activity?.date).map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile) }))
+        const zoneValues = list.filter(activity => activity?.date).map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
             .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone' }));
         // Count all activities with native Garmin Load when comparing source
@@ -137,19 +222,21 @@ export function getTrainingLoadData(records, settings, profile) {
  * max-HR fallback). Edwards uses five fixed %HRmax bands; time below 50%
  * HRmax is deliberately excluded rather than assigned to zone 1.
  */
-export function getHeartRateZoneAnalysis(records, settings, profile) {
+export function getHeartRateZoneAnalysis(records, settings, profile, dailyCheckins = {}) {
     const list = Array.isArray(records) ? records : [];
     const output = [];
     let eligibleGarminCount = 0;
     let kajoCount = 0;
     let edwardsCount = 0;
     let missingMaxHrCount = 0;
+    let missingAdaptiveRhrCount = 0;
 
     for (const activity of list) {
         if (!activity?.date || !isGarminActivity(activity)) continue;
         eligibleGarminCount++;
-        const kajo = calculateGarminZoneLoad(activity, settings, profile);
+        const kajo = calculateGarminZoneLoad(activity, settings, profile, dailyCheckins);
         if (kajo) kajoCount++;
+        else missingAdaptiveRhrCount++;
 
         const maxHr = Number(profile?.maxHr);
         let edwards = null;
@@ -247,6 +334,7 @@ export function getHeartRateZoneAnalysis(records, settings, profile) {
             activitiesWithKajoZones: kajoCount,
             activitiesWithEdwards: edwardsCount,
             activitiesWithoutUsableEdwardsMaxHr: missingMaxHrCount,
+            activitiesWithoutUsableAdaptiveRhr: missingAdaptiveRhrCount,
             activitiesWithoutAnyUsableZoneLoad: Math.max(0, eligibleGarminCount - output.length)
         },
         edwardsMethod: {
