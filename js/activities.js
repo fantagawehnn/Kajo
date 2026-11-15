@@ -947,8 +947,9 @@ function renderOptionalActivityViews(act) {
         setPanel('activity-elevation-panel', 'Höhenprofil und Streckenanalyse', `<p class="text-sm text-slate-200">${profile}${profile && gain !== null ? ' · ' : ''}${gain !== null ? `Höhengewinn: ${Math.round(gain)} m` : ''}</p>`);
     } else setPanel('activity-elevation-panel', 'Höhenprofil und Streckenanalyse', '');
 
-    // Belastungskontext aus derselben aktiven Quelle wie die Belastungsübersicht.
+    // Belastungskontext aus derselben zentralen Berechnung wie die Belastungsübersicht.
     // Keine Mischung von Garmin Load, EA-HF-Punkten und externem TSS.
+    const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
     const today = state.dailyTimeline.findIndex(d => d.date === act.date);
     const activityLoadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
     if (activityLoadItem && today >= 0) {
