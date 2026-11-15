@@ -577,7 +577,7 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
         container.innerHTML = '<p class="col-span-full text-xs text-slate-500">Für diese Aktivität sind noch keine auswertbaren Kennzahlen hinterlegt.</p>';
         return;
     }
-    const primaryLabels = ['Dauer', 'Distanz', 'Ø Herzfrequenz'];
+    const primaryLabels = ['Distanz', 'Dauer', 'Ø Herzfrequenz'];
     const primary = primaryLabels.map(label => metrics.find(metric => metric.label === label)).filter(Boolean);
     const secondary = metrics.filter(metric => !primaryLabels.includes(metric.label));
     const colors = { 'Dauer': '#35b7a5', 'Distanz': '#4297df', 'Ø Herzfrequenz': '#e46d79' };
