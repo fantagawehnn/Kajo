@@ -94,11 +94,6 @@ function renderTelemetrySettings() {
   }));
 }
 
-const ZONE_METHODS = {
-  manual: { label: 'Manuell' },
-  maxhr_myprocoach: { label: '% HFmax – 5-Zonen-Modell' }
-};
-
 function findRecordedMaxHr(value, depth = 0) {
   if (!value || typeof value !== 'object' || depth > 4) return [];
   const found = [];
@@ -125,11 +120,6 @@ function detectMaxHr() {
   return { value: null, source: 'Noch kein geeigneter Wert vorhanden' };
 }
 
-function getZoneBoundaries(method, base) {
-  const percentages = method === 'maxhr_myprocoach' ? [0.73, 0.80, 0.87, 0.93] : null;
-  if (!percentages || !Number.isFinite(Number(base)) || Number(base) <= 0) return null;
-  return percentages.map(percent => Math.round(Number(base) * percent));
-}
 
 export function previewHeartRateZones() {
   const maxHr = Number(document.getElementById('kajo-zone-maxhr')?.value);
