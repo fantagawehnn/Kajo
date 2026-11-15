@@ -526,3 +526,20 @@ test('adaptive RHR prefers Garmin daily value over a legacy/manual rhr field', (
     assert.equal(result.value, 50);
     assert.equal(result.source, 'rolling-median');
 });
+
+
+test('default adaptive resting-HR window is 14 days and requires nine readings', () => {
+    const eightReadings = Object.fromEntries(
+        Array.from({ length: 8 }, (_, index) => [offsetDate('2026-01-14', index - 7), { garminRhr: 50 + (index % 2) }])
+    );
+    assert.equal(getAdaptiveRestingHr(eightReadings, '2026-01-14').value, null);
+
+    const nineReadings = {
+        ...eightReadings,
+        '2026-01-14': { garminRhr: 50 }
+    };
+    const result = getAdaptiveRestingHr(nineReadings, '2026-01-14');
+    assert.equal(result.value, 50);
+    assert.equal(result.windowDays, 14);
+    assert.equal(result.readingCount, 9);
+});
