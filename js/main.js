@@ -2193,6 +2193,25 @@ async function syncGarminTodayOnOpen(userId) {
     garminDailySyncInFlight.add(runKey);
 
     try {
+        // Bereits gespeicherte Garmin-Tageswerte unabhängig vom Live-API-Status
+        // laden, damit historische Aktivitäten adaptive Ruhe-HF erhalten.
+        try {
+            const activityDates = (state.rawActivities || [])
+                .map(activity => String(activity?.date || activity?.startTime || '').slice(0, 10))
+                .filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value))
+                .sort();
+            const zoneWindowDays = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 7));
+            const healthStart = activityDates.length
+                ? new Date(activityDates[0] + 'T12:00:00')
+                : new Date(date + 'T12:00:00');
+            healthStart.setDate(healthStart.getDate() - zoneWindowDays + 1);
+            const healthStartDate = getLocalCalendarDate(healthStart);
+            const healthImport = await loadGarminHealthRecordsIntoCheckins(healthStartDate, date);
+            console.info('KAJO: Garmin-Tagesruhe-HF für den Trainingsverlauf geladen:', healthImport);
+        } catch (healthHistoryError) {
+            console.warn('KAJO: Gespeicherte Garmin-Tagesruhe-HF konnten nicht vollständig geladen werden:', healthHistoryError);
+        }
+
         const connection = await callGarminFunction({ action: 'status' });
         if (activeAppUserId !== userId || !appUserReady) return;
         if (connection.connection?.status !== 'connected') {
@@ -2229,18 +2248,7 @@ async function syncGarminTodayOnOpen(userId) {
         if (activeAppUserId !== userId || !appUserReady) return;
         await loadGarminActivitiesFromCloud();
         if (activeAppUserId !== userId || !appUserReady) return;
-        const activityDates = (state.rawActivities || [])
-            .map(activity => String(activity?.date || activity?.startTime || '').slice(0, 10))
-            .filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value))
-            .sort();
-        const zoneWindowDays = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 7));
-        const healthStart = activityDates.length
-            ? new Date(activityDates[0] + 'T12:00:00')
-            : new Date(date + 'T12:00:00');
-        healthStart.setDate(healthStart.getDate() - zoneWindowDays + 1);
-        const healthStartDate = getLocalCalendarDate(healthStart);
-        const healthImport = await loadGarminHealthRecordsIntoCheckins(healthStartDate, date);
-        console.info('KAJO: Garmin-Tagesruhe-HF für den Trainingsverlauf geladen:', healthImport);
+
 
         try {
             await syncMissingGarminTelemetry(date, date, null);
