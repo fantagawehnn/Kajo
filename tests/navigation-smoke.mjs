@@ -278,7 +278,7 @@ assert.ok(html.includes('id="training-load-overview"'), 'Training Load has a ded
 assert.ok(html.includes('data-training-load-model="kajo"') && html.includes('data-training-load-model="edwards"'), 'Training Load offers KAJO and Edwards HR-zone models');
 assert.ok(html.includes('id="training-load-zone-chart"') && html.includes('id="training-load-daily-chart"'), 'Training Load shows zone distribution and daily HR-zone load');
 assert.ok(!html.includes('data-training-load-model="srpe"') && !html.includes('training-load-value-ctl'), 'sRPE and CTL/ATL/TSB are excluded from the initial HR-zone view');
-assert.ok(main.includes("from './training-load-view.js'"), 'Training Load view module is wired into main navigation');
+assert.ok(/from '\.\/training-load-view\.js(?:\?v=\d+)?'/.test(main), 'Training Load view module is wired into main navigation');
 assert.ok(main.includes('kajoRenderTrainingLoadView: renderTrainingLoadView'), 'Training Load view refresh is exposed to shared timeframe controls');
 assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared analysis timeframe refreshes the Training Load chart');
 assert.ok(trainingLoadView.includes('getHeartRateZoneAnalysis'), 'view uses the centralized HR-zone calculation');
