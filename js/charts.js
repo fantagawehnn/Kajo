@@ -410,7 +410,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         records = (records || []).filter(activity => activity.date >= from && activity.date <= to);
     }
 
-    let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedActivities = 0;
+    let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedDurationActivities = 0, estimatedZoneActivities = 0;
     for (const activity of records || []) {
         const heartRateSeries = getGarminHeartRateSeries(activity);
         const hr = heartRateSeries?.hr;
@@ -426,7 +426,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
             const maxHr = Number(state.profile?.maxHr);
             if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
                 zones = [0.73, 0.80, 0.87, 0.93].map(percent => Math.round(maxHr * percent));
-                estimatedActivities++;
+                estimatedZoneActivities++;
             } else {
                 missingZones++;
                 continue;
@@ -439,7 +439,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
             && time.every(value => Number.isFinite(Number(value)))
             && time.slice(1).every((value, index) => Number(value) > Number(time[index])
                 && Number(value) - Number(time[index]) <= 30);
-        if (!hasUsableTime) estimatedActivities++;
+        if (!hasUsableTime) estimatedDurationActivities++;
         if (!hasUsableTime && durationSeconds === null) {
             missingDuration++;
             continue;
@@ -550,7 +550,7 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
         summary.innerHTML = rows.join('');
     }
 
-    if (note) note.textContent = usable + ' Einheiten ausgewertet · ' + (missingTelemetry + missingZones + missingDuration) + ' nicht auswertbar' + (estimatedActivities ? ' · ' + estimatedActivities + ' mit geschätzter Dauer' : '') + '. Prozentwerte beziehen sich auf erfasste HF-Zeit.';
+    if (note) note.textContent = usable + ' Einheiten ausgewertet · ' + (missingTelemetry + missingZones + missingDuration) + ' nicht auswertbar' + (estimatedDurationActivities ? ' · ' + estimatedDurationActivities + ' mit geschätzter Dauer' : '') + (estimatedZoneActivities ? ' · ' + estimatedZoneActivities + ' mit HFmax-Zonen-Näherung' : '') + '. Prozentwerte beziehen sich auf erfasste HF-Zeit.';
 }
 
 export function renderRaceTimeline(){
