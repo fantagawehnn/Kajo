@@ -2227,8 +2227,10 @@ async function handleAuthSession(session) {
                     if (missingAfterReadback.length > 0) {
                         throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
                     }
-                    mergeGarminTelemetryRecords(cloudTelemetry.records);
                     await clearLocalGarminTelemetryCache();
+                    // Nach dem Entfernen des lokalen Caches die bestätigten Cloud-Daten
+                    // wieder in den aktiven Arbeitsspeicher übernehmen.
+                    mergeGarminTelemetryRecords(cloudTelemetry.records);
                     console.info('KAJO: Garmin-Telemetrie-Cloudabgleich abgeschlossen:', {
                         uploaded: cloudTelemetry.uploaded,
                         existing: cloudTelemetry.existing,
