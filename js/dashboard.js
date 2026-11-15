@@ -1099,8 +1099,16 @@ function renderHistoryChart(kind, labels, values, definition, key, baselineValue
         options: {
             responsive: true, maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
+            onHover: (event, elements, chart) => {
+                const active = chart.getElementsAtEventForMode(event, 'index', { intersect: false }, true)
+                    .filter(item => item.datasetIndex === 0);
+                if (active.length) showChartPointReadout(canvas, chart, active[0].index, {
+                    title: definition.label, unit: definition.unit,
+                    formatValue: value => historyDisplay(value, key)
+                });
+            },
             onClick: (event, elements, chart) => {
-                const active = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true)
+                const active = chart.getElementsAtEventForMode(event, 'index', { intersect: false }, true)
                     .filter(item => item.datasetIndex === 0);
                 if (active.length) showChartPointReadout(canvas, chart, active[0].index, {
                     title: definition.label, unit: definition.unit,
