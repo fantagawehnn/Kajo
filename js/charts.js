@@ -773,7 +773,18 @@ export function focusActivityTelemetryPoint(index) {
 export function setActivityTelemetryMetric(metric) {
     const act = state.selectedActivityForModal;
     if (!act) return;
-    state.activityTelemetryMetric = metric;
+    const available = getActivityTelemetrySeries(act);
+    const current = Array.isArray(state.activityTelemetryMetrics)
+        ? state.activityTelemetryMetrics.filter(key => available.some(item => item.key === key))
+        : [];
+    const next = current.includes(metric)
+        ? current.filter(key => key !== metric)
+        : [...current, metric];
+    // Mindestens eine Messreihe bleibt sichtbar; erneutes Anklicken blendet sie nur aus,
+    // wenn mindestens eine andere Reihe ausgewählt bleibt.
+    if (!next.length) return;
+    state.activityTelemetryMetrics = next;
+    state.activityTelemetryMetric = next[0];
     renderActivityTelemetryChart(act);
 }
 
@@ -794,35 +805,52 @@ export function renderActivityTelemetryChart(act) {
         return;
     }
     panel.classList.remove('hidden');
-    const preferred = series.some(item => item.key === state.activityTelemetryMetric)
-        ? state.activityTelemetryMetric
-        : series.some(item => item.key === 'hr') ? 'hr' : series[0].key;
-    state.activityTelemetryMetric = preferred;
+    let selectedKeys = Array.isArray(state.activityTelemetryMetrics)
+        ? state.activityTelemetryMetrics.filter(key => series.some(item => item.key === key))
+        : [];
+    if (!selectedKeys.length) {
+        const initial = series.some(item => item.key === state.activityTelemetryMetric)
+            ? state.activityTelemetryMetric
+            : series.some(item => item.key === 'hr') ? 'hr' : series[0].key;
+        selectedKeys = [initial];
+    }
+    state.activityTelemetryMetrics = selectedKeys;
+    state.activityTelemetryMetric = selectedKeys[0];
     if (controls) {
-        controls.innerHTML = series.map(item =>
-            '<button type="button" class="activity-series-switch' + (item.key === preferred ? ' is-active' : '')
-            + '" data-metric="' + item.key + '" aria-pressed="' + (item.key === preferred ? 'true' : 'false') + '">'
-            + item.label + '</button>'
-        ).join('');
+        controls.innerHTML = series.map(item => {
+            const active = selectedKeys.includes(item.key);
+            return '<button type="button" class="activity-series-switch' + (active ? ' is-active' : '')
+                + '" data-metric="' + item.key + '" aria-pressed="' + (active ? 'true' : 'false') + '">'
+                + item.label + (item.unit ? ' · ' + item.unit : '') + '</button>';
+        }).join('');
         controls.querySelectorAll('[data-metric]').forEach(button => {
             button.addEventListener('click', () => setActivityTelemetryMetric(button.dataset.metric));
         });
     }
-    const selected = series.find(item => item.key === preferred);
+    const selected = selectedKeys.map(key => series.find(item => item.key === key)).filter(Boolean);
     const pointReadout = document.getElementById('activity-telemetry-point');
-    if (pointReadout) { pointReadout.hidden = true; pointReadout.textContent = ''; pointReadout.classList.add('kajo-chart-point-readout'); }
-    const formatValue = value => (selected.key === 'pace' || selected.key === 'swimPace') && Number.isFinite(Number(value))
-        ? Math.floor(Math.round(Number(value)) / 60) + ':' + String(Math.round(Number(value)) % 60).padStart(2, '0')
-        : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
+    if (pointReadout) {
+        pointReadout.hidden = true;
+        pointReadout.textContent = '';
+        pointReadout.classList.add('kajo-chart-point-readout');
+    }
+    const formatValue = (metric, value) => {
+        if ((metric.key === 'pace' || metric.key === 'swimPace') && Number.isFinite(Number(value))) {
+            const rounded = Math.round(Number(value));
+            return Math.floor(rounded / 60) + ':' + String(rounded % 60).padStart(2, '0');
+        }
+        return Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
+    };
     const telem = getActivityTelemetry(act) || {};
-    const times = Array.isArray(selected.time) ? selected.time : Array.isArray(telem.time) ? telem.time : [];
-    const hasElapsedTime = times.length === selected.values.length
+    const timeSource = selected.find(item => Array.isArray(item.time) && item.time.length === item.values.length) || selected[0];
+    const times = Array.isArray(timeSource.time) ? timeSource.time : Array.isArray(telem.time) ? telem.time : [];
+    const hasElapsedTime = times.length === timeSource.values.length
         && times.every(value => Number.isFinite(Number(value)))
         && times.slice(1).every((value, index) => Number(value) > Number(times[index]));
-    const hasClockLabels = Array.isArray(telem.labels) && telem.labels.length === selected.values.length;
+    const hasClockLabels = Array.isArray(telem.labels) && telem.labels.length === timeSource.values.length;
     const labels = hasElapsedTime
         ? times.map(value => String(Math.floor(Number(value) / 60)).padStart(2, '0') + ':' + String(Math.floor(Number(value) % 60)).padStart(2, '0'))
-        : hasClockLabels ? telem.labels : selected.values.map((_, index) => String(index + 1));
+        : hasClockLabels ? telem.labels : timeSource.values.map((_, index) => String(index + 1));
     const selectedLap = state.activitySelectedLap;
     const highlightedIndexes = hasElapsedTime && selectedLap
         ? times.reduce((indexes, value, index) => {
@@ -830,29 +858,66 @@ export function renderActivityTelemetryChart(act) {
             if (seconds >= selectedLap.startTimeSeconds && seconds <= selectedLap.endTimeSeconds) indexes.push(index);
             return indexes;
         }, []) : [];
-    const highlightRange = highlightedIndexes.length ? [highlightedIndexes[0], highlightedIndexes[highlightedIndexes.length - 1]] : null;
+    const highlightRange = highlightedIndexes.length
+        ? [highlightedIndexes[0], highlightedIndexes[highlightedIndexes.length - 1]] : null;
     const status = document.getElementById('activity-hr-series-status');
     if (status) {
-        const validCount = selected.values.filter(value => value !== null).length;
-        const complete = hasElapsedTime && validCount === selected.values.length;
-        const dataStatus = complete ? 'Vollständig' : 'Eingeschränkt';
+        const validCount = selected.reduce((sum, item) => sum + item.values.filter(value => value !== null && value !== undefined && Number.isFinite(Number(value))).length, 0);
         const axisNote = hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit · keine verlässliche Zeitachse' : 'Messpunktindex · keine Zeitstempel';
-        status.textContent = 'Datenstatus: ' + dataStatus + ' · ' + validCount.toLocaleString('de-DE') + ' gültige Messpunkte · ' + axisNote;
+        status.textContent = selected.length + ' Messreihen gleichzeitig · ' + validCount.toLocaleString('de-DE') + ' gültige Werte insgesamt · ' + axisNote;
     }
+    const scales = {
+        x: {
+            title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
+            grid: { color: 'rgba(100,116,139,.12)' },
+            ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 8 }
+        }
+    };
+    selected.forEach((metric, index) => {
+        const axisId = 'y' + index;
+        scales[axisId] = {
+            type: 'linear',
+            position: index === 0 ? 'left' : 'right',
+            display: true,
+            offset: index > 1,
+            title: { display: true, text: metric.label + (metric.unit ? ' (' + metric.unit + ')' : ''), color: metric.color, font: { size: 9 } },
+            ticks: {
+                color: metric.color,
+                font: { size: 8 },
+                maxTicksLimit: 5,
+                callback: value => (metric.key === 'pace' || metric.key === 'swimPace') ? formatValue(metric, value) : value
+            },
+            grid: { drawOnChartArea: index === 0, color: 'rgba(100,116,139,.12)' }
+        };
+    });
+    const datasets = selected.map((metric, index) => ({
+        label: metric.label + (metric.unit ? ' (' + metric.unit + ')' : ''),
+        data: metric.values,
+        yAxisID: 'y' + index,
+        borderColor: metric.color,
+        backgroundColor: metric.color + '22',
+        borderWidth: 1.8,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: .18,
+        spanGaps: false,
+        fill: false
+    }));
+    const updateReadout = (chart, elements) => {
+        if (!pointReadout || !elements?.length) return;
+        const element = elements[0];
+        const metric = selected[element.datasetIndex];
+        const value = metric?.values?.[element.index];
+        if (value === null || value === undefined || !Number.isFinite(Number(value))) return;
+        const timeLabel = labels[element.index] ?? ('Messpunkt ' + (element.index + 1));
+        pointReadout.textContent = metric.label + ': ' + formatValue(metric, value)
+            + (metric.unit && metric.key !== 'pace' && metric.key !== 'swimPace' ? ' ' + metric.unit : '')
+            + ' · ' + timeLabel;
+        pointReadout.hidden = false;
+    };
     state.telemetryChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
-        data: { labels, datasets: [{
-            label: selected.label + (selected.key === 'pace' ? ' (min/km)' : selected.key === 'swimPace' ? ' (min/100 m)' : selected.unit ? ' (' + selected.unit + ')' : ''),
-            data: selected.values,
-            borderColor: selected.color,
-            backgroundColor: selected.color + '22',
-            borderWidth: 1.7,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            tension: .18,
-            spanGaps: false,
-            fill: false
-        }] },
+        data: { labels, datasets },
         plugins: [{
             id: 'activity-lap-highlight',
             beforeDatasetsDraw(chart) {
@@ -870,19 +935,16 @@ export function renderActivityTelemetryChart(act) {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false }
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            onHover(event, elements, chart) {
+                const active = chart.getElementsAtEventForMode(event, 'index', { intersect: false }, true);
+                updateReadout(chart, active);
             },
-onHover(event,elements,chart){const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true);if(!active.length||!pointReadout)return;const index=active[0].index;const value=selected.values[index];if(value===null||value===undefined||!Number.isFinite(Number(value)))return;const timeLabel=labels[index]??('Messpunkt '+(index+1));showChartPointReadout(canvas,chart,index,{title:selected.label,unit:(selected.key==='pace'||selected.key==='swimPace')?'':selected.unit,formatValue});const readout=canvas.parentElement?.nextElementSibling;if(readout?.classList.contains('kajo-chart-point-readout')){const time=readout.querySelector('.kajo-chart-point-time');if(time)time.textContent=timeLabel;}},
-            onClick(event,elements,chart){const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true);if(!active.length||!pointReadout)return;const index=active[0].index;const value=selected.values[index];if(value===null||value===undefined||!Number.isFinite(Number(value)))return;const timeLabel=labels[index]??('Messpunkt '+(index+1));showChartPointReadout(canvas,chart,index,{title:selected.label,unit:(selected.key==='pace'||selected.key==='swimPace')?'':selected.unit,formatValue});const readout=canvas.parentElement?.nextElementSibling;if(readout?.classList.contains('kajo-chart-point-readout')){const time=readout.querySelector('.kajo-chart-point-time');if(time)time.textContent=timeLabel;}},
-            scales: {
-                x: { title: { display: true, text: hasElapsedTime ? 'Zeit seit Start' : hasClockLabels ? 'Uhrzeit' : 'Messpunkt', color: '#64748b', font: { size: 9 } },
-                    grid: { color: 'rgba(100,116,139,.12)' }, ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 8 } },
-                y: { title: { display: true, text: selected.key === 'pace' ? 'min/km' : selected.key === 'swimPace' ? 'min/100 m' : selected.unit, color: '#64748b', font: { size: 9 } },
-                    ticks: { callback: value => (selected.key === 'pace' || selected.key === 'swimPace') ? formatValue(value) : value, color: '#94a3b8', font: { size: 9 } },
-                    grid: { color: 'rgba(100,116,139,.16)' } }
-            }
+            onClick(event, elements, chart) {
+                const active = chart.getElementsAtEventForMode(event, 'index', { intersect: false }, true);
+                updateReadout(chart, active);
+            },
+            scales
         }
     });
 }
