@@ -266,9 +266,12 @@ export function setUserLocalSetting(key, value) {
     activeUserStorage.setItem(key, value);
 }
 
-export function getUserDataSnapshot() {
+export function getUserDataSnapshot(options = {}) {
+    const activities = options.includeGarminTelemetry
+        ? state.rawActivities
+        : stripGarminTelemetryFromActivities(state.rawActivities);
     return {
-        activities: stripGarminTelemetryFromActivities(state.rawActivities), planned: state.plannedActivities,
+        activities, planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
@@ -358,7 +361,7 @@ export function saveDataToLocalStorage() {
         return false;
     }
 
-    const snapshot = getUserDataSnapshot();
+    const snapshot = getUserDataSnapshot({ includeGarminTelemetry: true });
     const split = splitGarminTelemetry(snapshot.activities);
     state.garminTelemetryStore = split.telemetryStore;
     const localSnapshot = {
