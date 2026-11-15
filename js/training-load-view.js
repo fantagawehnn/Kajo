@@ -48,7 +48,7 @@ function renderCoverage(analysis) {
   const c = analysis.coverage;
   setText('training-load-source-title', selectedModel === 'kajo' ? 'KAJO-HF-Zonenindex' : selectedModel === 'edwards' ? 'Edwards TRIMP' : 'Vergleich der HF-Zonenmodelle');
   setText('training-load-source-description', selectedModel === 'kajo'
-    ? 'Gewichtete Zeit in automatisch berechneten Herzfrequenzreserve-Zonen (Karvonen). Die Ruheherzfrequenz wird als Median der letzten konfigurierten Tage angepasst; die HFmax stammt aus deinem Athletenprofil.'
+    ? 'Gewichtete Zeit in automatisch berechneten Herzfrequenzreserve-Zonen (Karvonen). Die Ruheherzfrequenz wird als Median der letzten 14 Tage (oder des gewählten Rückblicks) angepasst; die HFmax stammt aus deinem Athletenprofil.'
     : selectedModel === 'edwards'
       ? 'Gewichtete Zeit in fünf festen Bereichen relativ zur maximalen Herzfrequenz: 50–60 %, 60–70 %, 70–80 %, 80–90 % und ≥90 %. Zeit unter 50 % wird nicht gewertet.'
       : 'KAJO nutzt adaptive Herzfrequenzreserve-Zonen; Edwards nutzt feste Prozentbereiche der HFmax.');
@@ -162,7 +162,7 @@ export function renderTrainingLoadView() {
     ? 'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO verwendet adaptive Prozentanteile der Herzfrequenzreserve (HFmax minus adaptive Ruhe-HF); Edwards feste Prozentbereiche der HFmax. Werte und Zeitverteilungen daher als unterschiedliche Modellperspektiven betrachten.'
     : selectedModel === 'edwards'
       ? 'Edwards-Grenzen sind feste Prozentbereiche der HFmax und keine individuell gemessenen Schwellen. Zeit unter 50 % HFmax bleibt außerhalb der fünf Edwards-Zonen.'
-      : 'Der KAJO-Index verwendet die Herzfrequenzreserve: HFmax minus adaptiver Ruhe-HF. Die Ruhe-HF wird als Median der verfügbaren Tageswerte im konfigurierten Rückblickfenster berechnet; bei zu wenigen Messungen wird ein hinterlegter Profilwert gekennzeichnet als Fallback verwendet.');
+      : 'Der KAJO-Index verwendet die Herzfrequenzreserve: HFmax minus adaptiver Ruhe-HF. Die Ruhe-HF wird als Median der verfügbaren Tageswerte im standardmäßigen 14-Tage-Rückblick (anpassbar in den Einstellungen) berechnet; bei zu wenigen Messungen wird ein hinterlegter Profilwert gekennzeichnet als Fallback verwendet.');
   setVisible('training-load-standard-analysis', true);
   setVisible('training-load-compare-analysis', false);
   setVisible('training-load-content', true);
