@@ -3,8 +3,8 @@
  * No separate load formulas are introduced in this presentation layer.
  */
 import { state } from './state.js';
-import { computePerformanceTimeline } from './calculations.js';
-import { getHeartRateZoneAnalysis } from './training-load.js?v=3';
+import { computePerformanceTimeline } from './calculations.js?v=1';
+import { getHeartRateZoneAnalysis } from './training-load.js?v=4';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
 const charts=Object.create(null);
