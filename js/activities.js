@@ -19,71 +19,68 @@ function diagnoseSelectedActivityTelemetry() {
     const output = document.getElementById('activity-telemetry-diagnostic-output');
     if (!activity || !output) return;
 
-    const garmin = activity.garminTelemetry && typeof activity.garminTelemetry === 'object'
-        ? activity.garminTelemetry : {};
-    const generic = activity.telemetry && typeof activity.telemetry === 'object'
-        ? activity.telemetry : {};
-    const selectedTelemetry = getActivityTelemetry(activity);
-    const series = getActivityTelemetrySeries(activity);
-    const hrSeries = series.find(item => item.key === 'hr');
-    const validCount = values => Array.isArray(values)
-        ? values.filter(value => value !== null && value !== undefined && value !== ''
-            && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length
-        : 0;
-    const chartTimeSource = activity.telemetry ? 'telemetry (generisch)' : activity.garminTelemetry ? 'garminTelemetry' : 'keine';
-    const chartTimes = Array.isArray((activity.telemetry || activity.garminTelemetry || {}).time)
-        ? (activity.telemetry || activity.garminTelemetry).time : [];
-    const hrValues = Array.isArray(garmin.hr) ? garmin.hr : [];
-    const hrTimes = Array.isArray(garmin.time) ? garmin.time : [];
-    const genericHr = Array.isArray(generic.hr) ? generic.hr : [];
-    const genericTimes = Array.isArray(generic.time) ? generic.time : [];
-    const chartTimeValid = chartTimes.length > 1
-        && chartTimes.every(value => Number.isFinite(Number(value)))
-        && chartTimes.slice(1).every((value, index) => Number(value) > Number(chartTimes[index]));
+    const telemetry = getActivityTelemetry(activity) || {};
+    const hrSeries = getGarminHeartRateSeries(activity);
+    const hrValues = Array.isArray(hrSeries?.hr) ? hrSeries.hr : [];
+    const time = Array.isArray(hrSeries?.time) ? hrSeries.time : [];
+    const validHrCount = hrValues.filter(value => Number.isFinite(Number(value))
+        && Number(value) >= 30 && Number(value) <= 250).length;
+    const validTime = time.length === hrValues.length && time.length >= 2
+        && time.every(value => Number.isFinite(Number(value)))
+        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
+    const intervals = validTime
+        ? time.slice(1).map((value, index) => Number(value) - Number(time[index])).filter(value => value > 0)
+        : [];
+    const sortedIntervals = [...intervals].sort((a, b) => a - b);
+    const medianInterval = sortedIntervals.length
+        ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : null;
+    const load = calculateGarminZoneLoad(activity, state.settings, state.profile);
+    const zoneTime = calculateActivityZoneTime(activity);
+    const metricKeys = Object.keys(telemetry.metricSeries || {});
     const lines = [
-        'KAJO – Zeitreihen-Diagnose (nur lesend)',
+        'KAJO – Garmin-Telemetrie-Diagnose (nur lesend)',
         'Aktivität: ' + (activity.name || activity.type || 'Unbenannt'),
         'Datum: ' + (activity.date || 'nicht vorhanden'),
-        'Aktivitäts-ID: ' + String(activity.id ?? 'nicht vorhanden'),
         '',
-        'HERKUNFT',
+        'GELADENES AKTIVITÄTSOBJEKT',
         'Als Garmin erkannt: ' + (isGarminActivity(activity) ? 'Ja' : 'Nein'),
-        'FIT-Import markiert: ' + (activity.garminFitImported === true ? 'Ja' : 'Nein'),
-        'Zentraler Datenzugriff: ' + (selectedTelemetry === garmin && selectedTelemetry ? 'garminTelemetry'
-            : selectedTelemetry === generic && selectedTelemetry ? 'telemetry (FIT)' : 'keine Zeitreihe'),
+        'Garmin-Telemetrie vorhanden: ' + (activity.garminTelemetry && typeof activity.garminTelemetry === 'object' ? 'Ja' : 'Nein'),
+        'Felder in garminTelemetry: ' + Object.keys(activity.garminTelemetry || {}).join(', '),
+        'metricSeries-Felder: ' + (metricKeys.join(', ') || 'keine'),
         '',
-        'GARMIN-TELEMETRIE',
-        'HF-Array: ' + hrValues.length + ' Werte · davon plausibel: ' + validCount(hrValues),
-        'Zeit-Array: ' + hrTimes.length + ' Werte',
-        'HF/Zeit gleich lang: ' + (hrValues.length === hrTimes.length ? 'Ja' : 'Nein'),
+        'ERKANNTE HERZFREQUENZREIHE',
+        'Quelle: ' + (hrSeries?.source || 'keine erkannt'),
+        'HF-Messpunkte: ' + hrValues.length,
+        'Plausible HF-Werte (30–250 bpm): ' + validHrCount,
+        'Zeitachsenquelle: ' + (hrSeries?.timeSource || 'keine gültige Zeitachse'),
+        'Zeitwerte: ' + time.length,
+        'HF- und Zeitreihe gleich lang: ' + (time.length === hrValues.length && hrValues.length > 0 ? 'Ja' : 'Nein'),
+        'Zeitachse numerisch und streng aufsteigend: ' + (validTime ? 'Ja' : 'Nein'),
+        'Zeitbezug: ' + (validTime ? 'relative Sekunden ab Aktivitätsbeginn' : 'nicht verfügbar / nicht verwendbar'),
+        'Medianes Messintervall: ' + (medianInterval === null ? 'nicht verfügbar' : medianInterval.toFixed(2) + ' s'),
+        'Größtes Messintervall: ' + (intervals.length ? Math.max(...intervals).toFixed(2) + ' s' : 'nicht verfügbar'),
         '',
-        'GENERISCHE TELEMETRIE',
-        'HF-Array: ' + genericHr.length + ' Werte · davon plausibel: ' + validCount(genericHr),
-        'Zeit-Array: ' + genericTimes.length + ' Werte',
-        '',
-        'DIAGRAMM',
-        'Herzfrequenzreihe durch Datenzugriff erzeugt: ' + (hrSeries ? 'Ja' : 'Nein'),
-        'HF-Messpunkte in Reihe: ' + (hrSeries ? hrSeries.values.length : 0),
-        'Zeitachsenquelle laut Diagrammcode: ' + chartTimeSource,
-        'Zeitwerte für Zeitachse: ' + chartTimes.length,
-        'Zeitachse numerisch und streng aufsteigend: ' + (chartTimeValid ? 'Ja' : 'Nein'),
-        'Zeitachse passt zur HF-Reihe: ' + (hrSeries && chartTimes.length === hrSeries.values.length ? 'Ja' : 'Nein'),
+        'BERECHNUNGSSTATUS',
+        'KAJO-HF-Zonen-Load: ' + (load ? load.value + ' ' + load.unit : 'nicht berechenbar'),
+        'HF-Zonenverteilung: ' + (zoneTime ? 'berechenbar' : 'nicht berechenbar'),
+        'Zonenzeit mit echter Zeitachse: ' + (zoneTime ? (zoneTime.hasTime ? 'Ja' : 'Nein – Dauerverteilung als eingeschränkte Näherung') : 'keine'),
+        'Ausgewertete Zonenzeit: ' + (zoneTime ? Math.round(zoneTime.totalSeconds) + ' s' : 'keine'),
         '',
         'HINWEIS',
-        'Diese Diagnose untersucht nur das aktuell in KAJO geladene Aktivitätsobjekt. Sie liest keine Supabase-Rohdatensätze und startet keinen Garmin-Abruf.'
+        'Diese Diagnose liest nur das aktuell geladene Aktivitätsobjekt. Sie verändert keine Daten und fragt Garmin oder Supabase nicht erneut ab.'
     ];
 
-    if (activity.telemetry && activity.garminTelemetry && activity.telemetry !== activity.garminTelemetry) {
-        lines.push('', 'AUFFÄLLIGKEIT: Beide Telemetrie-Felder existieren. Das Diagramm verwendet für die Zeitachse aktuell das generische Feld vor garminTelemetry.');
+    if (activity.garminTelemetry?.hr?.length && activity.garminTelemetry.hr.length !== activity.garminTelemetry.time?.length) {
+        lines.push('', 'AUFFÄLLIGKEIT: Das direkte Garmin-HF-Array und das direkte Garmin-Zeitarray haben unterschiedliche Längen.');
     }
-    if (hrValues.length && hrTimes.length && hrValues.length !== hrTimes.length) {
-        lines.push('AUFFÄLLIGKEIT: Garmin-HF- und Garmin-Zeitarray haben unterschiedliche Längen.');
+    if (hrSeries && !validTime) {
+        lines.push('AUFFÄLLIGKEIT: Eine HF-Reihe ist vorhanden, aber keine passende gültige Zeitachse. Load kann deshalb nicht aus der Zeitreihe berechnet werden.');
     }
-    if (!hrSeries && hrValues.length >= 2) {
-        lines.push('AUFFÄLLIGKEIT: Garmin-HF-Werte sind vorhanden, werden aber nicht als Diagrammreihe erkannt. Herkunftskennzeichnung und Wertebereich prüfen.');
+    if (!hrSeries) {
+        lines.push('AUFFÄLLIGKEIT: Es wurde keine plausible Garmin-Herzfrequenzreihe erkannt.');
     }
-    if (hrSeries && chartTimes.length !== hrSeries.values.length) {
-        lines.push('AUFFÄLLIGKEIT: Die Zeitachse hat nicht dieselbe Länge wie die angezeigte Messreihe.');
+    if (hrSeries?.source?.startsWith('metricSeries:') && activity.garminTelemetry?.hr?.length) {
+        lines.push('INFO: Die zentrale Erkennung verwendet die vollständige metricSeries-Reihe statt des unvollständigen top-level hr-Arrays.');
     }
 
     output.textContent = lines.join('\n');
@@ -1249,7 +1246,7 @@ function initializeActivityDetailTabs() {
     if (!modal || !content || !overview || modal.dataset.activityTabsReady === 'true') return;
 
     // Die Detailansicht ist ein durchgehender Bericht statt mehrerer Registerkarten.
-    const removeIds = ['activity-data-quality', 'activity-fit-data-panel', 'activity-telemetry-diagnostic-source'];
+    const removeIds = ['activity-data-quality', 'activity-fit-data-panel'];
     removeIds.forEach(id => document.getElementById(id)?.remove());
     document.getElementById('activity-hr-series-status')?.remove();
     content.querySelector('.activity-detail-grid')?.remove();
@@ -1284,6 +1281,7 @@ function initializeActivityDetailTabs() {
     createAccordion('intervals', 'Intervalle & Runden', ['activity-intervals-panel']);
     createAccordion('sport', 'Sportartspezifische Analyse', ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel']);
     createAccordion('diagnostics', 'Weitere Leistungsanalysen', ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel']);
+    createAccordion('data-quality', 'Datenqualität & Garmin-Diagnose', ['activity-telemetry-diagnostic-source']);
 
     // Bearbeitung bleibt außerhalb der Analysebereiche und wird über den Stift im Kopf geöffnet.
     const editPanel = document.getElementById('activity-edit-panel');
