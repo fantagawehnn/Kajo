@@ -522,6 +522,7 @@ async function loadGarminTelemetryWhenActivityOpened(activity) {
         if (summary) {
             activity.garminAnalysis = summary;
             saveDataToLocalStorage();
+            refreshAll();
         }
         if (state.selectedActivityForModal !== activity) return;
         const analysisActivity = { ...activity, telemetry: getActivityTelemetry(activity) };
