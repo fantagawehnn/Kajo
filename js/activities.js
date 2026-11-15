@@ -14,77 +14,101 @@ import { populateActivityRouteSelect } from './routes.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
 // Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
-function diagnoseSelectedActivityTelemetry() {
+async function diagnoseSelectedActivityTelemetry() {
     const activity = state.selectedActivityForModal;
     const output = document.getElementById('activity-telemetry-diagnostic-output');
-    if (!activity || !output) return;
+    const button = document.getElementById('activity-telemetry-diagnose');
+    if (!activity || !output || !button || button.disabled) return;
 
-    const telemetry = getActivityTelemetry(activity) || {};
-    const hrSeries = getGarminHeartRateSeries(activity);
-    const hrValues = Array.isArray(hrSeries?.hr) ? hrSeries.hr : [];
-    const time = Array.isArray(hrSeries?.time) ? hrSeries.time : [];
-    const validHrCount = hrValues.filter(value => Number.isFinite(Number(value))
-        && Number(value) >= 30 && Number(value) <= 250).length;
-    const validTime = time.length === hrValues.length && time.length >= 2
-        && time.every(value => Number.isFinite(Number(value)))
-        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
-    const intervals = validTime
-        ? time.slice(1).map((value, index) => Number(value) - Number(time[index])).filter(value => value > 0)
-        : [];
-    const sortedIntervals = [...intervals].sort((a, b) => a - b);
-    const medianInterval = sortedIntervals.length
-        ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : null;
-    const load = calculateGarminZoneLoad(activity, state.settings, state.profile);
-    const zoneTime = calculateActivityZoneTime(activity);
-    const metricKeys = Object.keys(telemetry.metricSeries || {});
-    const lines = [
-        'KAJO – Garmin-Telemetrie-Diagnose (nur lesend)',
-        'Aktivität: ' + (activity.name || activity.type || 'Unbenannt'),
-        'Datum: ' + (activity.date || 'nicht vorhanden'),
-        '',
-        'GELADENES AKTIVITÄTSOBJEKT',
-        'Als Garmin erkannt: ' + (isGarminActivity(activity) ? 'Ja' : 'Nein'),
-        'Garmin-Telemetrie vorhanden: ' + (activity.garminTelemetry && typeof activity.garminTelemetry === 'object' ? 'Ja' : 'Nein'),
-        'Felder in garminTelemetry: ' + Object.keys(activity.garminTelemetry || {}).join(', '),
-        'metricSeries-Felder: ' + (metricKeys.join(', ') || 'keine'),
-        '',
-        'ERKANNTE HERZFREQUENZREIHE',
-        'Quelle: ' + (hrSeries?.source || 'keine erkannt'),
-        'HF-Messpunkte: ' + hrValues.length,
-        'Plausible HF-Werte (30–250 bpm): ' + validHrCount,
-        'Zeitachsenquelle: ' + (hrSeries?.timeSource || 'keine gültige Zeitachse'),
-        'Zeitwerte: ' + time.length,
-        'HF- und Zeitreihe gleich lang: ' + (time.length === hrValues.length && hrValues.length > 0 ? 'Ja' : 'Nein'),
-        'Zeitachse numerisch und streng aufsteigend: ' + (validTime ? 'Ja' : 'Nein'),
-        'Zeitbezug: ' + (validTime ? 'relative Sekunden ab Aktivitätsbeginn' : 'nicht verfügbar / nicht verwendbar'),
-        'Medianes Messintervall: ' + (medianInterval === null ? 'nicht verfügbar' : medianInterval.toFixed(2) + ' s'),
-        'Größtes Messintervall: ' + (intervals.length ? Math.max(...intervals).toFixed(2) + ' s' : 'nicht verfügbar'),
-        '',
-        'BERECHNUNGSSTATUS',
-        'KAJO-HF-Zonen-Load: ' + (load ? load.value + ' ' + load.unit : 'nicht berechenbar'),
-        'HF-Zonenverteilung: ' + (zoneTime ? 'berechenbar' : 'nicht berechenbar'),
-        'Zonenzeit mit echter Zeitachse: ' + (zoneTime ? (zoneTime.hasTime ? 'Ja' : 'Nein – Dauerverteilung als eingeschränkte Näherung') : 'keine'),
-        'Ausgewertete Zonenzeit: ' + (zoneTime ? Math.round(zoneTime.totalSeconds) + ' s' : 'keine'),
-        '',
-        'HINWEIS',
-        'Diese Diagnose liest nur das aktuell geladene Aktivitätsobjekt. Sie verändert keine Daten und fragt Garmin oder Supabase nicht erneut ab.'
-    ];
-
-    if (activity.garminTelemetry?.hr?.length && activity.garminTelemetry.hr.length !== activity.garminTelemetry.time?.length) {
-        lines.push('', 'AUFFÄLLIGKEIT: Das direkte Garmin-HF-Array und das direkte Garmin-Zeitarray haben unterschiedliche Längen.');
-    }
-    if (hrSeries && !validTime) {
-        lines.push('AUFFÄLLIGKEIT: Eine HF-Reihe ist vorhanden, aber keine passende gültige Zeitachse. Load kann deshalb nicht aus der Zeitreihe berechnet werden.');
-    }
-    if (!hrSeries) {
-        lines.push('AUFFÄLLIGKEIT: Es wurde keine plausible Garmin-Herzfrequenzreihe erkannt.');
-    }
-    if (hrSeries?.source?.startsWith('metricSeries:') && activity.garminTelemetry?.hr?.length) {
-        lines.push('INFO: Die zentrale Erkennung verwendet die vollständige metricSeries-Reihe statt des unvollständigen top-level hr-Arrays.');
-    }
-
-    output.textContent = lines.join('\n');
+    button.disabled = true;
+    button.textContent = 'Telemetrie wird geprüft …';
+    output.textContent = 'Prüfe die geladene Aktivität und den zugehörigen Cloud-Datensatz (nur lesend) …';
     output.hidden = false;
+
+    const summarize = (label, telemetry, ownerActivity) => {
+        if (!telemetry || typeof telemetry !== 'object') return [label + ': kein Datensatz'];
+        const series = getGarminHeartRateSeries({ ...ownerActivity, garminTelemetry: telemetry });
+        const hr = Array.isArray(series?.hr) ? series.hr : [];
+        const time = Array.isArray(series?.time) ? series.time : [];
+        const validTime = time.length === hr.length && time.length >= 2
+            && time.every(value => Number.isFinite(Number(value)))
+            && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
+        const metricSeries = telemetry.metricSeries && typeof telemetry.metricSeries === 'object'
+            ? telemetry.metricSeries : {};
+        const metricSummary = Object.entries(metricSeries).map(([key, metric]) => {
+            const values = Array.isArray(metric?.values) ? metric.values : [];
+            const validCount = values.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value))).length;
+            const metricTime = Array.isArray(metric?.time) ? metric.time.length : 0;
+            return key + ': ' + validCount + '/' + values.length + ' numerische Werte, eigene Zeitachse ' + metricTime;
+        });
+        const intervals = validTime
+            ? time.slice(1).map((value, index) => Number(value) - Number(time[index]))
+            : [];
+        const sortedIntervals = [...intervals].sort((a, b) => a - b);
+        const medianInterval = sortedIntervals.length
+            ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : null;
+        const load = calculateGarminZoneLoad({ ...ownerActivity, garminTelemetry: telemetry }, state.settings, state.profile);
+        const zoneTime = calculateActivityZoneTime({ ...ownerActivity, garminTelemetry: telemetry });
+        return [
+            label + ':',
+            '  Telemetriefelder: ' + Object.keys(telemetry).join(', '),
+            '  top-level hr/time: ' + (Array.isArray(telemetry.hr) ? telemetry.hr.length : 0) + '/' + (Array.isArray(telemetry.time) ? telemetry.time.length : 0),
+            '  metricSeriesTime: ' + (Array.isArray(telemetry.metricSeriesTime) ? telemetry.metricSeriesTime.length : 0),
+            '  metricSeries: ' + (metricSummary.join(' | ') || 'keine'),
+            '  zentrale HF-Reihe: ' + (series?.source || 'nicht erkannt') + ' · ' + hr.length + ' HF-Werte / ' + time.length + ' Zeitwerte',
+            '  Zeitachse vollständig und aufsteigend: ' + (validTime ? 'Ja' : 'Nein'),
+            '  Zeitbezug nach Normalisierung: ' + (validTime ? 'relative Sekunden ab Start' : 'nicht verfügbar'),
+            '  medianes Intervall: ' + (medianInterval === null ? '—' : medianInterval.toFixed(2) + ' s'),
+            '  KAJO-HF-Zonen-Load: ' + (load ? load.value + ' ' + load.unit : 'nicht berechenbar'),
+            '  HF-Zonenverteilung: ' + (zoneTime ? (zoneTime.hasTime ? 'mit Zeitachse' : 'eingeschränkte Dauer-Näherung') : 'nicht berechenbar')
+        ];
+    };
+
+    try {
+        const activityId = String(activity.sourceRefs?.garminActivityId
+            ?? activity.garminData?.activityId ?? activity.id ?? '').replace(/^garmin-/, '');
+        if (!/^\\d+$/.test(activityId) || !isGarminActivity(activity)) {
+            throw new Error('Für diese Aktivität ist keine gültige Garmin-Aktivitäts-ID hinterlegt.');
+        }
+        const { supabase } = await import('./supabase-client.js');
+        if (!supabase) throw new Error('Supabase ist in dieser Sitzung nicht verfügbar.');
+        const { data, error } = await supabase
+            .from('garmin_activity_telemetry')
+            .select('telemetry')
+            .eq('garmin_activity_id', activityId)
+            .maybeSingle();
+        if (error) throw error;
+
+        const lines = [
+            'KAJO – Garmin-Telemetrie-Diagnose (nur lesend)',
+            'Aktivität: ' + (activity.name || activity.type || 'Unbenannt'),
+            'Datum: ' + (activity.date || 'nicht vorhanden'),
+            '',
+            'CLOUD-DATENSATZ',
+            'Datensatz gefunden: ' + (data?.telemetry ? 'Ja' : 'Nein'),
+            '',
+            ...summarize('In KAJO geladen', activity.garminTelemetry, activity),
+            '',
+            ...summarize('In Supabase gespeichert', data?.telemetry, activity),
+            '',
+            'HINWEIS',
+            'Es wurden nur Kennzahlen des eigenen, angemeldeten Kontos gelesen. Keine Rohwerte wurden ausgegeben oder verändert; Garmin wurde nicht erneut abgefragt.'
+        ];
+        output.textContent = lines.join('\n');
+    } catch (error) {
+        const localSummary = summarize('In KAJO geladen', activity.garminTelemetry, activity);
+        output.textContent = [
+            'KAJO – Garmin-Telemetrie-Diagnose (nur lesend)',
+            ...localSummary,
+            '',
+            'Cloud-Prüfung nicht möglich: ' + (error?.message || String(error)),
+            'Die lokale Diagnose ist verfügbar; der Cloud-Datensatz konnte nicht verifiziert werden.'
+        ].join('\n');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Geladene Garmin-Daten analysieren';
+    }
 }
 
 // Gezielte, serverseitige JSON-Diagnose für die ausdrücklich freigegebene Aktivität.
