@@ -103,10 +103,13 @@ test('a day with multiple activities is incomplete if any activity lacks the sel
     assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
-test('without confirmed activity-list coverage no performance timeline is produced', () => {
+test('without confirmed activity-list coverage measured activity loads remain visible', () => {
     const records = [{ id: 'g-no-coverage', source: 'garmin', date: completedDay, garminTrainingLoad: 25 }];
     const timeline = computePerformanceTimeline(records, {}, {});
-    assert.deepEqual(timeline, []);
+    const day = timeline.find(item => item.date === completedDay);
+    assert.equal(day.load, 25);
+    assert.equal(day.dataStatus, 'activity-load-only');
+    assert.equal(day.ctl, null);
 });
 
 test('a day outside confirmed activity-list coverage remains unknown', () => {
@@ -149,7 +152,7 @@ test('an unknown day breaks the CTL model instead of carrying load across the ga
 test('automatic model uses HR-zone load when native Garmin load is absent', () => {
     const records = [{
         id: 'g-hr-1', source: 'garmin', date: completedDay, duration: 60,
-        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 10, 20, 30] }
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
     }];
     const result = getTrainingLoadData(records, {}, { maxHr: 190 });
     assert.equal(result.mode, 'garmin-zone');

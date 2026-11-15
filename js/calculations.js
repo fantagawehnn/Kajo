@@ -20,6 +20,10 @@ function validCoverageRanges(settings) {
             && range.status === 'complete');
 }
 
+function toLocalDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function isDateCovered(date, ranges) {
     return ranges.some(range => date >= range.startDate && date <= range.endDate);
 }
@@ -77,8 +81,15 @@ export function computePerformanceTimeline(records, settings, profile) {
             dayLoad = 0;
             dayStatus = 'confirmed-rest';
         } else if (activityCount > 0 && loadedCount === activityCount) {
-            dayLoad = dailyLoad[dateStr] || 0;
-            dayStatus = covered ? 'complete' : 'activity-load-only';
+            // The current local day is still in progress; its daily total cannot
+            // be treated as complete until the activity-list range is confirmed.
+            if (covered) {
+                dayLoad = dailyLoad[dateStr] || 0;
+                dayStatus = 'complete';
+            } else if (dateStr !== toLocalDateKey(new Date())) {
+                dayLoad = dailyLoad[dateStr] || 0;
+                dayStatus = 'activity-load-only';
+            }
         } else if (activityCount > 0) {
             dayStatus = 'incomplete-activity-load';
         }
