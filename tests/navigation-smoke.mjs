@@ -332,7 +332,7 @@ assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-
 assert.ok(html.includes('id="activity-data-quality"'), 'activity overview exposes a compact data quality and provenance summary');
 assert.ok(html.includes('id="activity-telemetry-point"'), 'activity chart provides a selected-point readout');
 assert.ok(charts.includes('const timeLabel = labels[element.index]') && charts.includes('pointReadout.textContent = metric.label +'), 'activity chart selection reports the exact time and value through the shared readout');
-assert.ok(charts.includes("selected.key === 'pace' ? 'min/km'") && charts.includes("selected.key === 'swimPace' ? 'min/100 m'"), 'pace charts use sport-appropriate display units');
+assert.ok(charts.includes("pace: { label: 'Pace', unit: 's/km'") && charts.includes("swimPace: { label: 'Pace', unit: 's/100 m'"), 'pace charts use sport-appropriate display units');
 assert.ok(charts.includes("getSportsCatalog()[act?.type]?.color"), 'telemetry series use the configured activity sport color');
 assert.ok(activities.includes('function renderActivityDataQuality(activity)'), 'activity details expose provenance and data completeness');
 assert.ok(activities.includes("container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'not-calculable'"), 'activity data quality distinguishes complete, limited and not calculable');
