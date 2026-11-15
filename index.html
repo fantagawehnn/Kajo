@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=134">
+    <link rel="stylesheet" href="css/styles.css?v=135">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1224,10 +1224,15 @@
                         <div id="activity-training-stimulus"></div>
                     </section>
                     <section id="activity-rpe-panel" class="activity-detail-panel activity-rpe-panel">
-                        <div class="activity-detail-section-heading"><div><h3>Belastung (RPE)</h3></div><strong id="activity-rpe-value" class="activity-rpe-value">—/10</strong></div>
+                        <div class="activity-detail-section-heading">
+                            <div><h3>Subjektives Empfinden</h3><p class="activity-detail-muted">Wie anstrengend hat sich die Einheit angefühlt?</p></div>
+                            <div class="activity-rpe-actions"><strong id="activity-rpe-value" class="activity-rpe-value">—/10</strong><button id="activity-note-toggle" type="button" class="activity-note-button" aria-label="Trainingsnotiz hinzufügen" title="Trainingsnotiz"><i data-lucide="notebook-pen"></i></button></div>
+                        </div>
                         <input id="activity-rpe-slider" type="range" min="1" max="10" step="1" value="5" oninput="updateActivityRPE(this.value)">
                         <div class="activity-rpe-scale"><span>1 · Sehr leicht</span><span>10 · Maximal</span></div>
-                        <p id="activity-rpe-description" class="activity-detail-help">1 = leicht · 10 = maximal</p>
+                        <p id="activity-rpe-description" class="activity-detail-help">Noch nicht bewertet</p>
+                        <p id="activity-note-preview" class="activity-note-preview" hidden></p>
+                        <textarea id="activity-note-editor" class="activity-note-editor" maxlength="2000" rows="3" placeholder="Notiz zu dieser Trainingseinheit …" hidden></textarea>
                     </section>
                     <section id="activity-zone-panel" class="activity-detail-panel activity-zone-panel">
                         <div class="activity-detail-section-heading"><div><h3>Herzfrequenz-Zonen</h3></div></div>
