@@ -437,7 +437,7 @@ export function buildGarminActivityAnalysis(activity, settings, profile, dailyCh
         version: 1,
         durationMinutes: Number(activity.duration) || null,
         maxHr: Number(profile?.maxHr) || null,
-        restingHr: Number.isFinite(Number(adaptive?.value)) ? Number(adaptive.value) : null,
+        restingHr: adaptive?.value != null && Number.isFinite(Number(adaptive.value)) ? Number(adaptive.value) : null,
         restingHrWindowDays: Number(adaptive?.windowDays) || 14,
         kajo: record?.kajo || null,
         edwards: record?.edwards || null,
