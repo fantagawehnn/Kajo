@@ -543,16 +543,28 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             const targetKey = key === 'rhr' ? 'garminRhr' : key;
             if (existing[targetKey] !== null && existing[targetKey] !== undefined && existing[targetKey] !== '') continue;
             updates[targetKey] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
-            if (key === 'rhr') {
-                updates.measurementSources = {
-                    ...(existing.measurementSources || {}),
-                    garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' }
-                };
-            }
-            if (key === 'garminStress') {
+
+            // Herkunft und Bedeutung für jeden übernommenen Garmin-Wert dokumentieren.
+            // Die HRV-Metrik bleibt bewusst unspecified: Der Rohdatenimport belegt
+            // nicht zuverlässig, ob es sich z. B. um RMSSD oder SDNN handelt.
+            const sourceDefinitions = {
+                hrv: { metric: 'unspecified', unit: 'ms' },
+                garminRhr: { metric: 'resting_heart_rate', unit: 'bpm' },
+                sleepDuration: { metric: 'sleep_duration', unit: 'hours' },
+                sleepScore: { metric: 'sleep_score', unit: 'points' },
+                respiration: { metric: 'respiration_rate', unit: 'breaths_per_minute' },
+                garminStress: { metric: 'daily_average_stress', unit: 'points' },
+                weight: { metric: 'body_weight', unit: 'kg' },
+                bodyBattery: { metric: 'body_battery', unit: 'points' },
+                spo2: { metric: 'oxygen_saturation', unit: 'percent' },
+                steps: { metric: 'steps', unit: 'count' },
+                fitnessAge: { metric: 'fitness_age', unit: 'years' }
+            };
+            const definition = sourceDefinitions[targetKey];
+            if (definition) {
                 updates.measurementSources = {
                     ...(updates.measurementSources || existing.measurementSources || {}),
-                    garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' }
+                    [targetKey]: { source: 'garmin', ...definition }
                 };
             }
         }
