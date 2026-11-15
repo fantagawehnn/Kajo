@@ -315,8 +315,18 @@ test('absolute timestamps are not silently converted to relative seconds', () =>
 test('time-axis summary reports spacing and coverage without inferring units', () => {
     assert.deepEqual(summarizeTimeAxis([100, 101, 103, 106]), {
         valid: true, pointCount: 4, intervalCount: 3,
-        minInterval: 1, medianInterval: 2, maxInterval: 3, span: 6
+        minInterval: 1, medianInterval: 2, maxInterval: 3, span: 6,
+        intervalsAtMost30: 3, intervalsOver30: 0,
+        intervalSumAtMost30: 6, intervalSumOver30: 0
     });
+});
+
+test('time-axis summary counts intervals accepted and excluded by the current 30-unit load threshold', () => {
+    const summary = summarizeTimeAxis([0, 5, 19, 54, 59]);
+    assert.equal(summary.intervalsAtMost30, 3);
+    assert.equal(summary.intervalsOver30, 1);
+    assert.equal(summary.intervalSumAtMost30, 24);
+    assert.equal(summary.intervalSumOver30, 35);
 });
 
 test('time-axis summary rejects nonnumeric, duplicate, and descending values', () => {
