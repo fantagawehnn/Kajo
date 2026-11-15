@@ -645,7 +645,41 @@ function isMeaningfulRideSpeed(act, values, unit = 'km/h') {
     return Math.max(...numeric) > threshold;
 }
 
-export function getActivityTelemetrySeries(act) {
+export const activityTelemetryColors = {
+    hr: '#F05D5E',
+    pace: '#36A2EB',
+    swimPace: '#36A2EB',
+    speed: '#4BC0C0',
+    power: '#9966FF',
+    cadence: '#FF9F40',
+    altitude: '#8BC34A',
+    respirationRate: '#00B8A9',
+    temperature: '#E6B84A',
+    grade: '#C084FC',
+    groundContactTime: '#F472B6',
+    verticalOscillation: '#A3A3A3',
+    strideLength: '#22C55E',
+    verticalRatio: '#F97316',
+    swolf: '#14B8A6',
+    stroke: '#818CF8',
+    bodyBattery: '#D946EF'
+};
+function getActivityTelemetryColor(key, label = '') {
+    const normalized = String(key || '').toLowerCase().replace(/[^a-z]/g, '');
+    const semantic = /heart.?rate|heartrate|(^|hr$)|puls|herzfrequenz/.test(normalized + ' ' + String(label).toLowerCase()) ? 'hr' : normalized;
+    if (activityTelemetryColors[key]) return activityTelemetryColors[key];
+    if (activityTelemetryColors[semantic]) return activityTelemetryColors[semantic];
+    if (/respirat|breathing|atemfrequenz/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.respirationRate;
+    if (/temperature|temperatur/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.temperature;
+    if (/altitude|elevation|height|hoehe/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.altitude;
+    if (/speed|geschwindigkeit/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.speed;
+    if (/power|leistung|watt/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.power;
+    if (/pace|tempo/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.pace;
+    if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.cadence;
+    return '#94A3B8';
+}
+
+function getActivityTelemetrySeries(act) {
     const telem = getActivityTelemetry(act) || {};
     const fields = act?.garminFitData?.recordFields || {};
     const aliases = {
@@ -699,11 +733,11 @@ export function getActivityTelemetrySeries(act) {
         const semantic = semanticFor(key, meta.label);
         if (seenSemantics.has(semantic)) continue;
         seenSemantics.add(semantic);
-        const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
+        const metricColor = getActivityTelemetryColor(key, meta.label);
         const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
             && (key === 'speed' || key === 'power')
             ? meta.label + ' (Gerätemesswert)' : meta.label;
-        result.push({ key, label: displayLabel, unit: meta.unit, color: sportColor, values: values.map(value =>
+        result.push({ key, label: displayLabel, unit: meta.unit, color: metricColor, values: values.map(value =>
             value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
                 || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
                 ? null : Number(value)
@@ -712,7 +746,6 @@ export function getActivityTelemetrySeries(act) {
 
     // Zusätzliche Garmin-JSON-Messreihen bleiben verfügbar, sofern sie zur Sportart passen.
     const rawSeries = telem.metricSeries && typeof telem.metricSeries === 'object' ? telem.metricSeries : {};
-    const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
     for (const [key, metric] of Object.entries(rawSeries)) {
         if (!metric || !Array.isArray(metric.values)) continue;
         const label = typeof metric.label === 'string' && metric.label.trim()
@@ -739,7 +772,7 @@ export function getActivityTelemetrySeries(act) {
                 ? metric.time
                 : Array.isArray(telem.metricSeriesTime) && telem.metricSeriesTime.length === metric.values.length
                     ? telem.metricSeriesTime : null,
-            color: sportColor,
+            color: getActivityTelemetryColor(key, displayLabel),
             values: metric.values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
         });
@@ -788,9 +821,7 @@ export function setActivityTelemetryMetric(metric) {
     const next = current.includes(metric)
         ? current.filter(key => key !== metric)
         : [...current, metric];
-    // Mindestens eine Messreihe bleibt sichtbar; erneutes Anklicken blendet sie nur aus,
-    // wenn mindestens eine andere Reihe ausgewählt bleibt.
-    if (!next.length) return;
+    // Auch eine vollständig leere Auswahl ist erlaubt; alle Reihen lassen sich ausblenden.
     state.activityTelemetryMetrics = next;
     state.activityTelemetryMetric = next[0];
     renderActivityTelemetryChart(act);
