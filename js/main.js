@@ -2282,13 +2282,13 @@ async function loadRecentGarminTelemetryOnOpen(userId, sequence) {
                 || activity?.sourceRefs?.garminActivityId != null
                 || activity?.garminData?.activityId != null
                 || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'));
-            return isGarmin && /^\\d{4}-\\d{2}-\\d{2}$/.test(activityDate)
+            return isGarmin && /^\d{4}-\d{2}-\d{2}$/.test(activityDate)
                 && activityDate >= cutoff && activityDate <= today;
         })
         .map(activity => activity?.sourceRefs?.garminActivityId
             ?? activity?.garminData?.activityId ?? activity?.id)
         .map(value => String(value ?? '').replace(/^garmin-/, ''))
-        .filter(value => /^\\d+$/.test(value))));
+        .filter(value => /^\d+$/.test(value))));
     if (!activityIds.length) {
         console.info('KAJO: Keine Garmin-Aktivitäten im 90-Tage-Fenster für den Telemetrieabruf gefunden.');
         return;
