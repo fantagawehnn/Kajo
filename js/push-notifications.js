@@ -21,6 +21,13 @@ function base64ToUint8Array(base64) {
   return output;
 }
 
+function hasMatchingVapidKey(subscription, expectedKey) {
+  const currentKey = subscription?.options?.applicationServerKey;
+  if (!currentKey) return false;
+  const currentBytes = new Uint8Array(currentKey);
+  return currentBytes.length === expectedKey.length && currentBytes.every((byte, index) => byte === expectedKey[index]);
+}
+
 async function currentUser() {
   if (!supabase) throw new Error("Die Cloud-Verbindung ist nicht eingerichtet.");
   const { data, error } = await supabase.auth.getUser();
@@ -102,10 +109,28 @@ export async function enableKajoPush() {
     if (permission !== "granted") throw new Error(permission === "denied" ? "Bitte erlaube Benachrichtigungen in den Geräteeinstellungen." : "Die Benachrichtigungsfreigabe wurde nicht erteilt.");
     const user = await currentUser();
     const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: base64ToUint8Array(KAJO_VAPID_PUBLIC_KEY)
-    });
+    const applicationServerKey = base64ToUint8Array(KAJO_VAPID_PUBLIC_KEY);
+    let subscription = await registration.pushManager.getSubscription();
+
+    // A browser subscription is bound to the VAPID public key it was created with.
+    // Replace an old subscription before registering with a rotated key.
+    if (subscription && !hasMatchingVapidKey(subscription, applicationServerKey)) {
+      const oldEndpoint = subscription.endpoint;
+      const { error: deleteError } = await supabase.from("kajo_push_subscriptions")
+        .delete().eq("endpoint", oldEndpoint).eq("user_id", user.id);
+      if (deleteError) throw new Error("Die alte Push-Registrierung konnte nicht aus KAJO entfernt werden. Bitte versuche es erneut.");
+
+      const unsubscribed = await subscription.unsubscribe();
+      if (!unsubscribed) throw new Error("Die alte Push-Registrierung konnte nicht ersetzt werden. Bitte lade KAJO neu und versuche es erneut.");
+      subscription = null;
+    }
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey
+      });
+    }
     const json = subscription.toJSON();
     const record = {
       user_id: user.id,
