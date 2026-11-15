@@ -122,3 +122,15 @@
  #view-dashboard .kajo-home-day-controls button{min-width:28px;height:28px}
  #view-dashboard .kajo-home-day-context{font-size:.54rem}
 }
+
+/* Informationsreihenfolge: Status → Tagesplan → Wochenbelastung → Kontext → Wettkampf / Gesundheit */
+#view-dashboard .kajo-home-status{order:1}
+#view-dashboard #home-daily-overview{order:2}
+#view-dashboard #home-training-week{order:3}
+#view-dashboard .kajo-home-recommendation{order:4}
+#view-dashboard .kajo-home-race{order:5}
+#view-dashboard .kajo-home-wearables{order:6}
+#view-dashboard .kajo-home-status{position:relative;overflow:hidden}
+#view-dashboard .kajo-home-status:after{content:"LOAD · RECOVERY · FITNESS";display:block;margin-top:.65rem;color:rgba(154,171,192,.7);font-size:.52rem;font-weight:800;letter-spacing:.13em;text-align:center}
+#view-dashboard .kajo-home-week .kajo-week-total{margin-top:.65rem;padding-top:.65rem;border-top:1px solid var(--kajo-pro-border);color:#dce8f5;font-size:.68rem;font-weight:700}
+#view-dashboard .kajo-home-race:disabled{opacity:.72;cursor:default}
