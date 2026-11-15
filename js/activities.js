@@ -863,7 +863,7 @@ function renderActivityTrainingInsights(act) {
     const loadLabel = activityLoad?.label || 'Load nicht berechenbar';
     const separateLoads = [
         act.garminTrainingLoad != null && Number.isFinite(Number(act.garminTrainingLoad)) ? ['Garmin Training Load', Number(act.garminTrainingLoad).toFixed(1)] : null,
-        zoneLoad ? ['KAJO HF-Zonen-Load' + (zoneLoad.zoneSource === 'maxhr-estimate' ? ' · HFmax-Näherung' : ''), zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,
+        zoneLoad ? ['KAJO HF-Zonen-Load' + (zoneLoad.restingHrSource === 'profile-fallback' ? ' · Ruhe-HF-Profil-Fallback' : ' · adaptive HF-Reserve'), zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,
         srpeItem ? ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU'] : null,
         act.edwardsTrimp != null && Number.isFinite(Number(act.edwardsTrimp)) ? ['Edwards TRIMP', Number(act.edwardsTrimp).toFixed(1)] : null
     ].filter(Boolean);
