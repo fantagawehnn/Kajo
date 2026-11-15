@@ -26,7 +26,7 @@ import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDa
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderSportDistribution, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=3';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=5';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=75';
-import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory } from './import.js?v=1';
+import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=1';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
@@ -1077,6 +1077,7 @@ async function refreshGarminConnectionStatus() {
     try {
         const result = await callGarminFunction({ action: 'status' });
         const connected = result.connection?.status === 'connected';
+        try { setUserLocalSetting('garmin_connected', connected ? 'true' : 'false'); } catch (_) {}
         const apiEntry = document.getElementById('garmin-api-entry');
         const disconnectButton = document.getElementById('garmin-disconnect-button');
         if (apiEntry) apiEntry.classList.toggle('hidden', connected);
@@ -1089,6 +1090,7 @@ async function refreshGarminConnectionStatus() {
             if (status) status.textContent = 'Nicht verbunden';
         }
     } catch (error) {
+        try { setUserLocalSetting('garmin_connected', 'unknown'); } catch (_) {}
         setGarminSyncIndicator('error', 'Nicht verbunden');
         if (status) status.textContent = 'Verbindungsstatus konnte nicht geprüft werden.';
     }
@@ -1944,7 +1946,11 @@ async function syncGarminTodayOnOpen(userId) {
     try {
         const connection = await callGarminFunction({ action: 'status' });
         if (activeAppUserId !== userId || !appUserReady) return;
-        if (connection.connection?.status !== 'connected') return;
+        if (connection.connection?.status !== 'connected') {
+            try { setUserLocalSetting('garmin_connected', 'false'); } catch (_) {}
+            return;
+        }
+        try { setUserLocalSetting('garmin_connected', 'true'); } catch (_) {}
 
         setGarminSyncIndicator('syncing', 'Tagesabgleich läuft');
         let response = null;
@@ -2108,6 +2114,14 @@ async function handleAuthSession(session) {
 
             try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
             catch (garminLoadError) { console.warn('Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', garminLoadError); }
+
+            // Reine Intervals.icu-Aktivitäten werden aus dem aktiven Trainingsbestand
+            // ausgeblendet und separat aufbewahrt. Garmin-Datensätze mit ergänzendem
+            // Intervals-Quellverweis bleiben als Garmin-Aktivitäten erhalten.
+            const intervalsDeactivation = deactivateIntervalsActivities();
+            if (intervalsDeactivation.deactivated > 0) {
+                console.info('KAJO: Intervals.icu-Aktivitäten deaktiviert:', intervalsDeactivation);
+            }
 
             // Einmaliger Abgleich: lokale und ältere Snapshot-Telemetrie werden
             // nur in noch nicht belegte Cloud-Datensätze übernommen. Vorhandene
