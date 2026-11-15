@@ -50,14 +50,25 @@ function median(values) {
   const middle = Math.floor(sorted.length/2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle-1]+sorted[middle])/2;
 }
+function measurementIdentity(row, key) {
+  const source = row?.measurementSources?.[key];
+  return [
+    typeof source?.source === 'string' ? source.source : 'unknown',
+    typeof source?.metric === 'string' ? source.metric : 'unspecified',
+    typeof source?.unit === 'string' ? source.unit : ''
+  ].join('|');
+}
 function personalBaseline(key, date) {
   const end = new Date(date + 'T12:00:00');
   if (!Number.isFinite(end.getTime())) return null;
+  const reference = state.dailyCheckins?.[date];
+  if (!valid(metricValue(reference, key))) return null;
+  const identity = measurementIdentity(reference, key);
   const start = new Date(end);
   start.setDate(start.getDate()-90);
   const from = dateKey(start);
   const values = Object.entries(state.dailyCheckins || {})
-    .filter(([day]) => day < date && day >= from)
+    .filter(([day, row]) => day < date && day >= from && measurementIdentity(row, key) === identity)
     .map(([,row]) => metricValue(row,key))
     .filter(valid);
   return values.length >= 5 ? median(values) : null;
@@ -151,7 +162,7 @@ function renderDetail() {
   document.getElementById('kajo-health-detail-baseline').textContent=baseline===null?'Persönlicher Normalbereich noch nicht verfügbar':'Persönlicher 90-Tage-Median: '+format(baseline,metric)+' '+metric.unit;
   document.getElementById('kajo-health-detail-delta').textContent=delta===null?'Noch keine normierte Abweichung berechenbar':signedPercent(delta)+' gegenüber deinem persönlichen Median';
   document.getElementById('kajo-health-detail-count').textContent=values.filter(valid).length+' Messwerte im Zeitraum';
-  document.getElementById('kajo-health-detail-note').textContent='Die normierte Abweichung beschreibt den Abstand zum persönlichen Median. Sie ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
+  document.getElementById('kajo-health-detail-note').textContent='Der persönliche 90-Tage-Median berücksichtigt nur frühere Messwerte mit derselben dokumentierten Quelle und Messgrößen-Kennzeichnung. Fehlende oder anders zugeordnete Werte fließen nicht ein. Die Abweichung ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
   const labels=dates.map(day=>new Date(day+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}));
   const baselineSeries=dates.map(day=>personalBaseline(metric.key,day));
   const canvas=document.getElementById('kajo-health-detail-chart');
