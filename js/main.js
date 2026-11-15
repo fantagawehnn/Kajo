@@ -438,7 +438,9 @@ function findGarminSleepScore(payload) {
 }
 
 async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
-    if (!appUserReady || !activeAppUserId) return { days: 0, values: 0 };
+    if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich an, bevor du Garmin-Gesundheitsdaten wiederherstellst.');
+    if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
+
     const rows = [];
     const pageSize = 1000;
     for (let offset = 0; ; offset += pageSize) {
@@ -461,6 +463,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
 
     let importedValues = 0;
     let changedDays = 0;
+    let recordsWithPayload = 0;
     for (const [date, records] of byDate) {
         const existing = state.dailyCheckins[date] || {};
         const updates = {};
@@ -475,15 +478,22 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
             sleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
             sleepScore: findGarminSleepScore(sleepPayload),
             respiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
-            garminStress: findGarminNumber(records.stress, ['averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
-            weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg'])
+            garminStress: findGarminNumber(records.stress, ['overallStressLevel', 'averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
+            weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
+            bodyBattery: findGarminNumber(summaryPayload, ['latestValue']),
+            spo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
+            steps: findGarminNumber(records.steps, ['totalSteps']),
+            fitnessAge: findGarminNumber(records.fitness_age, ['fitnessAge'])
         };
-        if (candidates.rhr === null) {
-            candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
-        }
-        if (candidates.respiration === null) {
-            candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue']);
-        }
+
+        // Fallbacks aus der Tageszusammenfassung, wenn ein spezialisierter Datensatz fehlt.
+        if (candidates.rhr === null) candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
+        if (candidates.respiration === null) candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
+        if (candidates.garminStress === null) candidates.garminStress = findGarminNumber(summaryPayload, ['avgLevel']);
+        if (candidates.bodyBattery === null) candidates.bodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
+        if (candidates.spo2 === null) candidates.spo2 = findGarminNumber(summaryPayload, ['avgValue']);
+        if (candidates.steps === null) candidates.steps = findGarminNumber(summaryPayload, ['value']);
+
         if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
 
         for (const [key, value] of Object.entries(candidates)) {
@@ -495,8 +505,13 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
             if (key === 'respiration' && (value < 4 || value > 60)) continue;
             if (key === 'garminStress' && (value < 0 || value > 100)) continue;
             if (key === 'weight' && (value <= 0 || value > 400)) continue;
-            // Garmin-Stress bleibt als eigener Messwert getrennt vom subjektiven Check-in-Stress.
-            if (key !== 'garminStress' && existing[key] !== null && existing[key] !== undefined && existing[key] !== '') continue;
+            if (key === 'bodyBattery' && (value < 0 || value > 100)) continue;
+            if (key === 'spo2' && (value < 50 || value > 100)) continue;
+            if (key === 'steps' && (value < 0 || value > 200000)) continue;
+            if (key === 'fitnessAge' && (value <= 0 || value > 120)) continue;
+
+            // Vorhandene Check-in-Werte – insbesondere manuelle Einträge – niemals überschreiben.
+            if (existing[key] !== null && existing[key] !== undefined && existing[key] !== '') continue;
             updates[key] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
             if (key === 'garminStress') {
                 updates.measurementSources = {
@@ -505,6 +520,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
                 };
             }
         }
+
         const keys = Object.keys(updates);
         if (!keys.length) continue;
         state.dailyCheckins[date] = { ...existing, ...updates };
@@ -513,10 +529,46 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate) {
     }
 
     if (importedValues > 0) {
-        saveDataToLocalStorage();
+        if (saveDataToLocalStorage() === false) {
+            throw new Error('Die Werte wurden ermittelt, konnten aber nicht gespeichert werden. Bitte Kontoanmeldung prüfen.');
+        }
         initEngine();
     }
-    return { days: changedDays, values: importedValues };
+    return { days: changedDays, values: importedValues, records: rows.length, dates: byDate.size };
+}
+
+async function restoreGarminHealthRange() {
+    const startDate = document.getElementById('garmin-preview-start-date')?.value;
+    const endDate = document.getElementById('garmin-preview-end-date')?.value;
+    const button = document.getElementById('garmin-health-restore-button');
+    const status = document.getElementById('garmin-health-restore-status');
+    const today = new Date().toISOString().slice(0, 10);
+    if (!button || !status) return;
+    if (!startDate || !endDate || startDate > endDate || endDate > today) {
+        status.textContent = 'Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
+        return;
+    }
+    if (!appUserReady || !activeAppUserId) {
+        status.textContent = 'Bitte melde dich an, bevor du die Wiederherstellung startest.';
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'Gesundheitsdaten werden wiederhergestellt …';
+    status.textContent = 'Lese bereits gespeicherte Garmin-Rohdaten. Es werden keine Garmin-API-Aufrufe gestartet …';
+    try {
+        const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
+        status.textContent = result.records === 0
+            ? 'Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
+            : 'Wiederherstellung abgeschlossen: ' + result.values + ' Werte an ' + result.days +
+                ' Tagen ergänzt. Geprüft: ' + result.records + ' Rohdatensätze an ' + result.dates +
+                ' Tagen. Bestehende Check-in-Werte wurden nicht überschrieben.';
+    } catch (error) {
+        console.error('Garmin-Gesundheitsdaten konnten nicht wiederhergestellt werden:', error);
+        status.textContent = 'Wiederherstellung fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Gesundheitsdaten aus Rohdaten wiederherstellen';
+    }
 }
 
 function setGarminSyncIndicator(state, label) {
