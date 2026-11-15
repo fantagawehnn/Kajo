@@ -300,7 +300,7 @@ export function applyCloudDataSnapshot(snapshot) {
     }
 
     if (snapshot.disabledIntervals != null && !Array.isArray(snapshot.disabledIntervals)) {
-        throw new Error('Der Cloud-Datenstand enthält für "disabledIntervalsActivities" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
+        throw new Error('Der Cloud-Datenstand enthält für "disabledIntervals" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
     }
     for (const key of ['activities', 'planned', 'races', 'strength', 'strengthPBs', 'supplements']) {
         if (!Array.isArray(snapshot[key])) {
