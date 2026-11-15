@@ -48,18 +48,18 @@ function renderCoverage(analysis) {
   const c = analysis.coverage;
   setText('training-load-source-title', selectedModel === 'kajo' ? 'KAJO-HF-Zonenindex' : selectedModel === 'edwards' ? 'Edwards TRIMP' : 'Vergleich der HF-Zonenmodelle');
   setText('training-load-source-description', selectedModel === 'kajo'
-    ? 'Gewichtete Zeit in deinen gespeicherten sportartspezifischen bzw. globalen KAJO-HF-Zonen. Falls keine gültigen Grenzen vorliegen, greift der bestehende HFmax-Fallback.'
+    ? 'Gewichtete Zeit in automatisch berechneten Herzfrequenzreserve-Zonen (Karvonen). Die Ruheherzfrequenz wird als Median der letzten konfigurierten Tage angepasst; die HFmax stammt aus deinem Athletenprofil.'
     : selectedModel === 'edwards'
       ? 'Gewichtete Zeit in fünf festen Bereichen relativ zur maximalen Herzfrequenz: 50–60 %, 60–70 %, 70–80 %, 80–90 % und ≥90 %. Zeit unter 50 % wird nicht gewertet.'
-      : 'Beide Modelle verwenden dieselben auswertbaren Garmin-HF-Zeitreihen, unterscheiden sich aber in ihrer Zonengrenze.');
+      : 'KAJO nutzt adaptive Herzfrequenzreserve-Zonen; Edwards nutzt feste Prozentbereiche der HFmax.');
   setText('training-load-coverage', 'Garmin-Aktivitäten im Zeitraum: ' + c.garminActivityCount
     + ' · KAJO berechenbar: ' + c.activitiesWithKajoZones
     + ' · Edwards berechenbar: ' + c.activitiesWithEdwards
     + (c.activitiesWithoutUsableEdwardsMaxHr ? ' · Edwards ohne gültige HFmax/Zone: ' + c.activitiesWithoutUsableEdwardsMaxHr : ''));
   const maxHr = Number(state.profile?.maxHr);
   setText('training-load-edwards-maxhr-note', Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240
-    ? 'Für Edwards verwendet: HFmax ' + maxHr + ' bpm aus deinem Athletenprofil.'
-    : 'Edwards TRIMP ist nicht berechenbar: In deinem Athletenprofil ist keine gültige HFmax hinterlegt.');
+    ? 'Für Edwards und die Herzfrequenzreserve verwendet: HFmax ' + maxHr + ' bpm aus deinem Athletenprofil.'
+    : 'Die Zonenberechnung ist nicht möglich: In deinem Athletenprofil ist keine gültige HFmax hinterlegt.');
 }
 function renderZoneChart(analysis) {
   const keys = selectedModel === 'compare' ? ['kajo','edwards'] : [selectedModel];
@@ -152,16 +152,16 @@ export function closeTrainingLoadMetric() { renderTrainingLoadView(); }
 export function renderTrainingLoadView() {
   const period = { '7d': '7 Tage', '28d': '28 Tage', '3m': '90 Tage', '6m': '180 Tage', '1y': '1 Jahr', custom: 'Individueller Zeitraum' };
   setText('training-load-period-label', period[state.activeTimeframe] || 'Aktueller Zeitraum');
-  const analysis = getHeartRateZoneAnalysis(selectedActivities(), state.settings || {}, state.profile || {});
+  const analysis = getHeartRateZoneAnalysis(selectedActivities(), state.settings || {}, state.profile || {}, state.dailyCheckins || {});
   renderCoverage(analysis);
   renderZoneChart(analysis);
   renderDailyChart(analysis);
   renderActivityList(analysis);
   setText('training-load-zone-method-note', selectedModel === 'compare'
-    ? 'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO verwendet deine hinterlegten Grenzen; Edwards feste Prozentbereiche der HFmax. Werte und Zeitverteilungen daher als unterschiedliche Modellperspektiven betrachten.'
+    ? 'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO verwendet adaptive Prozentanteile der Herzfrequenzreserve (HFmax minus adaptive Ruhe-HF); Edwards feste Prozentbereiche der HFmax. Werte und Zeitverteilungen daher als unterschiedliche Modellperspektiven betrachten.'
     : selectedModel === 'edwards'
       ? 'Edwards-Grenzen sind feste Prozentbereiche der HFmax und keine individuell gemessenen Schwellen. Zeit unter 50 % HFmax bleibt außerhalb der fünf Edwards-Zonen.'
-      : 'Der KAJO-Index verwendet die gespeicherten Zonen für die jeweilige Sportart, ersatzweise globale Zonen oder den bestehenden automatischen HFmax-Fallback.');
+      : 'Der KAJO-Index verwendet die Herzfrequenzreserve: HFmax minus adaptiver Ruhe-HF. Die Ruhe-HF wird als Median der verfügbaren Tageswerte im konfigurierten Rückblickfenster berechnet; bei zu wenigen Messungen wird ein hinterlegter Profilwert gekennzeichnet als Fallback verwendet.');
   setVisible('training-load-standard-analysis', true);
   setVisible('training-load-compare-analysis', false);
   setVisible('training-load-content', true);
