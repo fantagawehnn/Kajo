@@ -3,7 +3,7 @@ import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 /**
  * Adapted resting HR for a given activity date.
  * Uses the median of valid daily RHR values in the configured trailing window.
- * A minimum of three daily observations is required; otherwise a valid
+ * At least 60% of the window (minimum three observations) is required; otherwise a valid
  * profile restingHr may be used as an explicitly marked static fallback.
  */
 export function getAdaptiveRestingHr(dailyCheckins, date, windowDays = 7, profile = {}) {
@@ -219,8 +219,8 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
 
 /**
  * Heart-rate-zone analysis for the KAJO comparison view.
- * KAJO uses the athlete's configured sport/global zones (or its existing
- * max-HR fallback). Edwards uses five fixed %HRmax bands; time below 50%
+ * KAJO uses adaptive Karvonen zones from max HR and trailing median resting HR.
+ * Edwards uses five fixed %HRmax bands; time below 50%
  * HRmax is deliberately excluded rather than assigned to zone 1.
  */
 export function getHeartRateZoneAnalysis(records, settings, profile, dailyCheckins = {}) {
