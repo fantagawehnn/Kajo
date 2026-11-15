@@ -808,7 +808,7 @@ export function renderActivityTelemetryChart(act) {
     let selectedKeys = Array.isArray(state.activityTelemetryMetrics)
         ? state.activityTelemetryMetrics.filter(key => series.some(item => item.key === key))
         : [];
-    if (!selectedKeys.length) {
+    if (!Array.isArray(state.activityTelemetryMetrics)) {
         const initial = series.some(item => item.key === state.activityTelemetryMetric)
             ? state.activityTelemetryMetric
             : series.some(item => item.key === 'hr') ? 'hr' : series[0].key;
@@ -829,6 +829,23 @@ export function renderActivityTelemetryChart(act) {
     }
     const selected = selectedKeys.map(key => series.find(item => item.key === key)).filter(Boolean);
     const pointReadout = document.getElementById('activity-telemetry-point');
+    if (!selected.length) {
+        if (pointReadout) { pointReadout.hidden = true; pointReadout.textContent = ''; }
+        const status = document.getElementById('activity-hr-series-status');
+        if (status) status.textContent = 'Keine Messreihe ausgewählt · Wähle oben eine oder mehrere Größen aus.';
+        const telem = getActivityTelemetry(act) || {};
+        const rawTimes = Array.isArray(telem.time) ? telem.time : [];
+        const labels = rawTimes.map((value, index) => Number.isFinite(Number(value))
+            ? String(Math.floor(Number(value) / 60)).padStart(2, '0') + ':' + String(Math.floor(Number(value) % 60)).padStart(2, '0')
+            : String(index + 1));
+        state.telemetryChartInstance = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: { labels, datasets: [] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: { x: { grid: { color: 'rgba(100,116,139,.12)' }, ticks: { color: '#64748b', maxTicksLimit: 8 } } } }
+        });
+        return;
+    }
     if (pointReadout) {
         pointReadout.hidden = true;
         pointReadout.textContent = '';
