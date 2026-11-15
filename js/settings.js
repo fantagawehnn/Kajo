@@ -215,7 +215,7 @@ function renderRows() {
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
         <label for="kajo-zone-maxhr" class="text-[11px] font-medium text-slate-300">Maximale Herzfrequenz</label>
-        <div class="mt-2 flex items-center gap-2"><input id="kajo-zone-maxhr" type="number" min="100" max="240" step="1" value="${detected.value ?? ''}" placeholder="z. B. 201" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white"><span class="text-xs text-slate-400">bpm</span></div>
+        <div class="mt-2 flex items-center gap-2"><input id="kajo-zone-maxhr" type="number" min="100" max="240" step="1" oninput="previewHeartRateZones()" value="${detected.value ?? ''}" placeholder="z. B. 201" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white"><span class="text-xs text-slate-400">bpm</span></div>
         <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Quelle: ${escapeHtml(detected.source)}. Die HFmax bleibt als stabiler Profilwert erhalten und wird nicht aus der Ruhe-HF abgeleitet.</p>
       </div>
       <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
