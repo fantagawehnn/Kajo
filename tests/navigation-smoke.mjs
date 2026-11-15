@@ -352,6 +352,9 @@ assert.ok(!html.includes('id="analysis-overview-detail-content"'), 'overview kee
 assert.ok(overviewModule.includes('setAnalysisOverviewMetric') && overviewModule.includes('selectedMetrics = new Set'), 'overview exposes multi-series toggles with all currently supported series selected initially');
 assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.includes('baseline: Number(baseline)'), 'overview normalizes supported series to a relative index');
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
+assert.ok(overviewModule.includes('return day && valid(day.load) ? Number(day.load) : null;'), 'overview daily load does not disappear when ATL is unavailable');
+assert.ok(overviewModule.includes("label: 'Load · Tagesload'"), 'overview labels the independent daily load accurately');
+assert.ok(main.includes("'./analysis-overview.js?v=2'"), 'analysis overview cache version is refreshed after the load-series update');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
 assert.ok(overviewModule.includes('Health availability is deliberately not inferred'), 'Health does not fabricate a continuous availability score');
