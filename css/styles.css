@@ -8552,3 +8552,6 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
     .activity-detail-sport-icon{flex-basis:34px;width:34px;height:34px}
     .activity-detail-title-line h2{font-size:13px}
 }
+
+#view-calendar .calendar-period-predicted{stroke-dasharray:2 2;opacity:.58}
+#view-calendar .calendar-event-cycle-predicted{opacity:.62}
