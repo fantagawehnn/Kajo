@@ -64,7 +64,7 @@ function buildSeries(dates) {
   const checkins = state.dailyCheckins || {};
   const load = dates.map(date => {
     const day = timeline.get(date);
-    return day && day.load != null && valid(day.atl) ? Number(day.atl) : null;
+    return day && valid(day.load) ? Number(day.load) : null;
   });
   const recovery = dates.map(date => valid(checkins[date]?.hrv) ? Number(checkins[date].hrv) : null);
   // VO₂max liegt im geprüften Datenmodell als Profilwert vor. Ein datierter,
@@ -75,7 +75,7 @@ function buildSeries(dates) {
   // No continuous availability series exists in the current data model.
   const health = dates.map(() => null);
   return [
-    { key: 'load', label: 'Load · ATL', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
+    { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
     { key: 'performance', label: 'Fitness · VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance, unavailable: true },
     { key: 'health', label: 'Health · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
