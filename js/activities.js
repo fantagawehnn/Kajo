@@ -124,8 +124,8 @@ async function diagnoseGarminCloudTelemetry() {
             && axis.every(value => value !== null && value !== '' && Number.isFinite(Number(value)))
             && axis.slice(1).every((value, index) => Number(value) > Number(axis[index]));
         const timeKind = monotonic
-            ? Math.max(...axis.map(Number)) > 100000000000 ? 'absolut wirkende Zeitstempel (ms)'
-                : Math.max(...axis.map(Number)) > 1000000000 ? 'absolut wirkende Zeitstempel (s)'
+            ? Number(axis[axis.length - 1]) > 100000000000 ? 'absolut wirkende Zeitstempel (ms)'
+                : Number(axis[axis.length - 1]) > 1000000000 ? 'absolut wirkende Zeitstempel (s)'
                     : 'numerische Zeitachse; Einheit muss aus Import-Metadaten bestätigt werden'
             : 'keine gültige aufsteigende Zeitachse';
         const metricLines = Object.entries(metricSeries).map(([key, metric]) => {
