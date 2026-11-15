@@ -154,18 +154,34 @@ export async function enableKajoPush() {
 
 export async function sendKajoPushTest() {
   try {
-    if (!("Notification" in window) || Notification.permission !== "granted") throw new Error("Aktiviere zuerst die Benachrichtigungsfreigabe.");
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      throw new Error("Web-Push wird von diesem Browser nicht unterstützt.");
+    }
+    if (Notification.permission !== "granted") throw new Error("Aktiviere zuerst die Benachrichtigungsfreigabe.");
+    if (!KAJO_VAPID_PUBLIC_KEY) throw new Error("Der öffentliche VAPID-Schlüssel ist nicht konfiguriert.");
+
+    await currentUser();
     const registration = await navigator.serviceWorker.ready;
-    await registration.showNotification("KAJO · Alles bereit", {
-      body: "Deine persönlichen Erinnerungen erscheinen hier im KAJO-Design.",
-      icon: "./icons/icon-192.svg",
-      badge: "./icons/icon-192.svg",
-      tag: "kajo-test-notification",
-      data: { url: "./" },
-      vibrate: [100, 45, 100]
-    });
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) throw new Error("Dieses Gerät ist noch nicht für Push registriert. Aktiviere zuerst Push auf diesem Gerät.");
+    if (!hasMatchingVapidKey(subscription, base64ToUint8Array(KAJO_VAPID_PUBLIC_KEY))) {
+      throw new Error("Die Push-Registrierung verwendet einen alten Schlüssel. Aktiviere Push auf diesem Gerät erneut.");
+    }
+
+    const { data, error } = await supabase.functions.invoke("kajo-push-test");
+    if (error) throw error;
+    if (!data?.ok) throw new Error(data?.error || "Der Pushdienst konnte die Testnachricht nicht zustellen.");
+
+    const sent = Number(data.sent || 0);
+    const failed = Number(data.failed || 0);
+    setStatus(
+      failed > 0
+        ? `Server-Push zugestellt: ${sent} Gerät(e). ${failed} weitere Zustellung(en) fehlgeschlagen.`
+        : `Server-Push erfolgreich an ${sent} Gerät(e) übermittelt.`,
+      "is-ready"
+    );
   } catch (error) {
-    setStatus(error.message || "Die Testnachricht konnte nicht angezeigt werden.", "is-error");
+    setStatus(error.message || "Der serverseitige Push-Test ist fehlgeschlagen.", "is-error");
   }
 }
 
