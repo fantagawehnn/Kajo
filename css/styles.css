@@ -8088,3 +8088,14 @@ html[data-theme="light"] .kajo-pull-refresh {
 @media (min-width: 768px) {
   .kajo-pull-refresh { display: none; }
 }
+
+
+/* Gesundheitsdaten in Mehr: an erster Stelle und orange hervorgehoben. */
+#view-more .kajo-area-card.kajo-area-health .kajo-area-icon {
+  color:#fb923c !important;
+  background:rgba(249,115,22,.14) !important;
+}
+#view-more .kajo-area-card.kajo-area-health .kajo-area-icon svg {
+  color:#fb923c !important;
+  stroke:#fb923c !important;
+}
