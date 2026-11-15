@@ -989,12 +989,13 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-sm text-white">KAJO - Performance Coach</h3>
-                            <div class="text-[10px] text-emerald-400">Datenbasis: Live (Aktivitäten, CTL/ATL/Belastungssaldo, Check-ins, Wettkämpfe)</div>
+                            <div class="text-[10px] text-emerald-400">Datenbasis: lokal gespeicherte KAJO-Daten</div>
                             <div id="coach-context-hint" class="mt-1 text-[10px] text-slate-500">Kontext: deinem Training</div>
                         </div>
                     </div>
-                    <span class="text-[10px] bg-slate-950 px-2 py-1 rounded text-slate-400 border border-slate-800 font-mono">Quellennachweis-Modus Aktiv</span>
+                    <span class="text-[10px] bg-slate-950 px-2 py-1 rounded text-slate-400 border border-slate-800 font-mono">Lokale Auswertung</span>
                 </div>
+                <p class="mx-4 mt-3 mb-1 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-2 text-[11px] leading-relaxed text-emerald-200">Deine Nachricht wird nicht an einen externen KI-Dienst übertragen. Der Coach erstellt seine Antwort lokal aus den in KAJO gespeicherten Daten. Die reguläre KAJO-Cloud-Synchronisierung deiner übrigen App-Daten bleibt davon unberührt.</p>
 
                 <div class="p-4 space-y-4 text-xs" id="chat-messages">
                     <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl max-w-xl text-slate-300">
@@ -1410,12 +1411,12 @@
           </button>
           <button type="button" class="kajo-settings-category" data-tone="mint" onclick="kajoSettingsOpenPage('performance')">
             <span class="kajo-settings-category-icon"><i data-lucide="heart-pulse" aria-hidden="true"></i></span>
-            <span class="kajo-settings-category-copy"><strong>Leistungsparameter</strong><small>Herzfrequenz, Zonen und individuelle Leistungswerte</small></span>
+            <span class="kajo-settings-category-copy"><strong>Leistungsparameter</strong><small>Maximale Herzfrequenz und individuelle Herzfrequenzzonen</small></span>
             <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
           </button>
           <button type="button" class="kajo-settings-category" data-tone="violet" onclick="kajoSettingsOpenPage('app')">
             <span class="kajo-settings-category-icon"><i data-lucide="palette" aria-hidden="true"></i></span>
-            <span class="kajo-settings-category-copy"><strong>App &amp; Darstellung</strong><small>Farbschema, Anzeige, Datenschutz und Konto</small></span>
+            <span class="kajo-settings-category-copy"><strong>App &amp; Darstellung</strong><small>Farbschema und Datenschutz</small></span>
             <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
           </button>
           <button type="button" class="kajo-settings-category" data-tone="amber" onclick="kajoSettingsOpenPage('notifications')">
@@ -1456,9 +1457,9 @@
             <div class="grid grid-cols-[auto_minmax(0,1fr)_minmax(145px,1fr)_auto] gap-2 px-2 text-[10px] text-slate-500"><span>Aktiv</span><span>Sportart</span><span>Kalenderfarbe</span><span></span></div>
             <div id="settings-sports-list" class="space-y-2"></div>
           </div>
-        </details><section id="settings-categories" class="kajo-settings-card space-y-2"><div class="flex items-center justify-between"><h3 class="text-sm font-bold text-white">Trainingslegenden</h3><button type="button" onclick="addCustomCategory()" class="text-xs text-cyan-400">+ Legende</button></div><div id="settings-categories-list" class="space-y-2"></div></section><section id="settings-load" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Trainingsbelastung</h3><p>Welche Datenquelle für die Belastungssteuerung verwendet wird.</p></div><span class="kajo-settings-section-icon"><i data-lucide="activity"></i></span></div><label class="block text-xs text-slate-300">Belastungsquelle für CTL / ATL<select id="training-load-source" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white"><option value="auto">Automatisch (Garmin / TSS)</option><option value="srpe">Session-RPE (Dauer × Gesamtanstrengung)</option></select></label><p class="text-[11px] text-slate-400">Bewerte die gesamte Einheit möglichst etwa 30 Minuten nach Trainingsende. Load = Dauer in Minuten × RPE (1–10), angegeben in arbiträren Einheiten (AU). Bei Auswahl dieser Quelle werden ausschließlich bewertete Aktivitäten berücksichtigt; Garmin-Load und TSS werden nicht beigemischt. Die relative Belastungsbilanz ist ein Modellwert, keine validierte Trainingsfreigabe.</p></section></section>
+        </details><section id="settings-categories" class="kajo-settings-card space-y-2"><div class="flex items-center justify-between"><h3 class="text-sm font-bold text-white">Trainingslegenden</h3><button type="button" onclick="addCustomCategory()" class="text-xs text-cyan-400">+ Legende</button></div><div id="settings-categories-list" class="space-y-2"></div></section><section id="settings-load" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Trainingsbelastung</h3><p>Welche Datenquelle für die Belastungssteuerung verwendet wird.</p></div><span class="kajo-settings-section-icon"><i data-lucide="activity"></i></span></div><label class="block text-xs text-slate-300">Belastungsquelle für CTL / ATL<select id="training-load-source" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white"><option value="auto">Automatisch (Garmin)</option><option value="srpe">Session-RPE (Dauer × Gesamtanstrengung)</option></select></label><p class="text-[11px] text-slate-400">Bei automatischer Auswahl verwendet KAJO Garmin-Load oder den eigenen Index aus gewichteter Herzfrequenzzonenzeit. Externe TSS-Werte werden nicht verwendet.</p><p class="text-[11px] text-slate-400">Bewerte die gesamte Einheit möglichst etwa 30 Minuten nach Trainingsende. Load = Dauer in Minuten × RPE (1–10), angegeben in arbiträren Einheiten (AU). Bei Auswahl dieser Quelle werden ausschließlich bewertete Aktivitäten berücksichtigt; Garmin-Load und TSS werden nicht beigemischt. Die relative Belastungsbilanz ist ein Modellwert, keine validierte Trainingsfreigabe.</p></section></section>
           <section id="settings-performance-group" class="kajo-settings-group" data-settings-page="performance"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="heart-pulse"></i></span><div><p class="kajo-settings-eyebrow">INDIVIDUELLE TRAININGSBEREICHE</p><h3>Leistungsparameter</h3><p>Erkenne deine Herzfrequenzzonen automatisch und passe sie bei Bedarf manuell an.</p></div></div><section id="settings-zones" class="kajo-settings-card space-y-2"><div class="kajo-settings-section-head"><div><h3>Herzfrequenzzonen</h3><p>Ein gemeinsames, automatisch vorgeschlagenes und manuell anpassbares Zonenprofil.</p></div><span class="kajo-settings-section-icon"><i data-lucide="heart-pulse"></i></span></div><p class="text-[11px] text-slate-400">KAJO schlägt deine fünf Herzfrequenzzonen anhand der erkannten maximalen Herzfrequenz vor. Du kannst alle Zonengrenzen anschließend manuell anpassen. Die Erkennung ist eine Orientierung und ersetzt keine Leistungsdiagnostik.</p><div id="settings-zones-list" class="space-y-3"></div></section></section>
-          <section id="settings-app" class="kajo-settings-group" data-settings-page="app"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="shield-check"></i></span><div><p class="kajo-settings-eyebrow">KONTO UND KONTROLLE</p><h3>App &amp; Datenschutz</h3><p>Behalte den Überblick über deine Daten und deine Kontoeinstellungen.</p></div></div>
+          <section id="settings-app" class="kajo-settings-group" data-settings-page="app"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="shield-check"></i></span><div><p class="kajo-settings-eyebrow">KONTO UND KONTROLLE</p><h3>App &amp; Datenschutz</h3><p>Passe die Darstellung an und erfahre, wie KAJO deine Daten verarbeitet.</p></div></div>
             <section class="kajo-settings-card kajo-theme-settings" aria-labelledby="kajo-theme-heading">
               <div class="kajo-settings-section-head"><div><h3 id="kajo-theme-heading">Darstellung</h3><p>Wähle, ob KAJO dem Gerät folgt oder dauerhaft hell bzw. dunkel angezeigt wird.</p></div><span class="kajo-settings-section-icon"><i data-lucide="sun-moon"></i></span></div>
               <label class="kajo-settings-field" for="kajo-theme-select">Farbschema
@@ -1470,7 +1471,7 @@
               </label>
               <p class="kajo-settings-footnote">Die Auswahl wird auf diesem Gerät gespeichert. Die App-Daten und Trainingsberechnungen bleiben unverändert.</p>
             </section>
-            <p class="kajo-settings-footnote">Dein Athletenprofil und deine Trainingsdaten bleiben privat und deinem angemeldeten Konto zugeordnet.</p>
+            <p class="kajo-settings-footnote">Deine App-Daten sind deinem angemeldeten Konto zugeordnet. Die reguläre KAJO-Cloud-Synchronisierung deiner Trainings- und Kontodaten ist unabhängig von der lokalen Verarbeitung deiner Coach-Nachrichten.</p>
           </section>
         </div>
         <div class="kajo-settings-footer hidden" id="kajo-settings-footer"><button type="button" onclick="closeSettingsModal()" class="kajo-settings-secondary">Schließen</button><button type="button" onclick="saveSettings()" class="kajo-settings-primary">Einstellungen speichern</button></div>
