@@ -59,7 +59,9 @@ export function getActivityTelemetry(activity) {
  * a usable metricSeries entry.
  */
 export function getGarminHeartRateSeries(activity) {
-    const telemetry = getGarminTelemetry(activity);
+    // Verwende exakt denselben provenance-geprüften Zugriff wie die Aktivitätenansicht:
+    // Garmin-Telemetrie bevorzugt, explizit als FIT markierte Telemetrie als Fallback.
+    const telemetry = getActivityTelemetry(activity);
     if (!telemetry) return null;
 
     const validValues = values => Array.isArray(values) && values.length >= 2
