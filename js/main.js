@@ -2231,7 +2231,7 @@ async function syncGarminTodayOnOpen(userId) {
         if (activeAppUserId !== userId || !appUserReady) return;
         const activityDates = (state.rawActivities || [])
             .map(activity => String(activity?.date || activity?.startTime || '').slice(0, 10))
-            .filter(value => /^\\d{4}-\\d{2}-\\d{2}$/.test(value))
+            .filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value))
             .sort();
         const zoneWindowDays = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 7));
         const healthStart = activityDates.length
