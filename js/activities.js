@@ -881,7 +881,23 @@ function renderOptionalActivityViews(act) {
     } else setPanel('activity-efficiency-panel', 'Effizienz und Belastungsverhältnis', '');
 
     // Runden getrennt ausweisen: automatische Runden dürfen keinen Intervallvergleich beeinflussen.
-    const laps = Array.isArray(act.laps) ? act.laps : Array.isArray(act.intervals) ? act.intervals : [];
+    // FIT-Runden liegen nach dem Garmin-Import unter garminFitData.laps und
+    // werden hier in das bestehende Anzeigeformat überführt.
+    const storedLaps = Array.isArray(act.laps) ? act.laps : Array.isArray(act.intervals) ? act.intervals : [];
+    const fitLaps = Array.isArray(act.garminFitData?.laps) ? act.garminFitData.laps : [];
+    const laps = storedLaps.length ? storedLaps : fitLaps.map((lap, index) => ({
+        name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
+        kind: 'automatic',
+        duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationUnit: 'seconds',
+        distance: Number.isFinite(Number(lap.distanceKm)) ? Number(lap.distanceKm) * 1000 : null,
+        avgHr: lap.averageHeartRate ?? null,
+        maxHr: lap.maxHeartRate ?? null,
+        avgSpeed: lap.averageSpeedKmh ?? null,
+        maxSpeed: lap.maxSpeedKmh ?? null,
+        startTime: lap.startTime ?? null
+    }));
     if (laps.length) {
         const manualCount = laps.filter(lap => lap.kind === 'manual').length;
         const automaticCount = laps.filter(lap => lap.kind === 'automatic').length;
