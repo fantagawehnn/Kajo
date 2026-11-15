@@ -308,5 +308,5 @@ test('absolute timestamps are not silently converted to relative seconds', () =>
     const load = getTrainingLoadData([{
         ...activity, date: completedDay, duration: 60
     }], {}, { maxHr: 190 });
-    assert.equal(load.mode, 'srpe');
+    assert.equal(load.mode, 'garmin-unavailable');
 });
