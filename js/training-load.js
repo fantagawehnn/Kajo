@@ -97,7 +97,7 @@ function getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins) {
 
 /* Garmin-only training-load calculation.
  * Weighted HR-zone minutes: Z1=1 ... Z5=5 points per minute.
- * This is an Endurance AI index, not TSS and not Garmin's native Training Load.
+ * This is a KAJO index, not TSS and not Garmin's native Training Load.
  */
 export function calculateGarminZoneLoad(activity, settings, profile, dailyCheckins = {}) {
     // FIT-Zeitreihen können bei älteren/zusammengeführten Datensätzen bereits
