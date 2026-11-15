@@ -184,7 +184,8 @@ function renderRows() {
   for (const id of ['modal-edit-type-select','plan-category']) { const select=document.getElementById(id); if(select){ const current=select.value; select.innerHTML=Object.entries(categories).map(([key,v])=>`<option value="${escapeHtml(key)}">${escapeHtml(v.label)}</option>`).join(''); if(current&&categories[current])select.value=current; } }
   const detected = detectMaxHr();
   const zoneSettings = state.settings?.heartRateZoneSettings || {};
-  const windowDays = Math.min(28, Math.max(3, Number(zoneSettings.restingHrWindowDays) || 14));
+  const windowDays = Number(zoneSettings.restingHrWindowVersion) >= 2
+    ? Math.min(28, Math.max(3, Number(zoneSettings.restingHrWindowDays) || 14)) : 14;
   const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
   const adaptiveRhr = getAdaptiveRestingHr(state.dailyCheckins || {}, today, windowDays, state.profile || {});
   const adaptiveZones = adaptiveRhr?.value != null ? calculateHeartRateReserveZones(detected.value, adaptiveRhr.value) : null;
@@ -325,7 +326,8 @@ export function saveSettings() {
   if (zoneMaxHr !== null) state.profile = { ...state.profile, maxHr: zoneMaxHr };
   const heartRateZoneSettings = {
     method: 'karvonen-adaptive',
-    restingHrWindowDays: windowDays
+    restingHrWindowDays: windowDays,
+    restingHrWindowVersion: 2
   };
   const knownActivityTypes = new Set([
     ...Object.keys(sports),
