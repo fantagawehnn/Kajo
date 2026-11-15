@@ -114,7 +114,7 @@ export function getGarminTelemetryRecordsForCloud() {
     }
     for (const [rawId, telemetry] of Object.entries(state.garminTelemetryStore || {})) {
         const id = String(rawId).replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(id) || records.has(id) || !telemetry || typeof telemetry !== 'object') continue;
+        if (!/^\d+$/.test(id) || records.has(id) || !telemetry || typeof telemetry !== 'object') continue;
         if (Object.keys(telemetry).length) records.set(id, { garmin_activity_id: id, telemetry });
     }
     return Array.from(records.values());
