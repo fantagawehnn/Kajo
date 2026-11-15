@@ -73,31 +73,6 @@ async function fetchAllRows(supabase, userId) {
     return rows;
 }
 
-function mergeTelemetry(existing = {}, incoming = {}) {
-    const merged = { ...(existing || {}), ...(incoming || {}) };
-    // Never replace a populated series with an empty/partial retry.
-    for (const [key, value] of Object.entries(incoming || {})) {
-        if (Array.isArray(value) && value.length === 0 && Array.isArray(existing?.[key]) && existing[key].length > 0) {
-            merged[key] = existing[key];
-        }
-    }
-    const oldSeries = existing?.metricSeries && typeof existing.metricSeries === 'object'
-        ? existing.metricSeries : {};
-    const newSeries = incoming?.metricSeries && typeof incoming.metricSeries === 'object'
-        ? incoming.metricSeries : {};
-    merged.metricSeries = { ...oldSeries, ...newSeries };
-    for (const [key, metric] of Object.entries(newSeries)) {
-        if (!Array.isArray(metric?.values) || metric.values.length === 0) {
-            if (oldSeries[key]) merged.metricSeries[key] = oldSeries[key];
-        }
-    }
-    if ((!Array.isArray(incoming?.metricSeriesTime) || incoming.metricSeriesTime.length === 0)
-        && Array.isArray(existing?.metricSeriesTime)) {
-        merged.metricSeriesTime = existing.metricSeriesTime;
-    }
-    return merged;
-}
-
 export async function uploadMissingGarminTelemetry(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
     const candidates = new Map();
@@ -176,41 +151,35 @@ export async function uploadMissingGarminTelemetry(supabase, userId, candidateRe
 
 export async function syncGarminTelemetryToCloud(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
-    const existingRows = await fetchAllRows(supabase, id);
-    const existingById = new Map(existingRows.map(row => [String(row.garmin_activity_id), row.telemetry || {}]));
-    const uniqueCandidates = new Map();
 
-    for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
-        const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
-        uniqueCandidates.set(activityId, mergeTelemetry(
-            existingById.get(activityId) || {},
-            record.telemetry
-        ));
-    }
+    // Erst IDs prüfen und ausschließlich tatsächlich fehlende Messreihen speichern.
+    // Vorhandene Telemetrie wird dabei weder geladen noch überschrieben.
+    const uploadResult = await uploadMissingGarminTelemetry(supabase, id, candidateRecords);
 
-    let uploaded = 0;
-    for (const [activityId, telemetry] of uniqueCandidates) {
-        const { error } = await supabase.from(TABLE).upsert({
-            user_id: id,
-            garmin_activity_id: activityId,
-            telemetry
-        }, { onConflict: 'user_id,garmin_activity_id' });
-        if (error) throw error;
-        uploaded++;
-    }
-
+    // Ein einmaliger Download ist weiterhin nötig, um den lokalen Cache nach
+    // erfolgreicher Migration mit den bereits gespeicherten Cloud-Daten aufzubauen.
+    // Im Gegensatz zum bisherigen Ablauf wird die komplette Tabelle nicht
+    // zusätzlich vor dem Upload geladen.
     const cloudRows = await fetchAllRows(supabase, id);
     const cloudIds = new Set(cloudRows.map(row => String(row.garmin_activity_id)));
-    const missing = Array.from(uniqueCandidates.keys()).filter(activityId => !cloudIds.has(activityId));
-    if (missing.length) throw new Error('Cloud-Readback unvollständig: ' + missing.length + ' Telemetrie-Datensätze fehlen.');
+    const candidateIds = Array.from(new Set(
+        (Array.isArray(candidateRecords) ? candidateRecords : [])
+            .map(record => String(record?.garmin_activity_id ?? '').replace(/^garmin-/, ''))
+            .filter(activityId => /^\\d+$/.test(activityId))
+    ));
+    const missing = candidateIds.filter(activityId => !cloudIds.has(activityId));
+    if (missing.length) {
+        throw new Error('Cloud-Readback unvollständig: ' + missing.length + ' Telemetrie-Datensätze fehlen.');
+    }
+
     return {
         records: cloudRows.map(row => ({
             garmin_activity_id: String(row.garmin_activity_id),
             telemetry: row.telemetry
         })),
-        uploaded,
-        existing: existingRows.length,
-        total: cloudRows.length
+        uploaded: uploadResult.uploaded,
+        existing: uploadResult.skippedExisting,
+        total: cloudRows.length,
+        verified: uploadResult.verified
     };
 }
