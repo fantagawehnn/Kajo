@@ -205,7 +205,7 @@ function renderRows() {
     ? 'Adaptive Ruhe-HF: ' + adaptiveRhr.value + ' bpm · ' + adaptiveRhr.readingCount + '/' + adaptiveRhr.windowDays + ' Tageswerte'
       + (adaptiveRhr.source === 'profile-fallback' ? ' · statischer Profil-Fallback' : ' · Median der letzten Tage')
       + (adaptiveRhr.quality === 'limited' ? ' · eingeschränkte Datenbasis' : '')
-    : 'Keine adaptive Ruhe-HF verfügbar. Mindestens drei gültige Tageswerte im Rückblickfenster oder ein Ruhe-HF-Profilwert sind erforderlich.';
+    : 'Keine adaptive Ruhe-HF verfügbar. Mindestens 60 % der Tage (mindestens drei Messwerte) oder ein Ruhe-HF-Profilwert sind erforderlich.';
   zoneBox.innerHTML = `<div class="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-3">
     <div class="flex items-start justify-between gap-3">
       <div><p class="text-sm font-semibold text-white">Automatische Herzfrequenzzonen</p>
@@ -223,7 +223,7 @@ function renderRows() {
         <div class="mt-2 flex items-center gap-2"><select id="kajo-zone-rhr-window" onchange="previewHeartRateZones()" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
           ${[7,10,14,21,28].map(days => `<option value="${days}" ${days===windowDays?'selected':''}>${days} Tage</option>`).join('')}
         </select><span class="text-xs text-slate-400">Tageswerte</span></div>
-        <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Verwendet wird der Median gültiger Ruhe-HF-Tageswerte bis einschließlich des Aktivitätstags. Mindestens drei Messwerte sind erforderlich.</p>
+        <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Verwendet wird der Median gültiger Ruhe-HF-Tageswerte bis einschließlich des Aktivitätstags. Mindestens 60 % der Tage (mindestens drei Messwerte) sind erforderlich.</p>
       </div>
     </div>
     <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3 space-y-2">
