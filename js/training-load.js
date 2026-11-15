@@ -129,3 +129,132 @@ export function getTrainingLoadData(records, settings, profile) {
     // External TSS is not an approved source for KAJO training-load calculations.
     return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
 }
+
+
+/**
+ * Heart-rate-zone analysis for the KAJO comparison view.
+ * KAJO uses the athlete's configured sport/global zones (or its existing
+ * max-HR fallback). Edwards uses five fixed %HRmax bands; time below 50%
+ * HRmax is deliberately excluded rather than assigned to zone 1.
+ */
+export function getHeartRateZoneAnalysis(records, settings, profile) {
+    const list = Array.isArray(records) ? records : [];
+    const output = [];
+    let eligibleGarminCount = 0;
+    let kajoCount = 0;
+    let edwardsCount = 0;
+    let missingMaxHrCount = 0;
+
+    for (const activity of list) {
+        if (!activity?.date || !isGarminActivity(activity)) continue;
+        eligibleGarminCount++;
+        const kajo = calculateGarminZoneLoad(activity, settings, profile);
+        if (kajo) kajoCount++;
+
+        const maxHr = Number(profile?.maxHr);
+        let edwards = null;
+        if (!Number.isFinite(maxHr) || maxHr < 100 || maxHr > 240) {
+            missingMaxHrCount++;
+        } else {
+            const series = getGarminHeartRateSeries(activity);
+            const hr = series?.hr;
+            const time = series?.time;
+            if (Array.isArray(hr) && hr.length >= 2 && Array.isArray(time) && time.length === hr.length) {
+                const secondsByZone = [0, 0, 0, 0, 0];
+                let excludedIntervalCount = 0;
+                let excludedIntervalSeconds = 0;
+                let below50Seconds = 0;
+                for (let i = 0; i < hr.length - 1; i++) {
+                    const bpm = Number(hr[i]);
+                    const seconds = Number(time[i + 1]) - Number(time[i]);
+                    if (!Number.isFinite(seconds) || seconds <= 0) continue;
+                    if (seconds > 30) {
+                        excludedIntervalCount++;
+                        excludedIntervalSeconds += seconds;
+                        continue;
+                    }
+                    if (!Number.isFinite(bpm) || bpm < 30 || bpm > 250) continue;
+                    const pct = bpm / maxHr * 100;
+                    if (pct < 50) {
+                        below50Seconds += seconds;
+                        continue;
+                    }
+                    const zone = pct < 60 ? 0 : pct < 70 ? 1 : pct < 80 ? 2 : pct < 90 ? 3 : 4;
+                    secondsByZone[zone] += seconds;
+                }
+                const totalSeconds = secondsByZone.reduce((sum, value) => sum + value, 0);
+                if (totalSeconds >= 60) {
+                    const value = secondsByZone.reduce((sum, seconds, index) => sum + seconds / 60 * (index + 1), 0);
+                    edwards = {
+                        value: Number(value.toFixed(1)),
+                        secondsByZone,
+                        totalSeconds,
+                        below50Seconds,
+                        excludedIntervalCount,
+                        excludedIntervalSeconds,
+                        maxHr,
+                        boundaries: [50, 60, 70, 80, 90]
+                    };
+                    edwardsCount++;
+                }
+            }
+        }
+        if (kajo || edwards) output.push({
+            activity,
+            date: String(activity.date).slice(0, 10),
+            sport: activity.type || activity.sport || 'Unbekannt',
+            kajo,
+            edwards
+        });
+    }
+
+    const aggregate = model => {
+        const daily = new Map();
+        const zones = [0, 0, 0, 0, 0];
+        let weightedLoad = 0;
+        let zoneSeconds = 0;
+        for (const item of output) {
+            const result = item[model];
+            if (!result) continue;
+            if (!daily.has(item.date)) daily.set(item.date, { date: item.date, value: 0, activityCount: 0, secondsByZone: [0,0,0,0,0] });
+            const day = daily.get(item.date);
+            day.value += result.value;
+            day.activityCount++;
+            result.secondsByZone.forEach((seconds, index) => {
+                zones[index] += seconds;
+                day.secondsByZone[index] += seconds;
+            });
+            weightedLoad += result.value;
+            zoneSeconds += result.totalSeconds;
+        }
+        return {
+            daily: [...daily.values()].sort((a, b) => a.date.localeCompare(b.date)).map(day => ({
+                ...day, value: Number(day.value.toFixed(1))
+            })),
+            zonesSeconds: zones,
+            zonesMinutes: zones.map(seconds => Number((seconds / 60).toFixed(1))),
+            totalZoneMinutes: Number((zoneSeconds / 60).toFixed(1)),
+            weightedLoad: Number(weightedLoad.toFixed(1))
+        };
+    };
+
+    return {
+        records: output,
+        kajo: aggregate('kajo'),
+        edwards: aggregate('edwards'),
+        coverage: {
+            garminActivityCount: eligibleGarminCount,
+            activitiesWithKajoZones: kajoCount,
+            activitiesWithEdwards: edwardsCount,
+            activitiesWithoutUsableEdwardsMaxHr: missingMaxHrCount,
+            activitiesWithoutAnyUsableZoneLoad: Math.max(0, eligibleGarminCount - output.length)
+        },
+        edwardsMethod: {
+            name: 'Edwards TRIMP',
+            basis: '% der maximalen Herzfrequenz',
+            zones: ['50–<60 %', '60–<70 %', '70–<80 %', '80–<90 %', '≥90 %'],
+            weights: [1, 2, 3, 4, 5],
+            below50: 'Nicht berücksichtigt'
+        }
+    };
+}
