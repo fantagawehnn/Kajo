@@ -1389,18 +1389,31 @@ function initializeActivityDetailTabs() {
     const overview = document.getElementById('activity-overview');
     if (!modal || !content || !overview || modal.dataset.activityTabsReady === 'true') return;
 
+    // Analysebereiche vor dem Entfernen des alten Layout-Containers sichern.
+    // Andernfalls werden RPE, HF-Zonen und weitere Panels mit dem Grid aus dem DOM gelöscht.
+    const panelIds = [
+        'activity-training-stimulus', 'activity-benefit-profile', 'activity-load-context-panel',
+        'activity-intervals-panel', 'activity-canoe-panel', 'activity-route-map-panel',
+        'activity-elevation-panel', 'activity-strength-analysis-panel', 'activity-recovery-panel',
+        'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel',
+        'activity-telemetry-diagnostic-source', 'activity-rpe-panel', 'activity-zone-panel'
+    ];
+    const preservedPanels = new Map(panelIds
+        .map(id => [id, document.getElementById(id)])
+        .filter(([, element]) => !!element));
+
     // Die Detailansicht ist ein durchgehender Bericht statt mehrerer Registerkarten.
     const removeIds = ['activity-data-quality', 'activity-fit-data-panel'];
     removeIds.forEach(id => document.getElementById(id)?.remove());
     document.getElementById('activity-hr-series-status')?.remove();
     content.querySelector('.activity-detail-grid')?.remove();
 
-    const rpe = document.getElementById('activity-rpe-panel');
+    const rpe = preservedPanels.get('activity-rpe-panel');
     const metrics = document.getElementById('activity-sport-metrics');
     if (rpe && metrics) metrics.after(rpe);
 
     const telemetry = document.getElementById('activity-telemetry-panel');
-    const zones = document.getElementById('activity-zone-panel');
+    const zones = preservedPanels.get('activity-zone-panel');
     if (telemetry && !overview.contains(telemetry)) overview.appendChild(telemetry);
     if (zones) overview.appendChild(zones);
 
@@ -1413,7 +1426,7 @@ function initializeActivityDetailTabs() {
         const body = document.createElement('div');
         body.className = 'activity-detail-accordion-body';
         panelIds.forEach(panelId => {
-            const panel = document.getElementById(panelId);
+            const panel = preservedPanels.get(panelId) || document.getElementById(panelId);
             if (panel) body.appendChild(panel);
         });
         details.append(summary, body);
