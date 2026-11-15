@@ -30,13 +30,90 @@ import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDrop
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
-import { sendAICoachMessage } from './coach.js';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones } from './settings.js?v=5';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
-import { renderNutritionView, openSupplementModal, closeSupplementModal, saveSupplement, deleteSupplement, toggleSupplementTaken, enableNutritionNotifications, initializeNutritionReminders } from './nutrition.js?v=1';
-import { renderGarminHealthData, openGarminHealthMetric, closeGarminHealthMetric, setGarminHealthRange, applyGarminHealthCustomRange } from './health-data.js?v=2';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry } from './garmin-cloud-telemetry.js?v=1';
+
+/* Selten genutzte Bereiche werden erst bei Bedarf geladen.
+   Die Promise-Caches verhindern parallele Mehrfachimporte. */
+let coachModulePromise = null;
+let healthDataModulePromise = null;
+let nutritionModulePromise = null;
+
+function loadCoachModule() {
+    if (!coachModulePromise) coachModulePromise = import('./coach.js?v=1');
+    return coachModulePromise;
+}
+function loadHealthDataModule() {
+    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=2');
+    return healthDataModulePromise;
+}
+function loadNutritionModule() {
+    if (!nutritionModulePromise) nutritionModulePromise = import('./nutrition.js?v=1');
+    return nutritionModulePromise;
+}
+
+async function sendAICoachMessage(...args) {
+    const module = await loadCoachModule();
+    return module.sendAICoachMessage(...args);
+}
+function renderGarminHealthData() {
+    void loadHealthDataModule().then(module => module.renderGarminHealthData())
+        .catch(error => console.error('Garmin-Gesundheitsdaten konnten nicht geladen werden:', error));
+}
+async function openGarminHealthMetric(...args) {
+    const module = await loadHealthDataModule();
+    return module.openGarminHealthMetric(...args);
+}
+async function closeGarminHealthMetric(...args) {
+    const module = await loadHealthDataModule();
+    return module.closeGarminHealthMetric(...args);
+}
+async function setGarminHealthRange(...args) {
+    const module = await loadHealthDataModule();
+    return module.setGarminHealthRange(...args);
+}
+async function applyGarminHealthCustomRange(...args) {
+    const module = await loadHealthDataModule();
+    return module.applyGarminHealthCustomRange(...args);
+}
+function renderNutritionView() {
+    void loadNutritionModule().then(module => module.renderNutritionView())
+        .catch(error => console.error('Ernährungsbereich konnte nicht geladen werden:', error));
+}
+async function openSupplementModal(...args) {
+    const module = await loadNutritionModule();
+    return module.openSupplementModal(...args);
+}
+async function closeSupplementModal(...args) {
+    const module = await loadNutritionModule();
+    return module.closeSupplementModal(...args);
+}
+async function saveSupplement(...args) {
+    const module = await loadNutritionModule();
+    return module.saveSupplement(...args);
+}
+async function deleteSupplement(...args) {
+    const module = await loadNutritionModule();
+    return module.deleteSupplement(...args);
+}
+async function toggleSupplementTaken(...args) {
+    const module = await loadNutritionModule();
+    return module.toggleSupplementTaken(...args);
+}
+async function enableNutritionNotifications(...args) {
+    const module = await loadNutritionModule();
+    return module.enableNutritionNotifications(...args);
+}
+function initializeNutritionRemindersWhenIdle() {
+    const start = () => {
+        void loadNutritionModule().then(module => module.initializeNutritionReminders())
+            .catch(error => console.error('Supplement-Erinnerungen konnten nicht initialisiert werden:', error));
+    };
+    if ('requestIdleCallback' in window) window.requestIdleCallback(start, { timeout: 2500 });
+    else window.setTimeout(start, 1200);
+}
 
 // Externe UI-Bibliotheken dürfen die Kontoaktivierung nicht blockieren.
 // Insbesondere kann das optionale Lucide-CDN vorübergehend nicht erreichbar sein.
@@ -2202,7 +2279,7 @@ async function handleAuthSession(session) {
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
                 void syncGarminTodayOnOpen(userId);
-                initializeNutritionReminders();
+                initializeNutritionRemindersWhenIdle();
             } catch (renderError) {
                 console.error('Die App-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
                 window.dispatchEvent(new CustomEvent('endurance:user-init-error', {
