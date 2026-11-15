@@ -11,7 +11,7 @@ import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData } from './training-load.js';
-import { getGarminTelemetry, getActivityTelemetry } from './data-source.js';
+import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
 
 /* Chart.js: Touchbewegungen innerhalb eines Diagramms wie Hover behandeln.
@@ -397,6 +397,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
 
     const catalog = getSportsCatalog();
     const totals = {};
+    const zoneBounds = {};
     const rangeEl = document.getElementById('sport-range');
     const days = rangeEl ? rangeEl.value : '7';
     if (options.fromDate && options.toDate) {
@@ -409,30 +410,36 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         records = (records || []).filter(activity => activity.date >= from && activity.date <= to);
     }
 
-    let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedActivities = 0;
+    let usable = 0, missingTelemetry = 0, missingZones = 0, missingDuration = 0, estimatedDurationActivities = 0, estimatedZoneActivities = 0;
     for (const activity of records || []) {
-        const telemetry = getGarminTelemetry(activity) || {};
-        const hr = telemetry.hr;
+        const heartRateSeries = getGarminHeartRateSeries(activity);
+        const hr = heartRateSeries?.hr;
         if (!Array.isArray(hr) || hr.length < 2) {
             missingTelemetry++;
             continue;
         }
-        const zones = state.settings?.heartRateZones?.[activity.type];
-        const validZones = Array.isArray(zones) && zones.length === 4
-            && zones.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 240)
-            && zones.every((value, index) => index === 0 || Number(value) > Number(zones[index - 1]));
-        if (!validZones) {
-            missingZones++;
-            continue;
+        let zones = state.settings?.heartRateZones?.[activity.type];
+        const validZones = values => Array.isArray(values) && values.length === 4
+            && values.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 240)
+            && values.every((value, index) => index === 0 || Number(value) > Number(values[index - 1]));
+        if (!validZones(zones)) {
+            const maxHr = Number(state.profile?.maxHr);
+            if (Number.isFinite(maxHr) && maxHr >= 100 && maxHr <= 240) {
+                zones = [0.73, 0.80, 0.87, 0.93].map(percent => Math.round(maxHr * percent));
+                estimatedZoneActivities++;
+            } else {
+                missingZones++;
+                continue;
+            }
         }
 
         const durationSeconds = Number(activity.duration) > 0 ? Number(activity.duration) * 60 : null;
-        const time = telemetry.time;
+        const time = heartRateSeries.time;
         const hasUsableTime = Array.isArray(time) && time.length === hr.length
             && time.every(value => Number.isFinite(Number(value)))
             && time.slice(1).every((value, index) => Number(value) > Number(time[index])
                 && Number(value) - Number(time[index]) <= 30);
-        if (!hasUsableTime) estimatedActivities++;
+        if (!hasUsableTime) estimatedDurationActivities++;
         if (!hasUsableTime && durationSeconds === null) {
             missingDuration++;
             continue;
@@ -454,6 +461,7 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
         });
 
         if (!totals[activity.type]) totals[activity.type] = [0, 0, 0, 0, 0];
+        zoneBounds[activity.type] = zones.map(Number);
         let activityHasValidSample = false;
         hr.forEach((rawBpm, index) => {
             const bpm = Number(rawBpm);
@@ -529,7 +537,7 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
                 <div class="flex items-center justify-between gap-2"><strong class="text-xs text-white">${catalog[key]?.label || key}</strong><span class="text-[10px] text-slate-400">${duration(totalSeconds)} erfasst</span></div>
                 <div class="grid grid-cols-5 gap-1">${zoneSeconds.map((seconds, index) => {
                     const percent = totalSeconds > 0 ? seconds / totalSeconds * 100 : 0;
-                    const bounds = state.settings.heartRateZones[key].map(Number);
+                    const bounds = zoneBounds[key] || state.settings?.heartRateZones?.[key]?.map(Number) || [];
                     const lower = index === 0 ? null : bounds[index - 1] + 1;
                     const upper = index === 4 ? null : bounds[index];
                     const rangeLabel = lower === null ? `≤ ${upper} bpm`
@@ -542,7 +550,7 @@ onHover:(event,elements,chart)=>{if(!elements.length)return;const index=elements
         summary.innerHTML = rows.join('');
     }
 
-    if (note) note.textContent = usable + ' Einheiten ausgewertet · ' + (missingTelemetry + missingZones + missingDuration) + ' nicht auswertbar' + (estimatedActivities ? ' · ' + estimatedActivities + ' mit geschätzter Dauer' : '') + '. Prozentwerte beziehen sich auf erfasste HF-Zeit.';
+    if (note) note.textContent = usable + ' Einheiten ausgewertet · ' + (missingTelemetry + missingZones + missingDuration) + ' nicht auswertbar' + (estimatedDurationActivities ? ' · ' + estimatedDurationActivities + ' mit geschätzter Dauer' : '') + (estimatedZoneActivities ? ' · ' + estimatedZoneActivities + ' mit HFmax-Zonen-Näherung' : '') + '. Prozentwerte beziehen sich auf erfasste HF-Zeit.';
 }
 
 export function renderRaceTimeline(){

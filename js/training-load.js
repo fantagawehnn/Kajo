@@ -1,4 +1,4 @@
-import { getGarminTelemetry, isGarminActivity } from './data-source.js';
+import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 
 /* Garmin-only training-load calculation.
  * Weighted HR-zone minutes: Z1=1 ... Z5=5 points per minute.
@@ -9,8 +9,8 @@ export function calculateGarminZoneLoad(activity, settings, profile) {
     // vorhanden sein, auch wenn das Import-Flag fehlt. Nur Garmin-Aktivitäten
     // auswerten; beliebige lokale/Intervals-Telemetrie bleibt ausgeschlossen.
     if (!isGarminActivity(activity)) return null;
-    const sourceTelemetry = getGarminTelemetry(activity);
-    const hr = sourceTelemetry?.hr, time = sourceTelemetry?.time;
+    const heartRateSeries = getGarminHeartRateSeries(activity);
+    const hr = heartRateSeries?.hr, time = heartRateSeries?.time;
     let zones = settings?.heartRateZones?.[activity.type];
     let zoneSource = 'sport-specific';
     const isValidZones = values => Array.isArray(values) && values.length === 4
