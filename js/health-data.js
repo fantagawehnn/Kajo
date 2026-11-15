@@ -52,10 +52,12 @@ function median(values) {
 }
 function measurementIdentity(row, key) {
   const source = row?.measurementSources?.[key];
+  if (!source || typeof source.source !== 'string' || !source.source.trim()
+      || typeof source.unit !== 'string' || !source.unit.trim()) return null;
   return [
-    typeof source?.source === 'string' ? source.source : 'unknown',
-    typeof source?.metric === 'string' ? source.metric : 'unspecified',
-    typeof source?.unit === 'string' ? source.unit : ''
+    source.source,
+    typeof source.metric === 'string' && source.metric.trim() ? source.metric : 'unspecified',
+    source.unit
   ].join('|');
 }
 function personalBaseline(key, date) {
@@ -64,6 +66,7 @@ function personalBaseline(key, date) {
   const reference = state.dailyCheckins?.[date];
   if (!valid(metricValue(reference, key))) return null;
   const identity = measurementIdentity(reference, key);
+  if (identity === null) return null;
   const start = new Date(end);
   start.setDate(start.getDate()-90);
   const from = dateKey(start);
