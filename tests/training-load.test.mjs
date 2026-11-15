@@ -215,3 +215,110 @@ test('Garmin JSON metricSeries heart rate is normalized for load calculations', 
     assert.equal(load.records.length, 1);
     assert.ok(load.records[0].value > 0);
 });
+
+
+test('top-level Garmin HR without a matching time axis does not hide a complete metricSeries', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            hr: [120, 130, 140],
+            time: [0, 1],
+            metricSeriesTime: [0, 10, 20],
+            metricSeries: {
+                directHeartRate: { label: 'Heart Rate', values: [150, 160, 170] }
+            }
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.equal(series.source, 'metricSeries:directHeartRate');
+    assert.deepEqual(series.hr, [150, 160, 170]);
+    assert.deepEqual(series.time, [0, 10, 20]);
+});
+
+test('Garmin HR in hr/time uses the top-level series when its axis is valid', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: { hr: [120, 130, 140], time: [0, 5, 10] }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.equal(series.source, 'hr');
+    assert.deepEqual(series.hr, [120, 130, 140]);
+    assert.deepEqual(series.time, [0, 5, 10]);
+});
+
+test('metricSeriesTime is used when a metric has no individual time axis', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            metricSeriesTime: [0, 15, 30],
+            metricSeries: { directHeartRate: { values: [140, 150, 160] } }
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.deepEqual(series.time, [0, 15, 30]);
+    assert.equal(series.timeSource, 'metricSeriesTime');
+});
+
+test('missing or mismatched Garmin time axis is not fabricated', () => {
+    const missing = getGarminHeartRateSeries({
+        source: 'garmin', garminTelemetry: { hr: [120, 130, 140] }
+    });
+    assert.deepEqual(missing.hr, [120, 130, 140]);
+    assert.equal(missing.time, null);
+
+    const mismatched = getGarminHeartRateSeries({
+        source: 'garmin', garminTelemetry: {
+            hr: [120, 130, 140], time: [0, 10]
+        }
+    });
+    assert.deepEqual(mismatched.hr, [120, 130, 140]);
+    assert.equal(mismatched.time, null);
+});
+
+test('non-increasing or non-numeric time axes are rejected', () => {
+    for (const time of [[0, 10, 10], [0, 20, 15], [0, 'bad', 20]]) {
+        const series = getGarminHeartRateSeries({
+            source: 'garmin', garminTelemetry: { hr: [120, 130, 140], time }
+        });
+        assert.equal(series.time, null);
+    }
+});
+
+test('absolute Garmin millisecond timestamps are normalized to relative seconds', () => {
+    const base = 1794740000000;
+    const series = getGarminHeartRateSeries({
+        source: 'garmin',
+        garminTelemetry: { hr: [140, 150, 160], time: [base, base + 5000, base + 10000] }
+    });
+    assert.deepEqual(series.time, [0, 5, 10]);
+});
+
+test('absolute Unix-second timestamps are normalized to relative seconds', () => {
+    const base = 1794740000;
+    const series = getGarminHeartRateSeries({
+        source: 'garmin',
+        garminTelemetry: { hr: [140, 150, 160], time: [base, base + 5, base + 10] }
+    });
+    assert.deepEqual(series.time, [0, 5, 10]);
+});
+
+test('Garmin HR-zone load is not calculated without valid zone boundaries', () => {
+    const result = getTrainingLoadData([{
+        id: 'g-no-zones', source: 'garmin', date: completedDay,
+        garminTelemetry: { hr: [145, 155, 165], time: [0, 20, 40] }
+    }], { trainingLoadSource: 'garmin' }, {});
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
+});
+
+test('a complete shared Garmin HR series remains eligible for HR-zone load', () => {
+    const activity = {
+        id: 'g-complete-series', source: 'garmin', date: completedDay, duration: 1,
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    const load = getTrainingLoadData([activity], {}, { maxHr: 190 });
+    assert.equal(series.hr.length, series.time.length);
+    assert.equal(load.mode, 'garmin-zone');
+    assert.equal(load.records[0].activity.id, activity.id);
+});
