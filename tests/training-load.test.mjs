@@ -395,8 +395,8 @@ test('Edwards TRIMP uses fixed %HRmax bands and excludes time below 50%', () => 
     const activity = {
         id: 'edwards-fixture', source: 'garmin', type: 'Running', date: completedDay,
         garminTelemetry: {
-            hr: [90, 110, 130, 150, 170, 190, 190],
-            time: [0, 20, 40, 60, 80, 100, 120]
+            hr: [90, 110, 130, 150, 170, 190, 190, 190],
+            time: [0, 20, 40, 60, 80, 100, 120, 140]
         }
     };
     const result = getHeartRateZoneAnalysis([activity], {
