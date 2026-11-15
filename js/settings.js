@@ -274,6 +274,10 @@ export function saveSettings() {
     enteredZones[index] = raw === '' ? null : Number(raw);
   });
   const entered = enteredZones.filter(value => value !== null);
+  if (entered.length !== 4) {
+    alert('Bitte trage alle vier Herzfrequenz-Grenzen ein.');
+    return;
+  }
   if (entered.some(value => !Number.isFinite(value) || value < 40 || value > 240)) {
     alert('Herzfrequenz-Grenzen müssen zwischen 40 und 240 bpm liegen.');
     return;
@@ -321,8 +325,13 @@ export function saveSettings() {
   if (zoneMaxHr !== null) state.profile = { ...state.profile, maxHr: zoneMaxHr };
   zoneMethods.global = entered.length ? 'manual' : 'maxhr_myprocoach';
 
-  // Entfernte Sportarten sollen keine verwaisten Zoneneinstellungen behalten.
-  Object.keys(zones).forEach(key => { if (key !== 'global' && !sports[key]) delete zones[key]; });
+  // Zonengrenzen auch für historische Aktivitätstypen behalten, die nicht
+  // mehr im Kalenderkatalog geführt werden.
+  const knownActivityTypes = new Set([
+    ...Object.keys(sports),
+    ...(Array.isArray(state.rawActivities) ? state.rawActivities.map(activity => activity?.type).filter(Boolean) : [])
+  ]);
+  Object.keys(zones).forEach(key => { if (key !== 'global' && !knownActivityTypes.has(key)) delete zones[key]; });
   Object.keys(zoneThresholds).forEach(key => { if (!sports[key]) delete zoneThresholds[key]; });
   const activeSportsForSelect = Object.fromEntries(Object.entries(sports).filter(([key]) => enabledSports.includes(key)));
   for(const [id,items] of [['modal-edit-sport-select',activeSportsForSelect],['plan-sport',activeSportsForSelect],['modal-edit-type-select',categories],['plan-category',categories]]){const select=document.getElementById(id);if(select){const current=select.value;select.innerHTML=Object.entries(items).map(([key,v])=>'<option value="'+escapeHtml(key)+'">'+escapeHtml(v.label)+'</option>').join('');if(items[current])select.value=current;}}
