@@ -2272,7 +2272,31 @@ function getLocalCalendarDate(date = new Date()) {
  * Cloud-Telemetrie berechnet. Die vollständigen Messreihen bleiben dabei aus
  * dem App-Zustand heraus und werden nicht beim Start dauerhaft geladen.
  */
+const garminAnalysisBackfillInFlight = new Set();
+const garminAnalysisBackfillPending = new Map();
+
 async function backfillGarminAnalysisOnOpen(userId, sequence) {
+    if (!userId) return;
+    if (garminAnalysisBackfillInFlight.has(userId)) {
+        garminAnalysisBackfillPending.set(userId, sequence);
+        return;
+    }
+    garminAnalysisBackfillInFlight.add(userId);
+    try {
+        await runGarminAnalysisBackfillOnOpen(userId, sequence);
+    } finally {
+        garminAnalysisBackfillInFlight.delete(userId);
+        if (garminAnalysisBackfillPending.has(userId)) {
+            const nextSequence = garminAnalysisBackfillPending.get(userId);
+            garminAnalysisBackfillPending.delete(userId);
+            if (nextSequence === activationSequence && activeAppUserId === userId) {
+                void backfillGarminAnalysisOnOpen(userId, nextSequence);
+            }
+        }
+    }
+}
+
+async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
     if (!userId || activeAppUserId !== userId || !appUserReady) return;
     const activities = (state.rawActivities || []).filter(activity => {
         const isGarmin = activity?.source === 'garmin'
