@@ -20,7 +20,7 @@
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
     <link rel="stylesheet" href="css/styles.css?v=142">
-    <link rel="stylesheet" href="css/dashboard-design.css?v=1">
+    <link rel="stylesheet" href="css/dashboard-design.css?v=2">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -347,20 +347,27 @@
     <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
-        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
+        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span><small>individueller Check-in</small></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
-        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load</span><small>ATL</small></div></div>
+        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Akute Belastung</span><small>ATL</small></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
-        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small>CTL · Fitnessmodell</small></div></div>
+        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitnessmodell</span><small>CTL · kein Leistungstest</small></div></div>
       </button>
     </div>
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
   </section>
 
   <section id="home-daily-overview" data-dashboard-widget="daily" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
-    <div class="kajo-home-section-heading"><h2 id="home-daily-overview-title">Training heute</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span></div>
+    <div class="kajo-home-section-heading kajo-home-day-heading">
+       <div class="kajo-home-day-title"><h2 id="home-daily-overview-title">Training</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span><span id="dashboard-day-context" class="kajo-home-day-context">Heute</span></div>
+       <div class="kajo-home-day-controls">
+         <button type="button" onclick="changeDashboardDay(-1)" aria-label="Vorheriger Tag"><i data-lucide="chevron-left"></i></button>
+         <button type="button" id="dashboard-day-today" onclick="goToDashboardToday()" class="hidden">Heute</button>
+         <button type="button" id="dashboard-day-next" onclick="changeDashboardDay(1)" aria-label="Nächster Tag"><i data-lucide="chevron-right"></i></button>
+       </div>
+     </div>
     <section id="home-planned-section" class="hidden kajo-home-session-group" aria-labelledby="home-planned-title">
       <div class="kajo-home-subheading"><h3 id="home-planned-title">Geplant</h3><span>PLANUNG</span></div>
       <div id="home-planned-list" class="home-today-list"></div>
@@ -372,8 +379,8 @@
     <p id="home-training-empty" class="kajo-empty hidden">Für heute sind keine Trainingseinheiten hinterlegt.</p>
   </section>
 
-  <button type="button" data-dashboard-widget="recommendation" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
-    <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
+  <button type="button" data-dashboard-widget="recommendation" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Trainingskontext öffnen">
+    <span class="kajo-home-section-heading"><strong>Trainingskontext</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
     <strong id="home-training-recommendation">Wird berechnet …</strong>
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
