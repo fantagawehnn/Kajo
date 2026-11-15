@@ -666,17 +666,22 @@ export const activityTelemetryColors = {
 };
 function getActivityTelemetryColor(key, label = '') {
     const normalized = String(key || '').toLowerCase().replace(/[^a-z]/g, '');
-    const semantic = /heart.?rate|heartrate|(^|hr$)|puls|herzfrequenz/.test(normalized + ' ' + String(label).toLowerCase()) ? 'hr' : normalized;
+    const descriptor = normalized + ' ' + String(label).toLowerCase();
+    const semantic = /heart.?rate|heartrate|(^|hr$)|puls|herzfrequenz/.test(descriptor) ? 'hr' : normalized;
     if (activityTelemetryColors[key]) return activityTelemetryColors[key];
     if (activityTelemetryColors[semantic]) return activityTelemetryColors[semantic];
-    if (/respirat|breathing|atemfrequenz/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.respirationRate;
-    if (/temperature|temperatur/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.temperature;
-    if (/altitude|elevation|height|hoehe/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.altitude;
-    if (/speed|geschwindigkeit/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.speed;
-    if (/power|leistung|watt/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.power;
-    if (/pace|tempo/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.pace;
-    if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(semantic + ' ' + label.toLowerCase())) return activityTelemetryColors.cadence;
-    return '#94A3B8';
+    if (/respirat|breathing|atemfrequenz/.test(descriptor)) return activityTelemetryColors.respirationRate;
+    if (/temperature|temperatur/.test(descriptor)) return activityTelemetryColors.temperature;
+    if (/altitude|elevation|height|hoehe/.test(descriptor)) return activityTelemetryColors.altitude;
+    if (/speed|geschwindigkeit/.test(descriptor)) return activityTelemetryColors.speed;
+    if (/power|leistung|watt/.test(descriptor)) return activityTelemetryColors.power;
+    if (/pace|tempo/.test(descriptor)) return activityTelemetryColors.pace;
+    if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor)) return activityTelemetryColors.cadence;
+    const palette = ['#E879F9','#F87171','#FBBF24','#34D399','#60A5FA','#A78BFA','#FB923C','#2DD4BF','#F472B6','#A3E635'];
+    const seed = String(key || label || 'metric');
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    return palette[hash % palette.length];
 }
 
 function getActivityTelemetrySeries(act) {
@@ -859,7 +864,8 @@ export function renderActivityTelemetryChart(act) {
         controls.innerHTML = series.map(item => {
             const active = selectedKeys.includes(item.key);
             return '<button type="button" class="activity-series-switch' + (active ? ' is-active' : '')
-                + '" data-metric="' + item.key + '" aria-pressed="' + (active ? 'true' : 'false') + '">'
+                + '" data-metric="' + item.key + '" style="--series-color:' + item.color + '" aria-pressed="' + (active ? 'true' : 'false') + '">'
+                + '<span class="activity-series-color-dot" aria-hidden="true"></span>'
                 + item.label + (item.unit ? ' · ' + item.unit : '') + '</button>';
         }).join('');
         controls.querySelectorAll('[data-metric]').forEach(button => {
