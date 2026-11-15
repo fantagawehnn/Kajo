@@ -536,7 +536,7 @@ test('default adaptive resting-HR window is 14 days and requires nine readings',
 
     const nineReadings = {
         ...eightReadings,
-        '2026-01-14': { garminRhr: 50 }
+        '2026-01-06': { garminRhr: 50 }
     };
     const result = getAdaptiveRestingHr(nineReadings, '2026-01-14');
     assert.equal(result.value, 50);
