@@ -102,6 +102,11 @@ assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same chec
 assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
 assert.ok(healthData.includes('if (identity === null) return null;'), 'personal baselines require documented measurement provenance');
 assert.ok(healthData.includes('measurementIdentity(row, key) === identity'), 'personal baselines compare only matching measurement identities');
+assert.ok(main.includes('importedValues += metricKeys.length;'), 'Garmin restore preview counts actual measurements, not metadata objects');
+assert.ok(main.includes("garminStress: findGarminNumber(records.stress"), 'Garmin stress is extracted from stored stress records');
+assert.ok(main.includes("bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery'"), 'Body Battery extraction uses the named summary section');
+assert.ok(main.includes("spo2: findGarminNumber(records.spo2"), 'SpO2 is extracted from stored Garmin SpO2 records');
+assert.ok(main.includes("source: 'garmin', ...definition"), 'restored Garmin measurements retain explicit provenance');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
