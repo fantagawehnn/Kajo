@@ -77,7 +77,7 @@ export async function uploadMissingGarminTelemetry(supabase, userId, candidateRe
     const candidates = new Map();
     for (const record of Array.isArray(candidateRecords) ? candidateRecords : []) {
         const activityId = String(record?.garmin_activity_id ?? '').replace(/^garmin-/, '');
-        if (!/^\\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
+        if (!/^\d+$/.test(activityId) || !record?.telemetry || typeof record.telemetry !== 'object') continue;
         candidates.set(activityId, record.telemetry);
     }
     const entries = Array.from(candidates.entries());
