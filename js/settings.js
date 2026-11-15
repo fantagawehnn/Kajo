@@ -1,6 +1,7 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=3';
 import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml } from './utils.js';
+import { getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js';
 
 
 const TELEMETRY_OPTIONS = {
@@ -131,18 +132,21 @@ function getZoneBoundaries(method, base) {
 }
 
 export function previewHeartRateZones() {
-  const base = document.getElementById('kajo-zone-maxhr')?.value;
-  const boundaries = getZoneBoundaries('maxhr_myprocoach', base);
-  if (!boundaries || boundaries.some((value, index) => value < 40 || value > 240 || (index > 0 && value <= boundaries[index - 1]))) {
-    alert('Bitte hinterlege eine plausible maximale Herzfrequenz zwischen 80 und 240 bpm.');
-    return;
-  }
-  boundaries.forEach((value, index) => {
-    const input = document.querySelector(`[data-zone-index="${index}"]`);
-    if (input) input.value = value;
-  });
-  const note = document.getElementById('kajo-zone-note');
-  if (note) note.textContent = 'Automatischer Vorschlag eingetragen. Du kannst jede Grenze jetzt manuell anpassen.';
+  const maxHr = Number(document.getElementById('kajo-zone-maxhr')?.value);
+  const windowDays = Number(document.getElementById('kajo-zone-rhr-window')?.value) || 7;
+  const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
+  const resting = getAdaptiveRestingHr(state.dailyCheckins || {}, today, windowDays, state.profile || {});
+  const zones = resting?.value != null ? calculateHeartRateReserveZones(maxHr, resting.value) : null;
+  const status = document.getElementById('kajo-zone-rhr-status');
+  const preview = document.getElementById('kajo-zone-preview');
+  if (status) status.textContent = resting?.value != null
+    ? 'Adaptive Ruhe-HF: ' + resting.value + ' bpm · ' + resting.readingCount + '/' + resting.windowDays + ' Tageswerte'
+      + (resting.source === 'profile-fallback' ? ' · statischer Profil-Fallback' : ' · Median der letzten Tage')
+      + (resting.quality === 'limited' ? ' · eingeschränkte Datenbasis' : '')
+    : 'Keine adaptive Ruhe-HF verfügbar. Mindestens drei gültige Tageswerte oder ein Profilwert sind erforderlich.';
+  if (preview) preview.textContent = zones
+    ? 'Z1 bis ' + zones[0] + ' · Z2 bis ' + zones[1] + ' · Z3 bis ' + zones[2] + ' · Z4 bis ' + zones[3] + ' · Z5 darüber'
+    : 'Aktuell nicht berechenbar: Bitte HFmax und Ruhe-HF-Daten prüfen.';
 }
 
 const sportColorPalette = [
@@ -189,32 +193,47 @@ function renderRows() {
   for (const id of ['modal-edit-sport-select','plan-sport']) { const select=document.getElementById(id); if(select){ const current=select.value; select.innerHTML=Object.entries(activeSports).map(([key,v])=>`<option value="${escapeHtml(key)}">${escapeHtml(v.label)}</option>`).join(''); if(current&&sports[current])select.value=current; } }
   for (const id of ['modal-edit-type-select','plan-category']) { const select=document.getElementById(id); if(select){ const current=select.value; select.innerHTML=Object.entries(categories).map(([key,v])=>`<option value="${escapeHtml(key)}">${escapeHtml(v.label)}</option>`).join(''); if(current&&categories[current])select.value=current; } }
   const detected = detectMaxHr();
-  const storedZones = state.settings?.heartRateZones || {};
-  const legacyZoneValues = storedZones.global || Object.values(storedZones).find(values =>
-    Array.isArray(values) && values.filter(value => value !== null && value !== undefined).length === 4
-  ) || [];
-  const automaticBoundaries = detected.value ? getZoneBoundaries('maxhr_myprocoach', detected.value) : [];
-  const displayedZones = legacyZoneValues.length ? legacyZoneValues : (automaticBoundaries || []);
+  const zoneSettings = state.settings?.heartRateZoneSettings || {};
+  const windowDays = Math.min(28, Math.max(3, Number(zoneSettings.restingHrWindowDays) || 7));
+  const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
+  const adaptiveRhr = getAdaptiveRestingHr(state.dailyCheckins || {}, today, windowDays, state.profile || {});
+  const adaptiveZones = adaptiveRhr?.value != null ? calculateHeartRateReserveZones(detected.value, adaptiveRhr.value) : null;
+  const zonePreview = adaptiveZones
+    ? 'Z1 bis ' + adaptiveZones[0] + ' · Z2 bis ' + adaptiveZones[1] + ' · Z3 bis ' + adaptiveZones[2] + ' · Z4 bis ' + adaptiveZones[3] + ' · Z5 darüber'
+    : 'Aktuell nicht berechenbar: HFmax oder ausreichende Ruhe-HF-Daten fehlen.';
+  const rhrStatus = adaptiveRhr?.value != null
+    ? 'Adaptive Ruhe-HF: ' + adaptiveRhr.value + ' bpm · ' + adaptiveRhr.readingCount + '/' + adaptiveRhr.windowDays + ' Tageswerte'
+      + (adaptiveRhr.source === 'profile-fallback' ? ' · statischer Profil-Fallback' : ' · Median der letzten Tage')
+      + (adaptiveRhr.quality === 'limited' ? ' · eingeschränkte Datenbasis' : '')
+    : 'Keine adaptive Ruhe-HF verfügbar. Mindestens drei gültige Tageswerte im Rückblickfenster oder ein Ruhe-HF-Profilwert sind erforderlich.';
   zoneBox.innerHTML = `<div class="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-3">
     <div class="flex items-start justify-between gap-3">
-      <div><p class="text-sm font-semibold text-white">Deine Herzfrequenzzonen</p>
-        <p class="mt-1 text-[11px] text-slate-400">Ein gemeinsames Zonenprofil statt einer separaten Liste für jede Sportart.</p></div>
+      <div><p class="text-sm font-semibold text-white">Automatische Herzfrequenzzonen</p>
+        <p class="mt-1 text-[11px] text-slate-400">Herzfrequenzreserve (Karvonen): HFmax minus adaptive Ruhe-HF. Keine manuell hinterlegten oder laktatbasierten Zonengrenzen.</p></div>
       <span class="rounded-full bg-sky-500/10 px-2 py-1 text-[10px] text-sky-300">5 Zonen</span>
     </div>
-    <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
-      <div class="flex items-center justify-between gap-2"><label for="kajo-zone-maxhr" class="text-[11px] font-medium text-slate-300">Erkannte maximale Herzfrequenz</label><span class="text-[10px] text-slate-500">${escapeHtml(detected.source)}</span></div>
-      <div class="mt-2 flex items-center gap-2"><input id="kajo-zone-maxhr" type="number" min="80" max="240" step="1" value="${detected.value ?? ''}" placeholder="z. B. 190" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white"><span class="text-xs text-slate-400">bpm</span>
-      <button type="button" onclick="previewHeartRateZones()" class="ml-auto rounded-lg bg-sky-500/10 px-3 py-2 text-[11px] font-semibold text-sky-300">Zonen automatisch berechnen</button></div>
-      <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Die automatische Erkennung nutzt zuerst den Wert aus deinem Athletenprofil, andernfalls den höchsten in importierten Aktivitäten dokumentierten Maximalpuls. Das ist ein Ausgangswert und kein Ersatz für eine validierte Leistungsdiagnostik.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
+        <label for="kajo-zone-maxhr" class="text-[11px] font-medium text-slate-300">Maximale Herzfrequenz</label>
+        <div class="mt-2 flex items-center gap-2"><input id="kajo-zone-maxhr" type="number" min="100" max="240" step="1" value="${detected.value ?? ''}" placeholder="z. B. 201" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white"><span class="text-xs text-slate-400">bpm</span></div>
+        <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Quelle: ${escapeHtml(detected.source)}. Die HFmax bleibt als stabiler Profilwert erhalten und wird nicht aus der Ruhe-HF abgeleitet.</p>
+      </div>
+      <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
+        <label for="kajo-zone-rhr-window" class="text-[11px] font-medium text-slate-300">Rückblick für adaptive Ruhe-HF</label>
+        <div class="mt-2 flex items-center gap-2"><select id="kajo-zone-rhr-window" onchange="previewHeartRateZones()" class="w-28 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
+          ${[7,10,14,21,28].map(days => `<option value="${days}" ${days===windowDays?'selected':''}>${days} Tage</option>`).join('')}
+        </select><span class="text-xs text-slate-400">Tageswerte</span></div>
+        <p class="mt-2 text-[10px] leading-relaxed text-slate-500">Verwendet wird der Median gültiger Ruhe-HF-Tageswerte bis einschließlich des Aktivitätstags. Mindestens drei Messwerte sind erforderlich.</p>
+      </div>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-      ${[1,2,3,4].map((n,i)=>`<label class="text-[10px] text-slate-400">Z${n} bis (bpm)<input data-zone-index="${i}" type="number" min="40" max="240" step="1" value="${displayedZones[i] ?? ''}" placeholder="bpm" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white"></label>`).join('')}
+    <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3 space-y-2">
+      <p id="kajo-zone-rhr-status" class="text-[11px] text-slate-300">${escapeHtml(rhrStatus)}</p>
+      <p id="kajo-zone-preview" class="text-[11px] font-semibold text-white">${escapeHtml(zonePreview)}</p>
+      <p class="text-[10px] text-slate-500">Zonengrenzen: 60 %, 70 %, 80 % und 90 % der Herzfrequenzreserve. Bei weniger als drei Tagesmessungen wird – falls hinterlegt – die statische Ruhe-HF aus dem Athletenprofil als gekennzeichneter Fallback verwendet.</p>
     </div>
-    <p class="text-[10px] text-slate-500">Z5 beginnt oberhalb der Z4-Grenze. Alle vier Grenzen können manuell angepasst werden.</p>
-    <p id="kajo-zone-note" class="text-[10px] text-slate-400">${legacyZoneValues.length ? 'Gespeicherte Zonengrenzen geladen.' : (automaticBoundaries?.length ? 'Automatischer Vorschlag anhand der erkannten HFmax. Bitte prüfen und bei Bedarf anpassen.' : 'Noch keine HFmax erkannt. Trage einen Wert ein und berechne die Zonen oder gib die Grenzen manuell ein.')}</p>
     <div class="pt-2 border-t border-slate-800">
-      <p class="text-[10px] leading-relaxed text-slate-400 mb-2">Beim Speichern werden die neuen Grenzen rückwirkend für alle Aktivitäten mit auswertbaren Herzfrequenzdaten verwendet. Zeit-in-Zonen-Auswertungen und der KAJO-HF-Load werden neu berechnet; Garmin-Rohdaten bleiben unverändert.</p>
-      <button type="button" onclick="saveSettings()" class="w-full rounded-xl bg-sky-500 px-4 py-3 text-xs font-bold text-slate-950 hover:bg-sky-400">Herzfrequenzzonen speichern &amp; rückwirkend anwenden</button>
+      <p class="text-[10px] leading-relaxed text-slate-400 mb-2">Jede Aktivität erhält die zu ihrem Datum passende adaptive Ruhe-HF. Historische Aktivitäten werden daher mit dem jeweiligen zurückliegenden Fenster berechnet und nicht mit dem heutigen Ruhepuls überschrieben.</p>
+      <button type="button" onclick="saveSettings()" class="w-full rounded-xl bg-sky-500 px-4 py-3 text-xs font-bold text-slate-950 hover:bg-sky-400">Automatische Zonen-Einstellungen speichern</button>
     </div>
   </div>`;
   sportBox.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => btn.closest('[data-sport-row]').remove()));
@@ -298,67 +317,26 @@ export function saveSettings() {
   if (invalidSportColor) { alert('Bitte gib für jede Sportart einen gültigen Hex-Farbcode im Format #RRGGBB ein.'); return; }
   if (!enabledSports.length) { alert('Bitte wähle mindestens eine Sportart für den Kalender aus.'); return; }
   document.querySelectorAll('#settings-categories-list [data-category-row]').forEach(row => { const key=row.dataset.key,label=row.querySelector('[data-label]').value.trim(),color=row.querySelector('[data-color]').value;if(label)categories[key]={...(typeColorMap[key]||{bg:'bg-slate-900',text:'text-slate-200',border:'border-slate-700',bar:'bg-slate-500'}),label,color}; });
-  const zoneInputs = [...document.querySelectorAll('#settings-zones-list [data-zone-index]')];
-  const enteredZones = [null, null, null, null];
-  zoneInputs.forEach(input => {
-    const index = Number(input.dataset.zoneIndex);
-    const raw = input.value.trim();
-    enteredZones[index] = raw === '' ? null : Number(raw);
-  });
-  const entered = enteredZones.filter(value => value !== null);
-  if (entered.length !== 4) {
-    alert('Bitte trage alle vier Herzfrequenz-Grenzen ein.');
-    return;
-  }
-  if (entered.some(value => !Number.isFinite(value) || value < 40 || value > 240)) {
-    alert('Herzfrequenz-Grenzen müssen zwischen 40 und 240 bpm liegen.');
-    return;
-  }
-  if (entered.some((value, index) => index > 0 && value <= entered[index - 1])) {
-    alert('Die Herzfrequenz-Grenzen müssen von Z1 bis Z4 aufsteigend sein.');
-    return;
-  }
   const maxHrInput = document.getElementById('kajo-zone-maxhr');
   const maxHrRaw = maxHrInput?.value.trim() || '';
   let zoneMaxHr = null;
   if (maxHrRaw) {
     zoneMaxHr = Number(maxHrRaw);
-    if (!Number.isFinite(zoneMaxHr) || zoneMaxHr < 80 || zoneMaxHr > 240) {
-      alert('Die maximale Herzfrequenz muss zwischen 80 und 240 bpm liegen.');
+    if (!Number.isFinite(zoneMaxHr) || zoneMaxHr < 100 || zoneMaxHr > 240) {
+      alert('Die maximale Herzfrequenz muss zwischen 100 und 240 bpm liegen.');
       return;
     }
   }
-  const previousGlobal = Array.isArray(state.settings?.heartRateZones?.global)
-    ? state.settings.heartRateZones.global : null;
-  const zoneProfileChanged = entered.length > 0
-    && JSON.stringify(previousGlobal) !== JSON.stringify(enteredZones);
-  if (entered.length) {
-    zones.global = enteredZones;
-    // Das gemeinsame Profil wird für sämtliche bekannten und tatsächlich
-    // verwendeten Aktivitätstypen gespiegelt, auch für ältere Aktivitäten,
-    // deren Sportart aktuell nicht im Kalender aktiviert ist.
-    const activityTypes = new Set([
-      ...Object.keys(sports),
-      ...(Array.isArray(state.rawActivities) ? state.rawActivities.map(activity => activity?.type).filter(Boolean) : [])
-    ]);
-    for (const key of activityTypes) zones[key] = [...enteredZones];
-  } else {
-    delete zones.global;
-  }
-  if (zoneProfileChanged) {
-    const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
-    const withHr = activities.filter(activity => {
-      const telemetry = activity?.garminTelemetry || activity?.telemetry || {};
-      return Array.isArray(telemetry.hr) && telemetry.hr.length >= 2;
-    }).length;
-    const message = `Die neuen Herzfrequenzzonen werden rückwirkend auf alle ${activities.length} gespeicherten Aktivitäten angewendet. Für ${withHr} Aktivitäten liegen mindestens zwei Herzfrequenz-Messpunkte vor. Zeit-in-Zonen-Auswertungen und – sofern berechenbar – der KAJO-HF-Load werden mit den neuen Grenzen neu berechnet. Garmin-Rohdaten und Garmin-native Load-Werte bleiben unverändert.\n\nMöchtest du fortfahren?`;
-    if (!confirm(message)) return;
+  const windowDays = Number(document.getElementById('kajo-zone-rhr-window')?.value || state.settings?.heartRateZoneSettings?.restingHrWindowDays || 7);
+  if (!Number.isInteger(windowDays) || windowDays < 3 || windowDays > 28) {
+    alert('Der Rückblick für die adaptive Ruhe-HF muss zwischen 3 und 28 Tagen liegen.');
+    return;
   }
   if (zoneMaxHr !== null) state.profile = { ...state.profile, maxHr: zoneMaxHr };
-  zoneMethods.global = entered.length ? 'manual' : 'maxhr_myprocoach';
-
-  // Zonengrenzen auch für historische Aktivitätstypen behalten, die nicht
-  // mehr im Kalenderkatalog geführt werden.
+  const heartRateZoneSettings = {
+    method: 'karvonen-adaptive',
+    restingHrWindowDays: windowDays
+  };
   const knownActivityTypes = new Set([
     ...Object.keys(sports),
     ...(Array.isArray(state.rawActivities) ? state.rawActivities.map(activity => activity?.type).filter(Boolean) : [])
@@ -373,7 +351,7 @@ export function saveSettings() {
       .map(input => input.dataset.telemetryMetric);
     telemetryMetrics[sport] = selected;
   });
-  state.settings={...state.settings,sports,enabledSports,categories,heartRateZones:zones,heartRateZoneMethods:zoneMethods,heartRateThresholds:zoneThresholds,trainingLoadSource,telemetryMetrics};
+  state.settings={...state.settings,sports,enabledSports,categories,heartRateZones:zones,heartRateZoneMethods:zoneMethods,heartRateThresholds:zoneThresholds,heartRateZoneSettings,trainingLoadSource,telemetryMetrics};
   saveDataToLocalStorage();
   closeSettingsModal();
   refreshAll();
