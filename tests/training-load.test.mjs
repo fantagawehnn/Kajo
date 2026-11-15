@@ -543,3 +543,28 @@ test('default adaptive resting-HR window is 14 days and requires nine readings',
     assert.equal(result.windowDays, 14);
     assert.equal(result.readingCount, 9);
 });
+
+
+test('manual KAJO load source uses weighted adaptive HR-zone load instead of Garmin native load', () => {
+    const activity = {
+        id: 'g-manual-kajo', source: 'garmin', date: completedDay, duration: 60,
+        garminTrainingLoad: 999,
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
+    };
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.unit, 'KAJO-HF-Punkte');
+    assert.notEqual(result.records[0].value, 999);
+    assert.equal(result.coverage.loadedActivityCount, 1);
+});
+
+test('manual KAJO load source does not fall back to Garmin native load or sRPE when HR zones are unavailable', () => {
+    const activity = {
+        id: 'g-manual-kajo-no-hr', source: 'garmin', date: completedDay,
+        duration: 60, perceivedEffort: 8, garminTrainingLoad: 35
+    };
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, {});
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
+    assert.equal(result.coverage.excludedActivityCount, 1);
+});
