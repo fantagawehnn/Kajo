@@ -344,6 +344,9 @@ assert.ok(overviewModule.includes('Health availability is deliberately not infer
 assert.ok(overviewModule.includes('renderHeartRateZoneDistribution'), 'intensity distribution reuses the existing heart-rate zone analysis');
 assert.ok(charts.includes('options.canvasId || \'heartRateZonesChart\''), 'heart-rate zone chart supports a dedicated overview target');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
+assert.ok(!main.includes('renderSportDistribution'), 'obsolete sport distribution chart is no longer imported or initialized');
+assert.ok(main.includes("if (overviewContent && !overviewContent.classList.contains('hidden')) renderAnalysisOverview()"), 'activity refresh updates the visible analysis overview without initializing obsolete charts');
+assert.ok(main.includes("runInitStep('Sportverteilung', () => refreshSportAnalytics())"), 'initialization routes sport analytics through the current overview renderer');
 assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
 assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(4'), 'four circles remain in a compact horizontal row on mobile');
 
