@@ -488,28 +488,42 @@ export async function performIntervalsLiveSync() {
 
             const existing = state.dailyCheckins[dStr] || {};
             const incoming = {};
+            const measurementSources = { ...(existing.measurementSources || {}) };
+            // Intervals darf nur fehlende Werte oder eigene frühere Importe aktualisieren.
+            // Manuelle, Garmin- oder nicht eindeutig zugeordnete Bestandswerte bleiben erhalten.
+            const canImportIntervalsMetric = key =>
+                existing[key] == null || existing[key] === '' || measurementSources[key]?.source === 'intervals';
+            const setIntervalsMetric = (key, value, metric, unit) => {
+                if (!canImportIntervalsMetric(key)) return;
+                incoming[key] = value;
+                measurementSources[key] = { source: 'intervals', metric, unit };
+            };
             const sleepDuration = Number(w.sleepSecs);
             const weight = Number(w.weight);
             const rhr = Number(w.restingHR);
             const hrv = Number(w.hrv);
             const sleepScore = Number(w.sleepScore);
-            if (Number.isFinite(sleepDuration) && sleepDuration > 0) incoming.sleepDuration = Number((sleepDuration / 3600).toFixed(1));
-            if (Number.isFinite(weight) && weight > 0) incoming.weight = weight;
-            if (Number.isFinite(rhr) && rhr > 0) incoming.rhr = rhr;
-            if (Number.isFinite(hrv) && hrv > 0) {
-                incoming.hrv = hrv;
-                incoming.measurementSources = {
-                    ...(existing.measurementSources || {}),
-                    hrv: { source: 'intervals', metric: 'rmssd', unit: 'ms' }
-                };
+            if (Number.isFinite(sleepDuration) && sleepDuration > 0) {
+                setIntervalsMetric('sleepDuration', Number((sleepDuration / 3600).toFixed(1)), 'total_sleep_duration', 'h');
             }
-            if (Number.isFinite(sleepScore) && sleepScore >= 0 && sleepScore <= 100) incoming.sleepScore = sleepScore;
+            if (Number.isFinite(weight) && weight > 0) setIntervalsMetric('weight', weight, 'body_weight', 'kg');
+            if (Number.isFinite(rhr) && rhr > 0) setIntervalsMetric('rhr', rhr, 'resting_heart_rate', 'bpm');
+            if (Number.isFinite(hrv) && hrv > 0 && canImportIntervalsMetric('hrv')) {
+                incoming.hrv = hrv;
+                measurementSources.hrv = { source: 'intervals', metric: 'rmssd', unit: 'ms' };
+            }
+            if (Number.isFinite(sleepScore) && sleepScore >= 0 && sleepScore <= 100) {
+                setIntervalsMetric('sleepScore', sleepScore, 'sleep_score', 'points');
+            }
             const respiration = Number(w.respiration);
-            if (Number.isFinite(respiration) && respiration >= 4 && respiration <= 60) incoming.respiration = respiration;
+            if (Number.isFinite(respiration) && respiration >= 4 && respiration <= 60) {
+                setIntervalsMetric('respiration', respiration, 'respiratory_rate', 'Atemzüge/min');
+            }
             ['sleepQuality','fatigue','soreness','stress','motivation'].forEach(key => {
                 const value = Number(w[key]);
                 if (existing[key] == null && Number.isFinite(value) && value >= 1 && value <= 5) incoming[key] = value;
             });
+            if (Object.keys(measurementSources).length) incoming.measurementSources = measurementSources;
             // API-Felder ohne gültigen Wert überschreiben keine vorhandenen Angaben.
             state.dailyCheckins[dStr] = { ...existing, ...incoming };
         });

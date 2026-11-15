@@ -15,7 +15,10 @@ const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
 const dataSource = readFileSync('js/data-source.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
+const healthData = readFileSync('js/health-data.js', 'utf8');
 const competitions = readFileSync('js/competitions.js', 'utf8');
+const pushNotifications = readFileSync('js/push-notifications.js', 'utf8');
+const pushTestFunction = readFileSync('supabase/functions/kajo-push-test/index.ts', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -30,6 +33,18 @@ assert.ok(html.includes('id="kajo-mobile-notifications-button"'), 'mobile global
 assert.ok(html.includes('id="kajo-mobile-profile-button"'), 'mobile global top bar contains athlete profile');
 assert.ok(html.includes('class="kajo-mobile-logo"'), 'mobile global top bar contains KAJO logo');
 assert.ok(html.includes('class="kajo-desktop-header-actions"'), 'desktop global top bar contains notification and profile actions');
+assert.ok(pushNotifications.includes('function hasMatchingVapidKey(subscription, expectedKey)'), 'push registration can detect subscriptions created with an older VAPID key');
+assert.ok(pushNotifications.includes('registration.pushManager.getSubscription()') && pushNotifications.includes('!hasMatchingVapidKey(subscription, applicationServerKey)'), 'push activation reuses matching subscriptions and detects key rotation');
+assert.ok(pushNotifications.includes('Dieses Gerät nutzt eine ältere Push-Registrierung'), 'settings disclose when the browser subscription uses an outdated VAPID key');
+assert.ok(pushNotifications.includes('.delete().eq("endpoint", oldEndpoint).eq("user_id", user.id)'), 'old push endpoint is removed from the current account before replacement');
+assert.ok(pushNotifications.includes('const unsubscribed = await subscription.unsubscribe()'), 'old browser subscription is explicitly unsubscribed before replacement');
+assert.ok(html.includes('Push-Versand testen'), 'settings button clearly identifies a real push delivery test');
+assert.ok(pushNotifications.includes('supabase.functions.invoke("kajo-push-test")'), 'push test calls the authenticated server-side edge function');
+assert.ok(!pushNotifications.includes('registration.showNotification("KAJO · Alles bereit"'), 'push test no longer uses a local-only browser notification');
+assert.ok(pushTestFunction.includes('authClient.auth.getUser()'), 'server-side push test verifies the signed-in user');
+assert.ok(pushTestFunction.includes('.eq("user_id", userId)'), 'server-side push test only loads the current user subscriptions');
+assert.ok(pushTestFunction.includes('subscriber.pushTextMessage('), 'server-side push test sends through the Web Push provider');
+assert.ok(pushTestFunction.includes('status === 404 || status === 410'), 'server-side push test removes expired endpoints');
 assert.ok(!html.includes('<header class="kajo-home-topbar">'), 'home view does not duplicate the global brand and account actions');
 
 for (const domain of ['load', 'recovery', 'performance', 'health']) {
@@ -76,7 +91,7 @@ assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes
 assert.ok(!html.includes('id="health-hero-ring"') && !html.includes('id="health-availability-status"'), 'Health does not display an unsupported availability score');
 assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'), 'each recovery circle uses the existing metric-specific status classification');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
-assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
+assert.ok(analysisUI.includes('fließen derzeit noch nicht in die Recovery-Kennzahlen oder Readiness-Berechnung ein'), 'Garmin health metrics are documented separately from recovery calculations');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
 assert.ok(!html.includes('id="training-history-title"'), 'Performance no longer embeds the training-load history panel');
@@ -94,8 +109,24 @@ assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV f
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
 assert.ok(importer.includes("source: 'intervals', metric: 'rmssd', unit: 'ms'"), 'Intervals HRV carries explicit RMSSD provenance');
+assert.ok(importer.includes('const canImportIntervalsMetric = key =>'), 'Intervals wellness import protects existing values');
+assert.ok(importer.includes("measurementSources[key]?.source === 'intervals'"), 'Intervals only refreshes values previously sourced from Intervals');
+assert.ok(importer.includes("setIntervalsMetric('rhr', rhr, 'resting_heart_rate', 'bpm')"), 'Intervals resting heart rate carries provenance');
 assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
 assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
+assert.ok(healthData.includes('if (identity === null) return null;'), 'personal baselines require documented measurement provenance');
+assert.ok(healthData.includes('measurementIdentity(row, key) === identity'), 'personal baselines compare only matching measurement identities');
+assert.ok(main.includes('importedValues += metricKeys.length;'), 'Garmin restore preview counts actual measurements, not metadata objects');
+assert.ok(main.includes('days: new Set(activityDates)'), 'Garmin activity history counts distinct activity days');
+assert.ok(main.includes('if (date) group.days.add(date)'), 'Garmin health history counts distinct days per data type');
+assert.ok(main.includes('Messtage = unterschiedliche Kalendertage'), 'Garmin history distinguishes record counts from day coverage without claiming completeness');
+assert.ok(main.includes("garminStress: findGarminNumber(records.stress"), 'Garmin stress is extracted from stored stress records');
+assert.ok(main.includes("bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery'"), 'Body Battery extraction uses the named summary section');
+assert.ok(main.includes("spo2: findGarminNumber(records.spo2"), 'SpO2 is extracted from stored Garmin SpO2 records');
+assert.ok(main.includes("source: 'garmin', ...definition"), 'restored Garmin measurements retain explicit provenance');
+assert.ok(!main.includes("findGarminNumber(summaryPayload, ['avgValue'])"), 'SpO2 is not inferred from an ambiguous generic summary field');
+assert.ok(!main.includes("findGarminNumber(summaryPayload, ['value'])"), 'steps are not inferred from an ambiguous generic summary field');
+assert.ok(!main.includes("findGarminNumber(summaryPayload, ['avgLevel'])"), 'stress is not inferred from an ambiguous generic summary field');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
@@ -321,12 +352,18 @@ assert.ok(!html.includes('id="analysis-overview-detail-content"'), 'overview kee
 assert.ok(overviewModule.includes('setAnalysisOverviewMetric') && overviewModule.includes('selectedMetrics = new Set'), 'overview exposes multi-series toggles with all currently supported series selected initially');
 assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.includes('baseline: Number(baseline)'), 'overview normalizes supported series to a relative index');
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
+assert.ok(overviewModule.includes('return day && valid(day.load) ? Number(day.load) : null;'), 'overview daily load does not disappear when ATL is unavailable');
+assert.ok(overviewModule.includes("label: 'Load · Tagesload'"), 'overview labels the independent daily load accurately');
+assert.ok(main.includes("'./analysis-overview.js?v=2'"), 'analysis overview cache version is refreshed after the load-series update');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
 assert.ok(overviewModule.includes('Health availability is deliberately not inferred'), 'Health does not fabricate a continuous availability score');
 assert.ok(overviewModule.includes('renderHeartRateZoneDistribution'), 'intensity distribution reuses the existing heart-rate zone analysis');
 assert.ok(charts.includes('options.canvasId || \'heartRateZonesChart\''), 'heart-rate zone chart supports a dedicated overview target');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
+assert.ok(!main.includes('renderSportDistribution'), 'obsolete sport distribution chart is no longer imported or initialized');
+assert.ok(main.includes("if (overviewContent && !overviewContent.classList.contains('hidden')) renderAnalysisOverview()"), 'activity refresh updates the visible analysis overview without initializing obsolete charts');
+assert.ok(main.includes("runInitStep('Sportverteilung', () => refreshSportAnalytics())"), 'initialization routes sport analytics through the current overview renderer');
 assert.ok(main.includes("'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' }"), 'primary analysis route opens the overview');
 assert.ok(css.includes('.kajo-analysis-circles') && css.includes('grid-template-columns:repeat(4'), 'four circles remain in a compact horizontal row on mobile');
 

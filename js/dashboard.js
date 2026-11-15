@@ -1279,3 +1279,44 @@ export function openTrainingMetric(key) {
     if (typeof window.switchTab === 'function') window.switchTab('training-analysis');
     else renderMetricHistory('training');
 }
+
+
+/* Individuell konfigurierbare Dashboard-Bereiche. Der Status bleibt bewusst fixiert. */
+const DASHBOARD_WIDGET_DEFAULTS = Object.freeze({ daily:true, recommendation:true, wearables:true, race:true, week:true });
+function getDashboardWidgetPreferences() {
+    const saved = state.settings?.dashboardWidgets;
+    return { ...DASHBOARD_WIDGET_DEFAULTS, ...(saved && typeof saved === 'object' ? saved : {}) };
+}
+export function applyDashboardWidgetPreferences() {
+    const preferences = getDashboardWidgetPreferences();
+    document.querySelectorAll('#view-dashboard [data-dashboard-widget]').forEach(element => {
+        element.classList.toggle('kajo-dashboard-widget-hidden', preferences[element.dataset.dashboardWidget] === false);
+    });
+    document.querySelectorAll('[data-dashboard-widget-toggle]').forEach(input => {
+        input.checked = preferences[input.dataset.dashboardWidgetToggle] !== false;
+    });
+}
+export function toggleDashboardSetup() {
+    const panel = document.getElementById('dashboard-customization');
+    const button = document.querySelector('.kajo-dashboard-customize-button');
+    if (!panel) return;
+    const opening = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !opening);
+    if (button) button.setAttribute('aria-expanded', String(opening));
+    if (opening) applyDashboardWidgetPreferences();
+    try { globalThis.lucide?.createIcons?.(); } catch (_) {}
+}
+export function saveDashboardWidgetPreferences() {
+    const next = { ...DASHBOARD_WIDGET_DEFAULTS };
+    document.querySelectorAll('[data-dashboard-widget-toggle]').forEach(input => {
+        next[input.dataset.dashboardWidgetToggle] = Boolean(input.checked);
+    });
+    state.settings = { ...(state.settings || {}), dashboardWidgets: next };
+    saveDataToLocalStorage();
+    applyDashboardWidgetPreferences();
+}
+export function resetDashboardLayout() {
+    state.settings = { ...(state.settings || {}), dashboardWidgets: { ...DASHBOARD_WIDGET_DEFAULTS } };
+    saveDataToLocalStorage();
+    applyDashboardWidgetPreferences();
+}

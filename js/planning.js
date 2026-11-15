@@ -4,7 +4,7 @@
 
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=2';
-import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
+import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, parseLocalDate, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
 import { renderCalendar } from './calendar.js';
 
 export function renderPlannedWorkouts() {
@@ -48,21 +48,35 @@ export function deletePlannedWorkout(id){
     renderCalendar();
 }
 
-export function openPlannedWorkoutModal() { document.getElementById('planned-workout-modal').classList.remove('hidden'); }
+export function openPlannedWorkoutModal() { const date=document.getElementById('plan-date'); if(date&&!date.value)date.value=toLocalDateString(); document.getElementById('planned-workout-modal').classList.remove('hidden'); }
 export function closePlannedWorkoutModal() { document.getElementById('planned-workout-modal').classList.add('hidden'); }
 
 export function savePlannedWorkout() {
-    const date = document.getElementById('plan-date').value || toLocalDateString();
-    const name = document.getElementById('plan-name').value || 'Geplante Einheit';
-    const type = document.getElementById('plan-sport').value;
-    const duration = parseInt(document.getElementById('plan-duration').value) || 60;
-    const targetTss = parseInt(document.getElementById('plan-tss').value) || 60;
-    const category = document.getElementById('plan-category').value;
-    const desc = document.getElementById('plan-desc').value;
+    const date = document.getElementById('plan-date')?.value || '';
+    const name = document.getElementById('plan-name')?.value.trim() || '';
+    const type = document.getElementById('plan-sport')?.value || 'Workout';
+    const durationRaw = document.getElementById('plan-duration')?.value ?? '';
+    const targetRaw = document.getElementById('plan-tss')?.value ?? '';
+    const duration = Number(durationRaw);
+    const targetTss = Number(targetRaw);
+    const category = document.getElementById('plan-category')?.value || 'ga';
+    const desc = document.getElementById('plan-desc')?.value.trim() || '';
+    const parsedDate = parseLocalDate(date);
 
+    if (!name) { alert('Bitte gib der Trainingseinheit einen Namen.'); return; }
+    if (!date || Number.isNaN(parsedDate.getTime()) || toLocalDateString(parsedDate) !== date) {
+        alert('Bitte wähle ein gültiges Trainingsdatum.'); return;
+    }
+    if (durationRaw === '' || !Number.isInteger(duration) || duration < 1 || duration > 1440) {
+        alert('Die Trainingsdauer muss zwischen 1 und 1440 Minuten liegen.'); return;
+    }
+    if (targetRaw === '' || !Number.isFinite(targetTss) || targetTss < 0 || targetTss > 1000) {
+        alert('Die Ziel-Belastung muss zwischen 0 und 1000 liegen.'); return;
+    }
+    if (!Array.isArray(state.plannedActivities)) state.plannedActivities = [];
     state.plannedActivities.push({ id: 'p-' + Date.now(), date, name, type, duration, targetTss, category, desc });
     saveDataToLocalStorage();
     closePlannedWorkoutModal();
+    renderPlannedWorkouts();
     renderCalendar();
-
 }

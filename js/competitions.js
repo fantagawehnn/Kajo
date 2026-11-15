@@ -192,15 +192,30 @@ export function closeRaceDetail() {
     if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
 }
 
-export function toggleRaceModal() { populateRaceRouteSelect(); document.getElementById('race-modal').classList.toggle('hidden'); }
+export function toggleRaceModal() {
+    const modal = document.getElementById('race-modal');
+    if (!modal) return;
+    const opening = modal.classList.contains('hidden');
+    if (opening) {
+        const dateInput = document.getElementById('race-date');
+        if (dateInput && !dateInput.value) dateInput.value = toLocalDateString();
+        populateRaceRouteSelect();
+    }
+    modal.classList.toggle('hidden');
+}
 
 export function addRace() {
-    const name = document.getElementById('race-name').value || 'Wettkampf';
-    const date = document.getElementById('race-date').value || toLocalDateString();
-    const location = document.getElementById('race-location').value || '';
-    const prio = document.getElementById('race-prio').value;
-    const sport = document.getElementById('race-sport').value || 'K1';
-    const target = document.getElementById('race-target').value || 'Ziel';
+    const name = document.getElementById('race-name')?.value.trim() || '';
+    const date = document.getElementById('race-date')?.value || '';
+    if (!name) { alert('Bitte gib einen Wettkampfnamen an.'); return; }
+    const parsedDate = parseLocalDate(date);
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || toLocalDateString(parsedDate) !== date) {
+        alert('Bitte wähle ein gültiges Wettkampfdatum.'); return;
+    }
+    const location = document.getElementById('race-location')?.value.trim() || '';
+    const prio = document.getElementById('race-prio')?.value || 'E';
+    const sport = document.getElementById('race-sport')?.value.trim() || '';
+    const target = document.getElementById('race-target')?.value.trim() || '';
     const routeId = document.getElementById('race-route')?.value || '';
     const label = getRacePriorityMeta(prio).title;
 

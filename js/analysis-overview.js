@@ -67,14 +67,17 @@ function buildSeries(dates) {
     return day && valid(day.load) ? Number(day.load) : null;
   });
   const recovery = dates.map(date => valid(checkins[date]?.hrv) ? Number(checkins[date].hrv) : null);
-  const performance = dates.map(date => valid(checkins[date]?.vo2max) ? Number(checkins[date].vo2max) : null);
+  // VO₂max liegt im geprüften Datenmodell als Profilwert vor. Ein datierter,
+  // kontinuierlicher Messverlauf aus Garmin ist im Importpfad nicht belegt.
+  // Deshalb wird der Profilwert nicht fälschlich als tägliche Zeitreihe dargestellt.
+  const performance = dates.map(() => null);
   // Health availability is deliberately not inferred from illness/injury logs.
   // No continuous availability series exists in the current data model.
   const health = dates.map(() => null);
   return [
     { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'performance', label: 'Fitness · VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance },
+    { key: 'performance', label: 'Fitness · VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance, unavailable: true },
     { key: 'health', label: 'Health · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
   ];
 }
@@ -92,8 +95,9 @@ function updateMetricSwitch() {
     const active = selectedMetrics.has(key);
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
-    button.classList.toggle('is-unavailable', key === 'health');
-    button.disabled = key === 'health';
+    const unavailable = key === 'health' || key === 'performance';
+    button.classList.toggle('is-unavailable', unavailable);
+    button.disabled = unavailable;
   });
 }
 function renderTrendChart() {
@@ -154,9 +158,9 @@ function renderTrendChart() {
       }
     }
   });
-  const healthNote = 'Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
+  const availabilityNote = 'VO₂max: derzeit nur als Profilwert dokumentiert, kein datierter Messverlauf im geprüften Garmin-Import. Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar; Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
   setText('analysis-overview-trend-note',
-    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. ' + healthNote);
+    'Jede verfügbare Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. ' + availabilityNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {

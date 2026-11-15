@@ -21,15 +21,15 @@ import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=5';
-import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=3';
+import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, applyDashboardWidgetPreferences, toggleDashboardSetup, saveDashboardWidgetPreferences, resetDashboardLayout, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=5';
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=33';
-import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=11';
+import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=12';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=12';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=75';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=2';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
-import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
+import { addStrengthSetRow, closeStrengthModal, closeStrengthWorkoutModal, deleteStrengthLog, deleteStrengthWorkoutLog, openStrengthModal, openStrengthWorkoutModal, renderStrengthView, renumberStrengthSetRows, saveStrengthWorkout, saveStrengthWorkoutLog } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=9';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=3';
@@ -494,7 +494,6 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
 
     let importedValues = 0;
     let changedDays = 0;
-    let recordsWithPayload = 0;
     for (const [date, records] of byDate) {
         const existing = state.dailyCheckins[date] || {};
         const updates = {};
@@ -520,10 +519,10 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         // Fallbacks aus der Tageszusammenfassung, wenn ein spezialisierter Datensatz fehlt.
         if (candidates.rhr === null) candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
         if (candidates.respiration === null) candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
-        if (candidates.garminStress === null) candidates.garminStress = findGarminNumber(summaryPayload, ['avgLevel']);
         if (candidates.bodyBattery === null) candidates.bodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
-        if (candidates.spo2 === null) candidates.spo2 = findGarminNumber(summaryPayload, ['avgValue']);
-        if (candidates.steps === null) candidates.steps = findGarminNumber(summaryPayload, ['value']);
+        // Stress, SpO₂ und Schritte werden nur aus ihren typisierten Tagesdatensätzen
+        // übernommen. Generische Schlüssel wie avgLevel, avgValue oder value können
+        // in einer verschachtelten Tageszusammenfassung zu anderen Messgrößen gehören.
 
         if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
 
@@ -546,24 +545,41 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             const targetKey = key === 'rhr' ? 'garminRhr' : key;
             if (existing[targetKey] !== null && existing[targetKey] !== undefined && existing[targetKey] !== '') continue;
             updates[targetKey] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
-            if (key === 'rhr') {
-                updates.measurementSources = {
-                    ...(existing.measurementSources || {}),
-                    garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' }
-                };
-            }
-            if (key === 'garminStress') {
+
+            // Herkunft und Bedeutung für jeden übernommenen Garmin-Wert dokumentieren.
+            // Die HRV-Metrik bleibt bewusst unspecified: Der Rohdatenimport belegt
+            // nicht zuverlässig, ob es sich z. B. um RMSSD oder SDNN handelt.
+            const sourceDefinitions = {
+                hrv: { metric: 'unspecified', unit: 'ms' },
+                garminRhr: { metric: 'resting_heart_rate', unit: 'bpm' },
+                sleepDuration: { metric: 'sleep_duration', unit: 'hours' },
+                sleepScore: { metric: 'sleep_score', unit: 'points' },
+                respiration: { metric: 'respiration_rate', unit: 'breaths_per_minute' },
+                garminStress: { metric: 'daily_average_stress', unit: 'points' },
+                weight: { metric: 'body_weight', unit: 'kg' },
+                bodyBattery: { metric: 'body_battery', unit: 'points' },
+                spo2: { metric: 'oxygen_saturation', unit: 'percent' },
+                steps: { metric: 'steps', unit: 'count' },
+                fitnessAge: { metric: 'fitness_age', unit: 'years' }
+            };
+            const definition = sourceDefinitions[targetKey];
+            if (definition) {
                 updates.measurementSources = {
                     ...(updates.measurementSources || existing.measurementSources || {}),
-                    garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' }
+                    [targetKey]: { source: 'garmin', ...definition }
                 };
             }
         }
 
-        const keys = Object.keys(updates);
-        if (!keys.length) continue;
+        const metricKeys = Object.keys(candidates).filter(key => {
+            const targetKey = key === 'rhr' ? 'garminRhr' : key;
+            return Object.prototype.hasOwnProperty.call(updates, targetKey);
+        });
+        if (!metricKeys.length) continue;
         if (!dryRun) state.dailyCheckins[date] = { ...existing, ...updates };
-        importedValues += keys.length;
+        // Nur tatsächlich ergänzte Messwerte zählen, nicht das zusätzliche
+        // measurementSources-Metadatenobjekt.
+        importedValues += metricKeys.length;
         changedDays++;
     }
 
@@ -716,9 +732,10 @@ async function loadGarminSyncHistory() {
         for (const row of healthRows) {
             const type = String(row.data_type || 'other');
             const date = String(row.record_date || '').slice(0, 10);
-            if (!groups.has(type)) groups.set(type, { count: 0, first: date, last: date });
+            if (!groups.has(type)) groups.set(type, { count: 0, days: new Set(), first: date, last: date });
             const group = groups.get(type);
             group.count++;
+            if (date) group.days.add(date);
             if (date && (!group.first || date < group.first)) group.first = date;
             if (date && (!group.last || date > group.last)) group.last = date;
         }
@@ -731,6 +748,7 @@ async function loadGarminSyncHistory() {
         if (activityDates.length) {
             groups.set('activities', {
                 count: activityDates.length,
+                days: new Set(activityDates),
                 first: activityDates[0],
                 last: activityDates[activityDates.length - 1]
             });
@@ -769,17 +787,18 @@ async function loadGarminSyncHistory() {
         container.innerHTML = `
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px]">
-              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2 pr-2 font-medium">Datenfeld</th><th class="py-2 px-2 text-right font-medium">Anzahl</th><th class="py-2 pl-2 text-right font-medium">Zeitraum</th></tr></thead>
+              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2 pr-2 font-medium">Datenfeld</th><th class="py-2 px-2 text-right font-medium">Datensätze</th><th class="py-2 px-2 text-right font-medium">Messtage</th><th class="py-2 pl-2 text-right font-medium">Zeitraum</th></tr></thead>
               <tbody>${rows.map(([type, item]) => `
                 <tr class="border-b border-slate-800/70 last:border-0">
                   <td class="py-2 pr-2 text-slate-200">${String(labels[type] || type.replaceAll('_', ' ')).replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[char])}</td>
                   <td class="py-2 px-2 text-right tabular-nums text-white">${item.count.toLocaleString('de-DE')}</td>
+                  <td class="py-2 px-2 text-right tabular-nums text-slate-300">${(item.days?.size ?? 0).toLocaleString('de-DE')}</td>
                   <td class="py-2 pl-2 text-right whitespace-nowrap text-slate-400">${item.first || '–'} – ${item.last || '–'}</td>
                 </tr>`).join('')}
               </tbody>
             </table>
           </div>
-          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
+          <p class="pt-1 text-[10px] text-slate-500">Datensätze = gespeicherte Garmin-Einträge. Messtage = unterschiedliche Kalendertage mit mindestens einem Eintrag dieses Datenfelds. Das ist keine Aussage über eine lückenlose Synchronisierung.</p>`;
     } catch (error) {
         container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
     }
@@ -1754,6 +1773,7 @@ function initEngine() {
     runInitStep('Readiness', () => renderReadinessDashboard());
     runInitStep('Nächster Wettkampf', () => renderDashboardNextRace());
     runInitStep('Trainingswoche', () => renderHomeTrainingWeek());
+    runInitStep('Dashboard-Einrichtung', () => applyDashboardWidgetPreferences());
     runInitStep('Belastungsdiagramm', () => renderMainLoadChart(state.dailyTimeline, state.activeTimeframe));
     runInitStep('Analysebereiche', () => renderAnalysisInsights());
     runInitStep('Sportverteilung', () => refreshSportAnalytics());
@@ -2682,6 +2702,10 @@ Object.assign(window, {
     deleteStrengthLog,
     exportDatabaseBackup,
     handleMultipleFileSelect,
+    applyDashboardWidgetPreferences,
+    toggleDashboardSetup,
+    saveDashboardWidgetPreferences,
+    resetDashboardLayout,
     changeDashboardDay,
     goToDashboardToday,
     selectDashboardDate,
@@ -2726,6 +2750,12 @@ Object.assign(window, {
     openIntervalsSyncModal,
     openPlannedWorkoutModal,
     openStrengthModal,
+    openStrengthWorkoutModal,
+    closeStrengthWorkoutModal,
+    addStrengthSetRow,
+    renumberStrengthSetRows,
+    saveStrengthWorkoutLog,
+    deleteStrengthWorkoutLog,
     performIntervalsLiveSync,
     saveCheckin,
     saveDayEditor,

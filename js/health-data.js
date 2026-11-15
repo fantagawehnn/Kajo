@@ -10,6 +10,7 @@ import { showChartPointReadout } from './chart-readout.js';
 const METRICS = [
   { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#38bdf8', decimals:0 },
   { key:'rhr', label:'Ruheherzfrequenz', short:'Ruhepuls', unit:'bpm', group:'Herz-Kreislauf', icon:'heart-pulse', color:'#fb7185', decimals:0 },
+  { key:'garminRhr', label:'Ruheherzfrequenz (Garmin)', short:'Garmin Ruhepuls', unit:'bpm', group:'Herz-Kreislauf', icon:'heart-pulse', color:'#fda4af', decimals:0 },
   { key:'sleepScore', label:'Schlafscore', short:'Sleep Score', unit:'/ 100', group:'Schlaf', icon:'moon-star', color:'#a78bfa', decimals:0 },
   { key:'sleepDuration', label:'Schlafdauer', short:'Schlafdauer', unit:'h', group:'Schlaf', icon:'bed-double', color:'#818cf8', decimals:1 },
   { key:'respiration', label:'Atemfrequenz', short:'Atemfrequenz', unit:'/min', group:'Atmung', icon:'wind', color:'#2dd4bf', decimals:1 },
@@ -49,14 +50,28 @@ function median(values) {
   const middle = Math.floor(sorted.length/2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle-1]+sorted[middle])/2;
 }
+function measurementIdentity(row, key) {
+  const source = row?.measurementSources?.[key];
+  if (!source || typeof source.source !== 'string' || !source.source.trim()
+      || typeof source.unit !== 'string' || !source.unit.trim()) return null;
+  return [
+    source.source,
+    typeof source.metric === 'string' && source.metric.trim() ? source.metric : 'unspecified',
+    source.unit
+  ].join('|');
+}
 function personalBaseline(key, date) {
   const end = new Date(date + 'T12:00:00');
   if (!Number.isFinite(end.getTime())) return null;
+  const reference = state.dailyCheckins?.[date];
+  if (!valid(metricValue(reference, key))) return null;
+  const identity = measurementIdentity(reference, key);
+  if (identity === null) return null;
   const start = new Date(end);
   start.setDate(start.getDate()-90);
   const from = dateKey(start);
   const values = Object.entries(state.dailyCheckins || {})
-    .filter(([day]) => day < date && day >= from)
+    .filter(([day, row]) => day < date && day >= from && measurementIdentity(row, key) === identity)
     .map(([,row]) => metricValue(row,key))
     .filter(valid);
   return values.length >= 5 ? median(values) : null;
@@ -144,11 +159,13 @@ function renderDetail() {
   document.getElementById('kajo-health-detail-title').textContent=metric.label;
   document.getElementById('kajo-health-detail-unit').textContent=metric.unit;
   document.getElementById('kajo-health-detail-current').textContent=latest?format(latest.value,metric):'—';
-  document.getElementById('kajo-health-detail-date').textContent=latest?'Letzter Messwert · '+new Date(latest.date+'T12:00:00').toLocaleDateString('de-DE'):'Im gewählten Zeitraum keine Messung';
+  const latestSource=latest?state.dailyCheckins?.[latest.date]?.measurementSources?.[metric.key]:null;
+  const sourceLabel=latestSource?.source==='garmin'?'Garmin'+(latestSource.metric==='unspecified'?' · Metrik nicht näher spezifiziert':' · '+(latestSource.metric||'Messgröße nicht dokumentiert')):latestSource?.source==='manual'?'Manuelle Eingabe':latestSource?.source?'Quelle: '+latestSource.source:'Quelle nicht dokumentiert';
+  document.getElementById('kajo-health-detail-date').textContent=latest?'Letzter Messwert · '+new Date(latest.date+'T12:00:00').toLocaleDateString('de-DE')+' · '+sourceLabel:'Im gewählten Zeitraum keine Messung';
   document.getElementById('kajo-health-detail-baseline').textContent=baseline===null?'Persönlicher Normalbereich noch nicht verfügbar':'Persönlicher 90-Tage-Median: '+format(baseline,metric)+' '+metric.unit;
   document.getElementById('kajo-health-detail-delta').textContent=delta===null?'Noch keine normierte Abweichung berechenbar':signedPercent(delta)+' gegenüber deinem persönlichen Median';
   document.getElementById('kajo-health-detail-count').textContent=values.filter(valid).length+' Messwerte im Zeitraum';
-  document.getElementById('kajo-health-detail-note').textContent='Die normierte Abweichung beschreibt den Abstand zum persönlichen Median. Sie ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
+  document.getElementById('kajo-health-detail-note').textContent='Der persönliche 90-Tage-Median berücksichtigt nur frühere Messwerte mit derselben dokumentierten Quelle und Messgrößen-Kennzeichnung. Fehlende oder anders zugeordnete Werte fließen nicht ein. Die Abweichung ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
   const labels=dates.map(day=>new Date(day+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}));
   const baselineSeries=dates.map(day=>personalBaseline(metric.key,day));
   const canvas=document.getElementById('kajo-health-detail-chart');

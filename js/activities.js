@@ -731,6 +731,17 @@ function renderSportSpecificActivityMetrics(act, loadSummary) {
 
     const elevation = firstNumber(act.elevationGain, act.totalAscent, act.ascent);
     add('Höhenmeter', elevation !== null && elevation > 0 ? Math.round(elevation) + ' m' : null);
+    // Sportartspezifischer Kontext wird nur angezeigt, wenn er tatsächlich dokumentiert ist.
+    if (['Kayaking', 'C1', 'C2'].includes(type)) {
+        const raceFormatLabels = { sprint: 'Sprint', classic: 'Classic' };
+        add('Rennformat', raceFormatLabels[act.raceFormat] || null, 'text-cyan-300');
+        const water = act.waterConditions || {};
+        add('Gewässertyp', water.type === 'wildwater' ? 'Wildwasser' : water.type === 'flatwater' ? 'Flachwasser' : null, 'text-cyan-300');
+        const waterLevel = firstNumber(water.level);
+        add('Pegel', waterLevel !== null ? waterLevel.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' ' + (water.levelUnit === 'm' ? 'm' : 'cm') : null);
+        const discharge = firstNumber(water.discharge);
+        add('Abfluss', discharge !== null ? discharge.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' m³/s' : null);
+    }
     // Die aktive Load-Methode wird im Belastungsbereich separat mit ihrer Quelle ausgewiesen.
     if (type === 'C2') add('Trainingspartner', act.trainingPartner || null, 'text-cyan-300');
     if (isStrength && Array.isArray(act.exercises) && act.exercises.length) {
@@ -1040,13 +1051,19 @@ function renderActivityComparisons(activity) {
     const currentSpeed = Number(activity.avgSpeed ?? activity.averageSpeed);
     const rows = matches.map(candidate => {
         const otherSpeed = Number(candidate.avgSpeed ?? candidate.averageSpeed);
-        const speedDiff = Number.isFinite(currentSpeed) && currentSpeed > 0 && Number.isFinite(otherSpeed)
+        // Ein gespeicherter Nullwert ist keine valide Vergleichsgeschwindigkeit:
+        // sonst würde die relative Differenz durch null geteilt.
+        const speedDiff = Number.isFinite(currentSpeed) && currentSpeed > 0
+            && Number.isFinite(otherSpeed) && otherSpeed > 0
             ? ((currentSpeed - otherSpeed) / otherSpeed * 100) : null;
-        const durationDiff = duration > 0 && Number(candidate.duration) > 0 ? Number(candidate.duration) - duration : null;
+        const candidateDuration = Number(candidate.duration);
+        const durationDiff = Number.isFinite(duration) && duration > 0
+            && Number.isFinite(candidateDuration) && candidateDuration > 0
+            ? candidateDuration - duration : null;
         return '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-slate-800 py-2 text-xs">'
             + '<div><strong class="text-slate-200">' + escape(candidate.name || 'Training') + '</strong><div class="text-[10px] text-slate-500">'
-            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + Math.round(Number(candidate.duration)) + ' min · ' + escape(getActivitySourceLabel(candidate))
-            + (candidate.distance ? ' · ' + formatKm(candidate.distance) + ' km' : '') + '</div></div>'
+            + escape(formatDateDDMMYY(candidate.date)) + ' · ' + (Number.isFinite(candidateDuration) && candidateDuration > 0 ? Math.round(candidateDuration) + ' min' : 'Dauer nicht hinterlegt') + ' · ' + escape(getActivitySourceLabel(candidate))
+            + (Number.isFinite(Number(candidate.distance)) && Number(candidate.distance) > 0 ? ' · ' + formatKm(candidate.distance) + ' km' : '') + '</div></div>'
             + '<div class="text-right text-[10px] text-slate-400">'
             + (speedDiff !== null ? 'Geschwindigkeit: ' + (speedDiff > 0 ? '+' : '') + speedDiff.toFixed(1) + '%' : '')
             + (durationDiff !== null ? (speedDiff !== null ? '<br>' : '') + 'Dauer: ' + (durationDiff > 0 ? '+' : '') + Math.round(durationDiff) + ' min' : '')

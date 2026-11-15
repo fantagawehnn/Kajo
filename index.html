@@ -20,6 +20,7 @@
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
     <link rel="stylesheet" href="css/styles.css?v=142">
+    <link rel="stylesheet" href="css/dashboard-design.css?v=3">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -316,25 +317,57 @@
 
         
 
-        <div id="view-dashboard" class="kajo-home">
+        <div id="view-dashboard" class="kajo-home kajo-dashboard-design">
+  <header class="kajo-dashboard-topline">
+    <div class="kajo-dashboard-heading-copy">
+      <p class="kajo-dashboard-eyebrow">KAJO PERFORMANCE</p>
+      <h1>Dein Training im Blick</h1>
+      <p>Belastung · Regeneration · Leistungsentwicklung · Gesundheit</p>
+      <span class="kajo-dashboard-sport-focus">KANU-WILDWASSER · K1 / C1 / C2 · CLASSIC / SPRINT</span>
+    </div>
+    <button type="button" class="kajo-dashboard-customize-button" onclick="toggleDashboardSetup()" aria-expanded="false" aria-controls="dashboard-customization">
+      <i data-lucide="sliders-horizontal" aria-hidden="true"></i><span>Ansicht anpassen</span>
+    </button>
+  </header>
+  <section id="dashboard-customization" class="kajo-dashboard-customization hidden" aria-label="Dashboard individuell einrichten">
+    <div class="kajo-dashboard-customization-heading">
+      <div><strong>Dein Dashboard</strong><span>Wähle, welche Bereiche du sehen möchtest.</span></div>
+      <button type="button" onclick="resetDashboardLayout()" class="kajo-dashboard-reset">Zurücksetzen</button>
+    </div>
+    <div class="kajo-dashboard-widget-options">
+      <label><input type="checkbox" data-dashboard-widget-toggle="daily" checked onchange="saveDashboardWidgetPreferences()"> <span>Training heute</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="recommendation" checked onchange="saveDashboardWidgetPreferences()"> <span>Trainingskontext</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="wearables" checked onchange="saveDashboardWidgetPreferences()"> <span>Gesundheitsdaten</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="race" checked onchange="saveDashboardWidgetPreferences()"> <span>Nächster Wettkampf</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="week" checked onchange="saveDashboardWidgetPreferences()"> <span>Trainingswoche</span></label>
+    </div>
+    <p>Dein Status bleibt immer sichtbar. Deine Auswahl wird in deinem Profil gespeichert.</p>
+  </section>
   <section class="kajo-home-status" aria-labelledby="home-status-heading">
     <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
-        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
+        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span><small>individueller Check-in</small></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
-        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load</span><small>ATL</small></div></div>
+        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Akute Belastung</span><small>ATL</small></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
-        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small>CTL · Fitnessmodell</small></div></div>
+        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitnessmodell</span><small>CTL · kein Leistungstest</small></div></div>
       </button>
     </div>
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
   </section>
 
-  <section id="home-daily-overview" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
-    <div class="kajo-home-section-heading"><h2 id="home-daily-overview-title">Training heute</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span></div>
+  <section id="home-daily-overview" data-dashboard-widget="daily" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
+    <div class="kajo-home-section-heading kajo-home-day-heading">
+      <div class="kajo-home-day-title"><h2 id="home-daily-overview-title">Training</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span><span id="dashboard-day-context" class="kajo-home-day-context">Heute</span></div>
+      <div class="kajo-home-day-controls">
+        <button type="button" onclick="changeDashboardDay(-1)" aria-label="Vorheriger Tag"><i data-lucide="chevron-left"></i></button>
+        <button type="button" id="dashboard-day-today" onclick="goToDashboardToday()" class="hidden">Heute</button>
+        <button type="button" id="dashboard-day-next" onclick="changeDashboardDay(1)" aria-label="Nächster Tag"><i data-lucide="chevron-right"></i></button>
+      </div>
+    </div>
     <section id="home-planned-section" class="hidden kajo-home-session-group" aria-labelledby="home-planned-title">
       <div class="kajo-home-subheading"><h3 id="home-planned-title">Geplant</h3><span>PLANUNG</span></div>
       <div id="home-planned-list" class="home-today-list"></div>
@@ -346,14 +379,14 @@
     <p id="home-training-empty" class="kajo-empty hidden">Für heute sind keine Trainingseinheiten hinterlegt.</p>
   </section>
 
-  <button type="button" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
-    <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
+  <button type="button" data-dashboard-widget="recommendation" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
+    <span class="kajo-home-section-heading"><strong>Trainingskontext</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
     <strong id="home-training-recommendation">Wird berechnet …</strong>
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
   </button>
 
-  <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
+  <section data-dashboard-widget="wearables" class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
     <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Wearable &amp; Gesundheitsdaten</h2></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
@@ -364,7 +397,7 @@
     </div>
   </section>
 
-  <button type="button" id="home-next-race-card" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
+  <button type="button" data-dashboard-widget="race" id="home-next-race-card" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
     <span class="kajo-home-section-heading"><strong>Nächster Wettkampf</strong><i data-lucide="flag" aria-hidden="true"></i></span>
     <span class="kajo-home-race-main"><i data-lucide="trophy" aria-hidden="true"></i><strong id="home-next-race-name">Kein Wettkampf geplant</strong></span>
     <span id="home-next-race-sport" class="kajo-home-race-type-label"></span>
@@ -374,7 +407,7 @@
     <span id="home-next-race-rank" class="hidden"></span>
   </button>
 
-  <section id="home-training-week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
+  <section id="home-training-week" data-dashboard-widget="week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
     <div class="kajo-home-section-heading"><h2 id="home-training-week-title">Trainingswoche</h2><span id="home-week-range" class="kajo-home-meta"></span></div>
     <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsdauer pro Wochentag"></div>
     <div id="home-week-legend" class="kajo-week-legend"></div>
@@ -725,11 +758,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
                         <label class="block text-slate-400 mb-1">Wettkampf Name</label>
-                        <input type="text" id="race-name" placeholder="z. B. DM Kanu-Rennsport K1" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                        <input type="text" id="race-name" required maxlength="120" placeholder="z. B. Deutsche Meisterschaft" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1">Datum</label>
-                        <input type="date" id="race-date" value="2026-11-20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                        <input type="date" id="race-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1">Ort</label>
@@ -773,13 +806,14 @@
         </div>
 
 
-        <!-- PERSONAL BESTS -->
+        <!-- KRAFTTRAINING -->
         <div id="view-strength" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between gap-3">
-                <div><h2 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-purple-400"></i> Personal Bests · Kraftleistungen</h2><p class="text-xs text-slate-400 mt-1">Dokumentiere deine höchsten Trainingsgewichte und Wiederholungsleistungen je Übung.</p></div>
-                <button type="button" onclick="openStrengthModal()" class="shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold">+ Personal Best</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="strength-history-grid"></div>
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="flex items-center gap-2 text-base font-bold text-white"><i data-lucide="dumbbell" class="h-5 w-5 text-cyan-400"></i> Krafttraining</h2><p class="mt-1 text-xs text-slate-400">Dokumentiere Übungen und jeden absolvierten Satz.</p></div><button type="button" onclick="openStrengthWorkoutModal()" class="rounded-xl bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-500">+ Training erfassen</button></div>
+                <div id="strength-workout-summary" class="grid grid-cols-3 gap-2"></div>
+            </section>
+            <section class="space-y-3"><h3 class="text-sm font-semibold text-white">Trainingsverlauf</h3><div id="strength-workout-history" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div></section>
+            <section class="space-y-3 border-t border-slate-800 pt-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-sm font-semibold text-white">Personal Bests</h3><p class="text-[11px] text-slate-400">Deine höchsten dokumentierten Gewichte und Wiederholungsleistungen.</p></div><button type="button" onclick="openStrengthModal()" class="rounded-xl bg-purple-600 px-3 py-2 text-xs font-semibold text-white hover:bg-purple-500">+ Personal Best</button></div><div class="grid grid-cols-1 gap-4 md:grid-cols-2" id="strength-history-grid"></div></section>
         </div>
 
         <!-- ========================================== -->
@@ -1334,7 +1368,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
                     <label class="block text-slate-400 mb-1">Datum</label>
-                    <input type="date" id="plan-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="date" id="plan-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">Sportart</label>
@@ -1350,15 +1384,15 @@
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">Titel / Name</label>
-                    <input type="text" id="plan-name" placeholder="z. B. Intervall 5x1000m" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="text" id="plan-name" required maxlength="120" placeholder="z. B. Intervall 5 × 1000 m" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">Ziel-Dauer (Min)</label>
-                    <input type="number" id="plan-duration" value="60" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="number" id="plan-duration" min="1" max="1440" step="1" value="60" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">Ziel-Belastung (Load)</label>
-                    <input type="number" id="plan-tss" value="70" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="number" id="plan-tss" min="0" max="1000" step="1" value="70" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">Trainingskategorie</label>
@@ -1383,23 +1417,33 @@
     </div>
 
 
+    <!-- MODAL: KRAFTTRAINING -->
+    <div id="strength-workout-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-slate-950/85 p-4 backdrop-blur-sm">
+        <div class="my-auto w-full max-w-lg space-y-4 rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <div><h3 class="text-base font-bold text-white">Krafttraining erfassen</h3><p class="mt-1 text-xs text-slate-400">Eine Übung mit den tatsächlich absolvierten Sätzen dokumentieren.</p></div>
+            <div class="space-y-3 text-xs">
+                <label class="block text-slate-400">Datum<input type="date" id="str-workout-date" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-white"></label>
+                <label class="block text-slate-400">Übung<input id="str-workout-exercise" list="str-workout-exercise-options" maxlength="100" placeholder="Übung auswählen oder eingeben" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-white"><datalist id="str-workout-exercise-options"><option value="Bankdrücken"><option value="Bankziehen mit Langhantel"><option value="Einarmiges Bankziehen"><option value="Kniebeugen"><option value="Kreuzheben"><option value="Klimmzüge"><option value="Schulterdrücken"><option value="Rumpfrotation"></datalist></label>
+                <div class="flex items-center justify-between gap-2"><h4 class="font-semibold text-white">Sätze</h4><button type="button" onclick="addStrengthSetRow()" class="rounded-lg bg-slate-800 px-3 py-2 text-[11px] text-cyan-300">+ Satz hinzufügen</button></div>
+                <div id="strength-set-rows" class="space-y-2"></div>
+                <label class="block text-slate-400">Notiz (optional)<textarea id="str-workout-notes" rows="2" maxlength="300" placeholder="z. B. RPE, Ausführung oder Besonderheiten" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-white"></textarea></label>
+                <p class="text-[10px] text-slate-500">Volumen = Summe aus Gewicht × Wiederholungen je Satz. Ein Dokumentationswert, keine Leistungsprognose.</p>
+            </div>
+            <div class="flex justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeStrengthWorkoutModal()" class="rounded-xl bg-slate-800 px-4 py-2 text-xs text-slate-300">Abbrechen</button><button type="button" onclick="saveStrengthWorkoutLog()" class="rounded-xl bg-cyan-600 px-5 py-2 text-xs font-semibold text-white hover:bg-cyan-500">Speichern</button></div>
+        </div>
+    </div>
+
     <!-- MODAL: PERSONAL BEST -->
-    <div id="strength-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 my-auto">
+    <div id="strength-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-4">
+        <div class="my-auto w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h3 class="text-base font-bold text-white">Personal Best eintragen</h3>
             <div class="space-y-3 text-xs">
-                <label class="block text-slate-400">Datum<input type="date" id="str-date" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"></label>
-                <label class="block text-slate-400">Übung<input id="str-exercise" list="str-exercise-options" placeholder="Übung auswählen oder selbst eingeben" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"><datalist id="str-exercise-options"><option value="Bankdrücken"><option value="Bankziehen mit Langhantel"><option value="Einarmiges Bankziehen"><option value="Kniebeugen"><option value="Kreuzheben"></datalist></label>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="text-slate-400">Gewicht (kg)<input type="number" id="str-weight" min="0" step="0.5" placeholder="z. B. 60" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"></label>
-                    <label class="text-slate-400">Wiederholungen<input type="number" id="str-reps" min="1" max="100" value="1" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"></label>
-                </div>
-                <p class="text-[10px] text-slate-500">Trage den tatsächlich erreichten Wert ein. Mehrere Einträge pro Übung bilden deinen Leistungsfortschritt ab.</p>
+                <label class="block text-slate-400">Datum<input type="date" id="str-date" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white"></label>
+                <label class="block text-slate-400">Übung<input id="str-exercise" list="str-pb-exercise-options" placeholder="Übung auswählen oder selbst eingeben" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white"><datalist id="str-pb-exercise-options"><option value="Bankdrücken"><option value="Bankziehen mit Langhantel"><option value="Einarmiges Bankziehen"><option value="Kniebeugen"><option value="Kreuzheben"><option value="Klimmzüge"><option value="Schulterdrücken"><option value="Rumpfrotation"></datalist></label>
+                <div class="grid grid-cols-2 gap-3"><label class="text-slate-400">Gewicht (kg)<input type="number" id="str-weight" min="0" step="0.5" placeholder="z. B. 60" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white"></label><label class="text-slate-400">Wiederholungen<input type="number" id="str-reps" min="1" max="100" value="1" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white"></label></div>
+                <p class="text-[10px] text-slate-500">Personal Bests bleiben getrennt von regulären Trainingsprotokollen.</p>
             </div>
-            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button type="button" onclick="closeStrengthModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button>
-                <button type="button" onclick="saveStrengthWorkout()" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs">Speichern</button>
-            </div>
+            <div class="flex justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeStrengthModal()" class="rounded-xl bg-slate-800 px-4 py-2 text-xs text-slate-300">Abbrechen</button><button type="button" onclick="saveStrengthWorkout()" class="rounded-xl bg-purple-600 px-5 py-2 text-xs font-semibold text-white hover:bg-purple-500">Speichern</button></div>
         </div>
     </div>
 
@@ -1447,7 +1491,7 @@
            <section id="settings-notifications-group" class="kajo-settings-group" data-settings-page="notifications"><div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="bell-ring"></i></span><div><p class="kajo-settings-eyebrow">IMMER ZUM RICHTIGEN ZEITPUNKT</p><h3>Benachrichtigungen</h3><p>Erhalte persönliche Erinnerungen direkt auf dein Smartphone.</p></div></div><section id="settings-notifications" class="kajo-settings-card space-y-4">
            <div class="kajo-settings-section-head"><div><p class="kajo-settings-eyebrow">IMMER ZUM RICHTIGEN ZEITPUNKT</p><h3>Push-Benachrichtigungen</h3><p>Persönliche Erinnerungen direkt auf dein Smartphone – mit KAJO-Icon und eigenem Nachrichtentext.</p></div><span class="kajo-settings-section-icon"><i data-lucide="bell-ring"></i></span></div>
            <div id="kajo-push-status" class="kajo-push-status" role="status" aria-live="polite"><span class="kajo-push-status-dot"></span><span>Push-Status wird geprüft …</span></div>
-           <div class="flex flex-wrap gap-2"><button type="button" id="kajo-enable-push" onclick="enableKajoPush()" class="kajo-settings-primary"><i data-lucide="smartphone"></i> Push auf diesem Gerät aktivieren</button><button type="button" onclick="sendKajoPushTest()" class="kajo-settings-secondary"><i data-lucide="send"></i> Darstellung testen</button><button type="button" onclick="disableKajoPush()" class="kajo-settings-secondary"><i data-lucide="bell-off"></i> Gerät abmelden</button></div>
+           <div class="flex flex-wrap gap-2"><button type="button" id="kajo-enable-push" onclick="enableKajoPush()" class="kajo-settings-primary"><i data-lucide="smartphone"></i> Push auf diesem Gerät aktivieren</button><button type="button" onclick="sendKajoPushTest()" class="kajo-settings-secondary"><i data-lucide="send"></i> Push-Versand testen</button><button type="button" onclick="disableKajoPush()" class="kajo-settings-secondary"><i data-lucide="bell-off"></i> Gerät abmelden</button></div>
            <div class="kajo-push-hint"><i data-lucide="info"></i><p>Für den App-Charakter installiere KAJO über „Zum Home-Bildschirm“. Auf iPhones ist Web-Push ab iOS 16.4 für installierte Web-Apps verfügbar. Die Zustellung bei geschlossener App erfolgt über den KAJO-Pushdienst.</p></div>
            <div class="kajo-settings-divider"></div>
            <div class="space-y-1"><h4 class="text-sm font-bold text-white">Eigene Erinnerungen</h4><p class="text-xs text-slate-400">Lege fest, woran KAJO dich erinnern soll und an welchen Tagen die Nachricht erscheint.</p></div>
