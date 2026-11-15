@@ -28,6 +28,7 @@ import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=75';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=2';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
+import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=1';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=10';
@@ -2774,6 +2775,12 @@ Object.assign(window, {
     closeDayEditor,
     closeIntervalsSyncModal,
     closePlannedWorkoutModal,
+    openManualActivityModal,
+    closeManualActivityModal,
+    updateManualActivityFields,
+    addManualActivityExerciseSet,
+    removeManualActivityExerciseSet,
+    saveManualActivity,
     closeStrengthModal,
     deletePlannedWorkout,
     deleteRace,

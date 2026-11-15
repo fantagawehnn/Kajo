@@ -661,7 +661,7 @@
                     <div class="relative">
                         <button type="button" id="calendar-add-button" aria-label="Eintrag hinzufügen" title="Eintrag hinzufügen" onclick="toggleCalendarAddMenu()" class="calendar-add-button"><i data-lucide="plus"></i></button>
                         <div id="calendar-add-menu" class="calendar-add-menu hidden" role="menu" aria-label="Eintrag hinzufügen">
-                            <button type="button" onclick="closeCalendarAddMenu();openCalendarTrainingCreate()" class="calendar-add-menu-item"><i data-lucide="dumbbell"></i> Training</button><button type="button" onclick="closeCalendarAddMenu();openCalendarRaceCreate()" class="calendar-add-menu-item"><i data-lucide="trophy"></i> Wettkampf</button><button type="button" onclick="closeCalendarAddMenu();openCalendarHealthCreate()" class="calendar-add-menu-item"><i data-lucide="thermometer"></i> Krankheit</button><button type="button" onclick="closeCalendarAddMenu();openCalendarPeriodCreate()" class="calendar-add-menu-item"><i data-lucide="droplet"></i> Periode</button>
+                            <button type="button" onclick="closeCalendarAddMenu();openCalendarTrainingCreate()" class="calendar-add-menu-item"><i data-lucide="calendar-plus"></i> Einheit planen</button><button type="button" onclick="closeCalendarAddMenu();openManualActivityModal()" class="calendar-add-menu-item"><i data-lucide="clipboard-pen-line"></i> Training eintragen</button><button type="button" onclick="closeCalendarAddMenu();openCalendarRaceCreate()" class="calendar-add-menu-item"><i data-lucide="trophy"></i> Wettkampf</button><button type="button" onclick="closeCalendarAddMenu();openCalendarHealthCreate()" class="calendar-add-menu-item"><i data-lucide="thermometer"></i> Krankheit</button><button type="button" onclick="closeCalendarAddMenu();openCalendarPeriodCreate()" class="calendar-add-menu-item"><i data-lucide="droplet"></i> Periode</button>
                         </div>
                     </div>
                 </div>
@@ -1382,6 +1382,70 @@
         </div>
     </div>
 
+
+
+    <div id="manual-activity-modal" class="hidden fixed inset-0 z-[90] bg-slate-950/90 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
+      <div class="max-w-3xl mx-auto my-4 bg-slate-900 border border-slate-700 rounded-2xl p-5 sm:p-6 space-y-5">
+        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] tracking-widest text-cyan-400 font-bold">TRAININGSDOKUMENTATION</p><h2 class="text-lg font-bold text-white">Training eintragen</h2><p class="text-xs text-slate-400 mt-1">Manuelle Einheiten werden als absolvierte Aktivitäten gespeichert – getrennt von deiner Trainingsplanung.</p></div><button type="button" onclick="closeManualActivityModal()" class="p-2 text-slate-400 hover:text-white" aria-label="Schließen">✕</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <label class="text-slate-400">Datum<input id="manual-activity-date" type="date" required class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          <label class="text-slate-400">Startzeit (optional)<input id="manual-activity-time" type="time" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          <label class="text-slate-400">Sportart<select id="manual-activity-sport" onchange="updateManualActivityFields()" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></select></label>
+          <label class="text-slate-400">Trainingskategorie<select id="manual-activity-category" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"><option value="ga">GA / Ausdauer</option><option value="interval">Intervalle</option><option value="race">Wettkampf</option><option value="reg">Regeneration</option><option value="strength">Kraft</option><option value="tech">Technik</option></select></label>
+          <label class="text-slate-400 sm:col-span-2">Name der Einheit<input id="manual-activity-name" maxlength="120" placeholder="z. B. Grundlagenausdauer, 6 × 4 min oder Techniktraining" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          <label class="text-slate-400">Dauer (Minuten) *<input id="manual-activity-duration" type="number" min="1" max="1440" step="1" required placeholder="z. B. 75" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          <label id="manual-distance-field" class="text-slate-400"><span id="manual-distance-label">Distanz (km)</span><input id="manual-activity-distance" type="number" min="0" max="1000" step="0.01" placeholder="Optional" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+        </div>
+        <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
+          <h3 class="text-xs font-bold text-cyan-300">Sportartspezifische Angaben</h3>
+          <div id="manual-canoe-fields" class="hidden space-y-3"><p class="text-[11px] text-slate-400">Kanu-Wildwasserrennsport</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <label class="text-slate-400">Rennformat<select id="manual-canoe-format" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"><option value="">Nicht zugeordnet</option><option value="classic">Classic</option><option value="sprint">Sprint</option></select></label>
+            <label class="text-slate-400">Gewässertyp<select id="manual-canoe-water-type" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"><option value="">Nicht dokumentiert</option><option value="flatwater">Flachwasser</option><option value="wildwater">Wildwasser</option></select></label>
+            <label class="text-slate-400">Pegel / Wasserstand (cm)<input id="manual-canoe-level" type="number" min="0" step="any" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Abfluss (m³/s)<input id="manual-canoe-discharge" type="number" min="0" step="any" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label id="manual-c2-partner-field" class="hidden text-slate-400 sm:col-span-2">C2-Partner<input id="manual-c2-partner" maxlength="100" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400 sm:col-span-2">Strecke / Bedingungen (Notiz)<input id="manual-canoe-note" maxlength="200" placeholder="Optional" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          </div></div>
+          <div id="manual-paddle-fields" class="hidden space-y-3"><p id="manual-paddle-metric-title" class="text-[11px] text-slate-400">Paddelwerte</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <label class="text-slate-400">Ø Geschwindigkeit (km/h)<input id="manual-paddle-speed" type="number" min="0" max="100" step="0.01" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Ø Leistung (W)<input id="manual-paddle-power" type="number" min="0" max="3000" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Schlagfrequenz (/min)<input id="manual-paddle-rate" type="number" min="0" max="300" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          </div></div>
+          <div id="manual-run-fields" class="hidden space-y-3"><p class="text-[11px] text-slate-400">Laufen</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <label class="text-slate-400">Ø Pace (mm:ss / km)<input id="manual-run-pace" placeholder="05:30" inputmode="numeric" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Schrittfrequenz (/min)<input id="manual-run-cadence" type="number" min="0" max="300" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Höhenmeter (m)<input id="manual-run-elevation" type="number" min="0" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          </div></div>
+          <div id="manual-ride-fields" class="hidden space-y-3"><p class="text-[11px] text-slate-400">Radfahren</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <label class="text-slate-400">Ø Geschwindigkeit (km/h)<input id="manual-ride-speed" type="number" min="0" max="150" step="0.01" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Ø Leistung (W)<input id="manual-ride-power" type="number" min="0" max="3000" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Trittfrequenz (/min)<input id="manual-ride-cadence" type="number" min="0" max="300" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Höhenmeter (m)<input id="manual-ride-elevation" type="number" min="0" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          </div></div>
+          <div id="manual-swim-fields" class="hidden space-y-3"><p class="text-[11px] text-slate-400">Schwimmen</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <label class="text-slate-400">Ø Pace (mm:ss / 100 m)<input id="manual-swim-pace" placeholder="02:00" inputmode="numeric" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">SWOLF<input id="manual-swim-swolf" type="number" min="1" max="300" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Schlagfrequenz (/min)<input id="manual-swim-rate" type="number" min="0" max="300" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Schwimmstil<input id="manual-swim-style" placeholder="z. B. Kraul, Brust" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Beckenlänge (m)<input id="manual-swim-pool-length" type="number" min="5" max="100" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Bahnen / Längen<input id="manual-swim-length-count" type="number" min="1" max="10000" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+          </div></div>
+          <div id="manual-strength-fields" class="hidden space-y-3"><p class="text-[11px] text-slate-400">Krafttraining – Übungen und Sätze</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <input id="manual-strength-exercise" maxlength="80" placeholder="Übung, z. B. Kniebeuge" class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white">
+            <input id="manual-strength-reps" type="number" min="1" max="100" step="1" placeholder="Wiederholungen" class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white">
+            <input id="manual-strength-weight" type="number" min="0" max="1000" step="0.5" placeholder="Gewicht (kg)" class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white">
+          </div><button type="button" onclick="addManualActivityExerciseSet()" class="px-3 py-2 rounded-lg bg-purple-700 text-white text-xs">Satz hinzufügen</button><div id="manual-strength-list" class="space-y-2"></div></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <label class="text-slate-400">Ø Herzfrequenz (bpm)<input id="manual-activity-avg-hr" type="number" min="30" max="250" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Max. Herzfrequenz (bpm)<input id="manual-activity-max-hr" type="number" min="30" max="250" step="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label>
+            <label class="text-slate-400">Subjektive Belastung (RPE 1–10)<select id="manual-activity-rpe" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"><option value="">Nicht bewertet</option><option value="1">1 · Sehr leicht</option><option value="2">2</option><option value="3">3 · Leicht</option><option value="4">4</option><option value="5">5 · Mittel</option><option value="6">6</option><option value="7">7 · Anstrengend</option><option value="8">8</option><option value="9">9</option><option value="10">10 · Maximal</option></select></label>
+            <label class="text-slate-400 sm:col-span-2">Trainingsnotiz<textarea id="manual-activity-note" rows="2" maxlength="2000" placeholder="Optional: Inhalte, Intervalle, Besonderheiten …" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></textarea></label>
+          </div>
+        </section>
+        <div class="flex flex-wrap justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeManualActivityModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button><button type="button" onclick="saveManualActivity()" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-xs">Training speichern</button></div>
+        <p class="text-[10px] text-slate-500">Nur eingetragene Werte werden gespeichert. Nicht ausgefüllte Messwerte bleiben leer und werden nicht als 0 interpretiert.</p>
+      </div>
+    </div>
 
     <!-- MODAL: PERSONAL BEST -->
     <div id="strength-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
