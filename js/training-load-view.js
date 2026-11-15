@@ -4,7 +4,7 @@
  * subjective session ratings are available and the model choice is revisited.
  */
 import { state } from './state.js';
-import { getHeartRateZoneAnalysis } from './training-load.js';
+import { getHeartRateZoneAnalysis } from './training-load.js?v=2';
 
 let selectedModel = 'kajo';
 const charts = Object.create(null);
