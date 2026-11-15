@@ -338,7 +338,7 @@ assert.ok(activities.includes('function renderActivityDataQuality(activity)'), '
 assert.ok(activities.includes("container.dataset.status = series.length ? (hasTimeAxis ? 'complete' : 'limited') : 'not-calculable'"), 'activity data quality distinguishes complete, limited and not calculable');
 assert.ok(activities.includes('candidate.trainingPartner !== activity.trainingPartner'), 'C2 comparisons require the same documented partner');
 assert.ok(activities.includes('escape(getActivitySourceLabel(candidate))'), 'comparison entries retain their source provenance');
-assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('metricColor'), 'activity metrics use sport-aware circular indicators with consistent metric colors');
+assert.ok(activities.includes('activity-metric-circle-card') && activities.includes('colors[metric.label]'), 'activity metrics use sport-aware circular indicators with consistent metric colors');
 
 assert.ok(activities.includes('lat.reduce((count, rawLat, index)'), 'activity data quality counts only valid GPS coordinate pairs');
 
