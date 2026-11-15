@@ -590,6 +590,59 @@ const activitySeriesMeta = {
     bodyBattery: { label: 'Body Battery', unit: 'Punkte', color: '#a3e635', min: 0, max: 100 }
 };
 
+function isTelemetrySeriesAllowed(act, key, label = '') {
+    const type = act?.type || '';
+    const descriptor = (String(key) + ' ' + String(label)).toLowerCase()
+        .replace(/[_-]+/g, ' ');
+    // Distanz ist ein zusammenfassender Aktivitätswert, keine Telemetrie-Zeitreihe.
+    if (/distance|distanz|sum.?distance/.test(descriptor)) return false;
+
+    const isHeartRate = /heart.?rate|heartrate|(^|\s)hr($|\s)|puls|herzfrequenz/.test(descriptor);
+    const isRespiration = /respirat|breathing|atemfrequenz/.test(descriptor);
+    const isTemperature = /temperature|temp(eratur)?/.test(descriptor);
+    const isAltitude = /altitude|elevation|height|höhe|ascent/.test(descriptor);
+    const isSpeed = /(^|\s)speed($|\s)|geschwindigkeit/.test(descriptor);
+    const isPower = /power|leistung|watt/.test(descriptor);
+    const isPace = /pace|tempo/.test(descriptor);
+    const isCadence = /cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor);
+    const isSwolf = /swolf/.test(descriptor);
+    const isBodyBattery = /body.?battery/.test(descriptor);
+
+    if (['Kayaking', 'C1', 'C2'].includes(type)) {
+        // Kanu: HF als Kernwert; Atemfrequenz und Temperatur nur bei echten Messreihen.
+        return isHeartRate || isRespiration || isTemperature;
+    }
+    if (type === 'PaddleErgo') {
+        // Garmin zeichnet am Paddelergometer keine verlässliche Geschwindigkeit,
+        // Distanz oder Leistung auf. Andere tatsächlich vorhandene Werte bleiben möglich.
+        return !isSpeed && !isPower && !isAltitude && (isHeartRate || isRespiration || isTemperature || isCadence || isBodyBattery);
+    }
+    if (type === 'Run') {
+        return isHeartRate || isPace || isSpeed || isCadence || isRespiration || isTemperature
+            || isAltitude || /ground.?contact|vertical.?oscillation|stride.?length|vertical.?ratio/.test(descriptor);
+    }
+    if (type === 'Ride') {
+        return isHeartRate || isSpeed || isPower || isCadence || isRespiration || isTemperature
+            || isAltitude || /grade|steigung/.test(descriptor);
+    }
+    if (type === 'Swim') {
+        return isHeartRate || /swim.?pace|pace|tempo/.test(descriptor) || isCadence || isSwolf
+            || /stroke|swim.?style|schwimmstil|lap|runde/.test(descriptor) || isRespiration;
+    }
+    if (type === 'WeightTraining') {
+        return isHeartRate || isRespiration || isBodyBattery;
+    }
+    return true;
+}
+
+function isMeaningfulRideSpeed(act, values) {
+    if (act?.type !== 'Ride') return true;
+    const numeric = values.map(Number).filter(Number.isFinite);
+    if (!numeric.length) return false;
+    // Ergometer liefern teils nur Null- bzw. nahezu Null-Geschwindigkeit.
+    return Math.max(...numeric) > 1;
+}
+
 export function getActivityTelemetrySeries(act) {
     const telem = getActivityTelemetry(act) || {};
     const fields = act?.garminFitData?.recordFields || {};
@@ -601,17 +654,17 @@ export function getActivityTelemetrySeries(act) {
         power: [telem.power, fields.power],
         cadence: [telem.cadence, fields.cadence],
         altitude: [telem.altitude, fields.altitude, fields.enhanced_altitude],
-        distance: [telem.distance, fields.distance],
         respirationRate: [telem.respirationRate],
         bodyBattery: [telem.bodyBattery]
     };
     const result = [];
     for (const [key, sources] of Object.entries(aliases)) {
+        const meta = activitySeriesMeta[key];
+        if (!isTelemetrySeriesAllowed(act, key, meta.label)) continue;
         const values = sources.find(value => Array.isArray(value) && value.filter(item =>
             item !== null && item !== undefined && item !== '' && Number.isFinite(Number(item))
         ).length >= 2);
-        if (!values) continue;
-        const meta = activitySeriesMeta[key];
+        if (!values || (key === 'speed' && !isMeaningfulRideSpeed(act, values))) continue;
         const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
         result.push({ key, label: meta.label, unit: meta.unit, color: sportColor, values: values.map(value =>
             value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
@@ -620,18 +673,20 @@ export function getActivityTelemetrySeries(act) {
         ) });
     }
 
-    // Add every additional Garmin JSON descriptor as a selectable raw series.
-    // Do not apply quality thresholds or scale factors here; that cleanup is a later step.
+    // Zusätzliche Garmin-JSON-Messreihen bleiben verfügbar, sofern sie zur Sportart passen.
     const rawSeries = telem.metricSeries && typeof telem.metricSeries === 'object' ? telem.metricSeries : {};
     const canonicalRawAliases = new Set(['directHeartRate', 'directElevation', 'sumDistance', 'directRespirationRate', 'directBodyBattery']);
     const sportColor = getSportsCatalog()[act?.type]?.color || '#38bdf8';
     for (const [key, metric] of Object.entries(rawSeries)) {
         if (!metric || !Array.isArray(metric.values)) continue;
+        const label = typeof metric.label === 'string' && metric.label.trim()
+            ? metric.label : key.replace(/^direct/, '').replace(/^sum/, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        if (!isTelemetrySeriesAllowed(act, key, label)) continue;
         const numericCount = metric.values.filter(value => value !== null && value !== undefined
             && value !== '' && Number.isFinite(Number(value))).length;
         if (numericCount < 2) continue;
-        const label = typeof metric.label === 'string' && metric.label.trim()
-            ? metric.label : key.replace(/^direct/, '').replace(/^sum/, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        if (/speed|geschwindigkeit/i.test(key + ' ' + label)
+            && !isMeaningfulRideSpeed(act, metric.values)) continue;
         result.push({
             key,
             label: canonicalRawAliases.has(key) ? label + ' (Rohwert)' : label,
