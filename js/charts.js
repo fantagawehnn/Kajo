@@ -684,7 +684,7 @@ function getActivityTelemetryColor(key, label = '') {
     return palette[hash % palette.length];
 }
 
-function getActivityTelemetrySeries(act) {
+export function getActivityTelemetrySeries(act) {
     const telem = getActivityTelemetry(act) || {};
     const fields = act?.garminFitData?.recordFields || {};
     const aliases = {
