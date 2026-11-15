@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
 import { getTrainingLoadData } from '../js/training-load.js';
-import { getGarminTelemetry, getGarminHeartRateSeries } from '../js/data-source.js';
+import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
 
 function dateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -309,4 +309,22 @@ test('absolute timestamps are not silently converted to relative seconds', () =>
         ...activity, date: completedDay, duration: 60
     }], {}, { maxHr: 190 });
     assert.equal(load.mode, 'garmin-unavailable');
+});
+
+
+test('time-axis summary reports spacing and coverage without inferring units', () => {
+    assert.deepEqual(summarizeTimeAxis([100, 101, 103, 106]), {
+        valid: true, pointCount: 4, intervalCount: 3,
+        minInterval: 1, medianInterval: 2, maxInterval: 3, span: 6
+    });
+});
+
+test('time-axis summary rejects nonnumeric, duplicate, and descending values', () => {
+    assert.equal(summarizeTimeAxis([0, 1, 'x']).valid, false);
+    assert.equal(summarizeTimeAxis([0, 1, 1]).valid, false);
+    assert.equal(summarizeTimeAxis([0, 2, 1]).valid, false);
+});
+
+test('time-axis summary does not fabricate statistics for a missing axis', () => {
+    assert.deepEqual(summarizeTimeAxis(null), { valid: false, pointCount: 0, intervalCount: 0 });
 });
