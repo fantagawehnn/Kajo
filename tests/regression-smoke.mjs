@@ -111,7 +111,7 @@ assert.equal(storage.saveActivitiesToLocalStorage(), true);
 await new Promise(resolve => setImmediate(resolve));
 const compactActivity = JSON.parse(store.get('endurance:user:smoke-test-user:activities'))[0];
 assert.equal(compactActivity.garminTelemetry, undefined);
-assert.equal(store.get('endurance:user:smoke-test-user:garminTelemetry'), null);
+assert.equal(store.get('endurance:user:smoke-test-user:garminTelemetry'), undefined);
 assert.deepEqual(state.rawActivities[0].garminTelemetry.metricSeries.directSpeed.values, [1.2, 1.4]);
 assert.deepEqual(storage.getUserDataSnapshot().activities[0].garminTelemetry, undefined);
 
