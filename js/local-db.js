@@ -104,6 +104,14 @@ export async function getLocalCollection(key) {
     return result?.value;
 }
 
+/** Entfernt eine einzelne benutzerbezogene Sammlung aus IndexedDB. */
+export async function deleteLocalCollection(key) {
+    const db = await openLocalDatabase();
+    const transaction = db.transaction(COLLECTIONS_STORE, 'readwrite');
+    transaction.objectStore(COLLECTIONS_STORE).delete(key);
+    await transactionFinished(transaction);
+}
+
 /**
  * Übernimmt vorhandene localStorage-Daten genau einmal nach IndexedDB.
  * Die alten localStorage-Einträge werden absichtlich NICHT gelöscht.
