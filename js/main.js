@@ -1875,7 +1875,7 @@ function openCloudInitialTransferConfirmation() {
     const plannedCount = Array.isArray(snapshot.planned) ? snapshot.planned.length : 0;
     const raceCount = Array.isArray(snapshot.races) ? snapshot.races.length : 0;
     const details = document.getElementById('cloud-sync-confirm-details');
-    if (details) details.textContent = activityCount + ' Aktivitäten, ' + plannedCount + ' geplante Einheiten und ' + raceCount + ' Wettkämpfe; insgesamt ca. ' + sizeMb + ' MB JSON-Daten. Enthalten sind alle zehn App-Datenbereiche einschließlich vorhandener Aktivitäts-Messreihen. Originale FIT-Dateien sowie separate Garmin-Detail- und Gesundheitsdatensätze werden nicht erneut hochgeladen.';
+    if (details) details.textContent = activityCount + ' Aktivitäten, ' + plannedCount + ' geplante Einheiten und ' + raceCount + ' Wettkämpfe; insgesamt ca. ' + sizeMb + ' MB JSON-Daten. Die großen Garmin-Rohzeitreihen werden unabhängig davon in der separaten Garmin-Telemetrie-Cloudspeicherung abgelegt. Originale FIT-Dateien sowie separate Garmin-Gesundheitsdatensätze werden nicht in diesen JSON-Snapshot aufgenommen.';
     const modal = document.getElementById('cloud-sync-confirm-modal');
     modal?.classList.remove('hidden');
     modal?.classList.add('flex');
