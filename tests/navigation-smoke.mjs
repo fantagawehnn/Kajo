@@ -94,6 +94,9 @@ assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV f
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
 assert.ok(importer.includes("source: 'intervals', metric: 'rmssd', unit: 'ms'"), 'Intervals HRV carries explicit RMSSD provenance');
+assert.ok(importer.includes('const canImportIntervalsMetric = key =>'), 'Intervals wellness import protects existing values');
+assert.ok(importer.includes("measurementSources[key]?.source === 'intervals'"), 'Intervals only refreshes values previously sourced from Intervals');
+assert.ok(importer.includes("setIntervalsMetric('rhr', rhr, 'resting_heart_rate', 'bpm')"), 'Intervals resting heart rate carries provenance');
 assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
 assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
