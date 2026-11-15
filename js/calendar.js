@@ -558,7 +558,7 @@ function installCalendarGestures(){
     if(calendarGestureInstalled)return;const root=document.getElementById('view-calendar');if(!root)return;calendarGestureInstalled=true;
     root.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;calendarPinchStart=Math.hypot(dx,dy);}},{passive:true});
     root.addEventListener('touchend',e=>{if(e.touches.length<2)calendarPinchStart=0;},{passive:true});
-    root.addEventListener('touchmove',e=>{if(e.touches.length!==2||!calendarPinchStart)return;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,scale=Math.hypot(dx,dy)/calendarPinchStart;if(scale>1.28){calendarPinchStart=0;calendarFormatZoomStep(1);}else if(scale<.78){calendarPinchStart=0;calendarFormatZoomStep(-1);}},{passive:true});
+    root.addEventListener('touchmove',e=>{if(e.touches.length!==2||!calendarPinchStart)return;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,scale=Math.hypot(dx,dy)/calendarPinchStart;e.preventDefault();if(scale>1.28){calendarPinchStart=0;calendarFormatZoomStep(1);}else if(scale<.78){calendarPinchStart=0;calendarFormatZoomStep(-1);}},{passive:false});
     root.addEventListener('wheel',e=>{if(!e.ctrlKey||calendarWheelLocked)return;e.preventDefault();calendarWheelLocked=true;calendarFormatZoomStep(e.deltaY<0?1:-1);setTimeout(()=>calendarWheelLocked=false,350);},{passive:false});
 }
 function calendarYearPhaseStore() {
