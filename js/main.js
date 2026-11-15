@@ -2283,11 +2283,26 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
         return isGarmin && /^\d{4}-\d{2}-\d{2}$/.test(String(activity?.date || '').slice(0, 10));
     });
     const expectedWindow = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 14));
+    const sameOptionalNumber = (left, right) => left == null || left === ''
+        ? right == null || right === ''
+        : right != null && right !== '' && Number(left) === Number(right);
+    const unavailableCacheFor = activity => {
+        const adaptive = getAdaptiveRestingHr(
+            state.dailyCheckins, String(activity.date).slice(0, 10), expectedWindow, state.profile
+        );
+        return {
+            version: 1, status: 'unavailable',
+            durationMinutes: Number(activity.duration) || null,
+            maxHr: Number(state.profile?.maxHr) || null,
+            restingHr: adaptive?.value != null && Number.isFinite(Number(adaptive.value)) ? Number(adaptive.value) : null,
+            restingHrWindowDays: Number(adaptive?.windowDays) || expectedWindow
+        };
+    };
     const isCacheCurrent = activity => {
         const cache = activity?.garminAnalysis;
         if (cache?.version !== 1) return false;
-        if (Number(cache.durationMinutes) !== Number(activity.duration)
-            || Number(cache.maxHr) !== Number(state.profile?.maxHr)
+        if (!sameOptionalNumber(cache.durationMinutes, activity.duration)
+            || !sameOptionalNumber(cache.maxHr, state.profile?.maxHr)
             || Number(cache.restingHrWindowDays) !== expectedWindow) return false;
         const adaptive = getAdaptiveRestingHr(
             state.dailyCheckins, String(activity.date).slice(0, 10), expectedWindow, state.profile
@@ -2302,12 +2317,7 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
         const series = getGarminHeartRateSeries(activity);
         if (series?.hr?.length >= 2) {
             const summary = buildGarminActivityAnalysis(activity, state.settings, state.profile, state.dailyCheckins);
-            activity.garminAnalysis = summary || {
-                version: 1, status: 'unavailable',
-                durationMinutes: Number(activity.duration) || null,
-                maxHr: Number(state.profile?.maxHr) || null,
-                restingHr: null, restingHrWindowDays: expectedWindow
-            };
+            activity.garminAnalysis = summary || unavailableCacheFor(activity);
             calculated++;
             continue;
         }
@@ -2335,12 +2345,7 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
                 const summary = telemetry
                     ? buildGarminActivityAnalysis(temporaryActivity, state.settings, state.profile, state.dailyCheckins)
                     : null;
-                item.activity.garminAnalysis = summary || {
-                    version: 1, status: 'unavailable',
-                    durationMinutes: Number(item.activity.duration) || null,
-                    maxHr: Number(state.profile?.maxHr) || null,
-                    restingHr: null, restingHrWindowDays: expectedWindow
-                };
+                item.activity.garminAnalysis = summary || unavailableCacheFor(item.activity);
                 calculated++;
             }
             // Nur kompakte Kennzahlen werden dauerhaft gespeichert; Rohtelemetrie
