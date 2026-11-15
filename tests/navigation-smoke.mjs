@@ -273,18 +273,19 @@ assert.ok(css.includes('html[data-theme="light"] #csv-details-modal .activity-de
 
 
 const trainingLoadView = readFileSync('js/training-load-view.js', 'utf8');
+const trainingLoadCalculation = readFileSync('js/training-load.js', 'utf8');
 assert.ok(html.includes('id="training-load-overview"'), 'Training Load has a dedicated overview');
-assert.ok(html.includes('id="training-load-metric-detail"'), 'Training Load has a dedicated metric detail view');
-for (const metric of ['ctl', 'atl', 'tsb']) {
-  assert.ok(html.includes('data-training-load-metric="' + metric + '"'), 'Training Load metric is directly selectable: ' + metric);
-  assert.ok(trainingLoadView.includes(metric + ": ["), 'Training Load detail metadata exists: ' + metric);
-}
+assert.ok(html.includes('data-training-load-model="kajo"') && html.includes('data-training-load-model="edwards"'), 'Training Load offers KAJO and Edwards HR-zone models');
+assert.ok(html.includes('id="training-load-zone-chart"') && html.includes('id="training-load-daily-chart"'), 'Training Load shows zone distribution and daily HR-zone load');
+assert.ok(!html.includes('data-training-load-model="srpe"') && !html.includes('training-load-value-ctl'), 'sRPE and CTL/ATL/TSB are excluded from the initial HR-zone view');
 assert.ok(main.includes("from './training-load-view.js'"), 'Training Load view module is wired into main navigation');
 assert.ok(main.includes('kajoRenderTrainingLoadView: renderTrainingLoadView'), 'Training Load view refresh is exposed to shared timeframe controls');
 assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared analysis timeframe refreshes the Training Load chart');
-assert.ok(trainingLoadView.includes("['complete', 'confirmed-rest'].includes(x.dataStatus)"), 'only complete or confirmed-rest days supply the current model value');
-assert.ok(trainingLoadView.includes('spanGaps: false'), 'unknown or incomplete days remain visible as chart gaps');
-assert.ok(!trainingLoadView.includes('monotony') && !trainingLoadView.includes('training strain'), 'unsupported load metrics are not fabricated');
+assert.ok(trainingLoadView.includes('getHeartRateZoneAnalysis'), 'view uses the centralized HR-zone calculation');
+assert.ok(trainingLoadCalculation.includes('export function getHeartRateZoneAnalysis'), 'central calculation exposes both HR-zone models');
+assert.ok(trainingLoadCalculation.includes('pct < 50'), 'Edwards excludes HR time below 50% HRmax');
+assert.ok(trainingLoadView.includes('spanGaps: false'), 'days without eligible HR data remain visible as chart gaps');
+assert.ok(!trainingLoadView.includes('sRPE-Load') && !trainingLoadView.includes('CTL'), 'the initial view does not present subjective load or CTL/ATL/TSB');
 
 assert.ok(calculations.includes('export function calculateStrengthActivitySummary(exercises)'), 'strength volume calculation is centralized');
 assert.ok(calculations.includes('completeSets.length === sets.length'), 'strength volume is withheld when any set lacks data');
