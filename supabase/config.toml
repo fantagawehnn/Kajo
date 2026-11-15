@@ -1,0 +1,2 @@
+[functions.kajo-push-scheduler]
+verify_jwt = false
