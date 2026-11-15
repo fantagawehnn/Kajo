@@ -189,7 +189,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
             )).length;
             return {
                 mode: useZone ? 'garmin-zone' : 'garmin-native',
-                unit: useZone ? 'EA-HF-Punkte' : 'Garmin Load',
+                unit: useZone ? 'KAJO-HF-Punkte' : 'Garmin Load',
                 records: selected.map(({ activity, value }) => ({ activity, value })),
                 coverage: {
                     eligibleActivityCount: eligibleCount,
