@@ -122,11 +122,17 @@ async function diagnoseGarminCloudTelemetry() {
             || (Array.isArray(telemetry.time) ? telemetry.time : null);
         const axisStats = summarizeTimeAxis(axis);
         const monotonic = axisStats.valid;
-        const timeKind = monotonic
-            ? Number(axis[axis.length - 1]) > 100000000000 ? 'absolut wirkende Zeitstempel (ms)'
-                : Number(axis[axis.length - 1]) > 1000000000 ? 'absolut wirkende Zeitstempel (s)'
-                    : 'numerische Zeitachse; Einheit muss aus Import-Metadaten bestätigt werden'
-            : 'keine gültige aufsteigende Zeitachse';
+        const durationSeconds = Number(telemetry.durationSeconds);
+        const axisEnd = axisStats.valid ? Number(axis[axis.length - 1]) : NaN;
+        const matchesDuration = Number.isFinite(durationSeconds) && Number.isFinite(axisEnd)
+            && Math.abs(axisEnd - durationSeconds) < 0.01;
+        const secondsConfirmed = telemetry.source === 'garmin-activity-details-json' && matchesDuration;
+        const timeKind = !monotonic
+            ? 'keine gültige aufsteigende Zeitachse'
+            : secondsConfirmed ? 'Sekunden (durch Importquelle und durationSeconds-Abgleich bestätigt)'
+                : Number(axis[axis.length - 1]) > 100000000000 ? 'absolut wirkende Zeitstempel (ms)'
+                    : Number(axis[axis.length - 1]) > 1000000000 ? 'absolut wirkende Zeitstempel (s)'
+                        : 'numerische Zeitachse; Einheit muss aus Import-Metadaten bestätigt werden';
         const metricLines = Object.entries(metricSeries).map(([key, metric]) => {
             const values = Array.isArray(metric?.values) ? metric.values : [];
             const valid = values.filter(value => value !== null && value !== undefined && value !== ''
@@ -138,11 +144,7 @@ async function diagnoseGarminCloudTelemetry() {
         const validHr = hrCount ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
             && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length : 0;
         const load = calculateGarminZoneLoad({ ...activity, garminTelemetry: telemetry }, state.settings, state.profile);
-        const durationSeconds = Number(telemetry.durationSeconds);
-        const axisEnd = axisStats.valid ? Number(axis[axis.length - 1]) : NaN;
-        const matchesDuration = Number.isFinite(durationSeconds) && Number.isFinite(axisEnd)
-            && Math.abs(axisEnd - durationSeconds) < 0.01;
-        const timeUnitAssessment = telemetry.source === 'garmin-activity-details-json' && matchesDuration
+        const timeUnitAssessment = secondsConfirmed
             ? 'Sekunden bestätigt: Garmin-Zeitstempel wurden beim Import durch 1000 geteilt; Zeitachsenende stimmt mit durationSeconds überein'
             : 'nicht bestätigt: Importquelle und durationSeconds-Abgleich reichen für diesen Datensatz nicht aus';
         return [
@@ -168,9 +170,9 @@ async function diagnoseGarminCloudTelemetry() {
                 + ' · Summe: ' + (axisStats.valid ? axisStats.intervalSumOver30 : 'n/a'),
             '  Load-Logik: Rohintervalle > 30 werden ausgeschlossen; letzter HF-Punkt erhält ersatzweise den Median der akzeptierten Intervalle.',
             '  Import-Metadaten zur Zeiteinheit: ' + (telemetry.timeUnit || telemetry.time_unit
-                || telemetry.metricSeriesTimeUnit || telemetry.metric_series_time_unit || 'nicht vorhanden'),
-            '  Einheitenbewertung: ' + (axisStats.valid
-                ? 'nicht bestätigt; Statistik allein belegt keine Zeiteinheit'
+                || telemetry.metricSeriesTimeUnit || telemetry.metric_series_time_unit
+                || (secondsConfirmed ? 'Sekunden (aus Importquelle + durationSeconds bestätigt)' : 'nicht vorhanden')),
+            '  Einheitenbewertung: ' + (axisStats.valid ? timeUnitAssessment
                 : 'nicht bewertbar, da die Zeitachse ungültig ist'),
             '  metricSeries: ' + Object.keys(metricSeries).length + ' Reihen',
             ...metricLines,
