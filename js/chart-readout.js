@@ -22,7 +22,7 @@ export function showChartSummaryReadout(canvas, options = {}) {
   (options.items || []).filter(item => item && item.value !== null && item.value !== undefined && (typeof item.value === 'string' || Number.isFinite(Number(item.value)))).forEach(item => {
     const value = document.createElement('strong');
     value.className = 'kajo-chart-point-value';
-    value.textContent = (item.label ? item.label + ' ' : '') + (item.format ? item.format(item.value) : Number(item.value).toLocaleString('de-DE',{maximumFractionDigits:2})) + (item.unit ? ' ' + item.unit : '');
+    value.textContent = (item.label ? item.label + ' ' : '') + (item.format ? item.format(item.value) : (typeof item.value === 'string' ? item.value : Number(item.value).toLocaleString('de-DE',{maximumFractionDigits:2}))) + (item.unit ? ' ' + item.unit : '');
     if (item.color) value.style.setProperty('--readout-series-color', item.color);
     node.appendChild(value);
   });
