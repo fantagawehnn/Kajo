@@ -223,16 +223,16 @@ test('top-level Garmin HR without a matching time axis does not hide a complete 
         garminTelemetry: {
             hr: [120, 130, 140],
             time: [0, 1],
-            metricSeriesTime: [0, 10, 20],
+            metricSeriesTime: [0, 10, 20, 30],
             metricSeries: {
-                directHeartRate: { label: 'Heart Rate', values: [150, 160, 170] }
+                directHeartRate: { label: 'Heart Rate', values: [150, 160, 170, 180] }
             }
         }
     };
     const series = getGarminHeartRateSeries(activity);
     assert.equal(series.source, 'metricSeries:directHeartRate');
-    assert.deepEqual(series.hr, [150, 160, 170]);
-    assert.deepEqual(series.time, [0, 10, 20]);
+    assert.deepEqual(series.hr, [150, 160, 170, 180]);
+    assert.deepEqual(series.time, [0, 10, 20, 30]);
 });
 
 test('Garmin HR in hr/time uses the top-level series when its axis is valid', () => {
