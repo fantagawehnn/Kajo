@@ -109,6 +109,14 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const hr = heartRateSeries?.hr, time = heartRateSeries?.time;
     const adaptive = getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins);
     const zones = adaptive?.zones;
+    const cached = activity?.garminAnalysis;
+    const cachedMatches = cached?.version === 1
+        && Number(cached.durationMinutes) === Number(activity.duration)
+        && Number(cached.maxHr) === Number(profile?.maxHr)
+        && Number(cached.restingHr) === Number(adaptive?.restingHr)
+        && Number(cached.restingHrWindowDays) === Number(adaptive?.restingHrWindowDays);
+    if ((!Array.isArray(hr) || hr.length < 2) && cachedMatches && cached.kajo
+        && Array.isArray(cached.kajo.secondsByZone)) return cached.kajo;
     if (!Array.isArray(zones)) return null;
     if (!Array.isArray(hr) || hr.length < 2) return null;
     const validZones = Array.isArray(zones) && zones.length === 4
@@ -292,7 +300,15 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
         else if (!adaptiveRhr || !Number.isFinite(adaptiveRhr.value)) missingAdaptiveRhrCount++;
 
         let edwards = null;
-        if (!hasValidMaxHr) {
+        const cachedAnalysis = activity?.garminAnalysis;
+        const cachedEdwardsMatches = cachedAnalysis?.version === 1
+            && Number(cachedAnalysis.durationMinutes) === Number(activity.duration)
+            && Number(cachedAnalysis.maxHr) === Number(maxHr);
+        if (cachedEdwardsMatches && cachedAnalysis.edwards
+            && !getGarminHeartRateSeries(activity)) {
+            edwards = cachedAnalysis.edwards;
+            edwardsCount++;
+        } else if (!hasValidMaxHr) {
             // Edwards requires HFmax; KAJO additionally requires an adaptive or profile resting-HR value.
         } else {
             const series = getGarminHeartRateSeries(activity);
@@ -399,4 +415,33 @@ export function getHeartRateZoneAnalysis(records, settings, profile, dailyChecki
             below50: 'Nicht berücksichtigt'
         }
     };
+}
+
+
+/**
+ * Erstellt kompakte, dauerhaft speicherbare Analysewerte für eine Garmin-Aktivität.
+ * Die Rohtelemetrie wird nur während der Berechnung benötigt und nicht in den
+ * zurückgegebenen Cache übernommen.
+ */
+export function buildGarminActivityAnalysis(activity, settings, profile, dailyCheckins = {}) {
+    if (!activity?.date || !isGarminActivity(activity)) return null;
+    const zoneAnalysis = getHeartRateZoneAnalysis([activity], settings, profile, dailyCheckins);
+    const record = zoneAnalysis.records[0] || null;
+    const adaptive = getAdaptiveRestingHr(
+        dailyCheckins,
+        String(activity.date).slice(0, 10),
+        settings?.heartRateZoneSettings?.restingHrWindowDays ?? 14,
+        profile
+    );
+    const result = {
+        version: 1,
+        durationMinutes: Number(activity.duration) || null,
+        maxHr: Number(profile?.maxHr) || null,
+        restingHr: Number.isFinite(Number(adaptive?.value)) ? Number(adaptive.value) : null,
+        restingHrWindowDays: Number(adaptive?.windowDays) || 14,
+        kajo: record?.kajo || null,
+        edwards: record?.edwards || null,
+        calculatedAt: new Date().toISOString()
+    };
+    return result.kajo || result.edwards ? result : null;
 }
