@@ -16,7 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=126">
+    <link rel="stylesheet" href="css/styles.css?v=127">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1535,5 +1535,135 @@
         });
       }
     </script>
+
+    <!-- Pull-to-refresh: App-Shell aktualisieren, wenn am Seitenanfang nach unten gezogen wird. -->
+    <script>
+      (() => {
+        function initKajoPullToRefresh() {
+          const main = document.getElementById("app-main");
+          if (!main || main.dataset.pullRefreshReady === "true") return;
+          main.dataset.pullRefreshReady = "true";
+
+          const indicator = document.createElement("div");
+          indicator.className = "kajo-pull-refresh";
+          indicator.setAttribute("role", "status");
+          indicator.setAttribute("aria-live", "polite");
+          indicator.innerHTML = '<span class="kajo-pull-refresh-spinner" aria-hidden="true"></span><span class="kajo-pull-refresh-label">Zum Aktualisieren ziehen</span>';
+          main.prepend(indicator);
+
+          let startY = 0;
+          let distance = 0;
+          let pulling = false;
+          let refreshing = false;
+          let reloaded = false;
+
+          const label = indicator.querySelector(".kajo-pull-refresh-label");
+          const reset = () => {
+            pulling = false;
+            distance = 0;
+            indicator.classList.remove("is-pulling", "is-refreshing");
+            indicator.style.height = "0px";
+            indicator.style.transition = "";
+            label.textContent = "Zum Aktualisieren ziehen";
+          };
+
+          const reloadOnce = () => {
+            if (reloaded) return;
+            reloaded = true;
+            window.location.reload();
+          };
+
+          const refreshApp = async () => {
+            if (refreshing) return;
+            refreshing = true;
+            indicator.classList.add("is-refreshing");
+            indicator.style.height = "54px";
+            label.textContent = "KAJO wird aktualisiert …";
+
+            if (!("serviceWorker" in navigator)) {
+              reloadOnce();
+              return;
+            }
+
+            let fallback;
+            try {
+              const registration = await navigator.serviceWorker.getRegistration();
+              if (!registration) {
+                reloadOnce();
+                return;
+              }
+
+              navigator.serviceWorker.addEventListener("controllerchange", reloadOnce, { once: true });
+              await registration.update();
+
+              const worker = registration.installing;
+              if (registration.waiting || !worker) {
+                reloadOnce();
+                return;
+              }
+
+              if (worker.state === "activated") {
+                reloadOnce();
+                return;
+              }
+
+              worker.addEventListener("statechange", () => {
+                if (worker.state === "activated" || worker.state === "redundant") reloadOnce();
+              });
+              fallback = window.setTimeout(reloadOnce, 7000);
+            } catch (error) {
+              console.warn("KAJO-Aktualisierung fehlgeschlagen; lade die App erneut:", error);
+              reloadOnce();
+            } finally {
+              if (fallback && reloaded) window.clearTimeout(fallback);
+            }
+          };
+
+          main.addEventListener("touchstart", event => {
+            if (refreshing || event.touches.length !== 1 || main.scrollTop > 1) return;
+            if (event.target.closest("input, textarea, select, button, a, [contenteditable='true'], .kajo-modal-content, [role='dialog']")) return;
+            startY = event.touches[0].clientY;
+            distance = 0;
+            pulling = false;
+          }, { passive: true });
+
+          main.addEventListener("touchmove", event => {
+            if (refreshing || event.touches.length !== 1 || !startY) return;
+            const delta = event.touches[0].clientY - startY;
+            if (delta <= 0) {
+              if (pulling) reset();
+              return;
+            }
+            if (main.scrollTop > 1) return;
+            if (delta < 8 && !pulling) return;
+
+            pulling = true;
+            distance = Math.min(delta, 120);
+            event.preventDefault();
+            indicator.style.transition = "none";
+            indicator.style.height = Math.min(66, distance * 0.55) + "px";
+            indicator.classList.add("is-pulling");
+            label.textContent = distance >= 72 ? "Loslassen zum Aktualisieren" : "Weiter ziehen zum Aktualisieren";
+          }, { passive: false });
+
+          const finishPull = () => {
+            startY = 0;
+            if (!pulling) return;
+            const shouldRefresh = distance >= 72;
+            reset();
+            if (shouldRefresh) refreshApp();
+          };
+          main.addEventListener("touchend", finishPull, { passive: true });
+          main.addEventListener("touchcancel", finishPull, { passive: true });
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initKajoPullToRefresh, { once: true });
+        } else {
+          initKajoPullToRefresh();
+        }
+      })();
+    </script>
+
 </body>
 </html>
