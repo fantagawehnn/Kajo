@@ -951,8 +951,26 @@ function renderOptionalActivityViews(act) {
         const comparisonNote = manualSpeeds.length >= 2
             ? `<div class="text-[10px] text-slate-400 mt-2">Schnellster manuell markierter Abschnitt: ${fastestManual.toLocaleString('de-DE', { maximumFractionDigits: 2 })} km/h. Nur manuell markierte FIT-Runden mit eindeutiger Dauer- und Distanzangabe werden verglichen.</div>`
             : '<div class="text-[10px] text-slate-500 mt-2">Für einen Vergleich fehlen mindestens zwei manuell markierte Runden mit eindeutiger Dauer- und Distanzangabe. Automatische Runden werden nicht als Ersatz herangezogen.</div>';
-        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote);
-    } else setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', '');
+        const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
+        const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
+        const workoutStepHtml = workoutSteps.length
+            ? '<div class="mt-4 border-t border-slate-800 pt-3"><h5 class="text-xs font-semibold text-cyan-300 mb-2">Garmin-Trainingsintervalle / Workout-Schritte (' + workoutSteps.length + ')</h5>'
+                + workoutSteps.map((step, index) => {
+                    const entries = Object.entries(step || {}).filter(([, value]) => value !== null && value !== undefined && value !== '');
+                    const detail = entries.map(([key, value]) => escapeHtml(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ');
+                    return '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + detail + '</div></div>';
+                }).join('') + '</div>'
+            : '';
+        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote + workoutStepHtml);
+    } else {
+        const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
+        const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
+        const workoutStepHtml = workoutSteps.length
+            ? '<h5 class="text-xs font-semibold text-cyan-300 mb-2">Garmin-Trainingsintervalle / Workout-Schritte (' + workoutSteps.length + ')</h5>'
+                + workoutSteps.map((step, index) => '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + Object.entries(step || {}).map(([key, value]) => escapeHtml(key.replace(/_/g, ' ') + ': ' + (typeof value === 'object' ? JSON.stringify(value) : value))).join(' · ') + '</div></div>').join('')
+            : '';
+        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', workoutStepHtml);
+    }
 
     // Höhenprofil nur anzeigen, wenn ein Höhenverlauf oder Höhengewinn gespeichert ist.
     const altitude = telemetry.altitude || telemetry.elevation || act.garminFitData?.recordFields?.altitude || act.garminFitData?.recordFields?.enhanced_altitude;
