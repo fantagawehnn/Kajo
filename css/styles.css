@@ -2326,6 +2326,36 @@ body.kajo-modal-open{overflow:hidden}
 }
 
 
+/* KAJO Kalender – kompakte Zeitraum-Auswahl, Saison und Zoom-Übergänge */
+#view-calendar .calendar-view-switch{display:none!important}
+#view-calendar .calendar-format-button{display:flex;align-items:center;justify-content:space-between;gap:14px;min-width:112px;max-width:150px;padding:9px 12px;border:1px solid #334155;border-radius:10px;background:#111b29;color:#f1f5f9;font-size:.78rem;font-weight:650}
+#view-calendar .calendar-format-button svg{width:14px;height:14px;color:#94a3b8}
+#view-calendar .calendar-format-menu,#view-calendar .calendar-add-menu{position:absolute;right:0;top:calc(100% + 7px);z-index:70;width:142px;padding:5px;border:1px solid #334155;border-radius:11px;background:#111b29;box-shadow:0 14px 35px #0008}
+#view-calendar .calendar-format-menu button{display:block;width:100%;padding:8px 10px;border-radius:7px;text-align:left;color:#dbe4ef;font-size:.76rem}
+#view-calendar .calendar-format-menu button:hover,#view-calendar .calendar-format-menu button.active{background:#273449;color:#ff8585}
+#view-calendar .calendar-format-menu button.hidden{display:none}
+#view-calendar .calendar-add-menu{width:156px}
+#view-calendar .calendar-add-menu-item{padding:8px 9px;font-size:.74rem;gap:9px}
+#view-calendar .calendar-add-menu-item svg{width:15px;height:15px}
+#view-calendar #cal-format-month,#view-calendar #cal-format-week,#view-calendar #cal-format-day,#view-calendar #cal-format-year,#view-calendar #cal-format-season{transform-origin:50% 0;animation:calendar-view-enter .2s cubic-bezier(.2,.75,.25,1)}
+@keyframes calendar-view-enter{from{opacity:.45;transform:translateY(5px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+#view-calendar .calendar-season-view{display:grid;gap:12px}
+#view-calendar .calendar-season-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:17px;border:1px solid #263449;border-radius:15px;background:linear-gradient(145deg,#141d2b,#0d1420)}
+#view-calendar .calendar-season-heading p{margin:0 0 5px;color:#8da0b8;font-size:.58rem;letter-spacing:.12em;font-weight:700}
+#view-calendar .calendar-season-heading h2{margin:0;color:#fff;font-size:1.1rem;font-weight:800}
+#view-calendar .calendar-season-heading>div:first-child>span{display:block;margin-top:5px;color:#9aa8bb;font-size:.72rem}
+#view-calendar .calendar-season-stats{display:flex;gap:12px;flex-wrap:wrap}
+#view-calendar .calendar-season-stats span{display:grid;gap:2px;color:#8fa0b5;font-size:.62rem}
+#view-calendar .calendar-season-stats strong{color:#fff;font-size:1rem}
+#view-calendar .calendar-season-month{padding:12px 14px;border:1px solid #263449;border-radius:12px;background:#111a27}
+#view-calendar .calendar-season-month h3{margin:0 0 8px;color:#e5edf7;font-size:.83rem;font-weight:750;text-transform:capitalize}
+#view-calendar .calendar-season-event{display:flex;gap:12px;padding:7px 0;border-top:1px solid #253246;color:#bdc9d8;font-size:.72rem}
+#view-calendar .calendar-season-event time{flex:0 0 88px;color:#8292a8;font-variant-numeric:tabular-nums}
+#view-calendar .calendar-season-event span{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+#view-calendar .calendar-season-event-icon{width:13px;height:13px}
+#view-calendar .calendar-season-event-icon.is-race{color:#fbbf24}#view-calendar .calendar-season-event-icon.is-sick{color:#fb923c}#view-calendar .calendar-season-event-icon.is-injured{color:#facc15}#view-calendar .calendar-season-event-icon.is-period{color:#fb8caf}
+#view-calendar .calendar-season-empty{padding:22px;text-align:center;color:#8292a8;font-size:.78rem}
+@media(max-width:767px){#view-calendar .calendar-season-heading{display:grid}#view-calendar .calendar-season-stats{gap:18px}#view-calendar .calendar-season-event time{flex-basis:76px}}
 /* KAJO Kalender – kompaktere Bedienleiste und besser lesbare Monatsübersicht */
 #view-calendar .calendar-topbar{
   padding:18px 20px !important;
