@@ -848,6 +848,8 @@ async function persistGarminTelemetryBatch(activities, userId) {
 }
 
 async function syncMissingGarminTelemetry(startDate, endDate, status) {
+    const syncUserId = activeAppUserId;
+    if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
     const pending = state.rawActivities.filter(activity => {
         const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
         const date = String(activity.date || '').slice(0, 10);
@@ -859,6 +861,9 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     const errors = [];
     let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
+        if (activeAppUserId !== syncUserId || !appUserReady) {
+            return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+        }
         const activity = pending[index];
         const id = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId);
         const message = status?.querySelector('#garmin-sync-progress-message');
@@ -893,7 +898,7 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
         if ((index + 1) % 5 === 0 || index === pending.length - 1) {
             if (saveDataToLocalStorage() === false) throw new Error('Garmin-Zeitreihen konnten nicht im lokalen Datenspeicher gesichert werden.');
             const batch = pending.slice(persistedThrough, index + 1);
-            const cloudResult = await persistGarminTelemetryBatch(batch, activeAppUserId);
+            const cloudResult = await persistGarminTelemetryBatch(batch, syncUserId);
             persistedThrough = index + 1;
             if (status) {
                 const message = status.querySelector('#garmin-sync-progress-message');
