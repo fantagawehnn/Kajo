@@ -149,7 +149,7 @@ Deno.serve(async (request) => {
           await subscriber.pushTextMessage(JSON.stringify({
             title: schedule.title || "KAJO",
             body: schedule.body || "Deine persönliche Erinnerung",
-            url: "/",
+            url: "./",
             tag: `kajo-reminder-${schedule.id}`,
           }), { urgency: Urgency.Normal, ttl: 3600 });
           delivered++;
@@ -174,7 +174,7 @@ Deno.serve(async (request) => {
           .from("kajo_notification_schedules")
           .update({ last_sent_local_date: clock.date })
           .eq("id", schedule.id)
-          .neq("last_sent_local_date", clock.date);
+          .or(`last_sent_local_date.is.null,last_sent_local_date.neq.${clock.date}`);
         if (markError) console.error("Could not mark schedule as sent:", schedule.id, markError);
       }
     }
