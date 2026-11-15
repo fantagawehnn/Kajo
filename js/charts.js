@@ -28,7 +28,7 @@ function renderLoadSourceNote(timeline) {
     const mode = last?.loadMode;
     const descriptions = {
         'garmin-zone': 'Quelle: Garmin-FIT-Herzfrequenzdaten. Der angezeigte Wert ist ein KAJO-Index aus gewichteter Zeit in adaptiven Herzfrequenzreserve-Zonen (Z1–Z5), kein TSS und kein Garmin-Training-Load. Es zählen nur Aktivitäten mit auswertbarer HF-Zeitreihe und gültigen HF-Zonen.',
-        'garmin-native': 'Quelle: Garmin-eigene Trainingsbelastung. Diese Werte werden nicht mit externem TSS oder dem Endurance-AI-HF-Zonenindex vermischt und sind nicht direkt mit ihnen vergleichbar.',
+        'garmin-native': 'Quelle: Garmin-eigene Trainingsbelastung. Diese Werte werden nicht mit externem TSS oder dem KAJO-HF-Zonenindex vermischt und sind nicht direkt mit ihnen vergleichbar.',
         'external-tss': 'Externe TSS-Werte werden nicht als Belastungsgrundlage verwendet.',
         'garmin-unavailable': 'Garmin-Daten erkannt, aber aktuell keine auswertbaren Garmin-Load-Werte vorhanden. Externe TSS-Werte werden in diesem Modus nicht beigemischt.'
     };
@@ -77,7 +77,7 @@ export function renderMainLoadChart(timeline, timeframe) {
         data:{labels,datasets:[
             {label:'Langfristige Belastung (CTL)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
             {label:'Kurzfristige Belastung (ATL)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (EA-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
+            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
             {label:'Krankheit / Verletzung',data:health,showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#facc15',yAxisID:'y'}
         ]},
         options:{
