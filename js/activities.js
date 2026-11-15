@@ -539,8 +539,8 @@ export function openCSVDetailsModal(id) {
     const sportIcon = document.getElementById('modal-act-sport-icon');
     if (sportIcon) {
         sportIcon.style.setProperty('--activity-sport-color', sportColor);
-        const iconNode = sportIcon.querySelector('i');
-        if (iconNode) iconNode.setAttribute('data-lucide', sportIcons[act.type] || 'activity');
+        sportIcon.innerHTML = '<i data-lucide="' + (sportIcons[act.type] || 'activity') + '"></i>';
+        window.lucide?.createIcons?.();
     }
     const metricsContainer = document.getElementById('activity-sport-metrics');
     if (metricsContainer) metricsContainer.style.setProperty('--activity-sport-color', getSportsCatalog()[act.type]?.color || '#38bdf8');
