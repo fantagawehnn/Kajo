@@ -59,7 +59,7 @@ function renderSchedules() {
     const days = Array.isArray(item.weekdays) ? item.weekdays : [];
     const repeat = days.length === 7 ? "Täglich" : repeatForDays(days) === "weekdays" ? "Mo–Fr" : repeatForDays(days) === "weekends" ? "Sa–So" : days.map(d => DAY_LABELS[d]).join(" · ");
     const paused = item.enabled === false;
-    return '<article class="kajo-reminder-item' + (paused ? ' is-paused' : '') + '"><div class="kajo-reminder-item-main"><span class="kajo-reminder-item-icon"><i data-lucide="bell"></i></span><div class="min-w-0"><h4>' + escapeHtml(item.title) + '</h4><p>' + escapeHtml(item.body) + '</p><time>' + escapeHtml(String(item.time_local || "").slice(0,5)) + ' Uhr · ' + escapeHtml(repeat) + (paused ? ' · Pausiert' : '') + '</time></div></div><div class="kajo-reminder-actions"><button type="button" title="Erinnerung pausieren oder aktivieren" aria-label="Erinnerung pausieren oder aktivieren" onclick="toggleKajoReminder(\'' + escapeHtml(item.id) + '\')"><i data-lucide="' + (paused ? 'play' : 'pause') + '"></i></button><button type="button" title="Bearbeiten" aria-label="Erinnerung bearbeiten" onclick="editKajoReminder(\'' + escapeHtml(item.id) + '\')"><i data-lucide="pencil"></i></button><button type="button" title="Löschen" aria-label="Erinnerung löschen" onclick="deleteKajoReminder(\'' + escapeHtml(item.id) + '\')"><i data-lucide="trash-2"></i></button></div></article>';
+    return '<article class="kajo-reminder-item' + (paused ? ' is-paused' : '') + '"><div class="kajo-reminder-item-main"><span class="kajo-reminder-item-icon"><i data-lucide="bell"></i></span><div class="min-w-0"><h4>' + escapeHtml(item.title) + '</h4><p>' + escapeHtml(item.body) + '</p><time>' + escapeHtml(String(item.time_local || "").slice(0,5)) + ' Uhr · ' + escapeHtml(repeat) + (paused ? ' · Pausiert' : '') + '</time></div></div><div class="kajo-reminder-actions"><button type="button" title="Erinnerung pausieren oder aktivieren" aria-label="Erinnerung pausieren oder aktivieren" onclick="toggleKajoReminder(\'' + escapeHtml(item.id) + '\')"><i data-lucide="' + (paused ? 'play' : 'pause') + '"></i></button><button type="button" title="Bearbeiten" aria-label="Bearbeiten" onclick="editKajoReminder(\'' + escapeHtml(item.id) + '\')"><i data-lucide="pencil"></i></button><button type="button" title="Löschen" aria-label="Löschen" onclick="deleteKajoReminder(\'' + escapeHtml(item.id) + '\')"><i data-lucide="trash-2"></i></button></div></article>';
   }).join("");
   try { globalThis.lucide?.createIcons?.(); } catch {}
 }
@@ -167,7 +167,8 @@ export async function saveKajoReminder(event) {
     if (error) throw error;
     resetKajoReminderForm();
     await renderKajoPushSettings();
-    setStatus("Deine Erinnerung wurde gespeichert. Für den Versand muss der KAJO-Pushdienst eingerichtet und aktiv sein.", "");
+    // renderKajoPushSettings() displays the actual browser push-registration state.
+    // Do not overwrite it with a generic message suggesting push must be activated.
   } catch (error) {
     setStatus(error.message || "Die Erinnerung konnte nicht gespeichert werden.", "is-error");
   }
