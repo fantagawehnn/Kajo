@@ -224,7 +224,7 @@ assert.ok(main.includes('confirmCalendarSeasonPhase,') && main.includes('saveCal
 
 assert.ok(charts.includes('export function getActivityTelemetrySeries(act)'), 'activity chart options are built from available telemetry and FIT series');
 assert.ok(charts.includes('export function setActivityTelemetryMetric(metric)'), 'activity chart exposes a single metric switch');
-assert.ok(charts.includes('state.activityTelemetryMetric = preferred'), 'activity chart retains a valid selected metric');
+assert.ok(charts.includes('state.activityTelemetryMetric = next[0]') && charts.includes('state.activityTelemetryMetrics = next'), 'activity chart retains valid selected telemetry metrics');
 assert.ok(html.includes('id="activity-telemetry-switch"'), 'activity detail has one central telemetry switch');
 assert.ok(!activities.includes('activityFitSeriesChart'), 'FIT diagnostic panel does not create a second time-series chart');
 assert.ok(activities.includes("getSportsCatalog()[act.type]?.color"), 'activity header uses the configured sport color');
