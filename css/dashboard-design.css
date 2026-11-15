@@ -1,0 +1,84 @@
+/* KAJO Design-Prototyp – konsistente Dashboard-Hierarchie und kompakte Komponenten */
+:root{
+  --kajo-pro-bg:#07111f;--kajo-pro-surface:#101d2d;--kajo-pro-surface-2:#14243a;
+  --kajo-pro-border:rgba(126,160,198,.18);--kajo-pro-text:#f4f8fc;--kajo-pro-muted:#9aabc0;
+  --kajo-pro-cyan:#35c8e8;--kajo-pro-blue:#438ff0;--kajo-pro-green:#35d49a;
+  --kajo-pro-violet:#a78bfa;--kajo-pro-pink:#f36b9a;--kajo-pro-orange:#f5a044;
+}
+#view-dashboard.kajo-dashboard-design{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem;align-items:stretch}
+.kajo-dashboard-design>*{min-width:0}
+.kajo-dashboard-topline{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.25rem .15rem .5rem}
+.kajo-dashboard-heading-copy{min-width:0}
+.kajo-dashboard-eyebrow{color:var(--kajo-pro-cyan);font-size:.62rem;font-weight:850;letter-spacing:.16em}
+.kajo-dashboard-topline h1{margin:.2rem 0;color:var(--kajo-pro-text);font-size:clamp(1.35rem,3vw,1.9rem);font-weight:850;letter-spacing:-.035em}
+.kajo-dashboard-topline p:not(.kajo-dashboard-eyebrow){color:var(--kajo-pro-muted);font-size:.76rem}
+.kajo-dashboard-sport-focus{display:inline-flex;margin-top:.55rem;padding:.28rem .55rem;border:1px solid rgba(53,200,232,.25);border-radius:999px;background:rgba(53,200,232,.08);color:#83dff0;font-size:.58rem;font-weight:800;letter-spacing:.08em}
+.kajo-dashboard-customize-button{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:40px;padding:.55rem .8rem;border:1px solid var(--kajo-pro-border);border-radius:12px;background:linear-gradient(135deg,rgba(67,143,240,.16),rgba(53,200,232,.08));color:var(--kajo-pro-text);font-size:.7rem;font-weight:750;white-space:nowrap;transition:border-color .18s,transform .18s}
+.kajo-dashboard-customize-button:hover{border-color:rgba(53,200,232,.55);transform:translateY(-1px)}
+.kajo-dashboard-customize-button svg{width:16px;height:16px;color:var(--kajo-pro-cyan)}
+.kajo-dashboard-customization{grid-column:1/-1;padding:.9rem 1rem;border:1px solid rgba(53,200,232,.25);border-radius:16px;background:linear-gradient(145deg,#13243a,#0d1929);box-shadow:0 14px 35px rgba(0,0,0,.2)}
+.kajo-dashboard-customization-heading{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.kajo-dashboard-customization-heading>div{display:grid;gap:.15rem}
+.kajo-dashboard-customization-heading strong{font-size:.82rem;color:var(--kajo-pro-text)}
+.kajo-dashboard-customization-heading span,.kajo-dashboard-customization>p{font-size:.65rem;color:var(--kajo-pro-muted)}
+.kajo-dashboard-reset{font-size:.65rem;color:#7dd3fc;text-decoration:underline;text-underline-offset:3px}
+.kajo-dashboard-widget-options{display:flex;flex-wrap:wrap;gap:.5rem;margin:.8rem 0}
+.kajo-dashboard-widget-options label{display:flex;align-items:center;gap:.45rem;padding:.48rem .65rem;border:1px solid var(--kajo-pro-border);border-radius:10px;background:rgba(3,10,20,.35);color:#dce8f5;font-size:.68rem;cursor:pointer}
+.kajo-dashboard-widget-options input{accent-color:var(--kajo-pro-cyan);width:15px;height:15px}
+.kajo-dashboard-widget-hidden{display:none!important}
+#view-dashboard .kajo-home-status{grid-column:1/-1}
+#view-dashboard #home-daily-overview{grid-column:1/-1}
+#view-dashboard .kajo-home-recommendation{grid-column:1/-1}
+#view-dashboard .kajo-home-wearables{grid-column:span 6}
+#view-dashboard .kajo-home-race{grid-column:span 6}
+#view-dashboard #home-training-week{grid-column:1/-1}
+#view-dashboard .kajo-home-section,#view-dashboard .kajo-home-race,#view-dashboard .kajo-home-recommendation{min-width:0;border:1px solid var(--kajo-pro-border);border-radius:18px;background:linear-gradient(145deg,rgba(19,34,53,.96),rgba(10,21,35,.98));box-shadow:0 8px 24px rgba(0,0,0,.14)}
+#view-dashboard .kajo-home-section{padding:1rem}
+#view-dashboard .kajo-home-section-heading{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:.8rem}
+#view-dashboard .kajo-home-section-heading h2,#view-dashboard .kajo-home-section-heading strong{font-size:.85rem;font-weight:800;color:var(--kajo-pro-text)}
+#view-dashboard .kajo-home-meta{color:var(--kajo-pro-muted);font-size:.62rem}
+#view-dashboard .kajo-home-status{padding:1rem;border:1px solid var(--kajo-pro-border);border-radius:18px;background:radial-gradient(ellipse at 14% 10%,rgba(53,200,232,.13),transparent 40%),linear-gradient(145deg,#14263d,#0c192a)}
+#view-dashboard .kajo-home-status>h2{margin-bottom:.75rem;color:var(--kajo-pro-muted);font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+#view-dashboard .kajo-readiness-grid{gap:.75rem}
+#view-dashboard .kajo-ring-card{min-width:0;padding:.5rem;border:1px solid rgba(135,170,205,.14);border-radius:15px;background:rgba(5,15,28,.46);transition:transform .18s,border-color .18s}
+#view-dashboard .kajo-ring-card:hover{transform:translateY(-2px);border-color:rgba(53,200,232,.45)}
+#view-dashboard .kajo-home-recommendation{display:grid;gap:.35rem;padding:1rem;text-align:left;color:var(--kajo-pro-text)}
+#view-dashboard .kajo-home-recommendation .kajo-home-section-heading{margin:0}
+#view-dashboard .kajo-home-recommendation>strong{font-size:1rem}
+#view-dashboard .kajo-home-recommendation>span:not(.kajo-home-section-heading),#view-dashboard .kajo-home-recommendation small{color:var(--kajo-pro-muted);font-size:.68rem;line-height:1.45}
+#view-dashboard .kajo-home-race{display:grid;gap:.35rem;padding:1rem;text-align:left;color:var(--kajo-pro-text)}
+#view-dashboard .kajo-home-race .kajo-home-section-heading{margin:0}
+#view-dashboard .kajo-home-race-main{display:flex;align-items:center;gap:.55rem;font-size:.9rem}
+#view-dashboard .kajo-home-race-main>svg{color:var(--kajo-pro-orange)}
+#view-dashboard .kajo-week-chart{min-height:90px}
+#view-dashboard .kajo-home-wearables .kajo-circle-grid{gap:.6rem}
+#view-dashboard .kajo-home-wearables .kajo-health-circle-item{padding:.5rem .25rem;border:1px solid rgba(135,170,205,.12);border-radius:13px;background:rgba(4,13,25,.35)}
+#view-dashboard .home-today-list{gap:.55rem}
+#view-dashboard .kajo-home-session-group{padding:.7rem;border-radius:13px;background:rgba(3,12,23,.32);border:1px solid rgba(135,170,205,.1)}
+#view-dashboard .kajo-home-subheading h3{font-size:.72rem}
+#view-dashboard .kajo-home-date{color:var(--kajo-pro-muted);font-size:.65rem}
+#view-dashboard .kajo-empty{font-size:.68rem;color:var(--kajo-pro-muted)}
+/* Gemeinsame Oberflächen in den Analyse- und Trainingsbereichen */
+.kajo-analysis-overview-panel,.kajo-training-load-panel{border-color:var(--kajo-pro-border)!important;border-radius:16px!important;background:linear-gradient(145deg,rgba(17,31,48,.96),rgba(10,20,33,.98))!important;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.kajo-analysis-switch button,.kajo-load-switch button{border-radius:999px}
+.kajo-analysis-switch button.active,.kajo-load-switch button.active{background:rgba(53,200,232,.16);color:#8be4f1;border-color:rgba(53,200,232,.35)}
+@media(max-width:760px){
+ #view-dashboard.kajo-dashboard-design{gap:.7rem}
+ .kajo-dashboard-topline{align-items:flex-start}
+ .kajo-dashboard-topline h1{font-size:1.35rem}
+ .kajo-dashboard-topline p:not(.kajo-dashboard-eyebrow){font-size:.66rem}
+ .kajo-dashboard-sport-focus{font-size:.52rem}
+ .kajo-dashboard-customize-button{min-height:36px;padding:.45rem .55rem;font-size:0}
+ .kajo-dashboard-customize-button svg{width:18px;height:18px}
+ #view-dashboard .kajo-home-wearables,#view-dashboard .kajo-home-race{grid-column:1/-1}
+ #view-dashboard .kajo-home-section{padding:.8rem}
+ #view-dashboard .kajo-readiness-grid{gap:.45rem}
+ #view-dashboard .kajo-ring-card{padding:.35rem}
+ .kajo-dashboard-widget-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .kajo-dashboard-widget-options label{font-size:.62rem}
+}
+@media(max-width:390px){
+ .kajo-dashboard-topline{gap:.5rem}
+ .kajo-dashboard-sport-focus{letter-spacing:.03em}
+ #view-dashboard .kajo-home-section-heading h2{font-size:.78rem}
+}
