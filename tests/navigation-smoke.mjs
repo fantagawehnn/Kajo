@@ -283,7 +283,7 @@ assert.ok(main.includes('kajoRenderTrainingLoadView: renderTrainingLoadView'), '
 assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared analysis timeframe refreshes the Training Load chart');
 assert.ok(trainingLoadView.includes('getHeartRateZoneAnalysis'), 'view uses the centralized HR-zone calculation');
 assert.ok(trainingLoadCalculation.includes('export function getHeartRateZoneAnalysis'), 'central calculation exposes both HR-zone models');
-assert.ok(trainingLoadCalculation.includes('pct < 50'), 'Edwards excludes HR time below 50% HRmax');
+assert.ok(/pct\s*<\s*50/.test(trainingLoadCalculation), 'Edwards excludes HR time below 50% HRmax');
 assert.ok(trainingLoadView.includes('spanGaps: false'), 'days without eligible HR data remain visible as chart gaps');
 
 
