@@ -168,7 +168,15 @@ async function diagnoseGarminCloudTelemetry() {
                 + ' · Summe: ' + (axisStats.valid ? axisStats.intervalSumAtMost30 : 'n/a'),
             '  Rohintervalle > 30 Quelleinheiten: ' + (axisStats.valid ? axisStats.intervalsOver30 : 'n/a')
                 + ' · Summe: ' + (axisStats.valid ? axisStats.intervalSumOver30 : 'n/a'),
-            '  Load-Logik: Rohintervalle > 30 werden ausgeschlossen; letzter HF-Punkt erhält ersatzweise den Median der akzeptierten Intervalle.',
+            '  Load-Logik: Jeder HF-Punkt gilt bis zum nächsten Zeitstempel; der letzte Punkt erhält keine zusätzliche Zeit. Intervalle > 30 Sekunden werden ausgeschlossen.',
+            '  Aktivitätstyp für HF-Zonen: ' + (activity.type || 'nicht angegeben'),
+            '  Zonenquelle: ' + (load?.zoneSource || 'nicht berechenbar'),
+            '  Verwendete Zonengrenzen (Z1–Z4): ' + (load?.zones?.join(' / ') || 'nicht verfügbar'),
+            '  Zonenzeit (Sekunden, Z1–Z5): ' + (load?.secondsByZone?.join(' / ') || 'nicht verfügbar'),
+            '  Für Load ausgewertete Sekunden: ' + (load?.totalSeconds ?? 'nicht berechenbar')
+                + ' / aufgezeichnete Zeit: ' + (load?.recordedSeconds ?? 'nicht verfügbar'),
+            '  Ausgeschlossene Intervalle > 30 s: ' + (load?.excludedIntervalCount ?? 'nicht berechenbar')
+                + ' · Sekunden: ' + (load?.excludedIntervalSeconds ?? 'nicht verfügbar'),
             '  Import-Metadaten zur Zeiteinheit: ' + (telemetry.timeUnit || telemetry.time_unit
                 || telemetry.metricSeriesTimeUnit || telemetry.metric_series_time_unit
                 || (secondsConfirmed ? 'Sekunden (aus Importquelle + durationSeconds bestätigt)' : 'nicht vorhanden')),
