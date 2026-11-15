@@ -215,3 +215,98 @@ test('Garmin JSON metricSeries heart rate is normalized for load calculations', 
     assert.equal(load.records.length, 1);
     assert.ok(load.records[0].value > 0);
 });
+
+
+test('a partial top-level HR array does not mask an aligned metricSeries', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            hr: [150, 160, 170],
+            metricSeries: {
+                directHeartRate: { label: 'Heart Rate', values: [140, 150, 160], time: [0, 15, 30] }
+            }
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.equal(series.source, 'metricSeries:directHeartRate');
+    assert.deepEqual(series.hr, [140, 150, 160]);
+    assert.deepEqual(series.time, [0, 15, 30]);
+});
+
+test('metricSeries accepts its own aligned time axis', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            metricSeries: {
+                heartRate: { label: 'Heart Rate', values: [120, 130, 140], time: [0, 10, 20] }
+            }
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.deepEqual(series.time, [0, 10, 20]);
+});
+
+test('metricSeriesTime is used only when it matches the HR series length', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            metricSeriesTime: [0, 10, 20],
+            metricSeries: {
+                directHeartRate: { label: 'Heart Rate', values: [120, 130, 140] }
+            }
+        }
+    };
+    assert.deepEqual(getGarminHeartRateSeries(activity).time, [0, 10, 20]);
+});
+
+test('missing time axis remains explicit and does not fabricate timestamps', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            metricSeries: {
+                directHeartRate: { label: 'Heart Rate', values: [120, 130, 140] }
+            }
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.deepEqual(series.hr, [120, 130, 140]);
+    assert.equal(series.time, null);
+});
+
+test('mismatched and non-monotonic time axes are rejected', () => {
+    const mismatched = {
+        source: 'garmin',
+        garminTelemetry: {
+            metricSeriesTime: [0, 10],
+            metricSeries: {
+                directHeartRate: { label: 'Heart Rate', values: [120, 130, 140] }
+            }
+        }
+    };
+    assert.equal(getGarminHeartRateSeries(mismatched).time, null);
+
+    const nonMonotonic = {
+        source: 'garmin',
+        garminTelemetry: {
+            time: [0, 20, 10],
+            hr: [120, 130, 140]
+        }
+    };
+    assert.equal(getGarminHeartRateSeries(nonMonotonic).time, null);
+});
+
+test('absolute timestamps are not silently converted to relative seconds', () => {
+    const activity = {
+        source: 'garmin',
+        garminTelemetry: {
+            time: [1794700000000, 1794700001000, 1794700002000],
+            hr: [120, 130, 140]
+        }
+    };
+    const series = getGarminHeartRateSeries(activity);
+    assert.deepEqual(series.time, activity.garminTelemetry.time);
+    const load = getTrainingLoadData([{
+        ...activity, date: completedDay, duration: 60
+    }], {}, { maxHr: 190 });
+    assert.equal(load.mode, 'garmin-unavailable');
+});

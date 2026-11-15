@@ -1201,14 +1201,13 @@
             <section id="activity-route-map-panel" class="hidden activity-detail-panel"></section>
 
             <section id="activity-telemetry-diagnostic-source" class="activity-detail-panel" aria-label="Zeitreihen-Diagnose">
+                <p class="text-[11px] text-slate-400 mb-2">Prüft die aktuell geladene Aktivität und den zugehörigen gespeicherten Supabase-Telemetriedatensatz. Die Cloud-Prüfung verändert keine Daten und gibt keine Herzfrequenz-Rohwerte aus.</p>
                 <div class="flex flex-wrap gap-2">
-                    <button id="activity-telemetry-diagnose" type="button" class="activity-series-switch">Zeitreihen-Diagnose ausführen</button>
-                    <button id="garmin-json-diagnostic-run" type="button" class="activity-series-switch">Garmin-JSON-Diagnose für diese Aktivität ausführen</button>
-                    <button id="garmin-json-import-run" type="button" class="activity-series-switch">Garmin-Telemetrie für diese Aktivität ergänzen</button>
+                    <button id="garmin-cloud-telemetry-diagnostic-run" type="button" class="activity-series-switch">Gespeicherte Garmin-Telemetrie prüfen (nur lesend)</button>
+                    <button id="activity-telemetry-diagnose" type="button" class="activity-series-switch">Geladene Zeitreihe lokal prüfen</button>
                 </div>
+                <pre id="garmin-cloud-telemetry-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
                 <pre id="activity-telemetry-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
-                <pre id="garmin-json-diagnostic-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
-                <pre id="garmin-json-import-output" class="activity-detail-data-status mt-2 whitespace-pre-wrap text-xs" aria-live="polite" hidden></pre>
             </section>
             <div class="activity-detail-grid">
                 <div class="activity-detail-primary">

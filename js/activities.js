@@ -90,6 +90,109 @@ function diagnoseSelectedActivityTelemetry() {
     output.hidden = false;
 }
 
+// Liest den tatsächlich gespeicherten Cloud-Datensatz der geöffneten Aktivität.
+// Die Ausgabe enthält ausschließlich Struktur- und Qualitätskennzahlen, keine Rohwerte.
+async function diagnoseGarminCloudTelemetry() {
+    const output = document.getElementById('garmin-cloud-telemetry-diagnostic-output');
+    const button = document.getElementById('garmin-cloud-telemetry-diagnostic-run');
+    const activity = state.selectedActivityForModal;
+    if (!output || !button || !activity) return;
+
+    const rawId = activity.sourceRefs?.garminActivityId
+        ?? activity.garminData?.activityId ?? activity.id;
+    const activityId = String(rawId ?? '').replace(/^garmin-/, '');
+    if (!/^\d+$/.test(activityId)) {
+        output.textContent = 'Für diese Aktivität ist keine gültige Garmin-Aktivitäts-ID hinterlegt.';
+        output.hidden = false;
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Cloud-Datensatz wird geprüft …';
+    output.textContent = 'Lese den gespeicherten Telemetrie-Datensatz nur lesend aus …';
+    output.hidden = false;
+
+    const summarize = (label, telemetry) => {
+        if (!telemetry || typeof telemetry !== 'object') return [label + ': kein Telemetrieobjekt'];
+        const metricSeries = telemetry.metricSeries && typeof telemetry.metricSeries === 'object'
+            ? telemetry.metricSeries : {};
+        const series = getGarminHeartRateSeries({ ...activity, garminTelemetry: telemetry });
+        const axis = series?.time
+            || (Array.isArray(telemetry.metricSeriesTime) ? telemetry.metricSeriesTime : null)
+            || (Array.isArray(telemetry.time) ? telemetry.time : null);
+        const monotonic = Array.isArray(axis) && axis.length > 1
+            && axis.every(value => value !== null && value !== '' && Number.isFinite(Number(value)))
+            && axis.slice(1).every((value, index) => Number(value) > Number(axis[index]));
+        const timeKind = monotonic
+            ? Number(axis[axis.length - 1]) > 100000000000 ? 'absolut wirkende Zeitstempel (ms)'
+                : Number(axis[axis.length - 1]) > 1000000000 ? 'absolut wirkende Zeitstempel (s)'
+                    : 'numerische Zeitachse; Einheit muss aus Import-Metadaten bestätigt werden'
+            : 'keine gültige aufsteigende Zeitachse';
+        const metricLines = Object.entries(metricSeries).map(([key, metric]) => {
+            const values = Array.isArray(metric?.values) ? metric.values : [];
+            const valid = values.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value))).length;
+            return '  · ' + key + (metric?.label ? ' (' + metric.label + ')' : '')
+                + ': ' + values.length + ' Werte, ' + valid + ' numerisch';
+        });
+        const hrCount = Array.isArray(series?.hr) ? series.hr.length : 0;
+        const validHr = hrCount ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
+            && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length : 0;
+        const load = calculateGarminZoneLoad({ ...activity, garminTelemetry: telemetry }, state.settings, state.profile);
+        return [
+            label + ':',
+            '  HF-Reihe erkannt: ' + (series ? 'Ja (' + series.source + ')' : 'Nein'),
+            '  HF-Messpunkte: ' + hrCount + ' · plausibel: ' + validHr,
+            '  Zeitwerte zur HF-Reihe: ' + (Array.isArray(series?.time) ? series.time.length : 0),
+            '  Zeitachse: ' + timeKind,
+            '  metricSeries: ' + Object.keys(metricSeries).length + ' Reihen',
+            ...metricLines,
+            '  KAJO-HF-Load: ' + (load ? load.value + ' ' + load.unit + ' (' + load.method + ')' : 'nicht berechenbar')
+        ];
+    };
+
+    try {
+        const { supabase } = await import('./supabase-client.js');
+        if (!supabase) throw new Error('Supabase ist in dieser Sitzung nicht verfügbar.');
+        const { data, error } = await supabase
+            .from('garmin_activity_telemetry')
+            .select('telemetry')
+            .eq('garmin_activity_id', activityId)
+            .maybeSingle();
+        if (error) throw error;
+
+        const localTelemetry = activity.garminTelemetry && typeof activity.garminTelemetry === 'object'
+            ? activity.garminTelemetry : null;
+        const cloudTelemetry = data?.telemetry && typeof data.telemetry === 'object'
+            ? data.telemetry : null;
+        const lines = [
+            'KAJO – Garmin-Telemetrie-Diagnose (nur lesend)',
+            'Aktivität: ' + (activity.name || activity.type || 'Garmin-Aktivität')
+                + ' · ' + String(activity.date || '').slice(0, 10),
+            'Cloud-Datensatz: ' + (cloudTelemetry ? 'vorhanden' : 'nicht gefunden'),
+            ''
+        ];
+        lines.push(...summarize('Aktuell geladenes Aktivitätsobjekt', localTelemetry));
+        lines.push('');
+        lines.push(...summarize('Gespeicherter Supabase-Datensatz', cloudTelemetry));
+        if (localTelemetry && cloudTelemetry) {
+            const localSeries = getGarminHeartRateSeries({ ...activity, garminTelemetry: localTelemetry });
+            const cloudSeries = getGarminHeartRateSeries({ ...activity, garminTelemetry: cloudTelemetry });
+            lines.push('', 'VERGLEICH',
+                'HF-Messpunktzahl lokal / Cloud: ' + (localSeries?.hr?.length ?? 0) + ' / ' + (cloudSeries?.hr?.length ?? 0),
+                'Zeitreihenquelle lokal / Cloud: ' + (localSeries?.source || 'keine') + ' / ' + (cloudSeries?.source || 'keine'));
+        }
+        lines.push('', 'Hinweis: Es wurden keine Daten verändert und keine Messwerte ausgegeben.');
+        output.textContent = lines.join('\n');
+    } catch (error) {
+        output.textContent = 'Cloud-Diagnose fehlgeschlagen: ' + (error?.message || String(error))
+            + '\nPrüfe, ob die Migration garmin_activity_telemetry aktiv ist und die angemeldete Sitzung Leserechte besitzt.';
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Gespeicherte Garmin-Telemetrie prüfen (nur lesend)';
+    }
+}
+
 // Gezielte, serverseitige JSON-Diagnose für die ausdrücklich freigegebene Aktivität.
 // Der Supabase-Client übermittelt die bestehende Sitzung automatisch; es werden
 // keine Daten geschrieben und keine FIT-Dateien geladen.
@@ -237,6 +340,7 @@ async function importGarminActivityJsonTelemetry() {
 if (typeof document.addEventListener === 'function') {
     document.addEventListener('click', event => {
         if (event.target?.closest?.('#activity-telemetry-diagnose')) diagnoseSelectedActivityTelemetry();
+        if (event.target?.closest?.('#garmin-cloud-telemetry-diagnostic-run')) diagnoseGarminCloudTelemetry();
         if (event.target?.closest?.('#garmin-json-diagnostic-run')) diagnoseGarminActivityJson();
         if (event.target?.closest?.('#garmin-json-import-run')) importGarminActivityJsonTelemetry();
     });
@@ -1249,7 +1353,7 @@ function initializeActivityDetailTabs() {
     if (!modal || !content || !overview || modal.dataset.activityTabsReady === 'true') return;
 
     // Die Detailansicht ist ein durchgehender Bericht statt mehrerer Registerkarten.
-    const removeIds = ['activity-data-quality', 'activity-fit-data-panel', 'activity-telemetry-diagnostic-source'];
+    const removeIds = ['activity-data-quality', 'activity-fit-data-panel'];
     removeIds.forEach(id => document.getElementById(id)?.remove());
     document.getElementById('activity-hr-series-status')?.remove();
     content.querySelector('.activity-detail-grid')?.remove();
@@ -1283,7 +1387,7 @@ function initializeActivityDetailTabs() {
     createAccordion('load', 'Trainingsbelastung', ['activity-training-stimulus', 'activity-benefit-profile', 'activity-load-context-panel']);
     createAccordion('intervals', 'Intervalle & Runden', ['activity-intervals-panel']);
     createAccordion('sport', 'Sportartspezifische Analyse', ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel']);
-    createAccordion('diagnostics', 'Weitere Leistungsanalysen', ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel']);
+    createAccordion('diagnostics', 'Weitere Leistungsanalysen & Datenprüfung', ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel', 'activity-telemetry-diagnostic-source']);
 
     // Bearbeitung bleibt außerhalb der Analysebereiche und wird über den Stift im Kopf geöffnet.
     const editPanel = document.getElementById('activity-edit-panel');
@@ -1301,7 +1405,7 @@ function renderActivityDetailTabEmptyStates() {
         load: ['activity-training-stimulus', 'activity-benefit-profile', 'activity-load-context-panel'],
         intervals: ['activity-intervals-panel'],
         sport: ['activity-canoe-panel', 'activity-route-map-panel', 'activity-elevation-panel', 'activity-strength-analysis-panel'],
-        diagnostics: ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel']
+        diagnostics: ['activity-recovery-panel', 'activity-efficiency-panel', 'activity-comparison-panel', 'activity-ai-panel', 'activity-telemetry-diagnostic-source']
     };
     Object.entries(groups).forEach(([key, ids]) => {
         const details = document.querySelector('[data-activity-accordion="' + key + '"]');

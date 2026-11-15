@@ -54,33 +54,43 @@ export function getActivityTelemetry(activity) {
 
 /**
  * Return the Garmin heart-rate series in the normalized shape used by
- * training-load and zone calculations. Garmin Activity Details JSON can store
- * sensor streams under metricSeries (for example directHeartRate) rather than
- * the legacy top-level hr/time arrays.
+ * training-load and zone calculations. Prefer a complete, aligned time series
+ * over an earlier HR-only candidate so a partial top-level array cannot mask
+ * a usable metricSeries entry.
  */
 export function getGarminHeartRateSeries(activity) {
     const telemetry = getGarminTelemetry(activity);
     if (!telemetry) return null;
+
     const validValues = values => Array.isArray(values) && values.length >= 2
-        && values.filter(value => Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length >= 2;
+        && values.filter(value => value !== null && value !== undefined && value !== ''
+            && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length >= 2;
+    const validTime = (time, length) => Array.isArray(time) && time.length === length
+        && time.every(value => value !== null && value !== '' && Number.isFinite(Number(value)))
+        && time.slice(1).every((value, index) => Number(value) > Number(time[index]));
+
+    const candidates = [];
     if (validValues(telemetry.hr)) {
-        const time = Array.isArray(telemetry.time) && telemetry.time.length === telemetry.hr.length
-            ? telemetry.time : null;
-        return { hr: telemetry.hr, time, source: 'hr' };
+        candidates.push({
+            hr: telemetry.hr,
+            time: validTime(telemetry.time, telemetry.hr.length) ? telemetry.time : null,
+            source: 'hr'
+        });
     }
+
     const metricSeries = telemetry.metricSeries && typeof telemetry.metricSeries === 'object'
         ? telemetry.metricSeries : {};
     for (const [key, metric] of Object.entries(metricSeries)) {
         const descriptor = (String(key) + ' ' + String(metric?.label || '')).toLowerCase().replace(/[_-]+/g, ' ');
         if (!/(heart.?rate|heartrate|(^|\s)hr($|\s)|puls|herzfrequenz)/.test(descriptor)
             || !validValues(metric?.values)) continue;
-        const time = Array.isArray(metric.time) && metric.time.length === metric.values.length
-            ? metric.time
-            : Array.isArray(telemetry.metricSeriesTime) && telemetry.metricSeriesTime.length === metric.values.length
-                ? telemetry.metricSeriesTime
-                : Array.isArray(telemetry.time) && telemetry.time.length === metric.values.length
-                    ? telemetry.time : null;
-        return { hr: metric.values, time, source: 'metricSeries:' + key };
+        const axisCandidates = [metric.time, telemetry.metricSeriesTime, telemetry.time];
+        const time = axisCandidates.find(axis => validTime(axis, metric.values.length)) || null;
+        candidates.push({ hr: metric.values, time, source: 'metricSeries:' + key });
     }
-    return null;
+
+    // A complete series is required by Load. If none has an aligned time axis,
+    // retain the best HR-only candidate so duration-based zone distribution
+    // can still be calculated where the activity duration is valid.
+    return candidates.find(candidate => candidate.time) || candidates[0] || null;
 }
