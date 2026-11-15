@@ -2280,7 +2280,7 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
             || activity?.garminData?.activityId != null
             || activity?.garminFitImported === true
             || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'));
-        return isGarmin && /^\\d{4}-\\d{2}-\\d{2}$/.test(String(activity?.date || '').slice(0, 10));
+        return isGarmin && /^\d{4}-\d{2}-\d{2}$/.test(String(activity?.date || '').slice(0, 10));
     });
     const expectedWindow = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 14));
     const isCacheCurrent = activity => {
@@ -2314,7 +2314,7 @@ async function backfillGarminAnalysisOnOpen(userId, sequence) {
         const rawId = activity?.sourceRefs?.garminActivityId
             ?? activity?.garminData?.activityId ?? activity?.id;
         const id = String(rawId ?? '').replace(/^garmin-/, '');
-        if (/^\\d+$/.test(id)) pending.push({ activity, id });
+        if (/^\d+$/.test(id)) pending.push({ activity, id });
     }
 
     const BATCH_SIZE = 25;
