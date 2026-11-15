@@ -137,7 +137,10 @@ export async function uploadMissingGarminTelemetry(supabase, userId, candidateRe
     let uploaded = 0;
     for (let offset = 0; offset < missingRecords.length; offset += INSERT_BATCH_SIZE) {
         const batch = missingRecords.slice(offset, offset + INSERT_BATCH_SIZE);
-        const { error } = await supabase.from(TABLE).insert(batch);
+        const { error } = await supabase.from(TABLE).upsert(batch, {
+            onConflict: 'user_id,garmin_activity_id',
+            ignoreDuplicates: true
+        });
         if (error) throw error;
         uploaded += batch.length;
     }
