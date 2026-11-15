@@ -510,3 +510,19 @@ test('Garmin HR-zone load adapts Karvonen boundaries to each activity date RHR w
     assert.equal(elevated.adaptiveRestingHr, 60);
 });
 
+
+
+test('adaptive RHR prefers Garmin daily value over a legacy/manual rhr field', () => {
+    const checkins = {
+        '2026-01-01': { rhr: 62, garminRhr: 49 },
+        '2026-01-02': { rhr: 63, garminRhr: 50 },
+        '2026-01-03': { rhr: 61, garminRhr: 51 },
+        '2026-01-04': { rhr: 64, garminRhr: 48 },
+        '2026-01-05': { rhr: 60, garminRhr: 50 },
+        '2026-01-06': { rhr: 62, garminRhr: 49 },
+        '2026-01-07': { rhr: 63, garminRhr: 50 }
+    };
+    const result = getAdaptiveRestingHr(checkins, '2026-01-07', 7, {});
+    assert.equal(result.value, 50);
+    assert.equal(result.source, 'rolling-median');
+});
