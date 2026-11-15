@@ -15,6 +15,7 @@ const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
 const dataSource = readFileSync('js/data-source.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
+const healthData = readFileSync('js/health-data.js', 'utf8');
 const competitions = readFileSync('js/competitions.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
@@ -99,6 +100,8 @@ assert.ok(importer.includes("measurementSources[key]?.source === 'intervals'"), 
 assert.ok(importer.includes("setIntervalsMetric('rhr', rhr, 'resting_heart_rate', 'bpm')"), 'Intervals resting heart rate carries provenance');
 assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
 assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
+assert.ok(healthData.includes('if (identity === null) return null;'), 'personal baselines require documented measurement provenance');
+assert.ok(healthData.includes('measurementIdentity(row, key) === identity'), 'personal baselines compare only matching measurement identities');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
