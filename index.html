@@ -19,7 +19,7 @@
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=143">
+    <link rel="stylesheet" href="css/styles.css?v=144">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -223,6 +223,21 @@
             <h1 class="text-xl font-bold text-white">Gesundheitsdaten</h1>
             <p class="text-xs text-slate-400">Deine gespeicherten Gesundheitsmesswerte mit persönlicher Einordnung und Verlauf.</p>
           </header>
+          <section id="kajo-period-manager" class="kajo-period-manager">
+  <div class="kajo-period-heading"><div><p class="kajo-analysis-eyebrow">ZYKLUS &amp; MENSTRUATION</p><h2>Menstruationszyklus</h2><p>Kontrolliere und korrigiere deine eingetragenen Periodentage – auch rückwirkend.</p></div><span class="kajo-period-icon"><i data-lucide="calendar-heart"></i></span></div>
+  <div class="kajo-period-editor">
+    <div class="kajo-period-editor-title"><strong id="kajo-period-form-title">Periode eintragen</strong><span id="kajo-period-form-hint">Wähle den ersten und letzten Periodentag.</span></div>
+    <div class="kajo-period-date-grid">
+      <label>Beginn<input id="kajo-period-start" type="date" max="" /></label>
+      <label>Ende<input id="kajo-period-end" type="date" max="" /></label>
+    </div>
+    <div class="kajo-period-actions"><button type="button" id="kajo-period-cancel" class="hidden" onclick="cancelPeriodEdit()">Abbrechen</button><button type="button" onclick="saveManagedPeriod()">Zeitraum speichern</button></div>
+    <p id="kajo-period-feedback" class="kajo-period-feedback" aria-live="polite"></p>
+  </div>
+  <div class="kajo-period-list-heading"><h3>Gespeicherte Perioden</h3><span id="kajo-period-count">—</span></div>
+  <div id="kajo-period-list" class="kajo-period-list"><p class="text-xs text-slate-500">Periodeneinträge werden geladen …</p></div>
+  <p class="kajo-period-footnote">Beim Bearbeiten werden ausschließlich die Periodenmarkierungen im gewählten Zeitraum geändert. Andere Check-in- und Zyklusdaten bleiben erhalten.</p>
+</section>
           <div id="kajo-health-data-overview" class="space-y-5">
             <div class="kajo-health-data-intro"><i data-lucide="chart-no-axes-combined"></i><p>Wähle einen Messwert aus, um seinen Verlauf und deine persönliche Baseline zu sehen. Angezeigt werden nur tatsächlich gespeicherte Werte; fehlende Messungen bleiben Lücken.</p></div>
             <div id="kajo-health-metric-list" class="space-y-5"></div>
@@ -1628,7 +1643,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=124"></script>
+    <script type="module" src="js/main.js?v=125"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
