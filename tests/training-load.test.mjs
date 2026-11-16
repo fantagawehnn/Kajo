@@ -80,6 +80,17 @@ test('Garmin native training load is used when available', () => {
     assert.equal(day.loadMode, 'garmin-native');
 });
 
+test('CTL and ATL leave the provisional phase after 126 fully covered days', () => {
+    const startDay = offsetDate(today, -127);
+    const lastCoveredDay = offsetDate(today, -2);
+    const timeline = computePerformanceTimeline([], {
+        garminActivityCoverageRanges: [covered(startDay, lastCoveredDay)]
+    }, {});
+    const last = timeline.find(day => day.date === lastCoveredDay);
+    assert.equal(last.dataStatus, 'confirmed-rest');
+    assert.equal(last.isProvisional, false);
+});
+
 test('CTL and ATL use daily exponential smoothing and TSB is their difference', () => {
     const firstDay = offsetDate(today, -3);
     const secondDay = offsetDate(today, -2);
