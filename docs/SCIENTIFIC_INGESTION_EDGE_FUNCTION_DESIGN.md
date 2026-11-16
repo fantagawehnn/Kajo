@@ -425,3 +425,13 @@ Die Function leitet `owner_id` aus dem JWT ab. Quelle und Dokument werden über 
 Die Chunk-Indizes müssen dokumentweit eindeutig und lückenlos von 0 bis `expected_chunk_count - 1` sein. Die UI muss bei einem Fehler den Status erneut abrufen und darf nicht annehmen, dass ein fehlgeschlagener HTTP-Aufruf keine Daten geschrieben hat: Ein Timeout kann nach erfolgreicher serverseitiger Persistenz auftreten. Identische Batch-Retries sind deshalb vorgesehen; abweichende Inhalte unter demselben Index werden abgewiesen.
 
 Der Vertrag enthält absichtlich keine Aktion zur Shared-Freigabe, keine Änderung von Eigentümer oder Sichtbarkeit und keinen Download-Endpunkt. Der aktuelle lokale PDF.js-Prototyp ruft diese Actions noch nicht auf.
+
+
+## 20. Statische Konsistenzkorrekturen nach Code-Review
+
+Beim Abgleich der Edge Function mit dem RPC-/DDL-Entwurf wurden zwei kleine, aber relevante Punkte korrigiert:
+
+- Die Aktion confirm-upload setzt beim erfolgreichen Statuswechsel von pending auf uploaded jetzt zusätzlich upload_confirmed_at. Damit wird der im DDL vorgesehene Zeitstempel tatsächlich befüllt.
+- Die RPC kajo_begin_scientific_extraction erzwingt jetzt dieselben Obergrenzen wie die Edge Function: maximal 10.000 Seiten, 20.000 Chunks und 20 Millionen extrahierte Zeichen. Die Grenzen liegen damit nicht nur in der HTTP-Schicht, sondern auch in der Datenbankoperation.
+
+Diese Anpassungen sind weiterhin ausschließlich Repository-Änderungen an Entwürfen. Es wurden keine Tests ausgeführt und weder Migrationen noch Storage-Konfiguration oder Deployments vorgenommen.
