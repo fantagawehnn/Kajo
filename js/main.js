@@ -1633,6 +1633,9 @@ async function downloadGarminFitTelemetry(activityId) {
     const lapSummaries = laps.map((lap, index) => ({
         lapNumber: index + 1,
         startTime: lap.start_time ?? lap.timestamp ?? null,
+        // Preserve the FIT lap trigger verbatim; it describes the lap end trigger,
+        // not whether the complete lap was a planned performance test.
+        lapTrigger: lap.lap_trigger ?? lap.trigger ?? null,
         totalElapsedTimeSeconds: numberOrNull(lap.total_elapsed_time ?? lap.elapsed_time),
         totalTimerTimeSeconds: numberOrNull(lap.total_timer_time),
         distanceKm: numberOrNull(lap.total_distance),
