@@ -157,3 +157,10 @@ Der Entwurf `docs/drafts/SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql` konkretisiert 
 Die Edge Function enthält jetzt zusätzlich eine serverseitige Action `cleanup-expired-uploads`. Sie ist ausschließlich mit dem exakt konfigurierten Service-Role-Bearer aufrufbar; dieser interne Aufruf darf keine normalen Nutzeraktionen ausführen. Zusätzlich ist die Action standardmäßig gesperrt und antwortet nur dann nicht mit `503`, wenn die serverseitige Variable `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` gesetzt wurde. Diese Variable wurde nicht gesetzt. Die Action beansprucht eine begrenzte Batchgröße, löscht nur den vom Claim gelieferten kanonischen Pfad im festgelegten privaten Bucket und finalisiert Metadaten erst nach erfolgreicher Storage-Löschung.
 
 **Einschränkung:** Das ist weiterhin nur Scaffold-Code. Die SQL-RPCs/Claim-Spalten sind nicht in Supabase vorhanden; die Action kann im aktuellen Datenbankzustand daher nicht erfolgreich ausgeführt werden. Kein Service-Role-Key wurde im Frontend hinterlegt oder ausgegeben. Kein Scheduler wurde eingerichtet.
+
+
+## 11. Bevorzugter Uploadweg für den nächsten Implementierungsschritt
+
+TUS (Supabase Resumable Upload) ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt, da Supabase ihn für Dateien über 6 MB und instabile Verbindungen empfiehlt. Die Upload-URL ist laut Supabase bis zu 24 Stunden gültig. Die konkrete Clientbibliothek, Version und das maximale Dateilimit sind noch festzulegen. Das Dateilimit muss sowohl durch MAX_UPLOAD_BYTES als auch durch die Bucket-Konfiguration erzwungen werden und unter dem tatsächlichen globalen Projektlimit liegen.
+
+Die Frontend-Integration wird erst nach dieser Konfigurationsprüfung umgesetzt. Aktuell bleibt die Scientific Library eine lokale PDF.js-Vorschau; es wird nichts hochgeladen. Der bestehende Upload-/Cleanup-Scaffold ist nicht deployed und nicht migriert.
