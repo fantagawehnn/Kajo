@@ -1,3 +1,16 @@
+## Aktueller Status nach Cleanup-Isolierung (16.11.2026)
+
+Dieser Abschnitt ist der maßgebliche aktuelle Stand und ersetzt widersprechende frühere Zwischenstände in den darunterliegenden historischen Prüfabschnitten.
+
+- `scientific-ingestion` enthält keine Cleanup-Action mehr und verlangt für sämtliche Aktionen eine reguläre Nutzer-JWT, die über `auth.getUser()` validiert wird.
+- `scientific-upload-cleanup` ist eine separate Function mit eigenem `x-kajo-cleanup-secret`, Mindestlänge 32 Zeichen und zusätzlichem serverseitigem Aktivierungsschalter.
+- Die Cleanup-Function verwendet den Service-Role-Key ausschließlich intern und hat keine Browser-CORS-Freigabe.
+- Pro Aufruf wird höchstens ein Dokument beansprucht und verarbeitet. Storage- und Finalisierungsfehler führen zu HTTP 503; noch nicht erreichte Quieszenz zu HTTP 200 mit `deferred: true`.
+- `supabase/config.toml` setzt für die separate Cleanup-Function `verify_jwt = false`; der eigene Secret-Check ist deshalb die maßgebliche Authentifizierung und muss vor einem Deployment korrekt konfiguriert sein.
+
+Nicht aktiviert: kein Deployment, keine gesetzten Supabase-Secrets, keine Migration/RPC-Anwendung, kein Bucket/Policy-Setup und kein Scheduler. Es wurden keine Tests ausgeführt.
+
+
 # KAJO – statische Integrationsprüfung der wissenschaftlichen Upload-Pipeline
 
 **Stand:** 16.11.2026  
