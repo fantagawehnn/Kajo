@@ -190,6 +190,41 @@ function summarizeHeartRateZones(activities, settings, profile) {
     };
 }
 
+function summarizeVo2max(checkIns) {
+    const records = checkIns
+        .filter(item => dateKey(item?.date) && validNumber(item?.vo2max) && Number(item.vo2max) > 0)
+        .map(item => ({ date: dateKey(item.date), value: Number(item.vo2max) }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+    if (!records.length) {
+        return {
+            measurementCount: 0,
+            first: null,
+            latest: null,
+            absoluteChange: null,
+            relativeChangePct: null,
+            interpretation: 'Keine numerischen VO2max-Messwerte im ausgewählten Zeitraum vorhanden.'
+        };
+    }
+    const first = records[0];
+    const latest = records[records.length - 1];
+    const absoluteChange = records.length > 1
+        ? Number((latest.value - first.value).toFixed(1))
+        : null;
+    const relativeChangePct = records.length > 1 && first.value !== 0
+        ? Number(((latest.value - first.value) / first.value * 100).toFixed(1))
+        : null;
+    return {
+        measurementCount: records.length,
+        first,
+        latest,
+        absoluteChange,
+        relativeChangePct,
+        interpretation: records.length > 1
+            ? 'Deskriptive Veränderung zwischen erstem und letztem dokumentiertem Wert; Messmethode, Bedingungen und Schätzunsicherheit sind nicht bewertet.'
+            : 'Nur ein Messwert vorhanden; daraus lässt sich kein Verlauf ableiten.'
+    };
+}
+
 function summarizeCheckIns(checkIns) {
     const fields = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
     const result = {};
@@ -220,6 +255,7 @@ export function buildCoachAnalysisSummary({ activities = [], timeline = [], chec
         heartRateZoneDistribution: summarizeHeartRateZones(activities, settings, profile),
         calculatedLoadSummary: loadSummary,
         recoveryCheckInSummary: checkInSummary,
+        performanceSummary: { vo2max: summarizeVo2max(checkIns) },
         planningSummary: {
             plannedSessionCount: datedPlanned.length,
             nextPlannedSessions: datedPlanned.slice(0, 14).map(item => ({
