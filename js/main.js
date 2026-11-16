@@ -263,7 +263,7 @@ function renderHealthAnalysis() {
                         : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
                             + ' (' + window.trainingLoadActivityCount + '/' + window.activities + ' Aktivitäten)').join(' / ')
                     + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
-                    + '</div><div>Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
+                    + '</div><div>Identische Aktivitäts-IDs mit gleichem Datum und gleicher Startzeit werden nur einmal gezählt; gleiche IDs mit abweichender Zeitzuordnung bleiben getrennt. Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
                 row.classList.remove('items-center');
                 row.classList.add('flex-col', 'items-stretch');
                 row.appendChild(comparison);
