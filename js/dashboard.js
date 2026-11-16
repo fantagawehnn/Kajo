@@ -23,7 +23,7 @@ function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STA
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 export function calculateReadiness(dateKey=localTodayKey()){
-  return calculateReadinessFromData(state.dailyCheckins, state.dailyTimeline, dateKey);
+  return calculateReadinessFromData(state.dailyCheckins, dateKey);
 }
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
   const r=calculateReadiness(dateKey);
@@ -35,7 +35,7 @@ export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=
   status.textContent=r.score===null?'Noch nicht genügend Messdaten':r.dataQuality;
   const tile=(label,score,count,total,color)=>'<div class="bg-slate-950 rounded-xl p-3 border border-slate-800"><div class="text-[10px] text-slate-500 uppercase">'+label+'</div><div class="text-xl font-bold '+color+'">'+(score===null?'—':score+'/100')+'</div><div class="text-[10px] text-slate-500">'+count+'/'+total+(label==='Objektiv'?' Messgrößen':' Angaben')+'</div></div>';
   if(updateDetails) details.innerHTML='<div class="grid grid-cols-2 gap-3">'+
-    tile('Objektiv',r.objectiveScore,r.objectiveCount,5,'text-sky-400')+
+    tile('Objektiv',r.objectiveScore,r.objectiveCount,4,'text-sky-400')+
     tile('Subjektiv',r.subjectiveScore,r.subjectiveCount,6,'text-emerald-400')+
     '</div><p class="mt-2 text-[10px] text-slate-400">'+escapeHtml(r.dataMode)+' · '+escapeHtml(r.dataQuality)+'</p>';
 }
