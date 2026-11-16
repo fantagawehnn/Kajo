@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.scientific-ingestion]
 verify_jwt = true
+
+[functions.scientific-upload-cleanup]
+verify_jwt = false
