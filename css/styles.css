@@ -8606,7 +8606,6 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
   z-index: 2147483002 !important;
 }
 
-
 /* Geplante Trainingseinheit: als echtes, mittig ausgerichtetes Viewport-Modal. */
 @media screen and (max-width: 640px) {
   #planned-workout-modal:not(.hidden) {

@@ -356,3 +356,37 @@ assert.ok(charts.includes('export function focusActivityTelemetryPoint(index)'),
 assert.ok(activities.includes('canLinkRouteToChart'), 'GPS-to-chart interaction is enabled only for aligned time and metric arrays');
 assert.ok(importer.includes('avgPower: Number(lap.avg_power) || null'), 'FIT lap power is preserved only when supplied by the file');
 assert.ok(activities.includes("avgCadence !== null ? 'Ø ' + Math.round(avgCadence) + '/min' : null"), 'lap cadence is displayed only when available');
+
+
+// Calendar day summaries display set-level strength data without fabricating
+// details for legacy entries that do not contain individual sets.
+assert.ok(calendar.includes("const sets=Array.isArray(a.sets)?a.sets:[]"), 'day editor supports set-based strength logs');
+assert.ok(calendar.includes("totalReps=sets.reduce"), 'day editor totals repetitions from recorded sets');
+assert.ok(calendar.includes("volume=sets.reduce"), 'day editor calculates volume from recorded sets');
+assert.ok(calendar.includes("Sätze · '+totalReps+' Wdh."), 'day editor displays the number of recorded sets and repetitions');
+assert.ok(calendar.includes("item.exercise || 'Krafttraining', detail"), 'day timeline displays set details when available');
+assert.ok(competitions.includes("date.value = toLocalDateString()"), 'new race form defaults to today rather than a stale hard-coded date');
+assert.ok(competitions.includes("Bitte gib eine gültige Platzierung als positive ganze Zahl an."), 'race result form validates ranking input');
+assert.ok(competitions.includes("!['C1', 'C2', 'K1', 'K2'].includes(discipline)"), 'race result form validates canoe discipline');
+assert.ok(competitions.includes("!['Classic', 'Sprint', 'Sonstiges'].includes(format)"), 'race result form validates race format');
+assert.ok(html.includes('id="race-modal" class="hidden" role="dialog" aria-modal="true"'), 'race modal has dialog semantics');
+assert.ok(html.includes('class="race-modal-panel'), 'race modal has a dedicated scrollable panel');
+assert.ok(competitions.includes("document.body.appendChild(modal)"), 'race modal is moved out of the scrollable app container');
+assert.ok(competitions.includes("document.body.classList.add('kajo-modal-open')"), 'race modal locks background scrolling');
+assert.ok(css.includes('#race-modal:not(.hidden)') && css.includes('#race-modal .race-modal-panel'), 'race modal uses viewport-level responsive styling');
+
+assert.ok(main.includes("async function startManualCloudSync()"), 'manual cloud sync action is implemented in the app module');
+assert.ok(main.includes("    startManualCloudSync,"), 'manual cloud sync action is exposed to the HTML control');
+assert.ok(html.includes('id="cloud-sync-manual-button"') && html.includes('onclick="startManualCloudSync()"'), 'cloud sync modal exposes the manual sync action');
+assert.ok(main.includes("cloudInitialTransferState !== 'exists'"), 'manual cloud sync cannot perform an unconfirmed initial upload');
+assert.ok(css.includes('#planned-workout-modal:not(.hidden)') && css.includes('z-index: 2147483003'), 'planned workout modal remains above fixed mobile navigation');
+
+
+
+// Competition editing reuses the existing record and preserves its results and identity.
+assert.ok(competitions.includes('export function editRace(encodedId)'), 'existing competitions can be opened for editing');
+assert.ok(competitions.includes('Object.assign(existing, updatedFields)'), 'competition edits update the existing record instead of creating duplicates');
+assert.ok(competitions.includes('if (routeId) updatedFields.routeId = routeId') && competitions.includes('else delete updatedFields.routeId'), 'clearing a route removes only the optional route assignment');
+assert.ok(competitions.includes('export function openRaceModalForCreate()'), 'new competition creation resets edit state');
+assert.ok(html.includes('id="race-modal-save"') && html.includes('onclick="openRaceModalForCreate()"'), 'competition modal distinguishes create and edit actions');
+assert.ok(main.includes('    editRace,') && main.includes('    openRaceModalForCreate,'), 'competition edit actions are exposed to the UI');
