@@ -34,7 +34,7 @@ globalThis.setTimeout = () => 0;
 
 const { state, setRefreshHandler } = await import('../js/state.js');
 const storage = await import('../js/storage.js?v=3');
-const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
+const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog, resolveGarminActivityDateTime } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
 const { getRacePriorityMeta, migrateLegacyRacePriorities, addRace } = await import('../js/competitions.js');
 
@@ -42,6 +42,17 @@ const { getRacePriorityMeta, migrateLegacyRacePriorities, addRace } = await impo
 assert.equal(toLocalDateString(new Date(2026, 10, 10, 0, 15)), '2026-11-10');
 assert.equal(escapeHtml(`<script>alert('x')</script>`), '&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;');
 assert.equal(formatKm(12.3456), '12.35');
+assert.deepEqual(resolveGarminActivityDateTime({
+    startTimeLocal: '2026-11-16T00:15:00'
+}), { date: '2026-11-16', startTime: '2026-11-16T00:15:00' });
+assert.deepEqual(resolveGarminActivityDateTime({
+    startTimeLocal: '2026-11-16T00:15:00',
+    startTimeGMT: '2026-11-15T23:15:00Z'
+}), { date: '2026-11-16', startTime: '2026-11-15T23:15:00.000Z' });
+assert.deepEqual(resolveGarminActivityDateTime({
+    startTimeGMT: '2026-11-15T23:15:00Z'
+}), { date: '2026-11-15', startTime: '2026-11-15T23:15:00.000Z' });
+
 state.settings = { sports: { custom_row: { label: 'Rudern', color: '#123456' } }, categories: {}, heartRateZones: {} };
 assert.equal(getSportsCatalog().custom_row.label, 'Rudern');
 const todayKey = toLocalDateString();
