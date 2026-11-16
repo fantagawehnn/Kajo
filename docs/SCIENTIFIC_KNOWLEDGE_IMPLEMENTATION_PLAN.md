@@ -126,7 +126,7 @@ Ein separater SQL-Entwurf liegt unter [`docs/drafts/SCIENTIFIC_INGESTION_RPC_DRA
 
 Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen und sollen ausschließlich für `service_role` ausführbar sein. Die Edge Function muss vor jedem RPC-Aufruf weiterhin JWT, Dokumenteigentum und private Sichtbarkeit prüfen. Die clientseitigen Extraktionsangaben sind nicht vertrauenswürdig und dürfen nicht als Nachweis für den tatsächlichen PDF-Inhalt interpretiert werden.
 
-**Status:** Nur SQL-Entwurf und Dokumentation. Die vorhandene Edge Function wurde noch nicht um diese Aktionen erweitert. Keine Migration, Storage-Änderung, Funktionserstellung in Supabase, Tests, Merge oder Deployment.
+**Status:** SQL-Entwurf und zugehörige Edge-Function-Aktionen liegen im Integrationsbranch. Die RPCs existieren nur als SQL-Entwurf; keine Migration, Storage-Änderung, Funktionserstellung in Supabase, Tests, Merge oder Deployment.
 
 ## 8. Edge-Function-Scaffold erweitert
 
