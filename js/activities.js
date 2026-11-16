@@ -1047,6 +1047,23 @@ function renderActivityRouteMap(activity) {
 }
 
 
+export function toggleActivityTestLap(index) {
+    const activity = state.selectedActivityForModal;
+    if (!activity || !Number.isInteger(Number(index))) return;
+    const lapIndex = Number(index);
+    const laps = Array.isArray(activity.laps) ? activity.laps
+        : Array.isArray(activity.intervals) ? activity.intervals
+        : Array.isArray(activity.garminFitData?.laps) ? activity.garminFitData.laps : [];
+    if (lapIndex < 0 || lapIndex >= laps.length) return;
+    const selected = new Set(Array.isArray(activity.testLapIndexes) ? activity.testLapIndexes : []);
+    if (selected.has(lapIndex)) selected.delete(lapIndex);
+    else selected.add(lapIndex);
+    activity.testLapIndexes = [...selected].sort((a, b) => a - b);
+    if (!activity.testLapIndexes.length) delete activity.testLapIndexes;
+    saveDataToLocalStorage();
+    openCSVDetailsModal(encodeURIComponent(String(activity.id)));
+}
+
 export function focusActivityLap(index) {
     const activity = state.selectedActivityForModal;
     const lap = Array.isArray(activity?.laps) ? activity.laps[index] : null;
@@ -1273,10 +1290,14 @@ function renderOptionalActivityViews(act) {
             const isFastestManual = lap.kind === 'manual' && speed !== null && fastestManual !== null && Math.abs(speed - fastestManual) < 0.0001;
             const speedTone = isFastestManual ? 'text-emerald-300' : 'text-slate-400';
             const canFocus = Number.isFinite(Number(lap.startTimeSeconds)) && Number.isFinite(Number(lap.endTimeSeconds));
+            const lapIndex = index - 1;
+            const selectedForTest = Array.isArray(act.testLapIndexes) && act.testLapIndexes.includes(lapIndex);
             const row = '<div><div class="text-slate-200">' + label + '</div><div class="text-[10px] text-slate-500">' + escapeHtml(kindLabel) + '</div></div><div class="text-right ' + speedTone + '">' + details + '</div>';
-            return canFocus
-                ? '<button type="button" onclick="focusActivityLap(' + (index - 1) + ')" aria-label="Abschnitt im Zeitverlauf markieren" class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left">' + row + '</button>'
-                : '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2">' + row + '</div>';
+            const focusButton = canFocus
+                ? '<button type="button" onclick="focusActivityLap(' + lapIndex + ')" aria-label="Abschnitt im Zeitverlauf markieren" class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs py-2 w-full text-left">' + row + '</button>'
+                : '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs py-2">' + row + '</div>';
+            const testButton = '<button type="button" onclick="toggleActivityTestLap(' + lapIndex + ')" class="shrink-0 rounded-md border px-2 py-1 text-[10px] ' + (selectedForTest ? 'border-cyan-500 text-cyan-300' : 'border-slate-700 text-slate-400') + '">' + (selectedForTest ? 'Test-Runde ✓' : 'Als Test wählen') + '</button>';
+            return '<div class="flex items-center gap-2 border-b border-slate-800">' + focusButton + testButton + '</div>';
         }).join('');
         const comparisonNote = manualSpeeds.length >= 2
             ? `<div class="text-[10px] text-slate-400 mt-2">Schnellster manuell markierter Abschnitt: ${fastestManual.toLocaleString('de-DE', { maximumFractionDigits: 2 })} km/h. Nur manuell markierte FIT-Runden mit eindeutiger Dauer- und Distanzangabe werden verglichen.</div>`
@@ -1291,6 +1312,26 @@ function renderOptionalActivityViews(act) {
                     return '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + detail + '</div></div>';
                 }).join('') + '</div>'
             : '';
+        const selectedIndexes = [...new Set((Array.isArray(act.testLapIndexes) ? act.testLapIndexes : [])
+            .filter(index => Number.isInteger(index) && index >= 0 && index < laps.length))].sort((a, b) => a - b);
+        const selectedGroups = [];
+        selectedIndexes.forEach(index => {
+            const last = selectedGroups[selectedGroups.length - 1];
+            if (last && index === last.lapIndexes[last.lapIndexes.length - 1] + 1) last.lapIndexes.push(index);
+            else selectedGroups.push({ index: selectedGroups.length + 1, lapIndexes: [index] });
+        });
+        const selectedTestSummary = selectedGroups.length
+            ? '<div class="rounded-lg border border-violet-800/50 bg-violet-950/20 p-3 mb-3"><h5 class="text-xs font-semibold text-violet-300 mb-2">Manuell ausgewählte Testabschnitte</h5>'
+                + selectedGroups.map(segment => {
+                    const result = summarizeTestSegment(segment, laps);
+                    const duration = result.durationSeconds === null ? 'Zeit nicht vollständig verfügbar'
+                        : Math.floor(result.durationSeconds / 60) + ':' + String(Math.round(result.durationSeconds % 60)).padStart(2, '0') + ' min';
+                    const distance = result.distanceMeters === null ? 'Distanz nicht vollständig verfügbar'
+                        : result.distanceMeters >= 1000 ? (result.distanceMeters / 1000).toFixed(2) + ' km' : Math.round(result.distanceMeters) + ' m';
+                    const speed = result.averageSpeedKmh === null ? 'Geschwindigkeit nicht berechenbar'
+                        : result.averageSpeedKmh.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' km/h';
+                    return '<div class="border-t border-violet-900/60 py-2 text-xs"><strong class="text-slate-100">Abschnitt ' + segment.index + '</strong><div class="text-slate-300 mt-1">' + duration + ' · ' + distance + ' · ' + speed + '</div><div class="text-[10px] text-slate-500 mt-1">' + result.splitCount + ' ausgewählte Runde(n)</div></div>';
+                }).join('') + '</div>' : '';
         const sFormSummary = sFormSegments.length
             ? '<div class="rounded-lg border border-cyan-800/50 bg-cyan-950/20 p-3 mb-3"><h5 class="text-xs font-semibold text-cyan-300 mb-2">Erkannte S-Form-Testintervalle</h5>'
                 + sFormSegments.map(segment => {
@@ -1307,7 +1348,7 @@ function renderOptionalActivityViews(act) {
             : isSFormActivity
                 ? '<p class="text-[10px] text-amber-300 mb-3">S-Form erkannt, aber keine vollständig durch manuelle FIT-Lap-Grenzen eingegrenzten Testintervalle gefunden. Es wird nichts automatisch als Test gewertet.</p>'
                 : '';
-        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', sFormSummary + summary + rows + comparisonNote + workoutStepHtml);
+        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', sFormSummary + selectedTestSummary + summary + rows + comparisonNote + workoutStepHtml);
     } else {
         const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
         const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
