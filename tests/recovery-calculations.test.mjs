@@ -85,7 +85,7 @@ test('does not estimate sleep deficit without a configured personal target or va
 test('calculates a 90-day personal baseline for HRV and resting heart rate only with five readings', () => {
   const data = {};
   for (let day = 1; day <= 90; day++) {
-    const date = new Date(2026, 10, 7 - 7 - day, 12);
+    const date = new Date(2026, 10, 7 - 7 - day + 1, 12);
     const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
     data[key] = { hrv: 50, garminRhr: 48 };
   }
