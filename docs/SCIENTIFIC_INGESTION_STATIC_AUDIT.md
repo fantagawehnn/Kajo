@@ -182,3 +182,18 @@ Die separate Function `supabase/functions/scientific-upload-cleanup/index.ts`:
 In `supabase/config.toml` ist für diese Function `verify_jwt = false` gesetzt, weil die Function ihre eigene Secret-Authentifizierung durchführt. Das ist nur sicher, solange das separate Secret stark, vertraulich und ausschließlich beim Scheduler hinterlegt ist. Der Service-Role-Key darf nicht als Trigger-Secret verwendet werden.
 
 **Noch nicht eingerichtet oder aktiviert:** Function-Deployment, beide Function-Secrets, Datenbankmigrationen/RPCs, Storage-Bucket/Policies und Scheduler. Es wurden keine Tests ausgeführt.
+
+
+## 11. Aktuelle Nachprüfung und Remote-Baseline-Blocker (16.11.2026, 14:32 CET)
+
+Dieser Abschnitt ist der maßgebliche Stand dieser Nachprüfung und korrigiert überholte Zwischenstände in den historischen Abschnitten 3, 6 und 7:
+
+- Die Cleanup-Ausführung liegt inzwischen ausschließlich in `scientific-upload-cleanup`; die normale `scientific-ingestion` verlangt reguläre Nutzer-JWTs. Die ältere Beschreibung einer Cleanup-Action innerhalb der Ingestion-Function ist überholt.
+- Die Claim-RPC gibt `document_id`, `source_id`, `owner_id`, `storage_path`, `claim_token`, `lease_expires_at` und `cleanup_ready_at` zurück. Die Cleanup-Function prüft die UUIDs und den exakten Pfad `owner_id/document_id/original.pdf`. `source_id` wird nicht als Eigentümer-ID verwendet.
+- Die Frontend-Intent-Payload (`source`, `file.mime_type`, `file.size_bytes`) stimmt statisch mit dem Request-Vertrag der Ingestion-Function überein.
+- Die Storage-Policy ist INSERT-only. Das entspricht dem aktuellen Supabase-Storage-Zugriffsmodell für neue Uploads bei `upsert=false`; Upsert würde zusätzlich SELECT und UPDATE erfordern. Der TUS-Endpunkt und die konkreten RLS-/Bucket-Bedingungen wurden im Zielprojekt nicht ausgeführt oder getestet.
+- Supabase dokumentiert TUS-Upload-URLs als bis zu 24 Stunden gültig. Der Entwurf wartet mindestens sieben Tage nach Intent-Ablauf plus weitere 24 Stunden Quieszenz. Das ist ein konservativer Entwurfsabstand, kein Nachweis für alle Storage-Randfälle.
+
+**Remote-Abgleich nicht abgeschlossen:** Die erneute Abfrage von Supabase-Tabellen/Spalten/Policies/Funktionen sowie der Migrationshistorie ist am 16.11.2026 mit einem Connection Timeout abgebrochen. Deshalb darf dieser Durchgang nicht als aktueller Remote-Schema-Abgleich oder als vollständige Integrationsfreigabe bezeichnet werden. Frühere Remote-Feststellungen bleiben lediglich der zuletzt bekannte Stand und müssen vor einer Migration erneut gelesen werden.
+
+Keine Tests, SQL-Ausführung, Migration, Bucket-/Policy-Änderung, Secret-Änderung oder Deployment.
