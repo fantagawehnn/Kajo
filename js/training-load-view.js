@@ -4,7 +4,7 @@
  */
 import { state } from './state.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
-import { getHeartRateZoneAnalysis } from './training-load.js?v=5';
+import { getHeartRateZoneAnalysis } from './training-load.js?v=6';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
 const charts=Object.create(null);
