@@ -8799,3 +8799,71 @@ body.kajo-modal-open { overflow: hidden !important; }
  #view-calendar .calendar-control-row .calendar-format-button svg{width:12px;height:12px}
  #view-calendar .calendar-control-row .calendar-add-button{width:36px;height:36px}
 }
+
+/* KAJO calendar: force the complete period toolbar onto one compact row on phones. */
+@media (max-width: 640px) {
+  #view-calendar .calendar-control-row {
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) 28px 68px 32px;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    min-width: 0;
+  }
+  #view-calendar .calendar-control-row > #calendar-period-prev,
+  #view-calendar .calendar-control-row > #calendar-period-next {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    min-width: 0;
+    height: 34px;
+    padding: 0;
+  }
+  #view-calendar .calendar-control-row > #calendar-period-title {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    max-width: 100%;
+    padding: 0 1px !important;
+    font-size: .72rem !important;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #view-calendar .calendar-control-row > .calendar-format-wrap {
+    width: 68px;
+    min-width: 0;
+  }
+  #view-calendar .calendar-control-row .calendar-format-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 68px;
+    min-width: 0 !important;
+    max-width: 68px !important;
+    min-height: 34px;
+    padding: 5px 3px !important;
+    gap: 3px;
+    font-size: .65rem !important;
+    white-space: nowrap;
+  }
+  #view-calendar .calendar-control-row .calendar-format-button svg {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+  }
+  #view-calendar .calendar-control-row > .calendar-add-wrap {
+    width: 32px;
+    min-width: 0;
+  }
+  #view-calendar .calendar-control-row .calendar-add-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    min-width: 0;
+    height: 34px;
+    padding: 0;
+  }
+}
+
