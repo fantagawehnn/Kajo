@@ -399,7 +399,7 @@ function eachPeriodDate(start,end,callback){
 export function saveCalendarPeriod(){
  const start=document.getElementById('period-range-start')?.value||'';
  const end=document.getElementById('period-range-end')?.value||'';
- if(!/^\d{4}-\\d{2}-\\d{2}$/.test(start)||!/^\d{4}-\\d{2}-\\d{2}$/.test(end)){alert('Bitte wähle einen gültigen Start- und Endtag.');return;}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)){alert('Bitte wähle einen gültigen Start- und Endtag.');return;}
  if(start>end){alert('Der Starttag darf nicht nach dem Endtag liegen.');return;}
  eachPeriodDate(start,end,date=>{
   const entry={...(state.dailyCheckins[date]||{})};
@@ -411,7 +411,7 @@ export function saveCalendarPeriod(){
 export function removeCalendarPeriodRange(){
  const start=document.getElementById('period-range-start')?.value||'';
  const end=document.getElementById('period-range-end')?.value||'';
- if(!/^\d{4}-\\d{2}-\\d{2}$/.test(start)||!/^\d{4}-\\d{2}-\\d{2}$/.test(end)||start>end){alert('Bitte wähle einen gültigen Zeitraum.');return;}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||start>end){alert('Bitte wähle einen gültigen Zeitraum.');return;}
  eachPeriodDate(start,end,date=>{
   const entry=state.dailyCheckins[date];
   if(!entry?.cycle)return;
