@@ -1,124 +1,142 @@
-# KAJO – Cloudflare Queues für wissenschaftliche Dokumente
+# KAJO – Scientific Ingestion auf Cloudflare Free + Supabase
 
-**Status: Architekturentscheidung / Implementierungsentwurf. Nicht deployed.**
+**Status: Architekturentscheidung / Implementierungsentwurf. Nicht deployed.**  
+**Berücksichtigter Tarif:** Cloudflare Workers Free; Supabase-Tarif ist separat zu betrachten.
 
-## 1. Ziel
+## 1. Ziel und Entscheidung
 
-KAJO nutzt bereits Cloudflare Workers für die App-Auslieferung und den passiven AI-Coach sowie Supabase für Auth, PostgreSQL und Storage. Für wissenschaftliche PDFs soll keine dritte Laufzeitplattform eingeführt werden.
+KAJO nutzt Cloudflare für App-Auslieferung und den passiven AI-Coach sowie Supabase für Auth, PostgreSQL und Storage. Die wissenschaftliche Dokumentaufnahme soll innerhalb dieser bestehenden Infrastruktur bleiben.
 
-Empfohlener Aufbau:
+**Entscheidung für den Free-Plan: PDF-Textextraktion zunächst clientseitig im Browser.** Cloudflare Workers Free haben ein CPU-Limit von 10 ms pro HTTP-Invocation. Supabase Edge Functions haben 2 Sekunden CPU-Zeit pro Request. Beides ist keine verlässliche Umgebung für das Parsen umfangreicher wissenschaftlicher PDFs. Die Supabase Edge Function bleibt deshalb bei kurzen, authentifizierten Datenbankaktionen. Ein Cloudflare Queue Consumer wird im MVP nicht für PDF-Parsing eingesetzt.
 
-- **Supabase Auth:** authentifiziert Nutzer.
-- **Supabase PostgreSQL:** Quelle, Dokumentmetadaten, Status, Chunks und spätere Embeddings.
-- **Supabase Storage:** dedizierter privater Bucket für PDF-Originale.
-- **Supabase Edge Function `scientific-ingestion`:** legt private Upload-Intents und Metadaten an und liefert den Dokumentstatus.
-- **Cloudflare Worker `kajo-scientific-ingestion`:** eigener Worker für Upload-Abschlussprüfung und Queue-Produktion.
-- **Cloudflare Queues:** dauerhafte asynchrone Job-Zustellung mit Retries und Dead-Letter-Queue.
-- **Cloudflare Queue Consumer:** lädt das Dokument serverseitig aus Supabase Storage, prüft es und verarbeitet es nach erfolgreichem Parser-PoC.
-- **Bestehender Worker `kajo`:** bleibt für App-Assets und Coach zuständig. Kein Service-Role-Key wird in diesen bestehenden Coach-Worker aufgenommen.
+Zielaufbau:
 
-## 2. Warum ein separater Cloudflare Worker?
+- **Supabase Auth:** Nutzeridentität.
+- **Supabase PostgreSQL:** Quellen-/Dokumentmetadaten, Status und Text-Chunks.
+- **Supabase Storage:** eigener privater Bucket für PDF-Originale.
+- **Supabase Edge Function `scientific-ingestion`:** Upload-Intent, Statusabfrage, Verifikation des Uploads und kontrollierte Annahme extrahierter Chunk-Batches.
+- **Browser:** PDF.js-basierte Extraktion seitenweise und Übermittlung kleiner Chunk-Batches; Verarbeitung bleibt ausdrücklich nutzerinitiiert.
+- **Cloudflare:** App-Auslieferung und bestehender Coach-Worker. Für den Ingestion-MVP ist kein zusätzlicher Cloudflare-Worker und keine Queue erforderlich.
+- **Bestehender Coach-Worker:** bleibt ohne Service-Role-Key und ohne Schreibzugriff auf wissenschaftliche Dokumente.
 
-Der bestehende `worker.js` enthält bereits den Coach-Endpunkt und das statische Asset-Fallback. Die wissenschaftliche Dokumentverarbeitung benötigt zusätzliche privilegierte Supabase-Zugriffe und Queue-Bindings.
+## 2. Warum keine serverseitige PDF-Extraktion im Free-Plan?
 
-Ein eigener Worker isoliert:
-- den Supabase-Service-Role-Key,
-- die Queue-Bindings,
-- Upload-Verifikation und Job-Statusübergänge,
-- Parser-Abhängigkeiten und deren Ressourcenverbrauch.
+Die aktuelle Cloudflare-Dokumentation nennt für Workers Free 10 ms CPU-Zeit pro HTTP-Request und 128 MB Speicher pro Isolate. Supabase Edge Functions haben 2 Sekunden CPU-Zeit pro Request und maximal 256 MB Speicher. Ein vollständiger PDF-Parserlauf kann diese CPU-/Speichergrenzen überschreiten; ein längeres Wall-Clock-Limit ändert daran nichts.
 
-Der Service-Role-Key gehört ausschließlich als Cloudflare Secret in den separaten Ingestion-Worker. Er darf weder in `wrangler`-Klartextkonfiguration noch im Browser, GitHub-Repository oder Coach-Worker landen.
+Cloudflare Queues sind grundsätzlich auch im Free-Plan verfügbar und können Nachrichten zuverlässig zustellen. Sie erhöhen aber nicht automatisch die CPU-Grenze eines Workers. Eine Queue würde daher das Zustellungsproblem lösen, nicht die eigentliche PDF-Parsing-Begrenzung.
 
-## 3. Geplanter Ablauf
-
-1. Browser ruft `scientific-ingestion` mit Supabase-JWT auf.
-2. Edge Function validiert den Nutzer, erzeugt Quelle/Dokument und den exakten Storage-Pfad.
-3. Browser lädt die PDF direkt in den privaten Supabase-Bucket hoch (`upsert: false`; bei größeren Dateien TUS/resumable).
-4. Browser ruft den separaten Cloudflare Worker mit JWT und `document_id` auf: `POST /api/knowledge/confirm-upload`.
-5. Worker validiert den JWT gegen Supabase Auth. Er liest die Dokumentmetadaten mit Nutzerkontext und prüft Eigentümer, private Sichtbarkeit und erwarteten Status.
-6. Worker prüft das Objekt serverseitig im exakten Bucket/Pfad, tatsächliche Dateigröße, PDF-Signatur und MIME-Konsistenz.
-7. Worker setzt den Status bedingt von `pending` auf `uploaded` und sendet nur eine kleine Queue-Nachricht mit `document_id` und Schema-Version. **Nie die PDF oder den extrahierten Text in die Queue-Nachricht legen.**
-8. Queue Consumer lädt die Metadaten erneut, prüft Eigentümer/Sichtbarkeit/Status und beansprucht den Auftrag atomar durch bedingten Übergang `uploaded → extracting`.
-9. Consumer extrahiert Text mit Seitenzuordnung, schreibt Chunks idempotent und setzt danach `extracted`; private Dokumente werden anschließend `private_ready`.
-10. Bei permanenten Fehlern wird der Status nachvollziehbar auf `failed` gesetzt. Wiederholte Queue-Fehler gelangen in die DLQ und werden nicht stillschweigend verworfen.
-
-## 4. Idempotenz und konkurrierende Zustellungen
-
-Cloudflare Queues arbeitet mit wiederholter Zustellung. Die Anwendung darf daher keine Exactly-once-Verarbeitung voraussetzen.
-
-- Queue-Nachrichten enthalten nur `document_id`, `schema_version` und optional eine nicht-sensitive Korrelations-ID.
-- Consumer beansprucht einen Auftrag über einen atomaren bedingten Datenbank-Übergang `uploaded → extracting`. Nur ein Consumer darf erfolgreich beanspruchen.
-- Bereits `extracting`, `extracted`, `private_ready`, `failed` oder `rejected` befindliche Dokumente werden anhand einer expliziten Retry-Regel behandelt, nicht erneut blind verarbeitet.
-- Chunk-Unique-Key bleibt `(document_id, extraction_version, chunk_index)`.
-- Chunk-Ergebnisse einer fehlgeschlagenen Extraktion dürfen nicht in Retrieval gelangen.
-- Retry und DLQ sind getrennt: transiente Fehler können wiederholt werden; dauerhaft defekte oder nicht unterstützte PDFs erhalten einen fachlichen Fehlerstatus.
-
-## 5. Laufzeitgrenzen: Cloudflare ist nicht unbegrenzt
-
-Die aktuelle Cloudflare-Dokumentation nennt für Workers 128 MB Speicher pro Isolate. Workers Paid erlaubt bis zu fünf Minuten CPU-Zeit pro Invocation (Standardwert typischerweise 30 Sekunden, konfigurierbar); Workers Free ist auf 10 ms CPU begrenzt. Queue-Consumer können bis zu 15 Minuten Wall-Clock-Zeit laufen, die CPU-Grenze bleibt jedoch maßgeblich.
-
-Cloudflare Queues begrenzt eine Nachricht auf 128 KB; Consumer-Batches können konfiguriert werden. Die Queue bietet Retries und eine Dead-Letter-Queue.
-
-**Konsequenz:** Queues lösen das Problem der dauerhaften Job-Zustellung und Wiederholung, nicht automatisch das Problem speicherintensiver PDF-Extraktion. Ein einzelner großer PDF-Parserlauf kann auch im Cloudflare Worker die 128-MB-Grenze überschreiten. Deshalb:
-- Parser-PoC mit repräsentativen Papers vor der produktiven Verarbeitung;
-- kleine Consumer-Batches (MVP: 1 Dokument pro Nachricht);
-- begrenzte maximale PDF-Größe erst nach PoC festlegen;
-- Seiten-/Dokumentgrößen und Extraktionsdauer messen;
-- bei großen Dokumenten gegebenenfalls mehrstufige Verarbeitung mit page-range Jobs erwägen;
-- Workers Free ist für CPU-intensive PDF-Verarbeitung voraussichtlich ungeeignet; tatsächlichen Tarif und CPU-Einstellungen vor Umsetzung prüfen.
-
-## 6. Cloudflare-Konfiguration (konzeptionell)
-
-Geplante Queue-Namen:
-- `kajo-scientific-documents`
-- `kajo-scientific-documents-dlq`
-
-Geplante Queue-Consumer-Parameter für den MVP:
-- `max_batch_size: 1`
-- `max_batch_timeout: 5`
-- `max_retries: 5`
-- `dead_letter_queue: kajo-scientific-documents-dlq`
-- begrenzte `max_concurrency` nach Parser-PoC
-
-Queue-Erstellung und Worker-Deployment erfolgen erst nach ausdrücklicher Freigabe. Es wurden keine Queues in Cloudflare angelegt.
-
-## 7. Secrets / Bindings
-
-Separater Worker benötigt:
-- `SUPABASE_URL` (nicht geheim, aber als Worker-Variable)
-- `SUPABASE_ANON_KEY` (für Auth-/Nutzerkontext)
-- `SUPABASE_SERVICE_ROLE_KEY` (Secret, nur serverseitig im separaten Worker)
-- Queue Producer Binding
-- Queue Consumer Binding
-
-Bestehender Coach-Worker bleibt ohne `SUPABASE_SERVICE_ROLE_KEY`. Keine Secrets im Repository speichern. Die Edge Function `scientific-ingestion` behält ihre eigenen Supabase Secrets.
-
-## 8. Supabase bleibt Daten- und Dateiquelle
-
-PDF-Dateien verbleiben im privaten Supabase Storage. Cloudflare Queues speichert nur Auftragsreferenzen. Die Worker laden Dokumente zur Verarbeitung serverseitig über die Supabase Storage API und speichern Ergebnis-Metadaten/Chunks in PostgreSQL.
-
-Für größere Uploads empfiehlt Supabase TUS-resumable Uploads (insbesondere bei Dateien über 6 MB oder instabilen Verbindungen). Das Uploadverfahren wird im Frontend umgesetzt; Cloudflare soll keine PDF-Upload-Proxy-Strecke bereitstellen.
-
-## 9. Offene Punkte vor Code und Deployment
-
-- Cloudflare Tarif/CPU-Einstellungen des Accounts bestätigen.
-- Konkretes PDF-Größenlimit anhand des Parser-PoC festlegen.
-- Parser-Library und Version pinnen; Deno-/Workers-Kompatibilität, Lizenz, WASM/Worker-Unterstützung und Speicher messen.
-- Atomare Statusübergänge und Chunk-Schreibstrategie festlegen.
-- Storage-Policy und tatsächliche Objektprüfung finalisieren.
-- Queue- und DLQ-Retention festlegen.
-- Logging ohne PDF-Inhalte, Tokens, Titel/Autoren oder unnötige personenbezogene Daten.
-- Private Uploads bleiben privat; Shared-Literatur erfordert separaten Curator-Workflow.
-
-## 10. Quellen
-
-- [Cloudflare Queues – Limits](https://developers.cloudflare.com/queues/platform/limits/)
-- [Cloudflare Queues – Konfiguration](https://developers.cloudflare.com/queues/configuration/configure-queues/)
-- [Cloudflare Queues – JavaScript APIs](https://developers.cloudflare.com/queues/configuration/javascript-apis/)
+Quellen:
 - [Cloudflare Workers – Limits](https://developers.cloudflare.com/workers/platform/limits/)
+- [Cloudflare Queues – Limits](https://developers.cloudflare.com/queues/platform/limits/)
 - [Supabase Edge Functions – Limits](https://supabase.com/docs/guides/functions/limits)
-- [Supabase Storage – Resumable Uploads](https://supabase.com/docs/guides/storage/uploads/resumable-uploads)
 
-## 11. Umsetzungsstatus
+## 3. Geplanter MVP-Ablauf
 
-Dieses Dokument beschreibt die Zielarchitektur. Es wurden keine Cloudflare Queues erstellt, keine Worker-Bindings konfiguriert, keine Cloudflare Secrets gesetzt, keine Supabase Tabellen/Policies/Buckets verändert und kein Deployment gestartet. Es wurden keine Tests ausgeführt.
+1. Nutzer erfasst bibliografische Metadaten und wählt ein PDF.
+2. Browser ruft `scientific-ingestion` mit Supabase-JWT auf.
+3. Edge Function validiert den Nutzer und erzeugt private Quelle, Dokument und serverseitig festgelegten Storage-Pfad.
+4. Browser lädt das PDF direkt in den privaten Supabase-Bucket hoch (`upsert: false`; TUS/resumable bei größeren Dateien oder instabiler Verbindung).
+5. Browser meldet den Uploadabschluss. Edge Function prüft Eigentümer, erwarteten Status und das konkrete Storage-Objekt; die tatsächliche Dateigröße und PDF-Signatur werden serverseitig kontrolliert.
+6. Browser extrahiert PDF-Text seitenweise mit einer fest versionierten PDF.js-basierten Bibliothek. Die Seitenzuordnung wird aus dem Parser übernommen, nicht aus geschätzten Seitenzahlen.
+7. Browser übermittelt kleine, sequenzielle Chunk-Batches an die Edge Function. Jeder Request enthält Dokument-ID, Extraktionsversion und Chunk-Daten mit Seitenbezug.
+8. Edge Function validiert erneut den JWT, leitet die User-ID aus `auth.getUser()` ab, prüft Dokumenteigentum/Privatstatus und Größen-/Mengenlimits und schreibt ausschließlich für dieses Dokument.
+9. Nach vollständiger Übermittlung bestätigt der Browser den Abschluss. Die Funktion prüft Vollständigkeit und setzt das Dokument auf `extracted`, danach `private_ready`. Unvollständige Extraktionen bleiben unveröffentlicht und können fortgesetzt oder verworfen werden.
+10. Die spätere Retrieval-Schicht darf nur Dokumente im Status `private_ready` bzw. kuratierte freigegebene Shared-Dokumente berücksichtigen.
+
+## 4. Sicherheits- und Vertrauensgrenzen
+
+Clientseitige Extraktion ist eine bewusste MVP-Abwägung, keine vertrauenswürdige Beweisführung über den Inhalt des PDFs.
+
+- Der Browser darf nur eigene private Dokumente verarbeiten.
+- Der Browser kann niemals `owner_id`, `visibility`, `review_status`, Storage-Pfad oder Freigabestatus bestimmen.
+- Die Edge Function leitet die Nutzer-ID ausschließlich aus dem validierten Supabase-JWT ab.
+- Chunk-Batches werden nur angenommen, wenn das Dokument dem Nutzer gehört, privat ist und sich in einem passenden Verarbeitungsstatus befindet.
+- Serverlimits für Batch-Größe, Gesamttextmenge, Chunk-Anzahl und Seitenbereich sind zwingend; Clientlimits allein sind keine Sicherheitskontrolle.
+- Chunk-Inhalte gelten als untrusted user-provided content. Sie dürfen nicht in gemeinsame Suche oder Shared-Knowledge einfließen.
+- Die gemeinsame Literaturbasis benötigt weiterhin einen getrennten Kuratierungsprozess mit serverseitig kontrollierten Rollen und Rechteprüfung.
+- Service-Role-Key bleibt ausschließlich in der Supabase Edge Function. Er wird weder im Browser noch im Cloudflare Coach-Worker oder Repository gespeichert.
+- Keine vollständigen PDF-Texte, Tokens oder signierten URLs in Logs.
+
+## 5. Idempotenz, Wiederaufnahme und Status
+
+Für private Uploads:
+
+`pending → uploaded → extracting → extracted → private_ready`
+
+Fehlerzustände:
+- `failed`: technischer Fehler, der einen erneuten Versuch erlauben kann.
+- `rejected`: ungültige, beschädigte, verschlüsselte oder nicht unterstützte Datei.
+- `manual_review_required`: gescannte PDF oder unzureichende Textextraktion; OCR ist nicht Teil des ersten MVP.
+
+Wiederaufnahme:
+- Jeder Chunk erhält einen stabilen Index innerhalb von Dokument und Extraktionsversion.
+- Der bestehende Unique-Key `(document_id, extraction_version, chunk_index)` verhindert doppelte Einträge.
+- Serverseitige Schreibvorgänge müssen idempotent gestaltet werden; ein erneuter Batch darf keinen zweiten Chunk erzeugen.
+- Ein Dokument wird erst nach erfolgreicher Abschlussprüfung `private_ready`.
+- Bereits gespeicherte Teil-Chunks eines unvollständigen Laufs dürfen im Retrieval nicht sichtbar sein.
+- Ein Fortschritts-/Checkpoint-Mechanismus ist vor Implementierung festzulegen; der Browser darf nach Tab-Schließen nicht behaupten, eine Extraktion sei abgeschlossen.
+
+## 6. Grenzen der clientseitigen Verarbeitung
+
+Clientseitige Extraktion verlagert CPU- und Speicherbedarf auf das Gerät des Nutzers. Das ist für den Free-Plan geeigneter, aber nicht unbegrenzt:
+
+- Sehr große oder layoutkomplexe PDFs können Browser-Tabs verlangsamen oder zum Absturz bringen.
+- Tabellen, Mehrspaltenlayouts, Formeln und Fußnoten können fehlerhaft oder in falscher Lesereihenfolge extrahiert werden.
+- Eingescannte PDFs liefern ohne OCR keinen brauchbaren Text.
+- Der Nutzer muss die Browserseite während der Verarbeitung geöffnet lassen, sofern keine robuste Wiederaufnahme implementiert wurde.
+- Dateigrößenlimit, Seitenlimit, Batch-Größe und Chunk-Größe werden erst nach einem lokalen Parser-PoC mit repräsentativen Papers festgelegt.
+- Original-PDF bleibt maßgebliche Quelle; automatische Extraktion ist keine fachlich geprüfte Zusammenfassung.
+- Seitenzahlen müssen aus dem PDF-Parser stammen und dürfen nicht aus Viewer-Seiten, Titelblattzählung oder vermuteter Journal-Paginierung abgeleitet werden.
+
+## 7. Warum der MVP keine Cloudflare Queue benötigt
+
+Für eine clientseitig gestartete, schrittweise Extraktion wird keine serverseitige Hintergrundwarteschlange benötigt. Die Browseranwendung steuert den Fortschritt und übermittelt kleine Batches. Supabase speichert Dokumentstatus und Chunks.
+
+Cloudflare Queues bleiben eine spätere Option, wenn ein geeigneter kosten-/tarifkompatibler Consumer oder eine andere serverseitige Laufzeit für rechenintensive Aufgaben verfügbar ist. Eine Queue darf nicht allein deshalb eingebaut werden, weil sie asynchrone Zustellung bietet; der Consumer muss die tatsächliche PDF-Verarbeitung innerhalb seiner CPU- und Speichergrenzen ausführen können.
+
+## 8. Supabase Storage und Upload
+
+PDF-Dateien verbleiben im privaten Bucket `kajo-scientific-documents`; der bestehende Bucket `garmin-fit` wird nicht wiederverwendet.
+
+- Upload direkt vom Browser zu Supabase Storage, kein Cloudflare-Proxy.
+- Storage-Pfad wird serverseitig erzeugt und an den Upload-Intent gebunden.
+- Browser erhält nur die notwendigen Uploadrechte für den exakten Pfad.
+- Keine Browser-Lese-, Überschreib- oder Löschrechte für beliebige Dokumente.
+- Für größere Dateien empfiehlt Supabase TUS/resumable Uploads, insbesondere über 6 MB oder bei instabiler Verbindung.
+- Konkretes Bucket-Größenlimit wird erst nach Parser-PoC und Storage-Policy-Prüfung festgelegt.
+
+## 9. Nicht Teil des MVP
+
+- Server-seitiges PDF-Parsing in Cloudflare Free oder Supabase Edge Functions.
+- OCR für gescannte Dokumente.
+- Cloudflare Queue und Dead-Letter-Queue.
+- Gemeinsame Freigabe von Nutzer-Uploads.
+- Embeddings und semantisches Retrieval.
+- Automatische fachliche Bewertung von Studiendesign, Ergebnissen oder Transferierbarkeit.
+
+## 10. Umsetzungsreihenfolge
+
+1. Supabase-Schemaentwurf und Storage-Policies mit dem tatsächlichen Remote-Schema abgleichen.
+2. PDF.js-basierte clientseitige Extraktion lokal evaluieren (Seitenbezug, Unicode, Tabellen, Mehrspaltenlayout, Browser-Speicherbedarf).
+3. Limits für Dateigröße, Seiten, Batch-Größe und Gesamttext nach PoC festlegen.
+4. Edge Function um Uploadabschluss, Chunk-Batch-Annahme, Idempotenz und Abschlussprüfung erweitern.
+5. Frontend-Upload und sichtbaren Fortschritt mit Abbruch-/Wiederaufnahmeverhalten implementieren.
+6. Statische Sicherheitsprüfung; Tests erst nach ausdrücklicher Freigabe.
+7. Migration, Secrets und Deployment nur nach separater ausdrücklicher Freigabe.
+
+## 11. Secrets und Infrastruktur
+
+Für die bestehende Supabase Edge Function bleiben serverseitig erforderlich:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `APP_ORIGIN`
+- `MAX_UPLOAD_BYTES`
+
+Die tatsächlichen Secrets müssen vom Nutzer in Supabase hinterlegt werden; keine Secrets im Repository oder Chat. Es ist kein zusätzlicher Cloudflare-Secret und kein Queue-Binding erforderlich.
+
+## 12. Umsetzungsstatus
+
+Dieses Dokument beschreibt die angepasste Free-Plan-Zielarchitektur. Der bestehende Edge-Function-Scaffold enthält weiterhin nur Upload-Intent und Statusabfrage; `process-document` bleibt HTTP 501. Clientseitige PDF-Extraktion, Chunk-Batch-Endpunkte, Bucket, Policies, Datenbankänderungen und Frontend-Upload sind **noch nicht implementiert**.
+
+Es wurden keine Cloudflare Queues angelegt, keine Supabase-Tabellen/Policies/Buckets verändert, keine Secrets gesetzt, keine Tests ausgeführt, kein Merge vorgenommen und kein Deployment gestartet.
