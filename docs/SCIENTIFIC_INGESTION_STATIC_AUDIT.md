@@ -87,9 +87,9 @@ Die Edge Function meldet noch nicht löschbereite Einträge separat als `deferre
 
 ## 7. Präzisierung: Upload ist derzeit noch nicht implementiert
 
-Die aktuelle `js/scientific-library.js` führt ausschließlich eine lokale PDF.js-Extraktion durch. Sie enthält keinen Aufruf von Supabase Storage, keine Erzeugung eines Upload-Intents und keinen Aufruf von `confirm-upload`. Die Upload- und Cleanup-Rennen sind daher derzeit ein Architektur-/Zukunftsrisiko, kein aktuell laufender App-Workflow.
+Die aktuelle `js/scientific-library.js` führt weiterhin ausschließlich eine lokale PDF.js-Extraktion durch. Das separate Modul `js/scientific-upload.js` enthält inzwischen einen TUS-Upload- und Resume-Codepfad, wird aber nicht von der UI aufgerufen. Upload- und Cleanup-Rennen sind deshalb weiterhin kein aktuell laufender App-Workflow.
 
-Die konkrete Uploadmethode (Standard-Upload oder TUS/resumable), ein maximales Upload-Dateilimit und ein Abbruch-/Session-Ablauf sind noch nicht entschieden. Der vorläufige 24-Stunden-Quieszenzwert darf deshalb nicht als technisch verifiziert gelten.
+TUS ist als Uploadmethode festgelegt und `tus-js-client@4.3.1` ist im isolierten Modul eingebunden. Das maximale Upload-Dateilimit, das Projekt-/Bucket-Limit und das Verhalten des tatsächlichen Storage-Endpunkts sind noch nicht verifiziert. Der vorläufige 24-Stunden-Quieszenzwert darf deshalb nicht als technisch verifiziert gelten.
 
 Zusätzlich wurde die 24-Stunden-Bedingung in die Finalisierungs-RPC aufgenommen. Die Datenbank soll Metadaten nicht nur dann löschen, wenn die Edge Function den Zeitpunkt geprüft hat, sondern verlangt dieselbe Bedingung nochmals selbst.
 
@@ -98,7 +98,7 @@ Zusätzlich wurde die 24-Stunden-Bedingung in die Finalisierungs-RPC aufgenommen
 
 TUS ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt. Supabase empfiehlt den resumable Upload insbesondere oberhalb von 6 MB oder bei instabilen Netzwerken; eine erzeugte TUS-Upload-URL ist laut Dokumentation bis zu 24 Stunden gültig. Die bestehende Cleanup-Karenz von sieben Tagen nach Ablauf des Upload-Intents plus 24 Stunden Quieszenz bietet einen deutlichen zeitlichen Abstand zu dieser dokumentierten Session-Gültigkeit.
 
-Noch nicht verifiziert sind die konkrete TUS-Clientbibliothek, das Projektlimit, das Bucket-Limit und das Verhalten im Zielprojekt. Die Frontend-Integration fehlt weiterhin. Der statische Audit bestätigt daher nur die Konsistenz der Entwürfe, nicht den realen Storage-Lifecycle.
+Noch nicht verifiziert sind Projektlimit, Bucket-Limit, CDN-Lieferkette/SRI und das Verhalten des TUS-Endpunkts im Zielprojekt. Das Upload-Modul ist vorhanden, aber nicht in die UI integriert. Der statische Audit bestätigt daher nur die Code- und Entwurfskonsistenz, nicht den realen Storage-Lifecycle.
 
 ## Ergänzende Frontend-Integrationsprüfung: TUS
 
@@ -140,3 +140,22 @@ Ergänzende statische Korrekturen am Upload-Baustein:
 - Der Storage-Endpunkt wird auf den direkten Supabase-Storage-Hostname `<project-ref>.storage.supabase.co` abgebildet, nicht auf den allgemeinen `<project-ref>.supabase.co`-API-Host.
 - Nach `confirm-upload` wird `get-document-status` erneut aufgerufen; erst der serverseitig gelesene Status `uploaded` gilt als Erfolg.
 - Ein expliziter Abbruch während der TUS-Übertragung beendet auch das zurückgegebene Completion-Promise. Nach erfolgreichem TUS-Transfer wird die serverseitige Bestätigung nicht mehr durch einen nachträglichen Upload-Abbruch übergangen.
+
+
+## 10. Isolierung der Cleanup-Ausführung (16.11.2026)
+
+Die Cleanup-Action wurde aus `scientific-ingestion` entfernt. Die normale Ingestion-Function akzeptiert jetzt ausschließlich reguläre Nutzer-JWTs und validiert sie über `auth.getUser()`.
+
+Die separate Function `supabase/functions/scientific-upload-cleanup/index.ts`:
+- verwendet ein eigenes Trigger-Secret im Header `x-kajo-cleanup-secret`;
+- liest das Secret aus `SCIENTIFIC_UPLOAD_CLEANUP_SECRET` und verlangt mindestens 32 Zeichen;
+- vergleicht das Secret mit einer konstantzeitlichen Byte-Schleife;
+- bleibt zusätzlich durch `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` deaktiviert, solange der Schalter nicht gesetzt ist;
+- verwendet den Service-Role-Key ausschließlich intern für Datenbank- und Storage-Aufrufe;
+- bietet keine Browser-CORS-Freigabe;
+- verarbeitet höchstens ein Dokument pro Aufruf, um die 15-Minuten-Claim-Lease konservativ zu behandeln;
+- liefert bei Storage- oder Finalisierungsfehlern HTTP 503; eine noch nicht abgelaufene Quieszenz wird mit `deferred: true` gemeldet.
+
+In `supabase/config.toml` ist für diese Function `verify_jwt = false` gesetzt, weil die Function ihre eigene Secret-Authentifizierung durchführt. Das ist nur sicher, solange das separate Secret stark, vertraulich und ausschließlich beim Scheduler hinterlegt ist. Der Service-Role-Key darf nicht als Trigger-Secret verwendet werden.
+
+**Noch nicht eingerichtet oder aktiviert:** Function-Deployment, beide Function-Secrets, Datenbankmigrationen/RPCs, Storage-Bucket/Policies und Scheduler. Es wurden keine Tests ausgeführt.
