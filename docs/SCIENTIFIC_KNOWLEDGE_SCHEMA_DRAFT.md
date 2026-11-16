@@ -129,7 +129,7 @@ Der Worker darf nur aus tatsächlich übergebenen Evidenztreffern zitieren. Ohne
 - Keine Vektor-Extension aktiviert
 - Keine Embedding-Modelle festgelegt
 - Keine Storage-Buckets oder Storage-Policies für Paper
-- Keine PDF-Extraktion oder Chunking-Pipeline
+- Keine produktive PDF-Extraktion oder dauerhafte Chunking-Pipeline (lokaler PDF.js-Vorschau-PoC ist inzwischen vorhanden)
 - Keine Retrieval-Funktion oder Worker-Integration
 - Keine SQL-Migration angewendet
 
@@ -138,3 +138,15 @@ Der Worker darf nur aus tatsächlich übergebenen Evidenztreffern zitieren. Ohne
 - Supabase pgvector: https://supabase.com/docs/guides/database/extensions/pgvector
 - Supabase Semantic Search: https://supabase.com/docs/guides/ai/semantic-search
 - Supabase Vector Columns: https://supabase.com/docs/guides/ai/vector-columns
+
+
+## 11. Status- und Retrieval-Gating
+
+Der SQL-Entwurf unter `docs/drafts/SCIENTIFIC_KNOWLEDGE_PHASE1_DDL_DRAFT.sql` wurde nach einer RLS-Prüfung präzisiert:
+
+- `manual_review_required` ist ein eigener technischer Dokumentstatus für Scans bzw. nicht zuverlässig extrahierbare PDFs.
+- Private Chunks sind nur lesbar, wenn das Parent-Dokument `private_ready` ist und der Parent-Source dem authentifizierten Nutzer gehört.
+- Shared-Chunks sind nur lesbar, wenn das Dokument `review_pending` ist und die übergeordnete Quelle `approved` ist.
+- Chunks aus `pending`, `uploaded`, `extracting`, `extracted`, `failed`, `rejected` oder `manual_review_required` sind nicht über die normale authentifizierte SELECT-Policy sichtbar.
+
+Diese Regeln betreffen ausschließlich den Entwurf. Die Migration wurde nicht angewendet; vor Umsetzung sind Policy-Syntax und tatsächliche Grants weiterhin separat zu prüfen.
