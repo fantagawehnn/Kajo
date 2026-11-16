@@ -5,7 +5,7 @@
  * ============================================================ */
 import { state } from './state.js';
 import { renderMetricHistory } from './dashboard.js?v=3';
-import { calculateReadiness } from './recovery-calculations.js';
+import { calculateReadiness, summarizeRecoveryTrends } from './recovery-calculations.js?v=2';
 import { escapeHtml, formatDateDDMMYY } from './utils.js';
 
 const todayKey = () => {
@@ -169,6 +169,28 @@ function renderRecoveryInsight() {
     const checkins = Object.entries(state.dailyCheckins || {})
         .filter(([date]) => date >= daysAgoKey(6) && date <= today);
     const readiness = calculateReadiness(state.dailyCheckins);
+    const recoveryTrends = summarizeRecoveryTrends(state.dailyCheckins, today);
+    const trendFormat = (value, digits) => valid(value)
+        ? Number(value).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: digits })
+        : '—';
+    const trendCards = recoveryTrends.metrics.map(item => {
+        const currentText = item.currentAverage === null ? 'Keine Daten'
+            : trendFormat(item.currentAverage, item.digits) + ' ' + item.unit;
+        const previousText = item.previousAverage === null ? 'Vorwoche: keine Daten'
+            : 'Vorwoche: ' + trendFormat(item.previousAverage, item.digits) + ' ' + item.unit;
+        const deltaText = item.delta === null ? 'Kein Vergleich möglich'
+            : 'Veränderung: ' + (item.delta > 0 ? '+' : '') + trendFormat(item.delta, item.digits) + ' ' + item.unit;
+        const coverage = item.currentCount + '/7 aktuelle Tage · ' + item.previousCount + '/7 vorherige Tage';
+        return metric(item.label + ' · Ø 7 Tage', currentText,
+            previousText + ' · ' + deltaText + ' · ' + coverage);
+    });
+    const trendDates = recoveryTrends.from && recoveryTrends.to
+        ? 'Aktuell: ' + recoveryTrends.from + ' bis ' + recoveryTrends.to +
+          ' · Vergleich: ' + recoveryTrends.previousFrom + ' bis ' + recoveryTrends.previousTo
+        : 'Kein gültiger Zeitraum verfügbar.';
+    setPanel('analysis-recovery-insight',
+        '<div class="kajo-insight-grid">' + trendCards.join('') + '</div>' +
+        note(trendDates + '. Mittelwerte der vorhandenen Messungen; fehlende Tage werden nicht ergänzt. Veränderungen werden neutral angezeigt und sind keine medizinische Bewertung.'));
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
     const findObjective = key => objective.find(item => item.key === key);
     const rhrBaseline = findObjective('rhr');
