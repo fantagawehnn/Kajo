@@ -837,10 +837,13 @@ async function syncGarminActivitiesForUser(
     }
 
     const activityCounts = new Map<string, number>();
+    const seenActivityIds = new Set<string>();
     const records = rows.map((item) => {
       const activity = safeActivityPreview(item);
       const activityId = activity.activityId == null ? "" : String(activity.activityId);
-      if (!/^\\d+$/.test(activityId)) return null;
+      if (!/^\\d+$/.test(activityId)) {
+        throw new Error("Garmin-Aktivität ohne gültige numerische Aktivitäts-ID. Der Zeitraum wird nicht als vollständig synchronisiert markiert.");
+      }
       const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
       const parsedStart = rawStart ? new Date(String(rawStart)) : null;
       const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
@@ -848,7 +851,14 @@ async function syncGarminActivitiesForUser(
       const activityDate = /^\\d{4}-\\d{2}-\\d{2}/.test(localStart)
         ? localStart.slice(0, 10)
         : startTime?.slice(0, 10) ?? null;
-      if (activityDate && activityDate >= range.startDate && activityDate <= range.endDate) {
+      if (!activityDate || !/^\\d{4}-\\d{2}-\\d{2}$/.test(activityDate)) {
+        throw new Error("Garmin-Aktivität ohne gültiges Startdatum. Der Zeitraum wird nicht als vollständig synchronisiert markiert.");
+      }
+      // Garmin activity IDs are unique. Ignore duplicate rows from pagination
+      // before counting daily activity coverage or writing upserts.
+      if (seenActivityIds.has(activityId)) return null;
+      seenActivityIds.add(activityId);
+      if (activityDate >= range.startDate && activityDate <= range.endDate) {
         activityCounts.set(activityDate, (activityCounts.get(activityDate) ?? 0) + 1);
       }
       const duration = Number(activity.duration);
