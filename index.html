@@ -360,7 +360,7 @@
   </button>
 
   <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
-    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Wearable &amp; Gesundheitsdaten</h2></div>
+    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Self-Monitoring</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openDailyNote()" aria-label="Self-Monitoring-Notizbuch öffnen" title="Self-Monitoring-Notizbuch öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
@@ -1009,7 +1009,7 @@
         </div>
 
         <button type="button" id="coach-fab" class="kajo-coach-fab" onclick="openCoach()" aria-label="KAJO Coach öffnen" title="KAJO Coach öffnen">
-            <i data-lucide="brain-circuit"></i><span>Coach fragen</span>
+            <i data-lucide="brain-circuit" aria-hidden="true"></i>
         </button>
     <!-- Eigenständige Athletenprofil-Ansicht -->
     <section id="view-profile" class="hidden space-y-5" aria-labelledby="athlete-profile-page-title">
@@ -1626,7 +1626,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=122"></script>
+    <script type="module" src="js/main.js?v=123"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
