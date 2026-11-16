@@ -376,9 +376,21 @@ export async function performIntervalsLiveSync() {
                 category: inferCategory(name, item.type || ''), telemetry: null
             };
 
-            const exact = state.rawActivities.find(a =>
-                String(a.id) === actId || (a.sourceId != null && String(a.sourceId) === actId)
-            );
+            // Intervals-IDs sind nur innerhalb ihrer Quelle eindeutig.
+            // Eine zufällig gleiche Garmin-ID darf den Intervals-Datensatz
+            // weder als bereits importiert markieren noch dessen Daten verschlucken.
+            const exact = state.rawActivities.find(a => {
+                const hasIntervalsIdentity = a?.source === 'intervals'
+                    || a?.sources?.includes?.('intervals')
+                    || a?.sourceRefs?.intervalsActivityId != null;
+                if (hasIntervalsIdentity) {
+                    const intervalsId = a.sourceRefs?.intervalsActivityId ?? a.sourceId ?? a.id;
+                    return String(intervalsId) === actId;
+                }
+                return !isGarminActivity(a)
+                    && a?.source !== 'garmin'
+                    && String(a?.id) === actId;
+            });
             const crossMatches = state.rawActivities.filter(a =>
                 isGarminActivity(a) && crossSourceActivityMatch(candidate, a)
             );
