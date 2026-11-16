@@ -907,6 +907,7 @@ function historyRecommendation(key, value, dateKey) {
             ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert daher vorsichtig interpretieren.'
             : 'Die Form wird aus dem Verhältnis von langfristiger und kurzfristiger Belastung abgeleitet. Zusammen mit subjektivem Befinden und Trainingsqualität einordnen.'];
     }
+    if (key === 'bodyBattery') return ['Garmin Body Battery', 'Proprietärer Garmin-Wert auf einer Skala von 0 bis 100. Die Anzeige beschreibt den Gerätewert; daraus wird hier keine eigenständige Trainingsfreigabe oder Readiness-Einstufung abgeleitet.'];
     if (key === 'readiness') {
         if (value >= 80) return ['Günstige Readiness', 'Die verfügbaren objektiven und subjektiven Angaben fallen insgesamt günstig aus. Plane trotzdem passend zur Tagesform.'];
         if (value >= 60) return ['Mittlere Readiness', 'Die Signale sind nicht durchgehend günstig. Prüfe besonders Müdigkeit, Muskelkater, Schlaf und den geplanten Trainingsreiz.'];
