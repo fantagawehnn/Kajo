@@ -28,8 +28,33 @@ function isDateCovered(date, ranges) {
     return ranges.some(range => date >= range.startDate && date <= range.endDate);
 }
 
+function deduplicateTimelineActivities(records) {
+    const seenKeys = new Set();
+    const seenObjectsWithoutId = new Set();
+    return (Array.isArray(records) ? records : []).filter(activity => {
+        if (!activity || typeof activity !== 'object') return false;
+        const date = activityDateKey(activity.date);
+        if (!date) return false;
+        const id = activity.id;
+        if (id === null || id === undefined || id === '') {
+            // Without a stable ID, only repeated references can safely be
+            // identified as duplicates. Similar-looking sessions stay separate.
+            if (seenObjectsWithoutId.has(activity)) return false;
+            seenObjectsWithoutId.add(activity);
+            return true;
+        }
+        const key = [String(id), date, activity.startTime || ''].join('|');
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+    });
+}
+
 export function computePerformanceTimeline(records, settings, profile, dailyCheckins = {}) {
-    const list = Array.isArray(records) ? records : [];
+    // Prevent duplicate imports from inflating both daily load and activity
+    // counts. Distinct sessions sharing an ID but having a different date or
+    // start time remain separate.
+    const list = deduplicateTimelineActivities(records);
     const loadData = getTrainingLoadData(list, settings, profile, dailyCheckins);
 
     // Confirmed Garmin coverage allows empty days to count as rest days.
