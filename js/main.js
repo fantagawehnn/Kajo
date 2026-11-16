@@ -236,14 +236,12 @@ function renderHealthAnalysis() {
                     + periodLine('Davor', impact.before)
                     + periodLine('Währenddessen', impact.during)
                     + periodLine('Danach', impact.after)
-                    + (['before', 'during', 'after'].some(key => impact[key].trainingLoad !== null)
-                        ? '<div><strong>Trainingsload (' + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit') + '):</strong> '
-                            + ['before', 'during', 'after'].map(key => impact[key].trainingLoad === null
-                                ? '— (' + coverageText(impact[key].trainingLoadCoverage) + ')'
-                                : Number(impact[key].trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
-                                    + ' (' + coverageText(impact[key].trainingLoadCoverage) + ')').join(' / ')
-                            + '</div><div>Verwendetes Load-Modell: ' + (impact.before.trainingLoadMode || impact.during.trainingLoadMode || impact.after.trainingLoadMode || 'nicht verfügbar') + '</div>'
-                        : '<div>Trainingsload: für diese Zeiträume nicht berechenbar.</div>')
+                    + '<div><strong>Trainingsload (' + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit') + '):</strong> '
+                        + ['before', 'during', 'after'].map(key => impact[key].trainingLoad === null
+                            ? '— (' + coverageText(impact[key].trainingLoadCoverage) + ')'
+                            : Number(impact[key].trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
+                                + ' (' + coverageText(impact[key].trainingLoadCoverage) + ')').join(' / ')
+                        + '</div><div>Verwendetes Load-Modell: ' + (impact.before.trainingLoadMode || impact.during.trainingLoadMode || impact.after.trainingLoadMode || 'nicht verfügbar') + '</div>'
                     + '<div>Durchschnitt pro berücksichtigtem Kalendertag: '
                     + formatHours(impact.before.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.during.averageMinutesPerCalendarDay) + ' / '
@@ -261,7 +259,8 @@ function renderHealthAnalysis() {
                     }).join('')
                     + '<div>Ausgewählter Trainingsload ('
                     + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit')
-                    + '): ' + impact.returnToTraining.windows.map(window => window.trainingLoad === null ? '—'
+                    + '): ' + impact.returnToTraining.windows.map(window => window.trainingLoad === null
+                        ? '— (' + coverageText(window.trainingLoadCoverage) + ')'
                         : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
                             + ' (' + coverageText(window.trainingLoadCoverage) + ')').join(' / ')
                     + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
