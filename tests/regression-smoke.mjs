@@ -35,6 +35,21 @@ const storage = await import('../js/storage.js?v=5');
 const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
 const { getRacePriorityMeta, migrateLegacyRacePriorities } = await import('../js/competitions.js');
+const { mergeProfileSnapshots } = await import('../js/profile-merge.js');
+
+// Profile sync merges cloud-only fields without replacing non-empty local values.
+const cloudProfile = { name: 'Cloud name', maxHr: 190, club: 'Club', country: 'GER', nested: { b: 2, a: 1 } };
+const localProfile = { name: 'Local name', maxHr: 190, club: '', nested: { a: 1, b: 2 } };
+const mergedProfileResult = mergeProfileSnapshots(localProfile, cloudProfile);
+assert.equal(mergedProfileResult.profile.name, 'Local name');
+assert.equal(mergedProfileResult.profile.club, 'Club');
+assert.equal(mergedProfileResult.profile.country, 'GER');
+assert.deepEqual(mergedProfileResult.conflicts, ['name']);
+assert.equal(mergedProfileResult.cloudNeedsUpdate, true);
+const cloudSupersetResult = mergeProfileSnapshots({ name: 'Same', maxHr: 190 }, { name: 'Same', maxHr: 190, country: 'GER' });
+assert.deepEqual(cloudSupersetResult.conflicts, []);
+assert.equal(cloudSupersetResult.profile.country, 'GER');
+assert.equal(cloudSupersetResult.cloudNeedsUpdate, false);
 
 // Local date must not shift to the previous/next day through UTC conversion.
 assert.equal(toLocalDateString(new Date(2026, 10, 10, 0, 15)), '2026-11-10');
@@ -92,6 +107,21 @@ assert.equal(store.get('endurance_checkins'), legacyCheckins);
 
 // Subsequent import checks run inside an isolated authenticated-user storage scope.
 await storage.loadStateForUser('smoke-test-user');
+
+// Saving a sickness/injury entry must finish locally without waiting for a cloud request.
+const healthModule = await import('../js/health.js?v=79');
+elements['health-log-date-from'].value = '2026-11-12';
+elements['health-log-date-to'].value = '2026-11-13';
+elements['health-log-status'].value = 'sick';
+elements['health-log-diagnosis'].value = 'Smoke test infection';
+state.healthLogs = {};
+await healthModule.saveRetroactiveHealthLog();
+await storage.flushLocalPersistence();
+assert.equal(state.healthLogs['2026-11-12'].status, 'sick');
+assert.equal(state.healthLogs['2026-11-13'].diagnosis, 'Smoke test infection');
+assert.deepEqual(JSON.parse(store.get('endurance:user:smoke-test-user:health')), state.healthLogs);
+
+
 
 // Garmin raw telemetry remains available in memory for charts but is never
 // written to the persistent per-user activity or telemetry collections.
