@@ -123,6 +123,7 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
     let resolveUpload;
     let rejectUpload;
     let settled = false;
+    let tusFinished = false;
     const completion = new Promise((resolve, reject) => {
         resolveUpload = resolve;
         rejectUpload = reject;
@@ -168,6 +169,7 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
         },
         onSuccess: async () => {
             if (settled) return;
+            tusFinished = true;
             onStatus?.('Upload übertragen. Prüfe Datei und Eigentum serverseitig …');
             try {
                 const confirmation = await invokeIngestion({
@@ -205,9 +207,21 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
     onStatus?.('PDF wird sicher übertragen …');
     upload.start();
 
+    const abort = async () => {
+        if (settled || tusFinished) return;
+        settled = true;
+        try {
+            await upload.abort();
+        } finally {
+            const error = new Error('UPLOAD_ABORTED');
+            error.name = 'AbortError';
+            rejectUpload(error);
+        }
+    };
+
     return {
         documentId: intent.document_id,
         promise: completion,
-        abort: () => upload.abort()
+        abort
     };
 }
