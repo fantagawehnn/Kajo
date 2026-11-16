@@ -126,7 +126,21 @@ Für jede Quelle wird deshalb ein `access_basis` dokumentiert, zum Beispiel:
 
 Bei ungeklärter Rechtsgrundlage bleibt der Volltext außerhalb der gemeinsamen Wissensbasis. Für Link-only-Quellen können bibliografische Metadaten und ein externer Link gespeichert werden, sofern dies zulässig ist.
 
-## 8. Schnittstellen – noch nicht implementiert
+## 8. Vorhandene serverseitige Integrationsbasis
+
+Im Repository existiert bereits `supabase/functions/garmin-personal/index.ts`. Die Funktion zeigt ein bestehendes Muster, das für eine separate Knowledge-Ingestion-Edge-Function geprüft und teilweise wiederverwendet werden kann:
+
+- Supabase-URL, Anon-Key und Service-Role-Key werden ausschließlich aus Edge-Function-Umgebungsvariablen gelesen.
+- Nutzeranfragen werden über den Bearer-Token mit einem Anon-Client und `auth.getUser()` validiert.
+- Die User-ID wird anschließend aus dem validierten Nutzerobjekt übernommen.
+- Privilegierte Datenbank- und Storage-Aktionen laufen über einen getrennten Admin-Client.
+- Hintergrundaktionen verwenden einen eigenen serverseitigen Secret-Mechanismus.
+
+Das spricht dafür, die Dokumentverarbeitung als **separate Supabase Edge Function** umzusetzen und nicht den bestehenden Cloudflare-Chat-Worker mit einem Service-Role-Key auszustatten. Die neue Funktion muss eine eigene, eng begrenzte Aktionsoberfläche erhalten; Garmin-spezifische Logik oder Secrets werden nicht übernommen.
+
+Die vorhandene Funktion ist dabei ein Architekturbeispiel, keine fertige Upload-Lösung. Ihre CORS-Konfiguration, JWT-Prüfung, Rate-Limits und Fehlerprotokollierung müssen vor Wiederverwendung konkret geprüft werden.
+
+## 9. Schnittstellen – noch nicht implementiert
 
 Vorgeschlagene API-Aufteilung:
 
@@ -138,7 +152,7 @@ Vorgeschlagene API-Aufteilung:
 
 Die konkrete Umsetzung (Supabase Edge Function oder Worker) wird erst nach Prüfung der vorhandenen Edge-Function-Struktur und des Secret-/JWT-Konzepts festgelegt. Der aktuelle Worker wird nicht um einen privilegierten Service-Role-Key ergänzt, solange die sichere Zuständigkeit und Secret-Verwaltung nicht geklärt sind.
 
-## 9. MVP-Abnahmekriterien
+## 10. MVP-Abnahmekriterien
 
 Vor Freigabe eines ersten Upload-MVP müssen folgende Eigenschaften statisch und anschließend gezielt technisch nachgewiesen werden:
 
@@ -152,7 +166,7 @@ Vor Freigabe eines ersten Upload-MVP müssen folgende Eigenschaften statisch und
 8. Der Coach kann nur freigegebene gemeinsame Evidenz und ausdrücklich ausgewählte private Quellen abrufen.
 9. Fehlende oder unpassende Evidenz wird als solche benannt; es werden keine Quellen erfunden.
 
-## 10. Noch offene technische Entscheidungen
+## 11. Noch offene technische Entscheidungen
 
 - Dedizierter Storage-Bucket und konkrete Policies.
 - Supabase Edge Function oder Cloudflare Worker als Ingestion-Ausführung.
@@ -163,6 +177,6 @@ Vor Freigabe eines ersten Upload-MVP müssen folgende Eigenschaften statisch und
 - Aufbewahrungs- und Löschprozess für private Uploads.
 - Ob private Uploads im ersten MVP überhaupt verarbeitet werden oder zunächst nur Metadaten und Dateiablage erhalten.
 
-## 11. Nicht durchgeführt
+## 12. Nicht durchgeführt
 
 Es wurden keine Storage-Buckets, Tabellen, Policies, Functions, Secrets oder API-Routen angelegt. Es wurde kein Dokument hochgeladen oder verarbeitet. Es wurden keine Tests ausgeführt, kein Merge vorgenommen und kein Deployment gestartet.
