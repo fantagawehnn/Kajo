@@ -193,15 +193,21 @@ export function closeRaceDetail() {
 }
 
 export function toggleRaceModal() {
+    populateRaceRouteSelect();
     const modal = document.getElementById('race-modal');
     if (!modal) return;
-    const opening = modal.classList.contains('hidden');
-    if (opening) {
+
+    if (modal.classList.contains('hidden')) {
+        // Aus dem scrollbaren App-Bereich lösen, damit das Modal viewport-zentriert bleibt.
         const dateInput = document.getElementById('race-date');
         if (dateInput && !dateInput.value) dateInput.value = toLocalDateString();
-        populateRaceRouteSelect();
+        if (modal.parentElement !== document.body) document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+        document.body.classList.add('kajo-modal-open');
+    } else {
+        modal.classList.add('hidden');
+        document.body.classList.remove('kajo-modal-open');
     }
-    modal.classList.toggle('hidden');
 }
 
 export function addRace() {
