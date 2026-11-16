@@ -72,6 +72,7 @@ begin
          where d.visibility = 'private'
            and d.processing_status = 'pending'
            and d.upload_confirmed_at is null
+           and d.storage_path = d.owner_id::text || '/' || d.id::text || '/original.pdf'
            and d.upload_intent_expires_at < now() - interval '7 days'
            and (
                d.upload_cleanup_claimed_at is null
@@ -136,6 +137,7 @@ begin
        and d.visibility = 'private'
        and d.processing_status = 'pending'
        and d.upload_confirmed_at is null
+       and d.storage_path = d.owner_id::text || '/' || d.id::text || '/original.pdf'
        and d.upload_intent_expires_at < now() - interval '7 days'
        and d.upload_cleanup_claim_token = p_claim_token
        and d.upload_cleanup_claimed_at > now() - interval '15 minutes'
