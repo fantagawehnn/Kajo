@@ -61,3 +61,69 @@ export function calculateReadiness(dailyCheckins = {}, dateKey = localTodayKey()
     objective,subjective,totalCount
   };
 }
+
+
+const RECOVERY_TREND_METRICS = Object.freeze({
+  sleepDuration: { label: 'Schlafdauer', unit: 'h', digits: 1 },
+  sleepScore: { label: 'Sleep Score', unit: '/ 100', digits: 0 },
+  hrv: { label: 'HRV', unit: 'ms', digits: 1 },
+  rhr: { label: 'Ruhepuls', unit: 'bpm', digits: 1 },
+  bodyBattery: { label: 'Body Battery', unit: '/ 100', digits: 0 },
+  sleepQuality: { label: 'Schlafqualität', unit: '/ 10', digits: 1 },
+  fatigue: { label: 'Müdigkeit', unit: '/ 10', digits: 1 }
+});
+
+function recoveryTrendValue(row, key) {
+  if (!row || typeof row !== 'object') return null;
+  let value;
+  if (key === 'sleepDuration') value = row.sleepDuration ?? (Number(row.sleep) > 5 ? row.sleep : null);
+  else if (key === 'rhr') value = row.garminRhr ?? row.rhr;
+  else value = row[key];
+  if (!validNumber(value)) return null;
+  const n = Number(value);
+  if (key === 'sleepDuration' && (n <= 0 || n > 24)) return null;
+  if (key === 'sleepScore' || key === 'bodyBattery') return n >= 0 && n <= 100 ? n : null;
+  if (key === 'sleepQuality' || key === 'fatigue') return n >= 1 && n <= 10 ? n : null;
+  if ((key === 'hrv' || key === 'rhr') && n <= 0) return null;
+  return n;
+}
+
+/**
+ * Compares the seven calendar days ending on dateKey with the preceding
+ * seven calendar days. Missing measurements are excluded, never treated as 0.
+ */
+export function summarizeRecoveryTrends(dailyCheckins = {}, dateKey = localTodayKey()) {
+  const parts = String(dateKey).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isInteger(n)) || parts[0] < 1900 ||
+      parts[1] < 1 || parts[1] > 12 || parts[2] < 1 || parts[2] > 31) {
+    return { from: null, to: null, previousFrom: null, previousTo: null, metrics: [] };
+  }
+  const end = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+  if (!Number.isFinite(end.getTime()) || end.getFullYear() !== parts[0] ||
+      end.getMonth() !== parts[1] - 1 || end.getDate() !== parts[2]) {
+    return { from: null, to: null, previousFrom: null, previousTo: null, metrics: [] };
+  }
+  const keyFor = date => date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  const shift = (date, days) => { const d = new Date(date); d.setDate(d.getDate() + days); return d; };
+  const to = keyFor(end), from = keyFor(shift(end, -6));
+  const previousTo = keyFor(shift(end, -7)), previousFrom = keyFor(shift(end, -13));
+  const average = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  const entries = Object.entries(dailyCheckins || {});
+  const metrics = Object.entries(RECOVERY_TREND_METRICS).map(([key, meta]) => {
+    const currentValues = entries.filter(([date]) => date >= from && date <= to)
+      .map(([, row]) => recoveryTrendValue(row, key)).filter(value => value !== null);
+    const previousValues = entries.filter(([date]) => date >= previousFrom && date <= previousTo)
+      .map(([, row]) => recoveryTrendValue(row, key)).filter(value => value !== null);
+    const currentAverage = average(currentValues);
+    const previousAverage = average(previousValues);
+    return {
+      key, ...meta,
+      currentAverage: currentAverage === null ? null : Number(currentAverage.toFixed(2)),
+      previousAverage: previousAverage === null ? null : Number(previousAverage.toFixed(2)),
+      delta: currentAverage === null || previousAverage === null ? null : Number((currentAverage - previousAverage).toFixed(2)),
+      currentCount: currentValues.length,
+      previousCount: previousValues.length
+    };
+  });
+  return { from, to, previousFrom, previousTo, metrics };
+}
