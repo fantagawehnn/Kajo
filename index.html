@@ -19,7 +19,7 @@
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=142">
+    <link rel="stylesheet" href="css/styles.css?v=143">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -360,7 +360,7 @@
   </button>
 
   <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
-    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Self-Monitoring</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openDailyNote()" aria-label="Self-Monitoring-Notizbuch öffnen" title="Self-Monitoring-Notizbuch öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
+    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Self-Monitoring</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Self-Monitoring öffnen" title="Self-Monitoring öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
@@ -703,16 +703,18 @@
         </div>
 
         <div id="day-detail-modal" class="hidden fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
-          <div class="max-w-3xl mx-auto my-4 bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-5">
-            <div class="flex items-center justify-between"><div><h2 id="day-detail-title" class="text-lg font-bold text-white">Tagesdaten</h2><p class="text-xs text-slate-400">Angaben können auch rückwirkend ergänzt und geändert werden.</p></div><button type="button" onclick="closeDayEditor()" class="p-2 text-slate-400">✕</button></div>
-            <label class="block text-xs text-slate-400">Datum<input type="date" id="day-edit-date" onchange="openDayEditor(this.value)" class="mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
-            <div id="day-cycle-summary" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-3"></div>
-            <section class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2"><h3 class="text-xs font-bold text-cyan-400">Aktivitäten und Tagesplanung</h3><div id="day-activities-list" class="text-xs text-slate-300 space-y-2"></div></section>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-400">Gesundheitsstatus<select id="day-health-status" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"><option value="healthy">Gesund & einsatzbereit</option><option value="sick">Krank</option><option value="injured">Verletzt</option></select></label><label class="text-xs text-slate-400">Diagnose / Notiz<input id="day-health-diagnosis" maxlength="160" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label></div>
-            <section class="space-y-3"><h3 class="text-xs font-bold text-cyan-400">Self-monitoring (1–5)</h3><div id="day-subjective-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div></section>
-            <section class="space-y-3"><h3 class="text-xs font-bold text-cyan-400">Wearable- und Körperdaten</h3><div id="day-wearable-fields" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div></section>
-            <section id="day-cycle-section" class="hidden border-t border-slate-800 pt-4 space-y-3"><h3 class="text-xs font-bold text-rose-400">Menstruationszyklus</h3><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="day-period" onchange="toggleDayCycleFields()" class="accent-rose-500"> Periode</label><div id="day-cycle-fields" class="hidden space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-3"><div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><label class="text-xs text-slate-400">Blutungsstärke<select id="day-cycle-bleeding" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"><option value="">Keine Angabe</option><option value="spotting">Schmierblutung</option><option value="light">Leicht</option><option value="medium">Mittel</option><option value="heavy">Stark</option></select></label><label class="text-xs text-slate-400">Schmerzen (0–10)<input id="day-cycle-pain" type="number" min="0" max="10" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label><label class="text-xs text-slate-400">Trainingsbeeinträchtigung (0–5)<input id="day-cycle-impact" type="number" min="0" max="5" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label></div><div class="text-xs text-slate-400">Weitere Symptome</div><div id="day-cycle-symptoms" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-slate-300"><label><input type="checkbox" value="Krämpfe"> Krämpfe</label><label><input type="checkbox" value="Kopfschmerzen"> Kopfschmerzen</label><label><input type="checkbox" value="Magen-Darm-Beschwerden"> Magen-Darm</label><label><input type="checkbox" value="Brustspannen"> Brustspannen</label><label><input type="checkbox" value="Stimmungsschwankungen"> Stimmung</label><label><input type="checkbox" value="Müdigkeit"> Müdigkeit</label></div><label class="block text-xs text-slate-400">Weitere Notizen<input id="day-cycle-notes" maxlength="160" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label></div></section>
-            <div class="flex justify-end gap-2 border-t border-slate-800 pt-4"><button type="button" onclick="closeDayEditor()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="button" onclick="saveDayEditor()" class="px-5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold">Tagesdaten speichern</button></div>
+          <div class="kajo-selfmonitoring-modal max-w-2xl mx-auto my-4 bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-5">
+            <div class="flex items-center justify-between gap-3"><div><h2 id="day-detail-title" class="text-lg font-bold text-white">Self-Monitoring</h2><p class="text-xs text-slate-400">Dein täglicher Check-in</p></div><button type="button" onclick="closeDayEditor()" aria-label="Self-Monitoring schließen" class="p-2 text-slate-400">✕</button></div>
+            <input type="hidden" id="day-edit-date">
+            <section class="space-y-4"><div><h3 class="text-sm font-semibold text-white">Wie geht es dir heute?</h3><p class="text-xs text-slate-400 mt-1">Bewerte die fünf Bereiche auf einer Skala von 1 bis 5.</p></div><div id="day-subjective-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4"></div></section>
+            <section class="space-y-2"><label for="day-weight" class="block text-sm font-semibold text-white">Körpergewicht</label><div class="flex items-center gap-2 max-w-xs"><input id="day-weight" type="number" min="20" max="300" step="0.1" placeholder="z. B. 65,0" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white"><span class="text-sm text-slate-400">kg</span></div></section>
+            <section class="space-y-3"><h3 class="text-sm font-semibold text-white">Gesundheit</h3>
+              <div class="space-y-3">
+                <div class="space-y-2"><label class="flex items-center gap-2 text-sm text-slate-200"><input type="checkbox" id="day-sick" onchange="toggleDaySickFields()" class="accent-rose-500"> Ich bin krank</label><div id="day-sick-fields" class="hidden rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-3"><label class="block text-xs text-slate-400">Art der Erkrankung / Beschwerden<input id="day-health-diagnosis" maxlength="160" placeholder="Optional" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"></label><div><div class="flex items-center justify-between gap-2"><label for="day-sick-severity" class="text-xs text-slate-400">Beeinträchtigung</label><output id="day-sick-severity-value" class="text-xs font-semibold text-rose-300">3 / 5</output></div><input id="day-sick-severity" class="kajo-color-slider kajo-slider-negative" type="range" min="1" max="5" step="1" value="3" oninput="updateSelfMonitoringSlider(this)"><div class="flex justify-between text-[10px] text-slate-500"><span>Gering</span><span>Sehr stark</span></div></div></div></div>
+                <div class="space-y-2"><label class="flex items-center gap-2 text-sm text-slate-200"><input type="checkbox" id="day-period" onchange="toggleDayCycleFields()" class="accent-rose-500"> Ich habe meine Periode</label><div id="day-cycle-fields" class="hidden rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-3"><div><div class="flex items-center justify-between gap-2"><label for="day-cycle-pain" class="text-xs text-slate-400">Beschwerden / Schmerzen</label><output id="day-cycle-pain-value" class="text-xs font-semibold text-rose-300">1 / 5</output></div><input id="day-cycle-pain" class="kajo-color-slider kajo-slider-negative" type="range" min="1" max="5" step="1" value="1" oninput="updateSelfMonitoringSlider(this)"><div class="flex justify-between text-[10px] text-slate-500"><span>Keine</span><span>Sehr stark</span></div></div></div></div>
+              </div>
+            </section>
+            <div class="flex justify-end gap-2 border-t border-slate-800 pt-4"><button type="button" onclick="closeDayEditor()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="button" onclick="saveDayEditor()" class="px-5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold">Check-in speichern</button></div>
           </div>
         </div>
         <div id="view-races" class="hidden space-y-6">
@@ -1626,7 +1628,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=123"></script>
+    <script type="module" src="js/main.js?v=124"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
