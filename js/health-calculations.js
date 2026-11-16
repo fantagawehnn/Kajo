@@ -199,7 +199,19 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
         && Number.isFinite(Number(record.value)) ? Number(record.value) : null
     })).filter(item => item.date && item.value !== null)
   );
-  const loadRows = loadResult.rows;
+  const activityIdentityKey = item => item.id == null || item.id === ''
+    ? null : [String(item.id), item.date || '', item.startTime || ''].join('|');
+  const knownActivityKeys = new Set(activityRows.map(activityIdentityKey).filter(Boolean));
+  // Load-Werte nur berücksichtigen, wenn sie eindeutig einer Aktivität
+  // aus derselben Analysegrundlage zugeordnet werden können.
+  const unmatchedLoadRows = loadResult.rows.filter(item => {
+    const key = activityIdentityKey(item);
+    return !key || !knownActivityKeys.has(key);
+  });
+  const loadRows = loadResult.rows.filter(item => {
+    const key = activityIdentityKey(item);
+    return key && knownActivityKeys.has(key);
+  });
   const validAsOfDate = validDateKey(asOfDate) ? asOfDate : null;
   const summarizeWindow = (from, to, excludeHealthDates = false, capAtAsOfDate = false) => {
     const requestedTo = to;
@@ -261,6 +273,10 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
         !(excludeHealthDates && documentedHealthDates.has(item.date))
       ).length,
       duplicateLoadRecordsExcluded: loadResult.duplicates.filter(item =>
+        item.date >= from && item.date <= to &&
+        !(excludeHealthDates && documentedHealthDates.has(item.date))
+      ).length,
+      unmatchedLoadRecordsExcluded: unmatchedLoadRows.filter(item =>
         item.date >= from && item.date <= to &&
         !(excludeHealthDates && documentedHealthDates.has(item.date))
       ).length,
