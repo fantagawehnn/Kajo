@@ -365,7 +365,7 @@ assert.ok(calendar.includes("totalReps=sets.reduce"), 'day editor totals repetit
 assert.ok(calendar.includes("volume=sets.reduce"), 'day editor calculates volume from recorded sets');
 assert.ok(calendar.includes("Sätze · '+totalReps+' Wdh."), 'day editor displays the number of recorded sets and repetitions');
 assert.ok(calendar.includes("item.exercise || 'Krafttraining', detail"), 'day timeline displays set details when available');
-assert.ok(competitions.includes("dateInput.value = toLocalDateString()"), 'race modal defaults to today rather than a stale hard-coded date');
+assert.ok(competitions.includes("date.value = toLocalDateString()"), 'new race form defaults to today rather than a stale hard-coded date');
 assert.ok(competitions.includes("Bitte gib eine gültige Platzierung als positive ganze Zahl an."), 'race result form validates ranking input');
 assert.ok(competitions.includes("!['C1', 'C2', 'K1', 'K2'].includes(discipline)"), 'race result form validates canoe discipline');
 assert.ok(competitions.includes("!['Classic', 'Sprint', 'Sonstiges'].includes(format)"), 'race result form validates race format');
