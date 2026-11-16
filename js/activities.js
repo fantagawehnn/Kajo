@@ -11,6 +11,7 @@ import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, cal
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
 import { populateActivityRouteSelect } from './routes.js';
+import { deriveSFormTestSegments, summarizeTestSegment } from './test-segments.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
 // Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
@@ -1207,6 +1208,12 @@ function renderOptionalActivityViews(act) {
         maxSpeed: lap.maxSpeedKmh ?? null,
         startTime: lap.startTime ?? null
     }));
+    const isSFormActivity = /s-form/i.test(String(act.name || ''));
+    const sFormSegments = isSFormActivity ? deriveSFormTestSegments(laps) : [];
+    const sFormLapMap = new Map();
+    sFormSegments.forEach(segment => segment.lapIndexes.forEach((lapIndex, splitIndex) => {
+        sFormLapMap.set(lapIndex, { segment, splitIndex: splitIndex + 1 });
+    }));
     if (laps.length) {
         const manualCount = laps.filter(lap => lap.kind === 'manual').length;
         const automaticCount = laps.filter(lap => lap.kind === 'automatic').length;
@@ -1236,7 +1243,9 @@ function renderOptionalActivityViews(act) {
         const fastestManual = manualSpeeds.length ? Math.max(...manualSpeeds) : null;
         const rows = comparableLaps.map(item => {
             const { lap, index, duration, distance, speed, pace } = item;
-            const label = escapeHtml(lap.name || lap.label || `Runde ${index}`);
+            const sFormPart = sFormLapMap.get(i);
+            const label = escapeHtml(lap.name || lap.label || `Runde ${index}`)
+                + (sFormPart ? ` · S-Form ${sFormPart.segment.index} / Split ${sFormPart.splitIndex}` : '');
             const triggerLabel = lap.lapTrigger == null || lap.lapTrigger === ''
                 ? null : 'FIT-Auslöser: ' + String(lap.lapTrigger).replace(/_/g, ' ');
             const kind = lap.kind === 'manual' ? 'Manuell markiert' : lap.kind === 'automatic' ? 'Automatisch' : 'Nicht zugeordnet';
@@ -1282,7 +1291,23 @@ function renderOptionalActivityViews(act) {
                     return '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + detail + '</div></div>';
                 }).join('') + '</div>'
             : '';
-        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote + workoutStepHtml);
+        const sFormSummary = sFormSegments.length
+            ? '<div class="rounded-lg border border-cyan-800/50 bg-cyan-950/20 p-3 mb-3"><h5 class="text-xs font-semibold text-cyan-300 mb-2">Erkannte S-Form-Testintervalle</h5>'
+                + sFormSegments.map(segment => {
+                    const result = summarizeTestSegment(segment, laps);
+                    const duration = result.durationSeconds === null ? 'Zeit nicht vollständig verfügbar'
+                        : Math.floor(result.durationSeconds / 60) + ':' + String(Math.round(result.durationSeconds % 60)).padStart(2, '0') + ' min';
+                    const distance = result.distanceMeters === null ? 'Distanz nicht vollständig verfügbar'
+                        : result.distanceMeters >= 1000 ? (result.distanceMeters / 1000).toFixed(2) + ' km' : Math.round(result.distanceMeters) + ' m';
+                    const speed = result.averageSpeedKmh === null ? 'Geschwindigkeit nicht berechenbar'
+                        : result.averageSpeedKmh.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' km/h';
+                    return '<div class="border-t border-cyan-900/60 py-2 text-xs"><strong class="text-slate-100">Intervall ' + segment.index + '</strong><div class="text-slate-300 mt-1">' + duration + ' · ' + distance + ' · ' + speed + '</div><div class="text-[10px] text-slate-500 mt-1">' + result.splitCount + ' Runde(n) inklusive automatischer Zwischen-Splits</div></div>';
+                }).join('')
+                + '<p class="text-[10px] text-slate-500 mt-2">Erkennung anhand aufeinanderfolgender manueller FIT-Lap-Grenzen. Automatische Zeit-/Distanz-Laps dazwischen werden als Splits zusammengefasst. Nicht eindeutig abgeschlossene Intervalle werden nicht automatisch ergänzt.</p></div>'
+            : isSFormActivity
+                ? '<p class="text-[10px] text-amber-300 mb-3">S-Form erkannt, aber keine vollständig durch manuelle FIT-Lap-Grenzen eingegrenzten Testintervalle gefunden. Es wird nichts automatisch als Test gewertet.</p>'
+                : '';
+        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', sFormSummary + summary + rows + comparisonNote + workoutStepHtml);
     } else {
         const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
         const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
