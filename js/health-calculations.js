@@ -195,6 +195,7 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       id: record?.activity?.id,
       date: itemDateKey(record?.activity),
       startTime: record?.activity?.startTime || '',
+      sourceActivity: record?.activity,
       value: record?.value !== null && record?.value !== undefined && record?.value !== ''
         && Number.isFinite(Number(record.value)) ? Number(record.value) : null
     })).filter(item => item.date && item.value !== null)
@@ -202,16 +203,16 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
   const activityIdentityKey = item => item.id == null || item.id === ''
     ? null : [String(item.id), item.date || '', item.startTime || ''].join('|');
   const knownActivityKeys = new Set(activityRows.map(activityIdentityKey).filter(Boolean));
-  // Load-Werte nur berücksichtigen, wenn sie eindeutig einer Aktivität
-  // aus derselben Analysegrundlage zugeordnet werden können.
-  const unmatchedLoadRows = loadResult.rows.filter(item => {
+  const knownActivityObjects = new Set(activityRows.map(item => item.sourceActivity));
+  // Bevorzugt wird die Objektidentität aus getTrainingLoadData genutzt.
+  // Der zusammengesetzte Schlüssel bleibt Fallback für äquivalente Kopien.
+  const isMatchedLoadRow = item => {
+    if (knownActivityObjects.has(item.sourceActivity)) return true;
     const key = activityIdentityKey(item);
-    return !key || !knownActivityKeys.has(key);
-  });
-  const loadRows = loadResult.rows.filter(item => {
-    const key = activityIdentityKey(item);
-    return key && knownActivityKeys.has(key);
-  });
+    return Boolean(key && knownActivityKeys.has(key));
+  };
+  const unmatchedLoadRows = loadResult.rows.filter(item => !isMatchedLoadRow(item));
+  const loadRows = loadResult.rows.filter(isMatchedLoadRow);
   const eligibleLoadActivityObjects = Array.isArray(trainingLoadEligibleActivities)
     ? new Set(trainingLoadEligibleActivities) : null;
   const validAsOfDate = validDateKey(asOfDate) ? asOfDate : null;
