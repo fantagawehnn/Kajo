@@ -1,3 +1,6 @@
+import { calculateGarminZoneLoad } from './training-load.js';
+import { isGarminActivity } from './data-source.js';
+
 /**
  * Deterministische, beschreibende Kennzahlen für den KI-Coach.
  *
@@ -143,6 +146,50 @@ function summarizeLoad(timeline) {
     };
 }
 
+function summarizeHeartRateZones(activities, settings, profile) {
+    const eligible = activities.filter(isGarminActivity);
+    const groups = new Map();
+    let analyzedCount = 0;
+
+    eligible.forEach(activity => {
+        const result = calculateGarminZoneLoad(activity, settings, profile);
+        if (!result || !Array.isArray(result.secondsByZone) || result.secondsByZone.length !== 5) return;
+        analyzedCount++;
+        const type = typeof activity.type === 'string' && activity.type.trim() ? activity.type.trim() : 'Nicht angegeben';
+        const key = type + '::' + result.zoneSource;
+        if (!groups.has(key)) groups.set(key, {
+            activityType: type,
+            zoneSource: result.zoneSource,
+            activityCount: 0,
+            secondsByZone: [0, 0, 0, 0, 0]
+        });
+        const group = groups.get(key);
+        group.activityCount++;
+        result.secondsByZone.forEach((seconds, index) => {
+            if (Number.isFinite(Number(seconds)) && Number(seconds) > 0) {
+                group.secondsByZone[index] += Number(seconds);
+            }
+        });
+    });
+
+    return {
+        source: 'KAJO calculation from Garmin heart-rate time series',
+        eligibleGarminActivities: eligible.length,
+        analyzedActivities: analyzedCount,
+        excludedOrUnanalyzableActivities: eligible.length - analyzedCount,
+        groups: [...groups.values()].map(group => {
+            const totalSeconds = group.secondsByZone.reduce((sum, value) => sum + value, 0);
+            return {
+                activityType: group.activityType,
+                zoneSource: group.zoneSource,
+                activityCount: group.activityCount,
+                totalMinutes: Number((totalSeconds / 60).toFixed(1)),
+                minutesByZone: group.secondsByZone.map(value => Number((value / 60).toFixed(1)))
+            };
+        })
+    };
+}
+
 function summarizeCheckIns(checkIns) {
     const fields = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
     const result = {};
@@ -158,7 +205,7 @@ function summarizeCheckIns(checkIns) {
  * Erstellt transparente Kennzahlen aus den bereits ausgewählten Daten.
  * Die Zeitfensterwahl und Datenherkunft bleiben in dataCoverage/contextSelection.
  */
-export function buildCoachAnalysisSummary({ activities = [], timeline = [], checkIns = [], plannedSessions = [], today = null } = {}) {
+export function buildCoachAnalysisSummary({ activities = [], timeline = [], checkIns = [], plannedSessions = [], today = null, settings = {}, profile = {} } = {}) {
     const activitySummary = summarizeActivities(activities);
     const loadSummary = summarizeLoad(timeline);
     const checkInSummary = summarizeCheckIns(checkIns);
@@ -170,6 +217,7 @@ export function buildCoachAnalysisSummary({ activities = [], timeline = [], chec
     return {
         schemaVersion: 1,
         activitySummary,
+        heartRateZoneDistribution: summarizeHeartRateZones(activities, settings, profile),
         calculatedLoadSummary: loadSummary,
         recoveryCheckInSummary: checkInSummary,
         planningSummary: {
