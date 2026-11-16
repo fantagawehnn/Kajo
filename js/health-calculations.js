@@ -86,3 +86,58 @@ export function summarizeHealthDocumentation(
     availabilityReason: 'Gesunde Tage und Gründe für nicht absolvierte oder verschobene Einheiten werden nicht systematisch dokumentiert.'
   };
 }
+
+function addDays(dateKey, amount) {
+  const date = new Date(dateKey + 'T12:00:00');
+  date.setDate(date.getDate() + amount);
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+}
+
+/**
+ * Groups consecutive, explicitly documented days with the same status.
+ * Missing dates and status changes split episodes; no healthy days are inferred.
+ * Episodes crossing the selected window retain their documented full boundaries.
+ */
+export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
+  if (!validDateKey(from) || !validDateKey(to) || from > to) return null;
+
+  const days = Object.entries(healthLogs || {})
+    .filter(([date, item]) => validDateKey(date) && date <= to &&
+      (item?.status === 'sick' || item?.status === 'injured'))
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  const episodes = [];
+  let current = null;
+  for (const [date, item] of days) {
+    const status = item.status;
+    const isContinuation = current &&
+      current.status === status &&
+      addDays(current.endDate, 1) === date;
+    if (!isContinuation) {
+      if (current) episodes.push(current);
+      current = {
+        status,
+        startDate: date,
+        endDate: date,
+        documentedDays: 1,
+        diagnoses: item.diagnosis ? [String(item.diagnosis)] : []
+      };
+    } else {
+      current.endDate = date;
+      current.documentedDays += 1;
+      if (item.diagnosis && !current.diagnoses.includes(String(item.diagnosis))) {
+        current.diagnoses.push(String(item.diagnosis));
+      }
+    }
+  }
+  if (current) episodes.push(current);
+
+  return episodes
+    .filter(episode => episode.endDate >= from && episode.startDate <= to)
+    .map(episode => ({
+      ...episode,
+      daysInWindow: Math.max(0,
+        Math.round((new Date(Math.min(episode.endDate, to) + 'T12:00:00') -
+          new Date(Math.max(episode.startDate, from) + 'T12:00:00')) / 86400000) + 1)
+    }));
+}
