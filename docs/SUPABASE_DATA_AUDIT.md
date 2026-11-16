@@ -1,162 +1,161 @@
-# KAJO – Supabase-Datenbestandsaudit
+# KAJO – Supabase-Datenbestands- und Sicherheitsaudit
 
-**Stand:** 14.11.2026  
-**Geprüfter Branch:** `feat/coach-athlete-context-v2`  
-**Zweck:** Bestandsaufnahme vor der Einführung einer wissenschaftlichen Wissensdatenbank.
+**Stand:** 16.11.2026  
+**Geprüfter Branch:** \`integration/coach-ai-v2-latest\`  
+**Zweck:** Read-only-Bestandsaufnahme vor der Einführung einer wissenschaftlichen Wissensdatenbank.
 
-## 1. Prüfungsumfang und Einschränkung
+## 1. Prüfungsumfang
 
-Geprüft wurden die Repository-Konfiguration und die aktuelle Remote-Datenbank read-only über Supabase-Management- und SQL-Abfragen. Es wurden keine Datenbankinhalte einzelner Nutzer gelesen und keine Änderungen vorgenommen.
+Geprüft wurden:
+- Repository-Konfiguration und vorhandene SQL-Migrationsdateien.
+- Remote-Projektstatus, Tabellen, Spalten, RLS-Aktivierung und Migrationseinträge.
+- Ausgewählte Policies, Tabellenrechte und Funktionsdefinitionen.
+- Supabase Security Advisor.
+- Storage-Buckets und Storage-Policies.
 
-Die frühere Codeprüfung vom 14.11.2026 wurde damit um einen Live-Schema-Audit am 16.11.2026 ergänzt. Die Ergebnisse beziehen sich auf den zu diesem Zeitpunkt aktiven Supabase-Stand.
+Es wurden keine individuellen Trainings- oder Gesundheitsinhalte abgefragt. Es wurden keine Datenbankobjekte, Policies, Funktionen, Buckets, Extensions oder Secrets verändert. Es wurden keine Tests ausgeführt.
 
-## 2. Festgestellte Architektur
+## 2. Projekt- und Datenbankbestand
 
-### 2.1 Authentifizierung
-- `js/supabase-config.js` enthält die öffentliche Supabase-Projekt-URL und einen Publishable-Key.
-- `js/supabase-client.js` erstellt daraus den Browser-Client mit `@supabase/supabase-js`.
-- `js/auth.js` verwendet Supabase Auth für Registrierung, Login, Session-Wiederherstellung und Logout.
-- Die Anwendung leitet die Benutzeridentität aus der authentifizierten Supabase-Session ab.
+- Projekt-Ref: \`zgvargkfzgekokuisarv\`
+- Status zum Prüfzeitpunkt: \`ACTIVE_HEALTHY\`
+- Region: \`eu-central-1\`
+- PostgreSQL: \`17.11.0.018\`
+- 22 Tabellen im Schema \`public\`; die Tabellenübersicht meldet für alle RLS aktiviert.
+- Vorhandene Bereiche umfassen Nutzerprofile, Aktivitäten, geplante Einheiten, Check-ins, Gesundheitslogs, Wettkämpfe, Krafttraining, Garmin-Verbindungen, Garmin-Aktivitäten, Garmin-Gesundheitsdaten, Telemetrie und Push-Benachrichtigungen.
+- Es wurden keine Tabellen für wissenschaftliche Paper, Dokumente, Text-Chunks, Embeddings oder Evidenzdatensätze gefunden.
 
-Der Publishable-/Anon-Key ist für die Browsernutzung vorgesehen und kein Ersatz für RLS. Privilegierte Schlüssel dürfen weiterhin ausschließlich serverseitig gespeichert werden.
+### 2.1 Persönliche Daten und Cloud-Synchronisierung
 
-### 2.2 Persönliche Trainingsdaten
-`js/storage.js` und `js/user-storage.js` zeigen, dass die persönlichen Datensammlungen derzeit lokal und benutzerbezogen gespeichert werden:
-- Aktivitäten
-- geplante Einheiten
-- Check-ins
-- Gesundheitslogs
-- Wettkämpfe
-- Krafttraining und Kraft-Bestleistungen
-- Supplements
-- Profil und Einstellungen
+Die App enthält lokale Datenspeicher-Module sowie einen vorbereiteten Cloud-Sync über:
+- \`public.user_data(user_id, data, version, updated_at)\`
+- \`public.save_user_data(p_data jsonb, p_expected_version integer)\`
 
-Der lokale Speicherzugriff wird an die authentifizierte User-ID gebunden. Globale Legacy-Daten werden ausdrücklich nicht automatisch in ein Konto migriert.
+Die Remote-Tabelle existiert. RLS-Policies erlauben authentifizierten Nutzern INSERT, SELECT und UPDATE für den eigenen Datensatz über \`auth.uid() = user_id\`; eine DELETE-Policy wurde nicht gefunden.
 
-### 2.3 Vorbereitete Cloud-Synchronisierung
-`js/cloud-sync.js` implementiert einen vorbereiteten Zugriff auf:
-- Tabelle `user_data`, Spalten `user_id`, `data`, `version`, `updated_at`
-- RPC-Funktion `save_user_data` mit Parametern `p_data` und `p_expected_version`
+Die RPC-Funktion:
+- läuft als \`SECURITY INVOKER\`,
+- setzt einen leeren \`search_path\`,
+- bezieht die User-ID aus \`auth.uid()\` statt aus einem Client-Parameter,
+- prüft, dass \`p_data\` ein JSON-Objekt ist,
+- behandelt Versionskonflikte,
+- hat EXECUTE-Rechte für \`authenticated\` und \`postgres\`, nicht für \`anon\`.
 
-Die Remote-Tabelle und RPC-Funktion sind vorhanden. Die Live-Definition von save_user_data bestätigt: SECURITY INVOKER, leerer search_path, Ermittlung der User-ID über auth.uid(), Prüfung auf JSON-Objekt und Versionskonfliktbehandlung. EXECUTE ist für authenticated und postgres, nicht für anon, vergeben.
+Der Code-Kommentar beschreibt die Synchronisierung weiterhin als vorbereitet und nicht automatisch gestartet. Das Vorhandensein der Tabelle und Funktion beweist daher nicht, dass die App-Synchronisierung produktiv aktiviert ist.
 
-Der Modulkommentar sagt weiterhin, dass die Synchronisierung vorbereitet und nicht automatisch gestartet wird. Die tatsächliche Aktivierung in der App ist davon getrennt.
+## 3. Abgleich Repository-Migrationen und Remote-Historie
 
-### 2.4 Migrationen und Schema
-Im aktuellen Repository existieren vier SQL-Migrationsdateien für Garmin-Telemetrie, Garmin-Sync-Tage und Push-Delivery-Tracking. Die Remote-Migrationsliste enthält zum Prüfzeitpunkt jedoch nur einen Eintrag (20261115224846, garmin_activity_sync_days). Repository-Migrationsdateien und Remote-Migrationshistorie sind damit nicht vollständig deckungsgleich und müssen vor weiteren Schemaänderungen abgeglichen werden.
+### 3.1 Repository-Dateien
 
-Daraus folgt nicht, dass im Remote-Supabase-Projekt keine Tabellen existieren. Es bedeutet ausschließlich, dass deren Definitionen im untersuchten Branch nicht revisionssicher dokumentiert sind.
+Im geprüften Branch liegen folgende vier Dateien:
 
-## 3. Sicherheitsbefunde und offene Nachweise
+| Repository-Datei | Inhalt laut SQL-Datei |
+|---|---|
+| \`20261115000100_garmin_activity_telemetry.sql\` | Tabelle \`garmin_activity_telemetry\`, RLS, SELECT-/INSERT-Policies und Grants |
+| \`202611150001_garmin_activity_sync_days.sql\` | Tabelle \`garmin_activity_sync_days\`, RLS-Aktivierung, Tabellenkommentar |
+| \`20261115000200_kajo_push_delivery_tracking.sql\` | Spalte \`last_sent_local_date\` auf \`kajo_notification_schedules\` |
+| \`20261115000300_garmin_activity_telemetry_update_policy.sql\` | UPDATE-Grant und UPDATE-Policy für Garmin-Telemetrie |
 
-| Bereich | Befund aus Repository | Noch erforderlicher Nachweis |
-|---|---|---|
-| Authentifizierung | Supabase Auth im Browser implementiert | tatsächliche Auth-Konfiguration und Redirect-URLs |
-| Publishable Key | öffentliche Konfiguration vorhanden | bestätigen, dass kein privilegierter Schlüssel verwendet wird |
-| Persönliche Trainingsdaten | lokal und userbezogen gespeichert | tatsächliche lokale Daten-/Backupstrategie |
-| `user_data` | vom Cloud-Sync-Modul erwartet | Remote-Tabellendefinition, Constraints und Indizes |
-| `save_user_data` | RPC-Aufruf im Code vorhanden | Funktionsdefinition, SECURITY INVOKER/DEFINER, Grants und Suchpfad |
-| RLS | keine Policy-Definition im Repository gefunden | tatsächliche RLS-Aktivierung und Policies im Remote-Projekt |
-| Garmin-Daten | bestehende Edge Function wird laut Architektur wiederverwendet | Tabellen- und Policy-Nachweis sowie Function-Konfiguration |
-| Wissenschaftliche Daten | noch kein Schema implementiert | getrennte öffentliche und private Zugriffsmodelle |
+### 3.2 Remote-Befund
 
-**Wichtig:** Es wäre nicht seriös, auf Basis des Browsercodes zu behaupten, dass die vorhandenen Tabellen oder RPC-Funktionen sicher sind. Insbesondere muss bei `save_user_data` geprüft werden, ob die Datenbankfunktion die User-ID serverseitig aus `auth.uid()` ableitet und nicht einer vom Client frei übergebenen ID vertraut.
+Die Remote-Migrationshistorie enthält zum Prüfzeitpunkt nur:
+- Version \`20261115224846\`
+- Name \`garmin_activity_sync_days\`
 
-## 4. Konsequenz für die Scientific Knowledge Base
+Die zugehörige Tabelle ist remote vorhanden. Die drei weiteren Repository-Migrationsdateien erscheinen nicht als eigene Einträge in der abgefragten Remote-Historie.
 
-Die Literaturdatenbank soll nicht in den bestehenden JSON-Snapshot `user_data.data` aufgenommen werden. Sie benötigt ein eigenes relationales Schema.
+Gleichzeitig sind auch die von den anderen Dateien beschriebenen Änderungen remote sichtbar:
+- \`garmin_activity_telemetry\` existiert.
+- Die Tabelle besitzt SELECT-, INSERT- und UPDATE-Policies für \`authenticated\`.
+- \`kajo_notification_schedules.last_sent_local_date\` existiert.
 
-Vorgesehene Trennung:
+**Schlussfolgerung:** Der aktuelle Remote-Schemazustand enthält Änderungen, die in der Remote-Migrationshistorie nicht vollständig nachvollziehbar sind. Das kann beispielsweise durch manuelle Ausführung im SQL Editor oder eine abweichende Migrationserfassung entstanden sein; die konkrete Ursache wurde nicht festgestellt. Die Dateien dürfen deshalb nicht blind erneut ausgeführt oder als vollständig synchronisiert behandelt werden.
 
-### Gemeinsamer Literaturbestand
-- bibliografische Paper-Metadaten
-- rechtmäßig gespeicherte Dokumente
-- extrahierte Textabschnitte und Embeddings
-- Themenzuordnungen
-- redaktionell prüfbare Evidenzdatensätze
+### 3.3 Auffälligkeit: Garmin-Sync-Tage
 
-### Private Dokumente und persönliche Inhalte
-- private Paper-Uploads, sofern nicht zur gemeinsamen Nutzung freigegeben
-- nutzerbezogene Notizen und Annotationen
-- private Coach-Verläufe und Quellenverwendungsprotokolle, falls gespeichert
+Die Migration für \`garmin_activity_sync_days\` aktiviert RLS, erstellt aber keine Policy. Der Security Advisor bestätigt, dass aktuell keine Policies für diese Tabelle existieren. Das kann beabsichtigt sein, wenn ausschließlich vertrauenswürdige serverseitige Funktionen mit privilegiertem Zugriff schreiben und lesen. Die tatsächliche Edge-Function-Nutzung und benötigten Berechtigungen müssen vor einer Änderung geprüft werden.
 
-Die Trennung muss auf Datenbankebene durch RLS, Berechtigungen und gegebenenfalls getrennte Storage-Buckets/Policies abgesichert werden. Ein UI-Filter ist kein Sicherheitsmechanismus.
+### 3.4 Erforderlicher Migrationsabgleich
 
-## 5. Empfohlene nächste Schritte
+Vor einer weiteren Migration:
+1. Die vier SQL-Dateien gegen die tatsächlichen Remote-Definitionen und Policies abgleichen.
+2. Für jede bereits vorhandene Änderung klären, ob und wie sie historisch registriert wurde.
+3. Keine Migration rückwirkend in die Remote-Historie eintragen, ohne vorher den Supabase-Migrationszustand und die CLI-/Dashboard-Konventionen zu prüfen.
+4. Eine neue, additive Migration mit einer noch nicht verwendeten Versionskennung erstellen.
+5. Die neue Migration zunächst reviewen; eine Anwendung erfolgt nur nach ausdrücklicher Freigabe.
 
-1. Remote-Schema des bestehenden Supabase-Projekts read-only erfassen.
-2. Definition und Berechtigungen von `user_data` und `save_user_data` prüfen.
-3. RLS-Policies der vorhandenen benutzerbezogenen Tabellen und Garmin-Tabellen dokumentieren.
-4. Bestehende Migrationen aus dem ursprünglichen Projekt/Repository auffinden und als Referenz sichern.
-5. Erst nach diesem Abgleich eine additive Migration für `scientific_papers`, `scientific_documents`, `scientific_chunks`, `scientific_topics` und Zuordnungstabellen entwerfen.
-6. Storage- und Datenbankzugriffe für öffentliche Literatur und private Uploads getrennt definieren.
+## 4. RLS, Policies und Tabellenrechte
 
-## 6. Nicht durchgeführt
+### 4.1 Vorhandene Schutzregeln
 
-- Kein Zugriff auf Remote-Datenbankinhalte.
-- Keine Änderung an Supabase-Tabellen, Policies, Functions, Buckets oder Secrets.
-- Keine SQL-Migration erstellt oder ausgeführt.
-- Keine Tests ausgeführt.
-- Kein Merge und kein Deployment.
+Die geprüften persönlichen Tabellen verwenden überwiegend \`auth.uid()\` als Eigentumsprüfung. Für \`activities\`, \`daily_checkins\` und \`health_logs\` existieren zusätzlich SELECT-Policies für aktive Coach-Beziehungen über \`has_active_coach_access(user_id)\`.
 
-## 7. Ergebnis
+Für Garmin-Daten sind die Policies stärker getrennt:
+- Garmin-Verbindungen und Garmin-Gesundheitsdaten: SELECT für den jeweiligen Eigentümer.
+- Garmin-Aktivitätsdetails: SELECT für den jeweiligen Eigentümer.
+- Garmin-Telemetrie: SELECT, INSERT und UPDATE für den jeweiligen Eigentümer.
+- Garmin-Personal-Credentials und Garmin-Sync-Tage: keine RLS-Policies; die Tabellen sind nicht für normale Browserzugriffe freigegeben.
 
-Die bestehende Anwendung hat Supabase Auth und einen vorbereiteten Cloud-Snapshot-Mechanismus. Die persönliche Trainingsdatenhaltung ist im geprüften Code weiterhin lokal. Das tatsächliche Remote-Schema und die RLS-Konfiguration sind vor einer neuen Datenbankmigration zu verifizieren.
+### 4.2 Breite Tabellen-Grants
 
-Die nächste sinnvolle technische Aufgabe ist daher ein read-only Schema-Audit des bestehenden Supabase-Projekts, bevor das Scientific-Knowledge-Schema implementiert wird.
+Die Abfrage der Tabellenrechte zeigte für mehrere persönliche Tabellen – darunter \`activities\`, \`daily_checkins\`, \`health_logs\`, \`user_data\`, \`garmin_activity_telemetry\` und \`garmin_activity_sync_days\` – breite Grants an \`anon\` und/oder \`authenticated\`. Teilweise umfassen diese Rechte neben SELECT/INSERT/UPDATE auch DELETE, TRUNCATE, REFERENCES und TRIGGER.
 
+RLS schützt zeilenbezogene SELECT/INSERT/UPDATE/DELETE-Operationen, ersetzt aber keine minimale Vergabe von Tabellenrechten. Insbesondere ist TRUNCATE nicht durch normale RLS-Zeilenpolicies begrenzt. Die tatsächliche Erreichbarkeit einzelner SQL-Rechte über die verwendete API wurde in diesem Audit nicht getestet.
 
-## 8. Ergebnisse des read-only Remote-Audits vom 16.11.2026
+**Empfehlung:** Grants nach dem Least-Privilege-Prinzip prüfen und auf tatsächlich benötigte Rollen und Operationen begrenzen. Das darf nicht pauschal geschehen: Vorhandene App-Pfade, Coach-Zugriffe, Garmin-Edge-Functions, Upserts und administrative Prozesse müssen berücksichtigt werden. Es wurden keine Grants verändert.
 
-### 8.1 Projekt und Tabellen
-- Supabase-Projekt: fantagawehnn's Project, Ref zgvargkfzgekokuisarv.
-- Status: ACTIVE_HEALTHY; Region eu-central-1; PostgreSQL 17.11.0.018.
-- Im Schema public wurden 22 Tabellen gefunden. Für alle in der Tabellenübersicht zurückgegebenen Tabellen ist RLS aktiviert.
-- Vorhanden sind unter anderem user_data, user_profiles, activities, planned_sessions, daily_checkins, health_logs, competitions, strength_sessions sowie getrennte Garmin-Tabellen für Verbindungen, Metadaten, Details, Gesundheitsdaten, Sync-Status und Telemetrie.
-- Es wurden keine Tabellen für wissenschaftliche Paper, Dokumente, Text-Chunks oder Evidenzdatensätze gefunden.
+## 5. Storage
 
-### 8.2 user_data und save_user_data
-- public.user_data existiert mit user_id als Primärschlüssel, data jsonb, version bigint und updated_at.
-- RLS-Policies erlauben authenticated das eigene INSERT, SELECT und UPDATE über auth.uid() = user_id. Eine DELETE-Policy ist nicht vorhanden.
-- save_user_data(p_data jsonb, p_expected_version integer) existiert. Die Funktion ist SECURITY INVOKER, setzt einen leeren search_path, leitet die User-ID aus auth.uid() ab und prüft JSON-Objekt sowie Versionskonflikte.
-- EXECUTE ist für authenticated und postgres vergeben; nicht für anon.
-- Diese Funktion ist für die geplante Literaturdatenbank nicht zu verwenden: Der wissenschaftliche Bestand soll relational und getrennt vom persönlichen JSON-Snapshot bleiben.
+- Der einzige gefundene Bucket ist \`garmin-fit\`; er ist privat.
+- Für \`storage.objects\` wurden in der abgefragten Policy-Übersicht keine Policies zurückgegeben.
+- Der Bucket ist für Garmin-FIT-Dateien vorgesehen und wird nicht für Paper-Uploads zweckentfremdet.
+- Ein eigener Bucket und eigene Policies für wissenschaftliche Dokumente existieren noch nicht.
 
-### 8.3 RLS, Grants und Storage
-- Die Tabellenübersicht bestätigt RLS auf allen 22 erfassten öffentlichen Tabellen.
-- Die abgefragten Policies für persönliche Daten verwenden grundsätzlich auth.uid() als Eigentumsprüfung. Für mehrere Trainings- und Gesundheitsdaten-Tabellen existieren zusätzliche SELECT-Policies für aktive Coach-Zugriffe.
-- Die Tabellen-Grants für anon und authenticated sind auf öffentlichen Tabellen sehr breit vergeben. Die aktuell gefundenen RLS-Policies richten sich bei persönlichen Daten an authenticated; für anon wurden dort keine entsprechenden Policies gefunden. RLS schützt damit derzeit die Zeilen, die pauschalen Grants sollten aus Least-Privilege-Sicht dennoch überprüft und reduziert werden.
-- Storage enthält einen privaten Bucket garmin-fit. In storage wurden keine RLS-Policies gefunden. Es existiert kein eigener Bucket für wissenschaftliche Literatur oder private Paper-Uploads.
-- garmin_personal_credentials und garmin_activity_sync_days haben laut Security Advisor RLS ohne Policies. Das kann einem bewusst serverseitigen Zugriff entsprechen; die Berechtigungen sollten vor einer späteren Nutzung durch Browser-Clients nicht erweitert werden.
+Für die Scientific Knowledge Base müssen private Nutzer-Uploads und gemeinsam kuratierte Quellen getrennt werden. Storage-Policies müssen den Objektpfad und die Dokumentberechtigung kontrollieren; Tabellen-RLS allein schützt keine Storage-Dateien.
 
-### 8.4 Vektor-Suche
-- Die Extension vector ist in Supabase mit Version 0.8.2 verfügbar, aber nicht installiert (installed_version = null).
-- Eine Vektor-Suche kann daher noch nicht verwendet werden. Die Installation muss als explizite, additive Schemaänderung geplant werden.
-- Embedding-Modell und Dimension sind vor der Tabellendefinition festzulegen; eine willkürliche Dimension würde spätere Modellwechsel erschweren.
+## 6. Vektorsuche und Scientific Knowledge Base
 
-### 8.5 Edge Functions und Security Advisor
-- Aktive Edge Functions: garmin-personal (Version 42) und kajo-push-scheduler (Version 5). Beide werden in der Projektübersicht mit verify_jwt = false geführt; die jeweilige interne Authentifizierung ist bei Bedarf separat zu prüfen.
-- Der Security Advisor meldet:
-  - RLS ohne Policies bei garmin_activity_sync_days und garmin_personal_credentials.
-  - veränderlichen search_path bei set_updated_at und set_user_data_version.
-  - pg_net in Schema public.
-  - öffentlich ausführbare SECURITY DEFINER-Funktionen handle_new_user() und has_active_coach_access(uuid).
-  - deaktivierten Schutz vor kompromittierten Passwörtern.
-- has_active_coach_access wird in bestehenden RLS-Policies zur Prüfung aktiver Coach-Beziehungen verwendet. Eine Änderung an dieser Funktion oder ihren Grants darf daher nicht ohne Prüfung der Coach-Zugriffslogik erfolgen.
-- Diese Advisor-Befunde wurden dokumentiert, aber nicht verändert.
+- Die Extension \`vector\` ist in Version \`0.8.2\` verfügbar, aber nicht installiert.
+- Es gibt keine wissenschaftlichen Tabellen und keine Embedding-Daten.
+- Eine Vektorsuche ist daher aktuell nicht aktiv.
+- Die Dimension der Embeddings darf erst nach Auswahl und Dokumentation des Embedding-Modells festgelegt werden.
+- Die Extension soll, falls freigegeben, im Schema \`extensions\` installiert werden und nicht in \`public\`.
 
-## 9. Konsequenzen für die Scientific Knowledge Base
+## 7. Security Advisor
 
-1. Vor jeder neuen Migration müssen die vier Repository-Migrationen mit der Remote-Migrationshistorie abgeglichen werden.
-2. Die vorhandenen persönlichen Trainingsdaten und user_data bleiben unverändert.
-3. Der gemeinsame, frei zugängliche Literaturbestand und private Nutzer-Uploads benötigen getrennte Zugriffspfade.
-4. Der private Upload-Bereich benötigt eine eigene Storage-Policy mit Nutzerzuordnung; der bestehende Garmin-Bucket wird nicht zweckentfremdet.
-5. Die geplanten Paper- und Chunk-Tabellen benötigen RLS, dokumentierte Grants und klare Unterscheidung zwischen öffentlich kuratiertem Bestand und privaten Dokumenten.
-6. Die Installation von vector und die Festlegung des Embedding-Modells sind noch nicht erfolgt.
+Der Security Advisor meldete zum Prüfzeitpunkt:
 
-## 10. Nicht durchgeführt
-- Keine Tabellen, Policies, Funktionen, Buckets oder Secrets verändert.
+| Befund | Einordnung |
+|---|---|
+| RLS ohne Policies auf \`garmin_activity_sync_days\` und \`garmin_personal_credentials\` | Kann für serverseitige Tabellen beabsichtigt sein; Zugriffspfade prüfen |
+| Veränderlicher \`search_path\` bei \`set_updated_at\` und \`set_user_data_version\` | Warnung; Funktionen sollten qualifizierte Objektnamen und festen Suchpfad erhalten |
+| \`pg_net\` in Schema \`public\` | Warnung; Extension-Schema und Abhängigkeiten prüfen |
+| \`handle_new_user()\` als SECURITY DEFINER für anon/authenticated ausführbar | Advisor-Warnung; Triggerfunktion und tatsächliche RPC-Erreichbarkeit prüfen, nicht unbesehen ändern |
+| \`has_active_coach_access(uuid)\` als SECURITY DEFINER für anon/authenticated ausführbar | Advisor-Warnung; Funktion wird von bestehenden RLS-Policies verwendet, daher Abhängigkeiten und benötigte Rollen prüfen |
+| Schutz vor kompromittierten Passwörtern deaktiviert | Auth-Einstellung; bewusste Aktivierung prüfen |
+
+Die beiden SECURITY DEFINER-Funktionen haben unterschiedliche Aufgaben:
+- \`handle_new_user()\` ist eine Triggerfunktion, die ein Profil beim Anlegen eines Nutzers erzeugt. Sie setzt bereits einen leeren \`search_path\`.
+- \`has_active_coach_access(uuid)\` wird in RLS-Policies zur Prüfung einer aktiven Coach-Beziehung verwendet. Sie setzt \`search_path = public\` und \`row_security = off\`.
+
+Die Advisor-Meldung ist ein Prüfhinweis und allein kein Beleg für eine ausnutzbare Schwachstelle. Insbesondere muss bei einer Triggerfunktion geprüft werden, ob sie überhaupt über die REST-RPC-Schnittstelle aufrufbar ist. Keine der Funktionen wurde geändert.
+
+## 8. Konsequenzen für die Scientific Knowledge Base
+
+1. Bestehende persönliche Trainings-, Gesundheits- und Garmin-Daten bleiben unverändert.
+2. Wissenschaftliche Quellen werden relational und getrennt von \`user_data\` gespeichert.
+3. Gemeinsame kuratierte Literatur und private Uploads erhalten getrennte Tabellen-/Storage-Zugriffsregeln.
+4. Keine pauschalen \`anon\`-Grants für neue wissenschaftliche Tabellen.
+5. Gemeinsame Quellen sind für angemeldete Nutzer lesbar, aber nur durch einen explizit definierten Kurations- oder serverseitigen Prozess veränderbar.
+6. Private Dokumente und deren Chunks müssen dieselbe Eigentums- und Sichtbarkeitslogik verwenden.
+7. Embedding-Modell, Dimension, Lizenzgrundlage und Kosten werden vor der Vektor-Migration festgelegt.
+8. Bestehende Security-Advisor-Befunde werden separat bewertet; keine globale Rechteänderung als Nebenwirkung der Literatureinführung.
+
+## 9. Nicht durchgeführt
+
+- Keine Tabellen, Policies, Funktionen, Grants, Buckets oder Secrets verändert.
 - Keine Extension installiert.
-- Keine Migration angewendet.
+- Keine Migration angewendet oder rückwirkend registriert.
+- Keine individuellen Nutzer- oder Gesundheitsdaten abgefragt.
 - Keine Tests ausgeführt.
 - Kein Merge und kein Deployment.
