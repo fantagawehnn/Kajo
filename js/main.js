@@ -1503,13 +1503,13 @@ function garminCandidateFromPreview(a, storedActivityId = null) {
     const gmt = String(a?.startTimeGMT ?? '');
     const idValue = a?.activityId ?? storedActivityId;
     const id = idValue == null ? '' : String(idValue);
-    const localDate = /^\\d{4}-\\d{2}-\\d{2}/.test(raw) ? raw.slice(0, 10) : '';
+    const localDate = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.slice(0, 10) : '';
     const parsedStart = new Date(gmt || raw);
     const startTime = Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : '';
     // Keep the same date precedence as the backend: local calendar date first,
     // otherwise the UTC date derived from Garmin's GMT start timestamp.
     const date = localDate || (startTime ? startTime.slice(0, 10) : '');
-    if (!/^\\d+$/.test(id) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return null;
+    if (!/^\d+$/.test(id) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const secs = Number(a.duration), metres = Number(a.distance), avg = Number(a.averageHR), max = Number(a.maxHR);
     const name = String(a.activityName || 'Garmin-Aktivität'), rawType = String(a.activityType || '');
     const nativeLoadValue = a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad;
