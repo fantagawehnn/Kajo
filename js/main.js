@@ -18,7 +18,7 @@ import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
-import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=5';
+import { buildGarminActivityAnalysis, getAdaptiveRestingHr, getTrainingLoadData } from './training-load.js?v=5';
 import { renderAnalysisInsights } from './analysis-insights.js?v=6';
 import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
@@ -165,8 +165,12 @@ function renderHealthAnalysis() {
     );
 
     const episodes = summarizeHealthEpisodes(state.healthLogs, from, to) || [];
+    const healthComparisonLoad = getTrainingLoadData(
+        state.rawActivities, state.settings, state.profile, state.dailyCheckins
+    );
     const episodeTrainingImpact = summarizeHealthEpisodeTrainingImpact(
-        state.healthLogs, state.rawActivities, episodes, 14
+        state.healthLogs, state.rawActivities, episodes, 14,
+        healthComparisonLoad.records, healthComparisonLoad.mode, healthComparisonLoad.unit
     ) || [];
     if (count) count.textContent = episodes.length ? String(episodes.length) + ' dokumentierte Phasen' : 'Keine Einträge';
     if (metrics && summary) {
