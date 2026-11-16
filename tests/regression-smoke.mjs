@@ -27,14 +27,15 @@ globalThis.document = {
 };
 globalThis.confirm = () => true;
 globalThis.window = { dispatchEvent() {}, addEventListener() {} };
-globalThis.alert = () => {};
+const alertMessages = [];
+globalThis.alert = message => alertMessages.push(String(message));
 globalThis.setTimeout = () => 0;
 
 const { state, setRefreshHandler } = await import('../js/state.js');
 const storage = await import('../js/storage.js?v=3');
 const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
-const { getRacePriorityMeta, migrateLegacyRacePriorities } = await import('../js/competitions.js');
+const { getRacePriorityMeta, migrateLegacyRacePriorities, addRace } = await import('../js/competitions.js');
 
 // Local date must not shift to the previous/next day through UTC conversion.
 assert.equal(toLocalDateString(new Date(2026, 10, 10, 0, 15)), '2026-11-10');
@@ -77,6 +78,20 @@ assert.equal(migrateLegacyRacePriorities(), true);
 assert.equal(state.races[0].prio, 'E');
 assert.equal(state.races[0].name, 'Alter Trainingswettkampf');
 assert.equal(state.races[1].prio, 'C');
+
+// Invalid competition input must never create a placeholder event.
+const raceCountBeforeValidation = state.races.length;
+document.getElementById('race-name').value = '';
+document.getElementById('race-date').value = '2026-11-20';
+addRace();
+assert.equal(state.races.length, raceCountBeforeValidation);
+assert.match(alertMessages.at(-1), /Wettkampfnamen/);
+document.getElementById('race-name').value = 'Testwettkampf';
+document.getElementById('race-date').value = 'not-a-date';
+addRace();
+assert.equal(state.races.length, raceCountBeforeValidation);
+assert.match(alertMessages.at(-1), /gültiges Wettkampfdatum/);
+
 
 // Legacy global data is intentionally not imported into a user account automatically.
 // It must remain untouched until the user explicitly assigns it to an account.
