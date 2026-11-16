@@ -594,6 +594,12 @@ function installCalendarGestures(){
     root.addEventListener('touchmove',e=>{if(e.touches.length!==2||!calendarPinchStart)return;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,scale=Math.hypot(dx,dy)/calendarPinchStart;e.preventDefault();if(scale>1.28){calendarPinchStart=0;calendarFormatZoomStep(1);}else if(scale<.78){calendarPinchStart=0;calendarFormatZoomStep(-1);}},{passive:false});
     root.addEventListener('wheel',e=>{if(!e.ctrlKey||calendarWheelLocked)return;e.preventDefault();calendarWheelLocked=true;calendarFormatZoomStep(e.deltaY<0?1:-1);setTimeout(()=>calendarWheelLocked=false,350);},{passive:false});
 }
+function isValidCalendarPhaseDate(value) {
+    if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+    const parsed = new Date(value + 'T00:00:00.000Z');
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 function calendarYearPhaseStore() {
     if (!state.settings || typeof state.settings !== 'object') state.settings = { sports: {}, categories: {}, heartRateZones: {} };
     if (!Array.isArray(state.settings.calendarSeasonPhases)) state.settings.calendarSeasonPhases = [];
@@ -740,7 +746,7 @@ export function saveCalendarPhaseEditor(event) {
     const name = document.getElementById('calendar-phase-name')?.value.trim();
     const start = document.getElementById('calendar-phase-start')?.value;
     const end = document.getElementById('calendar-phase-end')?.value;
-    if (!id || !name || !/^\d{4}-\d{2}-\d{2}$/.test(start || '') || !/^\d{4}-\d{2}-\d{2}$/.test(end || '') || start > end) {
+    if (!id || !name || !isValidCalendarPhaseDate(start) || !isValidCalendarPhaseDate(end) || start > end) {
         alert('Bitte prüfe Bezeichnung und Zeitraum der Trainingsphase.');
         return;
     }
