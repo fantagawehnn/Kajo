@@ -985,22 +985,22 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-sm text-white">KAJO - Performance Coach</h3>
-                            <div class="text-[10px] text-emerald-400">Datenbasis: lokal gespeicherte KAJO-Daten</div>
+                            <div class="text-[10px] text-emerald-400">KI-Analyse auf Basis deiner KAJO-Daten</div>
                             <div id="coach-context-hint" class="mt-1 text-[10px] text-slate-500">Kontext: deinem Training</div>
                         </div>
                     </div>
-                    <span class="text-[10px] bg-slate-950 px-2 py-1 rounded text-slate-400 border border-slate-800 font-mono">Lokale Auswertung</span>
+                    <span class="text-[10px] bg-slate-950 px-2 py-1 rounded text-slate-400 border border-slate-800 font-mono">KI-Coach</span>
                 </div>
-                <p class="mx-4 mt-3 mb-1 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-2 text-[11px] leading-relaxed text-emerald-200">Deine Nachricht wird nicht an einen externen KI-Dienst übertragen. Der Coach erstellt seine Antwort lokal aus den in KAJO gespeicherten Daten. Die reguläre KAJO-Cloud-Synchronisierung deiner übrigen App-Daten bleibt davon unberührt. Freie Fragen werden aktuell nicht inhaltlich ausgewertet; angezeigt wird der zuletzt berechnete Belastungsstatus.</p>
+                <p class="mx-4 mt-3 mb-1 rounded-lg border border-sky-800/60 bg-sky-950/25 px-3 py-2 text-[11px] leading-relaxed text-sky-200">Deine Frage und der dafür ausgewählte KAJO-Datenkontext werden zur Antwortgenerierung über den KAJO-Server an Cloudflare Workers AI übermittelt. Der Coach kann deine Daten analysieren, verändert aber weder Trainingsplan noch Kalender oder gespeicherte Daten. Die wissenschaftliche Literaturdatenbank ist noch nicht angebunden.</p>
 
                 <div class="p-4 space-y-4 text-xs" id="chat-messages">
                     <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl max-w-xl text-slate-300">
-                        Der Coach zeigt dir eine regelbasierte Einordnung deiner zuletzt berechneten Trainingsbelastung (CTL, ATL und TSB), sofern die Daten vollständig vorliegen. Freie Fragen werden aktuell noch nicht inhaltlich ausgewertet.
+                        Stelle Fragen zu deinem Training, deiner Belastung, Regeneration und Leistungsentwicklung. Der Coach nutzt die für deine Frage ausgewählten KAJO-Daten und kennzeichnet Unsicherheiten und Datenlücken.
                     </div>
                 </div>
 
                 <div class="p-3 border-t border-slate-800 bg-slate-900 flex gap-2">
-                    <input type="text" id="chat-input" placeholder="Frage oder Notiz zum aktuellen Belastungsstatus (CTL, ATL, TSB)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white">
+                    <input type="text" id="chat-input" placeholder="Frage zu Training, Regeneration oder Leistung..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white">
                     <button type="button" onclick="sendAICoachMessage()" class="p-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl">
                         <i data-lucide="send" class="w-4 h-4"></i>
                     </button>
