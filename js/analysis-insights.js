@@ -4,7 +4,7 @@
  * Die Einordnungen beschreiben ausschließlich bereits gespeicherte Daten.
  * ============================================================ */
 import { state } from './state.js';
-import { renderMetricHistory } from './dashboard.js';
+import { renderMetricHistory } from './dashboard.js?v=3';
 import { calculateReadiness } from './recovery-calculations.js';
 import { escapeHtml, formatDateDDMMYY } from './utils.js';
 
