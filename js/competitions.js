@@ -236,7 +236,6 @@ export function editRace(encodedId) {
     const id = decodeURIComponent(encodedId);
     const race = state.races.find(item => String(item.id) === id);
     if (!race) return;
-    populateRaceRouteSelect();
     editingRaceId = id;
     const values = {
         'race-name': race.name || '',
@@ -247,6 +246,7 @@ export function editRace(encodedId) {
         'race-target': race.target || '',
         'race-route': race.routeId || ''
     };
+    toggleRaceModal();
     Object.entries(values).forEach(([field, value]) => {
         const input = document.getElementById(field);
         if (input) input.value = value;
