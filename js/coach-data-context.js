@@ -13,7 +13,7 @@ const ACTIVITY_FIELDS = [
     'maxHeartRate', 'avgPower', 'averagePower', 'maxPower', 'avgSpeed',
     'averageSpeed', 'maxSpeed', 'strokeRate', 'avgStrokeRate', 'cadence',
     'perceivedEffort', 'source', 'sources', 'raceFormat', 'discipline',
-    'waterType', 'garminTrainingLoad'
+    'waterType', 'waterConditions', 'trainingPartner', 'garminTrainingLoad'
 ];
 const CHECKIN_FIELDS = [
     'hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'vo2max',
@@ -129,6 +129,19 @@ function classifyQuestion(question, today) {
     };
 }
 
+function sanitizeActivity(activity = {}) {
+    const record = pick(activity, ACTIVITY_FIELDS);
+    if (record.waterConditions && typeof record.waterConditions === 'object') {
+        record.waterConditions = pick(record.waterConditions, ['type', 'level', 'levelUnit', 'discharge']);
+    } else {
+        delete record.waterConditions;
+    }
+    if (typeof record.trainingPartner === 'string') {
+        record.trainingPartner = record.trainingPartner.slice(0, 100);
+    }
+    return record;
+}
+
 function sanitizeHealthLogs(logs = {}) {
     return Object.entries(logs).map(([date, value]) => ({
         date,
@@ -211,7 +224,7 @@ export function buildCoachRequestContext(appState, question) {
 
     const healthEvents = scope.includeHealth ? sanitizeHealthLogs(state.healthLogs || {}) : [];
     const strengthRelevant = scope.mode === 'full_history' || scope.mode === 'strength_review';
-    const selectedActivityRecords = selectedActivities.records.map(item => pick(item, ACTIVITY_FIELDS));
+    const selectedActivityRecords = selectedActivities.records.map(sanitizeActivity);
     const selectedTimelineRecords = selectedTimeline.records.map(item => pick(item, TIMELINE_FIELDS));
     const selectedCheckInRecords = selectedCheckIns.records;
     const selectedPlannedRecords = sanitizePlanned(plannedWindow.records);
