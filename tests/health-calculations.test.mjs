@@ -307,3 +307,40 @@ test('does not cap historical return-to-training windows when as-of date is late
   assert.equal(result.returnToTraining.windows[1].calendarDays, 7);
   assert.equal(result.returnToTraining.windows[2].calendarDays, 14);
 });
+
+
+test('excludes identical duplicate activity IDs from duration and load totals', () => {
+  const activity = { id: 'same-activity', date: '2026-11-18', startTime: '2026-11-18T09:00:00Z', duration: 60 };
+  const loadRecord = { activity, value: 45 };
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [activity, { ...activity }],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14,
+    [loadRecord, { activity: { ...activity }, value: 45 }],
+    'garmin-native',
+    'Garmin Load',
+    '2026-12-31'
+  );
+  assert.equal(result.returnToTraining.windows[0].activities, 1);
+  assert.equal(result.returnToTraining.windows[0].totalMinutes, 60);
+  assert.equal(result.returnToTraining.windows[0].trainingLoad, 45);
+  assert.equal(result.returnToTraining.windows[0].trainingLoadActivityCount, 1);
+  assert.equal(result.returnToTraining.windows[0].duplicateActivityRecordsExcluded, 1);
+  assert.equal(result.returnToTraining.windows[0].duplicateLoadRecordsExcluded, 1);
+});
+
+test('keeps same IDs with conflicting start times separate for manual review', () => {
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [
+      { id: 'ambiguous', date: '2026-11-18', startTime: '2026-11-18T09:00:00Z', duration: 60 },
+      { id: 'ambiguous', date: '2026-11-18', startTime: '2026-11-18T15:00:00Z', duration: 30 }
+    ],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14, [], null, null, '2026-12-31'
+  );
+  assert.equal(result.returnToTraining.windows[0].activities, 2);
+  assert.equal(result.returnToTraining.windows[0].totalMinutes, 90);
+  assert.equal(result.returnToTraining.windows[0].duplicateActivityRecordsExcluded, 0);
+});
