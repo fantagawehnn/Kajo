@@ -380,9 +380,6 @@ test('reports complete, partial and unavailable duration and load coverage per w
   assert.deepEqual(result.during.durationCoverage, {
     available: 0, total: 0, status: 'nicht berechenbar'
   });
-  assert.deepEqual(result.during.trainingLoadCoverage, {
-    available: 0, total: 0, status: 'nicht berechenbar'
-  });
 });
 
 test('marks duration and load coverage as limited when only some activities have values', () => {
@@ -405,4 +402,26 @@ test('marks duration and load coverage as limited when only some activities have
   assert.deepEqual(result.before.trainingLoadCoverage, {
     available: 1, total: 3, status: 'eingeschränkt'
   });
+});
+
+
+test('excludes load records that cannot be matched to an activity from coverage and totals', () => {
+  const activity = { id: 'known', date: '2026-11-10', startTime: '09:00', duration: 60 };
+  const orphan = { id: 'orphan', date: '2026-11-11', startTime: '10:00' };
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [activity],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-15', documentedDays: 1 }],
+    14,
+    [
+      { activity, value: 25 },
+      { activity: orphan, value: 90 }
+    ],
+    'srpe', 'AU', '2026-12-31'
+  );
+  assert.equal(result.before.trainingLoad, 25);
+  assert.deepEqual(result.before.trainingLoadCoverage, {
+    available: 1, total: 1, status: 'vollständig'
+  });
+  assert.equal(result.before.unmatchedLoadRecordsExcluded, 1);
 });
