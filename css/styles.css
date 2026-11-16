@@ -8867,3 +8867,68 @@ body.kajo-modal-open { overflow: hidden !important; }
   }
 }
 
+
+
+/* KAJO: Kalender-Kopfleiste auf allen Bildschirmbreiten als feste Ein-Zeilen-Anordnung. */
+#view-calendar .calendar-control-row {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) 34px minmax(76px, 96px) 38px;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+#view-calendar .calendar-control-row > #calendar-period-prev,
+#view-calendar .calendar-control-row > #calendar-period-next {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0;
+}
+#view-calendar .calendar-control-row > #calendar-period-title {
+  display: block;
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100%;
+  padding: 0 1px !important;
+  font-size: clamp(.68rem, 2.5vw, .88rem) !important;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#view-calendar .calendar-control-row > .calendar-format-wrap,
+#view-calendar .calendar-control-row > .calendar-add-wrap {
+  width: 100%;
+  min-width: 0;
+}
+#view-calendar .calendar-control-row .calendar-format-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 34px;
+  padding: 5px 3px !important;
+  gap: 3px;
+  font-size: .68rem !important;
+  white-space: nowrap;
+}
+#view-calendar .calendar-control-row .calendar-add-button {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0;
+}
+@media (max-width: 420px) {
+  #view-calendar .calendar-control-row {
+    grid-template-columns: 28px minmax(0, 1fr) 28px 72px 32px;
+    gap: 2px;
+  }
+}
