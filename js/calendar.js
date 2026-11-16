@@ -3,6 +3,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
+import { getVisibleActivities } from './activity-groups.js?v=1';
 import { getGarminTelemetry } from './data-source.js';
 import { calculateReadiness } from './dashboard.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=5';
@@ -193,7 +194,7 @@ function calendarEventIcons(date) {
     return html;
 }
 function calendarDateData(date) {
-    const activities = (state.rawActivities || []).filter(item => item.date === date);
+    const activities = getVisibleActivities((state.rawActivities || []).filter(item => item.date === date));
     const planned = (state.plannedActivities || []).filter(item => item.date === date);
     const races = (state.races || []).filter(item => item.date === date);
     const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
@@ -1148,7 +1149,7 @@ export function renderWeekView() {
     firstMonday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
     const weekNo = Math.floor((weekNumberDate - firstMonday) / 604800000) + 1;
     document.getElementById('calendar-period-title').textContent = 'KW ' + weekNo + ' · ' + new Date(weekDates[0] + 'T12:00:00').getDate() + '. ' + monthShort[new Date(weekDates[0] + 'T12:00:00').getMonth()] + ' – ' + new Date(endDate + 'T12:00:00').getDate() + '. ' + monthShort[new Date(endDate + 'T12:00:00').getMonth()];
-    const activities = (state.rawActivities || []).filter(item => item.date >= weekDates[0] && item.date <= endDate);
+    const activities = getVisibleActivities((state.rawActivities || []).filter(item => item.date >= weekDates[0] && item.date <= endDate));
     const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
     const loadDays = weekDates.map(date => calendarDateData(date)).filter(data => data.activities.length);
     const loadComplete = loadDays.length > 0 && loadDays.every(data => data.loadValue !== null);
@@ -1259,7 +1260,7 @@ export function renderListView() {
     if (!container || !chips) return;
     renderCalendarLegend();
     document.getElementById('calendar-period-title').textContent = 'Aktivitäten';
-    const activities = [...(state.rawActivities || [])].sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const activities = getVisibleActivities(state.rawActivities || []).sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')));
     const sports = [...new Set(activities.map(act => act.type || 'Workout'))].sort((a,b) => {
         const al = sportCatalog[a]?.label || a, bl = sportCatalog[b]?.label || b;
         return al.localeCompare(bl, 'de');
