@@ -117,7 +117,7 @@ export function summarizeRecoveryTrends(dailyCheckins = {}, dateKey = localToday
     const currentAverage = average(currentValues);
     const previousAverage = average(previousValues);
     const baselineValues = ['hrv', 'rhr'].includes(key)
-      ? entries.filter(([date]) => date < from && date >= keyFor(shift(end, -97)))
+      ? entries.filter(([date]) => date < from && date >= keyFor(shift(end, -96)))
           .map(([, row]) => recoveryTrendValue(row, key)).filter(value => value !== null)
       : [];
     const baselineMedian = baselineValues.length >= 5 ? median(baselineValues) : null;
