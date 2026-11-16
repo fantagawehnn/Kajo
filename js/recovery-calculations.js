@@ -162,7 +162,7 @@ export function summarizeSleepDeficit(dailyCheckins = {}, sleepNeedHours, dateKe
     target: Number(target.toFixed(2)),
     from: keyFor(fromDate),
     to: keyFor(end),
-    cumulativeShortfall: Number(shortfall.toFixed(2)),
+    cumulativeShortfall: values.length ? Number(shortfall.toFixed(2)) : null,
     averageDuration: values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)) : null,
     measuredNights: values.length,
     nightsBelowTarget: values.filter(value => value < target).length
