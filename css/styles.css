@@ -8762,24 +8762,21 @@ body.kajo-modal-open { overflow: hidden !important; }
 /* Self-Monitoring kompakt: auf üblichen Displays ohne Scrollen nutzbar */
 #day-detail-modal:not(.hidden){display:flex;align-items:center;justify-content:center;overflow-y:auto}
 .kajo-selfmonitoring-modal{max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain}
-.kajo-selfmonitoring-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:12px}
+.kajo-selfmonitoring-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 .kajo-selfmonitoring-question{gap:.2rem}
 .kajo-selfmonitoring-question .kajo-color-slider{margin:.25rem 0;height:10px}
-.kajo-selfmonitoring-bottom{display:grid;grid-template-columns:minmax(120px,.75fr) minmax(0,1.5fr);gap:16px;align-items:start}
-.kajo-selfmonitoring-health-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kajo-selfmonitoring-bottom{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.kajo-selfmonitoring-bottom>section{width:100%}
+.kajo-selfmonitoring-health-options{display:grid;grid-template-columns:1fr;gap:8px}
 .kajo-selfmonitoring-modal .kajo-color-slider::-webkit-slider-thumb{width:19px;height:19px}
 .kajo-selfmonitoring-modal .kajo-color-slider::-moz-range-thumb{width:14px;height:14px}
 @media(max-width:480px){
  #day-detail-modal:not(.hidden){padding:7px}
  .kajo-selfmonitoring-modal{padding:12px;gap:10px;max-height:calc(100dvh - 14px)}
- .kajo-selfmonitoring-grid{column-gap:12px;row-gap:9px}
+ .kajo-selfmonitoring-grid{gap:9px}
  .kajo-selfmonitoring-question{gap:.1rem}
  .kajo-selfmonitoring-question>span:first-child>span:first-child{font-size:.76rem}
- .kajo-selfmonitoring-bottom{grid-template-columns:1fr 1.7fr;gap:10px}
+ .kajo-selfmonitoring-bottom{gap:10px}
  .kajo-selfmonitoring-health-options{grid-template-columns:1fr;gap:7px}
  .kajo-selfmonitoring-modal .kajo-color-slider{height:9px}
-}
-@media(max-width:350px){
- .kajo-selfmonitoring-bottom{grid-template-columns:1fr}
- .kajo-selfmonitoring-health-options{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
