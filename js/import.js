@@ -363,14 +363,14 @@ export async function performIntervalsLiveSync() {
             const type = inferSport(name, item.type || '');
             const durSec = Number(item.moving_time ?? item.elapsed_time ?? 0);
             const duration = Number.isFinite(durSec) && durSec > 0 ? Math.round(durSec / 60) : null;
-            const load = item.icu_training_load || item.training_load || null;
+            const load = item.icu_training_load ?? item.training_load ?? null;
             const dist = item.distance ? Number(item.distance) / 1000 : null;
             const hr = item.average_heartrate || null;
             const candidate = {
                 id: actId, sourceId: actId, source: 'intervals',
                 startTime: item.start_date || item.start_date_local || null,
                 date: dateStr, name, type,
-                tss: Number.isFinite(Number(load)) ? Number(load) : null,
+                tss: load != null && load !== '' && Number.isFinite(Number(load)) ? Number(load) : null,
                 duration, distance: dist, hr: hr ? Math.round(hr) : null,
                 maxHr: item.max_heartrate ? Math.round(item.max_heartrate) : null,
                 category: inferCategory(name, item.type || ''), telemetry: null
