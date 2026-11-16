@@ -118,3 +118,17 @@ Die Storage-INSERT-Policy verlangt ebenfalls einen leeren Claim-Token. Das verhi
 Die Claim-RPC löscht weder Storage noch Metadaten. Die Edge Function muss nach dem Claim den exakt zurückgegebenen Pfad im festgelegten Bucket löschen und darf nur bei erfolgreicher Löschung bzw. bestätigtem Nichtvorhandensein finalisieren. Sonstige Storage-Fehler müssen den Vorgang abbrechen und einen späteren Retry ermöglichen.
 
 **Noch nicht umgesetzt:** Die Cleanup-Edge-Function-Action, die Storage-Löschung, die Finalisierungs-RPC-Ausführung und ein Scheduler fehlen. Die 7-Tage-Karenz und 15-Minuten-Lease sind vorläufige Entwurfswerte.
+
+
+## 8. Serverseitige Action – Scaffold
+
+Die Edge Function enthält jetzt `cleanup-expired-uploads` als internen Ausführungspfad:
+
+- Aufruf nur mit dem exakt konfigurierten Service-Role-Bearer; normale Nutzer-JWTs werden abgewiesen.
+- Interne Requests dürfen ausschließlich diese Action ausführen.
+- Zusätzliche Aktivierungssperre über `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true`; ohne diese serverseitige Variable bleibt die Action deaktiviert.
+- Batchgröße 1–25; Pfad wird auf drei Segmente, gültige UUIDs und das Muster `<owner-uuid>/<document-uuid>/original.pdf` geprüft.
+- Storage-Löschung im fest kodierten privaten Bucket; bei Storage-Fehlern erfolgt keine Metadaten-Finalisierung.
+- Metadaten-Finalisierung mit dem zurückgegebenen Claim-Token.
+
+Die Funktion wurde nicht deployed. Die Variable wurde nicht gesetzt. Die SQL-RPCs und Claim-Spalten sind weiterhin nur Entwürfe; deshalb kann der Ablauf im aktuellen Supabase-Schema noch nicht funktionieren. Es gibt keinen Scheduler und keinen automatischen Aufruf.
