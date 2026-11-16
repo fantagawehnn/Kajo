@@ -456,6 +456,9 @@ export function openHealthLogForDate(dStr) {
 export function closeHealthLogModal() { document.getElementById('health-modal').classList.add('hidden'); }
 
 export async function saveRetroactiveHealthLog() {
+    const saveButton = document.getElementById('health-log-save-button');
+    if (saveButton?.disabled) return;
+
     const dateFromStr = document.getElementById('health-log-date-from').value;
     const dateToStr = document.getElementById('health-log-date-to').value;
     const status = document.getElementById('health-log-status').value;
@@ -486,32 +489,42 @@ export async function saveRetroactiveHealthLog() {
         cursor.setDate(cursor.getDate() + 1);
     }
 
-    if (saveDataToLocalStorage() !== true) {
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = 'Speichert …';
+    }
+
+    try {
+        if (saveDataToLocalStorage() !== true) {
+            throw new Error('Für dein Konto ist kein aktiver Datenspeicher verfügbar. Bitte melde dich erneut an.');
+        }
+    } catch (error) {
         changedDates.forEach(date => {
             if (previous[date].exists) state.healthLogs[date] = previous[date].value;
             else delete state.healthLogs[date];
         });
-        alert('Nicht gespeichert: Für dein Konto ist kein aktiver Datenspeicher verfügbar. Bitte melde dich erneut an.');
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = 'Speichern';
+        }
+        alert('Nicht gespeichert: ' + (error?.message || 'Der lokale Speichervorgang ist fehlgeschlagen.'));
         return;
     }
 
-    let localBackupConfirmed = true;
-    try {
-        await flushLocalPersistence();
-    } catch (error) {
-        localBackupConfirmed = false;
-        console.error('Zusätzliche lokale IndexedDB-Sicherung fehlgeschlagen:', error);
-    }
-
-    const cloudSaved = await new Promise(resolve => {
-        window.dispatchEvent(new CustomEvent('endurance:data-save-immediate', { detail: { resolve } }));
-    });
-
+    // Der lokale Speichervorgang ist synchron bestätigt. Die Oberfläche wird
+    // sofort aktualisiert; IndexedDB und Cloud werden im Hintergrund geprüft,
+    // damit ein langsamer Cloud-Request den Speichern-Button nicht blockiert.
     refreshAll();
     closeHealthLogModal();
-    if (!cloudSaved && !localBackupConfirmed) {
-        alert('Die Speicherung konnte weder in der Cloud noch in der zusätzlichen lokalen Datenbank bestätigt werden. Bitte prüfe den Eintrag nach dem Neuladen.');
-    } else if (!cloudSaved) {
-        alert('Der Eintrag wurde lokal gespeichert. Die Cloud-Synchronisierung konnte aktuell nicht bestätigt werden.');
-    }
+
+    if (saveButton) saveButton.textContent = 'Gespeichert';
+    void flushLocalPersistence().catch(error => {
+        console.error('Zusätzliche lokale IndexedDB-Sicherung fehlgeschlagen; der localStorage-Eintrag bleibt erhalten:', error);
+        alert('Der Gesundheitseintrag wurde lokal gespeichert. Die zusätzliche IndexedDB-Sicherung ist fehlgeschlagen.');
+    }).finally(() => {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = 'Speichern';
+        }
+    });
 }
