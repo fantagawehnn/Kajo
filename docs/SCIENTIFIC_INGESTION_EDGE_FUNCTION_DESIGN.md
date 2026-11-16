@@ -483,3 +483,6 @@ Das Edge-Function-Scaffold enthält nun die Action `cleanup-expired-uploads`. Si
 Der Service-Role-Key darf ausschließlich in Supabase Function Secrets verbleiben und niemals an Browser, Frontend oder Nutzerantworten ausgegeben werden. Die Cleanup-Action wird nicht durch die App-Oberfläche angeboten.
 
 **Aktivierungsstatus:** Das ist weiterhin nicht deployter Scaffold-Code. Die RPCs und Claim-Spalten existieren nur als SQL-Entwurf. `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED` wurde nicht gesetzt. Es wurde kein Scheduler eingerichtet. Die vorläufigen 7 Tage Karenzzeit und 15 Minuten Lease sind nicht fachlich freigegeben.
+
+
+Ergänzende Lease-Prüfung: Die Action verwirft Claim-Zeilen, deren `lease_expires_at` fehlt, ungültig ist oder bereits erreicht wurde, bevor sie Storage-Operationen beginnt. Läuft die Lease während eines laufenden Storage-Aufrufs ab, schützt die Finalisierungs-RPC weiterhin vor einer Finalisierung mit abgelaufenem oder inzwischen ersetztem Claim-Token.
