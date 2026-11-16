@@ -156,3 +156,12 @@ Vor der Umsetzung sind aktuelle Produktlimits, Kosten, Embedding-Modelle, Vektor
 ## 10. Abgrenzung des aktuellen Implementierungsstands
 
 Dieses Dokument ist ein Zielarchitekturentwurf. Es wurden dadurch noch keine Tabellen, Storage-Buckets, Embeddings, Importprozesse oder Suchfunktionen angelegt. Die bestehende Coach-Implementierung bleibt unverändert. Das Remote-Schema und die RLS-Konfiguration wurden am 16.11.2026 read-only geprüft; vor Datenbankänderungen müssen insbesondere die Migrationsabweichung und die dokumentierten Security-Advisor-Befunde geklärt werden.
+
+
+## 13. Präzisierung der Implementierungsverträge (16.11.2026)
+
+Die logischen Tabellenbezeichnungen in Abschnitt 3 sind ein frühes Zielbild und dürfen nicht als aktuelle physische Tabellen interpretiert werden. Der konkretisierte Schemaentwurf verwendet inzwischen `scientific_sources`, `scientific_documents`, `scientific_document_chunks` und weitere getrennte Tabellen. Vor einer Migration ist ausschließlich der final abgestimmte DDL-Entwurf maßgeblich, nachdem er erneut gegen das Remote-Schema abgeglichen wurde.
+
+Der konkrete Coach-Retrieval-Vertrag ist in [SCIENTIFIC_COACH_RETRIEVAL_CONTRACT.md](./SCIENTIFIC_COACH_RETRIEVAL_CONTRACT.md) festgehalten. Er präzisiert Authentifizierung, Shared-/Private-Scope, Response-Provenienz, Transferierbarkeitslabels, Begrenzung der Treffer und Fallback-Verhalten. Es gibt weiterhin keine Retrieval-Function, keine Embeddings und keine Worker-Anbindung.
+
+**Remote-Status:** Der letzte erneute read-only-Abgleich ist wegen eines Supabase-Connection-Timeouts nicht abgeschlossen worden. Frühere Remote-Auditbefunde sind daher nur der zuletzt bekannte Stand, keine aktuelle Verifikation.
