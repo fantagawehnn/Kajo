@@ -50,6 +50,7 @@ create or replace function public.kajo_claim_expired_scientific_uploads(
 returns table (
     document_id uuid,
     source_id uuid,
+    owner_id uuid,
     storage_path text,
     claim_token uuid,
     lease_expires_at timestamptz,
@@ -98,12 +99,13 @@ begin
                updated_at = now()
           from candidates c
          where d.id = c.id
-        returning d.id, d.source_id, d.storage_path,
+        returning d.id, d.source_id, d.owner_id, d.storage_path,
                   d.upload_cleanup_claim_token, d.upload_cleanup_claimed_at,
                   d.upload_cleanup_quiesced_at
     )
     select c.id,
            c.source_id,
+           c.owner_id,
            c.storage_path,
            c.upload_cleanup_claim_token,
            c.upload_cleanup_claimed_at + interval '15 minutes',
