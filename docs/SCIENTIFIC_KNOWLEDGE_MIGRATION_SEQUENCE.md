@@ -85,3 +85,16 @@ Eine spätere echte Migration muss als einmalig angewendete, transaktional gepr�
 - Kein Merge, Rebase oder Production-Deployment.
 
 **Nächster sicherer Schritt:** den Remote-Baseline-Abgleich für die wissenschaftlichen Objekte unmittelbar vor einer späteren Migration wiederholen und die Migrationshistorie mit Supabase CLI/Dashboard-Prozess klären. Bis dahin bleibt die Implementierung in Entwurfs- und Scaffold-Status.
+
+
+## 7. Nachprüfung vom 16.11.2026 – Baseline weiterhin gesperrt
+
+Die erneute read-only Abfrage der Remote-Migrationshistorie und der Tabellen-/Policy-/Funktionsmetadaten ist am 16.11.2026 wegen eines Supabase-Connection-Timeouts fehlgeschlagen. Die Remote-Baseline konnte in diesem Durchgang daher nicht aktualisiert werden. Die in älteren Auditnotizen festgehaltenen Remote-Objekte sind nur der zuletzt bekannte Stand.
+
+Die statische Vertragsprüfung bestätigt im Repository:
+- Ingestion-Request und Edge-Function erwarten dieselben Felder.
+- Der Cleanup-Claim liefert getrennte `source_id` und `owner_id`; der Storage-Pfad wird gegen `owner_id/document_id/original.pdf` geprüft.
+- Die Storage-Policy ist für neue Uploads mit `upsert=false` als INSERT-only entworfen. Das entspricht der aktuellen Supabase-Dokumentation; TUS im Zielprojekt bleibt ungetestet.
+- Supabase dokumentiert eine TUS-Upload-URL-Gültigkeit von bis zu 24 Stunden. Die zusätzliche Cleanup-Karenz bleibt eine vorsichtige Designannahme, keine Laufzeitgarantie.
+
+**Entscheidung unverändert:** Keine Migrationen erzeugen oder anwenden, bis die Remote-Migrationshistorie und das tatsächliche Schema wieder zuverlässig lesbar sind. Keine Tests oder Deployments.
