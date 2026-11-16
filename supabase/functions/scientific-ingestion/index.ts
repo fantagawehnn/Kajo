@@ -213,8 +213,9 @@ Deno.serve(async (request) => {
           !isUuid(item.source_id) ||
           !isUuid(item.claim_token) ||
           typeof item.storage_path !== "string" ||
-          item.storage_path !== `${item.document_id === "" ? "" : item.storage_path.split("/")[0]}/${item.document_id}/original.pdf` ||
-          item.storage_path.split("/").length !== 3
+          item.storage_path.split("/").length !== 3 ||
+          !isUuid(item.storage_path.split("/")[0]) ||
+          item.storage_path !== `${item.storage_path.split("/")[0]}/${item.document_id}/original.pdf`
         ) {
           failedCount += 1;
           console.error("Scientific upload cleanup: claim returned an invalid object reference.");
