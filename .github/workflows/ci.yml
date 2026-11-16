@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check js/storage.js && node --check js/user-storage.js && node --check js/local-db.js && node --check js/garmin-cloud-telemetry.js && node --check js/main.js && node --check js/analysis-insights.js && node --check js/calculations.js && node --check js/training-load.js && node --check js/data-source.js && node --check js/coach.js && node --check js/profile.js && node --check js/settings.js && node --check js/theme.js && node --check js/calendar.js && node --check js/dashboard.js && node --check js/charts.js && node --check js/analysis-ui.js && node --check js/training-load-view.js && node --check js/analysis-overview.js && node --check js/activities.js && node --check js/import.js
+        run: node --check js/storage.js && node --check js/user-storage.js && node --check js/local-db.js && node --check js/garmin-cloud-telemetry.js && node --check js/main.js && node --check js/analysis-insights.js && node --check js/calculations.js && node --check js/training-load.js && node --check js/data-source.js && node --check js/coach.js && node --check js/profile.js && node --check js/settings.js && node --check js/theme.js && node --check js/calendar.js && node --check js/dashboard.js && node --check js/charts.js && node --check js/analysis-ui.js && node --check js/training-load-view.js && node --check js/analysis-overview.js && node --check js/activities.js && node --check js/import.js && node --check js/planning.js && node --check js/strength.js
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
       - name: Run regression smoke tests
