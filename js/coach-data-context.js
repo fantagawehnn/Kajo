@@ -299,6 +299,7 @@ export function buildCoachRequestContext(appState, question) {
             timeline: selectedTimelineRecords,
             checkIns: selectedCheckInRecords,
             plannedSessions: selectedPlannedRecords,
+            races: sanitizeRaces(raceWindow.records),
             today,
             settings: state.settings || {},
             profile: state.profile || {}
