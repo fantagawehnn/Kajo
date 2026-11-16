@@ -258,3 +258,16 @@ Als Parser-Kandidat ist `unpdf` technisch interessant: Die Bibliothek beschreibt
 - Die tatsächliche maximale Uploadgröße wird nicht aus dem Storage-Limit allein abgeleitet; sie muss zur Parser- und Worker-Kapazität passen.
 
 **Entscheidung:** `unpdf` wird als erster Parser-Kandidat vorgemerkt, aber noch nicht eingebunden. Die Architektur wird vor der Prozessimplementierung um eine belastbare Job-Ausführung ergänzt. Der aktuelle Function-Scaffold bleibt bei `process-document` deshalb bewusst auf HTTP 501.
+
+
+## 14. Architekturabgleich: asynchrone Verarbeitung über Cloudflare Queues
+
+Die eigentliche asynchrone PDF-Verarbeitung wird nicht in dieser Supabase Edge Function ausgeführt. Die Funktion bleibt zuständig für authentifizierte Upload-Intents und Statusabfragen. Nach dem direkten Upload bestätigt ein separater Cloudflare Worker den Upload, prüft das Objekt und stellt eine kleine Nachricht mit der Dokument-ID in Cloudflare Queues ein.
+
+Der Queue Consumer läuft in einem **separaten Cloudflare Worker**, nicht im bestehenden Coach-Worker. So bleibt der Service-Role-Key auf den dedizierten Ingestion-Worker begrenzt. Der Coach-Worker erhält keine privilegierten Datenbankrechte.
+
+Die Zielarchitektur, Statusübergänge, Retry-/DLQ-Strategie und Laufzeitgrenzen sind in [CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md](./CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md) beschrieben.
+
+Wichtig: Cloudflare Workers haben laut aktueller Dokumentation 128 MB Speicher pro Isolate. Die CPU-Zeit ist planabhängig (Workers Free: 10 ms; Workers Paid: bis zu 5 Minuten konfigurierbar). Queues geben bis zu 15 Minuten Wall-Clock-Zeit, aber heben weder Speicher- noch CPU-Grenzen auf. Deshalb ist ein Parser-PoC zwingend, bevor die Verarbeitung aktiviert wird.
+
+Der bisherige Edge-Function-Scaffold bleibt auf `process-document` mit HTTP 501; die Aktion wird nicht stillschweigend als Queue-Producer missbraucht.
