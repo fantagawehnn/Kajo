@@ -116,3 +116,22 @@ Feststellungen:
 **Entscheidung:** Vor dem Frontend-Code muss die TUS-Bibliothek samt fester Version und browserkompatiblem Einbindungsweg festgelegt werden. Die spätere Integration muss den bestehenden Supabase-Client wiederverwenden, die Nutzer-Session ausschließlich als Storage-Bearer-Credential weiterreichen, den Intent-Pfad unverändert übernehmen und nach TUS-Abschluss zwingend `confirm-upload` sowie eine serverseitige Statusabfrage ausführen.
 
 **Grenze der Prüfung:** reine Repository-/Code-Lektüre. Keine Tests, kein Upload, keine Datenbankänderung, keine Storage-Konfiguration und kein Deployment.
+
+## 9. Statische Prüfung des vorbereiteten TUS-Moduls
+
+Neu hinzugekommen ist `js/scientific-upload.js`. Der Baustein ist derzeit nicht in `js/main.js` importiert und wird von keinem UI-Element aufgerufen.
+
+Statisch abgeglichen wurden:
+- fester Clientstand `tus-js-client@4.3.1` und verzögertes Laden des Browser-Bundles;
+- Wiederverwendung des bestehenden Supabase-Client-Singletons;
+- Intent-Request mit Datei-MIME-Typ und -Größe;
+- Validierung der vom Server gelieferten Dokument-ID, des Bucket-Namens, Objektpfads und Intent-Ablaufzeitpunkts;
+- direkter Storage-Hostname aus der vorhandenen Supabase-Projekt-URL;
+- TUS-Header, Metadaten, 6-MB-Chunkgröße und Retry-Abstände;
+- Aktualisierung des Bearer-Tokens über `onBeforeRequest`;
+- verpflichtender `confirm-upload`-Aufruf vor Auflösung des Upload-Erfolgs;
+- keine Speicherung von Resume-Fingerprints und keine Service-Role-Credentials im Browser.
+
+**Bewusste Einschränkung:** Der Code ermöglicht noch keine Wiederaufnahme nach einem Browser-Neustart. Er verwendet keine dauerhafte lokale Zuordnung zwischen Dokument-Intent und TUS-Upload-URL. Eine solche Zuordnung muss später nutzergebunden, intentgebunden und mit Ablauf-/Kontowechselbehandlung entworfen werden.
+
+**Nicht verifiziert:** CDN-Lieferkette/SRI, CORS und tatsächlicher TUS-Upload gegen den Zielbucket, Tokenrefresh während einer realen Übertragung, Upload-/Cleanup-Rennen sowie tatsächliche Storage-Response. Diese Punkte benötigen eine freigegebene Infrastruktur und kontrollierte Integration. Es wurden keine Tests ausgeführt.
