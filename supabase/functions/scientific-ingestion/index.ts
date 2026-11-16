@@ -363,6 +363,11 @@ Deno.serve(async (request) => {
         await signatureResponse.body?.cancel();
         return json(415, { error: "Uploaded file is not a verifiable PDF" }, configuredOrigin);
       }
+      const contentRange = signatureResponse.headers.get("Content-Range") ?? "";
+      if (!contentRange.startsWith(`bytes 0-4/`) || signatureResponse.headers.get("Content-Length") !== "5") {
+        await signatureResponse.body?.cancel();
+        return json(415, { error: "Uploaded file range could not be verified" }, configuredOrigin);
+      }
       const signature = new Uint8Array(await signatureResponse.arrayBuffer());
       const pdfSignature = [0x25, 0x50, 0x44, 0x46, 0x2d]; // %PDF-
       if (
@@ -467,6 +472,42 @@ Deno.serve(async (request) => {
         return json(400, { error: "Chunk batch was rejected" }, configuredOrigin);
       }
       return json(200, { document_id: body.document_id, inserted_chunks: data }, configuredOrigin);
+    }
+
+    if (body.action === "mark-manual-review") {
+      if (!isUuid(body.document_id)) {
+        return json(404, { error: "Document not found" }, configuredOrigin);
+      }
+      const { data: document, error: documentError } = await getOwnedPrivateDocument(
+        admin, body.document_id, authData.user.id,
+      );
+      if (documentError || !document) {
+        return json(documentError ? 500 : 404, { error: documentError ? "Could not verify document" : "Document not found" }, configuredOrigin);
+      }
+      if (document.processing_status === "manual_review_required") {
+        return json(200, { document_id: document.id, processing_status: "manual_review_required" }, configuredOrigin);
+      }
+      if (document.processing_status !== "uploaded" && document.processing_status !== "extracting") {
+        return json(409, { error: "Document cannot be moved to manual review from its current state" }, configuredOrigin);
+      }
+      const { data: updated, error: updateError } = await admin
+        .from("scientific_documents")
+        .update({
+          processing_status: "manual_review_required",
+          processing_error: "No reliable machine-readable text was extracted; manual review is required.",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", document.id)
+        .eq("owner_id", authData.user.id)
+        .eq("visibility", "private")
+        .in("processing_status", ["uploaded", "extracting"])
+        .select("id")
+        .maybeSingle();
+      if (updateError || !updated) {
+        console.error("Scientific manual-review status update failed.");
+        return json(409, { error: "Could not update document status" }, configuredOrigin);
+      }
+      return json(200, { document_id: document.id, processing_status: "manual_review_required" }, configuredOrigin);
     }
 
     if (body.action === "complete-extraction") {
