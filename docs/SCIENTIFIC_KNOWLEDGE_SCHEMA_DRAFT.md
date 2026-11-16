@@ -150,3 +150,11 @@ Der SQL-Entwurf unter `docs/drafts/SCIENTIFIC_KNOWLEDGE_PHASE1_DDL_DRAFT.sql` wu
 - Chunks aus `pending`, `uploaded`, `extracting`, `extracted`, `failed`, `rejected` oder `manual_review_required` sind nicht über die normale authentifizierte SELECT-Policy sichtbar.
 
 Diese Regeln betreffen ausschließlich den Entwurf. Die Migration wurde nicht angewendet; vor Umsetzung sind Policy-Syntax und tatsächliche Grants weiterhin separat zu prüfen.
+
+## 12. Transaktionsentwurf für die Ingestion
+
+Für die spätere private Chunk-Persistenz wurde `docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql` ergänzt. Der Entwurf fügt Status-/Umfangsfelder am Dokument hinzu und beschreibt drei eng begrenzte RPCs: Extraktion beanspruchen, Chunk-Batches idempotent speichern und die Extraktion erst nach lückenloser Chunk-Prüfung auf `private_ready` setzen.
+
+Die RPCs sind als `SECURITY INVOKER` konzipiert; Ausführung ist nur für `service_role` vorgesehen. Die Edge Function bleibt für JWT-Validierung, Eigentumsprüfung und private Sichtbarkeit verantwortlich, bevor sie einen RPC-Aufruf ausführt. Die RPCs sind nicht für Browser-Aufrufe freigegeben und erlauben keine Freigabe gemeinsamer Quellen.
+
+Der SQL-Entwurf ist nicht angewendet. Er muss mit der tatsächlichen Remote-Schemaversion, den bestehenden Grants und der Migration-Historie abgeglichen werden. Insbesondere bleibt zu entscheiden, wie Upload-Verifikation, Abbruch/Resume und die Kennzeichnung von PDFs ohne extrahierbaren Text umgesetzt werden.
