@@ -361,6 +361,7 @@ export function editPeriodRange(start,end) {
     document.getElementById('kajo-period-form-title').textContent='Zeitraum bearbeiten';
     document.getElementById('kajo-period-form-hint').textContent='Passe Beginn oder Ende an oder entferne den Zeitraum vollständig.';
     document.getElementById('kajo-period-cancel').classList.remove('hidden');
+    document.getElementById('kajo-period-delete').classList.remove('hidden');
     document.getElementById('kajo-period-feedback').textContent='';
     document.getElementById('kajo-period-start').scrollIntoView({behavior:'smooth',block:'center'});
 }
@@ -371,6 +372,7 @@ export function cancelPeriodEdit() {
     document.getElementById('kajo-period-form-title').textContent='Periode eintragen';
     document.getElementById('kajo-period-form-hint').textContent='Wähle den ersten und letzten Periodentag.';
     document.getElementById('kajo-period-cancel').classList.add('hidden');
+    document.getElementById('kajo-period-delete').classList.add('hidden');
     document.getElementById('kajo-period-feedback').textContent='';
 }
 function setPeriodFlag(date,enabled) {
@@ -386,6 +388,26 @@ function setPeriodFlag(date,enabled) {
 function applyPeriodRange(start,end,enabled) {
     const date=new Date(start+'T12:00:00'),last=new Date(end+'T12:00:00');
     while(date<=last){setPeriodFlag(toLocalDateString(date),enabled);date.setDate(date.getDate()+1);}
+}
+export function deleteManagedPeriod() {
+    if(!editingPeriodRange)return;
+    const range={...editingPeriodRange};
+    const snapshot={};
+    const cursor=new Date(range.start+'T12:00:00'),last=new Date(range.end+'T12:00:00');
+    while(cursor<=last){
+        const date=toLocalDateString(cursor),entry=state.dailyCheckins[date];
+        snapshot[date]=entry?{...entry,cycle:entry.cycle?{...entry.cycle}:undefined}:null;
+        cursor.setDate(cursor.getDate()+1);
+    }
+    applyPeriodRange(range.start,range.end,false);
+    if(saveDataToLocalStorage()!==true){
+        Object.entries(snapshot).forEach(([date,entry])=>{if(entry)state.dailyCheckins[date]=entry;else delete state.dailyCheckins[date];});
+        document.getElementById('kajo-period-feedback').textContent='Der Zeitraum konnte nicht gelöscht werden. Bitte prüfe deine Anmeldung.';
+        return;
+    }
+    cancelPeriodEdit();
+    renderManagedPeriods();
+    refreshAll();
 }
 export function saveManagedPeriod() {
     const start=document.getElementById('kajo-period-start').value;
