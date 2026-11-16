@@ -19,7 +19,7 @@
 
 Die Zusammenfassung ist noch keine vollständige sportwissenschaftliche Analyse-Engine. Insbesondere fehlen derzeit:
 
-- eine validierte Intensitätsverteilung aus tatsächlichen HF-Zonenminuten über die ausgewählten Aktivitäten,
+- eine weitergehende, sportartspezifische Intensitätsverteilung über Garmin-HF-Zonen hinaus (manuelle RPE-Intensitätsklassifikation, weitere Datenquellen und validierte Trainingszonen),
 - eine methodisch abgesicherte, sportartspezifische Vergleichslogik für K1/C1/C2, Classic/Sprint sowie Wildwasser/Flachwasser,
 - standardisierte Leistungs- und Testvergleiche,
 - ein wissenschaftlich kuratierter Evidenzkatalog mit Quellenabruf,
