@@ -1051,9 +1051,10 @@ export function toggleActivityTestLap(index) {
     const activity = state.selectedActivityForModal;
     if (!activity || !Number.isInteger(Number(index))) return;
     const lapIndex = Number(index);
-    const laps = Array.isArray(activity.laps) ? activity.laps
-        : Array.isArray(activity.intervals) ? activity.intervals
-        : Array.isArray(activity.garminFitData?.laps) ? activity.garminFitData.laps : [];
+    const storedLaps = Array.isArray(activity.laps) ? activity.laps : [];
+    const intervalLaps = Array.isArray(activity.intervals) ? activity.intervals : [];
+    const fitLaps = Array.isArray(activity.garminFitData?.laps) ? activity.garminFitData.laps : [];
+    const laps = storedLaps.length ? storedLaps : intervalLaps.length ? intervalLaps : fitLaps;
     if (lapIndex < 0 || lapIndex >= laps.length) return;
     const selected = new Set(Array.isArray(activity.testLapIndexes) ? activity.testLapIndexes : []);
     if (selected.has(lapIndex)) selected.delete(lapIndex);
