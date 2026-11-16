@@ -103,16 +103,19 @@ function summarizeActivities(activities) {
 
 
 function summarizeCanoeSpecificActivities(activities) {
-    const canoeActivities = activities.filter(item =>
+    const allCanoeActivities = activities.filter(item =>
         ['Kayaking', 'C1', 'C2'].includes(item?.type)
     );
+    const canoeActivities = allCanoeActivities.filter(item => dateKey(item?.date));
     const boatClass = type => type === 'Kayaking' ? 'K1' : type;
     const waterType = item => {
         const value = item?.waterConditions?.type || item?.waterType;
         return ['wildwater', 'flatwater'].includes(value) ? value : null;
     };
-    const raceFormat = item =>
-        ['classic', 'sprint'].includes(item?.raceFormat) ? item.raceFormat : null;
+    const raceFormat = item => {
+        const value = typeof item?.raceFormat === 'string' ? item.raceFormat.toLowerCase() : '';
+        return ['classic', 'sprint'].includes(value) ? value : null;
+    };
     const groups = new Map();
 
     canoeActivities.forEach(item => {
@@ -137,6 +140,7 @@ function summarizeCanoeSpecificActivities(activities) {
 
     return {
         eligibleCanoeSessions: canoeActivities.length,
+        undatedCanoeSessionsExcluded: allCanoeActivities.length - canoeActivities.length,
         classifiedRaceFormatSessions: canoeActivities.filter(item => raceFormat(item)).length,
         unclassifiedRaceFormatSessions: canoeActivities.filter(item => !raceFormat(item)).length,
         classifiedWaterTypeSessions: canoeActivities.filter(item => waterType(item)).length,
@@ -152,7 +156,7 @@ function summarizeCanoeSpecificActivities(activities) {
             knownDurationMinutes: Number(group.knownDurationMinutes.toFixed(1)),
             sessionsMissingDuration: group.missingDurationCount
         })),
-        interpretationLimit: 'K1 wird in den gespeicherten Aktivitäten durch den Aktivitätstyp Kayaking abgebildet. Fehlende Rennformat- oder Wasserangaben bleiben nicht zugeordnet. Die Gruppen beschreiben dokumentierte Einheiten und sind kein Leistungsvergleich.'
+        interpretationLimit: 'K1 wird in den gespeicherten Aktivitäten durch den Aktivitätstyp Kayaking abgebildet. Nicht datierte Kanu-Aktivitäten werden aus den zeitbezogenen Gruppen ausgeschlossen und separat gezählt. Fehlende Rennformat- oder Wasserangaben bleiben nicht zugeordnet. Die Gruppen beschreiben dokumentierte Einheiten und sind kein Leistungsvergleich.'
     };
 }
 
