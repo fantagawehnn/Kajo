@@ -248,6 +248,39 @@ const streamed = state.rawActivities.find(a => a.id === 'streamed-activity');
 assert.deepEqual(streamed.telemetry.hr, [120, 130, 140]);
 assert.deepEqual(streamed.telemetry.time, [0, 1, 2]);
 
+// Numeric IDs from different providers are not interchangeable.
+state.rawActivities = [{
+    id: '12345', source: 'garmin', sourceRefs: { garminActivityId: '12345' },
+    date: todayKey, startTime: todayKey + 'T06:00:00Z',
+    type: 'kayak', duration: 60, name: 'Garmin Einheit'
+}];
+globalThis.fetch = async url => url.includes('/activities')
+    ? { ok: true, json: async () => [
+        {
+            id: '12345', start_date_local: todayKey + 'T18:00:00',
+            moving_time: 900, distance: 4000, average_heartrate: 120,
+            icu_training_load: 0, type: 'Run', name: 'Intervals Lauf'
+        },
+        {
+            id: '12346', start_date_local: todayKey + 'T19:00:00',
+            moving_time: 900, distance: 4000, average_heartrate: 120,
+            type: 'Run', name: 'Intervals ohne Load'
+        }
+    ] }
+    : { ok: true, json: async () => [] };
+document.getElementById('icu-load-activities').checked = true;
+document.getElementById('icu-load-streams').checked = false;
+document.getElementById('icu-load-wellness').checked = false;
+await importer.performIntervalsLiveSync();
+assert.equal(state.rawActivities.length, 3,
+    'same numeric ID from Garmin and Intervals must not suppress a distinct activity');
+assert.equal(state.rawActivities.find(a => a.source === 'garmin').name, 'Garmin Einheit');
+const importedIntervals = state.rawActivities.find(a => a.source === 'intervals' && a.id === '12345');
+assert.ok(importedIntervals, 'Intervals activity with colliding Garmin ID is imported separately');
+assert.equal(importedIntervals.tss, 0, 'a valid zero training-load value is preserved');
+const missingLoadActivity = state.rawActivities.find(a => a.id === '12346');
+assert.equal(missingLoadActivity.tss, null, 'a missing training-load value remains missing, not zero');
+
 assert.equal(state.dailyCheckins['2026-11-10'].weight, 65);
 
 // Backup restoration validates, migrates, and restores the supported collections.
