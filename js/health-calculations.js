@@ -82,6 +82,12 @@ export function summarizeHealthDocumentation(
     plannedSessionsOnInjuredDays,
     plannedSickDaysWithoutActivity,
     plannedInjuredDaysWithoutActivity,
+    trainingAvailability: {
+      unrestricted: records.filter(([, item]) => item.trainingAvailability === 'unrestricted').length,
+      reduced: records.filter(([, item]) => item.trainingAvailability === 'reduced').length,
+      unavailable: records.filter(([, item]) => item.trainingAvailability === 'unavailable').length,
+      undocumented: records.filter(([, item]) => !['unrestricted', 'reduced', 'unavailable'].includes(item.trainingAvailability)).length
+    },
     availability: null,
     availabilityReason: 'Gesunde Tage und Gründe für nicht absolvierte oder verschobene Einheiten werden nicht systematisch dokumentiert.'
   };
