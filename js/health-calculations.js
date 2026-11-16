@@ -197,6 +197,8 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       averageMinutesPerCalendarDay: eligibleCalendarDays > 0 ? totalMinutes / eligibleCalendarDays : null,
       trainingLoad: windowLoadRows.length ? Number(totalLoad.toFixed(1)) : null,
       trainingLoadActivityCount: windowLoadRows.length,
+      averageTrainingLoadPerCalendarDay: eligibleCalendarDays > 0 && windowLoadRows.length
+        ? totalLoad / eligibleCalendarDays : null,
       trainingLoadMode: loadMode,
       trainingLoadUnit: loadUnit,
       daysWithActivity: new Set(rows.map(item => item.date)).size
@@ -210,14 +212,38 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     const beforeTo = addDays(episode.startDate, -1);
     const afterFrom = addDays(episode.endDate, 1);
     const afterTo = addDays(episode.endDate, comparisonDays);
+    const baseline = summarizeWindow(beforeFrom, beforeTo, true);
+    const returnWindows = [
+      { key: 'days1to7', label: 'Tag 1–7', from: afterFrom, to: addDays(episode.endDate, 7) },
+      { key: 'days8to14', label: 'Tag 8–14', from: addDays(episode.endDate, 8), to: addDays(episode.endDate, 14) },
+      { key: 'days15to28', label: 'Tag 15–28', from: addDays(episode.endDate, 15), to: addDays(episode.endDate, 28) }
+    ].map(window => {
+      const period = summarizeWindow(window.from, window.to, true);
+      const baselineAverage = baseline.averageMinutesPerCalendarDay;
+      const relativeToBaseline = baselineAverage !== null && baselineAverage > 0
+        && period.averageMinutesPerCalendarDay !== null
+        ? ((period.averageMinutesPerCalendarDay - baselineAverage) / baselineAverage) * 100
+        : null;
+      return {
+        key: window.key,
+        label: window.label,
+        ...period,
+        averageMinutesChangePercent: relativeToBaseline === null ? null : Number(relativeToBaseline.toFixed(1))
+      };
+    });
     return {
       status: episode.status,
       startDate: episode.startDate,
       endDate: episode.endDate,
       documentedDays: episode.documentedDays,
-      before: summarizeWindow(beforeFrom, beforeTo, true),
+      before: baseline,
       during: summarizeWindow(episode.startDate, episode.endDate),
-      after: summarizeWindow(afterFrom, afterTo, true)
+      after: summarizeWindow(afterFrom, afterTo, true),
+      returnToTraining: {
+        baseline,
+        windows: returnWindows,
+        note: 'Beschreibt ausschließlich dokumentierte Aktivitäten nach der Phase; keine medizinische Freigabe oder Empfehlung zur Belastungssteigerung.'
+      }
     };
   });
 }
