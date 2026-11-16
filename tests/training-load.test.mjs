@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
 import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis, getAdaptiveRestingHr, calculateHeartRateReserveZones } from '../js/training-load.js';
 import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
+import { calculateReadiness } from '../js/recovery-calculations.js';
 
 function dateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -620,7 +621,6 @@ test('cached Edwards zone analysis remains available without raw telemetry', () 
     assert.equal(result.records[0].edwards.value, 80);
 });
 
-import { calculateReadiness } from '../js/recovery-calculations.js';
 
 test('readiness calculation is independent of the dashboard and reports insufficient data', () => {
     const result = calculateReadiness({}, [], '2026-01-10');
