@@ -425,3 +425,39 @@ test('excludes load records that cannot be matched to an activity from coverage 
   });
   assert.equal(result.before.unmatchedLoadRecordsExcluded, 1);
 });
+
+
+test('calculates load coverage against activities eligible for the selected model only', () => {
+  const garmin = { id: 'g', date: '2026-11-10', startTime: '09:00', source: 'garmin', duration: 60 };
+  const intervals = { id: 'i', date: '2026-11-11', startTime: '10:00', source: 'intervals', duration: 45 };
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [garmin, intervals],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-15', documentedDays: 1 }],
+    14,
+    [{ activity: garmin, value: 30 }],
+    'garmin-native',
+    'Garmin Load',
+    '2026-12-31',
+    [garmin]
+  );
+  assert.equal(result.before.activities, 2);
+  assert.deepEqual(result.before.trainingLoadCoverage, {
+    available: 1, total: 1, status: 'vollständig'
+  });
+  assert.equal(result.before.durationCoverage.available, 2);
+  assert.equal(result.before.durationCoverage.total, 2);
+});
+
+test('reports unavailable load coverage when the selected model has no eligible activities', () => {
+  const activity = { id: 'i', date: '2026-11-10', startTime: '10:00', source: 'intervals', duration: 45 };
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [activity],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-15', documentedDays: 1 }],
+    14, [], 'garmin-unavailable', null, '2026-12-31', []
+  );
+  assert.deepEqual(result.before.trainingLoadCoverage, {
+    available: 0, total: 0, status: 'nicht berechenbar'
+  });
+});
