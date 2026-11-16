@@ -11,7 +11,7 @@
 - Aktivitätsdauer wird aus dem gespeicherten Minutenwert aggregiert. Der manuelle Aktivitätseditor und die Importpfade speichern die Dauer in Minuten.
 - Unvollständige Dauern werden kenntlich gemacht; `totalMinutes` bleibt dann `null`. `knownMinutes` ist ausdrücklich nur die Summe der Aktivitäten mit bekannter Dauer.
 - Belastungsdaten werden nach Load-Modell getrennt gehalten. Fehlende oder gemischte Load-Daten werden nicht zu einem gemeinsamen Wert zusammengefasst.
-- Check-in-Mittelwerte enthalten jeweils die Anzahl der tatsächlich vorhandenen Messwerte. Es wird kein Readiness-Score erzeugt.
+- Check-in-Mittelwerte enthalten jeweils die Anzahl der tatsächlich vorhandenen Messwerte, darunter HRV, Ruhepuls, Schlaf, Body Battery und Garmin-Stress, soweit vorhanden. Es wird kein Readiness-Score erzeugt.
 - Dokumentierte VO₂max-Werte werden über bis zu 180 Tage für Performance-Fragen deskriptiv verglichen; Messanzahl, erster und letzter Wert sowie Veränderung werden ausgewiesen, ohne daraus eine gesicherte physiologische Anpassung abzuleiten.
 - Kanu-Aktivitäten werden anhand der gespeicherten Aktivitätstypen Kayaking (K1), C1 und C2 gruppiert. Dokumentiertes Rennformat (`raceFormat`) und dokumentierte Wasserart (`waterConditions.type`, ersatzweise `waterType`) werden deskriptiv ausgewiesen; fehlende Zuordnungen bleiben sichtbar.
 - Hinterlegte Wettkampfergebnisse werden nach Disziplin und Format gruppiert; Anzahl und beste dokumentierte Platzierung werden ausgewiesen. Das ist keine standardisierte Leistungsdiagnostik.
