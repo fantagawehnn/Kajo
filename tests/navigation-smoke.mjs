@@ -382,3 +382,11 @@ assert.ok(main.includes("cloudInitialTransferState !== 'exists'"), 'manual cloud
 assert.ok(css.includes('#planned-workout-modal:not(.hidden)') && css.includes('z-index: 2147483003'), 'planned workout modal remains above fixed mobile navigation');
 
 
+
+// Competition editing reuses the existing record and preserves its results and identity.
+assert.ok(competitions.includes('export function editRace(encodedId)'), 'existing competitions can be opened for editing');
+assert.ok(competitions.includes('Object.assign(existing, updatedFields)'), 'competition edits update the existing record instead of creating duplicates');
+assert.ok(competitions.includes('if (routeId) updatedFields.routeId = routeId') && competitions.includes('else delete updatedFields.routeId'), 'clearing a route removes only the optional route assignment');
+assert.ok(competitions.includes('export function openRaceModalForCreate()'), 'new competition creation resets edit state');
+assert.ok(html.includes('id="race-modal-save"') && html.includes('onclick="openRaceModalForCreate()"'), 'competition modal distinguishes create and edit actions');
+assert.ok(main.includes('    editRace,') && main.includes('    openRaceModalForCreate,'), 'competition edit actions are exposed to the UI');
