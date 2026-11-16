@@ -135,3 +135,8 @@ Statisch abgeglichen wurden:
 **Bewusste Einschränkung:** Der Code ermöglicht noch keine Wiederaufnahme nach einem Browser-Neustart. Er verwendet keine dauerhafte lokale Zuordnung zwischen Dokument-Intent und TUS-Upload-URL. Eine solche Zuordnung muss später nutzergebunden, intentgebunden und mit Ablauf-/Kontowechselbehandlung entworfen werden.
 
 **Nicht verifiziert:** CDN-Lieferkette/SRI, CORS und tatsächlicher TUS-Upload gegen den Zielbucket, Tokenrefresh während einer realen Übertragung, Upload-/Cleanup-Rennen sowie tatsächliche Storage-Response. Diese Punkte benötigen eine freigegebene Infrastruktur und kontrollierte Integration. Es wurden keine Tests ausgeführt.
+
+Ergänzende statische Korrekturen am Upload-Baustein:
+- Der Storage-Endpunkt wird auf den direkten Supabase-Storage-Hostname `<project-ref>.storage.supabase.co` abgebildet, nicht auf den allgemeinen `<project-ref>.supabase.co`-API-Host.
+- Nach `confirm-upload` wird `get-document-status` erneut aufgerufen; erst der serverseitig gelesene Status `uploaded` gilt als Erfolg.
+- Ein expliziter Abbruch während der TUS-Übertragung beendet auch das zurückgegebene Completion-Promise. Nach erfolgreichem TUS-Transfer wird die serverseitige Bestätigung nicht mehr durch einen nachträglichen Upload-Abbruch übergangen.
