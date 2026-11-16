@@ -1,0 +1,268 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const BUCKET_ID = "kajo-scientific-documents";
+const MAX_TITLE_LENGTH = 500;
+const MAX_AUTHORS = 50;
+
+function json(status: number, body: unknown, origin: string) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": origin,
+      "Vary": "Origin",
+    },
+  });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function cleanOptionalString(value: unknown, maxLength = 2000): string | null {
+  if (typeof value !== "string") return null;
+  const cleaned = value.trim();
+  return cleaned.length > 0 && cleaned.length <= maxLength ? cleaned : null;
+}
+
+function validAuthors(value: unknown): string[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > MAX_AUTHORS) return null;
+  const authors = value.map((item) =>
+    typeof item === "string" ? item.trim() : ""
+  );
+  if (authors.some((author) => !author || author.length > 300)) return null;
+  return authors;
+}
+
+function validHttpsUrl(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string" || value.length > 2048) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+Deno.serve(async (request) => {
+  const configuredOrigin = Deno.env.get("APP_ORIGIN");
+  if (!configuredOrigin) {
+    return new Response("Service unavailable", { status: 503 });
+  }
+
+  const requestOrigin = request.headers.get("Origin");
+  if (requestOrigin && requestOrigin !== configuredOrigin) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": configuredOrigin,
+        "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, content-type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Max-Age": "600",
+        "Vary": "Origin",
+      },
+    });
+  }
+
+  if (request.method !== "POST") {
+    return json(405, { error: "Method not allowed" }, configuredOrigin);
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const maxUploadBytesRaw = Deno.env.get("MAX_UPLOAD_BYTES");
+  const maxUploadBytes = Number(maxUploadBytesRaw);
+
+  if (
+    !supabaseUrl || !anonKey || !serviceRoleKey ||
+    !Number.isSafeInteger(maxUploadBytes) || maxUploadBytes <= 0
+  ) {
+    console.error("Scientific ingestion configuration is incomplete.");
+    return json(503, { error: "Service unavailable" }, configuredOrigin);
+  }
+
+  const authorization = request.headers.get("Authorization") ?? "";
+  if (!authorization.startsWith("Bearer ")) {
+    return json(401, { error: "Unauthorized" }, configuredOrigin);
+  }
+
+  try {
+    const userClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: authorization } },
+    });
+    const { data: authData, error: authError } = await userClient.auth.getUser();
+    if (authError || !authData.user) {
+      return json(401, { error: "Unauthorized" }, configuredOrigin);
+    }
+
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return json(400, { error: "Invalid request body" }, configuredOrigin);
+    }
+    if (!isRecord(body) || typeof body.action !== "string") {
+      return json(400, { error: "Invalid request" }, configuredOrigin);
+    }
+
+    if (body.action === "create-upload-intent") {
+      if (!isRecord(body.source) || !isRecord(body.file)) {
+        return json(400, { error: "Invalid upload metadata" }, configuredOrigin);
+      }
+
+      const title = cleanOptionalString(body.source.title, MAX_TITLE_LENGTH);
+      const authors = validAuthors(body.source.authors);
+      const mimeType = body.file.mime_type;
+      const sizeBytes = body.file.size_bytes;
+      const publicationYear = body.source.publication_year;
+      const doi = cleanOptionalString(body.source.doi, 255);
+      const sourceUrl = validHttpsUrl(body.source.source_url);
+      const language = cleanOptionalString(body.source.language, 20);
+      const publicationType = body.source.publication_type;
+
+      const publicationTypes = [
+        "research_article",
+        "systematic_review",
+        "meta_analysis",
+        "position_statement",
+        "methodological",
+        "conference_paper",
+        "other",
+      ];
+
+      if (
+        !title || !authors ||
+        mimeType !== "application/pdf" ||
+        !Number.isSafeInteger(sizeBytes) || (sizeBytes as number) <= 0 ||
+        (sizeBytes as number) > maxUploadBytes ||
+        (publicationYear !== undefined && publicationYear !== null &&
+          (!Number.isInteger(publicationYear) || publicationYear < 1500 || publicationYear > 2200)) ||
+        (body.source.doi !== undefined && body.source.doi !== null &&
+          body.source.doi !== "" && !doi) ||
+        (body.source.source_url !== undefined && body.source.source_url !== null &&
+          body.source.source_url !== "" && !sourceUrl) ||
+        (body.source.language !== undefined && body.source.language !== null &&
+          body.source.language !== "" && !language) ||
+        (publicationType !== undefined && publicationType !== null &&
+          !publicationTypes.includes(String(publicationType)))
+      ) {
+        return json(400, { error: "Invalid or unsupported upload metadata" }, configuredOrigin);
+      }
+
+      const userId = authData.user.id;
+      const sourceId = crypto.randomUUID();
+      const documentId = crypto.randomUUID();
+      const storagePath = `${userId}/${documentId}/original.pdf`;
+
+      const { error: sourceError } = await admin
+        .from("scientific_sources")
+        .insert({
+          id: sourceId,
+          owner_id: userId,
+          visibility: "private",
+          review_status: "draft",
+          title,
+          authors,
+          publication_year: publicationYear ?? null,
+          doi,
+          source_url: sourceUrl,
+          language,
+          publication_type: publicationType ?? null,
+          access_basis: "private_upload",
+        });
+
+      if (sourceError) {
+        console.error("Scientific upload intent: source insert failed.");
+        return json(500, { error: "Could not create upload intent" }, configuredOrigin);
+      }
+
+      const { error: documentError } = await admin
+        .from("scientific_documents")
+        .insert({
+          id: documentId,
+          source_id: sourceId,
+          owner_id: userId,
+          visibility: "private",
+          storage_path: storagePath,
+          mime_type: "application/pdf",
+          file_size_bytes: sizeBytes,
+          processing_status: "pending",
+        });
+
+      if (documentError) {
+        const { error: cleanupError } = await admin
+          .from("scientific_sources")
+          .delete()
+          .eq("id", sourceId)
+          .eq("owner_id", userId);
+        if (cleanupError) {
+          console.error("Scientific upload intent: source cleanup failed.");
+        }
+        console.error("Scientific upload intent: document insert failed.");
+        return json(500, { error: "Could not create upload intent" }, configuredOrigin);
+      }
+
+      return json(201, {
+        document_id: documentId,
+        bucket_id: BUCKET_ID,
+        storage_path: storagePath,
+        processing_status: "pending",
+        upload: { upsert: false, content_type: "application/pdf" },
+      }, configuredOrigin);
+    }
+
+    if (body.action === "get-document-status") {
+      const documentId = typeof body.document_id === "string"
+        ? body.document_id
+        : "";
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(documentId)) {
+        return json(404, { error: "Document not found" }, configuredOrigin);
+      }
+
+      const { data, error } = await admin
+        .from("scientific_documents")
+        .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error")
+        .eq("id", documentId)
+        .eq("owner_id", authData.user.id)
+        .eq("visibility", "private")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Scientific document status lookup failed.");
+        return json(500, { error: "Could not retrieve document status" }, configuredOrigin);
+      }
+      if (!data) {
+        return json(404, { error: "Document not found" }, configuredOrigin);
+      }
+
+      return json(200, { document: data }, configuredOrigin);
+    }
+
+    if (body.action === "process-document") {
+      // Deliberately unavailable until a Deno-compatible PDF parser, atomic
+      // chunk persistence, and retry/claim semantics have been selected.
+      return json(501, {
+        error: "Document processing is not configured yet",
+        code: "PARSER_NOT_CONFIGURED",
+      }, configuredOrigin);
+    }
+
+    return json(400, { error: "Unknown action" }, configuredOrigin);
+  } catch {
+    console.error("Scientific ingestion request failed unexpectedly.");
+    return json(500, { error: "Internal server error" }, configuredOrigin);
+  }
+});
