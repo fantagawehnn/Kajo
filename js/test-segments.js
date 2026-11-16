@@ -32,8 +32,13 @@ export function deriveSFormTestSegments(laps = []) {
 
 export function summarizeTestSegment(segment, laps = []) {
     const selected = (segment?.lapIndexes || []).map(index => laps[index]).filter(Boolean);
-    const durations = selected.map(lap => Number(lap?.durationSeconds ?? lap?.duration))
-        .filter(value => Number.isFinite(value) && value > 0);
+    const durations = selected.map(lap => {
+        const raw = lap?.durationSeconds ?? lap?.duration;
+        const value = Number(raw);
+        if (!Number.isFinite(value) || value <= 0) return null;
+        if (lap?.durationSeconds != null || lap?.durationUnit === 'seconds') return value;
+        return value > 1000 ? value / 1000 : value;
+    }).filter(value => value !== null);
     const distances = selected.map(lap => Number(lap?.distance))
         .filter(value => Number.isFinite(value) && value > 0);
     const durationSeconds = durations.length === selected.length && selected.length ? durations.reduce((sum, value) => sum + value, 0) : null;
