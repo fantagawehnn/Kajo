@@ -168,7 +168,7 @@ function renderRecoveryInsight() {
     const current = (state.dailyCheckins || {})[today] || {};
     const checkins = Object.entries(state.dailyCheckins || {})
         .filter(([date]) => date >= daysAgoKey(6) && date <= today);
-    const readiness = calculateReadiness(state.dailyCheckins, state.dailyTimeline);
+    const readiness = calculateReadiness(state.dailyCheckins);
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
     const findObjective = key => objective.find(item => item.key === key);
     const rhrBaseline = findObjective('rhr');
@@ -200,7 +200,7 @@ function renderRecoveryInsight() {
         recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min')
     ];
     setPanel('recovery-analysis-metrics', objectiveCards.join(''));
-    setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte');
+    setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte angezeigt');
 
     const subjectiveLabels = [
         ['sleepQuality', 'Schlafqualität', false],
