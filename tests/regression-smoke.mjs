@@ -109,6 +109,7 @@ assert.equal(store.get('endurance_checkins'), legacyCheckins);
 await storage.loadStateForUser('smoke-test-user');
 
 // Saving a sickness/injury entry must finish locally without waiting for a cloud request.
+setRefreshHandler(() => {});
 const healthModule = await import('../js/health.js?v=79');
 elements['health-log-date-from'].value = '2026-11-12';
 elements['health-log-date-to'].value = '2026-11-13';
