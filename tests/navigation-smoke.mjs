@@ -425,3 +425,6 @@ assert.ok(calendar.includes('remaining.length === phases.length'), 'deleting an 
 assert.ok(calendar.includes('name.length > 60'), 'phase names are limited consistently with the editor input');
 assert.ok(calendar.includes('if (!existing && !suggestion)'), 'stale or unknown phase editor records cannot create orphaned phases');
 assert.ok(calendar.includes('!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)'), 'season phase date validator checks the exact ISO date shape');
+
+assert.ok(calendar.includes("state.settings.calendarSeasonPhaseDismissed.push(id)"), 'deleting a confirmed phase also suppresses its generated suggestion');
+assert.ok(calendar.includes('Saisonphase bearbeiten'), 'phase editor uses a neutral label for training and competition periods');
