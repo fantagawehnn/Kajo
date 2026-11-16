@@ -8726,3 +8726,33 @@ body.kajo-modal-open { overflow: hidden !important; }
   .kajo-selfmonitoring-question { gap: .65rem; }
   .kajo-color-slider { height: 14px; }
 }
+
+
+/* Eigenständige Periodenverwaltung in Gesundheitsdaten */
+.kajo-period-manager{display:flex;flex-direction:column;gap:14px;padding:16px;border:1px solid var(--kajo-border,#293644);border-radius:16px;background:var(--kajo-surface,#111820)}
+.kajo-period-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kajo-period-heading h2{margin:2px 0;font-size:1rem;font-weight:750;color:var(--kajo-text,#f4f7fa)}
+.kajo-period-heading p:last-child{margin:4px 0 0;color:var(--kajo-text-secondary,#a9b5c2);font-size:.7rem;line-height:1.5}
+.kajo-period-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:rgba(232,121,169,.12);color:#e879a9}
+.kajo-period-icon svg{width:20px;height:20px}
+.kajo-period-editor{display:flex;flex-direction:column;gap:11px;padding:13px;border:1px solid var(--kajo-border,#293644);border-radius:12px;background:var(--kajo-surface-raised,#17212c)}
+.kajo-period-editor-title{display:flex;flex-direction:column;gap:3px}
+.kajo-period-editor-title strong,.kajo-period-list-heading h3{font-size:.78rem;color:var(--kajo-text,#f4f7fa);font-weight:700}
+.kajo-period-editor-title span{font-size:.65rem;color:var(--kajo-text-secondary,#a9b5c2)}
+.kajo-period-date-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.kajo-period-date-grid label{display:flex;flex-direction:column;gap:5px;color:var(--kajo-text-secondary,#a9b5c2);font-size:.65rem}
+.kajo-period-date-grid input{min-width:0;width:100%;padding:9px;border:1px solid var(--kajo-border,#293644);border-radius:8px;background:var(--kajo-bg,#0b0f14);color:var(--kajo-text,#f4f7fa);color-scheme:dark;font-size:.75rem}
+.kajo-period-actions{display:flex;justify-content:flex-end;gap:7px}
+.kajo-period-actions button{padding:8px 12px;border-radius:8px;background:#e879a9;color:#1b1020;font-size:.68rem;font-weight:750}
+.kajo-period-actions button#kajo-period-cancel{background:var(--kajo-surface-subtle,#1c2835);color:var(--kajo-text-secondary,#a9b5c2)}
+.kajo-period-feedback{min-height:0;color:#f0a2bf;font-size:.65rem}
+.kajo-period-list-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.kajo-period-list-heading span{color:var(--kajo-text-muted,#7d8a98);font-size:.65rem}
+.kajo-period-list{display:flex;flex-direction:column;gap:7px}
+.kajo-period-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border:1px solid var(--kajo-border,#293644);border-radius:10px;background:var(--kajo-surface-raised,#17212c)}
+.kajo-period-entry-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.kajo-period-entry-copy strong{color:var(--kajo-text,#f4f7fa);font-size:.75rem}
+.kajo-period-entry-copy span,.kajo-period-empty,.kajo-period-footnote{color:var(--kajo-text-secondary,#a9b5c2);font-size:.64rem;line-height:1.5}
+.kajo-period-edit{flex:0 0 auto;padding:6px 9px;border:1px solid rgba(232,121,169,.35);border-radius:7px;color:#f0a2bf;font-size:.65rem;font-weight:700}
+.kajo-period-footnote{margin:0}
+@media(max-width:420px){.kajo-period-manager{padding:12px}.kajo-period-date-grid{grid-template-columns:1fr}}
