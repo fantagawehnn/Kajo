@@ -88,19 +88,21 @@ Die Vektorspalte darf erst nach Modellentscheidung typisiert werden. Eine feste 
 - Suchfunktion begrenzt die Zahl der zurückgegebenen Chunks und liefert Source-ID, Chunk-ID, Seitenbereich und Metadaten.
 - Private Treffer müssen durch RLS und zusätzlich durch Parent-Dokumentberechtigungen geschützt bleiben.
 
-## 6. Sportwissenschaftliche Taxonomie
+## 6. Sportwissenschaftliche Taxonomie und Metadatenebenen
 
-Mindestens folgende Unterscheidungen müssen filterbar sein:
+Die verbindlichen Felddefinitionen und kontrollierten Werte sind in `docs/SCIENTIFIC_METADATA_CONTRACT.md` beschrieben. Für das spätere Schema gelten insbesondere:
 
-- Sportbereich: Ausdauersport, Kanusport und weitere tatsächlich unterstützte Sportarten.
-- Kanusport: K1, C1, C2.
-- Wettkampfformat: Classic, Sprint.
-- Gewässer: Wildwasser, Flachwasser.
-- Evidenzkontext: direkte Kanustudie, andere Ausdauersportart, allgemeine Trainings-/Bewegungswissenschaft.
-- Studientyp: Interventionsstudie, Beobachtungsstudie, Review, Meta-Analyse, Positionspapier, methodische Arbeit.
-- Messkontext: Labor, Feld, Training, Wettkampf.
+- Quelle, Studienkontext und einzelner Befund sind getrennte Ebenen. Ein Review kann mehrere Studienkontexte und Befunde umfassen.
+- Sportbereich, Sportart, Kanudisziplin, Bootsklasse, Wildwasserformat, Gewässerumgebung und Studien-Setting sind getrennte Dimensionen.
+- K1/C1/C2 sind Bootsklassen, keine eigenständigen Disziplinen.
+- `canoe_sprint` (Flachwasserdisziplin) darf nicht mit `wildwater_format = sprint` (Sprintformat im Wildwasserrennsport) vermischt werden.
+- Messkontext (Labor/Feld/Training/Wettkampf/Regeneration) ist getrennt vom Sport- bzw. Disziplinbezug zu speichern.
+- Themenklassifikation, Studiendesign, Population, Outcome, Transferierbarkeit und Evidenzqualität sind unterschiedliche Metadaten.
+- Fehlende, nicht berichtete und nicht anwendbare Angaben müssen unterscheidbar bleiben.
 
-Allgemeine Ausdauerforschung darf nicht als direkte Evidenz für Kanusport dargestellt werden. Jede Übertragung braucht eine sichtbare Kennzeichnung und eine kurze Begründung.
+Die aktuelle DDL-Skizze bildet diese Struktur noch nicht vollständig ab. Insbesondere fehlen relationale Studien- und Befundentitäten sowie die vollständigen Kontextzuordnungen. Vor der Migration muss das logische Modell deshalb überarbeitet werden; die bestehende DDL darf nicht als vollständige Umsetzung der Taxonomie verstanden werden.
+
+Allgemeine Ausdauerforschung darf nicht als direkte Evidenz für Kanusport dargestellt werden. Jede Übertragung braucht eine sichtbare, fragestellungsbezogene Kennzeichnung und eine kurze Begründung.
 
 ## 7. Retrieval-Vertrag zum Coach
 
@@ -164,3 +166,8 @@ Der SQL-Entwurf ist nicht angewendet. Er muss mit der tatsächlichen Remote-Sche
 ## 13. DOI-Deduplizierung nach Datenraum
 
 Die DOI-Unique-Constraint im ersten DDL-Entwurf war zu weit gefasst: Ein global eindeutiger DOI-Index hätte private Uploads nutzerübergreifend kollidieren lassen. Der Index ist deshalb auf Quellen mit `visibility = 'shared'` begrenzt. Für private Uploads gibt es nur einen nicht eindeutigen Suchindex über Eigentümer und normalisierte DOI. Damit können mehrere Nutzer dieselbe Publikation privat hochladen; ebenso bleibt ein privater Upload neben einem kuratierten Shared-Datensatz möglich. Diese Korrektur ist ausschließlich im Entwurf vorgenommen und noch nicht auf Supabase angewendet.
+
+
+## 14. Präzisierung durch Metadatenvertrag
+
+`docs/SCIENTIFIC_METADATA_CONTRACT.md` ist die fachliche Referenz für die Trennung von Quelle, Studie und Befund sowie für Sportkontext, Population, Studiendesign, Outcomes, Transferierbarkeit und Provenienz. Die DDL muss vor einer späteren Migration an diesen Vertrag angepasst werden. Bis dahin bleiben alle zusätzlichen Felder konzeptionell und nicht produktiv.
