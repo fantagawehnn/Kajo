@@ -30,7 +30,7 @@ import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, clo
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=2';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=1';
-import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
+import { addRace, deleteRace, renderRaces, toggleRaceModal, openRaceModalForCreate, editRace, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, editRaceResult, cancelRaceResultEdit, addRaceResult, deleteRaceResult } from './competitions.js?v=4';
 import { addStrengthSetRow, closeStrengthModal, closeStrengthWorkoutModal, deleteStrengthLog, deleteStrengthWorkoutLog, openStrengthModal, openStrengthWorkoutModal, renderStrengthView, renumberStrengthSetRows, saveStrengthWorkout, saveStrengthWorkoutLog } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=10';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=4';
@@ -2889,6 +2889,8 @@ Object.assign(window, {
     openRaceModalForCreate,
     editRace,
     toggleRaceResultsForm,
+    editRaceResult,
+    cancelRaceResultEdit,
     addRaceResult,
     deleteRaceResult,
     openNextRaceDetail,
