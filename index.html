@@ -1660,7 +1660,7 @@
             }
           });
 
-          navigator.serviceWorker.register("./service-worker.js", { scope: "./" })
+          navigator.serviceWorker.register("./service-worker.js?v=9", { scope: "./" })
             .then(registration => registration.update())
             .catch(error => console.error("KAJO Service Worker konnte nicht registriert werden:", error));
         });
