@@ -76,53 +76,75 @@ function dayActivitySummary(dateStr){
  return out.length?out.join(''):'<span class="text-slate-500">Keine Aktivitäten oder Einheiten erfasst.</span>';
 }
 function dayNumber(value,min,max){if(value===''||value===null||value===undefined)return null;const n=Number(value);return Number.isFinite(n)&&n>=min&&n<=max?n:null;}
+function selfMonitoringSliderMarkup(label,key,value,inverted=false){
+ const v=Number.isFinite(Number(value))?Math.min(5,Math.max(1,Number(value))):3;
+ return '<label class="kajo-selfmonitoring-question"><span class="flex items-center justify-between gap-2"><span class="text-sm font-medium text-slate-200">'+label+'</span><output id="day-'+key+'-value" class="text-xs font-semibold text-cyan-300">'+(value==null?'—':v+' / 5')+'</output></span><input id="day-'+key+'" class="kajo-color-slider '+(inverted?'kajo-slider-negative':'kajo-slider-positive')+'" type="range" min="1" max="5" step="1" value="'+v+'" data-touched="'+(value==null?'false':'true')+'" oninput="updateSelfMonitoringSlider(this)"><span class="flex justify-between text-[10px] text-slate-500"><span>'+(inverted?'Günstig':'Sehr schlecht')+'</span><span>'+(inverted?'Sehr stark':'Sehr gut')+'</span></span></label>';
+}
+export function updateSelfMonitoringSlider(input){
+ if(!input)return;
+ const min=Number(input.min||1),max=Number(input.max||5),value=Number(input.value);
+ const percent=((value-min)/(max-min))*100;
+ input.style.setProperty('--slider-progress',percent+'%');
+ input.dataset.touched='true';
+ const output=document.getElementById(input.id+'-value');
+ if(output)output.textContent=value+' / '+max;
+}
 export function openDayEditor(dateStr){
  const modal=document.getElementById('day-detail-modal');
  if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
  if(modal){modal.style.zIndex='2147483005';document.body.classList.add('kajo-modal-open');}
- const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{};
+ const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{},cy=r.cycle||{};
  document.getElementById('day-edit-date').value=dateStr;
- document.getElementById('day-detail-title').textContent='Tagesdaten · '+formatDateDDMMYY(dateStr);
- document.getElementById('day-activities-list').innerHTML=dayActivitySummary(dateStr);
- document.getElementById('day-health-status').value=h.status||'healthy';
- document.getElementById('day-health-diagnosis').value=h.diagnosis||'';
- const subj=[['Schlafqualität','sleepQuality'],['Muskelkater','soreness'],['Müdigkeit','fatigue'],['Motivation','motivation'],['Stress','stress']];
- document.getElementById('day-subjective-fields').innerHTML=subj.map(([l,k])=>'<label class="text-xs text-slate-400">'+l+'<input id="day-'+k+'" type="number" min="1" max="5" value="'+(r[k]??'')+'" placeholder="—" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>').join('');
- const wear=[['HRV (ms)','hrv',1,300],['RHF (bpm)','rhr',20,250],['Schlafdauer (h)','sleepDuration',0.1,24],['Schlafscore','sleepScore',0,100],['Atemfrequenz (Atemzüge/min)','respiration',4,60],['Körpergewicht (kg)','weight',20,300]];
- document.getElementById('day-wearable-fields').innerHTML=wear.map(([l,k,min,max])=>'<label class="text-xs text-slate-400">'+l+'<input id="day-'+k+'" type="number" min="'+min+'" max="'+max+'" step="'+((k==='sleepDuration'||k==='weight')?'0.1':'1')+'" value="'+(r[k]??'')+'" placeholder="—" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>').join('');
- const enabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true,cy=r.cycle||{};
- document.getElementById('day-cycle-section').classList.toggle('hidden',!enabled);
+ document.getElementById('day-detail-title').textContent='Self-Monitoring · '+formatDateDDMMYY(dateStr);
+ const subj=[['Schlafqualität','sleepQuality',false],['Muskelkater','soreness',true],['Müdigkeit','fatigue',true],['Motivation','motivation',false],['Stress','stress',true]];
+ document.getElementById('day-subjective-fields').innerHTML=subj.map(([label,key,inverted])=>selfMonitoringSliderMarkup(label,key,r[key],inverted)).join('');
+ subj.forEach(([,key])=>{const el=document.getElementById('day-'+key);if(el)updateSelfMonitoringSlider(el);if(el&&r[key]==null){el.dataset.touched='false';const out=document.getElementById(el.id+'-value');if(out)out.textContent='—';}});
+ document.getElementById('day-weight').value=r.weight??'';
+ const sick=h.status==='sick';
+ document.getElementById('day-sick').checked=sick;
+ document.getElementById('day-health-diagnosis').value=sick?(h.diagnosis||''):'';
+ const severity=Number.isFinite(Number(h.severity))?Math.min(5,Math.max(1,Number(h.severity))):3;
+ document.getElementById('day-sick-severity').value=severity;
+ document.getElementById('day-sick-severity').dataset.touched=h.severity!=null?'true':'false';
+ document.getElementById('day-sick-severity-value').textContent=(h.severity??severity)+' / 5';
+ toggleDaySickFields();
+ const cycleEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
  document.getElementById('day-period').checked=cy.period===true;
- document.getElementById('day-cycle-bleeding').value=cy.bleeding||'';
- document.getElementById('day-cycle-pain').value=cy.pain??'';
- document.getElementById('day-cycle-impact').value=cy.trainingImpact??'';
- document.getElementById('day-cycle-notes').value=cy.notes||'';
- document.querySelectorAll('#day-cycle-symptoms input').forEach(el=>el.checked=(cy.symptoms||[]).includes(el.value));
+ document.getElementById('day-cycle-pain').value=Math.min(5,Math.max(1,Number(cy.pain??1)));
+ document.getElementById('day-cycle-pain').dataset.touched=cy.pain!=null?'true':'false';
+ document.getElementById('day-cycle-pain-value').textContent=(cy.pain==null?'1':String(cy.pain))+' / 5';
+ document.getElementById('day-cycle-section')?.classList.toggle('hidden',!cycleEnabled);
+ document.getElementById('day-period').closest('.space-y-2')?.classList.toggle('hidden',!cycleEnabled);
  toggleDayCycleFields();
- const info=dayCycleInfo(dateStr),summary=document.getElementById('day-cycle-summary');
- summary.classList.toggle('hidden',!enabled);
- summary.innerHTML='<div class="text-xs font-bold text-rose-300">'+escapeHtml(info.label)+'</div><div class="text-[10px] text-slate-500 mt-1">'+escapeHtml(info.cycleDays||'')+'</div><p class="text-xs text-slate-300 mt-2">'+escapeHtml(info.recommendation)+'</p><p class="text-[10px] text-slate-500 mt-2">Kalenderbasierte Schätzung, keine hormonell bestätigte Phase. Empfehlung nach Beschwerden und Tagesform.</p>';
+ ['day-sick-severity','day-cycle-pain'].forEach(id=>updateSelfMonitoringSlider(document.getElementById(id)));
+ if(document.getElementById('day-cycle-pain').dataset.touched==='false')document.getElementById('day-cycle-pain-value').textContent='—';
  document.getElementById('day-detail-modal').classList.remove('hidden');
 }
-export function toggleDayCycleFields(){const yes=document.getElementById('day-period')?.checked===true;document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!yes);}
+export function toggleDaySickFields(){document.getElementById('day-sick-fields')?.classList.toggle('hidden',!document.getElementById('day-sick')?.checked);}
+export function toggleDayCycleFields(){document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!document.getElementById('day-period')?.checked);}
 export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
 export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
  const r={...(state.dailyCheckins[date]||{})};
- const fields=[['sleepQuality',1,5],['soreness',1,5],['fatigue',1,5],['motivation',1,5],['stress',1,5],['hrv',1,300],['rhr',20,250],['sleepDuration',0.1,24],['sleepScore',0,100],['respiration',4,60],['weight',20,300]];
- for(const [k,min,max] of fields){const raw=document.getElementById('day-'+k)?.value??'';if(raw===''){delete r[k];continue;}const n=dayNumber(raw,min,max);if(n===null){alert('Bitte prüfe den Wert '+k+'.');return;}r[k]=n;}
- if(state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true){
-  if(document.getElementById('day-period').checked){
-   const pr=document.getElementById('day-cycle-pain').value,ir=document.getElementById('day-cycle-impact').value;
-   const pain=pr===''?0:dayNumber(pr,0,10),impact=ir===''?0:dayNumber(ir,0,5);
-   if(pain===null||impact===null){alert('Bitte prüfe Schmerzen und Trainingsbeeinträchtigung.');return;}
-   r.cycle={...(r.cycle||{}),period:true,bleeding:document.getElementById('day-cycle-bleeding').value,pain,trainingImpact:impact,notes:document.getElementById('day-cycle-notes').value,symptoms:[...document.querySelectorAll('#day-cycle-symptoms input:checked')].map(el=>el.value)};
-  }else if(r.cycle){delete r.cycle;}
- }
+ const subj=['sleepQuality','soreness','fatigue','motivation','stress'];
+ for(const key of subj){const el=document.getElementById('day-'+key);if(el?.dataset.touched==='true')r[key]=dayNumber(el.value,1,5);}
+ const weightRaw=document.getElementById('day-weight').value;
+ if(weightRaw==='')delete r.weight;else{const weight=dayNumber(weightRaw,20,300);if(weight===null){alert('Bitte prüfe dein Körpergewicht.');return;}r.weight=weight;}
+ const periodEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
+ if(periodEnabled&&document.getElementById('day-period').checked){
+  const pain=dayNumber(document.getElementById('day-cycle-pain').value,1,5);
+  r.cycle={...(r.cycle||{}),period:true,pain:pain??1};
+ }else if(periodEnabled&&r.cycle){delete r.cycle.period;delete r.cycle.pain;if(!Object.keys(r.cycle).length)delete r.cycle;}
  state.dailyCheckins[date]=r;
- const status=document.getElementById('day-health-status').value,diagnosis=document.getElementById('day-health-diagnosis').value.trim();
- if(status==='healthy')delete state.healthLogs[date];else state.healthLogs[date]={status,diagnosis:diagnosis||(status==='sick'?'Erkrankung':'Verletzung')};
+ const sick=document.getElementById('day-sick').checked;
+ const previousHealth=state.healthLogs[date]||{};
+ if(sick){
+  const health={...previousHealth,status:'sick',diagnosis:document.getElementById('day-health-diagnosis').value.trim()||'Erkrankung'};
+  const severity=document.getElementById('day-sick-severity');
+  if(severity?.dataset.touched==='true')health.severity=dayNumber(severity.value,1,5);
+  state.healthLogs[date]=health;
+ }else if(previousHealth.status==='sick'){delete state.healthLogs[date];}
  saveDataToLocalStorage();closeDayEditor();refreshAll();
 }
 
