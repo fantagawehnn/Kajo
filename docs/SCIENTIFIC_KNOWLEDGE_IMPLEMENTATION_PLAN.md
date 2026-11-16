@@ -113,3 +113,16 @@ Vor der ersten Datenbankmigration sind mindestens folgende Punkte zu entscheiden
 - Keine individuellen Trainings- oder Gesundheitsinhalte abgefragt.
 - Keine Tests ausgeführt.
 - Kein Merge und kein Deployment.
+
+
+## 7. Ergänzung: atomare private Chunk-Persistenz
+
+Ein separater SQL-Entwurf liegt jetzt unter [`docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql`](./drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql). Er definiert die vorgesehene Transaktionsgrenze für:
+
+1. den kontrollierten Übergang von `uploaded` nach `extracting`,
+2. idempotente Chunk-Batches mit Konfliktprüfung statt Überschreiben,
+3. den Übergang zu `private_ready` erst nach Prüfung eines lückenlosen Chunk-Indexbereichs.
+
+Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen und sollen ausschließlich für `service_role` ausführbar sein. Die Edge Function muss vor jedem RPC-Aufruf weiterhin JWT, Dokumenteigentum und private Sichtbarkeit prüfen. Die clientseitigen Extraktionsangaben sind nicht vertrauenswürdig und dürfen nicht als Nachweis für den tatsächlichen PDF-Inhalt interpretiert werden.
+
+**Status:** Nur SQL-Entwurf und Dokumentation. Die vorhandene Edge Function wurde noch nicht um diese Aktionen erweitert. Keine Migration, Storage-Änderung, Funktionserstellung in Supabase, Tests, Merge oder Deployment.
