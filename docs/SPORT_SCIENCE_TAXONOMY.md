@@ -59,15 +59,14 @@ Laufen, Radfahren, Schwimmen und andere ergänzende Aktivitäten können in der 
 
 ## 4. Evidenz- und Übertragbarkeitsmerkmale
 
-Jede Quelle sollte – sofern aus dem Paper feststellbar – mit folgenden kontrollierten Merkmalen versehen werden:
+Die Klassifikation erfolgt möglichst auf Studien- bzw. Befundebene. Bei Reviews oder Publikationen mit mehreren Studien darf eine einzige pauschale Quellenklassifikation die unterschiedlichen Kontexte nicht verdecken.
 
-- `sport_specificity`: `direct_canoe`, `related_paddlesport`, `other_endurance`, `general_sport_science`, `unclear`
-- `evidence_type`: `systematic_review`, `meta_analysis`, `randomized_trial`, `controlled_trial`, `observational`, `cross_sectional`, `case_study`, `consensus_guideline`, `narrative_review`, `other`, `unknown`
-- `population_type`: z. B. elite, trained, recreational, mixed, unreported
-- `study_context`: training, competition, laboratory, field_test, recovery, mixed, unknown
-- `transferability_status`: keine globale Quelleneigenschaft; wird relativ zur konkreten Fragestellung als `direct_canoe`, `related_paddlesport`, `other_endurance`, `general_sport_science` oder `unclear` begründet.
+- `study_design`: `systematic_review`, `meta_analysis`, `randomized_trial`, `controlled_trial`, `observational`, `cross_sectional`, `case_study`, `consensus_guideline`, `narrative_review`, `methodological`, `other`, `unknown`
+- `population_level`: `elite`, `trained`, `recreational`, `untrained`, `mixed`, `other`, `not_reported`
+- `study_setting`: `laboratory`, `field`, `training`, `competition`, `recovery`, `mixed`, `not_reported`
+- `transferability`: `direct_canoe`, `related_paddlesport`, `other_endurance`, `general_sport_science`, `unclear`; stets mit kurzer, fragestellungsbezogener Begründung.
 
-Diese Merkmale beschreiben die Quelle. Sie ergeben nicht automatisch eine Evidenzstärke oder eine Empfehlung.
+Diese Merkmale beschreiben Design, Population und Kontext. Sie ergeben nicht automatisch eine Evidenzstärke oder eine Empfehlung. Die detaillierten Feldregeln und die Abgrenzung zwischen fehlend, nicht berichtet und nicht anwendbar stehen im `SCIENTIFIC_METADATA_CONTRACT.md`.
 
 ## 5. Retrieval-Regeln
 
