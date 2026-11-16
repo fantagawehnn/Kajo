@@ -140,3 +140,12 @@ Der Branch enthält nun in `supabase/functions/scientific-ingestion/index.ts` di
 Die Edge Function verwendet für `create-upload-intent` nun die vorgesehene RPC `kajo_create_scientific_upload_intent`. Quelle und Dokument werden damit in einer Datenbanktransaktion angelegt; der vorherige Zwei-Schritt-Insert mit nachträglichem Cleanup entfällt. Die Function leitet die Eigentümer-ID weiterhin aus dem validierten JWT ab und übergibt sie an die nur für `service_role` vorgesehene `SECURITY INVOKER`-RPC.
 
 **Status:** Code und SQL-Entwurf sind im Integrationsbranch vorhanden. Die RPC wurde nicht in Supabase angelegt, die Migration nicht angewendet und die Function nicht deployed oder getestet. Vor einer Aktivierung müssen die DDL- und RPC-Entwürfe gegen die reconciliierte Remote-Migrationshistorie sowie tatsächliche Tabellen- und Rollenrechte geprüft werden.
+
+
+## 10. Lifecycle für abgelaufene Upload-Intents
+
+Der separate Entwurf [SCIENTIFIC_UPLOAD_CLEANUP_LIFECYCLE.md](./SCIENTIFIC_UPLOAD_CLEANUP_LIFECYCLE.md) beschreibt eine sichere Bereinigung abgelaufener privater Uploads. Die Bereinigung ist ausdrücklich auf nie bestätigte `pending`-Dokumente beschränkt. Bestätigte, extrahierende, fertige oder manuell zu prüfende Dokumente werden nicht automatisch entfernt; der Status `failed` allein reicht ebenfalls nicht als Bereinigungskriterium.
+
+Vorgesehen ist ein atomarer serverseitiger Claim mit Lease, danach die idempotente Löschung des exakt gespeicherten Storage-Pfads und erst anschließend die transaktionale Löschung der Metadaten. Ein Storage-Fehler lässt die Metadaten für einen Retry bestehen. Eine Karenzzeit von sieben Tagen nach Ablauf des 24-Stunden-Intents ist lediglich ein Vorschlag und noch nicht freigegeben.
+
+**Status:** Nur Lifecycle-Entwurf. Keine Cleanup-RPC, Schemafelder, Edge-Function-Action oder Scheduler implementiert. Keine Migration, Tests oder Deployments durchgeführt.
