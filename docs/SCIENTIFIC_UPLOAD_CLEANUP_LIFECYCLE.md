@@ -95,3 +95,26 @@ Es wird kein zusätzlicher Cloudflare Worker und keine Cloudflare Queue benötig
 - Keine Migration, Tests oder Deployments durchgeführt
 
 **Aktivierungsblocker:** Erst nach Festlegung der Karenzzeit, Ausarbeitung der Claim-/Lease-Mechanik und statischer Abstimmung mit dem tatsächlichen Schema darf daraus eine konkrete Implementierung entstehen.
+
+
+## 7. Konkretisierte Claim-/Lease-Mechanik
+
+Der SQL-Entwurf [SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql](./drafts/SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql) konkretisiert die Claim- und Finalisierungsschritte:
+
+- `upload_cleanup_claimed_at` und `upload_cleanup_claim_token` bilden gemeinsam den Claim-Zustand. Beide Werte sind entweder gesetzt oder beide `NULL`.
+- Die Claim-RPC verarbeitet höchstens 25 Datensätze pro Aufruf und verwendet `FOR UPDATE SKIP LOCKED`.
+- Ein Claim gilt im Entwurf 15 Minuten. Nach Ablauf kann ein anderer Lauf ihn mit einem neuen zufälligen Token übernehmen.
+- Der Claim akzeptiert nur private, nie bestätigte `pending`-Dokumente mit abgelaufenem Intent plus Karenzzeit, passendem privaten Parent-Datensatz, kanonischem Storage-Pfad und ohne Chunk-Datensätze.
+- Die Finalisierungs-RPC verlangt dasselbe aktuelle Claim-Token und eine noch gültige Lease. Ein alter Worker kann nach einer Neuvergabe daher keine Metadaten mehr löschen.
+
+### Konkurrenz mit Uploadbestätigung
+
+Die bestehende `confirm-upload`-Action wurde vorsorglich so angepasst, dass sie einen beanspruchten Datensatz ablehnt und der bedingte Statuswechsel zusätzlich `upload_cleanup_claim_token IS NULL` verlangt. Damit gilt auf Datenbankebene: Gewinnt die Bestätigung zuerst, passt der Cleanup-Claim nicht mehr auf den Status `pending`; gewinnt der Claim zuerst, kann die Bestätigung den Status nicht mehr auf `uploaded` setzen.
+
+Die Storage-INSERT-Policy verlangt ebenfalls einen leeren Claim-Token. Das verhindert neue Upload-Autorisierungen nach dem Claim. Die Änderung ist nur ein Entwurf für die spätere Storage-Migration und setzt voraus, dass die Claim-Spalte vorher angelegt wurde.
+
+### Wichtige Grenze
+
+Die Claim-RPC löscht weder Storage noch Metadaten. Die Edge Function muss nach dem Claim den exakt zurückgegebenen Pfad im festgelegten Bucket löschen und darf nur bei erfolgreicher Löschung bzw. bestätigtem Nichtvorhandensein finalisieren. Sonstige Storage-Fehler müssen den Vorgang abbrechen und einen späteren Retry ermöglichen.
+
+**Noch nicht umgesetzt:** Die Cleanup-Edge-Function-Action, die Storage-Löschung, die Finalisierungs-RPC-Ausführung und ein Scheduler fehlen. Die 7-Tage-Karenz und 15-Minuten-Lease sind vorläufige Entwurfswerte.
