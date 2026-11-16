@@ -14,6 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
+import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
@@ -2005,26 +2006,52 @@ async function loadCloudProfile(session) {
     const localProfile = state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)
         ? state.profile
         : {};
-    const localHasProfile = Object.keys(localProfile).length > 0;
-    const profilesMatch = JSON.stringify(localProfile) === JSON.stringify(data.profile);
+    const { profile: mergedProfile, conflicts, cloudNeedsUpdate } = mergeProfileSnapshots(localProfile, data.profile);
 
-    // Never replace an existing local profile silently with a cloud copy.
-    // Cloud data is adopted only when the local profile is still empty.
-    if (localHasProfile) {
-        if (!profilesMatch) {
-            const indicator = document.getElementById('sync-status-indicator');
-            if (indicator) {
-                indicator.textContent = 'Lokales und Cloud-Profil unterscheiden sich. Lokale Daten wurden geschützt; ein Abgleich ist noch nicht erfolgt.';
-            }
-            console.warn('Lokales und Cloud-Profil unterscheiden sich. Automatische Übernahme wurde zum Schutz lokaler Daten übersprungen.');
-        }
+    // Fehlende lokale Felder werden aus der Cloud ergänzt. Bei echten
+    // Feldkonflikten behalten explizit vorhandene lokale Werte Vorrang.
+    const sameProfile = (left, right) => {
+        const stable = value => Array.isArray(value) ? value.map(stable)
+            : value && typeof value === 'object'
+                ? Object.fromEntries(Object.keys(value).sort().map(key => [key, stable(value[key])]))
+                : value;
+        return JSON.stringify(stable(left)) === JSON.stringify(stable(right));
+    };
+    if (sameProfile(localProfile, mergedProfile)) return;
+
+    const previousProfile = state.profile;
+    state.profile = mergedProfile;
+    if (saveDataToLocalStorage() !== true) {
+        state.profile = previousProfile;
+        console.error('Profilabgleich abgebrochen: Der zusammengeführte lokale Profilstand konnte nicht gespeichert werden.');
         return;
     }
 
-    state.profile = data.profile;
-    saveDataToLocalStorage();
+    if (cloudNeedsUpdate) {
+        try {
+            const { error: profileSaveError } = await supabase.from('user_profiles')
+                .upsert({ user_id: userId, profile: mergedProfile, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+            if (profileSaveError) throw profileSaveError;
+        } catch (profileSaveError) {
+            console.error('Zusammengeführtes Athletenprofil konnte nicht in der Cloud aktualisiert werden:', profileSaveError);
+            const indicator = document.getElementById('sync-status-indicator');
+            if (indicator) indicator.textContent = 'Lokales Profil wurde geschützt gespeichert; die Cloud-Profilangleichung muss erneut versucht werden.';
+            return;
+        }
+    }
+
     loadProfileForm();
     initEngine();
+
+    const indicator = document.getElementById('sync-status-indicator');
+    if (indicator) {
+        indicator.textContent = conflicts.length
+            ? 'Profil abgeglichen. Bei ' + conflicts.length + ' abweichenden Feldern hatten lokale Angaben Vorrang.'
+            : 'Lokales und Cloud-Profil wurden ohne Datenverlust zusammengeführt.';
+    }
+    if (conflicts.length) {
+        console.warn('KAJO: Profilfelder unterschieden sich; lokale Werte hatten Vorrang:', conflicts);
+    }
 }
 
 let cloudInitialTransferState = 'unknown';
@@ -2876,6 +2903,7 @@ Object.assign(window, {
     closeCloudSyncModal,
     closeCloudInitialTransferConfirmation,
     performCloudInitialTransfer,
+    startManualCloudSync,
     openGarminConnectionModal,
     closeGarminConnectionModal,
     connectGarmin,
