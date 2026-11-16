@@ -9063,3 +9063,69 @@ body.kajo-modal-open { overflow: hidden !important; }
     width: 11px !important; height: 11px !important;
   }
 }
+
+/* KAJO calendar toolbar: balanced distribution with navigation directly beside the period. */
+#view-calendar .calendar-topbar .calendar-control-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1.6fr) 36px minmax(0, 1fr) !important;
+  grid-template-rows: 40px !important;
+  grid-auto-flow: row !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+  column-gap: 3px !important;
+  row-gap: 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row > .calendar-format-wrap {
+  grid-column: 1 !important; grid-row: 1 !important;
+  width: 100% !important; min-width: 0 !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row > #calendar-period-prev {
+  grid-column: 2 !important; grid-row: 1 !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row > #calendar-period-title {
+  grid-column: 3 !important; grid-row: 1 !important;
+  width: 100% !important; min-width: 0 !important;
+  text-align: center !important;
+  white-space: nowrap !important; overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row > #calendar-period-picker {
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  min-width: 1px !important; min-height: 1px !important;
+  opacity: 0 !important; pointer-events: none !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row > #calendar-period-next {
+  grid-column: 4 !important; grid-row: 1 !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row > .calendar-add-wrap {
+  grid-column: 5 !important; grid-row: 1 !important;
+  width: 100% !important; min-width: 0 !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row .calendar-nav-arrow,
+#view-calendar .calendar-topbar .calendar-control-row .calendar-add-button {
+  display: grid !important; place-items: center !important;
+  width: 100% !important; min-width: 0 !important;
+  height: 36px !important; min-height: 36px !important;
+  padding: 0 !important;
+}
+#view-calendar .calendar-topbar .calendar-control-row .calendar-format-button {
+  display: flex !important; justify-content: center !important; align-items: center !important;
+  width: 100% !important; min-width: 0 !important; max-width: none !important;
+  min-height: 36px !important; padding: 4px 3px !important;
+  gap: 3px !important; font-size: .72rem !important; white-space: nowrap !important;
+}
+@media (max-width: 420px) {
+  #view-calendar .calendar-topbar .calendar-control-row {
+    grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1.5fr) 30px minmax(0, 1fr) !important;
+    column-gap: 2px !important;
+  }
+  #view-calendar .calendar-topbar .calendar-control-row .calendar-format-button {
+    font-size: .66rem !important; gap: 2px !important; padding: 3px 1px !important;
+  }
+  #view-calendar .calendar-topbar .calendar-control-row .calendar-format-button svg {
+    width: 11px !important; height: 11px !important;
+  }
+}
