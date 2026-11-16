@@ -5,7 +5,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=4';
+import { saveDataToLocalStorage, flushLocalPersistence } from './storage.js?v=4';
 import { toLocalDateString, parseLocalDate } from './utils.js';
 
 export function loadCheckinInputs() {
@@ -455,26 +455,63 @@ export function openHealthLogForDate(dStr) {
 
 export function closeHealthLogModal() { document.getElementById('health-modal').classList.add('hidden'); }
 
-export function saveRetroactiveHealthLog() {
+export async function saveRetroactiveHealthLog() {
     const dateFromStr = document.getElementById('health-log-date-from').value;
     const dateToStr = document.getElementById('health-log-date-to').value;
     const status = document.getElementById('health-log-status').value;
-    const diagnosis = document.getElementById('health-log-diagnosis').value || (status === 'sick' ? 'Infekt' : 'Verletzung');
+    const diagnosis = document.getElementById('health-log-diagnosis').value.trim() || (status === 'sick' ? 'Infekt' : 'Verletzung');
 
-    let curr = parseLocalDate(dateFromStr);
+    const curr = parseLocalDate(dateFromStr);
     const end = parseLocalDate(dateToStr);
-
-    while (curr <= end) {
-        const dStr = toLocalDateString(curr);
-        if (status !== 'healthy') {
-            state.healthLogs[dStr] = { status, diagnosis };
-        } else {
-            delete state.healthLogs[dStr];
-        }
-        curr.setDate(curr.getDate() + 1);
+    if (!dateFromStr || !dateToStr || Number.isNaN(curr.getTime()) || Number.isNaN(end.getTime()) || curr > end) {
+        alert('Bitte prüfe den eingetragenen Zeitraum.');
+        return;
+    }
+    if (!['healthy', 'sick', 'injured'].includes(status)) {
+        alert('Bitte wähle einen gültigen Gesundheitsstatus.');
+        return;
     }
 
-    saveDataToLocalStorage();
+    const previous = {};
+    const changedDates = [];
+    const cursor = new Date(curr);
+    while (cursor <= end) {
+        const date = toLocalDateString(cursor);
+        previous[date] = Object.prototype.hasOwnProperty.call(state.healthLogs, date)
+            ? { exists: true, value: state.healthLogs[date] }
+            : { exists: false };
+        if (status !== 'healthy') state.healthLogs[date] = { status, diagnosis };
+        else delete state.healthLogs[date];
+        changedDates.push(date);
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    if (saveDataToLocalStorage() !== true) {
+        changedDates.forEach(date => {
+            if (previous[date].exists) state.healthLogs[date] = previous[date].value;
+            else delete state.healthLogs[date];
+        });
+        alert('Nicht gespeichert: Für dein Konto ist kein aktiver Datenspeicher verfügbar. Bitte melde dich erneut an.');
+        return;
+    }
+
+    let localBackupConfirmed = true;
+    try {
+        await flushLocalPersistence();
+    } catch (error) {
+        localBackupConfirmed = false;
+        console.error('Zusätzliche lokale IndexedDB-Sicherung fehlgeschlagen:', error);
+    }
+
+    const cloudSaved = await new Promise(resolve => {
+        window.dispatchEvent(new CustomEvent('endurance:data-save-immediate', { detail: { resolve } }));
+    });
+
     refreshAll();
     closeHealthLogModal();
+    if (!cloudSaved && !localBackupConfirmed) {
+        alert('Die Speicherung konnte weder in der Cloud noch in der zusätzlichen lokalen Datenbank bestätigt werden. Bitte prüfe den Eintrag nach dem Neuladen.');
+    } else if (!cloudSaved) {
+        alert('Der Eintrag wurde lokal gespeichert. Die Cloud-Synchronisierung konnte aktuell nicht bestätigt werden.');
+    }
 }
