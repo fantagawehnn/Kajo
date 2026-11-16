@@ -340,7 +340,7 @@
   </section>
 
   <section id="home-daily-overview" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
-    <div class="kajo-home-section-heading"><h2 id="home-daily-overview-title">Training heute</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span></div>
+    <div class="kajo-home-section-heading"><h2 id="home-daily-overview-title">Training heute</h2><button type="button" class="kajo-home-meta" onclick="openHomeSelfMonitoring()" aria-label="Self-monitoring für heute eintragen"><i data-lucide="clipboard-pen-line" aria-hidden="true"></i> Self-monitoring</button><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span></div>
     <section id="home-planned-section" class="hidden kajo-home-session-group" aria-labelledby="home-planned-title">
       <div class="kajo-home-subheading"><h3 id="home-planned-title">Geplant</h3><span>PLANUNG</span></div>
       <div id="home-planned-list" class="home-today-list"></div>
@@ -705,7 +705,7 @@
         <div id="day-detail-modal" class="hidden fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
           <div class="max-w-3xl mx-auto my-4 bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-5">
             <div class="flex items-center justify-between"><div><h2 id="day-detail-title" class="text-lg font-bold text-white">Tagesdaten</h2><p class="text-xs text-slate-400">Angaben können auch rückwirkend ergänzt und geändert werden.</p></div><button type="button" onclick="closeDayEditor()" class="p-2 text-slate-400">✕</button></div>
-            <input type="hidden" id="day-edit-date">
+            <label class="block text-xs text-slate-400">Datum<input type="date" id="day-edit-date" onchange="openDayEditor(this.value)" class="mt-1 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></label>
             <div id="day-cycle-summary" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-3"></div>
             <section class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2"><h3 class="text-xs font-bold text-cyan-400">Aktivitäten und Tagesplanung</h3><div id="day-activities-list" class="text-xs text-slate-300 space-y-2"></div></section>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-400">Gesundheitsstatus<select id="day-health-status" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"><option value="healthy">Gesund & einsatzbereit</option><option value="sick">Krank</option><option value="injured">Verletzt</option></select></label><label class="text-xs text-slate-400">Diagnose / Notiz<input id="day-health-diagnosis" maxlength="160" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label></div>
@@ -1610,7 +1610,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=120"></script>
+    <script type="module" src="js/main.js?v=121"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
