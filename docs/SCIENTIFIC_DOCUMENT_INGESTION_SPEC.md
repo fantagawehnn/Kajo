@@ -207,3 +207,10 @@ Es wurden keine Storage-Buckets, Tabellen, Policies, Functions, Secrets oder API
 Der Bucket- und Policy-Entwurf ist in [`drafts/SCIENTIFIC_STORAGE_POLICIES_DRAFT.sql`](./drafts/SCIENTIFIC_STORAGE_POLICIES_DRAFT.sql) dokumentiert. Er sieht einen eigenen privaten Bucket vor und erlaubt authentifizierten Nutzern ausschließlich den INSERT auf einen exakten, serverseitig vorab angelegten Upload-Intent-Pfad. Es gibt darin keine Browser-Lese-, Überschreib- oder Löschrechte.
 
 Das konkrete Bucket-Größenlimit ist noch nicht entschieden. Der Bucket-Entwurf darf daher nicht unverändert ausgeführt werden. Vor einer Migration sind außerdem vorhandene Storage-Policies, die RLS-Lesbarkeit eigener pending-Dokumente und die spätere serverseitige Download-/Löschlogik zu prüfen.
+
+
+## 15. Laufzeit- und Job-Ausführung
+
+Die PDF-Extraktion wird nicht ungeprüft als lang laufender synchroner Edge-Function-Request umgesetzt. Die aktuelle Supabase-Dokumentation nennt für gehostete Edge Functions 256 MB maximalen Speicher und 2 Sekunden CPU-Zeit pro Request; die Wall-Clock-Grenze hängt vom Tarif ab. Vor einer Parserintegration ist deshalb eine dauerhafte Job-/Queue-Ausführung zu spezifizieren. `EdgeRuntime.waitUntil()` allein wird nicht als dauerhafte Queue oder verlässliche Wiederholungsinfrastruktur behandelt.
+
+`unpdf` ist als Deno-/Worker-fähiger Parserkandidat mit seitenweiser PDF.js-Extraktion vorgemerkt, aber noch nicht ausgewählt oder eingebunden. Ein Proof of Concept muss mit realistischen wissenschaftlichen PDFs Seitenbezug, Unicode, Tabellen-/Spaltenverluste, CPU, Speicher und Fehlerfälle prüfen. Details und Quellen stehen im [technischen Edge-Function-Entwurf](./SCIENTIFIC_INGESTION_EDGE_FUNCTION_DESIGN.md#13-laufzeitprufung-pdf-extraktion-nicht-ungepruft-in-den-request-handler-legen).
