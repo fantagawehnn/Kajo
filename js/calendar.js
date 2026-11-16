@@ -342,6 +342,51 @@ function renderCalendarDayDetail(date, target) {
         : '';
     const recoveryMarkup = '<div class="calendar-day-recovery-rings">' + recoveryMetrics.join('') + '</div>' + subjectiveMarkup;
 
+    const timelineEvents = [
+        ...completed.map(item => calendarDayEvent(
+            item.name || 'Trainingseinheit',
+            calendarSport(item.type).label + (item.raceFormat ? ' · ' + item.raceFormat : ''),
+            calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time),
+            'completed'
+        )),
+        ...planned.map(item => calendarDayEvent(
+            item.name || 'Geplante Einheit',
+            calendarSport(item.type).label,
+            calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time),
+            'planned'
+        )),
+        ...(health?.status === 'sick' || health?.status === 'injured'
+            ? [calendarDayEvent(health.status === 'sick' ? 'Krankheit dokumentiert' : 'Verletzung dokumentiert', health.diagnosis || '', '', 'health')]
+            : []),
+        ...(checkin.cycle?.period === true
+            ? [calendarDayEvent('Menstruation dokumentiert', 'Als Gesundheitseintrag erfasst', '', 'health')]
+            : []),
+        ...data.races.map(item => calendarDayEvent(
+            item.name || 'Wettkampf',
+            item.result || item.prio || '',
+            calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time),
+            'race'
+        )),
+        ...strength.map(item => calendarDayEvent(
+            item.exercise || 'Krafttraining',
+            [item.sets, item.reps, item.weight != null ? item.weight + ' kg' : null].filter(value => value != null && value !== '').join(' × '),
+            calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time),
+            'completed'
+        ))
+    ].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+    const timelineMarkup = timelineEvents.map(item =>
+        '<div class="calendar-day-timeline-item is-' + item.kind + '">' +
+            '<time class="calendar-day-timeline-time">' + escapeHtml(item.time || '—') + '</time>' +
+            '<span class="calendar-day-timeline-dot" aria-hidden="true"></span>' +
+            '<span class="calendar-day-timeline-copy"><strong>' + escapeHtml(item.label) + '</strong>' +
+            (item.detail ? '<small>' + escapeHtml(item.detail) + '</small>' : '') +
+            '</span></div>'
+    ).join('');
+    const timelineSection = timelineEvents.length
+        ? '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3></div><div class="calendar-day-timeline">' + timelineMarkup + '</div></section>'
+        : '';
+
     const note = String(checkin.note || '').trim();
     const diaryButton = '<button type="button" class="calendar-day-diary-button" title="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" aria-label="' + (note ? 'Tagesnotiz bearbeiten' : 'Tagesnotiz erfassen') + '" onclick="openDailyNote(\'' + escapeHtml(date) + '\')"><i data-lucide="book-heart"></i></button>';
     const plannedSection = planned.length
@@ -360,6 +405,7 @@ function renderCalendarDayDetail(date, target) {
         '</section>' + diaryButton + '</div>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
         plannedSection +
+        timelineSection +
         '<section class="calendar-day-recovery-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3></div>' + recoveryMarkup + '</section>' +
         noteSection;
 }
