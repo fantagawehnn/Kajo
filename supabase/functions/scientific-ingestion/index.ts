@@ -92,7 +92,7 @@ async function getOwnedPrivateDocument(
 ) {
   return await admin
     .from("scientific_documents")
-    .select("id,owner_id,visibility,storage_path,mime_type,file_size_bytes,processing_status,extraction_version,expected_chunk_count,upload_intent_expires_at")
+    .select("id,owner_id,visibility,storage_path,mime_type,file_size_bytes,processing_status,extraction_version,expected_chunk_count,upload_intent_expires_at,upload_cleanup_claim_token")
     .eq("id", documentId)
     .eq("owner_id", userId)
     .eq("visibility", "private")
@@ -322,7 +322,7 @@ Deno.serve(async (request) => {
       if (document.processing_status === "uploaded") {
         return json(200, { document_id: document.id, processing_status: "uploaded" }, configuredOrigin);
       }
-      if (document.processing_status !== "pending" || !document.storage_path) {
+      if (document.processing_status !== "pending" || document.upload_cleanup_claim_token || !document.storage_path) {
         return json(409, { error: "Document is not awaiting an upload" }, configuredOrigin);
       }
       if (
@@ -393,6 +393,7 @@ Deno.serve(async (request) => {
         .eq("visibility", "private")
         .eq("processing_status", "pending")
         .gt("upload_intent_expires_at", new Date().toISOString())
+        .is("upload_cleanup_claim_token", null)
         .select("id")
         .maybeSingle();
 
