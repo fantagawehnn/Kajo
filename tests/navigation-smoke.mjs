@@ -58,7 +58,7 @@ assert.ok(html.includes('id="health-event-list"'), 'Health event list exists');
 assert.ok(main.includes("renderHomeTrainingWeek()"), 'weekly training grid is rendered');
 assert.ok(main.includes("view !== 'analyses' || sub !== id"), 'analysis subpages are switched independently');
 assert.ok(calendar.includes("const formats = ['day', 'week', 'month', 'year', 'activities', 'season']"), 'calendar supports day/week/month/year/activities/season');
-assert.match(state, /activeCalendarFormat:\s*'week'/, 'week is the default calendar mode');
+assert.match(state, /activeCalendarFormat:\s*'month'/, 'month is the default calendar mode on the current V2 base');
 
 
 for (const id of ['load-hero-ring', 'recovery-hero-ring']) {
