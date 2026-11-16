@@ -42,6 +42,7 @@ import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissin
 let coachModulePromise = null;
 let healthDataModulePromise = null;
 let nutritionModulePromise = null;
+let scientificLibraryModulePromise = null;
 
 function loadCoachModule() {
     if (!coachModulePromise) coachModulePromise = import('./coach.js?v=2');
@@ -54,6 +55,21 @@ function loadHealthDataModule() {
 function loadNutritionModule() {
     if (!nutritionModulePromise) nutritionModulePromise = import('./nutrition.js?v=1');
     return nutritionModulePromise;
+}
+function loadScientificLibraryModule() {
+    if (!scientificLibraryModulePromise) scientificLibraryModulePromise = import('./scientific-library.js?v=1');
+    return scientificLibraryModulePromise;
+}
+function renderScientificLibraryView() {
+    void loadScientificLibraryModule().then(module => module.renderScientificLibraryView())
+        .catch(error => {
+            console.error('Wissenschaftliche Bibliothek konnte nicht geladen werden:', error);
+            const status = document.getElementById('scientific-library-status');
+            if (status) {
+                status.textContent = 'Die wissenschaftliche Bibliothek konnte nicht geladen werden. Bitte lade KAJO neu und versuche es erneut.';
+                status.className = 'rounded-xl border border-rose-800 bg-rose-950/30 p-3 text-xs text-rose-200';
+            }
+        });
 }
 
 async function sendAICoachMessage(...args) {
@@ -204,6 +220,7 @@ function switchTab(requestedTab) {
         methods: { parent: 'more', view: 'methods' },
         routes: { parent: 'more', view: 'routes' },
         nutrition: { parent: 'more', view: 'nutrition' },
+        'scientific-library': { parent: 'more', view: 'scientific-library' },
         ai: { parent: 'more', view: 'ai' }
     };
     const destination = route[requestedTab] || { parent: 'more', view: 'more' };
@@ -214,7 +231,7 @@ function switchTab(requestedTab) {
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
-    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'garmin-health', 'backup', 'ai', 'profile'];
+    const viewIds = ['more', 'routes', 'dashboard', 'analyses', 'dashboard-details', 'calendar', 'races', 'strength', 'nutrition', 'upload', 'methods', 'data', 'garmin-health', 'backup', 'ai', 'profile', 'scientific-library'];
     viewIds.forEach(id => {
         const el = document.getElementById('view-' + id);
         if (el) el.classList.toggle('hidden', id !== view);
@@ -285,6 +302,7 @@ function switchTab(requestedTab) {
     if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
     if (view === 'strength') renderStrengthView();
     if (view === 'nutrition') renderNutritionView();
+    if (view === 'scientific-library') renderScientificLibraryView();
     if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); }
     if (view === 'upload') renderImportHistory();
     if (view === 'health-data') renderMetricHistory('health');
@@ -2994,6 +3012,7 @@ Object.assign(window, {
     deleteManagedPeriod,
     saveStrengthWorkout,
     sendAICoachMessage,
+    renderScientificLibraryView,
     setTimeframe,
     toggleCustomDatePicker,
     toggleRaceModal,
