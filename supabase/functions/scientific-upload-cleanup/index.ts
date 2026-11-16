@@ -130,6 +130,7 @@ Deno.serve(async (request) => {
       !isRecord(item) ||
       !isUuid(item.document_id) ||
       !isUuid(item.source_id) ||
+      !isUuid(item.owner_id) ||
       !isUuid(item.claim_token) ||
       typeof item.lease_expires_at !== "string" ||
       !Number.isFinite(Date.parse(item.lease_expires_at)) ||
@@ -138,9 +139,7 @@ Deno.serve(async (request) => {
       !Number.isFinite(Date.parse(item.cleanup_ready_at)) ||
       typeof item.storage_path !== "string" ||
       item.storage_path.split("/").length !== 3 ||
-      !isUuid(item.storage_path.split("/")[0]) ||
-      item.storage_path.split("/")[0] !== item.source_id ||
-      item.storage_path !== `${item.source_id}/${item.document_id}/original.pdf`
+      item.storage_path !== `${item.owner_id}/${item.document_id}/original.pdf`
     ) {
       console.error("Scientific upload cleanup: claim returned an invalid object reference.");
       return json(503, { error: "Invalid cleanup claim" });
