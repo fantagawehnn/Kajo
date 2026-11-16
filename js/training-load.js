@@ -200,6 +200,28 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
     );
     const garminActivities = list.filter(isGarminEligible);
     const hasGarmin = garminActivities.length > 0;
+    const nativeValues = garminActivities
+        .filter(activity => activity.garminTrainingLoad != null
+            && Number.isFinite(Number(activity.garminTrainingLoad))
+            && Number(activity.garminTrainingLoad) >= 0)
+        .map(activity => ({ activity, value: Number(activity.garminTrainingLoad) }));
+
+    // Explizit gewähltes Garmin-Modell: ausschließlich die übermittelte
+    // Garmin Native Load verwenden. Fehlende Werte bleiben nicht berechenbar.
+    if (settings?.trainingLoadSource === 'garmin-native') {
+        return {
+            mode: nativeValues.length ? 'garmin-native' : 'garmin-unavailable',
+            unit: nativeValues.length ? 'Garmin Load' : null,
+            records: nativeValues,
+            eligibleActivities: garminActivities,
+            coverage: {
+                eligibleActivityCount: garminActivities.length,
+                loadedActivityCount: nativeValues.length,
+                excludedActivityCount: Math.max(0, garminActivities.length - nativeValues.length),
+                availableNativeActivities: nativeValues.length
+            }
+        };
+    }
 
     // Explizit gewähltes KAJO-Modell: ausschließlich gewichtete Zeit in den
     // adaptiven HF-Reserve-Zonen verwenden. Garmin Native Load und sRPE werden
@@ -227,16 +249,10 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         const zoneValues = garminActivities.map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
             .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone' }));
-        // Count all activities with native Garmin Load when comparing source
-        // coverage; the chosen model will use this source exclusively.
-        const nativeValues = garminActivities
-            .filter(activity => activity.garminTrainingLoad != null
-                && Number.isFinite(Number(activity.garminTrainingLoad))
-                && Number(activity.garminTrainingLoad) >= 0)
-            .map(activity => ({ activity, value: Number(activity.garminTrainingLoad), sourceMode: 'garmin-native' }));
         // CTL/ATL require one consistent load scale across the time series.
-        // Never combine Garmin native Load with the KAJO HR-zone index.
-        const useZone = zoneValues.length > nativeValues.length;
+        // Automatic mode uses a fixed source priority: native Garmin Load first,
+        // then the KAJO HR-zone index. Coverage volume must not switch scales.
+        const useZone = nativeValues.length === 0 && zoneValues.length > 0;
         const selected = useZone ? zoneValues : nativeValues;
         if (selected.length) {
             return {
