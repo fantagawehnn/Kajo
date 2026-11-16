@@ -227,3 +227,24 @@ Für diesen MVP werden weder ein zusätzlicher Cloudflare-Ingestion-Worker noch 
 Die bisherige `process-document`-Aktion im Scaffold bleibt HTTP 501, bis der clientseitige Extraktions- und Chunk-Batch-Pfad implementiert und abgesichert ist. Details: [Cloudflare Scientific Ingestion Architecture](./CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md).
 
 **Hinweis zur Dokumenthistorie:** Frühere Abschnitte, die eine separate Cloudflare Queue-Verarbeitung oder serverseitige PDF-Extraktion vorsehen, sind durch diese Free-Plan-Entscheidung überholt. Die überarbeitete Zielarchitektur in Abschnitt 16 und das verlinkte Architekturpapier sind maßgeblich.
+
+
+## 17. Erster lokaler PDF.js-PoC im Frontend
+
+Im Repository ist nun eine eigenständige Ansicht „Wissenschaftliche Bibliothek“ unter „Mehr“ integriert. Sie lädt das Modul `js/scientific-library.js` erst beim Öffnen der Ansicht.
+
+Der aktuelle Funktionsumfang:
+- Auswahl einer einzelnen PDF-Datei.
+- Lokales Öffnen und seitenweise Textextraktion mit fest gepinntem `pdfjs-dist@6.5.438`.
+- Anzeige von Dateigröße, Seitenzahl, extrahierten Zeichen und Anzahl erzeugter Chunks.
+- Vorläufige Chunk-Aufteilung innerhalb einzelner PDF-Seiten (ca. 3.200 Zeichen pro Chunk).
+- Vorschau der ersten Textabschnitte mit explizitem Seitenbezug.
+- Abbruch und Verwerfen der Vorschau beim Verlassen der Ansicht, beim Zurücksetzen oder bei Auswahl einer anderen Datei.
+
+**Datenschutz:** Die PDF-Datei und der extrahierte Text werden in diesem Schritt nicht an Supabase oder Cloudflare gesendet und nicht in localStorage/IndexedDB gespeichert. Die Chunks existieren nur im Arbeitsspeicher der aktuellen Ansicht. PDF.js selbst wird beim ersten Aufruf vom jsDelivr-CDN geladen.
+
+**Wichtige Einschränkung:** Das ist eine technische Vorschau, kein validierter Extraktions- oder Chunking-Prozess. Die Lesereihenfolge, Tabellen, Formeln, Fußnoten, mehrspaltige Layouts und Unicode-Verhalten müssen mit repräsentativen wissenschaftlichen Papers beurteilt werden. Die feste Chunklänge ist vorläufig und kein semantisch validierter Wert.
+
+Noch nicht vorhanden sind Upload, Storage-Bucket, Storage Policies, Chunk-Batch-Endpunkt, Resume-/Checkpoint-Mechanismus, dauerhafte Chunk-Speicherung und Coach-Retrieval. Der vorhandene Edge-Function-Endpunkt `process-document` bleibt HTTP 501.
+
+Die aktuelle Implementierung ersetzt die frühere Planung eines `unpdf`-/serverseitigen Parserlaufs im ersten MVP. Frühere Parser-/Queue-Abschnitte sind entsprechend als überholte Entwurfsstände zu lesen; maßgeblich sind Abschnitt 16 und diese Ergänzung.
