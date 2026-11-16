@@ -165,18 +165,18 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
   // IDs mit abweichender Zeitzuordnung bleiben bewusst erhalten.
   const deduplicateActivityRows = rows => {
     const seen = new Set();
-    let excluded = 0;
+    const duplicates = [];
     const unique = rows.filter(item => {
       if (item.id == null || item.id === '') return true;
       const key = [String(item.id), item.date || '', item.startTime || ''].join('|');
       if (seen.has(key)) {
-        excluded++;
+        duplicates.push(item);
         return false;
       }
       seen.add(key);
       return true;
     });
-    return { rows: unique, excluded };
+    return { rows: unique, duplicates };
   };
   const activityResult = deduplicateActivityRows(
     (Array.isArray(activities) ? activities : []).map(activity => {
@@ -211,8 +211,8 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       trainingLoad: null, trainingLoadActivityCount: 0,
       averageTrainingLoadPerCalendarDay: null,
       trainingLoadMode: loadMode, trainingLoadUnit: loadUnit,
-      duplicateActivityRecordsExcluded: activityResult.excluded,
-      duplicateLoadRecordsExcluded: loadResult.excluded,
+      duplicateActivityRecordsExcluded: 0,
+      duplicateLoadRecordsExcluded: 0,
       daysWithActivity: 0, notStarted: true
     };
     const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
@@ -241,8 +241,14 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
         ? totalLoad / eligibleCalendarDays : null,
       trainingLoadMode: loadMode,
       trainingLoadUnit: loadUnit,
-      duplicateActivityRecordsExcluded: activityResult.excluded,
-      duplicateLoadRecordsExcluded: loadResult.excluded,
+      duplicateActivityRecordsExcluded: activityResult.duplicates.filter(item =>
+        item.date >= from && item.date <= to &&
+        !(excludeHealthDates && documentedHealthDates.has(item.date))
+      ).length,
+      duplicateLoadRecordsExcluded: loadResult.duplicates.filter(item =>
+        item.date >= from && item.date <= to &&
+        !(excludeHealthDates && documentedHealthDates.has(item.date))
+      ).length,
       daysWithActivity: new Set(rows.map(item => item.date)).size,
       notStarted: false,
       requestedTo
