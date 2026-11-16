@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeHealthDocumentation } from '../js/health-calculations.js';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes } from '../js/health-calculations.js';
 
 test('counts documented sick and injured days and activities on those days', () => {
   const result = summarizeHealthDocumentation(
@@ -65,4 +65,48 @@ test('does not infer healthy days or count records outside the selected range', 
 test('returns null for an invalid date range', () => {
   assert.equal(summarizeHealthDocumentation({}, [], [], '2026-02-30', '2026-03-01'), null);
   assert.equal(summarizeHealthDocumentation({}, [], [], '2026-11-20', '2026-11-01'), null);
+});
+
+test('groups consecutive documented days with the same status into episodes', () => {
+  const episodes = summarizeHealthEpisodes({
+    '2026-11-01': { status: 'sick', diagnosis: 'Infekt' },
+    '2026-11-02': { status: 'sick' },
+    '2026-11-03': { status: 'sick', diagnosis: 'Infekt' },
+    '2026-11-04': { status: 'injured', diagnosis: 'Schulter' },
+    '2026-11-06': { status: 'injured', diagnosis: 'Schulter' }
+  }, '2026-11-01', '2026-11-30');
+  assert.equal(episodes.length, 3);
+  assert.deepEqual(episodes.map(item => [item.status, item.startDate, item.endDate, item.documentedDays]), [
+    ['sick', '2026-11-01', '2026-11-03', 3],
+    ['injured', '2026-11-04', '2026-11-04', 1],
+    ['injured', '2026-11-06', '2026-11-06', 1]
+  ]);
+  assert.deepEqual(episodes[0].diagnoses, ['Infekt']);
+});
+
+test('keeps full episode boundaries when the selected window starts mid-episode', () => {
+  const episodes = summarizeHealthEpisodes({
+    '2026-10-30': { status: 'sick' },
+    '2026-10-31': { status: 'sick' },
+    '2026-11-01': { status: 'sick' },
+    '2026-11-02': { status: 'sick' }
+  }, '2026-11-01', '2026-11-30');
+  assert.equal(episodes.length, 1);
+  assert.equal(episodes[0].startDate, '2026-10-30');
+  assert.equal(episodes[0].documentedDays, 4);
+  assert.equal(episodes[0].daysInWindow, 2);
+});
+
+test('does not infer an episode across missing days or healthy-status gaps', () => {
+  const episodes = summarizeHealthEpisodes({
+    '2026-11-01': { status: 'sick' },
+    '2026-11-02': { status: 'healthy' },
+    '2026-11-03': { status: 'sick' },
+    '2026-11-05': { status: 'sick' }
+  }, '2026-11-01', '2026-11-30');
+  assert.deepEqual(episodes.map(item => [item.startDate, item.endDate]), [
+    ['2026-11-01', '2026-11-01'],
+    ['2026-11-03', '2026-11-03'],
+    ['2026-11-05', '2026-11-05']
+  ]);
 });
