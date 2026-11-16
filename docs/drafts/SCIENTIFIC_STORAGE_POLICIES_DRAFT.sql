@@ -81,6 +81,7 @@ create policy "KAJO users upload only their pending private document intent"
               and d.mime_type = 'application/pdf'
               and d.file_size_bytes > 0
               and d.upload_intent_expires_at > now()
+              and d.upload_cleanup_claim_token is null
               and name = d.owner_id::text || '/' || d.id::text || '/original.pdf'
         )
     );
@@ -117,3 +118,11 @@ commit;
 -- [ ] Review migration history before applying any schema/storage change.
 --
 -- NOTHING IN THIS FILE HAS BEEN EXECUTED AGAINST THE LIVE DATABASE.
+
+
+-- Cleanup-Claim-Schutz (Ergänzung zum Lifecycle-Entwurf):
+-- Ein Upload darf nicht mehr autorisiert werden, sobald ein Cleanup-Worker
+-- den Datensatz beansprucht hat. Die Storage-INSERT-Policy oben enthält daher
+-- zusätzlich: d.upload_cleanup_claim_token IS NULL.
+-- Diese Spalte stammt aus SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql und muss
+-- vor Aktivierung der Policy-Migration vorhanden sein.
