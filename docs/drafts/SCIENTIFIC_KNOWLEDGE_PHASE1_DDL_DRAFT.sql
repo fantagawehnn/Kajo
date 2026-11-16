@@ -56,9 +56,21 @@ create table public.scientific_sources (
     )
 );
 
-create unique index scientific_sources_doi_unique_idx
+-- DOI uniqueness applies only to the shared catalogue. Private uploads
+-- are user-owned copies and must not collide across users (or with a shared
+-- catalogue entry) merely because they describe the same publication.
+create unique index scientific_sources_shared_doi_unique_idx
     on public.scientific_sources (lower(doi))
-    where doi is not null and length(btrim(doi)) > 0;
+    where visibility = 'shared'
+      and doi is not null
+      and length(btrim(doi)) > 0;
+
+-- Non-unique lookup index for private uploads; duplicates remain permitted.
+create index scientific_sources_private_owner_doi_idx
+    on public.scientific_sources (owner_id, lower(doi))
+    where visibility = 'private'
+      and doi is not null
+      and length(btrim(doi)) > 0;
 
 create index scientific_sources_visibility_status_year_idx
     on public.scientific_sources (visibility, review_status, publication_year desc);
