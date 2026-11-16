@@ -726,8 +726,9 @@
             </section>
 
             <!-- Race Creation Modal -->
-            <div id="race-modal" class="hidden bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
-                <h3 class="text-sm font-bold text-white">Neuen Wettkampf anlegen</h3>
+            <div id="race-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="race-modal-title">
+                <div class="race-modal-panel bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+                <h3 id="race-modal-title" class="text-sm font-bold text-white">Neuen Wettkampf anlegen</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
                         <label class="block text-slate-400 mb-1">Wettkampf Name</label>
@@ -764,6 +765,7 @@
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="toggleRaceModal()" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button>
                     <button type="button" onclick="addRace()" class="px-4 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-semibold">Speichern</button>
+                </div>
                 </div>
             </div>
 
