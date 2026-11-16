@@ -137,6 +137,30 @@ Die tatsächlichen Secrets müssen vom Nutzer in Supabase hinterlegt werden; kei
 
 ## 12. Umsetzungsstatus
 
-Dieses Dokument beschreibt die angepasste Free-Plan-Zielarchitektur. Der bestehende Edge-Function-Scaffold enthält weiterhin nur Upload-Intent und Statusabfrage; `process-document` bleibt HTTP 501. Clientseitige PDF-Extraktion, Chunk-Batch-Endpunkte, Bucket, Policies, Datenbankänderungen und Frontend-Upload sind **noch nicht implementiert**.
+**Im Repository vorhanden:**
+- Neue eigenständige Ansicht „Wissenschaftliche Bibliothek“ unter „Mehr“.
+- Lazy-loaded Modul `js/scientific-library.js`; die bestehende Garmin-/Trainingslogik wird nicht verändert.
+- Lokale PDF.js-Vorschau mit seitenweiser Textextraktion, einfacher vorläufiger Chunk-Aufteilung und Anzeige von Seiten-/Zeichen-/Chunk-Metadaten.
+- Extrahierte Inhalte bleiben im Arbeitsspeicher. Beim Verlassen der Ansicht, beim Zurücksetzen oder bei Dateiauswahl wird der laufende Vorgang abgebrochen und die Vorschau verworfen.
+- PDF-Datei und extrahierter Text werden nicht hochgeladen oder in localStorage/IndexedDB gespeichert.
+- PDF.js wird fest auf Version `6.5.438` gepinnt. Das npm-Paket weist die Lizenz Apache-2.0 aus; die offizielle PDF.js-Dokumentation verweist auf CDN-Nutzung.
+
+**Noch nicht implementiert:**
+- Supabase Storage Bucket und Storage Policies.
+- Upload-Intent- und Uploadabschluss-Flow im Frontend.
+- Serverseitige Dateisignatur-/Objektprüfung.
+- Chunk-Batch- und Extraktionsabschluss-Aktionen in der Edge Function.
+- Serverseitige Limits, idempotente Chunk-Persistenz und Resume-/Checkpoint-Mechanismus.
+- OCR, Embeddings, Retrieval, Kuratierung und Coach-Anbindung.
+
+Der bestehende Edge-Function-Scaffold enthält weiterhin nur Upload-Intent und Statusabfrage; `process-document` bleibt HTTP 501. Die lokale PDF.js-Vorschau ist ein erster Integrations-PoC, noch keine validierte Parserfreigabe: Lesereihenfolge, Tabellen, Mehrspaltenlayout, Unicode und Ressourcenbedarf müssen anhand repräsentativer Papers beurteilt werden.
 
 Es wurden keine Cloudflare Queues angelegt, keine Supabase-Tabellen/Policies/Buckets verändert, keine Secrets gesetzt, keine Tests ausgeführt, kein Merge vorgenommen und kein Deployment gestartet.
+
+## 13. PDF.js-Referenz und Grenzen des PoC
+
+- Version: [pdfjs-dist 6.5.438](https://www.npmjs.com/package/pdfjs-dist)
+- Lizenzangabe des Pakets: Apache-2.0
+- API-/Integrationshinweise: [Mozilla PDF.js – Getting Started](https://mozilla.github.io/pdf.js/getting_started/)
+
+Die erste Chunk-Aufteilung ist technisch und vorläufig (maximal ca. 3.200 Zeichen je Abschnitt, seitenweise getrennt). Sie ist kein semantisches oder wissenschaftlich validiertes Chunking. Insbesondere Tabellen, Formeln, Fußnoten, Mehrspaltenlayout und Lesereihenfolge können durch die PDF-Textschicht falsch oder unvollständig abgebildet werden. Chunkgröße und Überlappung werden erst nach Sichtung echter Beispiel-Papers festgelegt.
