@@ -4,8 +4,9 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
+import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmergeActivityGroup } from './activity-groups.js?v=1';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, formatKm, getSportsCatalog } from './utils.js';
+import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
 import { calculateStrengthActivitySummary } from './calculations.js';
@@ -557,8 +558,8 @@ async function loadGarminTelemetryWhenActivityOpened(activity) {
         renderActivityTelemetryChart(analysisActivity);
         renderActivityTrainingInsights(analysisActivity);
         const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
-        const loadItem = loadData.records.find(item => String(item.activity.id) === String(activity.id));
-        renderSportSpecificActivityMetrics(activity, loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}` : '—');
+        const displayActivity = getVisibleActivities(state.rawActivities || []).find(item => String(item.id) === String(activity.id)) || activity;
+        renderSportSpecificActivityMetrics(displayActivity, getActivityLoadSummary(activity));
         try { renderActivityDetailTabEmptyStates(); } catch (_) {}
     } catch (error) {
         console.warn('KAJO: Aktivitätstelemetrie konnte beim Öffnen nicht geladen werden:', error);
@@ -567,6 +568,99 @@ async function loadGarminTelemetryWhenActivityOpened(activity) {
     }
 }
 
+
+function renderActivityGroupSummary(activity) {
+    const metrics = document.getElementById('activity-sport-metrics');
+    if (!metrics) return;
+    let panel = document.getElementById('activity-group-summary');
+    if (!panel) {
+        panel = document.createElement('section');
+        panel.id = 'activity-group-summary';
+        panel.className = 'mb-3 rounded-xl border border-cyan-500/25 bg-cyan-950/20 p-3';
+        metrics.before(panel);
+    }
+    const members = getActivityGroupMembers(activity, state.rawActivities || []);
+    if (members.length < 2) { panel.hidden = true; panel.innerHTML = ''; return; }
+    panel.hidden = false;
+    panel.innerHTML = '<div class="flex items-center justify-between gap-2"><strong class="text-xs text-cyan-200">Zusammengeführte Trainingseinheit</strong><span class="text-[10px] text-slate-400">' + members.length + ' Segmente</span></div>'
+        + '<div class="mt-2 space-y-1">' + members.map(member => {
+            const rawTime = member.startTimeLocal || member.start_time_local || member.startTime || member.time || '';
+            const match = String(rawTime).match(/(\d{1,2}):(\d{2})/);
+            const time = match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
+            const duration = member.duration != null && Number.isFinite(Number(member.duration)) ? Math.round(Number(member.duration)) + ' min' : 'Dauer —';
+            return '<div class="flex items-center justify-between gap-2 text-[11px] text-slate-300"><span>' + (time ? time + ' · ' : '') + escapeHtml(member.name || 'Trainingsteil') + '</span><strong class="shrink-0">' + duration + '</strong></div>';
+        }).join('') + '</div><p class="mt-2 text-[10px] text-slate-500">Die Originalaufzeichnungen bleiben erhalten. Messwertdiagramme und GPS-Daten werden weiterhin je Segment angezeigt; die Kennzahlen oben sind zusammengefasst.</p>';
+}
+function renderActivityMergeControls(activity) {
+    const actions = document.querySelector('.activity-detail-toolbar-actions');
+    if (!actions) return;
+    let button = document.getElementById('activity-merge-toggle');
+    if (!button) {
+        button = document.createElement('button');
+        button.id = 'activity-merge-toggle';
+        button.type = 'button';
+        button.className = 'activity-detail-nav-button';
+        const editButton = actions.querySelector('button[onclick="toggleActivityEdit()"]');
+        if (editButton) editButton.before(button); else actions.appendChild(button);
+    }
+    const grouped = Boolean(activity?.mergedGroupId);
+    button.innerHTML = grouped ? '<i data-lucide="unlink"></i>' : '<i data-lucide="combine"></i>';
+    button.title = grouped ? 'Zusammenführung auflösen' : 'Mit weiterer Aktivität zusammenführen';
+    button.setAttribute('aria-label', button.title);
+    button.onclick = () => grouped ? unmergeSelectedActivityGroup(activity) : showActivityMergePicker(activity);
+    globalThis.lucide?.createIcons?.();
+}
+function showActivityMergePicker(activity) {
+    const candidates = (state.rawActivities || []).filter(item => item && String(item.id) !== String(activity.id)
+        && item.date === activity.date && item.type === activity.type && !item.mergedGroupId)
+        .sort((a, b) => String(a.startTimeLocal || a.start_time_local || a.startTime || '')
+            .localeCompare(String(b.startTimeLocal || b.start_time_local || b.startTime || '')));
+    if (!candidates.length) {
+        alert('Es gibt keine weitere nicht zusammengeführte Aktivität derselben Sportart an diesem Tag.');
+        return;
+    }
+    document.getElementById('activity-merge-picker')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'activity-merge-picker';
+    modal.className = 'fixed inset-0 z-[180] flex items-center justify-center bg-black/75 p-4';
+    modal.innerHTML = '<section class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-2xl"><div class="flex items-center justify-between gap-3"><div><p class="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Trainingseinheit ergänzen</p><h3 class="mt-1 text-sm font-bold text-white">Welche Aktivität soll dazugehören?</h3></div><button type="button" data-close class="rounded-lg p-2 text-slate-400 hover:text-white" aria-label="Schließen">✕</button></div><p class="mt-2 text-[11px] text-slate-400">Es werden nur Aktivitäten desselben Tages und derselben Sportart angeboten. Die Garmin-Originale bleiben unverändert.</p><div class="mt-3 max-h-72 space-y-2 overflow-y-auto">'
+        + candidates.map(candidate => {
+            const rawTime = candidate.startTimeLocal || candidate.start_time_local || candidate.startTime || candidate.time || '';
+            const match = String(rawTime).match(/(\d{1,2}):(\d{2})/);
+            const time = match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
+            const duration = candidate.duration != null && Number.isFinite(Number(candidate.duration)) ? Math.round(Number(candidate.duration)) + ' min' : 'Dauer —';
+            return '<button type="button" data-merge-id="' + escapeHtml(String(candidate.id)) + '" class="w-full rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-left hover:border-cyan-500"><span class="block text-xs font-semibold text-white">' + escapeHtml(candidate.name || 'Trainingseinheit') + '</span><span class="mt-1 block text-[10px] text-slate-400">' + [time, duration].filter(Boolean).join(' · ') + '</span></button>';
+        }).join('') + '</div><div class="mt-3 flex justify-end"><button type="button" data-close class="rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300">Abbrechen</button></div></section>';
+    modal.addEventListener('click', event => {
+        if (event.target === modal || event.target.closest('[data-close]')) { modal.remove(); return; }
+        const choice = event.target.closest('[data-merge-id]');
+        if (!choice) return;
+        const secondary = candidates.find(item => String(item.id) === choice.dataset.mergeId);
+        if (!secondary) return;
+        if (!confirm('Diese beiden Aktivitäten als eine Trainingseinheit anzeigen? Die Originalaufzeichnungen bleiben erhalten.')) return;
+        try {
+            mergeActivityPair(activity, secondary, state.rawActivities || []);
+            if (saveDataToLocalStorage() === false) {
+                unmergeActivityGroup(activity, state.rawActivities || []);
+                throw new Error('Die Änderung konnte nicht gespeichert werden.');
+            }
+            modal.remove();
+            refreshAll();
+            openCSVDetailsModal(encodeURIComponent(String(activity.id)));
+        } catch (error) {
+            alert(error?.message || 'Die Aktivitäten konnten nicht zusammengeführt werden.');
+        }
+    });
+    document.body.appendChild(modal);
+}
+function unmergeSelectedActivityGroup(activity) {
+    if (!activity?.mergedGroupId) return;
+    if (!confirm('Diese Trainingseinheit wieder in ihre ursprünglichen Aktivitäten aufteilen?')) return;
+    unmergeActivityGroup(activity, state.rawActivities || []);
+    saveDataToLocalStorage();
+    refreshAll();
+    openCSVDetailsModal(encodeURIComponent(String(activity.id)));
+}
 
 export function openCSVDetailsModal(id) {
     let decodedId = String(id ?? '');
@@ -582,6 +676,10 @@ export function openCSVDetailsModal(id) {
     const wasClosed = modal.classList.contains('hidden') || getComputedStyle(modal).display === 'none';
     if (wasClosed) activityDetailReturnFocus = document.activeElement;
     state.selectedActivityForModal = act;
+    renderActivityMergeControls(act);
+    renderActivityGroupSummary(act);
+    const displayAct = getVisibleActivities(activities).find(item => String(item.id) === String(act.id)
+        || (act.mergedGroupId && item.mergedGroupId === act.mergedGroupId)) || act;
     const water = act.waterConditions || {};
     const waterLevel = document.getElementById('activity-water-level');
     const waterUnit = document.getElementById('activity-water-level-unit');
@@ -645,9 +743,11 @@ export function openCSVDetailsModal(id) {
     state.activitySelectedLap = null;
     renderActivityHeartRateSeriesStatus(analysisActivity);
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
-    const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
-    const loadSummary = loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}` : '—';
-    renderSportSpecificActivityMetrics(act, loadSummary);
+    const groupMembers = getActivityGroupMembers(act, activities);
+    const groupLoadItems = groupMembers.map(member => loadData.records.find(item => String(item.activity.id) === String(member.id)));
+    const loadSummary = groupLoadItems.length && groupLoadItems.every(Boolean)
+        ? groupLoadItems.reduce((sum, item) => sum + Number(item.value), 0).toFixed(1) + ' ' + loadData.unit : '—';
+    renderSportSpecificActivityMetrics(displayAct, loadSummary);
     renderActivityDataQuality(analysisActivity);
     renderActivityStrengthSets(act);
     toggleActivityStrengthSection(act.type);
@@ -887,8 +987,11 @@ export function removeActivityStrengthSet(exerciseIndex, setIndex) {
 }
 function getActivityLoadSummary(act) {
     const data = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
-    const item = data.records.find(record => String(record.activity.id) === String(act.id));
-    return item ? item.value.toFixed(1) + ' ' + data.unit : '—';
+    const members = getActivityGroupMembers(act, state.rawActivities || []);
+    const items = members.map(member => data.records.find(record => String(record.activity.id) === String(member.id)));
+    return items.length && items.every(Boolean)
+        ? items.reduce((sum, item) => sum + Number(item.value), 0).toFixed(1) + ' ' + data.unit
+        : '—';
 }
 
 const CANOE_ON_WATER_TYPES = new Set(['Kayaking', 'C1', 'C2']);
@@ -1411,6 +1514,7 @@ export function deleteSelectedActivity() {
     if (!state.selectedActivityForModal) return;
     const id = state.selectedActivityForModal.id;
     if (!confirm('Diese Aktivität wirklich löschen?')) return;
+    if (state.selectedActivityForModal?.mergedGroupId) unmergeActivityGroup(state.selectedActivityForModal, state.rawActivities);
     state.rawActivities = state.rawActivities.filter(a => a.id !== id);
     state.selectedActivityForModal = null; saveDataToLocalStorage(); closeCSVDetailsModal(); refreshAll();
 }
@@ -1588,7 +1692,7 @@ function renderActivityDetailTabEmptyStates() {
 }
 
 function renderActivityDetailNavigation(act) {
-    const ordered = [...(state.rawActivities || [])].sort((a, b) =>
+    const ordered = getVisibleActivities(state.rawActivities || []).sort((a, b) =>
         String(a.date || '').localeCompare(String(b.date || '')) ||
         String(a.startTime || a.startTimeLocal || '').localeCompare(String(b.startTime || b.startTimeLocal || '')) ||
         String(a.id).localeCompare(String(b.id))
