@@ -275,3 +275,16 @@ Der Browser darf ausschließlich per INSERT in den serverseitig vorbereiteten Ob
 ### Ablaufzeit für Upload-Intents
 
 Ein Upload-Intent ist ab seiner serverseitigen Erstellung 24 Stunden gültig. Nach Ablauf verweigert die Storage-Policy weitere Uploads; confirm-upload lehnt eine Bestätigung ebenfalls ab. Bereits bestätigte Dokumente bleiben unabhängig davon für die Extraktion verfügbar. Die 24 Stunden sind ein vorläufiger MVP-Wert und vor Aktivierung anhand der erwarteten Dateigrößen und Uploadzeiten zu bestätigen. Abgelaufene Datensätze und Objekte werden nicht automatisch gelöscht.
+
+
+## 26. Uploadmethode noch nicht festgelegt – wichtiger Status
+
+Die aktuelle Scientific-Library-Oberfläche extrahiert PDF-Dateien lokal mit PDF.js. Es findet noch kein Upload in Supabase Storage statt. Die Edge-Function-Actions für Upload-Intent und Uploadbestätigung sind vorbereitet, werden vom Frontend aber nicht aufgerufen. Daher existiert aktuell noch kein produktiver Uploadpfad und auch keine konkrete Uploadmethode, deren maximale Laufzeit wir als Grundlage für die Cleanup-Quieszenz verwenden könnten.
+
+Vor Implementierung des Uploads müssen wir entscheiden:
+- Standard-Upload oder TUS/resumable Upload;
+- maximale Dateigröße und dazu passendes Bucket-Limit;
+- Verhalten bei Abbruch, Browser-Neustart und Netzwerkunterbrechung;
+- Ablauf und Widerruf etwaiger resumable Sessions.
+
+Bis zu dieser Entscheidung ist das 24-Stunden-Fenster nur ein vorläufiger Schutzwert. Die Cleanup-Finalisierungs-RPC prüft nun zusätzlich selbst, dass die Quieszenz abgelaufen ist. Das verhindert ein versehentliches vorzeitiges Löschen über einen direkten RPC-Aufruf, ersetzt aber kein Upload-Session-Protokoll.
