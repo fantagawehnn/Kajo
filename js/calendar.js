@@ -235,9 +235,7 @@ function calendarActivityRow(activity, planned) {
     const sport = calendarSport(activity.type);
     const color = sport.color || '#64748b';
     const id = encodeURIComponent(String(activity.id || '')).replace(/'/g, '%27');
-    const timeRaw = activity.startTime || activity.startTimeLocal || activity.time || '';
-    const timeMatch = String(timeRaw).match(/(?:T|\s)?(\d{1,2}:\d{2})/);
-    const time = timeMatch ? timeMatch[1] : '';
+    const time = calendarDayTime(activity.startTimeLocal || activity.start_time_local || activity.startTime || activity.time);
     const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
     const status = planned ? 'Geplant' : 'Abgeschlossen';
     const action = planned
@@ -256,7 +254,12 @@ function calendarShiftDate(date, offset) {
     return toLocalDateString(shifted);
 }
 function calendarDayTime(value) {
-    const raw = String(value || '');
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const parsed = new Date(raw);
+    if (Number.isFinite(parsed.getTime()) && (raw.includes('T') || raw.includes(' '))) {
+        return parsed.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
     const match = raw.match(/(?:T|\s)?(\d{1,2}):(\d{2})/);
     return match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
 }
@@ -274,8 +277,8 @@ function renderCalendarDayDetail(date, target) {
     const checkin = state.dailyCheckins?.[date] || {};
     const health = state.healthLogs?.[date] || null;
     const readiness = calculateReadiness(date);
-    const completed = [...data.activities].sort((a, b) => calendarDayTime(a.startTime || a.startTimeLocal || a.time).localeCompare(calendarDayTime(b.startTime || b.startTimeLocal || b.time)));
-    const planned = [...data.planned].sort((a, b) => calendarDayTime(a.startTime || a.startTimeLocal || a.time).localeCompare(calendarDayTime(b.startTime || b.startTimeLocal || b.time)));
+    const completed = [...data.activities].sort((a, b) => calendarDayTime(a.startTimeLocal || a.start_time_local || a.startTime || a.time).localeCompare(calendarDayTime(b.startTimeLocal || b.start_time_local || b.startTime || b.time)));
+    const planned = [...data.planned].sort((a, b) => calendarDayTime(a.startTimeLocal || a.start_time_local || a.startTime || a.time).localeCompare(calendarDayTime(b.startTimeLocal || b.start_time_local || b.startTime || b.time)));
     const strength = (state.strengthLogs || []).filter(item => item.date === date);
     const actualDurationKnown = data.durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
     const actualDuration = data.activities.length === 0 ? 0 : actualDurationKnown;
@@ -288,33 +291,6 @@ function renderCalendarDayDetail(date, target) {
         ? completed.map(item => calendarActivityRow(item, false)).join('')
         : '<div class="calendar-empty-state">Noch keine absolvierte Trainingseinheit dokumentiert.</div>';
     const plannedMarkup = planned.map(item => calendarActivityRow(item, true)).join('');
-    const events = [];
-    if (calendarDayHasCheckin(checkin)) {
-        events.push(calendarDayEvent('Tages-Check-in', 'Recovery- und Self-Monitoring-Daten erfasst', '', 'checkin'));
-    }
-    if (String(checkin.note || '').trim()) events.push(calendarDayEvent('Tagesnotiz', 'Persönliche Reflexion hinterlegt', '', 'note'));
-    if (health?.status) {
-        const healthLabel = health.status === 'sick' ? 'Krankheit dokumentiert' : health.status === 'injured' ? 'Verletzung dokumentiert' : 'Gesundheitsstatus dokumentiert';
-        events.push(calendarDayEvent(healthLabel, health.diagnosis || 'Gesundheitsereignis', '', 'health'));
-    }
-    if (checkin.cycle?.period === true) events.push(calendarDayEvent('Menstruation dokumentiert', 'Zyklusdaten', '', 'health'));
-    data.activities.forEach(item => events.push(calendarDayEvent(item.name || 'Trainingseinheit', calendarSport(item.type).label + (item.raceFormat ? ' · ' + item.raceFormat : ''), calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'completed')));
-    data.planned.forEach(item => events.push(calendarDayEvent(item.name || 'Geplante Einheit', calendarSport(item.type).label, calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'planned')));
-    data.races.forEach(item => events.push(calendarDayEvent(item.name || 'Wettkampf', item.location || 'Wettkampf', calendarDayTime(item.startTime || item.time), 'race')));
-    strength.forEach(item => events.push(calendarDayEvent(item.exercise || 'Krafttraining', 'Kraftprotokoll', calendarDayTime(item.startTime || item.time), 'strength')));
-    events.sort((a, b) => {
-        if (a.time && b.time) return a.time.localeCompare(b.time);
-        if (a.time) return -1;
-        if (b.time) return 1;
-        return 0;
-    });
-    const timelineMarkup = events.length ? '<div class="calendar-day-timeline">' + events.map(item =>
-        '<div class="calendar-day-timeline-item is-' + item.kind + '">' +
-        '<span class="calendar-day-timeline-time">' + (item.time ? escapeHtml(item.time) : '—') + '</span>' +
-        '<span class="calendar-day-timeline-dot" aria-hidden="true"></span>' +
-        '<span class="calendar-day-timeline-copy"><strong>' + escapeHtml(item.label) + '</strong><small>' + escapeHtml(item.detail) + '</small></span></div>'
-    ).join('') + '</div>' : '<div class="calendar-empty-state">Für diesen Tag sind noch keine Ereignisse dokumentiert.</div>';
-
     const recoveryMetrics = [];
     const addRecovery = (label, value, tone = 'info') => {
         if (value === null || value === undefined || value === '') return;
@@ -356,7 +332,6 @@ function renderCalendarDayDetail(date, target) {
             calendarDayRing(String(completedCount), 'Einheiten', 'good') +
             calendarDayRing(readinessText, 'Recovery', calendarReadinessTone(readiness.score)) +
         '</section>' + diaryButton + '</div>' +
-        '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Tagesverlauf</h3></div>' + timelineMarkup + '</section>' +
         '<section class="calendar-detail-section"><div class="calendar-detail-heading"><h3>Absolviertes Training</h3></div><div class="calendar-day-activity-list">' + actualMarkup + '</div></section>' +
         plannedSection +
         '<section class="calendar-day-recovery-section"><div class="calendar-detail-heading"><h3>Recovery & Gesundheit</h3></div>' + recoveryMarkup + '</section>' +
@@ -1037,7 +1012,7 @@ export function renderMonthView() {
         const markers = [
             ...data.activities.map(item => ({ item, planned: false })),
             ...data.planned.map(item => ({ item, planned: true }))
-        ].sort((a, b) => calendarDayTime(a.item.startTime || a.item.startTimeLocal || a.item.time).localeCompare(calendarDayTime(b.item.startTime || b.item.startTimeLocal || b.item.time)));
+        ].sort((a, b) => calendarDayTime(a.item.startTimeLocal || a.item.start_time_local || a.item.startTime || a.item.time).localeCompare(calendarDayTime(b.item.startTimeLocal || b.item.start_time_local || b.item.startTime || b.item.time)));
         const markerMarkup = markers.map(({ item, planned }) => {
             const sport = catalog[item.type] || catalog.Workout;
             const label = sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '');
