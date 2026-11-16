@@ -390,3 +390,6 @@ assert.ok(competitions.includes('if (routeId) updatedFields.routeId = routeId') 
 assert.ok(competitions.includes('export function openRaceModalForCreate()'), 'new competition creation resets edit state');
 assert.ok(html.includes('id="race-modal-save"') && html.includes('onclick="openRaceModalForCreate()"'), 'competition modal distinguishes create and edit actions');
 assert.ok(main.includes('    editRace,') && main.includes('    openRaceModalForCreate,'), 'competition edit actions are exposed to the UI');
+
+assert.ok(calendar.includes('window.openRaceModalForCreate?.()'), 'calendar opens a clean competition form before applying the selected date');
+assert.ok(calendar.includes("if (input) input.value = date;"), 'calendar-selected date is retained when creating a competition');
