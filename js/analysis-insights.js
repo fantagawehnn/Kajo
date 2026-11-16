@@ -188,9 +188,9 @@ function renderRecoveryInsight() {
         ? 'Aktuell: ' + recoveryTrends.from + ' bis ' + recoveryTrends.to +
           ' · Vergleich: ' + recoveryTrends.previousFrom + ' bis ' + recoveryTrends.previousTo
         : 'Kein gültiger Zeitraum verfügbar.';
-    setPanel('analysis-recovery-insight',
+    const recoveryTrendMarkup =
         '<div class="kajo-insight-grid">' + trendCards.join('') + '</div>' +
-        note(trendDates + '. Mittelwerte der vorhandenen Messungen; fehlende Tage werden nicht ergänzt. Veränderungen werden neutral angezeigt und sind keine medizinische Bewertung.'));
+        note(trendDates + '. Mittelwerte der vorhandenen Messungen; fehlende Tage werden nicht ergänzt. Veränderungen werden neutral angezeigt und sind keine medizinische Bewertung.');
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
     const findObjective = key => objective.find(item => item.key === key);
     const rhrBaseline = findObjective('rhr');
@@ -260,7 +260,8 @@ function renderRecoveryInsight() {
     const interpretation = !checkins.length
         ? 'Keine Check-ins in den letzten 7 Tagen.'
         : 'Mittelwerte der vorhandenen Check-ins. Fehlende Tage werden nicht als neutrale oder erholte Tage gewertet.';
-    setPanel('analysis-recovery-insight', '<div class="kajo-insight-grid">' + entries.join('') + '</div>' +
+    setPanel('analysis-recovery-insight', recoveryTrendMarkup +
+        '<div class="kajo-insight-grid">' + entries.join('') + '</div>' +
         note(interpretation));
 }
 
