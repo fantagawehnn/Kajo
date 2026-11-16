@@ -418,4 +418,10 @@ assert.ok(calendar.includes("parsed.toISOString().slice(0, 10) === value"), 'sea
 assert.ok(calendar.includes('!isValidCalendarPhaseDate(start) || !isValidCalendarPhaseDate(end) || start > end'), 'season phase saving rejects impossible dates and reversed ranges');
 assert.ok(calendar.includes('if (existing) Object.assign(existing, updated)'), 'editing a confirmed season phase updates its existing record');
 assert.ok(calendar.includes("phases.push(updated)"), 'editing a suggestion creates one confirmed phase record');
+assert.ok(calendar.includes("typeof id !== 'string' || !id"), 'phase confirmation and deletion ignore missing or malformed identifiers');
+assert.ok(calendar.includes("!suggestion.name?.trim() || !isValidCalendarPhaseDate(suggestion.start)"), 'only complete suggestions with valid dates can be confirmed');
+assert.ok(calendar.includes("!(state.calendarYearPhaseSuggestions || []).some(item => item.id === id)"), 'only currently available suggestions can be dismissed');
+assert.ok(calendar.includes('remaining.length === phases.length'), 'deleting an unknown phase does not trigger a destructive write');
+assert.ok(calendar.includes('name.length > 60'), 'phase names are limited consistently with the editor input');
+assert.ok(calendar.includes('if (!existing && !suggestion)'), 'stale or unknown phase editor records cannot create orphaned phases');
 
