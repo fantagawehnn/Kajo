@@ -21,7 +21,7 @@ Die Zusammenfassung ist noch keine vollständige sportwissenschaftliche Analyse-
 
 - eine weitergehende, sportartspezifische Intensitätsverteilung über Garmin-HF-Zonen hinaus (manuelle RPE-Intensitätsklassifikation, weitere Datenquellen und validierte Trainingszonen),
 - eine methodisch abgesicherte, sportartspezifische Vergleichslogik für K1/C1/C2, Classic/Sprint sowie Wildwasser/Flachwasser,
-- standardisierte Leistungs- und Testvergleiche,
+- standardisierte Leistungs- und Testvergleiche sowie die Validierung von VO₂max-Schätzungen gegenüber sportartspezifischer Leistungsdiagnostik,
 - ein wissenschaftlich kuratierter Evidenzkatalog mit Quellenabruf,
 - eine fachlich validierte Entscheidungslogik, die aus den Kennzahlen eine konkrete Trainingsdosierung ableitet.
 
