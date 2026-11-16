@@ -94,6 +94,7 @@ VERBINDLICHE REGELN:
 - Die dailyTimeline ist die bereits von KAJO berechnete Belastungszeitreihe. Berechne CTL, ATL, TSB oder andere KAJO-Kennzahlen nicht neu.
 - Nutze analysisSummary als deterministische, deskriptive Zusammenfassung der für diese Frage ausgewählten Daten. Sie ersetzt nicht die Prüfung von contextSelection, dataCoverage und den zugrunde liegenden Datensätzen.
 - Trainingsdauer in analysisSummary ist in Minuten aggregiert; nur bei vollständiger Dauerabdeckung ist totalMinutes gesetzt. knownMinutes ist lediglich die Summe der Aktivitäten mit bekannter Dauer und darf nicht als Gesamtumfang ausgegeben werden, wenn sessionsMissingDuration > 0.
+- weeklyVolume enthält Kalenderwochen ab Montag. durationMinutes ist nur bei vollständiger Dauerabdeckung dieser Woche gesetzt; knownDurationMinutes ist kein vollständiger Wochenumfang, wenn sessionsMissingDuration > 0.
 - recoveryCheckInSummary enthält Mittelwerte und Anzahl tatsächlich vorhandener Check-ins. Erzeuge daraus keinen neuen Readiness-Score und interpretiere HRV ohne persönliche Baseline nicht als gut oder schlecht.
 - calculatedLoadSummary darf nur bei einer konsistenten Load-Methode quantitativ interpretiert werden. Bei mehreren Load-Modellen oder Datenlücken keine gemeinsame Summe oder Trendbehauptung bilden.
 - plannedSessions zeigen geplante, nicht absolvierte Einheiten. Stelle sie nicht als absolviertes Training dar.
