@@ -52,6 +52,25 @@ export function escapeHtml(value) {
     })[char]);
 }
 
+/**
+ * Garmin activity date follows its local calendar date when available.
+ * A GMT timestamp is normalized only when Garmin actually supplied one;
+ * a local wall-clock timestamp without an offset stays unchanged.
+ */
+export function resolveGarminActivityDateTime(activity = {}) {
+    const raw = String(activity?.startTimeLocal ?? '');
+    const gmt = String(activity?.startTimeGMT ?? '');
+    const localDate = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.slice(0, 10) : '';
+    const parsedGmt = gmt ? new Date(gmt) : null;
+    const startTime = parsedGmt && Number.isFinite(parsedGmt.getTime())
+        ? parsedGmt.toISOString()
+        : raw;
+    return {
+        date: localDate || (startTime ? startTime.slice(0, 10) : ''),
+        startTime
+    };
+}
+
 /** Datumsstring ohne implizite UTC-Interpretation parsen. */
 export function parseLocalDate(dateString) {
     const [year, month, day] = String(dateString || '').slice(0, 10).split('-').map(Number);
