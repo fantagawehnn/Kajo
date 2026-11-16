@@ -4,7 +4,7 @@ Die Claim-RPC liefert `owner_id` jetzt ausdrücklich zusätzlich zu `document_id
 
 ## Ergänzung: Cleanup-Pfadvalidierung (16.11.2026)
 
-Die separate Cleanup-Function prüft jetzt zusätzlich, dass das erste Pfadsegment des Storage-Objekts exakt der vom Claim gelieferten `source_id` entspricht und das vollständige Objektmuster `<owner-id>/<document-id>/original.pdf` erfüllt. Die Datenbank-Claim-RPC bleibt die maßgebliche Quelle für die Zuordnung von Dokument, Quelle und Eigentümer; die Function validiert die Rückgabe vor jeder Storage-Löschung nochmals.
+Die separate Cleanup-Function prüft, dass das erste Pfadsegment des Storage-Objekts exakt der vom Claim gelieferten `owner_id` entspricht und das vollständige Objektmuster `<owner-id>/<document-id>/original.pdf` erfüllt. Die Datenbank-Claim-RPC bleibt die maßgebliche Quelle für die Zuordnung von Dokument, Quelle und Eigentümer; die Function validiert die Rückgabe vor jeder Storage-Löschung nochmals.
 
 ## Aktueller Implementierungsstatus (16.11.2026)
 
