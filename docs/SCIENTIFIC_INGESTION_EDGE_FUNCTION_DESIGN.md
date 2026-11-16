@@ -539,7 +539,7 @@ Der Baustein:
 - setzt TUS-Metadaten für Bucket, Objektpfad und PDF-MIME-Typ, `x-upsert: false`, 6-MB-Chunks und begrenzte Retry-Abstände;
 - liest vor jedem TUS-Request die aktuelle Supabase-Sitzung erneut, damit ein während eines längeren Uploads erneuerter Access Token verwendet werden kann;
 - speichert keine TUS-Fingerprints im Browser-Storage; eine Wiederaufnahme nach einem vollständigen Browser-Neustart ist damit ausdrücklich noch nicht vorgesehen;
-- ruft nach dem TUS-Abschluss zwingend `confirm-upload` auf und löst den Erfolgsstatus erst nach bestätigter Serverantwort aus.
+- ruft nach dem TUS-Abschluss zwingend `confirm-upload` und danach `get-document-status` auf; der Erfolgsstatus wird erst nach bestätigtem `uploaded`-Status aufgelöst.
 
 Der Baustein enthält keinen Service-Role-Key und wird von keiner UI aufgerufen. Er kann daher derzeit keine Datei übertragen. Vor Aktivierung sind insbesondere Storage-Bucket/Policies, Migrationen/RPCs, Function-Secrets und Deployment erforderlich. Zusätzlich müssen CDN-Abhängigkeit, TUS-CORS und der tatsächliche Storage-Host im Zielprojekt verifiziert werden.
 
