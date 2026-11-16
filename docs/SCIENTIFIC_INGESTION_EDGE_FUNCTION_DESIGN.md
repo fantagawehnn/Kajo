@@ -325,3 +325,21 @@ Die Edge Function darf keine beliebigen Client-IDs ohne Eigentumsprüfung akzept
 Vor Umsetzung sind SQL-Transaktions-/RPC-Strategie, Batchlimits, Retry-/Resume-Verhalten und Bereinigung unvollständiger Extraktionsversionen festzulegen. Der lokale PoC validiert weder PDF-Inhalt noch Chunk-Qualität und ersetzt diese Sicherheitsprüfungen nicht.
 
 Der Scaffold enthält weiterhin keine dieser neuen Aktionen; `process-document` bleibt HTTP 501. Keine Migration, Storage-Konfiguration oder Deployment wurde durch den Frontend-PoC ausgelöst.
+
+## 17. Atomare Chunk-Persistenz über serverseitige RPCs
+
+Die neue Designvorlage `docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql` konkretisiert die Transaktionsgrenze für die clientseitig extrahierten privaten Chunks. Sie ist **keine Migration** und wurde nicht ausgeführt.
+
+Vorgesehener Ablauf nach bestätigtem Upload:
+
+1. Die Edge Function validiert Bearer-JWT erneut über `auth.getUser()` und leitet die User-ID ausschließlich aus dem validierten Ergebnis ab.
+2. Sie lädt das Dokument mit `document_id`, `owner_id`, `visibility` und `processing_status` und verlangt `owner_id = auth.uid()`, `visibility = private` sowie den erwarteten Status.
+3. `kajo_begin_scientific_extraction` übernimmt das Dokument nur aus `uploaded` nach `extracting`. Wiederholungen sind nur mit derselben Extraktionsversion und denselben gemeldeten Umfangswerten idempotent.
+4. `kajo_submit_scientific_chunk_batch` speichert 1–50 Chunks pro Transaktion. Ein Retry mit identischem Index und identischen Feldern wird akzeptiert; ein Retry mit abweichendem Inhalt wird abgewiesen. Es gibt kein Überschreiben bereits gespeicherter Chunk-Inhalte.
+5. `kajo_complete_scientific_extraction` setzt `private_ready` erst, wenn alle erwarteten Chunk-Indizes lückenlos von `0` bis `expected_chunk_count - 1` vorhanden sind.
+
+Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen. `EXECUTE` soll ausschließlich `service_role` erhalten. Das ist kein Ersatz für die JWT-/Eigentumsprüfung in der Edge Function: Der Service-Role-Client umgeht RLS, deshalb muss die Function vor jedem RPC-Aufruf das Dokument erneut dem authentifizierten Nutzer zuordnen. Die RPCs erlauben keine Shared-Freigabe.
+
+Die im Browser übermittelten Seiten-, Zeichen- und Chunk-Zahlen bleiben nicht vertrauenswürdige Extraktionsmetadaten. Sie dienen der Vollständigkeitskontrolle innerhalb des privaten Dokuments, nicht als unabhängiger Nachweis über den PDF-Inhalt. Ein gescanntes PDF ohne Text benötigt einen separaten Übergang zu `manual_review_required`; es darf nicht als leere erfolgreiche Extraktion abgeschlossen werden.
+
+Noch offen vor Implementierung: Upload-Objektverifikation für `confirm-upload`, Batch-/Gesamtlimits und Rate-Limits in der Edge Function, Resume nach Tab-Abbruch, Bereinigung fehlgeschlagener Extraktionsversionen sowie der Umgang mit OCR. Der vorhandene Function-Scaffold enthält diese RPC-Aktionen noch nicht. Keine Datenbankänderung, Migration, Storage-Konfiguration oder Deployment wurde vorgenommen.
