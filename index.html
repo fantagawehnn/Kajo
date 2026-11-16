@@ -110,7 +110,14 @@
                     <button type="button" class="kajo-home-icon-button" onclick="openSettingsModal()" aria-label="Benachrichtigungseinstellungen öffnen" title="Benachrichtigungen"><i data-lucide="bell"></i></button>
                     <button type="button" class="kajo-home-icon-button" onclick="kajoOpenProfile(event)" aria-label="Athletenprofil öffnen" title="Athletenprofil"><i data-lucide="user-round"></i></button>
                 </div>
-                    <input id="backup-import-input" type="file" accept="application/json,.json" class="hidden" onchange="restoreDatabaseBackup(event)"><div id="backup-preview-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[95] items-center justify-center p-4">
+
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Backup-Vorschau außerhalb der Navigation: eigenes Overlay ohne Navigation-Stacking-Context. -->
+    <input id="backup-import-input" type="file" accept="application/json,.json" class="hidden" onchange="restoreDatabaseBackup(event)"><div id="backup-preview-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[95] items-center justify-center p-4">
                         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-4">
                             <div class="flex items-center justify-between gap-3">
                                 <h2 class="text-lg font-bold text-white">Backup-Vorschau</h2>
@@ -128,10 +135,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </nav>
     <div id="auth-userbar" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 flex items-center justify-end gap-3 text-xs">
 
         <span id="auth-user-email" class="text-slate-400"></span>
