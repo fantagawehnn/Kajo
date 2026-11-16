@@ -670,8 +670,17 @@ function setGarminSyncIndicator(state, label) {
     }
 }
 
+function setGarminSyncResult(message, state = 'info') {
+    const node = document.getElementById('garmin-sync-result-status');
+    if (!node) return;
+    node.textContent = String(message || '');
+    node.classList.remove('text-slate-300', 'text-cyan-200', 'text-amber-200', 'text-rose-200');
+    node.classList.add(state === 'error' ? 'text-rose-200' : state === 'partial' ? 'text-amber-200' : state === 'syncing' ? 'text-cyan-200' : 'text-slate-300');
+    node.dataset.state = state;
+}
+
 function renderGarminSyncProgress(completedDays, totalDays, phase = 'Aktivitäts- und Gesundheitsdaten werden abgeglichen') {
-    const status = document.getElementById('garmin-connection-status');
+    const status = document.getElementById('garmin-sync-result-status');
     if (!status) return;
     const total = Math.max(1, Number(totalDays) || 1);
     const completed = Math.max(0, Math.min(total, Number(completedDays) || 0));
@@ -1199,7 +1208,7 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
 }
 
 async function syncGarminSelectedRange() {
-    const status = document.getElementById('garmin-connection-status');
+    const status = document.getElementById('garmin-sync-result-status');
     const button = document.getElementById('garmin-sync-range-button');
     const startDate = document.getElementById('garmin-preview-start-date')?.value;
     const endDate = document.getElementById('garmin-preview-end-date')?.value;
@@ -2570,6 +2579,7 @@ async function syncGarminTodayOnOpen(userId) {
         try { setUserLocalSetting('garmin_connected', 'true'); } catch (_) {}
 
         setGarminSyncIndicator('syncing', 'Tagesabgleich läuft');
+        setGarminSyncResult('Der automatische Garmin-Tagesabgleich läuft …', 'syncing');
         let response = null;
         let health = null;
         for (let attempt = 0; attempt < 4; attempt++) {
@@ -2624,6 +2634,7 @@ async function syncGarminTodayOnOpen(userId) {
         if (partial) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
+            setGarminSyncResult('Der Tagesabgleich wurde nur teilweise abgeschlossen. Einige Garmin-Daten konnten nicht vollständig übernommen werden; fehlende Daten werden erneut geprüft.', 'partial');
             if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
                 const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
@@ -2635,11 +2646,22 @@ async function syncGarminTodayOnOpen(userId) {
         } else {
             garminDailySyncCompleted.add(runKey);
             console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
+            const activitySync = response.sync?.activitySync || {};
+            const fetched = Number(activitySync.fetched || 0);
+            const stored = Number(activitySync.stored || 0);
+            setGarminSyncResult(stored > 0
+                ? 'Tagesabgleich abgeschlossen: ' + stored + ' neue Aktivität(en) gespeichert.'
+                : fetched > 0
+                    ? 'Tagesabgleich abgeschlossen: Garmin hat ' + fetched + ' Aktivität(en) geliefert; es wurden keine neuen Aktivitäten gespeichert.'
+                    : 'Tagesabgleich abgeschlossen: Garmin hat für heute keine Aktivitäten geliefert.', 'success');
             setGarminSyncIndicator('current', 'Verbunden');
         }
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
-        if (activeAppUserId === userId && appUserReady) setGarminSyncIndicator('current', 'Verbunden');
+        if (activeAppUserId === userId && appUserReady) {
+            setGarminSyncResult('Automatischer Tagesabgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), 'error');
+            setGarminSyncIndicator('current', 'Verbunden');
+        }
     } finally {
         garminDailySyncInFlight.delete(runKey);
     }
