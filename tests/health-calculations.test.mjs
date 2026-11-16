@@ -270,3 +270,40 @@ test('does not calculate relative return-to-training change when baseline is zer
   assert.equal(result.returnToTraining.baseline.averageMinutesPerCalendarDay, 0);
   assert.equal(result.returnToTraining.windows[0].averageMinutesChangePercent, null);
 });
+
+test('caps return-to-training windows at the as-of date and does not count future days', () => {
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [
+      { date: '2026-11-18', duration: 60 },
+      { date: '2026-11-20', duration: 30 },
+      { date: '2026-11-24', duration: 90 }
+    ],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14, [], null, null, '2026-11-21'
+  );
+  const [first, second, third] = result.returnToTraining.windows;
+  assert.equal(first.calendarDays, 5);
+  assert.equal(first.totalMinutes, 90);
+  assert.equal(first.averageMinutesPerCalendarDay, 18);
+  assert.equal(first.to, '2026-11-21');
+  assert.equal(second.notStarted, true);
+  assert.equal(second.calendarDays, 0);
+  assert.equal(second.averageMinutesPerCalendarDay, null);
+  assert.equal(third.notStarted, true);
+  assert.equal(third.averageMinutesChangePercent, null);
+  assert.equal(result.after.calendarDays, 5);
+  assert.equal(result.after.to, '2026-11-21');
+});
+
+test('does not cap historical return-to-training windows when as-of date is later', () => {
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [{ date: '2026-11-18', duration: 60 }],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14, [], null, null, '2027-01-01'
+  );
+  assert.equal(result.returnToTraining.windows[0].calendarDays, 7);
+  assert.equal(result.returnToTraining.windows[1].calendarDays, 7);
+  assert.equal(result.returnToTraining.windows[2].calendarDays, 14);
+});
