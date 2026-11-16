@@ -458,3 +458,12 @@ Der Storage-Entwurf wurde statisch gegen den Upload-Intent abgeglichen. Die INSE
 Die Policy schützt nicht vor einer manipulierten Datei oder einer falschen tatsächlichen Dateigröße. Dafür bleibt `confirm-upload` zuständig, das Storage-Metadaten und die PDF-Signatur prüft. Die Upload-Policy setzt außerdem voraus, dass die Authenticated-SELECT-Policy auf `scientific_documents` den eigenen privaten `pending`-Datensatz sichtbar macht; dies ist im Phase-1-DDL-Entwurf vorgesehen. Vor einer Migration muss geprüft werden, dass im Zielprojekt keine bereits vorhandenen Storage-Policies diese Beschränkung erweitern.
 
 **Noch nicht ausreichend für Aktivierung:** Es gibt noch kein Ablaufdatum für Upload-Intents, kein serverseitiges Rate-Limit und keine Bereinigungsroutine für verwaiste `pending`-Datensätze bzw. Storage-Objekte. Der Bucket muss mit einem expliziten positiven Größenlimit und ausschließlich benötigtem PDF-MIME-Typ angelegt werden. Der RPC-Checkpoint-Entwurf ergänzt die Spalten, die die Statusabfrage und Extraktionsaktionen erwarten; er muss nach dem Phase-1-DDL und vor dem Storage-/Edge-Function-Rollout in einer kontrollierten Migration angewendet werden. Diese Reihenfolge ist eine notwendige Abhängigkeit, keine bereits erfolgte Aktivierung.
+
+
+## 24. Ablaufzeit für Upload-Intents
+
+Neue private Upload-Intents erhalten in der atomaren RPC ein serverseitiges Ablaufdatum von 24 Stunden (upload_intent_expires_at). Die RPC gibt den gespeicherten Zeitstempel an den Browser zurück; die UI darf die Ablaufzeit nicht selbst festlegen. Die Storage-INSERT-Policy erlaubt einen Upload nur solange upload_intent_expires_at > now() gilt. confirm-upload prüft den Zeitstempel ebenfalls und führt den Statuswechsel zusätzlich nur mit einer zeitlich bedingten Datenbank-UPDATE-Bedingung aus. Damit kann ein abgelaufener pending-Intent weder neu hochgeladen noch nachträglich bestätigt werden.
+
+Die Ablaufzeit betrifft ausschließlich den noch nicht bestätigten Upload. Sobald ein Dokument erfolgreich nach uploaded überführt wurde, darf die spätere Extraktion unabhängig von diesem Zeitstempel fortgesetzt werden. Abgelaufene Datensätze und eventuell vorhandene Storage-Objekte werden durch diese Prüfung nicht automatisch gelöscht. Eine sichere Bereinigungsroutine mit zusätzlicher Altersgrenze und Statusprüfung bleibt ein eigener, noch nicht aktivierter Schritt.
+
+Die 24 Stunden sind ein vorläufiger MVP-Standardwert. Vor Aktivierung ist zu entscheiden, ob dieser Zeitraum zur realen Uploadgröße und Netzstabilität passt.
