@@ -154,7 +154,7 @@ export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
  * Missing duration is counted separately; missing activities are not inferred
  * to be rest days and no completeness/causality claim is made.
  */
-export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14, trainingLoadRecords = [], loadMode = null, loadUnit = null) {
+export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14, trainingLoadRecords = [], loadMode = null, loadUnit = null, asOfDate = null) {
   if (!Number.isInteger(comparisonDays) || comparisonDays < 1 || comparisonDays > 90) return null;
   const documentedHealthDates = new Set(Object.entries(healthLogs || {})
     .filter(([date, item]) => validDateKey(date) && (item?.status === 'sick' || item?.status === 'injured'))
@@ -174,7 +174,19 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     value: record?.value !== null && record?.value !== undefined && record?.value !== ''
       && Number.isFinite(Number(record.value)) ? Number(record.value) : null
   })).filter(item => item.date && item.value !== null);
-  const summarizeWindow = (from, to, excludeHealthDates = false) => {
+  const validAsOfDate = validDateKey(asOfDate) ? asOfDate : null;
+  const summarizeWindow = (from, to, excludeHealthDates = false, capAtAsOfDate = false) => {
+    const requestedTo = to;
+    if (capAtAsOfDate && validAsOfDate && to > validAsOfDate) to = validAsOfDate;
+    if (from > to) return {
+      from, to: requestedTo, calendarDays: 0, eligibleCalendarDays: 0,
+      activities: 0, activitiesWithDuration: 0, activitiesWithoutDuration: 0,
+      totalMinutes: 0, averageMinutesPerCalendarDay: null,
+      trainingLoad: null, trainingLoadActivityCount: 0,
+      averageTrainingLoadPerCalendarDay: null,
+      trainingLoadMode: loadMode, trainingLoadUnit: loadUnit,
+      daysWithActivity: 0, notStarted: true
+    };
     const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
     let eligibleCalendarDays = 0;
     for (let offset = 0; offset < days; offset++) {
@@ -201,7 +213,9 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
         ? totalLoad / eligibleCalendarDays : null,
       trainingLoadMode: loadMode,
       trainingLoadUnit: loadUnit,
-      daysWithActivity: new Set(rows.map(item => item.date)).size
+      daysWithActivity: new Set(rows.map(item => item.date)).size,
+      notStarted: false,
+      requestedTo
     };
   };
 
@@ -218,7 +232,7 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       { key: 'days8to14', label: 'Tag 8–14', from: addDays(episode.endDate, 8), to: addDays(episode.endDate, 14) },
       { key: 'days15to28', label: 'Tag 15–28', from: addDays(episode.endDate, 15), to: addDays(episode.endDate, 28) }
     ].map(window => {
-      const period = summarizeWindow(window.from, window.to, true);
+      const period = summarizeWindow(window.from, window.to, true, true);
       const baselineAverage = baseline.averageMinutesPerCalendarDay;
       const relativeToBaseline = baselineAverage !== null && baselineAverage > 0
         && period.averageMinutesPerCalendarDay !== null
@@ -238,7 +252,7 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       documentedDays: episode.documentedDays,
       before: baseline,
       during: summarizeWindow(episode.startDate, episode.endDate),
-      after: summarizeWindow(afterFrom, afterTo, true),
+      after: summarizeWindow(afterFrom, afterTo, true, true),
       returnToTraining: {
         baseline,
         windows: returnWindows,
