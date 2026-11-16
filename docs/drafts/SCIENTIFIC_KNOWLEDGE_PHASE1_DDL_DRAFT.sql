@@ -1,7 +1,7 @@
 -- KAJO Scientific Knowledge Base – Phase 1 DDL draft
 -- STATUS: DESIGN ONLY. NOT A SUPABASE MIGRATION. DO NOT APPLY AS-IS.
--- Scope: relational source/document metadata only.
--- Deliberately excludes pgvector, embeddings, chunks, Storage buckets,
+-- Scope: relational source/document metadata and extracted text chunks.
+-- Deliberately excludes pgvector, embeddings, Storage buckets,
 -- ingestion functions, and browser write policies.
 
 begin;
@@ -81,7 +81,10 @@ create table public.scientific_documents (
         check (processing_status in (
             'pending',
             'uploaded',
+            'extracting',
             'extracted',
+            'review_pending',
+            'private_ready',
             'failed',
             'rejected'
         )),
@@ -93,6 +96,12 @@ create table public.scientific_documents (
         (visibility = 'shared' and owner_id is null)
         or
         (visibility = 'private' and owner_id is not null)
+    ),
+    constraint scientific_documents_private_ready_check check (
+        processing_status <> 'private_ready' or visibility = 'private'
+    ),
+    constraint scientific_documents_review_pending_check check (
+        processing_status <> 'review_pending' or visibility = 'shared'
     )
 );
 
@@ -107,8 +116,32 @@ create index scientific_documents_owner_idx
     on public.scientific_documents (owner_id, created_at desc)
     where owner_id is not null;
 
+-- Extracted text is stored separately so every coach passage can be traced
+-- back to its source document and, where available, original PDF pages.
+create table public.scientific_document_chunks (
+    id uuid primary key default gen_random_uuid(),
+    document_id uuid not null references public.scientific_documents(id) on delete cascade,
+    chunk_index integer not null check (chunk_index >= 0),
+    page_start integer check (page_start is null or page_start > 0),
+    page_end integer check (page_end is null or page_end > 0),
+    section_heading text,
+    language text,
+    content_text text not null check (length(btrim(content_text)) > 0),
+    extraction_version text not null,
+    created_at timestamptz not null default now(),
+    constraint scientific_document_chunks_page_range_check check (
+        page_start is null or page_end is null or page_end >= page_start
+    ),
+    constraint scientific_document_chunks_document_index_unique
+        unique (document_id, extraction_version, chunk_index)
+);
+
+create index scientific_document_chunks_document_idx
+    on public.scientific_document_chunks (document_id, chunk_index);
+
 alter table public.scientific_sources enable row level security;
 alter table public.scientific_documents enable row level security;
+alter table public.scientific_document_chunks enable row level security;
 
 -- Browser clients can read only approved shared source metadata or their
 -- own private source metadata. No browser INSERT/UPDATE/DELETE policies.
@@ -159,10 +192,46 @@ create policy "Authenticated users read documents of readable sources"
         )
     );
 
+-- Chunk access follows document/source visibility. Shared chunks are visible
+-- only after the parent source is approved; private chunks only to their owner.
+revoke all on public.scientific_document_chunks from anon, authenticated;
+grant select on public.scientific_document_chunks to authenticated;
+grant all on public.scientific_document_chunks to service_role;
+
+create policy "Authenticated users read chunks of readable documents"
+    on public.scientific_document_chunks
+    for select
+    to authenticated
+    using (
+        exists (
+            select 1
+            from public.scientific_documents d
+            join public.scientific_sources s on s.id = d.source_id
+            where d.id = scientific_document_chunks.document_id
+              and (
+                  (
+                      d.visibility = 'shared'
+                      and d.owner_id is null
+                      and s.visibility = 'shared'
+                      and s.review_status = 'approved'
+                  )
+                  or
+                  (
+                      d.visibility = 'private'
+                      and d.owner_id = (select auth.uid())
+                      and s.visibility = 'private'
+                      and s.owner_id = (select auth.uid())
+                  )
+              )
+        )
+    );
+
 comment on table public.scientific_sources is
     'Bibliographic metadata for KAJO scientific sources; separate from personal athlete data.';
 comment on table public.scientific_documents is
-    'Document metadata only; actual files require a separately reviewed private Storage bucket and policies.';
+    'Document metadata and processing state; actual files require a separately reviewed private Storage bucket and policies.';
+comment on table public.scientific_document_chunks is
+    'Extracted text chunks with document and page provenance; embeddings are intentionally out of scope.';
 
 commit;
 
