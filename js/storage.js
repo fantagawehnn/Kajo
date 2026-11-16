@@ -13,6 +13,20 @@ import { createUserStorage } from './user-storage.js?v=3';
 let activeUserStorage = null;
 let activeUserId = null;
 let indexedDbWriteQueue = Promise.resolve();
+let indexedDbWriteError = null;
+
+function enqueueIndexedDbSave(storage, collections, label) {
+    indexedDbWriteQueue = indexedDbWriteQueue
+        .then(async () => { await storage.saveCollections(collections); indexedDbWriteError = null; })
+        .catch(error => { indexedDbWriteError = error; console.error(label, error); });
+    return indexedDbWriteQueue;
+}
+
+export async function flushLocalPersistence() {
+    await indexedDbWriteQueue;
+    if (indexedDbWriteError) throw new Error('Die lokale IndexedDB-Sicherung ist fehlgeschlagen: ' + (indexedDbWriteError.message || indexedDbWriteError));
+    return true;
+}
 
 /**
  * Legacy-Daten werden hier ausdrücklich nicht mehr automatisch migriert.
@@ -361,9 +375,7 @@ export function saveActivitiesToLocalStorage() {
         console.warn('Aktivitäten passen nicht mehr in localStorage; sichere sie stattdessen in IndexedDB.');
     }
     const storageForThisSave = activeUserStorage;
-    indexedDbWriteQueue = indexedDbWriteQueue
-        .then(() => storageForThisSave.saveCollections({ activities }))
-        .catch(error => console.error('Benutzerbezogene Aktivitätssicherung fehlgeschlagen:', error));
+    enqueueIndexedDbSave(storageForThisSave, { activities }, 'Benutzerbezogene Aktivitätssicherung fehlgeschlagen:');
     window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId, collection: 'activities' } }));
     return true;
 }
@@ -384,14 +396,13 @@ export function saveDataToLocalStorage() {
             activeUserStorage.setItem(collection, JSON.stringify(value));
         } catch (error) {
             if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+            try { activeUserStorage.removeItem(collection); } catch (_) {}
             console.warn(`Lokaler localStorage-Fallback für "${collection}" ist voll; IndexedDB übernimmt die Sicherung.`);
         }
     }
 
     const storageForThisSave = activeUserStorage;
-    indexedDbWriteQueue = indexedDbWriteQueue
-        .then(() => storageForThisSave.saveCollections(snapshot))
-        .catch(error => console.error('Benutzerbezogene IndexedDB-Sicherung fehlgeschlagen:', error));
+    enqueueIndexedDbSave(storageForThisSave, snapshot, 'Benutzerbezogene IndexedDB-Sicherung fehlgeschlagen:');
 
     window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId } }));
     return true;
