@@ -300,6 +300,8 @@ export function toggleRaceResultsForm(encodedId) {
     editingRaceResultIndex = null;
     delete form.dataset.editIndex;
     form.reset();
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = 'Ergebnis speichern';
     form.classList.toggle('hidden');
 }
 
@@ -314,6 +316,8 @@ export function editRaceResult(encodedId, index) {
         const field = form.elements.namedItem(key);
         if (field) field.value = result[key] ?? '';
     });
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = 'Änderungen speichern';
     form.classList.remove('hidden');
 }
 
@@ -323,6 +327,8 @@ export function cancelRaceResultEdit(encodedId) {
     editingRaceResultIndex = null;
     delete form.dataset.editIndex;
     form.reset();
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = 'Ergebnis speichern';
     form.classList.add('hidden');
 }
 
