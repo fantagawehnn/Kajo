@@ -2886,9 +2886,13 @@ if (supabase) {
     supabase.auth.getSession().then(({ data, error }) => {
         if (error) {
             console.error('Anmeldestatus konnte nicht geprüft werden:', error);
+            window.dispatchEvent(new CustomEvent('endurance:auth-check-error', { detail: { error } }));
             return;
         }
         handleAuthSession(data?.session || null);
+    }).catch((error) => {
+        console.error('Anmeldestatus konnte nicht geprüft werden:', error);
+        window.dispatchEvent(new CustomEvent('endurance:auth-check-error', { detail: { error } }));
     });
 } else {
     deactivateUserStorage();
