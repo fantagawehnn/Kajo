@@ -92,7 +92,7 @@ async function getOwnedPrivateDocument(
 ) {
   return await admin
     .from("scientific_documents")
-    .select("id,owner_id,visibility,storage_path,mime_type,file_size_bytes,processing_status,extraction_version,expected_chunk_count")
+    .select("id,owner_id,visibility,storage_path,mime_type,file_size_bytes,processing_status,extraction_version,expected_chunk_count,upload_intent_expires_at")
     .eq("id", documentId)
     .eq("owner_id", userId)
     .eq("visibility", "private")
@@ -245,6 +245,7 @@ Deno.serve(async (request) => {
         document_id: intent.document_id,
         bucket_id: BUCKET_ID,
         storage_path: intent.storage_path,
+        upload_intent_expires_at: intent.upload_intent_expires_at,
         processing_status: "pending",
         upload: { upsert: false, content_type: "application/pdf" },
       }, configuredOrigin);
@@ -260,7 +261,7 @@ Deno.serve(async (request) => {
 
       const { data, error } = await admin
         .from("scientific_documents")
-        .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error,extraction_version,extraction_page_count,expected_chunk_count,extracted_character_count,upload_confirmed_at,extraction_completed_at")
+        .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error,extraction_version,extraction_page_count,expected_chunk_count,extracted_character_count,upload_confirmed_at,upload_intent_expires_at,extraction_completed_at")
         .eq("id", documentId)
         .eq("owner_id", authData.user.id)
         .eq("visibility", "private")
@@ -324,6 +325,12 @@ Deno.serve(async (request) => {
       if (document.processing_status !== "pending" || !document.storage_path) {
         return json(409, { error: "Document is not awaiting an upload" }, configuredOrigin);
       }
+      if (
+        !document.upload_intent_expires_at ||
+        Date.parse(document.upload_intent_expires_at) <= Date.now()
+      ) {
+        return json(410, { error: "Upload intent has expired; create a new upload" }, configuredOrigin);
+      }
 
       // Read authoritative object metadata from Storage, not browser claims.
       const { data: objectInfo, error: infoError } = await admin.storage
@@ -385,6 +392,7 @@ Deno.serve(async (request) => {
         .eq("owner_id", userId)
         .eq("visibility", "private")
         .eq("processing_status", "pending")
+        .gt("upload_intent_expires_at", new Date().toISOString())
         .select("id")
         .maybeSingle();
 
