@@ -207,8 +207,10 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     if (from > to) return {
       from, to: requestedTo, calendarDays: 0, eligibleCalendarDays: 0,
       activities: 0, activitiesWithDuration: 0, activitiesWithoutDuration: 0,
+      durationCoverage: { available: 0, total: 0, status: 'nicht berechenbar' },
       totalMinutes: 0, averageMinutesPerCalendarDay: null,
       trainingLoad: null, trainingLoadActivityCount: 0,
+      trainingLoadCoverage: { available: 0, total: 0, status: 'nicht berechenbar' },
       averageTrainingLoadPerCalendarDay: null,
       trainingLoadMode: loadMode, trainingLoadUnit: loadUnit,
       duplicateActivityRecordsExcluded: 0,
@@ -228,15 +230,28 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     const windowLoadRows = loadRows.filter(item => item.date >= from && item.date <= to
       && !(excludeHealthDates && documentedHealthDates.has(item.date)));
     const totalLoad = windowLoadRows.reduce((sum, item) => sum + item.value, 0);
+    const coverageStatus = (available, total) => total === 0
+      ? 'nicht berechenbar'
+      : available === total ? 'vollständig' : 'eingeschränkt';
     return {
       from, to, calendarDays: days, eligibleCalendarDays,
       activities: rows.length,
       activitiesWithDuration: validDurations.length,
       activitiesWithoutDuration: rows.length - validDurations.length,
+      durationCoverage: {
+        available: validDurations.length,
+        total: rows.length,
+        status: coverageStatus(validDurations.length, rows.length)
+      },
       totalMinutes,
       averageMinutesPerCalendarDay: eligibleCalendarDays > 0 ? totalMinutes / eligibleCalendarDays : null,
       trainingLoad: windowLoadRows.length ? Number(totalLoad.toFixed(1)) : null,
       trainingLoadActivityCount: windowLoadRows.length,
+      trainingLoadCoverage: {
+        available: windowLoadRows.length,
+        total: rows.length,
+        status: coverageStatus(windowLoadRows.length, rows.length)
+      },
       averageTrainingLoadPerCalendarDay: eligibleCalendarDays > 0 && windowLoadRows.length
         ? totalLoad / eligibleCalendarDays : null,
       trainingLoadMode: loadMode,
