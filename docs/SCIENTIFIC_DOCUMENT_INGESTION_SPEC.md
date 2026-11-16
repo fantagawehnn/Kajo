@@ -8,7 +8,7 @@
 
 Die aktuelle KAJO-App speichert persönliche Trainingsdaten lokal in IndexedDB/localStorage und synchronisiert ausgewählte Kontodaten über die bestehende Supabase-Architektur. Die Scientific Knowledge Base ist davon getrennt.
 
-Der vorhandene Cloudflare Worker stellt derzeit nur den authentifizierten Chat-Endpunkt `POST /api/coach` bereit. Es gibt noch keinen Dokument-Upload-Endpunkt, keine PDF-Extraktion, keine Chunk-Verarbeitung und kein Retrieval. Der bestehende Storage-Bucket `garmin-fit` ist für Garmin-Daten vorgesehen und wird nicht für Paper wiederverwendet.
+Der vorhandene Cloudflare Worker stellt derzeit nur den authentifizierten Chat-Endpunkt `POST /api/coach` bereit. Im Repository liegt inzwischen ein nicht deploytes Supabase-Edge-Function-Scaffold für Upload-Intents, Uploadbestätigung und Chunk-Batches. Da die zugehörigen Tabellen, RPCs, Storage-Buckets und Policies noch nicht angelegt sind und die Frontend-Ansicht die Actions noch nicht aufruft, besteht noch kein aktivierter Dokument-Uploadprozess und kein Coach-Retrieval. Der bestehende Storage-Bucket `garmin-fit` ist für Garmin-Daten vorgesehen und wird nicht für Paper wiederverwendet.
 
 Diese Spezifikation ist kein Beleg dafür, dass bereits eine Upload-Funktion existiert.
 
@@ -245,6 +245,13 @@ Der aktuelle Funktionsumfang:
 
 **Wichtige Einschränkung:** Das ist eine technische Vorschau, kein validierter Extraktions- oder Chunking-Prozess. Die Lesereihenfolge, Tabellen, Formeln, Fußnoten, mehrspaltige Layouts und Unicode-Verhalten müssen mit repräsentativen wissenschaftlichen Papers beurteilt werden. Die feste Chunklänge ist vorläufig und kein semantisch validierter Wert.
 
-Noch nicht vorhanden sind Upload, Storage-Bucket, Storage Policies, Chunk-Batch-Endpunkt, Resume-/Checkpoint-Mechanismus, dauerhafte Chunk-Speicherung und Coach-Retrieval. Der vorhandene Edge-Function-Endpunkt `process-document` bleibt HTTP 501.
+Noch nicht aktiviert sind der tatsächliche Upload aus der Frontend-Ansicht, Storage-Bucket und Storage-Policies, die RPCs in Supabase, Resume-/Checkpoint-Mechanismus, dauerhafte Chunk-Speicherung und Coach-Retrieval. Die Edge-Function-Actions sind im Repository vorbereitet, hängen aber von den noch nicht angewendeten Datenbank- und Storage-Entwürfen ab. Der vorhandene Endpunkt `process-document` bleibt HTTP 501.
 
 Die aktuelle Implementierung ersetzt die frühere Planung eines `unpdf`-/serverseitigen Parserlaufs im ersten MVP. Frühere Parser-/Queue-Abschnitte sind entsprechend als überholte Entwurfsstände zu lesen; maßgeblich sind Abschnitt 16 und diese Ergänzung.
+
+
+## 18. Atomare Anlage des Upload-Intents
+
+Die Action `create-upload-intent` verwendet im aktuellen Branch nun die RPC `kajo_create_scientific_upload_intent`. Diese legt die private Quelle und den zugehörigen Dokumentdatensatz in einer einzelnen Datenbanktransaktion an. Damit entfällt die vorherige Folge aus zwei Inserts und einer best-effort-Löschkompensation.
+
+Die Eigentümer-ID stammt weiterhin ausschließlich aus dem zuvor validierten Supabase-JWT. Die RPC ist als `SECURITY INVOKER` vorgesehen und soll nur für `service_role` ausführbar sein. Der SQL-Entwurf liegt in `docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql`. Weder die RPC noch die Tabellen wurden in der Live-Datenbank angelegt. Der Browser-Upload bleibt deaktiviert.
