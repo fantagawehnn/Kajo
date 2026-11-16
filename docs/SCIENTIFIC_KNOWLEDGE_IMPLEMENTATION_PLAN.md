@@ -148,19 +148,19 @@ Der separate Entwurf [SCIENTIFIC_UPLOAD_CLEANUP_LIFECYCLE.md](./SCIENTIFIC_UPLOA
 
 Vorgesehen ist ein atomarer serverseitiger Claim mit Lease, danach die idempotente Löschung des exakt gespeicherten Storage-Pfads und erst anschließend die transaktionale Löschung der Metadaten. Ein Storage-Fehler lässt die Metadaten für einen Retry bestehen. Eine Karenzzeit von sieben Tagen nach Ablauf des 24-Stunden-Intents ist lediglich ein Vorschlag und noch nicht freigegeben.
 
-**Status:** Nur Lifecycle-Entwurf. Keine Cleanup-RPC, Schemafelder, Edge-Function-Action oder Scheduler implementiert. Keine Migration, Tests oder Deployments durchgeführt.
+**Status:** SQL-/RPC- und Schemaentwürfe sowie eine separate Cleanup-Function sind als Scaffold vorbereitet. Keine Migration, keine Secrets, kein Scheduler, keine Tests oder Deployments durchgeführt.
 
 
 Der Entwurf `docs/drafts/SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql` konkretisiert die atomare Claim-/Lease-Mechanik (maximal 25 Datensätze, vorläufig 15 Minuten Lease, zufälliges Claim-Token). Die bestehende Uploadbestätigung prüft im Branch bereits, ob ein Cleanup-Claim gesetzt ist, und bindet auch das bedingte Status-UPDATE an einen leeren Claim-Token. Die Storage-INSERT-Policy verlangt ebenfalls einen leeren Claim-Token. Diese Code-/Policy-Anpassungen bleiben Scaffold bzw. Migrationsentwurf und sind erst nach Schema-Reconciliation gemeinsam aktivierbar.
 
 
-Die Edge Function enthält jetzt zusätzlich eine serverseitige Action `cleanup-expired-uploads`. Sie ist ausschließlich mit dem exakt konfigurierten Service-Role-Bearer aufrufbar; dieser interne Aufruf darf keine normalen Nutzeraktionen ausführen. Zusätzlich ist die Action standardmäßig gesperrt und antwortet nur dann nicht mit `503`, wenn die serverseitige Variable `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` gesetzt wurde. Diese Variable wurde nicht gesetzt. Die Action beansprucht eine begrenzte Batchgröße, löscht nur den vom Claim gelieferten kanonischen Pfad im festgelegten privaten Bucket und finalisiert Metadaten erst nach erfolgreicher Storage-Löschung.
+Die separate Function `scientific-upload-cleanup` verwendet ein eigenes Trigger-Secret (`SCIENTIFIC_UPLOAD_CLEANUP_SECRET`) und den Service-Role-Key nur intern für Datenbank-/Storage-Zugriffe. Sie ist zusätzlich durch `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` gesperrt, verarbeitet maximal einen Datensatz je Aufruf und finalisiert Metadaten nur nach erfolgreicher Storage-Löschung. Die normale `scientific-ingestion`-Function enthält keine Cleanup-Action mehr.
 
 **Einschränkung:** Das ist weiterhin nur Scaffold-Code. Die SQL-RPCs/Claim-Spalten sind nicht in Supabase vorhanden; die Action kann im aktuellen Datenbankzustand daher nicht erfolgreich ausgeführt werden. Kein Service-Role-Key wurde im Frontend hinterlegt oder ausgegeben. Kein Scheduler wurde eingerichtet.
 
 
 ## 11. Bevorzugter Uploadweg für den nächsten Implementierungsschritt
 
-TUS (Supabase Resumable Upload) ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt, da Supabase ihn für Dateien über 6 MB und instabile Verbindungen empfiehlt. Die Upload-URL ist laut Supabase bis zu 24 Stunden gültig. Die konkrete Clientbibliothek, Version und das maximale Dateilimit sind noch festzulegen. Das Dateilimit muss sowohl durch MAX_UPLOAD_BYTES als auch durch die Bucket-Konfiguration erzwungen werden und unter dem tatsächlichen globalen Projektlimit liegen.
+TUS (Supabase Resumable Upload) ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt, da Supabase ihn für Dateien über 6 MB und instabile Verbindungen empfiehlt. Die Upload-URL ist laut Supabase bis zu 24 Stunden gültig. `tus-js-client@4.3.1` ist im isolierten Frontend-Modul eingebunden; das maximale Dateilimit ist noch festzulegen. Das Dateilimit muss sowohl durch `MAX_UPLOAD_BYTES` als auch durch die Bucket-Konfiguration erzwungen werden und unter dem tatsächlichen globalen Projektlimit liegen.
 
-Die Frontend-Integration wird erst nach dieser Konfigurationsprüfung umgesetzt. Aktuell bleibt die Scientific Library eine lokale PDF.js-Vorschau; es wird nichts hochgeladen. Der bestehende Upload-/Cleanup-Scaffold ist nicht deployed und nicht migriert.
+Der Upload-Code ist vorbereitet, aber noch nicht in die UI integriert. Die Scientific Library bleibt deshalb im aktuellen App-Betrieb eine lokale PDF.js-Vorschau; es wird nichts hochgeladen. Upload-/Cleanup-Scaffold ist nicht deployed und nicht migriert.
