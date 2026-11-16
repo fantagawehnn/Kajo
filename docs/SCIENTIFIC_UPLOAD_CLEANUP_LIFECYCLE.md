@@ -122,16 +122,16 @@ Die Claim-RPC löscht weder Storage noch Metadaten. Die Edge Function muss nach 
 
 ## 8. Serverseitige Action – Scaffold
 
-Die Edge Function enthält jetzt `cleanup-expired-uploads` als internen Ausführungspfad:
+Die Bereinigung ist inzwischen aus `scientific-ingestion` herausgelöst und liegt als separate Function `scientific-upload-cleanup` vor:
 
-- Aufruf nur mit dem exakt konfigurierten Service-Role-Bearer; normale Nutzer-JWTs werden abgewiesen.
-- Interne Requests dürfen ausschließlich diese Action ausführen.
-- Zusätzliche Aktivierungssperre über `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true`; ohne diese serverseitige Variable bleibt die Action deaktiviert.
-- Batchgröße 1–25; Pfad wird auf drei Segmente, gültige UUIDs und das Muster `<owner-uuid>/<document-uuid>/original.pdf` geprüft.
+- Aufruf nur mit eigenem Header `x-kajo-cleanup-secret`; der Wert wird über `SCIENTIFIC_UPLOAD_CLEANUP_SECRET` serverseitig konfiguriert und mit Mindestlänge 32 Zeichen geprüft.
+- Die Function akzeptiert ausschließlich POST mit JSON-Aktion `run`; es gibt keine Browser-CORS-Freigabe.
+- Zusätzliche Aktivierungssperre über `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true`; ohne diese serverseitige Variable bleibt die Function deaktiviert.
+- Ein Dokument pro Aufruf (`p_limit = 1`), um die 15-Minuten-Lease bei sequenzieller Verarbeitung konservativ zu halten; Pfad wird auf drei Segmente, gültige UUIDs und das Muster `<owner-uuid>/<document-uuid>/original.pdf` geprüft.
 - Storage-Löschung im fest kodierten privaten Bucket; bei Storage-Fehlern erfolgt keine Metadaten-Finalisierung.
 - Metadaten-Finalisierung mit dem zurückgegebenen Claim-Token.
 
-Die Funktion wurde nicht deployed. Die Variable wurde nicht gesetzt. Die SQL-RPCs und Claim-Spalten sind weiterhin nur Entwürfe; deshalb kann der Ablauf im aktuellen Supabase-Schema noch nicht funktionieren. Es gibt keinen Scheduler und keinen automatischen Aufruf.
+Die Function ist in `supabase/config.toml` mit `verify_jwt = false` eingetragen, weil sie ein eigenes rotierbares Secret prüft. Die Authentifizierung erfolgt vollständig in der Function; der Service-Role-Key bleibt ausschließlich internes Supabase-Credential. Die Function wurde nicht deployed, die Variablen wurden nicht gesetzt. Die SQL-RPCs und Claim-Spalten sind weiterhin nur Entwürfe; deshalb kann der Ablauf im aktuellen Supabase-Schema noch nicht funktionieren. Es gibt keinen Scheduler und keinen automatischen Aufruf.
 
 
 ## 9. Noch zu verifizierendes Storage-Verhalten
@@ -147,9 +147,9 @@ Die aktuelle Edge-Function-Fassung wurde gegen die Claim-/Finalisierungs-RPC und
 
 ### Authentifizierung: aktueller Stand und notwendige Trennung
 
-Die Action `cleanup-expired-uploads` liegt derzeit innerhalb von `scientific-ingestion`. Sie akzeptiert als internen Aufruf den exakten Service-Role-Bearer und weist normale Nutzer-JWTs für diese Action ab. Das ist nicht öffentlich nutzbar, solange der Service-Role-Key ausschließlich serverseitig gespeichert bleibt. Der Key ist jedoch ein umfassendes privilegiertes Credential und sollte nicht zugleich als eigenständiges Scheduler-/Trigger-Secret verwendet werden.
+Die Cleanup-Ausführung liegt inzwischen in der separaten Function `scientific-upload-cleanup`. Sie verwendet ein eigenes Secret (`SCIENTIFIC_UPLOAD_CLEANUP_SECRET`) als Trigger-Berechtigung. Der Service-Role-Key wird nur intern zum Aufruf der Datenbank-RPCs und Storage-Operationen verwendet. Die Function ist nicht deployed und noch nicht aktiviert.
 
-Vor Aktivierung ist deshalb eine separate interne Cleanup-Function mit eigenem, rotierbarem Aufruf-Secret vorzuziehen. Der Service-Role-Key bleibt ausschließlich als serverseitiges Datenbank-/Storage-Credential in dieser Function. Die Cleanup-Function darf keine Browser-CORS-Freigabe benötigen. Eine bloße CORS-Prüfung ist keine Authentifizierung.
+Diese Trennung ist im Repository vorbereitet. Vor Aktivierung muss das Secret in Supabase hinterlegt und der Scheduler mit diesem Secret verbunden werden. Die Function bietet bewusst keine Browser-CORS-Freigabe; CORS wird nicht als Authentifizierungsmechanismus verwendet.
 
 ### Storage-Löschung: bewusst fail-closed
 
@@ -177,9 +177,9 @@ Die Storage-INSERT-Policy prüft `upload_cleanup_claim_token IS NULL`, und `conf
 
 ### Teilfehler und Monitoring
 
-Die Action gibt bei teilweisen Fehlern derzeit HTTP 200 mit `retry_required_count` zurück. Ein späterer Scheduler muss deshalb den Antwortkörper auswerten und darf HTTP 200 nicht allein als vollständig erfolgreiche Bereinigung interpretieren. Alternativ kann der Endpoint bei Teilfehlern einen expliziten Fehlerstatus liefern; diese Entscheidung ist vor Einrichtung eines Schedulers zu treffen.
+Die separate Function liefert bei Storage- oder Finalisierungsfehlern HTTP 503, damit ein Scheduler den fehlgeschlagenen Lauf erkennen kann. Bei einer verschobenen Quieszenzphase liefert sie HTTP 200 mit `deferred: true`; ein späterer Lauf muss erneut erfolgen. Ein Scheduler ist noch nicht eingerichtet.
 
-**Ergebnis:** Der aktuelle Scaffold ist fail-closed für Storage- und Finalisierungsfehler. Er ist noch nicht aktivierungsreif. Offen sind insbesondere getrennte Trigger-Authentifizierung, verifiziertes Verhalten bei fehlendem Objekt, Lease-Strategie, Konkurrenz mit laufenden Uploads und Scheduler-Fehlerauswertung.
+**Ergebnis:** Die getrennte Trigger-Authentifizierung und die Ein-Dokument-Lease-Strategie sind im Code vorbereitet. Nicht aktivierungsreif bleibt der Ablauf wegen fehlender Migrationen/RPCs, fehlender Secrets, fehlendem Scheduler und nicht verifiziertem Storage-Verhalten bei bereits fehlenden Objekten sowie der Konkurrenz mit laufenden Uploads.
 
 
 ## 11. Upload-Quieszenz vor Storage-Löschung
