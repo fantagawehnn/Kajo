@@ -1194,7 +1194,9 @@ function renderOptionalActivityViews(act) {
     const fitLaps = Array.isArray(act.garminFitData?.laps) ? act.garminFitData.laps : [];
     const laps = storedLaps.length ? storedLaps : fitLaps.map((lap, index) => ({
         name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
-        kind: 'automatic',
+        // A FIT lap trigger does not by itself classify the whole lap as a test.
+        kind: 'unknown',
+        lapTrigger: lap.lapTrigger ?? null,
         duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
         durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
         durationUnit: 'seconds',
@@ -1235,7 +1237,10 @@ function renderOptionalActivityViews(act) {
         const rows = comparableLaps.map(item => {
             const { lap, index, duration, distance, speed, pace } = item;
             const label = escapeHtml(lap.name || lap.label || `Runde ${index}`);
+            const triggerLabel = lap.lapTrigger == null || lap.lapTrigger === ''
+                ? null : 'FIT-Auslöser: ' + String(lap.lapTrigger).replace(/_/g, ' ');
             const kind = lap.kind === 'manual' ? 'Manuell markiert' : lap.kind === 'automatic' ? 'Automatisch' : 'Nicht zugeordnet';
+            const kindLabel = triggerLabel ? kind + ' · ' + triggerLabel : kind;
             const durationText = duration !== null
                 ? Math.round(lap.durationUnit === 'seconds' ? duration : duration > 1000 ? duration / 1000 : duration) + ' s' : '—';
             const distanceText = distance !== null
@@ -1259,7 +1264,7 @@ function renderOptionalActivityViews(act) {
             const isFastestManual = lap.kind === 'manual' && speed !== null && fastestManual !== null && Math.abs(speed - fastestManual) < 0.0001;
             const speedTone = isFastestManual ? 'text-emerald-300' : 'text-slate-400';
             const canFocus = Number.isFinite(Number(lap.startTimeSeconds)) && Number.isFinite(Number(lap.endTimeSeconds));
-            const row = '<div><div class="text-slate-200">' + label + '</div><div class="text-[10px] text-slate-500">' + kind + '</div></div><div class="text-right ' + speedTone + '">' + details + '</div>';
+            const row = '<div><div class="text-slate-200">' + label + '</div><div class="text-[10px] text-slate-500">' + escapeHtml(kindLabel) + '</div></div><div class="text-right ' + speedTone + '">' + details + '</div>';
             return canFocus
                 ? '<button type="button" onclick="focusActivityLap(' + (index - 1) + ')" aria-label="Abschnitt im Zeitverlauf markieren" class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left">' + row + '</button>'
                 : '<div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2">' + row + '</div>';
