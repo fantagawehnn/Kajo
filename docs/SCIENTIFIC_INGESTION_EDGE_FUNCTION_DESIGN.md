@@ -1,3 +1,7 @@
+## Ergänzung: Serverseitiger Speicherpfad für TUS-Resume
+
+Die Action `get-document-status` gibt `storage_path` nur zusammen mit einem erfolgreich über Nutzer-ID, private Sichtbarkeit und Dokument-ID eingeschränkten Dokumentdatensatz zurück. Das Frontend darf diesen Wert nicht aus lokal gespeicherten Metadaten ableiten. Für Resume muss es den Pfad exakt mit `<auth.uid>/<document-id>/original.pdf` vergleichen und eine vorherige TUS-Session nur akzeptieren, wenn deren Bucket-, MIME- und Objektpfad-Metadaten exakt übereinstimmen.
+
 # KAJO – Technischer Entwurf der Scientific Ingestion Edge Function
 
 **Status:** Technischer Entwurf mit vorbereitetem Edge-Function-Scaffold; nicht deployed, nicht migriert und nicht getestet  
