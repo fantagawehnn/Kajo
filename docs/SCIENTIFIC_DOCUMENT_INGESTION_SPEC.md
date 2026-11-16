@@ -255,3 +255,8 @@ Die aktuelle Implementierung ersetzt die frühere Planung eines `unpdf`-/servers
 Die Action `create-upload-intent` verwendet im aktuellen Branch nun die RPC `kajo_create_scientific_upload_intent`. Diese legt die private Quelle und den zugehörigen Dokumentdatensatz in einer einzelnen Datenbanktransaktion an. Damit entfällt die vorherige Folge aus zwei Inserts und einer best-effort-Löschkompensation.
 
 Die Eigentümer-ID stammt weiterhin ausschließlich aus dem zuvor validierten Supabase-JWT. Die RPC ist als `SECURITY INVOKER` vorgesehen und soll nur für `service_role` ausführbar sein. Der SQL-Entwurf liegt in `docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql`. Weder die RPC noch die Tabellen wurden in der Live-Datenbank angelegt. Der Browser-Upload bleibt deaktiviert.
+
+
+### Wiederaufnahme nach Unterbrechung
+
+Die Statusabfrage eines eigenen privaten Dokuments stellt die Extraktionsversion, die erwartete Chunk-Anzahl und die serverseitig gespeicherte Chunk-Anzahl bereit, jedoch keine Chunk-Texte oder Download-URL. Nach einem Browser-Neuladen muss die Original-PDF erneut ausgewählt und lokal verarbeitet werden. Identische Chunk-Batches sind für Wiederholungsversuche vorgesehen; abweichende Inhalte unter bereits verwendeten Chunk-Indizes werden abgewiesen. Eine automatische Fortsetzung ohne erneute Dateiauswahl sowie die Bereinigung abgelaufener Upload-Intents sind noch nicht implementiert.
