@@ -1240,6 +1240,7 @@ async function syncGarminSelectedRange() {
     const totalDays = Math.max(1, Math.round((new Date(endDate + 'T00:00:00Z') - new Date(startDate + 'T00:00:00Z')) / 86400000) + 1);
     setGarminSyncIndicator('syncing', 'Synchronisierung läuft');
     renderGarminSyncProgress(0, totalDays);
+    try {
     const addUtcDays = (date, days) => {
         const value = new Date(date + 'T00:00:00Z');
         value.setUTCDate(value.getUTCDate() + days);
