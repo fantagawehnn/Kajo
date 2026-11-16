@@ -102,8 +102,9 @@ function countNearTimeCrossSourcePairs(activities) {
     return count;
 }
 
-export function consolidateVisibleCrossSourceDuplicates(activities = state.rawActivities) {
+export function consolidateVisibleCrossSourceDuplicates(activities = state.rawActivities, excludedGarminActivities = new Set()) {
     if (!Array.isArray(activities)) return 0;
+    const excluded = excludedGarminActivities instanceof Set ? excludedGarminActivities : new Set();
 
     // Nur eindeutige Eins-zu-eins-Zuordnungen zusammenführen. Bei mehreren
     // plausiblen Gegenstücken bleiben alle Datensätze zur manuellen Prüfung erhalten.
@@ -115,6 +116,7 @@ export function consolidateVisibleCrossSourceDuplicates(activities = state.rawAc
     );
 
     for (const garmin of garminActivities) {
+        if (excluded.has(garmin)) continue;
         for (const intervals of intervalsActivities) {
             if (!crossSourceActivityMatch(garmin, intervals)) continue;
             if (!matchesByGarmin.has(garmin)) matchesByGarmin.set(garmin, []);
@@ -319,6 +321,39 @@ export async function performIntervalsLiveSync() {
         let streamCount = 0;
         let crossSourceMatched = 0;
         let crossSourceAmbiguous = 0;
+        const remoteMatchesByGarmin = new Map();
+        const ambiguousRemoteGarmin = new Set();
+        if (loadActivities) {
+            // Mehrere Intervals-Einträge können einzeln betrachtet jeweils nur
+            // einen Garmin-Treffer haben, insgesamt aber denselben Treffer teilen.
+            // Deshalb wird die Eindeutigkeit über den gesamten Import-Batch geprüft.
+            for (const item of remoteActivities) {
+                const dateStr = (item.start_date_local || item.start_date || '').slice(0, 10);
+                if (!dateStr) continue;
+                const name = item.name || 'Intervals Aktivität';
+                const type = inferSport(name, item.type || '');
+                const durSec = Number(item.moving_time ?? item.elapsed_time ?? 0);
+                const duration = Number.isFinite(durSec) && durSec > 0 ? Math.round(durSec / 60) : null;
+                const matchCandidate = {
+                    startTime: item.start_date || item.start_date_local || null,
+                    date: dateStr, name, type, duration,
+                    hr: item.average_heartrate ? Math.round(item.average_heartrate) : null,
+                    maxHr: item.max_heartrate ? Math.round(item.max_heartrate) : null
+                };
+                const matches = state.rawActivities.filter(a =>
+                    isGarminActivity(a) && crossSourceActivityMatch(matchCandidate, a)
+                );
+                if (matches.length > 1) {
+                    matches.forEach(activity => ambiguousRemoteGarmin.add(activity));
+                } else if (matches.length === 1) {
+                    const garmin = matches[0];
+                    remoteMatchesByGarmin.set(garmin, (remoteMatchesByGarmin.get(garmin) || 0) + 1);
+                }
+            }
+            for (const [garmin, count] of remoteMatchesByGarmin) {
+                if (count > 1) ambiguousRemoteGarmin.add(garmin);
+            }
+        }
         if (loadActivities) remoteActivities.forEach(item => {
             const dateStr = (item.start_date_local || item.start_date || '').slice(0, 10);
             if (!dateStr) return;
@@ -348,7 +383,7 @@ export async function performIntervalsLiveSync() {
                 isGarminActivity(a) && crossSourceActivityMatch(candidate, a)
             );
 
-            if (crossMatches.length === 1) {
+            if (crossMatches.length === 1 && !ambiguousRemoteGarmin.has(crossMatches[0])) {
                 const canonical = crossMatches[0];
                 mergeActivityWithoutOverwrite(canonical, exact || candidate);
                 if (exact && exact !== canonical) {
@@ -357,7 +392,7 @@ export async function performIntervalsLiveSync() {
                 }
                 canonical.sourceRefs = { ...(canonical.sourceRefs || {}), intervalsActivityId: actId };
                 crossSourceMatched++;
-            } else if (crossMatches.length > 1) {
+            } else if (crossMatches.length > 1 || (crossMatches.length === 1 && ambiguousRemoteGarmin.has(crossMatches[0]))) {
                 crossSourceAmbiguous++;
                 if (!exact) {
                     // Mehrdeutige Zuordnung: keinen weiteren Datensatz erzeugen.
@@ -373,7 +408,7 @@ export async function performIntervalsLiveSync() {
         });
 
         // Bereits sichtbare Garmin-/Intervals-Doppelanlagen konservativ zusammenführen.
-        const cleanedCrossSourceDuplicates = consolidateVisibleCrossSourceDuplicates();
+        const cleanedCrossSourceDuplicates = consolidateVisibleCrossSourceDuplicates(state.rawActivities, ambiguousRemoteGarmin);
         const remainingNearTimeCrossSourcePairs = countNearTimeCrossSourcePairs(state.rawActivities);
 
         // Herzfrequenz-Zeitreihen für den gesamten verfügbaren Importzeitraum prüfen.
