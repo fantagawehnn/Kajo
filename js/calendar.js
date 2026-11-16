@@ -951,9 +951,23 @@ export function renderYearView() {
         }),
         ...Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && ['sick', 'injured'].includes(item?.status))
             .map(([date, item]) => ({ date, type: item.status, title: item.status === 'sick' ? 'Krankheit' : 'Verletzung', detail: item.diagnosis || '' })),
-        ...confirmedPhases.map(item => ({ date: item.start, type: 'phase', title: item.name, detail: formatDateDDMMYY(item.start) + ' – ' + formatDateDDMMYY(item.end) }))
-    ].sort((a, b) => a.date.localeCompare(b.date));
+        ...confirmedPhases.map(item => {
+            const startsBeforeYear = item.start < yearStart;
+            const endsAfterYear = item.end > yearEnd;
+            const detail = [
+                formatDateDDMMYY(item.start) + ' – ' + formatDateDDMMYY(item.end),
+                startsBeforeYear ? 'Beginn im Vorjahr' : '',
+                endsAfterYear ? 'Ende im Folgejahr' : ''
+            ].filter(Boolean).join(' · ');
+            // Show overlapping phases inside the selected year without changing
+            // their actual stored start/end dates or their displayed full range.
+            return { date: startsBeforeYear ? yearStart : item.start, type: 'phase', title: item.name, detail };
+        })
+    ].sort((a, b) => a.date.localeCompare(b.date) || ({ race: 0, sick: 1, injured: 2, phase: 3 }[a.type] - ({ race: 0, sick: 1, injured: 2, phase: 3 }[b.type])));
     const timelineMarkup = timelineEvents.slice(0, 18).map(item => '<div class="calendar-year-timeline-item is-' + item.type + '"><time>' + escapeHtml(formatDateDDMMYY(item.date)) + '</time><span>' + escapeHtml(item.title) + '</span><small>' + escapeHtml(item.detail) + '</small></div>').join('');
+    const timelineOverflow = timelineEvents.length > 18
+        ? '<p class="calendar-year-empty">Es werden die ersten 18 von ' + timelineEvents.length + ' chronologisch sortierten Ereignissen angezeigt.</p>'
+        : '';
 
     const legendTypes = [...new Set(weeks.flatMap(week => [...Object.values(week.bySport).map(item => item.type), ...Object.keys(week.plannedBySport)]))];
     const sportLegend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
@@ -973,7 +987,7 @@ export function renderYearView() {
         '<div id="calendar-year-phase-editor" class="hidden"></div></section>' +
         '<div class="calendar-year-analysis-grid"><section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Monatsvergleich</h3><p>Load-Summe je Monat · Trainingszeit als Zusatzinformation</p></div></div><div class="calendar-year-month-chart">' + monthChart + '</div></section>' +
         '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Sportartenverteilung</h3><p>Dokumentierte Trainingszeit und Einheiten</p></div></div><div class="calendar-year-sport-list">' + (sportRows || '<p class="calendar-year-empty">Noch keine Aktivitäten im Kalenderjahr dokumentiert.</p>') + '</div></section></div>' +
-        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Saison-Timeline</h3><p>Wettkämpfe, Gesundheitsereignisse und bestätigte Trainingsphasen</p></div></div><div class="calendar-year-timeline">' + (timelineMarkup || '<p class="calendar-year-empty">Für dieses Kalenderjahr sind noch keine Ereignisse dokumentiert.</p>') + '</div></section>';
+        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Saison-Timeline</h3><p>Wettkämpfe, Gesundheitsereignisse und bestätigte Saisonphasen · überjährige Phasen erscheinen am Jahresrand mit ihrem vollständigen Zeitraum</p></div></div><div class="calendar-year-timeline">' + (timelineMarkup || '<p class="calendar-year-empty">Für dieses Kalenderjahr sind noch keine Ereignisse dokumentiert.</p>') + timelineOverflow + '</div></section>';
     globalThis.lucide?.createIcons?.();
 }
 function renderCalendarMonthSummary(date, target) {
