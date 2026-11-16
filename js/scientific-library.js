@@ -9,7 +9,7 @@
  *   um sichere Upload-/Batch-/Abschlussaktionen erweitert wurden.
  */
 
-const PDFJS_VERSION = '4.10.38';
+const PDFJS_VERSION = '6.5.438';
 const PDFJS_MODULE_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.min.mjs`;
 const PDFJS_WORKER_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
 const PROVISIONAL_CHUNK_CHARS = 3200;
@@ -18,6 +18,8 @@ let pdfJsPromise = null;
 let activeFile = null;
 let activeChunks = [];
 let isExtracting = false;
+let activePdf = null;
+let extractionRunId = 0;
 
 function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -119,7 +121,16 @@ function formatBytes(bytes) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function cancelCurrentExtraction() {
+    extractionRunId++;
+    isExtracting = false;
+    const currentPdf = activePdf;
+    activePdf = null;
+    if (currentPdf) void currentPdf.destroy().catch(() => {});
+}
+
 function resetPreview() {
+    cancelCurrentExtraction();
     activeFile = null;
     activeChunks = [];
     const input = document.getElementById('scientific-pdf-file');
@@ -130,6 +141,10 @@ function resetPreview() {
     if (results) results.replaceChildren();
     const preview = document.getElementById('scientific-library-chunk-preview');
     if (preview) preview.replaceChildren();
+    const button = document.getElementById('scientific-library-extract');
+    if (button) { button.disabled = false; button.textContent = 'PDF lokal analysieren'; }
+    const progress = document.getElementById('scientific-library-progress');
+    if (progress) progress.textContent = '';
     setStatus('Noch kein Dokument ausgewählt. Die Auswahl und Extraktion erfolgen lokal im Browser.', 'neutral');
 }
 
@@ -194,6 +209,7 @@ async function extractSelectedPdf() {
     const button = document.getElementById('scientific-library-extract');
     const progress = document.getElementById('scientific-library-progress');
     isExtracting = true;
+    const runId = ++extractionRunId;
     activeFile = file;
     activeChunks = [];
     if (button) {
@@ -206,28 +222,36 @@ async function extractSelectedPdf() {
     let pdf = null;
     try {
         const pdfjs = await loadPdfJs();
+        if (runId !== extractionRunId) return;
         if (progress) progress.textContent = 'PDF wird geöffnet …';
         const bytes = new Uint8Array(await file.arrayBuffer());
+        if (runId !== extractionRunId) return;
         const loadingTask = pdfjs.getDocument({
             data: bytes,
             isEvalSupported: false,
             useSystemFonts: true
         });
         pdf = await loadingTask.promise;
+        if (runId !== extractionRunId) { await pdf.destroy(); return; }
+        activePdf = pdf;
         const pageCount = pdf.numPages;
         let totalChars = 0;
         const chunks = [];
 
         for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+            if (runId !== extractionRunId) return;
             if (progress) progress.textContent = `Seite ${pageNumber} von ${pageCount} wird extrahiert …`;
             const page = await pdf.getPage(pageNumber);
+            if (runId !== extractionRunId) return;
             const textContent = await page.getTextContent();
+            if (runId !== extractionRunId) return;
             const pageText = normalizePageText(textContent.items);
             totalChars += pageText.length;
             if (pageText) chunks.push(...splitPageIntoChunks(pageText, pageNumber, chunks.length));
             page.cleanup?.();
         }
 
+        if (runId !== extractionRunId) return;
         activeChunks = chunks;
         renderFileMeta(file, pageCount, totalChars);
         renderChunkPreview(chunks);
@@ -250,19 +274,27 @@ async function extractSelectedPdf() {
         }
         if (progress) progress.textContent = 'Abgeschlossen';
     } catch (error) {
+        if (runId !== extractionRunId) return;
         console.error('Scientific PDF preview failed:', error);
         setStatus(error?.name === 'PasswordException'
             ? 'Das PDF ist passwortgeschützt. Geschützte Dokumente werden im MVP nicht verarbeitet.'
             : 'Die PDF konnte nicht zuverlässig extrahiert werden. Bitte prüfe, ob die Datei intakt und nicht verschlüsselt ist.', 'error');
         if (progress) progress.textContent = 'Extraktion fehlgeschlagen';
     } finally {
-        try { await pdf?.destroy?.(); } catch (_) {}
-        isExtracting = false;
-        if (button) {
-            button.disabled = false;
-            button.textContent = 'PDF lokal analysieren';
+        if (runId === extractionRunId) {
+            try { await pdf?.destroy?.(); } catch (_) {}
+            activePdf = null;
+            isExtracting = false;
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'PDF lokal analysieren';
+            }
         }
     }
+}
+
+export function clearScientificLibraryPreview() {
+    resetPreview();
 }
 
 export function renderScientificLibraryView() {
