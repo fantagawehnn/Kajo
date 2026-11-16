@@ -271,3 +271,39 @@ Die Zielarchitektur, Statusübergänge, Retry-/DLQ-Strategie und Laufzeitgrenzen
 Wichtig: Cloudflare Workers haben laut aktueller Dokumentation 128 MB Speicher pro Isolate. Die CPU-Zeit ist planabhängig (Workers Free: 10 ms; Workers Paid: bis zu 5 Minuten konfigurierbar). Queues geben bis zu 15 Minuten Wall-Clock-Zeit, aber heben weder Speicher- noch CPU-Grenzen auf. Deshalb ist ein Parser-PoC zwingend, bevor die Verarbeitung aktiviert wird.
 
 Der bisherige Edge-Function-Scaffold bleibt auf `process-document` mit HTTP 501; die Aktion wird nicht stillschweigend als Queue-Producer missbraucht.
+
+
+## 15. Aktualisierte Laufzeitentscheidung für Cloudflare Free
+
+Nach Bestätigung des Cloudflare-Free-Tarifs wird die bisherige Queue-/Server-Parsing-Architektur für den MVP verworfen. **Dieser Abschnitt ist maßgeblich und ersetzt die früheren Queue-Aussagen in Abschnitt 14 sowie die serverseitige Parserausführung in den Abschnitten 3C und 5.**
+
+Cloudflare Workers Free haben laut aktueller Dokumentation 10 ms CPU-Zeit pro HTTP-Invocation. Supabase Edge Functions haben 2 Sekunden CPU-Zeit pro Request. Deshalb wird kein vollständiges PDF serverseitig in einem dieser Request-Handler geparst. Cloudflare Queues sind auch im Free-Plan verfügbar, heben die CPU-Grenze des Queue-Consumers aber nicht auf.
+
+### Neuer Ablauf
+
+1. `create-upload-intent` bleibt in der Supabase Edge Function.
+2. Der Browser lädt die PDF direkt in den privaten Supabase Storage Bucket.
+3. Eine neue Aktion `confirm-upload` prüft serverseitig Dokumenteigentum, privaten Status, erwarteten Pfad, tatsächliches Storage-Objekt, Dateigröße und PDF-Signatur und setzt erst danach `uploaded`.
+4. Der Browser extrahiert den Text seitenweise mit einer lokal eingebundenen und fest versionierten PDF.js-basierten Bibliothek.
+5. Der Browser sendet kleine, sequenzielle `submit-chunk-batch`-Requests. Die Edge Function prüft bei jedem Request erneut JWT, Eigentum, Sichtbarkeit, Dokumentstatus, Extraktionsversion, Seitenbezug sowie Batch-/Gesamtlimits.
+6. Die Funktion schreibt Chunks idempotent unter Nutzung des Unique Keys `(document_id, extraction_version, chunk_index)`.
+7. Eine Aktion `complete-extraction` prüft die erwartete Vollständigkeit und setzt erst dann `extracted` und anschließend `private_ready`. Teilweise übermittelte Chunks bleiben für Retrieval unsichtbar.
+8. `get-document-status` bleibt für Statusabfragen bestehen.
+
+### Zusätzliche Schutzregeln
+
+- Nur private Uploads im ersten MVP; keine Browseraktion darf Shared-Quellen freigeben.
+- Clientseitig extrahierter Text ist nicht vertrauenswürdig und darf ausschließlich im privaten Eigentümerkontext gespeichert werden.
+- Serverlimits für Batchgröße, Gesamttextmenge, Chunkanzahl und Seitenbereich sind verpflichtend.
+- Serverseitige Chunk-Schreibvorgänge müssen idempotent sein; Wiederholungen dürfen keine Duplikate erzeugen.
+- Browser- und Clientvalidierung ersetzt keine serverseitige Prüfung.
+- Extraktionsversion muss eindeutig sein. Bei einem Neustart mit neuer Version muss eine explizite Bereinigungs-/Ablösestrategie für alte Teil-Chunks bestehen.
+- Die UI muss Fortschritt und Fehler transparent darstellen. Bei Tab-Schließen darf der Vorgang nicht als abgeschlossen gelten; ein Resume-/Checkpoint-Mechanismus ist vor Implementierung festzulegen.
+- PDF.js wird erst nach einem PoC mit repräsentativen Papers ausgewählt und eingebunden. Seitenzuordnung, Unicode, Tabellen, Spaltenlayout und Ressourcenverbrauch sind zu bewerten.
+- OCR bleibt außerhalb des MVP; gescannte PDFs erhalten einen manuellen Prüfstatus.
+
+### Umsetzungsgrenzen
+
+Es wird kein zusätzlicher Cloudflare Worker, kein Queue Binding und keine Cloudflare Queue angelegt. Der bestehende Coach-Worker bleibt unverändert und ohne Service-Role-Key. Der aktuelle Scaffold bleibt bis zur Implementierung der oben beschriebenen Aktionen auf `process-document = 501`.
+
+Quellen zu den Tarifgrenzen: [Cloudflare Workers Limits](https://developers.cloudflare.com/workers/platform/limits/) und [Supabase Edge Function Limits](https://supabase.com/docs/guides/functions/limits).
