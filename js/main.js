@@ -260,10 +260,10 @@ function switchTab(requestedTab) {
         } else {
             calendarView.classList.remove('kajo-training-activity-mode');
             if (wasActivityMode && state.activeCalendarFormat === 'activities') {
-                setCalendarFormat(window.kajoCalendarFormatBeforeActivities || 'week');
+                setCalendarFormat(window.kajoCalendarFormatBeforeActivities || 'month');
                 window.kajoCalendarFormatBeforeActivities = null;
             } else if (parent === 'calendar' && state.activeCalendarFormat === 'activities') {
-                setCalendarFormat('week');
+                setCalendarFormat('month');
             }
         }
     }
