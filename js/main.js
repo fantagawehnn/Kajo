@@ -2591,7 +2591,32 @@ function withActivationTimeout(promise, label, timeoutMs = 30000) {
 }
 
 async function handleAuthSession(session) {
-    const userId = session?.user?.id || null;
+    let userId = session?.user?.id || null;
+
+    // Auth-Events können kurzzeitig eine leere Session liefern, obwohl Supabase
+    // bereits wieder eine gültige Session im Client hält. Eine solche verspätete
+    // oder transiente Null-Session darf den aktiven Benutzerspeicher nicht
+    // deaktivieren. Vor dem Abmelden wird deshalb der aktuelle Auth-Status
+    // außerhalb des synchronen onAuthStateChange-Callbacks erneut geprüft.
+    if (!userId && supabase) {
+        try {
+            const { data, error } = await supabase.auth.getSession();
+            if (error) throw error;
+            const currentSession = data?.session || null;
+            const currentUserId = currentSession?.user?.id || null;
+            if (currentUserId) {
+                console.warn('KAJO: Leere Auth-Session wurde durch die aktuelle Supabase-Session korrigiert; der Benutzerspeicher bleibt aktiv.');
+                session = currentSession;
+                userId = currentUserId;
+            }
+        } catch (sessionCheckError) {
+            // Bei einem vorübergehenden Auth-/Netzwerkfehler lieber den bestehenden
+            // Speicher erhalten, statt angemeldete Nutzerdaten zu deaktivieren.
+            console.warn('KAJO: Abmeldestatus konnte nicht verifiziert werden; der aktive Benutzerspeicher bleibt vorsorglich erhalten.', sessionCheckError);
+            return;
+        }
+    }
+
     if (userId && activeAppUserId === userId && (appUserReady || activationPromise)) return;
     const sequence = ++activationSequence;
 
