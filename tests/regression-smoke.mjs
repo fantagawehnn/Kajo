@@ -173,6 +173,18 @@ assert.equal(uniqueCrossSource[0].id, 'garmin-unique', 'Garmin remains the canon
 assert.equal(uniqueCrossSource[0].tss, 42, 'non-conflicting Intervals metrics are preserved');
 assert.deepEqual(uniqueCrossSource[0].sources.sort(), ['garmin', 'intervals'], 'both source labels are retained');
 
+const batchAmbiguousGarmin = {
+    id: 'garmin-batch-ambiguous', source: 'garmin', type: 'kayak',
+    startTime: '2026-11-10T11:00:00Z', duration: 60
+};
+const batchAmbiguousPair = [
+    batchAmbiguousGarmin,
+    { id: 'icu-batch-ambiguous', source: 'intervals', sourceId: 'icu-batch-ambiguous', type: 'kayak', startTime: '2026-11-10T11:02:00Z', duration: 60 }
+];
+assert.equal(importer.consolidateVisibleCrossSourceDuplicates(batchAmbiguousPair, new Set([batchAmbiguousGarmin])), 0,
+    'activities marked ambiguous by the full import batch are excluded from cleanup');
+assert.equal(batchAmbiguousPair.length, 2, 'batch-ambiguous source records remain separate');
+
 storage.setUserLocalSetting('garmin_connected', 'true');
 let intervalsFetchesWhileGarminConnected = 0;
 globalThis.fetch = async () => {
