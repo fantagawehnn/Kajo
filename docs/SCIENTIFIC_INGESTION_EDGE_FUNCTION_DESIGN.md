@@ -307,3 +307,21 @@ Cloudflare Workers Free haben laut aktueller Dokumentation 10 ms CPU-Zeit pro HT
 Es wird kein zusätzlicher Cloudflare Worker, kein Queue Binding und keine Cloudflare Queue angelegt. Der bestehende Coach-Worker bleibt unverändert und ohne Service-Role-Key. Der aktuelle Scaffold bleibt bis zur Implementierung der oben beschriebenen Aktionen auf `process-document = 501`.
 
 Quellen zu den Tarifgrenzen: [Cloudflare Workers Limits](https://developers.cloudflare.com/workers/platform/limits/) und [Supabase Edge Function Limits](https://supabase.com/docs/guides/functions/limits).
+
+
+## 16. Frontend-PoC und Abgrenzung der nächsten Edge-Function-Arbeiten
+
+Der erste lokale PDF.js-PoC ist inzwischen als `js/scientific-library.js` in die App eingebunden. Die Ansicht zeigt die lokale seitenweise Extraktion und eine vorläufige Chunk-Vorschau. Sie sendet keine Datei und keinen extrahierten Text an Server und persistiert keine Chunks.
+
+Daraus folgen die nächsten noch offenen serverseitigen Aktionen:
+
+- `confirm-upload`: tatsächliches Storage-Objekt, Eigentümer, erwarteten Pfad, MIME-/PDF-Signatur und Größe prüfen; erst dann `uploaded` setzen.
+- `submit-chunk-batch`: JWT, Dokumenteigentum, private Sichtbarkeit, Status, Extraktionsversion, Seitenbereich, Chunk-Anzahl und Batch-/Gesamtgrößen prüfen; idempotent speichern.
+- `complete-extraction`: Vollständigkeit und erwartete Chunk-Zählung prüfen; erst danach `extracted` und `private_ready` setzen.
+- `get-document-status`: Statusabfrage bleibt bestehen.
+
+Die Edge Function darf keine beliebigen Client-IDs ohne Eigentumsprüfung akzeptieren. Chunk-Schreibrechte müssen an private Dokumente des authentifizierten Nutzers gebunden sein. Die Funktion darf keine Shared-Freigabe durch Client-Anfragen zulassen.
+
+Vor Umsetzung sind SQL-Transaktions-/RPC-Strategie, Batchlimits, Retry-/Resume-Verhalten und Bereinigung unvollständiger Extraktionsversionen festzulegen. Der lokale PoC validiert weder PDF-Inhalt noch Chunk-Qualität und ersetzt diese Sicherheitsprüfungen nicht.
+
+Der Scaffold enthält weiterhin keine dieser neuen Aktionen; `process-document` bleibt HTTP 501. Keine Migration, Storage-Konfiguration oder Deployment wurde durch den Frontend-PoC ausgelöst.
