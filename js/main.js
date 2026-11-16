@@ -2886,6 +2886,8 @@ Object.assign(window, {
     closeBackupPreview,
     confirmBackupRestore,
     addRace,
+    openRaceModalForCreate,
+    editRace,
     toggleRaceResultsForm,
     addRaceResult,
     deleteRaceResult,
