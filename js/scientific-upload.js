@@ -174,11 +174,21 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
                     confirmation?.document_id !== intent.document_id) {
                     throw new Error('UPLOAD_CONFIRMATION_MISSING');
                 }
+
+                const statusResult = await invokeIngestion({
+                    action: 'get-document-status',
+                    document_id: intent.document_id
+                });
+                if (statusResult?.document?.id !== intent.document_id ||
+                    statusResult?.document?.processing_status !== 'uploaded') {
+                    throw new Error('UPLOAD_STATUS_NOT_CONFIRMED');
+                }
+
                 settled = true;
                 onStatus?.('PDF wurde übertragen und serverseitig bestätigt.');
                 resolveUpload({
                     documentId: intent.document_id,
-                    processingStatus: confirmation.processing_status
+                    processingStatus: statusResult.document.processing_status
                 });
             } catch (error) {
                 settled = true;
