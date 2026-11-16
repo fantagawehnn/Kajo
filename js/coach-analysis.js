@@ -44,7 +44,7 @@ function summarizeWeeklyVolume(activities) {
         const week = weeks.get(weekStart);
         week.sessions++;
         if (validNumber(item.duration) && Number(item.duration) > 0) {
-            week.knownMinutes += Number(item.duration) / 60;
+            week.knownMinutes += Number(item.duration);
         } else {
             week.missingDurationCount++;
         }
@@ -62,7 +62,7 @@ function summarizeActivities(activities) {
     const dated = activities.filter(item => dateKey(item?.date));
     const durationValues = dated.filter(item => validNumber(item.duration) && Number(item.duration) > 0);
     const missingDurationCount = dated.length - durationValues.length;
-    const totalMinutes = durationValues.reduce((sum, item) => sum + Number(item.duration) / 60, 0);
+    const totalMinutes = durationValues.reduce((sum, item) => sum + Number(item.duration), 0);
     const byType = new Map();
 
     dated.forEach(item => {
@@ -71,7 +71,7 @@ function summarizeActivities(activities) {
         const group = byType.get(type);
         group.sessions++;
         if (validNumber(item.duration) && Number(item.duration) > 0) {
-            group.durationMinutes += Number(item.duration) / 60;
+            group.durationMinutes += Number(item.duration);
             group.durationKnown++;
         } else {
             group.durationMissing++;
@@ -98,6 +98,61 @@ function summarizeActivities(activities) {
                 : null,
             sessionsMissingDuration: value.durationMissing
         }))
+    };
+}
+
+
+function summarizeCanoeSpecificActivities(activities) {
+    const canoeActivities = activities.filter(item =>
+        ['Kayaking', 'C1', 'C2'].includes(item?.type)
+    );
+    const boatClass = type => type === 'Kayaking' ? 'K1' : type;
+    const waterType = item => {
+        const value = item?.waterConditions?.type || item?.waterType;
+        return ['wildwater', 'flatwater'].includes(value) ? value : null;
+    };
+    const raceFormat = item =>
+        ['classic', 'sprint'].includes(item?.raceFormat) ? item.raceFormat : null;
+    const groups = new Map();
+
+    canoeActivities.forEach(item => {
+        const keyParts = [boatClass(item.type), raceFormat(item) || 'not_recorded', waterType(item) || 'not_recorded'];
+        const key = keyParts.join('::');
+        if (!groups.has(key)) groups.set(key, {
+            boatClass: keyParts[0],
+            raceFormat: raceFormat(item),
+            waterType: waterType(item),
+            sessions: 0,
+            knownDurationMinutes: 0,
+            missingDurationCount: 0
+        });
+        const group = groups.get(key);
+        group.sessions++;
+        if (validNumber(item.duration) && Number(item.duration) > 0) {
+            group.knownDurationMinutes += Number(item.duration);
+        } else {
+            group.missingDurationCount++;
+        }
+    });
+
+    return {
+        eligibleCanoeSessions: canoeActivities.length,
+        classifiedRaceFormatSessions: canoeActivities.filter(item => raceFormat(item)).length,
+        unclassifiedRaceFormatSessions: canoeActivities.filter(item => !raceFormat(item)).length,
+        classifiedWaterTypeSessions: canoeActivities.filter(item => waterType(item)).length,
+        unclassifiedWaterTypeSessions: canoeActivities.filter(item => !waterType(item)).length,
+        groups: [...groups.values()].map(group => ({
+            boatClass: group.boatClass,
+            raceFormat: group.raceFormat,
+            waterType: group.waterType,
+            sessions: group.sessions,
+            durationMinutes: group.missingDurationCount === 0
+                ? Number(group.knownDurationMinutes.toFixed(1))
+                : null,
+            knownDurationMinutes: Number(group.knownDurationMinutes.toFixed(1)),
+            sessionsMissingDuration: group.missingDurationCount
+        })),
+        interpretationLimit: 'K1 wird in den gespeicherten Aktivitäten durch den Aktivitätstyp Kayaking abgebildet. Fehlende Rennformat- oder Wasserangaben bleiben nicht zugeordnet. Die Gruppen beschreiben dokumentierte Einheiten und sind kein Leistungsvergleich.'
     };
 }
 
@@ -300,6 +355,7 @@ export function buildCoachAnalysisSummary({ activities = [], timeline = [], chec
     return {
         schemaVersion: 1,
         activitySummary,
+        canoeSpecificActivitySummary: summarizeCanoeSpecificActivities(activities),
         heartRateZoneDistribution: summarizeHeartRateZones(activities, settings, profile),
         calculatedLoadSummary: loadSummary,
         recoveryCheckInSummary: checkInSummary,
@@ -319,7 +375,8 @@ export function buildCoachAnalysisSummary({ activities = [], timeline = [], chec
             }))
         },
         rules: [
-            'Aggregierte Trainingsdauer ist nur dann als vollständig ausgewiesen, wenn für alle berücksichtigten Aktivitäten eine positive Dauer vorliegt.',
+            'Aktivitätsdauer wird im gespeicherten KAJO-Datensatz in Minuten geführt. Aggregierte Trainingsdauer ist nur dann als vollständig ausgewiesen, wenn für alle berücksichtigten Aktivitäten eine positive Dauer vorliegt.',
+            'Kanu-Einheiten werden anhand des Aktivitätstyps Kayaking (K1), C1 und C2 gruppiert. Rennformat und Wasserart werden nur berücksichtigt, wenn sie dokumentiert sind.',
             'Load-Werte werden nur innerhalb eines einheitlichen Load-Modells interpretiert.',
             'Unbekannte und unvollständige Tage sind keine Ruhetage.',
             'Check-in-Mittelwerte sind deskriptiv und kein kombinierter Recovery- oder Readiness-Score.',
