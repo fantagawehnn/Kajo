@@ -604,7 +604,7 @@ export function openCSVDetailsModal(id) {
     const dateEl = document.getElementById('modal-act-date');
     if (titleEl) titleEl.textContent = act.name || 'Trainingseinheit';
     if (dateEl) {
-        const rawStart = act.startTime || act.startTimeLocal || act.start_time_local || '';
+        const rawStart = act.startTimeLocal || act.start_time_local || act.startTime || '';
         const parsedStart = rawStart ? new Date(rawStart) : null;
         const parsedTime = parsedStart && Number.isFinite(parsedStart.getTime())
             ? parsedStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
