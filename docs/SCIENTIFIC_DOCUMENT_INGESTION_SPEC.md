@@ -290,7 +290,7 @@ Für das Cleanup gilt: Der 24-Stunden-Upload-Intent begrenzt, wann eine neue Upl
 Vor Implementierung müssen noch festgelegt werden:
 - konkretes MAX_UPLOAD_BYTES und passendes Bucket-Limit;
 - TUS-Endpunkt und verwendete Clientbibliothek/Version;
-- Behandlung abgelaufener TUS-URLs und Wiederaufnahme nach erneuter Dateiauswahl;
+- reale Verifikation des Verhaltens abgelaufener TUS-URLs und der Wiederaufnahme nach erneuter Dateiauswahl im Zielprojekt;
 - Umgang mit parallelen Uploadversuchen und nicht abgeschlossenen Sessions.
 
 Die Cleanup-Finalisierungs-RPC prüft die Quieszenz inzwischen zusätzlich selbst. Weder Upload noch Cleanup sind produktiv aktiviert.
