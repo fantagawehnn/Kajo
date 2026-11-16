@@ -369,4 +369,10 @@ assert.ok(competitions.includes("dateInput.value = toLocalDateString()"), 'race 
 assert.ok(competitions.includes("Bitte gib eine gültige Platzierung als positive ganze Zahl an."), 'race result form validates ranking input');
 assert.ok(competitions.includes("!['C1', 'C2', 'K1', 'K2'].includes(discipline)"), 'race result form validates canoe discipline');
 assert.ok(competitions.includes("!['Classic', 'Sprint', 'Sonstiges'].includes(format)"), 'race result form validates race format');
+assert.ok(main.includes("async function startManualCloudSync()"), 'manual cloud sync action is implemented in the app module');
+assert.ok(main.includes("    startManualCloudSync,"), 'manual cloud sync action is exposed to the HTML control');
+assert.ok(html.includes('id="cloud-sync-manual-button"') && html.includes('onclick="startManualCloudSync()"'), 'cloud sync modal exposes the manual sync action');
+assert.ok(main.includes("cloudInitialTransferState !== 'exists'"), 'manual cloud sync cannot perform an unconfirmed initial upload');
+assert.ok(css.includes('#planned-workout-modal {') && css.includes('z-index: 2147483003'), 'planned workout modal remains above fixed mobile navigation');
+
 
