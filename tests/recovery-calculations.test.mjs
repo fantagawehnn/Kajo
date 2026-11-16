@@ -80,3 +80,41 @@ test('does not estimate sleep deficit without a configured personal target or va
   assert.equal(noSleep.measuredNights, 0);
   assert.equal(noSleep.cumulativeShortfall, null);
 });
+
+
+test('calculates a 90-day personal baseline for HRV and resting heart rate only with five readings', () => {
+  const data = {};
+  for (let day = 1; day <= 90; day++) {
+    const date = new Date(2026, 7, day, 12);
+    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    data[key] = { hrv: 50, garminRhr: 48 };
+  }
+  for (let day = 1; day <= 7; day++) {
+    const date = new Date(2026, 10, day, 12);
+    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    data[key] = { hrv: 55, garminRhr: 46 };
+  }
+  const result = summarizeRecoveryTrends(data, '2026-11-07');
+  const hrv = result.metrics.find(item => item.key === 'hrv');
+  const rhr = result.metrics.find(item => item.key === 'rhr');
+  assert.equal(hrv.baselineMedian, 50);
+  assert.equal(hrv.baselineCount, 90);
+  assert.equal(hrv.baselineDeltaPercent, 10);
+  assert.equal(rhr.baselineMedian, 48);
+  assert.equal(rhr.baselineDeltaPercent, -4.2);
+});
+
+test('does not present a personal baseline with fewer than five valid readings', () => {
+  const data = {
+    '2026-11-01': { hrv: 50 },
+    '2026-11-02': { hrv: 52 },
+    '2026-11-03': { hrv: null },
+    '2026-11-04': { hrv: 48 },
+    '2026-11-05': { hrv: 51 }
+  };
+  const result = summarizeRecoveryTrends(data, '2026-11-16');
+  const hrv = result.metrics.find(item => item.key === 'hrv');
+  assert.equal(hrv.baselineMedian, null);
+  assert.equal(hrv.baselineCount, 4);
+  assert.equal(hrv.baselineDeltaPercent, null);
+});
