@@ -461,3 +461,25 @@ test('reports unavailable load coverage when the selected model has no eligible 
     available: 0, total: 0, status: 'nicht berechenbar'
   });
 });
+
+
+test('matches model load records to eligible activities without an ID by object identity', () => {
+  const garmin = { date: '2026-11-10', startTime: '09:00', source: 'garmin', duration: 60 };
+  const intervals = { date: '2026-11-11', startTime: '10:00', source: 'intervals', duration: 45 };
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [garmin, intervals],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-15', documentedDays: 1 }],
+    14,
+    [{ activity: garmin, value: 32 }],
+    'garmin-native',
+    'Garmin Load',
+    '2026-12-31',
+    [garmin]
+  );
+  assert.equal(result.before.trainingLoad, 32);
+  assert.deepEqual(result.before.trainingLoadCoverage, {
+    available: 1, total: 1, status: 'vollständig'
+  });
+  assert.equal(result.before.unmatchedLoadRecordsExcluded, 0);
+});
