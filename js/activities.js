@@ -558,8 +558,8 @@ async function loadGarminTelemetryWhenActivityOpened(activity) {
         renderActivityTelemetryChart(analysisActivity);
         renderActivityTrainingInsights(analysisActivity);
         const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
-        const loadItem = loadData.records.find(item => String(item.activity.id) === String(activity.id));
-        renderSportSpecificActivityMetrics(activity, loadItem ? `${loadItem.value.toFixed(1)} ${loadData.unit}` : '—');
+        const displayActivity = getVisibleActivities(state.rawActivities || []).find(item => String(item.id) === String(activity.id)) || activity;
+        renderSportSpecificActivityMetrics(displayActivity, getActivityLoadSummary(activity));
         try { renderActivityDetailTabEmptyStates(); } catch (_) {}
     } catch (error) {
         console.warn('KAJO: Aktivitätstelemetrie konnte beim Öffnen nicht geladen werden:', error);
@@ -987,8 +987,11 @@ export function removeActivityStrengthSet(exerciseIndex, setIndex) {
 }
 function getActivityLoadSummary(act) {
     const data = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
-    const item = data.records.find(record => String(record.activity.id) === String(act.id));
-    return item ? item.value.toFixed(1) + ' ' + data.unit : '—';
+    const members = getActivityGroupMembers(act, state.rawActivities || []);
+    const items = members.map(member => data.records.find(record => String(record.activity.id) === String(member.id)));
+    return items.length && items.every(Boolean)
+        ? items.reduce((sum, item) => sum + Number(item.value), 0).toFixed(1) + ' ' + data.unit
+        : '—';
 }
 
 const CANOE_ON_WATER_TYPES = new Set(['Kayaking', 'C1', 'C2']);
