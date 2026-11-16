@@ -742,6 +742,7 @@ async function syncGarminActivitiesForUser(
   startDate: string,
   endDate: string,
   onlyMissingDays = false,
+  rescanAnchorDate = endDate,
 ) {
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
@@ -771,7 +772,7 @@ async function syncGarminActivitiesForUser(
     if (coveredError) throw coveredError;
 
     const coveredDates = new Set((coveredRows ?? []).map((row) => String(row.sync_date).slice(0, 10)));
-    const recentRescanStart = addUtcDays(endDate, -(scanWindowDays - 1));
+    const recentRescanStart = addUtcDays(rescanAnchorDate, -(scanWindowDays - 1));
     const datesToScan: string[] = [];
     const totalDays = Math.floor(
       (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) / 86400000,
@@ -1305,9 +1306,14 @@ Deno.serve(async (req) => {
         return json(400, { error: "Bitte wähle einen gültigen Zeitraum bis einschließlich heute." });
       }
       const onlyMissingDays = body.onlyMissingDays === true;
+      const activityRescanEndDate = typeof body.activityRescanEndDate === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(body.activityRescanEndDate) &&
+        body.activityRescanEndDate >= endDate && body.activityRescanEndDate <= today
+        ? body.activityRescanEndDate
+        : endDate;
       const activitySync = body.includeActivities === false
         ? null
-        : await syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays);
+        : await syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays, activityRescanEndDate);
       // Activity coverage and health-history cursor are independent. Do not restart
       // a completed health range just because activity sync is incremental.
       const healthSync = await syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, false, false);
