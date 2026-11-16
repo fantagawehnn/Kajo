@@ -53,3 +53,8 @@ Nicht durchgeführt:
 - Keine Policy- oder Grant-Anpassung.
 - Keine Extension-Installation.
 - Keine Tests, kein Merge und kein Deployment.
+
+
+## 7. Migrationssperre für Scientific Knowledge Base
+
+Die wissenschaftlichen SQL-Entwürfe bleiben unter `docs/drafts/`. Sie werden nicht als nummerierte Migrationen nach `supabase/migrations/` kopiert, solange die Remote-Historie nicht reconciled ist. Die geplante Abfolge von DDL, Ingestion-RPCs, Cleanup-RPCs, Bucket, Storage-Policies, Functions, TUS und Scheduler ist in [SCIENTIFIC_KNOWLEDGE_MIGRATION_SEQUENCE.md](./SCIENTIFIC_KNOWLEDGE_MIGRATION_SEQUENCE.md) dokumentiert. Es wurden keine wissenschaftlichen Objekte angelegt oder Migrationen ausgeführt.
