@@ -604,7 +604,7 @@ export function openCSVDetailsModal(id) {
     const dateEl = document.getElementById('modal-act-date');
     if (titleEl) titleEl.textContent = act.name || 'Trainingseinheit';
     if (dateEl) {
-        const rawStart = act.startTime || act.startTimeLocal || act.start_time_local || '';
+        const rawStart = act.startTimeLocal || act.start_time_local || act.startTime || '';
         const parsedStart = rawStart ? new Date(rawStart) : null;
         const parsedTime = parsedStart && Number.isFinite(parsedStart.getTime())
             ? parsedStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -933,34 +933,40 @@ function renderActivityTrainingInsights(act) {
     const zonePanel = document.getElementById('activity-zone-panel');
     const categoryLabels = { ga: 'Grundlagenausdauer', interval: 'Intervalle', race: 'Wettkampf', reg: 'Regeneration', strength: 'Kraft', tech: 'Technik' };
     const category = categoryLabels[act.category] || 'Nicht zugeordnet';
+
+    // Ausschließlich die in den Einstellungen aktive Berechnungsmethode anzeigen.
+    // Ein fehlender Wert wird nicht durch eine andere Load-Methode ersetzt.
     const loadData = getTrainingLoadData(state.rawActivities, state.settings, state.profile, state.dailyCheckins);
     const loadItem = loadData.records.find(item => String(item.activity.id) === String(act.id));
-    const zoneLoad = calculateGarminZoneLoad(act, state.settings, state.profile, state.dailyCheckins);
-    const srpeData = getTrainingLoadData([act], { ...(state.settings || {}), trainingLoadSource: 'srpe' }, state.profile, state.dailyCheckins);
-    const srpeItem = srpeData.records[0];
-    // The long-term model uses one consistent source, but an individual
-    // activity may still show its own available load when it is not part of
-    // that selected model (for example native Garmin load is missing).
-    const activityLoad = loadItem
-        ? { value: loadItem.value, unit: loadData.unit, label: loadData.mode === 'garmin-native' ? 'Garmin Training Load'
-            : loadData.mode === 'garmin-zone' ? 'KAJO HF-Zonen-Load' : 'sRPE-Load' }
-        : zoneLoad ? { value: zoneLoad.value, unit: zoneLoad.unit, label: 'KAJO HF-Zonen-Load' }
-        : srpeItem ? { value: srpeItem.value, unit: srpeData.unit, label: 'sRPE-Load' }
-        : null;
-    const load = activityLoad ? activityLoad.value.toFixed(1) + ' ' + activityLoad.unit : '—';
-    const loadLabel = activityLoad?.label || 'Load nicht berechenbar';
-    const separateLoads = [
-        act.garminTrainingLoad != null && Number.isFinite(Number(act.garminTrainingLoad)) ? ['Garmin Training Load', Number(act.garminTrainingLoad).toFixed(1)] : null,
-        zoneLoad ? ['KAJO HF-Zonen-Load' + (zoneLoad.restingHrSource === 'profile-fallback' ? ' · Ruhe-HF-Profil-Fallback' : ' · adaptive HF-Reserve'), zoneLoad.value.toFixed(1) + ' ' + zoneLoad.unit] : null,
-        srpeItem ? ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU'] : null,
-        act.edwardsTrimp != null && Number.isFinite(Number(act.edwardsTrimp)) ? ['Edwards TRIMP', Number(act.edwardsTrimp).toFixed(1)] : null
-    ].filter(Boolean);
-    const loadRows = separateLoads.map(([label, value]) => '<div class="flex justify-between gap-3 border-b border-slate-800 py-1.5 text-[10px]"><span class="text-slate-400">' + label + '</span><strong class="text-slate-200">' + value + '</strong></div>').join('');
+    const configuredSource = state.settings?.trainingLoadSource || 'auto';
+    const methodLabels = {
+        'garmin-native': 'Garmin Training Load',
+        'garmin-zone': 'KAJO HF-Zonen-Load',
+        srpe: 'sRPE-Load'
+    };
+    const configuredLabels = {
+        'kajo-zone': 'KAJO HF-Zonen-Load',
+        srpe: 'sRPE-Load',
+        auto: 'Automatische Trainingsbelastung'
+    };
+    const loadLabel = methodLabels[loadData.mode] || configuredLabels[configuredSource] || 'Training Load';
+    const load = loadItem && Number.isFinite(Number(loadItem.value))
+        ? Number(loadItem.value).toFixed(1) + ' ' + (loadData.unit || '')
+        : '—';
+    const missingText = loadItem
+        ? ''
+        : configuredSource === 'kajo-zone'
+            ? 'Für diese Aktivität liegen keine auswertbaren Herzfrequenz-Zeitreihen für die KAJO-Zonenmethode vor.'
+            : configuredSource === 'srpe'
+                ? 'Bitte Dauer und Gesamtanstrengung (RPE) für diese Aktivität erfassen.'
+                : 'Für diese Aktivität liegt kein Load-Wert aus der aktuell automatisch gewählten Methode vor.';
+
     stimulus.innerHTML = '<div class="grid grid-cols-2 gap-2">'
         + '<div class="rounded-lg bg-slate-900 p-2"><div class="text-[10px] text-slate-500">Kategorie</div><strong class="mt-1 block text-sm text-white">' + category + '</strong></div>'
         + '<div class="rounded-lg bg-slate-900 p-2"><div class="text-[10px] text-slate-500">' + loadLabel + '</div><strong class="mt-1 block text-sm text-sky-300">' + load + '</strong></div>'
-        + '</div>' + (loadRows ? '<div class="mt-2">' + loadRows + '</div>' : '')
-        + '<details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Methoden & Datenbasis</summary><p class="mt-2">Garmin Training Load, KAJO HF-Zonen-Load und sRPE-Load werden getrennt ausgewiesen und nicht addiert. Ein eigenständiges Edwards-TRIMP-Feld erscheint nur, wenn es im Aktivitätsdatensatz explizit gespeichert ist.</p></details>';
+        + '</div>'
+        + (missingText ? '<p class="mt-2 text-[10px] leading-relaxed text-slate-500">' + missingText + '</p>' : '')
+        + '<details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Methoden & Datenbasis</summary><p class="mt-2">Angezeigt wird ausschließlich die aktuell in den Einstellungen gewählte Berechnungsmethode. Unterschiedliche Load-Skalen werden nicht vermischt und fehlende Werte nicht durch alternative Methoden ersetzt. Die automatische Auswahl verwendet die verfügbare Datenabdeckung.</p></details>';
     renderTrainingBenefitProfile(act);
     const zoneTime = calculateActivityZoneTime(act);
     if (!zoneTime || !zoneTime.totalSeconds) { if (zonePanel) zonePanel.classList.add('hidden'); return; }
@@ -973,7 +979,6 @@ function renderActivityTrainingInsights(act) {
         return `<div class="grid grid-cols-[2rem_1fr_5rem] items-center gap-2 text-xs"><span class="text-slate-300">Z${i + 1}</span><div class="h-2 rounded-full bg-slate-800 overflow-hidden"><div class="h-full rounded-full" style="width:${pct.toFixed(1)}%;background:${colors[i]}"></div></div><span class="text-right text-slate-300">${Math.round(v / 60)} min · ${pct.toFixed(0)}%</span></div>`;
     }).join('') + `<p class="mt-2 text-[10px] text-slate-400">Größter Zeitanteil: Z${topZone + 1} (${(seconds[topZone] / total * 100).toFixed(0)}%).</p><details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Datenbasis</summary><p class="mt-1">${hasTime ? 'Aus Zeitstempeln der HF-Messwerte berechnet.' : 'Zeitlich angenähert, da Zeitstempel fehlen.'} ${zoneTime.zoneSource === 'karvonen-adaptive' ? (zoneTime.restingHrSource === 'profile-fallback' ? 'HF-Zonen nutzen den statischen Ruhe-HF-Profilwert als Fallback.' : 'HF-Zonen nutzen die adaptive Ruhe-HF aus dem rollierenden Rückblickfenster.') : 'HF-Zonen sind mangels ausreichender Ruhe-HF- oder HFmax-Daten nicht berechenbar.'}</p></details>`;
 }
-
 
 
 
