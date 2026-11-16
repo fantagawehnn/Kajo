@@ -236,7 +236,8 @@ assert.ok(activities.includes('getActivityTelemetrySeries(act).length > 0'), 'te
 assert.ok(activities.includes("function renderActivityComparisons(activity)"), "activity detail contains function renderActivityComparisons(activity)");
 assert.ok(activities.includes("getActivityTelemetrySeries(act).length > 0"), "activity detail contains getActivityTelemetrySeries(act).length > 0");
 assert.ok(activities.includes("calculateGarminZoneLoad(act, state.settings, state.profile, state.dailyCheckins)"), "activity detail contains calculateGarminZoneLoad(act, state.settings, state.profile)");
-assert.ok(activities.includes("['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']"), "activity detail contains ['sRPE-Load', srpeItem.value.toFixed(1) + ' AU']");
+assert.ok(activities.includes("srpe: 'sRPE-Load'"), 'activity detail labels the configured sRPE method');
+assert.ok(activities.includes("const load = loadItem && Number.isFinite(Number(loadItem.value))"), 'activity detail displays the centrally calculated load value');
 assert.ok(activities.includes("panel.classList.add('hidden'); panel.innerHTML = ''; return;"), "activity detail contains panel.classList.add('hidden'); panel.innerHTML = ''; return;");
 
 assert.ok(activities.includes('const storedRouteIds = item =>'), 'comparison rendering reads stored route assignments without inferring or mutating them');
