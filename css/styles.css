@@ -8607,24 +8607,25 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
 }
 
 
-/* Geplante Trainingseinheit: liegt auch über der fixierten mobilen Navigation. */
+/* Geplante Trainingseinheit: als echtes, mittig ausgerichtetes Viewport-Modal. */
 @media screen and (max-width: 640px) {
-  #planned-workout-modal {
+  #planned-workout-modal:not(.hidden) {
     position: fixed !important;
     inset: 0 !important;
     z-index: 2147483003 !important;
-    align-items: flex-start !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding: calc(.65rem + env(safe-area-inset-top)) .65rem calc(5.25rem + env(safe-area-inset-bottom)) !important;
+    padding: calc(.75rem + env(safe-area-inset-top)) .65rem calc(.75rem + env(safe-area-inset-bottom)) !important;
   }
   #planned-workout-modal > div {
     box-sizing: border-box;
     width: min(100%, 36rem) !important;
-    max-height: calc(100dvh - 6.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
-    margin: 0 auto !important;
+    max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin: auto !important;
     padding: 1rem !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
@@ -8637,3 +8638,29 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
     background: #0F1420;
   }
 }
+
+/* Wettkampf-Erstellung wird aus dem scrollbaren App-Bereich in den Viewport gehoben. */
+#race-modal:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483004 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box;
+  padding: calc(.75rem + env(safe-area-inset-top)) .75rem calc(.75rem + env(safe-area-inset-bottom)) !important;
+  overflow-y: auto !important;
+  background: rgb(2 6 23 / .82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+#race-modal .race-modal-panel {
+  box-sizing: border-box;
+  width: min(100%, 48rem);
+  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  margin: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+body.kajo-modal-open { overflow: hidden !important; }
