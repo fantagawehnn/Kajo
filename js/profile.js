@@ -82,6 +82,12 @@ const sections = [
     ]
   },
   {
+    id: 'recovery', title: 'Regeneration', subtitle: 'Persönliche Erholungs- und Schlafreferenzwerte', icon: 'moon',
+    fields: [
+      { key: 'sleepNeedHours', label: 'Persönliches Schlafbedürfnis (Stunden pro Nacht)', type: 'number', min: 4, max: 14, step: 0.25, placeholder: 'z. B. 8' }
+    ]
+  },
+  {
     id: 'health', title: 'Gesundheit und Besonderheiten', subtitle: 'Freiwillige, trainingsrelevante Hinweise', icon: 'heart-pulse',
     fields: [
       { key: 'trainingNotes', label: 'Individuelle Hinweise für die Trainingssteuerung', type: 'textarea', max: 1000, wide: true, placeholder: 'Nur Angaben, die bei der Trainingsplanung berücksichtigt werden sollen …' },
@@ -106,6 +112,7 @@ function displayValue(field, value) {
     const date = new Date(String(value) + 'T12:00:00');
     return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('de-DE');
   }
+  if (field.key === 'sleepNeedHours') return value + ' h / Nacht';
   if (field.key === 'heightCm') return value + ' cm';
   if (field.key === 'maxHr' || field.key === 'thresholdHr') return value + ' bpm';
   if (field.key === 'vo2max') return value + ' ml/kg/min';
