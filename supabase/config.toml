@@ -1,2 +1,5 @@
 [functions.kajo-push-scheduler]
 verify_jwt = false
+
+[functions.scientific-ingestion]
+verify_jwt = true
