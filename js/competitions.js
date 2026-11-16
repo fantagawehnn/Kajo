@@ -8,6 +8,7 @@ import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate } from 
 import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
 
 let editingRaceId = null;
+let editingRaceResultIndex = null;
 
 const RACE_PRIORITY_META = {
     A: { title: 'International WM/EM', color: 'bg-rose-500 text-slate-950 font-black' },
@@ -96,7 +97,7 @@ export function renderRaces() {
             '<div class="grid grid-cols-[1fr_auto] gap-2 items-center rounded-lg bg-slate-900/80 px-3 py-2">' +
             '<div class="min-w-0"><div class="text-xs font-semibold text-white">' + escapeHtml(result.discipline || 'Disziplin offen') + ' · ' + escapeHtml(result.format || 'Format offen') + (result.partner ? ' · ' + escapeHtml(result.partner) : '') + '</div>' +
             '<div class="text-[10px] text-slate-400">' + (result.time ? 'Zeit ' + escapeHtml(result.time) : 'Keine Zeit eingetragen') + (result.gap ? ' · Abstand ' + escapeHtml(result.gap) : '') + '</div></div>' +
-            '<div class="flex items-center gap-2"><span class="text-sm font-bold text-white">' + Number(result.rank) + '.</span><button type="button" onclick="deleteRaceResult(\'' + encodeURIComponent(String(race.id)) + '\',' + index + ')" class="text-[10px] text-slate-500 hover:text-rose-400" aria-label="Ergebnis löschen">×</button></div></div>'
+            '<div class="flex items-center gap-2"><span class="text-sm font-bold text-white">' + Number(result.rank) + '.</span><button type="button" onclick="editRaceResult(\\'' + encodeURIComponent(String(race.id)) + '\\',' + index + ')" class="text-[10px] text-cyan-300" aria-label="Ergebnis bearbeiten">Bearbeiten</button><button type="button" onclick="deleteRaceResult(\\'' + encodeURIComponent(String(race.id)) + '\\',' + index + ')" class="text-[10px] text-slate-500 hover:text-rose-400" aria-label="Ergebnis löschen">×</button></div></div>'
         ).join('');
         const encodedId = encodeURIComponent(String(race.id));
         const formId = 'race-result-form-' + encodedId;
@@ -107,7 +108,7 @@ export function renderRaces() {
             '<label class="text-[10px] text-slate-400">Rennzeit<input name="time" type="text" placeholder="z. B. 04:32.18" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
             '<label class="text-[10px] text-slate-400">Abstand<input name="gap" type="text" placeholder="z. B. +2,14 s" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
             '<label class="text-[10px] text-slate-400">Partner (optional)<input name="partner" type="text" class="mt-1 w-full rounded-lg bg-slate-950 border border-slate-700 p-2 text-xs text-white"></label>' +
-            '<div class="col-span-2 sm:col-span-3 flex justify-end gap-2"><button type="button" onclick="toggleRaceResultsForm(\'' + encodedId + '\')" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="submit" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Ergebnis speichern</button></div></form>';
+            '<div class="col-span-2 sm:col-span-3 flex justify-end gap-2"><button type="button" onclick="cancelRaceResultEdit(\'' + encodedId + '\')" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="submit" class="px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">' + (editingRaceResultIndex === null ? 'Ergebnis speichern' : 'Änderungen speichern') + '</button></div></form>';
         const routeTraining = race.routeId ? countTrainingOnRouteBefore(race.routeId,race.date) : null;
         const sectionTraining = race.routeId ? countTrainingOnSectionBefore(race.routeId,race.date) : null;
         const water = race.routeId ? getWaterConditionSummaryBefore(race.routeId,race.date) : null;
@@ -295,7 +296,34 @@ export function addRace() {
 
 export function toggleRaceResultsForm(encodedId) {
     const form = document.getElementById('race-result-form-' + encodedId);
-    if (form) form.classList.toggle('hidden');
+    if (!form) return;
+    editingRaceResultIndex = null;
+    delete form.dataset.editIndex;
+    form.reset();
+    form.classList.toggle('hidden');
+}
+
+export function editRaceResult(encodedId, index) {
+    const race = state.races.find(item => String(item.id) === decodeURIComponent(encodedId));
+    const form = document.getElementById('race-result-form-' + encodedId);
+    const result = race?.results?.[index];
+    if (!race || !form || !result || !Number.isInteger(index)) return;
+    editingRaceResultIndex = index;
+    form.dataset.editIndex = String(index);
+    ['discipline', 'format', 'rank', 'time', 'gap', 'partner'].forEach(key => {
+        const field = form.elements.namedItem(key);
+        if (field) field.value = result[key] ?? '';
+    });
+    form.classList.remove('hidden');
+}
+
+export function cancelRaceResultEdit(encodedId) {
+    const form = document.getElementById('race-result-form-' + encodedId);
+    if (!form) return;
+    editingRaceResultIndex = null;
+    delete form.dataset.editIndex;
+    form.reset();
+    form.classList.add('hidden');
 }
 
 export function addRaceResult(encodedId) {
@@ -319,15 +347,21 @@ export function addRaceResult(encodedId) {
         return;
     }
     if (!Array.isArray(race.results)) race.results = [];
-    race.results.push({
-        id: Date.now().toString(),
+    const updatedResult = {
         discipline,
         format,
         rank,
         time: String(data.get('time') || '').trim(),
         gap: String(data.get('gap') || '').trim(),
         partner: String(data.get('partner') || '').trim()
-    });
+    };
+    const editIndex = form.dataset.editIndex === undefined ? null : Number(form.dataset.editIndex);
+    if (editIndex !== null && Number.isInteger(editIndex) && race.results[editIndex]) {
+        race.results[editIndex] = { ...race.results[editIndex], ...updatedResult };
+    } else {
+        race.results.push({ id: Date.now().toString(), ...updatedResult });
+    }
+    editingRaceResultIndex = null;
     saveDataToLocalStorage();
     refreshAll();
 }
