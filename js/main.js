@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=6';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=7';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -228,7 +228,8 @@ function renderHealthAnalysis() {
                 const periodLine = (title, period) => {
                     return '<div><strong>' + title + ':</strong> ' + formatHours(period.totalMinutes)
                         + ' · ' + period.activities + ' Aktivitäten · ' + period.eligibleCalendarDays + '/' + period.calendarDays
-                        + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(period.durationCoverage) + '</div>';
+                        + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(period.durationCoverage)
+                        + ' · Loadabdeckung ' + coverageText(period.trainingLoadCoverage) + '</div>';
                 };
                 const comparison = document.createElement('div');
                 comparison.className = 'mt-2 w-full text-xs text-slate-400 space-y-1';
@@ -255,6 +256,7 @@ function renderHealthAnalysis() {
                         return '<div><strong>' + window.label + ':</strong> ' + (window.notStarted ? 'Zeitraum noch nicht begonnen' : formatHours(window.totalMinutes)
                             + ' · ' + window.activities + ' Aktivitäten · ' + window.eligibleCalendarDays + '/' + window.calendarDays
                             + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(window.durationCoverage)
+                            + ' · Loadabdeckung ' + coverageText(window.trainingLoadCoverage)
                             + ' · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change) + '</div>';
                     }).join('')
                     + '<div>Ausgewählter Trainingsload ('
