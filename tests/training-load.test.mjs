@@ -80,6 +80,34 @@ test('Garmin native training load is used when available', () => {
     assert.equal(day.loadMode, 'garmin-native');
 });
 
+test('automatic source keeps Garmin Native Load when HR-zone coverage becomes larger', () => {
+    const records = [
+        { id: 'g-native', source: 'garmin', date: completedDay, garminTrainingLoad: 35 },
+        { id: 'g-zone-1', source: 'garmin', date: completedDay, duration: 60,
+          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } },
+        { id: 'g-zone-2', source: 'garmin', date: completedDay, duration: 60,
+          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } }
+    ];
+    const result = getTrainingLoadData(records, {}, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.mode, 'garmin-native');
+    assert.equal(result.records.length, 1);
+    assert.equal(result.records[0].value, 35);
+    assert.equal(result.coverage.availableZoneActivities, 2);
+    assert.equal(result.coverage.availableNativeActivities, 1);
+});
+
+test('explicit Garmin Native Load selection never falls back to HR zones or sRPE', () => {
+    const activity = {
+        id: 'g-native-explicit', source: 'garmin', date: completedDay,
+        duration: 60, perceivedEffort: 8,
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
+    };
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'garmin-native' }, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
+    assert.equal(result.coverage.excludedActivityCount, 1);
+});
+
 test('an explicit Garmin training load of zero remains a valid measured value', () => {
     const result = getTrainingLoadData([{
         id: 'g-zero-load', source: 'garmin', date: completedDay, garminTrainingLoad: 0
