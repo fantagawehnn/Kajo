@@ -182,8 +182,14 @@ function renderRecoveryInsight() {
         const deltaText = item.delta === null ? 'Kein Vergleich möglich'
             : 'Veränderung: ' + (item.delta > 0 ? '+' : '') + trendFormat(item.delta, item.digits) + ' ' + item.unit;
         const coverage = item.currentCount + '/7 aktuelle Tage · ' + item.previousCount + '/7 vorherige Tage';
+        const baselineText = ['hrv', 'rhr'].includes(item.key)
+            ? item.baselineMedian === null
+                ? 'Persönliche 90-Tage-Basis: noch nicht verfügbar (' + item.baselineCount + '/5 Messungen)'
+                : 'Persönliche 90-Tage-Basis: ' + trendFormat(item.baselineMedian, item.digits) + ' ' + item.unit +
+                  ' · Abweichung: ' + (item.baselineDeltaPercent > 0 ? '+' : '') + trendFormat(item.baselineDeltaPercent, 1) + ' %'
+            : '';
         return metric(item.label + ' · Ø 7 Tage', currentText,
-            previousText + ' · ' + deltaText + ' · ' + coverage);
+            [previousText, deltaText, coverage, baselineText].filter(Boolean).join(' · '));
     });
     const trendDates = recoveryTrends.from && recoveryTrends.to
         ? 'Aktuell: ' + recoveryTrends.from + ' bis ' + recoveryTrends.to +
