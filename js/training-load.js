@@ -188,7 +188,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
     const srpeData = () => {
         const eligible = list.filter(activity => activity?.date);
         const srpeRecords = eligible.map(activity => ({ activity, value: calculateSessionRpeLoad(activity) })).filter(item => item.value !== null);
-        return { mode: 'srpe', unit: 'AU', records: srpeRecords, coverage: { eligibleActivityCount: eligible.length, loadedActivityCount: srpeRecords.length, excludedActivityCount: eligible.length - srpeRecords.length } };
+        return { mode: 'srpe', unit: 'AU', records: srpeRecords, eligibleActivities: eligible, coverage: { eligibleActivityCount: eligible.length, loadedActivityCount: srpeRecords.length, excludedActivityCount: eligible.length - srpeRecords.length } };
     };
     if (settings?.trainingLoadSource === 'srpe') return srpeData();
 
@@ -213,6 +213,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
             mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
             unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
             records: zoneValues,
+            eligibleActivities: garminActivities,
             coverage: {
                 eligibleActivityCount: garminActivities.length,
                 loadedActivityCount: zoneValues.length,
@@ -242,6 +243,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
                 mode: useZone ? 'garmin-zone' : 'garmin-native',
                 unit: useZone ? 'KAJO-HF-Punkte' : 'Garmin Load',
                 records: selected.map(({ activity, value }) => ({ activity, value })),
+                eligibleActivities: garminActivities,
                 coverage: {
                     eligibleActivityCount: garminActivities.length,
                     loadedActivityCount: selected.length,
@@ -255,7 +257,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
             const subjective = srpeData();
             if (subjective.records.length) return subjective;
         }
-        return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: garminActivities.length, loadedActivityCount: 0, excludedActivityCount: garminActivities.length } };
+        return { mode: 'garmin-unavailable', unit: null, records: [], eligibleActivities: garminActivities, coverage: { eligibleActivityCount: garminActivities.length, loadedActivityCount: 0, excludedActivityCount: garminActivities.length } };
     }
     // In automatic mode, use sRPE when no Garmin-native or HR-zone load can be
     // calculated. The two scales are never mixed within one time series.
@@ -264,7 +266,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         if (subjective.records.length) return subjective;
     }
     // External TSS is not an approved source for KAJO training-load calculations.
-    return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
+    return { mode: 'garmin-unavailable', unit: null, records: [], eligibleActivities: [], coverage: { eligibleActivityCount: 0, loadedActivityCount: 0, excludedActivityCount: 0 } };
 }
 
 /**
