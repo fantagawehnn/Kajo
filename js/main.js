@@ -26,7 +26,7 @@ import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDa
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=36';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=11';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=15';
-import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=76';
+import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=76';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=2';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=1';
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=1';
@@ -2991,6 +2991,7 @@ Object.assign(window, {
     editPeriodRange,
     cancelPeriodEdit,
     saveManagedPeriod,
+    deleteManagedPeriod,
     saveStrengthWorkout,
     sendAICoachMessage,
     setTimeframe,
