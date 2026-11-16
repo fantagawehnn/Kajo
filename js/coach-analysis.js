@@ -183,7 +183,7 @@ function summarizeHeartRateZones(activities, settings, profile) {
                 activityType: group.activityType,
                 zoneSource: group.zoneSource,
                 activityCount: group.activityCount,
-                totalMinutes: Number((totalSeconds / 60).toFixed(1)),
+                recordedHeartRateMinutes: Number((totalSeconds / 60).toFixed(1)),
                 minutesByZone: group.secondsByZone.map(value => Number((value / 60).toFixed(1)))
             };
         })
