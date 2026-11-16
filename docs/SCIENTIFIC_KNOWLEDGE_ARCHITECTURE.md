@@ -123,17 +123,26 @@ Die vorhandene Supabase-/Cloudflare-Architektur kann grundsätzlich weiterverwen
 
 - Supabase Storage: Dokumentdateien
 - Supabase PostgreSQL: Metadaten, Taxonomie, Evidenzdatensätze
-- pgvector: Vektorindex, sofern die vorhandene Supabase-Instanz und ihr Tarif dies unterstützen
+- pgvector: Vektorindex; die Extension vector 0.8.2 ist in der vorhandenen Supabase-Instanz verfügbar, aber noch nicht installiert. Für die spätere Aktivierung ist das Supabase-Schema extensions vorgesehen, nicht public.
 - Cloudflare Worker: Authentifizierung, Orchestrierung und Modellaufruf
 - Worker-/Job-Verarbeitung: PDF-Extraktion und Indexierung asynchron ausführen, sobald Volumen und Laufzeit dies erfordern
 - Workers AI: austauschbare Generierungskomponente; Embedding-Modell und Verfügbarkeit separat prüfen
 
 Vor der Umsetzung sind aktuelle Produktlimits, Kosten, Embedding-Modelle, Vektordimensionen und Laufzeitgrenzen anhand der tatsächlich verwendeten Konten zu prüfen. Dieses Dokument verspricht keine dauerhaft kostenlose Verarbeitung.
 
+### Live-Befund aus dem Supabase-Audit vom 16.11.2026
+- Das aktive Projekt verwendet PostgreSQL 17.11.0.018 in eu-central-1.
+- 22 öffentliche Tabellen wurden erfasst; RLS ist bei allen in der Tabellenübersicht zurückgegebenen Tabellen aktiviert.
+- Es existieren noch keine wissenschaftlichen Tabellen und kein Literatur-Storage-Bucket.
+- Der einzige Storage-Bucket ist garmin-fit (privat). In storage wurden keine Policies gefunden; dieser Bucket wird nicht für Paper-Uploads wiederverwendet.
+- Die Extension vector ist verfügbar, aber nicht installiert.
+- Die Remote-Migrationshistorie enthält einen Eintrag, während das Repository vier SQL-Migrationsdateien enthält. Diese Abweichung muss vor neuen Schemaänderungen geklärt werden.
+- Die vorhandenen Tabellen-Grants für anon sind breit. RLS verhindert derzeit den Zugriff ohne passende Policies; vor Erweiterung der Daten-API sollten Grants nach Least-Privilege gehärtet werden.
+
 ## 9. Umsetzungsreihenfolge
 
 1. Taxonomie und Metadatenmodell fachlich freigeben.
-2. Bestehende Supabase-Schemata, RLS-Policies und Migrationskonventionen prüfen.
+2. Bestehende Supabase-Schemata, RLS-Policies und Migrationskonventionen prüfen. Das read-only Audit ist erfolgt; vor einer Migration sind die abweichenden lokalen und Remote-Migrationsstände sowie die vorhandenen Security-Advisor-Befunde zu klären.
 3. Datenbankmigration und private/public Zugriffsregeln erstellen.
 4. PDF-Import und Extraktion mit wenigen repräsentativen, rechtmäßig nutzbaren Dokumenten umsetzen.
 5. Chunking und Quellenbezug implementieren.
@@ -144,4 +153,4 @@ Vor der Umsetzung sind aktuelle Produktlimits, Kosten, Embedding-Modelle, Vektor
 
 ## 10. Abgrenzung des aktuellen Implementierungsstands
 
-Dieses Dokument ist ein Zielarchitekturentwurf. Es wurden dadurch noch keine Tabellen, Storage-Buckets, Embeddings, Importprozesse oder Suchfunktionen angelegt. Die bestehende Coach-Implementierung bleibt unverändert. Vor Datenbankänderungen müssen die vorhandenen Migrationen, RLS-Regeln und Supabase-Konfigurationen im Repository geprüft werden.
+Dieses Dokument ist ein Zielarchitekturentwurf. Es wurden dadurch noch keine Tabellen, Storage-Buckets, Embeddings, Importprozesse oder Suchfunktionen angelegt. Die bestehende Coach-Implementierung bleibt unverändert. Das Remote-Schema und die RLS-Konfiguration wurden am 16.11.2026 read-only geprüft; vor Datenbankänderungen müssen insbesondere die Migrationsabweichung und die dokumentierten Security-Advisor-Befunde geklärt werden.
