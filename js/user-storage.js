@@ -52,28 +52,18 @@ export function createUserStorage(userId) {
 
         async getCollection(collection) {
             const storageKey = getUserStorageKey(id, collection);
-            try {
-                // Ein blockierter oder festhängender IndexedDB-Zugriff darf den
-                // Login nicht endlos aufhalten. Nach 3 Sekunden wird ausschließlich
-                // auf den gleichnamigen, kontogebundenen localStorage-Eintrag
-                // zurückgegriffen; es werden keine globalen Legacy-Daten gelesen.
-                const indexedRead = getLocalCollection(storageKey);
-                const timeout = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('IndexedDB-Lesezeitüberschreitung')), 3000);
-                });
-                const indexedValue = await Promise.race([indexedRead, timeout]);
-                if (indexedValue !== undefined) return indexedValue;
-            } catch (error) {
-                console.warn('IndexedDB nicht verfügbar; benutzerspezifisches localStorage wird verwendet:', error);
-            }
-
+            // localStorage wird synchron aktualisiert und hat Vorrang vor einem
+            // eventuell veralteten IndexedDB-Eintrag. IndexedDB bleibt Fallback,
+            // wenn localStorage wegen Speicherlimits keinen aktuellen Eintrag hält.
             const raw = localStorage.getItem(storageKey);
-            if (raw === null) return undefined;
-
-            try {
-                return JSON.parse(raw);
-            } catch {
-                throw new Error(`Die benutzerspezifischen lokalen Daten "${collection}" sind beschädigt und konnten nicht gelesen werden.`);
+            if (raw !== null) {
+                try { return JSON.parse(raw); }
+                catch { throw new Error('Die benutzerspezifischen lokalen Daten ' + collection + ' sind beschädigt und konnten nicht gelesen werden.'); }
+            }
+            try { return await getLocalCollection(storageKey); }
+            catch (error) {
+                console.warn('IndexedDB nicht verfügbar; kein lokaler Fallback-Eintrag vorhanden:', error);
+                return undefined;
             }
         },
 
