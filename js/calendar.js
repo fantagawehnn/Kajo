@@ -656,7 +656,7 @@ function calendarYearBuildPhaseSuggestions(year, weeks) {
             const end = toLocalDateString(endDate) > year + '-12-31' ? year + '-12-31' : toLocalDateString(endDate);
             suggestions.push({
                 id: 'race-' + start + '-' + end, name: 'Wettkampfphase' + (clusters.length > 1 ? ' ' + (index + 1) : ''), type: 'competition',
-                start, end, reason: cluster.count + ' dokumentierte Wettkampf' + (cluster.count === 1 ? 'stermin' : 'stermine') + ' in diesem Zeitraum. Die vorgeschlagene Phase umfasst sieben Tage davor und zwei Tage danach; bitte prüfen.'
+                start, end, reason: cluster.count + ' gespeicherte Wettkampf-Einträge in diesem Zeitraum. Die zeitliche Gruppierung dient nur als Phasenvorschlag und fasst keine Wettkämpfe automatisch zu einem Event zusammen; bitte prüfen.'
             });
         });
     }
@@ -853,6 +853,14 @@ export function renderYearView() {
     const totalMinutes = durationRecords.reduce((sum, item) => sum + Number(item.duration), 0);
     const durationIncomplete = durationRecords.length !== activities.length;
     const races = (state.races || []).filter(item => item?.date >= yearStart && item.date <= yearEnd);
+    // A race record is not automatically a unique event weekend. Keep the
+    // record count explicit and evaluate documented starts from its results.
+    const raceResults = races.flatMap(race => (Array.isArray(race.results) ? race.results : [])
+        .filter(result => Number.isInteger(Number(result?.rank)) && Number(result.rank) > 0)
+        .map(result => ({ ...result, race })));
+    const racePodiums = raceResults.filter(result => Number(result.rank) <= 3).length;
+    const raceWins = raceResults.filter(result => Number(result.rank) === 1).length;
+    const bestRaceRank = raceResults.length ? Math.min(...raceResults.map(result => Number(result.rank))) : null;
     const sessions = activities.length;
     const elapsedYearDates = calendarYearDateRange(year, yearStart, today > yearEnd ? yearEnd : today);
     const annualLoadEntries = elapsedYearDates.map(date => timelineByDate.get(date));
@@ -866,9 +874,16 @@ export function renderYearView() {
         { label: 'Training Load', value: annualLoad === null ? '—' : annualLoad.toFixed(0), note: annualLoad === null ? 'Jahreswert wegen Datenlücken nicht vollständig' : calendarYearLoadLabel(loadMode, loadUnit) },
         { label: 'Trainingszeit', value: durationRecords.length ? calendarYearFormatHours(totalMinutes, durationIncomplete) : '—', note: durationIncomplete ? 'Nur dokumentierte Dauern · unvollständig' : 'Dokumentierte Trainingszeit' },
         { label: 'Einheiten', value: String(sessions), note: 'Abgeschlossene Aktivitäten' },
-        { label: 'Wettkämpfe', value: String(races.length), note: 'Dokumentierte Wettkämpfe' }
+        { label: 'Wettkampf-Einträge', value: String(races.length), note: 'Gespeicherte Termine · keine automatische Gruppierung zu Wochenenden' }
     ];
     const kpiMarkup = kpis.map((item, index) => '<article class="calendar-year-kpi"><div class="calendar-year-kpi-ring calendar-kpi-ring" style="--calendar-ring-color:' + ['var(--kajo-status-info)','var(--kajo-status-good)','var(--kajo-status-attention)','var(--kajo-status-critical)'][index] + '"><span>' + escapeHtml(item.value) + '</span></div><strong>' + escapeHtml(item.label) + '</strong><small>' + escapeHtml(item.note) + '</small></article>').join('');
+    const competitionMetrics = [
+        { label: 'Starts mit Ergebnis', value: String(raceResults.length), note: 'Dokumentierte Platzierungen' },
+        { label: 'Podiumsplätze', value: String(racePodiums), note: 'Platz 1 bis 3' },
+        { label: 'Siege', value: String(raceWins), note: 'Platz 1' },
+        { label: 'Beste Platzierung', value: bestRaceRank === null ? '—' : bestRaceRank + '.', note: bestRaceRank === null ? 'Noch keine Platzierung dokumentiert' : 'Bester eingetragener Rang' }
+    ];
+    const competitionMetricsMarkup = competitionMetrics.map((item, index) => '<article class="calendar-year-kpi"><div class="calendar-year-kpi-ring calendar-kpi-ring" style="--calendar-ring-color:' + ['var(--kajo-status-info)','var(--kajo-status-good)','var(--kajo-status-attention)','var(--kajo-status-critical)'][index] + '"><span>' + escapeHtml(item.value) + '</span></div><strong>' + escapeHtml(item.label) + '</strong><small>' + escapeHtml(item.note) + '</small></article>').join('');
 
     const months = Array.from({ length: 12 }, (_, month) => {
         const monthStart = year + '-' + String(month + 1).padStart(2, '0') + '-01';
@@ -910,7 +925,15 @@ export function renderYearView() {
     const suggestionMarkup = suggestions.map(phase => calendarYearPhaseCard(phase, true)).join('');
 
     const timelineEvents = [
-        ...races.map(item => ({ date: item.date, type: 'race', title: item.name || 'Wettkampf', detail: item.result || item.prio || '' })),
+        ...races.map(item => {
+            const results = (Array.isArray(item.results) ? item.results : [])
+                .filter(result => Number.isInteger(Number(result?.rank)) && Number(result.rank) > 0);
+            const bestRank = results.length ? Math.min(...results.map(result => Number(result.rank))) : null;
+            const resultDetail = results.length
+                ? results.length + ' dokumentierte ' + (results.length === 1 ? 'Platzierung' : 'Platzierungen') + (bestRank !== null ? ' · bestes Ergebnis: Platz ' + bestRank : '')
+                : '';
+            return { date: item.date, type: 'race', title: item.name || 'Wettkampf', detail: [item.prio || '', resultDetail].filter(Boolean).join(' · ') };
+        }),
         ...Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && ['sick', 'injured'].includes(item?.status))
             .map(([date, item]) => ({ date, type: item.status, title: item.status === 'sick' ? 'Krankheit' : 'Verletzung', detail: item.diagnosis || '' })),
         ...confirmedPhases.map(item => ({ date: item.start, type: 'phase', title: item.name, detail: formatDateDDMMYY(item.start) + ' – ' + formatDateDDMMYY(item.end) }))
@@ -924,6 +947,7 @@ export function renderYearView() {
     document.getElementById('calendar-period-title').textContent = String(year);
     container.innerHTML =
         '<section class="calendar-year-kpis">' + kpiMarkup + '</section>' +
+        '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Wettkampf & Ergebnisse</h3><p>Wettkampf-Einträge und dokumentierte Starts werden getrennt ausgewiesen</p></div></div><div class="calendar-year-kpis">' + competitionMetricsMarkup + '</div></section>' +
         '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Trainingsbelastung im Jahresverlauf</h3><p>Wochenwerte aus der zentralen Training-Load-Zeitreihe</p></div><span>' + escapeHtml(calendarYearLoadLabel(firstLoadMode, firstLoadUnit)) + '</span></div>' +
         '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '"><div class="calendar-year-months">' + monthHeader + '</div><div class="calendar-year-week-head">' + weekHeader + '</div><div class="calendar-year-weeks">' + weekCells + '</div></div></div>' +
         '<div class="calendar-year-load-legend"><span><i style="background:#DCEFE4"></i>Niedrig</span><span><i style="background:#A7D5B6"></i></span><span><i style="background:#F0D58C"></i>Mittel</span><span><i style="background:#E9A36F"></i></span><span><i style="background:#D87575"></i>Hoch</span><span><i class="is-unknown"></i>Nicht berechenbar</span><span><i class="is-partial"></i>Teilwoche</span></div>' +
