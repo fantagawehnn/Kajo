@@ -146,14 +146,22 @@ Deno.serve(async (request) => {
     return json(401, { error: "Unauthorized" }, configuredOrigin);
   }
 
+  // Internal cleanup calls must present the exact server-side service-role
+  // credential. Ordinary user JWTs cannot invoke the privileged lifecycle.
+  const isInternalCleanupRequest = authorization === `Bearer ${serviceRoleKey}`;
+  let authenticatedUserId: string | null = null;
+
   try {
-    const userClient = createClient(supabaseUrl, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { Authorization: authorization } },
-    });
-    const { data: authData, error: authError } = await userClient.auth.getUser();
-    if (authError || !authData.user) {
-      return json(401, { error: "Unauthorized" }, configuredOrigin);
+    if (!isInternalCleanupRequest) {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: authorization } },
+      });
+      const { data: authData, error: authError } = await userClient.auth.getUser();
+      if (authError || !authData.user) {
+        return json(401, { error: "Unauthorized" }, configuredOrigin);
+      }
+      authenticatedUserId = authenticatedUserId!;
     }
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -172,6 +180,80 @@ Deno.serve(async (request) => {
     }
     if (!isRecord(body) || typeof body.action !== "string") {
       return json(400, { error: "Invalid request" }, configuredOrigin);
+    }
+
+    if (body.action === "cleanup-expired-uploads") {
+      if (!isInternalCleanupRequest) {
+        return json(403, { error: "Forbidden" }, configuredOrigin);
+      }
+      if (Deno.env.get("SCIENTIFIC_UPLOAD_CLEANUP_ENABLED") !== "true") {
+        return json(503, { error: "Scientific upload cleanup is disabled" }, configuredOrigin);
+      }
+
+      const batchSize = body.batch_size === undefined ? 10 : body.batch_size;
+      if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 25) {
+        return json(400, { error: "Invalid cleanup batch size" }, configuredOrigin);
+      }
+
+      const { data: claimedRows, error: claimError } = await admin.rpc(
+        "kajo_claim_expired_scientific_uploads",
+        { p_limit: batchSize },
+      );
+      if (claimError || !Array.isArray(claimedRows)) {
+        console.error("Scientific upload cleanup: claim operation failed.");
+        return json(503, { error: "Could not claim expired uploads" }, configuredOrigin);
+      }
+
+      let deletedCount = 0;
+      let failedCount = 0;
+      for (const item of claimedRows) {
+        if (
+          !isRecord(item) ||
+          !isUuid(item.document_id) ||
+          !isUuid(item.source_id) ||
+          !isUuid(item.claim_token) ||
+          typeof item.storage_path !== "string" ||
+          item.storage_path !== `${item.document_id === "" ? "" : item.storage_path.split("/")[0]}/${item.document_id}/original.pdf` ||
+          item.storage_path.split("/").length !== 3
+        ) {
+          failedCount += 1;
+          console.error("Scientific upload cleanup: claim returned an invalid object reference.");
+          continue;
+        }
+
+        const { error: removeError } = await admin.storage
+          .from(BUCKET_ID)
+          .remove([item.storage_path]);
+        if (removeError) {
+          failedCount += 1;
+          console.error("Scientific upload cleanup: Storage deletion failed.");
+          continue;
+        }
+
+        const { data: finalized, error: finalizeError } = await admin.rpc(
+          "kajo_finalize_expired_scientific_upload",
+          {
+            p_document_id: item.document_id,
+            p_claim_token: item.claim_token,
+          },
+        );
+        if (finalizeError || finalized !== true) {
+          failedCount += 1;
+          console.error("Scientific upload cleanup: metadata finalization did not complete.");
+          continue;
+        }
+        deletedCount += 1;
+      }
+
+      return json(200, {
+        claimed_count: claimedRows.length,
+        finalized_count: deletedCount,
+        retry_required_count: failedCount,
+      }, configuredOrigin);
+    }
+
+    if (isInternalCleanupRequest) {
+      return json(403, { error: "Forbidden" }, configuredOrigin);
     }
 
     if (body.action === "create-upload-intent") {
@@ -218,7 +300,7 @@ Deno.serve(async (request) => {
         return json(400, { error: "Invalid or unsupported upload metadata" }, configuredOrigin);
       }
 
-      const userId = authData.user.id;
+      const userId = authenticatedUserId!;
       const { data: intentRows, error: intentError } = await admin.rpc(
         "kajo_create_scientific_upload_intent",
         {
@@ -263,7 +345,7 @@ Deno.serve(async (request) => {
         .from("scientific_documents")
         .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error,extraction_version,extraction_page_count,expected_chunk_count,extracted_character_count,upload_confirmed_at,upload_intent_expires_at,extraction_completed_at")
         .eq("id", documentId)
-        .eq("owner_id", authData.user.id)
+        .eq("owner_id", authenticatedUserId!)
         .eq("visibility", "private")
         .maybeSingle();
 
@@ -306,7 +388,7 @@ Deno.serve(async (request) => {
         return json(404, { error: "Document not found" }, configuredOrigin);
       }
 
-      const userId = authData.user.id;
+      const userId = authenticatedUserId!;
       const { data: document, error: documentError } = await getOwnedPrivateDocument(
         admin,
         body.document_id,
@@ -425,7 +507,7 @@ Deno.serve(async (request) => {
       }
 
       const { data: document, error: documentError } = await getOwnedPrivateDocument(
-        admin, body.document_id, authData.user.id,
+        admin, body.document_id, authenticatedUserId!,
       );
       if (documentError || !document) {
         return json(documentError ? 500 : 404, { error: documentError ? "Could not verify document" : "Document not found" }, configuredOrigin);
@@ -460,7 +542,7 @@ Deno.serve(async (request) => {
       }
 
       const { data: document, error: documentError } = await getOwnedPrivateDocument(
-        admin, body.document_id, authData.user.id,
+        admin, body.document_id, authenticatedUserId!,
       );
       if (documentError || !document) {
         return json(documentError ? 500 : 404, { error: documentError ? "Could not verify document" : "Document not found" }, configuredOrigin);
@@ -489,7 +571,7 @@ Deno.serve(async (request) => {
         return json(404, { error: "Document not found" }, configuredOrigin);
       }
       const { data: document, error: documentError } = await getOwnedPrivateDocument(
-        admin, body.document_id, authData.user.id,
+        admin, body.document_id, authenticatedUserId!,
       );
       if (documentError || !document) {
         return json(documentError ? 500 : 404, { error: documentError ? "Could not verify document" : "Document not found" }, configuredOrigin);
@@ -508,7 +590,7 @@ Deno.serve(async (request) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", document.id)
-        .eq("owner_id", authData.user.id)
+        .eq("owner_id", authenticatedUserId!)
         .eq("visibility", "private")
         .in("processing_status", ["uploaded", "extracting"])
         .select("id")
@@ -526,7 +608,7 @@ Deno.serve(async (request) => {
       }
 
       const { data: document, error: documentError } = await getOwnedPrivateDocument(
-        admin, body.document_id, authData.user.id,
+        admin, body.document_id, authenticatedUserId!,
       );
       if (documentError || !document) {
         return json(documentError ? 500 : 404, { error: documentError ? "Could not verify document" : "Document not found" }, configuredOrigin);
