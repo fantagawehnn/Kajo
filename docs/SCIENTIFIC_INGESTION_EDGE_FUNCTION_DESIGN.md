@@ -210,3 +210,14 @@ Keiner dieser Punkte ist aktuell in der produktiven Datenbank oder Storage-Konfi
 ## 10. Nicht umgesetzt
 
 Dieser Entwurf legt keine Funktion, keinen Bucket, keine Policies, keine Tabellen, keine Secrets und keine API-Routen an. Es wurde nichts deployed und kein Test ausgeführt.
+
+
+## 11. Konkreter Storage-Policy-Entwurf
+
+Der separate SQL-Entwurf liegt unter [`docs/drafts/SCIENTIFIC_STORAGE_POLICIES_DRAFT.sql`](./drafts/SCIENTIFIC_STORAGE_POLICIES_DRAFT.sql). Er sieht den privaten Bucket `kajo-scientific-documents` vor und bindet INSERT-Rechte an den exakten, zuvor serverseitig in `scientific_documents.storage_path` gespeicherten Pfad. Zusätzlich müssen Eigentümer, private Sichtbarkeit und Status `pending` übereinstimmen.
+
+Bewusst nicht vorgesehen sind Browser-SELECT/LIST, UPDATE oder DELETE. Downloads und Löschungen sollen später über serverseitige Aktionen mit erneuter Eigentumsprüfung erfolgen. Das verhindert, dass die Storage-Policy allein über einen erratbaren Ordnernamen Zugriff gewährt.
+
+Die tatsächliche Storage-Schemainspektion bestätigte die verwendeten Spalten `storage.buckets.id/name/public/file_size_limit/allowed_mime_types` sowie `storage.objects.bucket_id/name`. Das ist eine reine Lesebestätigung der Schemaform, keine Änderung der Datenbank.
+
+**Offen vor einer Migration:** Das konkrete positive `file_size_limit` muss anhand des gewählten PDF-Parsers und der Edge-Function-Laufzeit festgelegt werden. Der Bucket-Insert ist deshalb im SQL-Entwurf bewusst als nicht ausführbare Vorlage markiert. Außerdem muss vor Anwendung geprüft werden, ob bereits andere Storage-Policies auf dem Bucket weitergehende Rechte gewähren.
