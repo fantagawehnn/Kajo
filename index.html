@@ -319,7 +319,32 @@
 
         
 
-        <div id="view-dashboard" class="kajo-home">
+        <div id="view-dashboard" class="kajo-home kajo-dashboard-design">
+  <header class="kajo-dashboard-topline">
+    <div class="kajo-dashboard-heading-copy">
+      <p class="kajo-dashboard-eyebrow">KAJO PERFORMANCE</p>
+      <h1>Dein Training im Blick</h1>
+      <p>Belastung · Regeneration · Leistungsentwicklung · Gesundheit</p>
+      <span class="kajo-dashboard-sport-focus">KANU-WILDWASSER · K1 / C1 / C2 · CLASSIC / SPRINT</span>
+    </div>
+    <button type="button" class="kajo-dashboard-customize-button" onclick="toggleDashboardSetup()" aria-expanded="false" aria-controls="dashboard-customization">
+      <i data-lucide="sliders-horizontal" aria-hidden="true"></i><span>Ansicht anpassen</span>
+    </button>
+  </header>
+  <section id="dashboard-customization" class="kajo-dashboard-customization hidden" aria-label="Dashboard individuell einrichten">
+    <div class="kajo-dashboard-customization-heading">
+      <div><strong>Dein Dashboard</strong><span>Wähle, welche Bereiche du sehen möchtest.</span></div>
+      <button type="button" onclick="resetDashboardLayout()" class="kajo-dashboard-reset">Zurücksetzen</button>
+    </div>
+    <div class="kajo-dashboard-widget-options">
+      <label><input type="checkbox" data-dashboard-widget-toggle="daily" checked onchange="saveDashboardWidgetPreferences()"> <span>Training heute</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="recommendation" checked onchange="saveDashboardWidgetPreferences()"> <span>Trainingskontext</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="wearables" checked onchange="saveDashboardWidgetPreferences()"> <span>Gesundheitsdaten</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="race" checked onchange="saveDashboardWidgetPreferences()"> <span>Nächster Wettkampf</span></label>
+      <label><input type="checkbox" data-dashboard-widget-toggle="week" checked onchange="saveDashboardWidgetPreferences()"> <span>Trainingswoche</span></label>
+    </div>
+    <p>Dein Status bleibt immer sichtbar. Deine Auswahl wird in deinem Profil gespeichert.</p>
+  </section>
   <section class="kajo-home-status" aria-labelledby="home-status-heading">
     <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
@@ -336,8 +361,15 @@
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
   </section>
 
-  <section id="home-daily-overview" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
-    <div class="kajo-home-section-heading"><h2 id="home-daily-overview-title">Training heute</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span></div>
+  <section id="home-daily-overview" data-dashboard-widget="daily" class="kajo-home-section" aria-labelledby="home-daily-overview-title">
+    <div class="kajo-home-section-heading kajo-home-day-heading">
+      <div class="kajo-home-day-title"><h2 id="home-daily-overview-title">Training</h2><span id="home-daily-date-label" class="kajo-home-meta">HEUTE</span><span id="dashboard-day-context" class="kajo-home-day-context">Heute</span></div>
+      <div class="kajo-home-day-controls">
+        <button type="button" onclick="changeDashboardDay(-1)" aria-label="Vorheriger Tag"><i data-lucide="chevron-left"></i></button>
+        <button type="button" id="dashboard-day-today" onclick="goToDashboardToday()" class="hidden">Heute</button>
+        <button type="button" id="dashboard-day-next" onclick="changeDashboardDay(1)" aria-label="Nächster Tag"><i data-lucide="chevron-right"></i></button>
+      </div>
+    </div>
     <section id="home-planned-section" class="hidden kajo-home-session-group" aria-labelledby="home-planned-title">
       <div class="kajo-home-subheading"><h3 id="home-planned-title">Geplant</h3><span>PLANUNG</span></div>
       <div id="home-planned-list" class="home-today-list"></div>
@@ -349,14 +381,14 @@
     <p id="home-training-empty" class="kajo-empty hidden">Für heute sind keine Trainingseinheiten hinterlegt.</p>
   </section>
 
-  <button type="button" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
+  <button type="button" data-dashboard-widget="recommendation" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
     <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
     <strong id="home-training-recommendation">Wird berechnet …</strong>
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
   </button>
 
-  <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
+  <section data-dashboard-widget="wearables" class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
     <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Wearable &amp; Gesundheitsdaten</h2></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
@@ -367,7 +399,7 @@
     </div>
   </section>
 
-  <button type="button" id="home-next-race-card" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
+  <button type="button" data-dashboard-widget="race" id="home-next-race-card" class="kajo-home-race metric-history-clickable" onclick="openNextRaceDetail()" aria-label="Wettkampfdetails öffnen">
     <span class="kajo-home-section-heading"><strong>Nächster Wettkampf</strong><i data-lucide="flag" aria-hidden="true"></i></span>
     <span class="kajo-home-race-main"><i data-lucide="trophy" aria-hidden="true"></i><strong id="home-next-race-name">Kein Wettkampf geplant</strong></span>
     <span id="home-next-race-sport" class="kajo-home-race-type-label"></span>
@@ -377,7 +409,7 @@
     <span id="home-next-race-rank" class="hidden"></span>
   </button>
 
-  <section id="home-training-week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
+  <section id="home-training-week" data-dashboard-widget="week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
     <div class="kajo-home-section-heading"><h2 id="home-training-week-title">Trainingswoche</h2><span id="home-week-range" class="kajo-home-meta"></span></div>
     <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsdauer pro Wochentag"></div>
     <div id="home-week-legend" class="kajo-week-legend"></div>
