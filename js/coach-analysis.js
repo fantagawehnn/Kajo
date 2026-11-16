@@ -79,9 +79,10 @@ function summarizeLoad(timeline) {
     };
     const modes = [...new Set(usable.map(item => item.loadMode).filter(Boolean))];
     const consistentMode = modes.length === 1 ? modes[0] : null;
-    const latest = [...usable].reverse().find(item =>
-        validNumber(item.ctl) && validNumber(item.atl) && validNumber(item.tsb)
-    ) || null;
+    const latest = [...usable]
+        .sort((a, b) => (dateKey(b.date) || '').localeCompare(dateKey(a.date) || ''))
+        .find(item => validNumber(item.ctl) && validNumber(item.atl) && validNumber(item.tsb))
+        || null;
 
     return {
         availableDays: dated.length,
@@ -122,13 +123,14 @@ function summarizeCheckIns(checkIns) {
  * Erstellt transparente Kennzahlen aus den bereits ausgewählten Daten.
  * Die Zeitfensterwahl und Datenherkunft bleiben in dataCoverage/contextSelection.
  */
-export function buildCoachAnalysisSummary({ activities = [], timeline = [], checkIns = [], plannedSessions = [] } = {}) {
+export function buildCoachAnalysisSummary({ activities = [], timeline = [], checkIns = [], plannedSessions = [], today = null } = {}) {
     const activitySummary = summarizeActivities(activities);
     const loadSummary = summarizeLoad(timeline);
     const checkInSummary = summarizeCheckIns(checkIns);
-    const datedPlanned = plannedSessions.filter(item => dateKey(item?.date)).sort((a, b) =>
-        dateKey(a.date).localeCompare(dateKey(b.date))
-    );
+    const datedPlanned = plannedSessions.filter(item => {
+        const date = dateKey(item?.date);
+        return date && (!today || date >= today);
+    }).sort((a, b) => dateKey(a.date).localeCompare(dateKey(b.date)));
 
     return {
         schemaVersion: 1,
