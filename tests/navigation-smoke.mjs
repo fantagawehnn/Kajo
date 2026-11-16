@@ -92,6 +92,9 @@ assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe sy
 
 assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV field is identified as RMSSD');
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
+assert.ok(importer.includes('remoteMatchesByGarmin') && importer.includes('ambiguousRemoteGarmin'), 'Intervals import checks one-to-one matching across the full remote batch');
+assert.ok(importer.includes('consolidateVisibleCrossSourceDuplicates(state.rawActivities, ambiguousRemoteGarmin)'), 'ambiguous batch matches are excluded from automatic cleanup');
+assert.ok(importer.includes('matchesByGarmin') && importer.includes('matchesByIntervals'), 'visible cross-source cleanup requires uniqueness on both sides');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
 assert.ok(importer.includes("source: 'intervals', metric: 'rmssd', unit: 'ms'"), 'Intervals HRV carries explicit RMSSD provenance');
 assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
