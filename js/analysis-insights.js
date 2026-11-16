@@ -4,7 +4,8 @@
  * Die Einordnungen beschreiben ausschließlich bereits gespeicherte Daten.
  * ============================================================ */
 import { state } from './state.js';
-import { calculateReadiness, renderMetricHistory } from './dashboard.js';
+import { renderMetricHistory } from './dashboard.js';
+import { calculateReadiness } from './recovery-calculations.js';
 import { escapeHtml, formatDateDDMMYY } from './utils.js';
 
 const todayKey = () => {
@@ -167,7 +168,7 @@ function renderRecoveryInsight() {
     const current = (state.dailyCheckins || {})[today] || {};
     const checkins = Object.entries(state.dailyCheckins || {})
         .filter(([date]) => date >= daysAgoKey(6) && date <= today);
-    const readiness = calculateReadiness();
+    const readiness = calculateReadiness(state.dailyCheckins, state.dailyTimeline);
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
     const findObjective = key => objective.find(item => item.key === key);
     const rhrBaseline = findObjective('rhr');
