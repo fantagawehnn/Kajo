@@ -2758,12 +2758,21 @@ async function handleAuthSession(session) {
         } catch (error) {
             console.error('Benutzerdaten konnten nicht sicher geladen werden:', error);
             if (sequence === activationSequence) {
-                appUserReady = false;
-                deactivateUserStorage();
-                activeAppUserId = null;
-                window.dispatchEvent(new CustomEvent('endurance:user-load-error', {
-                    detail: { message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.' }
-                }));
+                if (appUserReady) {
+                    // Nachgelagerte optionale Schritte (z. B. Profilabgleich) dürfen
+                    // einen bereits aktivierten Benutzer-Speicher nicht deaktivieren.
+                    // Andernfalls bleibt die App sichtbar, aber alle lokalen Saves
+                    // schlagen mit "kein aktiver Datenspeicher" fehl.
+                    console.warn('Nachgelagerter Kontoabgleich fehlgeschlagen; die aktive Anmeldung und der Benutzerspeicher bleiben erhalten.', error);
+                    setCloudSyncStatus('Konto aktiv; ein nachgelagerter Abgleich ist fehlgeschlagen. Deine Einträge können weiterhin gespeichert werden.');
+                } else {
+                    appUserReady = false;
+                    deactivateUserStorage();
+                    activeAppUserId = null;
+                    window.dispatchEvent(new CustomEvent('endurance:user-load-error', {
+                        detail: { message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.' }
+                    }));
+                }
             }
         } finally {
             if (sequence === activationSequence) activationPromise = null;
