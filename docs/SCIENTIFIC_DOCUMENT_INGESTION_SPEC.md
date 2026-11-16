@@ -216,12 +216,14 @@ Die PDF-Extraktion wird nicht ungeprüft als lang laufender synchroner Edge-Func
 `unpdf` ist als Deno-/Worker-fähiger Parserkandidat mit seitenweiser PDF.js-Extraktion vorgemerkt, aber noch nicht ausgewählt oder eingebunden. Ein Proof of Concept muss mit realistischen wissenschaftlichen PDFs Seitenbezug, Unicode, Tabellen-/Spaltenverluste, CPU, Speicher und Fehlerfälle prüfen. Details und Quellen stehen im [technischen Edge-Function-Entwurf](./SCIENTIFIC_INGESTION_EDGE_FUNCTION_DESIGN.md).
 
 
-## 16. Zielarchitektur mit Cloudflare und Supabase
+## 16. Zielarchitektur mit Cloudflare Free und Supabase
 
-Die Ingestion wird auf die bereits genutzte Infrastruktur begrenzt. Supabase bleibt für Auth, PostgreSQL, private PDF-Dateien und Chunk-Metadaten zuständig. Cloudflare übernimmt die Upload-Abschlussprüfung und die asynchrone Verarbeitung über Queues.
+Die Architektur wurde nach Bestätigung des Cloudflare-Free-Tarifs angepasst. Cloudflare Workers Free sind auf 10 ms CPU-Zeit pro HTTP-Invocation begrenzt; Supabase Edge Functions haben 2 Sekunden CPU-Zeit pro Request. Deshalb wird PDF-Parsing im MVP nicht serverseitig in einem dieser beiden Request-Handler ausgeführt.
 
-Der separate Cloudflare Worker `kajo-scientific-ingestion` bestätigt nach dem Upload die tatsächliche Datei, setzt den Status `uploaded` und sendet nur die Dokument-ID an die Queue. Ein dedizierter Queue Consumer verarbeitet das Dokument und schreibt die Ergebnisse nach Supabase zurück. Der bestehende Coach-Worker erhält keinen Service-Role-Key.
+Supabase bleibt für Auth, PostgreSQL, private PDF-Dateien und Chunk-Metadaten zuständig. Die PDF-Textextraktion erfolgt zunächst clientseitig im Browser mit einer zu evaluierenden PDF.js-basierten Bibliothek. Die App sendet extrahierte, seitenbezogene Textabschnitte in kleinen authentifizierten Batches an die separate Supabase Edge Function. Diese prüft Dokumenteigentum und Status und persistiert Chunks idempotent. Der Browser kann ausschließlich eigene private Dokumente verarbeiten; Shared-Freigabe und Kuratierung bleiben serverseitig getrennt.
 
-Details, Sicherheitsgrenzen und offene Tarif-/Parserfragen: [Cloudflare Scientific Ingestion Architecture](./CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md).
+Für diesen MVP werden weder ein zusätzlicher Cloudflare-Ingestion-Worker noch Cloudflare Queues benötigt. Queues würden zwar Jobs zustellen, aber die CPU-Grenze eines Free-Workers nicht aufheben. Der bestehende Coach-Worker bleibt unverändert und ohne Service-Role-Key.
 
-Die bisherige Supabase Edge Function bleibt für Upload-Intent und Status zuständig. Ihre `process-document`-Aktion bleibt HTTP 501, bis der separate Cloudflare-Queue-Pfad implementiert und geprüft ist.
+Die bisherige `process-document`-Aktion im Scaffold bleibt HTTP 501, bis der clientseitige Extraktions- und Chunk-Batch-Pfad implementiert und abgesichert ist. Details: [Cloudflare Scientific Ingestion Architecture](./CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md).
+
+**Hinweis zur Dokumenthistorie:** Frühere Abschnitte, die eine separate Cloudflare Queue-Verarbeitung oder serverseitige PDF-Extraktion vorsehen, sind durch diese Free-Plan-Entscheidung überholt. Die überarbeitete Zielarchitektur in Abschnitt 16 und das verlinkte Architekturpapier sind maßgeblich.
