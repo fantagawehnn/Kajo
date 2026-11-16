@@ -1075,6 +1075,7 @@
             </label>
             <p class="text-[10px] text-slate-500">„Nur HF-Zeitreihen“ prüft die bereits in KAJO vorhandenen Garmin-Aktivitäten im gewählten Zeitraum. Andere Aktivitäts- und Gesundheitsdaten bleiben unverändert.</p>
             <button id="garmin-sync-range-button" type="button" onclick="syncGarminSelectedRange()" class="w-full rounded-lg bg-rose-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-rose-500 disabled:opacity-50">Daten synchronisieren</button>
+            <div id="garmin-sync-result-status" role="status" aria-live="polite" class="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-300">Das Ergebnis der letzten Synchronisierung erscheint hier.</div>
             <div class="border-t border-slate-800 pt-3 space-y-2">
               <div><h4 class="text-xs font-semibold text-white">Gesundheitsdaten wiederherstellen</h4><p class="text-[10px] leading-relaxed text-slate-400">Übernimmt bereits gespeicherte Garmin-Rohdaten für den oben gewählten Zeitraum in die täglichen Check-ins. Es werden keine neuen Garmin-Daten abgerufen; vorhandene Check-in-Werte bleiben erhalten.</p></div>
               <button id="garmin-health-preview-button" type="button" onclick="previewGarminHealthRange()" class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-50">Vorschau berechnen</button>
