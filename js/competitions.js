@@ -192,7 +192,21 @@ export function closeRaceDetail() {
     if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
 }
 
-export function toggleRaceModal() { populateRaceRouteSelect(); document.getElementById('race-modal').classList.toggle('hidden'); }
+export function toggleRaceModal() {
+    populateRaceRouteSelect();
+    const modal = document.getElementById('race-modal');
+    if (!modal) return;
+
+    if (modal.classList.contains('hidden')) {
+        // Aus dem scrollbaren App-Bereich lösen, damit das Modal viewport-zentriert bleibt.
+        if (modal.parentElement !== document.body) document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+        document.body.classList.add('kajo-modal-open');
+    } else {
+        modal.classList.add('hidden');
+        document.body.classList.remove('kajo-modal-open');
+    }
+}
 
 export function addRace() {
     const name = document.getElementById('race-name').value || 'Wettkampf';
