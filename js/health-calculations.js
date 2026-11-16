@@ -185,6 +185,9 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       && !(excludeHealthDates && documentedHealthDates.has(item.date)));
     const validDurations = rows.filter(item => item.duration !== null);
     const totalMinutes = validDurations.reduce((sum, item) => sum + item.duration, 0);
+    const windowLoadRows = loadRows.filter(item => item.date >= from && item.date <= to
+      && !(excludeHealthDates && documentedHealthDates.has(item.date)));
+    const totalLoad = windowLoadRows.reduce((sum, item) => sum + item.value, 0);
     return {
       from, to, calendarDays: days, eligibleCalendarDays,
       activities: rows.length,
