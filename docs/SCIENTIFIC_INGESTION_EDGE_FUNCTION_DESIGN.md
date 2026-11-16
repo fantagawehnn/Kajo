@@ -241,3 +241,20 @@ Erforderliche serverseitige Konfiguration vor einem späteren Deployment: `APP_O
 **Noch nicht produktionsfähig:** Tabellen/Policies/Bucket existieren noch nicht aufgrund dieses Scaffoldings; direkter Browser-Upload, PDF-Parser, tatsächliche Dateisignaturprüfung, serverseitige Größenprüfung des gespeicherten Objekts, atomare Chunk-Persistenz, Rate-Limits, Intent-Ablauf/Bereinigung und Download-/Delete-Aktionen fehlen. Der Prozess-Endpunkt bleibt deshalb deaktiviert (501).
 
 Der Code wurde nur im Repository angelegt. Er wurde nicht deployed und nicht getestet.
+
+
+## 13. Laufzeitprüfung: PDF-Extraktion nicht ungeprüft in den Request-Handler legen
+
+Eine aktuelle Prüfung der Supabase-Laufzeitgrenzen ergibt für gehostete Edge Functions 256 MB maximalen Speicher und 2 Sekunden CPU-Zeit pro Request; das Wall-Clock-Limit beträgt abhängig vom Supabase-Tarif 150 bzw. 400 Sekunden. Diese Grenzen machen eine vollständige PDF-Extraktion in einem einzelnen synchronen Request zu einem erheblichen Risiko, insbesondere bei langen oder layoutkomplexen Papers. Maßgeblich ist die jeweils aktuelle [Supabase-Limitdokumentation](https://supabase.com/docs/guides/functions/limits).
+
+Als Parser-Kandidat ist `unpdf` technisch interessant: Die Bibliothek beschreibt explizit Deno-/Worker-Unterstützung, nutzt einen serverless PDF.js-Build und kann Text seitenweise über die PDF.js-API auslesen. Die dokumentierte Lizenz ist MIT. Das ist ein **Kandidat für einen isolierten Proof of Concept**, keine bereits bestätigte Kompatibilität oder endgültige Auswahl. Siehe [UnPDF-Dokumentation](https://unjs.io/packages/unpdf/).
+
+### Konsequenz für die Zielarchitektur
+
+- Die Edge Function soll Authentifizierung, Upload-Intent, Dateiverifikation und Job-Erstellung übernehmen.
+- Die eigentliche Extraktion sollte nicht allein auf einen lang laufenden Request oder ein flüchtiges `EdgeRuntime.waitUntil()` gestützt werden.
+- Vor Implementierung ist eine dauerhafte Job-/Queue-Strategie zu wählen. Ein separater Worker kann PDFs mit kontrollierter Parallelität und Wiederholungslogik verarbeiten.
+- Falls ein Edge-Function-basierter Ansatz weiterverfolgt wird, muss zuerst ein kleiner PoC mit realistischen wissenschaftlichen PDFs CPU-Zeit, Speicherbedarf, Seitenzuordnung, Unicode und Fehlerfälle messen. Ein einzelner erfolgreicher Test mit einem Dummy-PDF reicht nicht.
+- Die tatsächliche maximale Uploadgröße wird nicht aus dem Storage-Limit allein abgeleitet; sie muss zur Parser- und Worker-Kapazität passen.
+
+**Entscheidung:** `unpdf` wird als erster Parser-Kandidat vorgemerkt, aber noch nicht eingebunden. Die Architektur wird vor der Prozessimplementierung um eine belastbare Job-Ausführung ergänzt. Der aktuelle Function-Scaffold bleibt bei `process-document` deshalb bewusst auf HTTP 501.
