@@ -429,6 +429,10 @@ export async function resumeScientificPdfUpload({
         removeResumeRecord(user.id, documentId);
         throw new Error('UPLOAD_INTENT_EXPIRED');
     }
+    const expectedStoragePath = `${user.id}/${documentId}/original.pdf`;
+    if (document.storage_path !== expectedStoragePath) {
+        throw new Error('DOCUMENT_STORAGE_PATH_MISMATCH');
+    }
 
     const tus = await loadTusClient();
     if (!tus.isSupported || !tus.canStoreURLs) throw new Error('RESUME_STORAGE_UNAVAILABLE');
@@ -474,8 +478,7 @@ export async function resumeScientificPdfUpload({
     const matching = previousUploads.filter(previous =>
         previous.metadata?.bucketName === EXPECTED_BUCKET &&
         previous.metadata?.contentType === 'application/pdf' &&
-        typeof previous.metadata?.objectName === 'string' &&
-        previous.metadata.objectName.endsWith(`/${documentId}/original.pdf`)
+        previous.metadata?.objectName === expectedStoragePath
     );
     if (matching.length !== 1) throw new Error('MATCHING_TUS_SESSION_NOT_FOUND');
 
