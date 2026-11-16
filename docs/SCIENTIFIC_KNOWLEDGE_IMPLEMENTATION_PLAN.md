@@ -117,11 +117,12 @@ Vor der ersten Datenbankmigration sind mindestens folgende Punkte zu entscheiden
 
 ## 7. Ergänzung: atomare private Chunk-Persistenz
 
-Ein separater SQL-Entwurf liegt jetzt unter [`docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql`](./drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql). Er definiert die vorgesehene Transaktionsgrenze für:
+Ein separater SQL-Entwurf liegt unter [`docs/drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql`](./drafts/SCIENTIFIC_INGESTION_RPC_DRAFT.sql). Er definiert die vorgesehenen Transaktionsgrenzen für:
 
-1. den kontrollierten Übergang von `uploaded` nach `extracting`,
-2. idempotente Chunk-Batches mit Konfliktprüfung statt Überschreiben,
-3. den Übergang zu `private_ready` erst nach Prüfung eines lückenlosen Chunk-Indexbereichs.
+1. die atomare Anlage einer privaten Quelle und des zugehörigen Dokumentdatensatzes,
+2. den kontrollierten Übergang von `uploaded` nach `extracting`,
+3. idempotente Chunk-Batches mit Konfliktprüfung statt Überschreiben,
+4. den Übergang zu `private_ready` erst nach Prüfung eines lückenlosen Chunk-Indexbereichs.
 
 Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen und sollen ausschließlich für `service_role` ausführbar sein. Die Edge Function muss vor jedem RPC-Aufruf weiterhin JWT, Dokumenteigentum und private Sichtbarkeit prüfen. Die clientseitigen Extraktionsangaben sind nicht vertrauenswürdig und dürfen nicht als Nachweis für den tatsächlichen PDF-Inhalt interpretiert werden.
 
@@ -132,3 +133,10 @@ Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen und soll
 Der Branch enthält nun in `supabase/functions/scientific-ingestion/index.ts` die Actions `confirm-upload`, `begin-extraction`, `submit-chunk-batch`, `complete-extraction` und `mark-manual-review`. Die Uploadbestätigung prüft Storage-Metadaten und versucht, die PDF-Signatur über einen begrenzten Range-Request zu verifizieren. Chunk-Batches werden vor dem vorgesehenen RPC-Aufruf auf Eigentümer, private Sichtbarkeit, Status und Extraktionsversion geprüft; der Request-Body ist begrenzt.
 
 **Wichtige Einschränkung:** Die Function ist ein Code-Scaffold, kein aktivierter Uploadprozess. Sie hängt von der noch nicht angewendeten Schema-/RPC-Migration, dem privaten Bucket und dessen Storage-Policy ab. Das Verhalten der Range-Antwort muss im Zielprojekt vor Aktivierung verifiziert werden. Rate-Limits, Resume/Retry über Browserabbrüche und Bereinigung verwaister Uploads bleiben offen. Keine Tests, Migration, Bucket-Erstellung oder Deployment wurden durchgeführt.
+
+
+## 9. Atomare Erstellung privater Upload-Intents
+
+Die Edge Function verwendet für `create-upload-intent` nun die vorgesehene RPC `kajo_create_scientific_upload_intent`. Quelle und Dokument werden damit in einer Datenbanktransaktion angelegt; der vorherige Zwei-Schritt-Insert mit nachträglichem Cleanup entfällt. Die Function leitet die Eigentümer-ID weiterhin aus dem validierten JWT ab und übergibt sie an die nur für `service_role` vorgesehene `SECURITY INVOKER`-RPC.
+
+**Status:** Code und SQL-Entwurf sind im Integrationsbranch vorhanden. Die RPC wurde nicht in Supabase angelegt, die Migration nicht angewendet und die Function nicht deployed oder getestet. Vor einer Aktivierung müssen die DDL- und RPC-Entwürfe gegen die reconciliierte Remote-Migrationshistorie sowie tatsächliche Tabellen- und Rollenrechte geprüft werden.
