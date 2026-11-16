@@ -393,12 +393,20 @@ export function saveManagedPeriod() {
     const today=toLocalDateString(), feedback=document.getElementById('kajo-period-feedback');
     if(!start||!end||start>end||end>today){feedback.textContent='Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';return;}
     const previous=editingPeriodRange;
+    const snapshot={};
+    const snapshotStart=previous&&previous.start<start?previous.start:start;
+    const snapshotEnd=previous&&previous.end>end?previous.end:end;
+    const cursor=new Date(snapshotStart+'T12:00:00'),last=new Date(snapshotEnd+'T12:00:00');
+    while(cursor<=last){
+        const date=toLocalDateString(cursor),entry=state.dailyCheckins[date];
+        snapshot[date]=entry?{...entry,cycle:entry.cycle?{...entry.cycle}:undefined}:null;
+        cursor.setDate(cursor.getDate()+1);
+    }
     if(previous) applyPeriodRange(previous.start,previous.end,false);
     applyPeriodRange(start,end,true);
     const saved=saveDataToLocalStorage();
     if(saved!==true){
-        if(previous)applyPeriodRange(previous.start,previous.end,true);
-        else applyPeriodRange(start,end,false);
+        Object.entries(snapshot).forEach(([date,entry])=>{if(entry)state.dailyCheckins[date]=entry;else delete state.dailyCheckins[date];});
         feedback.textContent='Die Änderungen konnten nicht gespeichert werden. Bitte prüfe deine Anmeldung und versuche es erneut.';
         return;
     }
