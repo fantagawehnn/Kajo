@@ -468,7 +468,7 @@ async function loadGarminActivitiesFromCloud() {
     if (error) throw error;
     let added = 0, merged = 0, ambiguous = 0;
     for (const row of data || []) {
-        const candidate = garminCandidateFromPreview(row.activity);
+        const candidate = garminCandidateFromPreview(row.activity, row.garmin_activity_id);
         if (!candidate) continue;
         const matches = findGarminDuplicates(candidate);
         if (matches.length === 1) {
@@ -1498,10 +1498,19 @@ async function connectGarmin() {
 }
 
 let latestGarminPreviewActivities = [];
-function garminCandidateFromPreview(a) {
-    const id = a?.activityId == null ? '' : String(a.activityId), raw = String(a?.startTimeLocal ?? ''), date = raw.slice(0, 10);
-    if (!id || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) return null;
-    const d = new Date(a.startTimeGMT || raw), secs = Number(a.duration), metres = Number(a.distance), avg = Number(a.averageHR), max = Number(a.maxHR);
+function garminCandidateFromPreview(a, storedActivityId = null) {
+    const raw = String(a?.startTimeLocal ?? '');
+    const gmt = String(a?.startTimeGMT ?? '');
+    const idValue = a?.activityId ?? storedActivityId;
+    const id = idValue == null ? '' : String(idValue);
+    const localDate = /^\\d{4}-\\d{2}-\\d{2}/.test(raw) ? raw.slice(0, 10) : '';
+    const parsedStart = new Date(gmt || raw);
+    const startTime = Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : '';
+    // Keep the same date precedence as the backend: local calendar date first,
+    // otherwise the UTC date derived from Garmin's GMT start timestamp.
+    const date = localDate || (startTime ? startTime.slice(0, 10) : '');
+    if (!/^\\d+$/.test(id) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return null;
+    const secs = Number(a.duration), metres = Number(a.distance), avg = Number(a.averageHR), max = Number(a.maxHR);
     const name = String(a.activityName || 'Garmin-Aktivität'), rawType = String(a.activityType || '');
     const nativeLoadValue = a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad;
     // Garmin-Nullwerte dürfen nicht durch Number(null) zu einer echten Load-Null werden.
@@ -1509,7 +1518,7 @@ function garminCandidateFromPreview(a) {
         ? Number(nativeLoadValue)
         : null;
     return { id: 'garmin-' + id, sourceId: 'garmin:' + id, source: 'garmin', sourceRefs: { garminActivityId: id },
-        startTime: Number.isFinite(d.getTime()) ? d.toISOString() : raw, date, name, type: inferSport(name, rawType), tss: null,
+        startTime: startTime || raw, date, name, type: inferSport(name, rawType), tss: null,
         garminTrainingLoad: Number.isFinite(nativeLoad) && nativeLoad >= 0 ? nativeLoad : null,
         aerobicTrainingEffect: a.aerobicTrainingEffect != null && Number.isFinite(Number(a.aerobicTrainingEffect)) ? Number(a.aerobicTrainingEffect) : null,
         anaerobicTrainingEffect: a.anaerobicTrainingEffect != null && Number.isFinite(Number(a.anaerobicTrainingEffect)) ? Number(a.anaerobicTrainingEffect) : null,
@@ -1517,7 +1526,7 @@ function garminCandidateFromPreview(a) {
         distance: Number.isFinite(metres) && metres > 0 ? metres / 1000 : null,
         hr: Number.isFinite(avg) && avg > 0 ? Math.round(avg) : null, maxHr: Number.isFinite(max) && max > 0 ? Math.round(max) : null,
         category: inferCategory(name, rawType), telemetry: null,
-        garminData: { activityId: id, activityName: name, activityType: rawType, startTimeLocal: raw, startTimeGMT: a.startTimeGMT || null,
+        garminData: { activityId: id, activityName: name, activityType: rawType, startTimeLocal: raw || null, startTimeGMT: gmt || null,
             durationSeconds: Number.isFinite(secs) && secs > 0 ? secs : null, distanceMeters: Number.isFinite(metres) && metres > 0 ? metres : null,
             averageHR: Number.isFinite(avg) && avg > 0 ? avg : null, maxHR: Number.isFinite(max) && max > 0 ? max : null } };
 }
