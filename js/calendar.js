@@ -720,6 +720,7 @@ export function deleteCalendarSeasonPhase(id) {
     const remaining = phases.filter(item => item.id !== id);
     if (remaining.length === phases.length) return;
     state.settings.calendarSeasonPhases = remaining;
+    if (!state.settings.calendarSeasonPhaseDismissed.includes(id)) state.settings.calendarSeasonPhaseDismissed.push(id);
     saveDataToLocalStorage();
     renderYearView();
 }
@@ -733,10 +734,10 @@ export function openCalendarPhaseEditor(id) {
     if (!host) return;
     host.classList.add('calendar-year-phase-editor');
     host.innerHTML = '<div class="calendar-year-editor-backdrop" role="presentation" onclick="closeCalendarPhaseEditor()"></div><form class="calendar-year-editor" onsubmit="saveCalendarPhaseEditor(event)">' +
-        '<div class="calendar-year-editor-head"><strong>Trainingsphase bearbeiten</strong><button type="button" onclick="closeCalendarPhaseEditor()" aria-label="Schließen">×</button></div>' +
+        '<div class="calendar-year-editor-head"><strong>Saisonphase bearbeiten</strong><button type="button" onclick="closeCalendarPhaseEditor()" aria-label="Schließen">×</button></div>' +
         '<label>Bezeichnung<input id="calendar-phase-name" maxlength="60" required value="' + escapeHtml(phase.name) + '"></label>' +
         '<div class="calendar-year-editor-dates"><label>Beginn<input id="calendar-phase-start" type="date" required value="' + escapeHtml(phase.start) + '"></label><label>Ende<input id="calendar-phase-end" type="date" required value="' + escapeHtml(phase.end) + '"></label></div>' +
-        '<p>Die Phase wird erst nach dem Speichern als bestätigt in deiner Saison geführt.</p>' +
+        '<p>Nach dem Speichern wird die Phase als bestätigt in deiner Saison geführt.</p>' +
         '<input id="calendar-phase-id" type="hidden" value="' + escapeHtml(id) + '">' +
         '<div class="calendar-year-editor-actions"><button type="button" onclick="closeCalendarPhaseEditor()">Abbrechen</button><button type="submit">Speichern</button></div></form>';
     host.classList.remove('hidden');
@@ -753,7 +754,7 @@ export function saveCalendarPhaseEditor(event) {
     const start = document.getElementById('calendar-phase-start')?.value;
     const end = document.getElementById('calendar-phase-end')?.value;
     if (!id || !name || name.length > 60 || !isValidCalendarPhaseDate(start) || !isValidCalendarPhaseDate(end) || start > end) {
-        alert('Bitte prüfe Bezeichnung und Zeitraum der Trainingsphase.');
+        alert('Bitte prüfe Bezeichnung und Zeitraum der Saisonphase.');
         return;
     }
     const phases = calendarYearPhaseStore();
