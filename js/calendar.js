@@ -77,6 +77,8 @@ function dayActivitySummary(dateStr){
 }
 function dayNumber(value,min,max){if(value===''||value===null||value===undefined)return null;const n=Number(value);return Number.isFinite(n)&&n>=min&&n<=max?n:null;}
 export function openDayEditor(dateStr){
+ const modal=document.getElementById('day-detail-modal');
+ if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
  const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{};
  document.getElementById('day-edit-date').value=dateStr;
  document.getElementById('day-detail-title').textContent='Tagesdaten · '+formatDateDDMMYY(dateStr);
@@ -103,6 +105,7 @@ export function openDayEditor(dateStr){
 }
 export function toggleDayCycleFields(){const yes=document.getElementById('day-period')?.checked===true;document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!yes);}
 export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');}
+export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
  const r={...(state.dailyCheckins[date]||{})};
@@ -375,7 +378,7 @@ export function toggleCalendarFormatMenu(){const menu=document.getElementById('c
 export function closeCalendarFormatMenu(){document.getElementById('calendar-format-menu')?.classList.add('hidden');document.getElementById('calendar-format-button')?.setAttribute('aria-expanded','false');}
 function calendarSeason(){const s=state.settings?.calendarSeason;return s&&/^\d{4}-\d{2}-\d{2}$/.test(s.start||'')&&/^\d{4}-\d{2}-\d{2}$/.test(s.end||'')&&s.start<=s.end?s:null;}
 export function openCalendarHealthCreate(){window.openHealthLogForDate?.(state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate));}
-export function openCalendarPeriodCreate(){const date=state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate);openDayEditor(date);document.getElementById('day-period')?.closest('label')?.scrollIntoView?.({behavior:'smooth',block:'center'});}
+export function openCalendarPeriodCreate(){const date=state.selectedCalendarDay||toLocalDateString();openDayEditor(date);document.getElementById('day-period')?.closest('label')?.scrollIntoView?.({behavior:'smooth',block:'center'});}
 
 export function setCalendarFormat(fmt) {
     const nextFormat = fmt==='season'&&calendarSeason()?'season':(['day','week','month','year','activities'].includes(fmt)?fmt:'week');
@@ -503,7 +506,7 @@ export function applyCalendarPeriodDate(value) {
 export function renderCalendar() {
     const formats = ['day', 'week', 'month', 'year', 'activities', 'season'];
     if(state.activeCalendarFormat==='season'&&!calendarSeason())state.activeCalendarFormat='month';
-    const format = formats.includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'week';
+    const format = formats.includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'month';
     state.activeCalendarFormat = format;
     formats.forEach(item => {
         const button = document.getElementById('btn-fmt-' + item);
