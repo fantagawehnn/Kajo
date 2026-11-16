@@ -24,7 +24,7 @@ import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=6';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, applyDashboardWidgetPreferences, toggleDashboardSetup, saveDashboardWidgetPreferences, resetDashboardLayout, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=3';
-import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=33';
+import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDayHealthImpact, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=33';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=11';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, toggleActivityTestLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=16';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=75';
@@ -177,8 +177,15 @@ function renderHealthAnalysis() {
             card('Aktivitäten an Verletzungstagen', summary.activitiesOnInjuredDays) +
             '</div><p class="kajo-insight-note">Geplante Tage ohne erfasste Aktivität: Krankheit ' +
             summary.plannedSickDaysWithoutActivity + ' · Verletzung ' + summary.plannedInjuredDaysWithoutActivity +
-            '. Das sind keine bestätigten Trainingsausfälle; Einheiten können verschoben, abgesagt oder unvollständig dokumentiert sein. ' +
-            'Trainingsverfügbarkeit ist noch nicht berechenbar, weil gesunde Tage und Ausfallgründe nicht systematisch erfasst werden.</p>';
+            '. Das sind keine bestätigten Trainingsausfälle. Trainingsbeeinträchtigung dokumentiert: ' +
+            (summary.documentedHealthDays - summary.trainingAvailability.undocumented) + ' von ' + summary.documentedHealthDays +
+            ' Gesundheitstagen. Fehlende Angaben bleiben unbekannt.</p>' +
+            '<div class="kajo-insight-grid">' +
+            card('Kein Training möglich', summary.trainingAvailability.unavailable) +
+            card('Training eingeschränkt', summary.trainingAvailability.reduced) +
+            card('Keine Einschränkung', summary.trainingAvailability.unrestricted) +
+            card('Auswirkung unbekannt', summary.trainingAvailability.undocumented) +
+            '</div>';
     }
     list.replaceChildren();
     if (!episodes.length) {
@@ -3045,6 +3052,7 @@ Object.assign(window, {
     toggleCheckinOptionalFields,
     toggleCycleFields,
     toggleDayCycleFields,
+    toggleDayHealthImpact,
     updateCheckin,
     refreshSportAnalytics,
     openSupplementModal,
