@@ -7,6 +7,8 @@ import { saveDataToLocalStorage } from './storage.js?v=2';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate } from './utils.js';
 import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
 
+let editingRaceId = null;
+
 const RACE_PRIORITY_META = {
     A: { title: 'International WM/EM', color: 'bg-rose-500 text-slate-950 font-black' },
     B: { title: 'International World Cup', color: 'bg-amber-400 text-slate-950 font-bold' },
@@ -118,7 +120,7 @@ export function renderRaces() {
             '<div class="flex items-start justify-between gap-3"><div class="min-w-0">' +
             '<div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 text-[10px] rounded ' + meta.color + '">' + priority + '</span><span class="text-[10px] text-slate-400">' + (parseLocalDate(race.date) < today ? 'Abgeschlossen' : 'Geplant') + ' · ' + escapeHtml(meta.title) + '</span></div>' +
             '<h4 class="font-bold text-sm text-white mt-1">' + escapeHtml(race.name) + '</h4><div class="text-xs text-slate-400 mt-0.5">' + formatDateDDMMYY(race.date) + ' · ' + escapeHtml(race.location || 'Ort offen') + '</div><div class="text-[10px] text-slate-400 mt-0.5">' + escapeHtml(race.sport || '') + (race.target ? ' · Ziel: ' + escapeHtml(race.target) : '') + '</div>' + routeInfo +
-            '</div><button onclick="deleteRace(\'' + encodedId + '\')" class="shrink-0 text-slate-500 hover:text-rose-400 text-xs">Löschen</button></div>' +
+            '</div><div class="flex shrink-0 items-center gap-3"><button type="button" onclick="editRace(\'' + encodedId + '\')" class="text-xs text-cyan-300">Bearbeiten</button><button type="button" onclick="deleteRace(\'' + encodedId + '\')" class="text-xs text-slate-500 hover:text-rose-400">Löschen</button></div></div>' +
             '<div class="space-y-2"><div class="flex items-center justify-between"><h5 class="text-xs font-semibold text-slate-200">Ergebnisse <span class="text-slate-500 font-normal">(' + results.length + ')</span></h5><button type="button" onclick="toggleRaceResultsForm(\'' + encodedId + '\')" class="text-[11px] text-cyan-300">+ Ergebnis</button></div>' +
             (rows || '<p class="text-[10px] text-slate-500">Noch keine Ergebnisse eingetragen.</p>') + resultForm + '</div></article>');
     });
@@ -192,22 +194,49 @@ export function closeRaceDetail() {
     if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
 }
 
-export function toggleRaceModal() {
-    populateRaceRouteSelect();
-    const modal = document.getElementById('race-modal');
-    if (!modal) return;
+export function openRaceModalForCreate() {
+    editingRaceId = null;
+    ['race-name', 'race-location', 'race-sport', 'race-target'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    const date = document.getElementById('race-date');
+    if (date) date.value = toLocalDateString();
+    const priority = document.getElementById('race-prio');
+    if (priority) priority.value = 'E';
+    const route = document.getElementById('race-route');
+    if (route) route.value = '';
+    const title = document.getElementById('race-modal-title');
+    if (title) title.textContent = 'Neuen Wettkampf anlegen';
+    const save = document.getElementById('race-modal-save');
+    if (save) save.textContent = 'Wettkampf speichern';
+    toggleRaceModal();
+}
 
-    if (modal.classList.contains('hidden')) {
-        // Aus dem scrollbaren App-Bereich lösen, damit das Modal viewport-zentriert bleibt.
-        const dateInput = document.getElementById('race-date');
-        if (dateInput && !dateInput.value) dateInput.value = toLocalDateString();
-        if (modal.parentElement !== document.body) document.body.appendChild(modal);
-        modal.classList.remove('hidden');
-        document.body.classList.add('kajo-modal-open');
-    } else {
-        modal.classList.add('hidden');
-        document.body.classList.remove('kajo-modal-open');
-    }
+export function editRace(encodedId) {
+    const id = decodeURIComponent(encodedId);
+    const race = state.races.find(item => String(item.id) === id);
+    if (!race) return;
+    populateRaceRouteSelect();
+    editingRaceId = id;
+    const values = {
+        'race-name': race.name || '',
+        'race-date': race.date || '',
+        'race-location': race.location || '',
+        'race-prio': ['A', 'B', 'C', 'D', 'E'].includes(race.prio) ? race.prio : 'E',
+        'race-sport': race.sport || '',
+        'race-target': race.target || '',
+        'race-route': race.routeId || ''
+    };
+    Object.entries(values).forEach(([field, value]) => {
+        const input = document.getElementById(field);
+        if (input) input.value = value;
+    });
+    const title = document.getElementById('race-modal-title');
+    if (title) title.textContent = 'Wettkampf bearbeiten';
+    const save = document.getElementById('race-modal-save');
+    if (save) save.textContent = 'Änderungen speichern';
+    toggleRaceModal();
 }
 
 export function addRace() {
@@ -225,7 +254,21 @@ export function addRace() {
     const routeId = document.getElementById('race-route')?.value || '';
     const label = getRacePriorityMeta(prio).title;
 
-    state.races.push({ id: Date.now().toString(), name, date, location, prio, sport, target, label, ...(routeId ? { routeId } : {}) });
+    const updatedFields = { name, date, location, prio, sport, target, label };
+    if (routeId) updatedFields.routeId = routeId;
+    else delete updatedFields.routeId;
+    if (editingRaceId) {
+        const existing = state.races.find(item => String(item.id) === editingRaceId);
+        if (!existing) {
+            alert('Der Wettkampf konnte nicht mehr gefunden werden. Bitte öffne die Liste erneut.');
+            editingRaceId = null;
+            return;
+        }
+        Object.assign(existing, updatedFields);
+    } else {
+        state.races.push({ id: Date.now().toString(), ...updatedFields });
+    }
+    editingRaceId = null;
     saveDataToLocalStorage();
     refreshAll();
     toggleRaceModal();
