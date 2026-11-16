@@ -265,3 +265,8 @@ Die Statusabfrage eines eigenen privaten Dokuments stellt die Extraktionsversion
 ### Lokale Prüfung der Extraktionsgrenzen
 
 Die PDF.js-Vorschau bricht die Verarbeitung ab, wenn ein Dokument mehr als 10.000 Seiten, 20.000 Chunks oder 20 Millionen extrahierte Zeichen erzeugt. Diese Werte entsprechen den vorbereiteten Server-/RPC-Grenzen. Eine separate maximale Dateigröße wird vor Aktivierung über die Serverkonfiguration festgelegt; sie ist nicht durch die Seiten-/Textgrenzen ersetzt.
+
+
+### Storage-Policy und offene Aktivierungsvoraussetzungen
+
+Der Browser darf ausschließlich per INSERT in den serverseitig vorbereiteten Objektpfad `<owner_id>/<document_id>/original.pdf` hochladen, solange das zugehörige private Dokument dem authentifizierten Nutzer gehört und `pending` ist. Browserseitiges Lesen, Überschreiben und Löschen ist im Entwurf nicht erlaubt; Uploads müssen `upsert: false` verwenden. Die Edge Function prüft anschließend die tatsächliche Dateigröße und PDF-Signatur. Vor Aktivierung fehlen weiterhin Intent-Ablauf, Rate-Limits, Bereinigung verwaister Uploads sowie die abgestimmte Bucket-Größenbegrenzung.
