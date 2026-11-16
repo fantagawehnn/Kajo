@@ -964,10 +964,7 @@ export function renderYearView() {
             return { date: startsBeforeYear ? yearStart : item.start, type: 'phase', title: item.name, detail };
         })
     ].sort((a, b) => a.date.localeCompare(b.date) || ({ race: 0, sick: 1, injured: 2, phase: 3 }[a.type] - ({ race: 0, sick: 1, injured: 2, phase: 3 }[b.type])));
-    const timelineMarkup = timelineEvents.slice(0, 18).map(item => '<div class="calendar-year-timeline-item is-' + item.type + '"><time>' + escapeHtml(formatDateDDMMYY(item.date)) + '</time><span>' + escapeHtml(item.title) + '</span><small>' + escapeHtml(item.detail) + '</small></div>').join('');
-    const timelineOverflow = timelineEvents.length > 18
-        ? '<p class="calendar-year-empty">Es werden die ersten 18 von ' + timelineEvents.length + ' chronologisch sortierten Ereignissen angezeigt.</p>'
-        : '';
+    const timelineMarkup = timelineEvents.map(item => '<div class="calendar-year-timeline-item is-' + item.type + '"><time>' + escapeHtml(formatDateDDMMYY(item.date)) + '</time><span>' + escapeHtml(item.title) + '</span><small>' + escapeHtml(item.detail) + '</small></div>').join('');
 
     const legendTypes = [...new Set(weeks.flatMap(week => [...Object.values(week.bySport).map(item => item.type), ...Object.keys(week.plannedBySport)]))];
     const sportLegend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
