@@ -2157,6 +2157,43 @@ window.addEventListener('endurance:user-ready', event => {
     scheduleCloudSync(userId);
 });
 
+async function startManualCloudSync() {
+    const button = document.getElementById('cloud-sync-manual-button');
+    if (cloudSyncInFlight || button?.disabled) return;
+
+    if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId) {
+        setCloudSyncStatus('Manuelle Synchronisierung nicht möglich: Das angemeldete Konto ist noch nicht vollständig bereit.');
+        return;
+    }
+    if (cloudInitialTransferState !== 'exists') {
+        setCloudSyncStatus('Manuelle Synchronisierung noch nicht möglich: Bitte zuerst den Cloud-Status prüfen. Ein erstmaliger Upload bleibt separat bestätigungspflichtig.');
+        return;
+    }
+    if (cloudSyncBlocked) {
+        setCloudSyncStatus('Manuelle Synchronisierung angehalten: Bitte lade KAJO neu, damit der aktuelle Cloud-Stand erneut geladen und geprüft wird. Es wurde nichts überschrieben.');
+        return;
+    }
+
+    if (cloudSyncTimer) {
+        clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = null;
+    }
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Synchronisierung läuft …';
+    }
+    setCloudSyncStatus('Manuelle Cloud-Synchronisierung wird gestartet …');
+    try {
+        await flushCloudSync();
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Jetzt synchronisieren';
+        }
+    }
+}
+
 function setCloudTransferMessage(message, showButton = false) {
     const transferMessage = document.getElementById('cloud-transfer-message');
     const button = document.getElementById('cloud-sync-initial-button');
@@ -2778,6 +2815,7 @@ Object.assign(window, {
     applyGarminHealthCustomRange,
     openCloudInitialTransferConfirmation,
     openCloudSyncModal,
+    startManualCloudSync,
     closeCloudSyncModal,
     closeCloudInitialTransferConfirmation,
     performCloudInitialTransfer,
