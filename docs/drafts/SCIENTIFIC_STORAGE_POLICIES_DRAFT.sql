@@ -126,3 +126,10 @@ commit;
 -- zusätzlich: d.upload_cleanup_claim_token IS NULL.
 -- Diese Spalte stammt aus SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql und muss
 -- vor Aktivierung der Policy-Migration vorhanden sein.
+
+
+-- Ergänzung zur Pfadbindung des TUS-Resume:
+-- get-document-status gibt storage_path nur für das authentifizierte
+-- Eigentümerkonto zurück. Das Frontend muss diesen Wert exakt mit
+-- <auth.uid>/<document-id>/original.pdf vergleichen und darf keine
+-- TUS-Session anhand eines bloßen Pfadsuffixes akzeptieren.
