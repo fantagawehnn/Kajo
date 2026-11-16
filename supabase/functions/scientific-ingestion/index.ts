@@ -353,7 +353,11 @@ Deno.serve(async (request) => {
 
       const { data: updated, error: updateError } = await admin
         .from("scientific_documents")
-        .update({ processing_status: "uploaded", updated_at: new Date().toISOString() })
+        .update({
+          processing_status: "uploaded",
+          upload_confirmed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", document.id)
         .eq("owner_id", userId)
         .eq("visibility", "private")
