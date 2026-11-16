@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { summarizeHealthDocumentation, summarizeHealthEpisodes } from './health-calculations.js?v=3';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=4';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -165,6 +165,9 @@ function renderHealthAnalysis() {
     );
 
     const episodes = summarizeHealthEpisodes(state.healthLogs, from, to) || [];
+    const episodeTrainingImpact = summarizeHealthEpisodeTrainingImpact(
+        state.healthLogs, state.rawActivities, episodes, 14
+    ) || [];
     if (count) count.textContent = episodes.length ? String(episodes.length) + ' dokumentierte Phasen' : 'Keine Einträge';
     if (metrics && summary) {
         const card = (label, value, detail = '') =>
@@ -208,6 +211,34 @@ function renderHealthAnalysis() {
             detail.textContent = [dateRange, episode.documentedDays + ' dokumentierte Tage',
                 episode.diagnoses.join(', ')].filter(Boolean).join(' · ');
             row.append(label, detail);
+            const impact = episodeTrainingImpact.find(item =>
+                item.startDate === episode.startDate && item.endDate === episode.endDate && item.status === episode.status
+            );
+            if (impact) {
+                const formatHours = minutes => (minutes / 60).toLocaleString('de-DE', {
+                    minimumFractionDigits: 1, maximumFractionDigits: 1
+                }) + ' h';
+                const periodLine = (title, period) => {
+                    const missing = period.activitiesWithoutDuration
+                        ? ' · ' + period.activitiesWithoutDuration + ' ohne Dauer' : '';
+                    return '<div><strong>' + title + ':</strong> ' + formatHours(period.totalMinutes)
+                        + ' · ' + period.activities + ' Aktivitäten' + missing + '</div>';
+                };
+                const comparison = document.createElement('div');
+                comparison.className = 'mt-2 w-full text-xs text-slate-400 space-y-1';
+                comparison.innerHTML = '<div class="font-medium text-slate-300">Dokumentierter Trainingsumfang · 14 Tage davor / Phase / 14 Tage danach</div>'
+                    + periodLine('Davor', impact.before)
+                    + periodLine('Währenddessen', impact.during)
+                    + periodLine('Danach', impact.after)
+                    + '<div>Durchschnitt pro Kalendertag: '
+                    + formatHours(impact.before.averageMinutesPerCalendarDay) + ' / '
+                    + formatHours(impact.during.averageMinutesPerCalendarDay) + ' / '
+                    + formatHours(impact.after.averageMinutesPerCalendarDay)
+                    + '</div><div>Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache.</div>';
+                row.classList.remove('items-center');
+                row.classList.add('flex-col', 'items-stretch');
+                row.appendChild(comparison);
+            }
             list.appendChild(row);
         });
     }
