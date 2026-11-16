@@ -110,3 +110,31 @@ test('does not infer an episode across missing days or healthy-status gaps', () 
     ['2026-11-05', '2026-11-05']
   ]);
 });
+
+test('counts explicitly documented training impact separately from missing impact data', () => {
+  const result = summarizeHealthDocumentation({
+    '2026-11-01': { status: 'sick', trainingAvailability: 'unavailable' },
+    '2026-11-02': { status: 'sick', trainingAvailability: 'reduced' },
+    '2026-11-03': { status: 'injured', trainingAvailability: 'unrestricted' },
+    '2026-11-04': { status: 'injured' },
+    '2026-11-05': { status: 'healthy', trainingAvailability: 'unavailable' }
+  }, [], [], '2026-11-01', '2026-11-30');
+  assert.deepEqual(result.trainingAvailability, {
+    unrestricted: 1,
+    reduced: 1,
+    unavailable: 1,
+    undocumented: 1
+  });
+});
+
+test('does not count training impact attached to healthy days', () => {
+  const result = summarizeHealthDocumentation({
+    '2026-11-01': { status: 'healthy', trainingAvailability: 'unavailable' }
+  }, [], [], '2026-11-01', '2026-11-30');
+  assert.deepEqual(result.trainingAvailability, {
+    unrestricted: 0,
+    reduced: 0,
+    unavailable: 0,
+    undocumented: 0
+  });
+});
