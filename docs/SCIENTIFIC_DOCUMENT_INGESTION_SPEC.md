@@ -294,3 +294,13 @@ Vor Implementierung müssen noch festgelegt werden:
 - Umgang mit parallelen Uploadversuchen und nicht abgeschlossenen Sessions.
 
 Die Cleanup-Finalisierungs-RPC prüft die Quieszenz inzwischen zusätzlich selbst. Weder Upload noch Cleanup sind produktiv aktiviert.
+
+### 27. Festgelegte TUS-Clientbibliothek und isolierter Frontend-Baustein
+
+Für die browserbasierte TUS-Anbindung ist `tus-js-client@4.3.1` festgelegt. Das Repository verwendet native ES-Module ohne Root-`package.json`; deshalb wird das versionierte Browser-Bundle bei explizitem Aufruf dynamisch von jsDelivr geladen. Der neue Baustein liegt in `js/scientific-upload.js`, ist aber noch nicht in die UI importiert und wird nicht ausgeführt.
+
+Der Baustein übernimmt ausschließlich serverseitig gelieferte Intent-Daten, nutzt den vorhandenen Supabase-Client, aktualisiert das Bearer-Token vor jedem TUS-Request und bestätigt den Upload nach Abschluss über die Edge Function. Der direkte Storage-Hostname wird aus der Projekt-URL abgeleitet und auf das Supabase-Format `<project-ref>.storage.supabase.co` abgebildet.
+
+Browserseitige Fingerprints werden derzeit deaktiviert. Dadurch entsteht keine automatische Wiederaufnahme nach einem Browser-Neustart; dieses Verhalten wird nicht vorgetäuscht und benötigt ein eigenes nutzer- und intentgebundenes Resume-Konzept.
+
+Die lokale PDF.js-Vorschau bleibt unverändert und vollständig getrennt vom Upload. Ohne explizite spätere UI-Aktivierung startet kein Upload. Die Infrastruktur bleibt nicht eingerichtet: Tabellen/RPCs/Policies sind Entwürfe, der private Bucket fehlt, die Edge Function ist nicht deployed und ihre Secrets sind nicht gesetzt.
