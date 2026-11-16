@@ -200,3 +200,10 @@ Der konkrete MVP-Aufbau der separaten Supabase Edge Function, einschließlich Au
 ## 13. Nicht durchgeführt
 
 Es wurden keine Storage-Buckets, Tabellen, Policies, Functions, Secrets oder API-Routen angelegt. Es wurde kein Dokument hochgeladen oder verarbeitet. Es wurden keine Tests ausgeführt, kein Merge vorgenommen und kein Deployment gestartet.
+
+
+## 14. Separater Storage-Policy-Entwurf
+
+Der Bucket- und Policy-Entwurf ist in [`drafts/SCIENTIFIC_STORAGE_POLICIES_DRAFT.sql`](./drafts/SCIENTIFIC_STORAGE_POLICIES_DRAFT.sql) dokumentiert. Er sieht einen eigenen privaten Bucket vor und erlaubt authentifizierten Nutzern ausschließlich den INSERT auf einen exakten, serverseitig vorab angelegten Upload-Intent-Pfad. Es gibt darin keine Browser-Lese-, Überschreib- oder Löschrechte.
+
+Das konkrete Bucket-Größenlimit ist noch nicht entschieden. Der Bucket-Entwurf darf daher nicht unverändert ausgeführt werden. Vor einer Migration sind außerdem vorhandene Storage-Policies, die RLS-Lesbarkeit eigener pending-Dokumente und die spätere serverseitige Download-/Löschlogik zu prüfen.
