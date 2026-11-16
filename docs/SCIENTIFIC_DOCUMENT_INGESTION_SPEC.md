@@ -56,15 +56,27 @@ Private Uploads bleiben privat. Ein privates Paper darf nicht stillschweigend in
 
 ## 4. Dokumentstatus und Fehlerbehandlung
 
-Vorgeschlagene Zustandsfolge:
+Die Statuslogik wird bewusst auf zwei Ebenen getrennt:
 
-`draft → uploaded → extracting → extracted → review_pending → approved`
+- `scientific_documents.processing_status` bildet den technischen Verarbeitungszustand ab.
+- `scientific_sources.review_status` bildet die fachliche Freigabe der Quelle ab.
+
+Für ein gemeinsames Dokument gilt:
+
+`pending → uploaded → extracting → extracted → review_pending`
+
+Nach der fachlichen Prüfung wird die **Quelle** auf `approved` oder `rejected` gesetzt. `approved` ist daher kein Dokument-Verarbeitungsstatus.
+
+Für einen privaten Upload gilt:
+
+`pending → uploaded → extracting → extracted → private_ready`
 
 Alternative Endzustände:
 
-- `rejected`: Rechte-, Sicherheits- oder Qualitätsprüfung nicht bestanden.
+- `rejected`: Datei oder Quelle besteht eine Rechte-, Sicherheits- oder Qualitätsprüfung nicht.
 - `failed`: technischer Fehler; erneuter Versuch möglich, ohne Duplikate anzulegen.
-- `private_ready`: Extraktion abgeschlossen, bleibt ausschließlich dem Eigentümer zugänglich.
+
+`review_pending` ist nur für gemeinsame Dokumente zulässig; `private_ready` nur für private Dokumente. Ein privater Upload wird nicht durch den technischen Status zur gemeinsamen Quelle.
 
 Statuswechsel müssen idempotent sein. Eine wiederholte Anfrage mit derselben Dokument-ID darf keine doppelten Chunks oder mehrfachen Freigaben erzeugen. Die Prüfsumme dient zur Erkennung identischer Dateien, ersetzt aber nicht die Prüfung unterschiedlicher Versionen einer Publikation.
 
@@ -86,10 +98,10 @@ Extraktion muss Seitenzahlen erhalten. Wo eine verlässliche Seitenzuordnung nic
 
 ## 6. Chunk- und Evidenzmodell
 
-Jeder Textabschnitt muss mindestens folgende Herkunftsinformationen tragen:
+Jeder Textabschnitt wird als eigener Datensatz in `scientific_document_chunks` gespeichert und muss mindestens folgende Herkunftsinformationen tragen:
 
-- `source_id` und `document_id`
-- fortlaufende Chunk-Nummer
+- `document_id` (die zugehörige `source_id` wird über das Dokument aufgelöst)
+- fortlaufende Chunk-Nummer je Dokument und Extraktionsversion
 - Seitenbereich oder Abschnittsüberschrift, falls verfügbar
 - Extraktionsversion
 - Sprache
@@ -126,6 +138,8 @@ Für jede Quelle wird deshalb ein `access_basis` dokumentiert, zum Beispiel:
 
 Bei ungeklärter Rechtsgrundlage bleibt der Volltext außerhalb der gemeinsamen Wissensbasis. Für Link-only-Quellen können bibliografische Metadaten und ein externer Link gespeichert werden, sofern dies zulässig ist.
 
+Die gemeinsame Lesbarkeit der Chunks folgt der Freigabe der übergeordneten Quelle: Nur Chunks eines genehmigten Shared-Source-Dokuments dürfen in die gemeinsame Suche gelangen. Private Chunks bleiben ausschließlich für den jeweiligen Eigentümer lesbar. Browser-Schreibrechte sind im Schemaentwurf nicht vorgesehen.
+
 ## 8. Vorhandene serverseitige Integrationsbasis
 
 Im Repository existiert bereits `supabase/functions/garmin-personal/index.ts`. Die Funktion zeigt ein bestehendes Muster, das für eine separate Knowledge-Ingestion-Edge-Function geprüft und teilweise wiederverwendet werden kann:
@@ -147,10 +161,12 @@ Vorgeschlagene API-Aufteilung:
 - `POST /api/knowledge/upload-intent`: prüft Berechtigung und erzeugt einen begrenzten Upload-Vorgang.
 - Direkter Upload in den privaten Storage-Bucket mit kurzlebigem, eng begrenztem Upload-Pfad.
 - `POST /api/knowledge/process`: stößt die Verarbeitung nur nach serverseitiger Verifikation an.
-- `GET /api/knowledge/documents/:id`: gibt nur Status und Metadaten zurück, die der Nutzer sehen darf.
-- Interne Kuratierungsaktion: Freigabe gemeinsamer Quellen nur für berechtigte Rollen.
+- `POST /api/knowledge/status` (MVP-Alternative zu einem GET-Pfad): gibt nur Status und Metadaten zurück, die der Nutzer sehen darf.
+- Interne Kuratierungsaktion: Freigabe der übergeordneten Quelle nur für berechtigte Rollen.
 
-Die konkrete Umsetzung (Supabase Edge Function oder Worker) wird erst nach Prüfung der vorhandenen Edge-Function-Struktur und des Secret-/JWT-Konzepts festgelegt. Der aktuelle Worker wird nicht um einen privilegierten Service-Role-Key ergänzt, solange die sichere Zuständigkeit und Secret-Verwaltung nicht geklärt sind.
+Die konkrete HTTP-Routenform ist noch nicht festgelegt; die Aktionsnamen sind fachliche Schnittstellenvorschläge, keine bereits vorhandenen App-Routen.
+
+Für den MVP ist eine **separate Supabase Edge Function** die vorgesehene Umsetzung. Die vorhandene Garmin-Funktion bestätigt ein nutzbares Grundmuster: OPTIONS-Preflight, eng begrenzte CORS-Origin, Bearer-Token-Validierung über einen Anon-Client mit `auth.getUser()` und ein davon getrennter Admin-Client. Für die neue Funktion werden nur die allgemeinen Auth-/Client-Grundsätze übernommen, nicht Garmin-Aktionen, Garmin-Secrets oder deren Cron-Ausnahmen. Die CORS-Origin muss zur tatsächlich genutzten KAJO-App-Domain passen. Die Funktion erhält keine anonyme privilegierte Hintergrundaktion. Der Cloudflare-Chat-Worker erhält keinen Service-Role-Key.
 
 ## 10. MVP-Abnahmekriterien
 
