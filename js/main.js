@@ -2739,6 +2739,15 @@ async function handleAuthSession(session) {
             // Daten werden erst nach erfolgreichem Cloud-Readback lokal bereinigt.
             void (async () => {
                 try {
+                    // Ein leerer Kandidatenbestand ist kein Nachweis dafür, dass
+                    // vorhandene lokale Telemetrie in der Cloud gesichert wurde.
+                    // In diesem Fall darf der lokale Cache keinesfalls gelöscht werden.
+                    if (!migrationCandidates.length) {
+                        console.info('KAJO: Kein lokaler Garmin-Telemetriebestand für den Cloud-Transfer gefunden; lokaler Cache bleibt unverändert.');
+                        void backfillGarminAnalysisOnOpen(userId, sequence);
+                        return;
+                    }
+
                     const cloudTelemetry = await withActivationTimeout(
                         syncGarminTelemetryToCloud(supabase, userId, migrationCandidates),
                         'Die Übertragung deiner Garmin-Telemetrie in die Cloud',
