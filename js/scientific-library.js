@@ -304,6 +304,11 @@ export function renderScientificLibraryView() {
 
     const fileInput = document.getElementById('scientific-pdf-file');
     fileInput?.addEventListener('change', () => {
+        cancelCurrentExtraction();
+        const button = document.getElementById('scientific-library-extract');
+        if (button) { button.disabled = false; button.textContent = 'PDF lokal analysieren'; }
+        const progress = document.getElementById('scientific-library-progress');
+        if (progress) progress.textContent = '';
         const file = fileInput.files?.[0];
         if (!file) return;
         activeFile = file;
