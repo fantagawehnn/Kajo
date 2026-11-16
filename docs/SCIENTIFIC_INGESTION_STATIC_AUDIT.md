@@ -1,3 +1,7 @@
+## Korrektur: Source-ID und Owner-ID im Cleanup-Claim (16.11.2026)
+
+Bei der Nachprüfung wurde ein semantischer Fehler in der Pfadvalidierung entdeckt: `source_id` identifiziert den Literatur-Metadatensatz, nicht den Eigentümer. Die Claim-RPC gibt deshalb nun zusätzlich `owner_id` zurück. Die Cleanup-Function bindet den Storage-Pfad an `owner_id/document_id/original.pdf`. Die vorherige source_id-basierte Pfadprüfung wurde ersetzt. Der SQL-Entwurf und die Function müssen als zusammengehöriger Vertragsstand betrachtet werden.
+
 ## Ergänzung: Exakte Pfadbindung bei TUS-Resume (16.11.2026)
 
 Die Status-Action `get-document-status` gibt für das authentifizierte Eigentümerkonto nun auch den serverseitig gespeicherten `storage_path` zurück. Das isolierte TUS-Modul prüft vor der Wiederaufnahme, dass dieser Pfad exakt `<auth.uid>/<document-id>/original.pdf` entspricht und dass die gespeicherte TUS-Session exakt denselben Objektpfad sowie den erwarteten Bucket und PDF-MIME-Typ enthält. Die vorherige Prüfung nur auf ein passendes Pfadsuffix wurde damit verschärft.
