@@ -12,7 +12,7 @@ const clamp = (v,min=0,max=100)=>Math.max(min,Math.min(max,v));
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 
-export function calculateReadiness(dailyCheckins = {}, dailyTimeline = [], dateKey = localTodayKey()){
+export function calculateReadiness(dailyCheckins = {}, dateKey = localTodayKey()){
   const current=dailyCheckins[dateKey]||{};
   const dateMs=new Date(dateKey+'T12:00:00').getTime();
   const history=Object.entries(dailyCheckins).filter(([date])=>{const ms=new Date(date+'T12:00:00').getTime();return date<dateKey&&Number.isFinite(ms)&&dateMs>ms&&dateMs-ms<=90*86400000;});
@@ -31,14 +31,6 @@ export function calculateReadiness(dailyCheckins = {}, dailyTimeline = [], dateK
   addBaseline('sleepDuration','Schlafdauer',(v,b)=>((v/b)-0.70)/0.30*100);
   if(validNumber(current.sleepScore)&&Number(current.sleepScore)>=0&&Number(current.sleepScore)<=100){
     objective.push({key:'sleepScore',label:'Schlafscore',value:Number(current.sleepScore),score:Math.round(clamp(Number(current.sleepScore)))});
-  }
-  // Acute-to-chronic workload ratio from the existing load timeline. This
-  // is a training-strain indicator, not a medical or injury-risk diagnosis.
-  const loadDay=(dailyTimeline||[]).find(day=>day.date===dateKey);
-  if(loadDay&&validNumber(loadDay.acwr)&&Number(loadDay.acwr)>0){
-    const ratio=Number(loadDay.acwr);
-    const loadScore=clamp(100-Math.max(0,ratio-1)*60-Math.max(0,0.8-ratio)*25);
-    objective.push({key:'trainingLoad',label:'Trainingsbelastung',value:ratio,unit:'ACWR',score:Math.round(loadScore)});
   }
   const subjective=[];
   const addSubjective=(key,label,reverse)=>{if(!validNumber(current[key]))return;const v=Number(current[key]);if(v<1||v>10)return;subjective.push({key,label,value:v,score:Math.round(reverse?(10-v)/9*100:(v-1)/9*100)});};
