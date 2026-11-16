@@ -619,3 +619,36 @@ test('cached Edwards zone analysis remains available without raw telemetry', () 
     assert.equal(result.records.length, 1);
     assert.equal(result.records[0].edwards.value, 80);
 });
+
+import { calculateReadiness } from '../js/recovery-calculations.js';
+
+test('readiness calculation is independent of the dashboard and reports insufficient data', () => {
+    const result = calculateReadiness({}, [], '2026-01-10');
+    assert.equal(result.score, null);
+    assert.equal(result.enoughData, false);
+    assert.equal(result.totalCount, 0);
+});
+
+test('readiness calculation uses personal baselines and existing daily load data', () => {
+    const checkins = {
+        '2026-01-01': { hrv: 70, rhr: 50, sleepDuration: 8 },
+        '2026-01-02': { hrv: 72, rhr: 49, sleepDuration: 8 },
+        '2026-01-03': { hrv: 68, rhr: 51, sleepDuration: 7.5 },
+        '2026-01-04': { hrv: 71, rhr: 50, sleepDuration: 8 },
+        '2026-01-05': { hrv: 69, rhr: 50, sleepDuration: 8 },
+        '2026-01-06': { hrv: 75, rhr: 48, sleepDuration: 8.5, sleepScore: 90, fatigue: 2 },
+        '2026-01-07': { hrv: 72, rhr: 49, sleepDuration: 8, sleepScore: 85, fatigue: 3 },
+        '2026-01-08': { hrv: 70, rhr: 50, sleepDuration: 8, sleepScore: 88, fatigue: 2 },
+        '2026-01-09': { hrv: 73, rhr: 49, sleepDuration: 8.2, sleepScore: 92, fatigue: 2 },
+        '2026-01-10': { hrv: 74, rhr: 48, sleepDuration: 8.1, sleepScore: 91, fatigue: 2 }
+    };
+    const timeline = [{ date: '2026-01-10', acwr: 1.0 }];
+    const result = calculateReadiness(checkins, timeline, '2026-01-10');
+    assert.equal(result.enoughData, true);
+    assert.equal(result.objective.some(item => item.key === 'hrv'), true);
+    assert.equal(result.objective.some(item => item.key === 'rhr'), true);
+    assert.equal(result.objective.some(item => item.key === 'sleepDuration'), true);
+    assert.equal(result.objective.some(item => item.key === 'trainingLoad'), true);
+    assert.equal(result.subjective.some(item => item.key === 'fatigue'), true);
+    assert.ok(result.score >= 0 && result.score <= 100);
+});
