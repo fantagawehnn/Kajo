@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeHealthDocumentation, summarizeHealthEpisodes } from '../js/health-calculations.js';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from '../js/health-calculations.js';
 
 test('counts documented sick and injured days and activities on those days', () => {
   const result = summarizeHealthDocumentation(
@@ -137,4 +137,63 @@ test('does not count training impact attached to healthy days', () => {
     unavailable: 0,
     undocumented: 0
   });
+});
+
+
+test('compares documented activity volume before, during and after a health episode', () => {
+  const healthLogs = {
+    '2026-11-15': { status: 'sick' },
+    '2026-11-16': { status: 'sick' },
+    '2026-11-20': { status: 'injured' }
+  };
+  const episodes = [{
+    status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2
+  }];
+  const activities = [
+    { date: '2026-11-01', duration: 60 },
+    { date: '2026-11-10', duration: 30 },
+    { date: '2026-11-15', duration: 20 },
+    { date: '2026-11-16', duration: 25 },
+    { date: '2026-11-22', duration: 45 },
+    { date: '2026-11-25', duration: null },
+    { date: '2026-11-30', duration: 90 }
+  ];
+  const [result] = summarizeHealthEpisodeTrainingImpact(healthLogs, activities, episodes, 14);
+  assert.equal(result.before.activities, 2);
+  assert.equal(result.before.totalMinutes, 90);
+  assert.equal(result.during.activities, 2);
+  assert.equal(result.during.totalMinutes, 45);
+  assert.equal(result.after.activities, 3);
+  assert.equal(result.after.activitiesWithDuration, 2);
+  assert.equal(result.after.activitiesWithoutDuration, 1);
+  assert.equal(result.after.totalMinutes, 135);
+  assert.equal(result.before.calendarDays, 14);
+  assert.equal(result.during.calendarDays, 2);
+  assert.equal(result.after.calendarDays, 14);
+});
+
+test('excludes other documented health dates from before/after comparison windows', () => {
+  const result = summarizeHealthEpisodeTrainingImpact(
+    { '2026-11-10': { status: 'injured' }, '2026-11-20': { status: 'sick' } },
+    [
+      { date: '2026-11-10', duration: 80 },
+      { date: '2026-11-12', duration: 40 },
+      { date: '2026-11-20', duration: 30 },
+      { date: '2026-11-22', duration: 50 }
+    ],
+    [{ status: 'sick', startDate: '2026-11-20', endDate: '2026-11-20', documentedDays: 1 }],
+    14
+  )[0];
+  assert.equal(result.before.activities, 1);
+  assert.equal(result.before.totalMinutes, 40);
+  assert.equal(result.during.totalMinutes, 30);
+  assert.equal(result.after.activities, 1);
+  assert.equal(result.after.totalMinutes, 50);
+});
+
+test('rejects invalid comparison windows and skips invalid episodes', () => {
+  assert.equal(summarizeHealthEpisodeTrainingImpact({}, [], [], 0), null);
+  assert.deepEqual(summarizeHealthEpisodeTrainingImpact({}, [], [
+    { status: 'sick', startDate: '2026-02-30', endDate: '2026-03-01' }
+  ]), []);
 });
