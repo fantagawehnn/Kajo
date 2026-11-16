@@ -246,7 +246,23 @@ function renderHealthAnalysis() {
                     + formatHours(impact.before.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.during.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.after.averageMinutesPerCalendarDay)
-                    + '</div><div>Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache.</div>';
+                    + '</div><div class="pt-2 font-medium text-slate-300">Return-to-Training · dokumentierter Umfang nach der Phase</div>'
+                    + '<div>Referenz: durchschnittlich ' + formatHours(impact.returnToTraining.baseline.averageMinutesPerCalendarDay)
+                    + ' pro berücksichtigtem Tag in den 14 Tagen davor.</div>'
+                    + impact.returnToTraining.windows.map(window => {
+                        const change = window.averageMinutesChangePercent === null ? 'kein sinnvoller Vergleich möglich'
+                            : (window.averageMinutesChangePercent > 0 ? '+' : '') + window.averageMinutesChangePercent.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' % gegenüber Referenz';
+                        return '<div><strong>' + window.label + ':</strong> ' + formatHours(window.totalMinutes)
+                            + ' · ' + window.activities + ' Aktivitäten · ' + window.eligibleCalendarDays + '/' + window.calendarDays
+                            + ' berücksichtigte Tage · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change
+                            + (window.activitiesWithoutDuration ? ' · ' + window.activitiesWithoutDuration + ' ohne Dauer' : '') + '</div>';
+                    }).join('')
+                    + '<div>Ausgewählter Trainingsload ('
+                    + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit')
+                    + '): ' + impact.returnToTraining.windows.map(window => window.trainingLoad === null ? '—'
+                        : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })).join(' / ')
+                    + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
+                    + '</div><div>Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
                 row.classList.remove('items-center');
                 row.classList.add('flex-col', 'items-stretch');
                 row.appendChild(comparison);
