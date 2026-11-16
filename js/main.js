@@ -1401,7 +1401,11 @@ function garminCandidateFromPreview(a) {
     if (!id || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) return null;
     const d = new Date(a.startTimeGMT || raw), secs = Number(a.duration), metres = Number(a.distance), avg = Number(a.averageHR), max = Number(a.maxHR);
     const name = String(a.activityName || 'Garmin-Aktivität'), rawType = String(a.activityType || '');
-    const nativeLoad = Number(a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad);
+    const nativeLoadValue = a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad;
+    // Garmin-Nullwerte dürfen nicht durch Number(null) zu einer echten Load-Null werden.
+    const nativeLoad = nativeLoadValue != null && nativeLoadValue !== ''
+        ? Number(nativeLoadValue)
+        : null;
     return { id: 'garmin-' + id, sourceId: 'garmin:' + id, source: 'garmin', sourceRefs: { garminActivityId: id },
         startTime: Number.isFinite(d.getTime()) ? d.toISOString() : raw, date, name, type: inferSport(name, rawType), tss: null,
         garminTrainingLoad: Number.isFinite(nativeLoad) && nativeLoad >= 0 ? nativeLoad : null,
