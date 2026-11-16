@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { summarizeHealthDocumentation } from './health-calculations.js?v=1';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes } from './health-calculations.js?v=2';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -164,10 +164,8 @@ function renderHealthAnalysis() {
         to
     );
 
-    const entries = Object.entries(state.healthLogs || {})
-        .filter(([date, value]) => date <= to && value && (value.status === 'sick' || value.status === 'injured'))
-        .sort(([a], [b]) => b.localeCompare(a));
-    if (count) count.textContent = entries.length ? String(entries.length) + ' dokumentierte Gesundheitstage' : 'Keine Einträge';
+    const episodes = summarizeHealthEpisodes(state.healthLogs, from, to) || [];
+    if (count) count.textContent = episodes.length ? String(episodes.length) + ' dokumentierte Phasen' : 'Keine Einträge';
     if (metrics && summary) {
         const card = (label, value, detail = '') =>
             '<div class="kajo-insight-metric"><span>' + label + '</span><strong>' + value + '</strong>' +
@@ -183,21 +181,25 @@ function renderHealthAnalysis() {
             'Trainingsverfügbarkeit ist noch nicht berechenbar, weil gesunde Tage und Ausfallgründe nicht systematisch erfasst werden.</p>';
     }
     list.replaceChildren();
-    if (!entries.length) {
+    if (!episodes.length) {
         const empty = document.createElement('p');
         empty.className = 'text-xs text-slate-500';
-        empty.textContent = 'Noch keine Krankheits- oder Verletzungstage dokumentiert.';
+        empty.textContent = 'Noch keine zusammenhängenden Krankheits- oder Verletzungsphasen dokumentiert.';
         list.appendChild(empty);
     } else {
-        entries.forEach(([date, value]) => {
+        episodes.slice().reverse().forEach(episode => {
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2';
             const label = document.createElement('span');
             label.className = 'text-sm text-slate-200';
-            label.textContent = value.status === 'sick' ? 'Krankheit' : 'Verletzung';
+            label.textContent = episode.status === 'sick' ? 'Krankheit' : 'Verletzung';
             const detail = document.createElement('span');
             detail.className = 'text-xs text-slate-400 text-right';
-            detail.textContent = [date, value.diagnosis].filter(Boolean).join(' · ');
+            const dateRange = episode.startDate === episode.endDate
+                ? episode.startDate
+                : episode.startDate + ' – ' + episode.endDate;
+            detail.textContent = [dateRange, episode.documentedDays + ' dokumentierte Tage',
+                episode.diagnoses.join(', ')].filter(Boolean).join(' · ');
             row.append(label, detail);
             list.appendChild(row);
         });
