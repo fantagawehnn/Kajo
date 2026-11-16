@@ -35,6 +35,7 @@ import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, 
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=11';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
+import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds } from './garmin-cloud-telemetry.js?v=5';
 
@@ -2937,6 +2938,15 @@ Object.assign(window, {
     closeGarminHealthMetric,
     setGarminHealthRange,
     applyGarminHealthCustomRange,
+    runKajoStorageDiagnostics: () => {
+        const report = analyzeSnapshotSizes(getUserDataSnapshot());
+        const output = document.getElementById('kajo-storage-diagnostics-output');
+        if (output) {
+            output.classList.remove('hidden');
+            output.textContent = JSON.stringify(report, null, 2);
+        }
+        return report;
+    },
     openCloudInitialTransferConfirmation,
     openCloudSyncModal,
     closeCloudSyncModal,
