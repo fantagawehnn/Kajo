@@ -390,6 +390,14 @@ assert.ok(competitions.includes('if (routeId) updatedFields.routeId = routeId') 
 assert.ok(competitions.includes('export function openRaceModalForCreate()'), 'new competition creation resets edit state');
 assert.ok(html.includes('id="race-modal-save"') && html.includes('onclick="openRaceModalForCreate()"'), 'competition modal distinguishes create and edit actions');
 assert.ok(main.includes('    editRace,') && main.includes('    openRaceModalForCreate,'), 'competition edit actions are exposed to the UI');
+assert.ok(competitions.includes('export function editRaceResult(encodedId, index)'), 'existing competition results can be opened for editing');
+assert.ok(competitions.includes('form.dataset.editIndex = String(index)'), 'result editing targets the selected result without creating another one');
+assert.ok(competitions.includes('race.results[editIndex] = { ...race.results[editIndex], ...updatedResult }'), 'result edits preserve the existing result identity and unrelated fields');
+assert.ok(competitions.includes('export function cancelRaceResultEdit(encodedId)'), 'result editing can be cancelled without changing saved data');
+assert.ok(competitions.includes('onclick="editRaceResult('), 'competition result rows expose an edit action');
+assert.ok(main.includes('    editRaceResult,') && main.includes('    cancelRaceResultEdit,'), 'result editing actions are exposed to the UI');
+assert.ok(main.includes('openRaceModalForCreate, editRace,'), 'competition create and edit handlers are imported before UI exposure');
+
 
 assert.ok(calendar.includes('window.openRaceModalForCreate?.()'), 'calendar opens a clean competition form before applying the selected date');
 assert.ok(calendar.includes("if (input) input.value = date;"), 'calendar-selected date is retained when creating a competition');
