@@ -99,3 +99,20 @@ Zusätzlich wurde die 24-Stunden-Bedingung in die Finalisierungs-RPC aufgenommen
 TUS ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt. Supabase empfiehlt den resumable Upload insbesondere oberhalb von 6 MB oder bei instabilen Netzwerken; eine erzeugte TUS-Upload-URL ist laut Dokumentation bis zu 24 Stunden gültig. Die bestehende Cleanup-Karenz von sieben Tagen nach Ablauf des Upload-Intents plus 24 Stunden Quieszenz bietet einen deutlichen zeitlichen Abstand zu dieser dokumentierten Session-Gültigkeit.
 
 Noch nicht verifiziert sind die konkrete TUS-Clientbibliothek, das Projektlimit, das Bucket-Limit und das Verhalten im Zielprojekt. Die Frontend-Integration fehlt weiterhin. Der statische Audit bestätigt daher nur die Konsistenz der Entwürfe, nicht den realen Storage-Lifecycle.
+
+## Ergänzende Frontend-Integrationsprüfung: TUS
+
+Geprüft wurden `js/scientific-library.js`, `js/supabase-client.js`, `js/supabase-config.js`, `js/auth.js`, `js/main.js`, der Scientific-Library-Abschnitt in `index.html` sowie `supabase/functions/scientific-ingestion/index.ts`.
+
+Feststellungen:
+
+- Die App nutzt native ES-Module; ein Root-`package.json` oder vorhandener npm-Buildprozess wurde nicht gefunden.
+- Ein gemeinsamer Supabase-Client existiert bereits. Er wird aus `js/supabase-client.js` importiert und verwendet den öffentlichen Publishable Key aus `js/supabase-config.js`.
+- Die Scientific Library ist bereits lazy-loaded. Der lokale PDF.js-PoC ist getrennt und führt keinen Upload aus.
+- Die Edge Function liefert beim Erstellen eines Upload-Intents den Bucket, den serverseitig erzeugten Objektpfad, Dokument-ID und Ablaufzeit zurück. Damit ist die notwendige Intent-Grundlage im Scaffold vorhanden.
+- Die TUS-Frontend-Bibliothek, der tatsächliche Storage-Upload und die UI-Schritte für Upload/Bestätigung sind noch nicht implementiert.
+- Das Repository enthält weiterhin nur Entwürfe für Tabellen/RPCs/Policies; der Bucket und die Edge Function sind nicht produktiv aktiviert. Ein Upload-Button wäre deshalb derzeit eine nicht funktionsfähige bzw. irreführende Oberfläche und wurde nicht ergänzt.
+
+**Entscheidung:** Vor dem Frontend-Code muss die TUS-Bibliothek samt fester Version und browserkompatiblem Einbindungsweg festgelegt werden. Die spätere Integration muss den bestehenden Supabase-Client wiederverwenden, die Nutzer-Session ausschließlich als Storage-Bearer-Credential weiterreichen, den Intent-Pfad unverändert übernehmen und nach TUS-Abschluss zwingend `confirm-upload` sowie eine serverseitige Statusabfrage ausführen.
+
+**Grenze der Prüfung:** reine Repository-/Code-Lektüre. Keine Tests, kein Upload, keine Datenbankänderung, keine Storage-Konfiguration und kein Deployment.
