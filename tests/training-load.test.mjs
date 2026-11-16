@@ -79,6 +79,23 @@ test('Garmin native training load is used when available', () => {
     assert.equal(day.loadMode, 'garmin-native');
 });
 
+test('an explicit Garmin training load of zero remains a valid measured value', () => {
+    const result = getTrainingLoadData([{
+        id: 'g-zero-load', source: 'garmin', date: completedDay, garminTrainingLoad: 0
+    }], {}, {});
+    assert.equal(result.mode, 'garmin-native');
+    assert.equal(result.records.length, 1);
+    assert.equal(result.records[0].value, 0);
+});
+
+test('a missing Garmin training load remains unavailable instead of becoming zero', () => {
+    const result = getTrainingLoadData([{
+        id: 'g-missing-load', source: 'garmin', date: completedDay, garminTrainingLoad: null
+    }], {}, {});
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
+});
+
 test('manual session-RPE load is calculated as duration in minutes times RPE', () => {
     const records = [{ id: 'manual-1', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 6 }];
     const settings = {
