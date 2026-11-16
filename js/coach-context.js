@@ -85,12 +85,14 @@ export function buildAthleteContext(profile = {}) {
             trainingGroup: cleanText(source.trainingGroup),
             coach: cleanText(source.coach),
             trainingLocation: cleanText(source.trainingLocation),
-            background: cleanText(source.athleticBackground),
+            background: cleanText(source.athleticBackground)
+        },
+        career: {
             nationalTitles: cleanText(source.nationalTitles),
             competitionHistory: cleanText(source.competitionHistory),
             personalRecords: cleanText(source.personalRecords),
-            careerHistory: cleanText(source.careerHistory),
-            careerNotes: cleanText(source.careerNotes)
+            history: cleanText(source.careerHistory),
+            notes: cleanText(source.careerNotes)
         },
         performance: {
             maxHeartRateBpm: finiteNumber(source.maxHr),
