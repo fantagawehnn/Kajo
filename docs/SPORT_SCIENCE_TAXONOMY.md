@@ -34,18 +34,21 @@ Diese Taxonomie ist zunächst ein Klassifikationsschema. Sie behauptet nicht, da
 - `endurance-sport`: übergeordnete Kategorie für Ausdauersport.
 - `canoe-sport`: Kanusport als Schwerpunktmodul.
 
-### 2.2 Kanusport – Disziplin- und Kontextdimensionen\n\nDie eigenständige Disziplin **Kanu-Sprint (Flachwasser)** ist strikt vom **Sprintformat im Wildwasserrennsport** zu unterscheiden. Ein gemeinsames Feld „Sprint“ wäre mehrdeutig. Die detaillierten kontrollierten Werte und Regeln stehen im `SCIENTIFIC_METADATA_CONTRACT.md`.
+### 2.2 Kanusport – Disziplin- und Kontextdimensionen
+
+Die eigenständige Disziplin **Kanu-Sprint (Flachwasser)** ist strikt vom **Sprintformat im Wildwasserrennsport** zu unterscheiden. Ein gemeinsames Feld „Sprint“ wäre mehrdeutig. Die detaillierten kontrollierten Werte und Regeln stehen im `SCIENTIFIC_METADATA_CONTRACT.md`.
 
 Diese Dimensionen sollten getrennt gespeichert werden, statt sie in einem einzelnen Freitextfeld zu vermischen:
 
 | Dimension | Vorgesehene Werte / Beispiele |
 |---|---|
-| Bootsklasse | K1, C1, C2, andere nur nach späterer fachlicher Ergänzung |
-| Kanudisziplin | Wildwasserrennsport, Kanu-Sprint (Flachwasser), Kanu-Slalom, Kanu-Marathon, andere / unbekannt |\n| Wildwasser-Wettkampfformat | Classic, Sprint; nur für Wildwasserrennsport |\n| Bootsklasse | K1, C1, C2, andere / nicht berichtet |
-| Gewässer-/Umgebungskontext | Wildwasser, Flachwasser |
-| Aktivitätsrolle | Hauptdisziplin, ergänzende Trainingsform |
+| Kanudisziplin | Wildwasserrennsport, Kanu-Sprint (Flachwasser), Kanu-Slalom, Kanu-Marathon, andere / unbekannt |
+| Bootsklasse | K1, C1, C2, andere / nicht berichtet |
+| Wildwasser-Wettkampfformat | Classic, Sprint; nur für Wildwasserrennsport |
+| Gewässer-/Umgebungskontext | Wildwasser, Flachwasser, Laborbecken / nicht berichtet |
+| Aktivitätsrolle | Hauptdisziplin, ergänzende Trainingsform, Vergleichsgruppe |
 | Trainingsziel | Technik, Ausdauer, Kraft, wettkampfspezifisch, Regeneration |
-| Messkontext | Training, standardisierter Test, Wettkampf |
+| Messkontext | Labor, Feld, Training, Wettkampf, Regeneration |
 | Vergleichsbedingungen | Strecke, Dauer/Distanz, Wasserstand/Strömung, Wetter/Wind, soweit dokumentiert |
 
 Die Werte sind Klassifikationsmerkmale. Sie ersetzen keine Prüfung, ob zwei Einheiten tatsächlich vergleichbar sind.
