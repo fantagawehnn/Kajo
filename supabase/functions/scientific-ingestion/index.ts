@@ -364,7 +364,11 @@ Deno.serve(async (request) => {
         return json(415, { error: "Uploaded file is not a verifiable PDF" }, configuredOrigin);
       }
       const contentRange = signatureResponse.headers.get("Content-Range") ?? "";
-      if (!contentRange.startsWith(`bytes 0-4/`) || signatureResponse.headers.get("Content-Length") !== "5") {
+      const contentLength = signatureResponse.headers.get("Content-Length");
+      if (
+        contentRange !== `bytes 0-4/${objectInfo.size}` ||
+        (contentLength !== null && contentLength !== "5")
+      ) {
         await signatureResponse.body?.cancel();
         return json(415, { error: "Uploaded file range could not be verified" }, configuredOrigin);
       }
