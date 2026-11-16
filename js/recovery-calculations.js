@@ -116,13 +116,22 @@ export function summarizeRecoveryTrends(dailyCheckins = {}, dateKey = localToday
       .map(([, row]) => recoveryTrendValue(row, key)).filter(value => value !== null);
     const currentAverage = average(currentValues);
     const previousAverage = average(previousValues);
+    const baselineValues = ['hrv', 'rhr'].includes(key)
+      ? entries.filter(([date]) => date < from && date >= keyFor(shift(end, -97)))
+          .map(([, row]) => recoveryTrendValue(row, key)).filter(value => value !== null)
+      : [];
+    const baselineMedian = baselineValues.length >= 5 ? median(baselineValues) : null;
     return {
       key, ...meta,
       currentAverage: currentAverage === null ? null : Number(currentAverage.toFixed(2)),
       previousAverage: previousAverage === null ? null : Number(previousAverage.toFixed(2)),
       delta: currentAverage === null || previousAverage === null ? null : Number((currentAverage - previousAverage).toFixed(2)),
       currentCount: currentValues.length,
-      previousCount: previousValues.length
+      previousCount: previousValues.length,
+      baselineMedian: baselineMedian === null ? null : Number(baselineMedian.toFixed(2)),
+      baselineCount: baselineValues.length,
+      baselineDeltaPercent: baselineMedian === null || currentAverage === null || baselineMedian === 0
+        ? null : Number(((currentAverage / baselineMedian - 1) * 100).toFixed(1))
     };
   });
   return { from, to, previousFrom, previousTo, metrics };
