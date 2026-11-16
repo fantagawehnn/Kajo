@@ -1576,6 +1576,22 @@
       </div>
     </div>
 
+    <div id="calendar-period-modal" class="hidden fixed inset-0 z-[2147483006] items-center justify-center bg-slate-950/85 backdrop-blur-sm p-3" aria-hidden="true">
+      <section class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 space-y-4" role="dialog" aria-modal="true" aria-labelledby="calendar-period-title">
+        <div class="flex items-center justify-between gap-3">
+          <div><h2 id="calendar-period-title" class="text-lg font-bold text-white">Periode eintragen</h2><p class="text-xs text-slate-400">Wähle einen Tag oder einen Zeitraum.</p></div>
+          <button type="button" onclick="closeCalendarPeriodCreate()" class="p-2 text-slate-400" aria-label="Schließen">✕</button>
+        </div>
+        <label class="block text-xs text-slate-400">Von<input id="period-range-start" type="date" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-white"></label>
+        <label class="block text-xs text-slate-400">Bis<input id="period-range-end" type="date" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-white"></label>
+        <p class="text-xs text-slate-500">Alle Tage einschließlich Start- und Enddatum werden als Periodentage markiert. Es werden keine weiteren Check-in-Daten abgefragt.</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="removeCalendarPeriodRange()" class="rounded-xl border border-slate-700 px-3 py-3 text-sm text-slate-300">Periode entfernen</button>
+          <button type="button" onclick="saveCalendarPeriod()" class="rounded-xl bg-rose-600 px-3 py-3 text-sm font-semibold text-white">Speichern</button>
+        </div>
+      </section>
+    </div>
+
     <div id="daily-note-modal" class="hidden" aria-hidden="true">
       <div class="daily-note-backdrop" onclick="if(event.target===this)closeDailyNote()">
         <section class="daily-note-panel" role="dialog" aria-modal="true" aria-labelledby="daily-note-title">
@@ -1610,7 +1626,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=121"></script>
+    <script type="module" src="js/main.js?v=122"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
