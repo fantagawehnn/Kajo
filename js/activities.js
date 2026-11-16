@@ -1261,7 +1261,7 @@ function renderOptionalActivityViews(act) {
         const fastestManual = manualSpeeds.length ? Math.max(...manualSpeeds) : null;
         const rows = comparableLaps.map(item => {
             const { lap, index, duration, distance, speed, pace } = item;
-            const sFormPart = sFormLapMap.get(i);
+            const sFormPart = sFormLapMap.get(item.index - 1);
             const label = escapeHtml(lap.name || lap.label || `Runde ${index}`)
                 + (sFormPart ? ` · S-Form ${sFormPart.segment.index} / Split ${sFormPart.splitIndex}` : '');
             const triggerLabel = lap.lapTrigger == null || lap.lapTrigger === ''
