@@ -1240,19 +1240,45 @@ async function syncGarminSelectedRange() {
     const totalDays = Math.max(1, Math.round((new Date(endDate + 'T00:00:00Z') - new Date(startDate + 'T00:00:00Z')) / 86400000) + 1);
     setGarminSyncIndicator('syncing', 'Synchronisierung läuft');
     renderGarminSyncProgress(0, totalDays);
-    let includeActivities = true;
-    let remainingDays = null;
-    let activitySummary = null;
+    const addUtcDays = (date, days) => {
+        const value = new Date(date + 'T00:00:00Z');
+        value.setUTCDate(value.getUTCDate() + days);
+        return value.toISOString().slice(0, 10);
+    };
+    const chunks = [];
+    for (let cursor = startDate; cursor <= endDate;) {
+        const candidateEnd = addUtcDays(cursor, 6);
+        const chunkEnd = candidateEnd < endDate ? candidateEnd : endDate;
+        chunks.push({ startDate: cursor, endDate: chunkEnd });
+        cursor = addUtcDays(chunkEnd, 1);
+    }
+
+    let activitySummary = { status: 'ok', fetched: 0, stored: 0, scannedDays: 0, skippedDays: 0 };
     let healthImportSummary = { days: 0, values: 0 };
-    let batch = 0;
     let consecutiveRateLimits = 0;
-    try {
+    let batch = 0;
+    let completedBeforeChunk = 0;
+
+    // Each Edge Function request handles at most seven calendar days of activity
+    // history. Health history keeps its own three-day cursor inside that chunk.
+    // This prevents a long historical range from exhausting the worker time limit.
+    for (const chunk of chunks) {
+        let includeActivities = true;
+        let remainingDays = null;
+        const chunkDays = Math.floor(
+            (new Date(chunk.endDate + 'T00:00:00Z').getTime() - new Date(chunk.startDate + 'T00:00:00Z').getTime()) / 86400000
+        ) + 1;
+
         while (remainingDays !== 0) {
-            if (batch >= 1000) throw new Error('Sicherheitsgrenze für automatische Teilabrufe erreicht. Der gespeicherte Fortschritt bleibt erhalten.');
+            if (batch >= 5000) throw new Error('Sicherheitsgrenze für automatische Teilabrufe erreicht. Der gespeicherte Fortschritt bleibt erhalten.');
             let response;
             try {
                 response = await callGarminFunction({
-                    action: 'sync-range', startDate, endDate, includeActivities,
+                    action: 'sync-range',
+                    startDate: chunk.startDate,
+                    endDate: chunk.endDate,
+                    activityRescanEndDate: endDate,
+                    includeActivities,
                     timezoneOffsetMinutes: new Date().getTimezoneOffset(),
                     onlyMissingDays: true
                 });
@@ -1266,19 +1292,20 @@ async function syncGarminSelectedRange() {
                 batch++;
                 continue;
             }
+
             includeActivities = false;
             const sync = response.sync || {};
             const health = sync.healthSync || {};
             if (sync.activitySync) {
-                activitySummary = sync.activitySync;
-                await loadGarminActivitiesFromCloud();
-                if (sync.activitySync.status === 'ok') {
-                    recordGarminActivityCoverageRange(startDate, endDate);
-                    initEngine();
+                for (const key of ['fetched', 'stored', 'scannedDays', 'skippedDays']) {
+                    activitySummary[key] += Number(sync.activitySync[key] || 0);
                 }
+                activitySummary.status = sync.activitySync.status || activitySummary.status;
+                await loadGarminActivitiesFromCloud();
             }
+
             remainingDays = Number(health.remainingDays ?? 0);
-            const completedDays = Math.max(0, Math.min(totalDays, totalDays - remainingDays));
+            const completedDays = Math.max(0, Math.min(totalDays, completedBeforeChunk + chunkDays - remainingDays));
             const dayResults = Array.isArray(health.results) ? health.results : [];
             const datesInBatch = dayResults
                 .map(day => String(day?.date || day?.record_date || day?.day || '').slice(0, 10))
@@ -1313,11 +1340,18 @@ async function syncGarminSelectedRange() {
                 throw new Error('Teilimport pausiert: ' + (first?.error || first?.dataType || 'Ein Garmin-Endpunkt konnte nicht vollständig abgerufen werden') + '. Der gespeicherte Fortschritt bleibt erhalten; ein erneuter Start kann fortsetzen.');
             }
             if (remainingDays > 0 && Number(health.processedDays || 0) === 0) {
-                throw new Error('Der Garmin-Import hat keinen Fortschritt erzielt. Der gespeicherte Fortschritt bleibt erhalten.');
+                throw new Error('Der Garmin-Import hat in diesem Teilzeitraum keinen Fortschritt erzielt. Der gespeicherte Fortschritt bleibt erhalten.');
             }
             batch++;
         }
 
+        completedBeforeChunk += chunkDays;
+    }
+
+    if (activitySummary.status === 'ok') {
+        recordGarminActivityCoverageRange(startDate, endDate);
+        initEngine();
+    }
         healthImportSummary = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
         const message = status.querySelector('#garmin-sync-progress-message');
         if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
