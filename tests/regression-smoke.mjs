@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 const store = new Map();
 const elements = {};
@@ -300,4 +301,10 @@ state.rawActivities = [editable];
 activities.updateActivityRPE(8);
 assert.equal(editable.perceivedEffort, 8);
 assert.equal(editable.sRpeLoad, 480);
+// Garmin-Load: explicit zero is valid, but absent/null values must stay missing.
+const mainSource = await readFile(new URL('../js/main.js', import.meta.url), 'utf8');
+assert.ok(mainSource.includes('const nativeLoadValue = a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad;'));
+assert.ok(mainSource.includes("nativeLoadValue != null && nativeLoadValue !== ''"));
+assert.ok(mainSource.includes('garminTrainingLoad: Number.isFinite(nativeLoad) && nativeLoad >= 0 ? nativeLoad : null,'));
+
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load and backup restore.');
