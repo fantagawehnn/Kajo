@@ -379,6 +379,6 @@ assert.ok(main.includes("async function startManualCloudSync()"), 'manual cloud 
 assert.ok(main.includes("    startManualCloudSync,"), 'manual cloud sync action is exposed to the HTML control');
 assert.ok(html.includes('id="cloud-sync-manual-button"') && html.includes('onclick="startManualCloudSync()"'), 'cloud sync modal exposes the manual sync action');
 assert.ok(main.includes("cloudInitialTransferState !== 'exists'"), 'manual cloud sync cannot perform an unconfirmed initial upload');
-assert.ok(css.includes('#planned-workout-modal {') && css.includes('z-index: 2147483003'), 'planned workout modal remains above fixed mobile navigation');
+assert.ok(css.includes('#planned-workout-modal:not(.hidden)') && css.includes('z-index: 2147483003'), 'planned workout modal remains above fixed mobile navigation');
 
 
