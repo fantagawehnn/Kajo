@@ -629,7 +629,7 @@ test('readiness calculation is independent of the dashboard and reports insuffic
     assert.equal(result.totalCount, 0);
 });
 
-test('readiness calculation uses personal baselines and existing daily load data', () => {
+test('readiness calculation uses personal recovery baselines without mixing training load', () => {
     const checkins = {
         '2026-01-01': { hrv: 70, rhr: 50, sleepDuration: 8 },
         '2026-01-02': { hrv: 72, rhr: 49, sleepDuration: 8 },
@@ -642,13 +642,13 @@ test('readiness calculation uses personal baselines and existing daily load data
         '2026-01-09': { hrv: 73, rhr: 49, sleepDuration: 8.2, sleepScore: 92, fatigue: 2 },
         '2026-01-10': { hrv: 74, rhr: 48, sleepDuration: 8.1, sleepScore: 91, fatigue: 2 }
     };
-    const timeline = [{ date: '2026-01-10', acwr: 1.0 }];
-    const result = calculateReadiness(checkins, timeline, '2026-01-10');
+    const result = calculateReadiness(checkins, '2026-01-10');
     assert.equal(result.enoughData, true);
     assert.equal(result.objective.some(item => item.key === 'hrv'), true);
     assert.equal(result.objective.some(item => item.key === 'rhr'), true);
     assert.equal(result.objective.some(item => item.key === 'sleepDuration'), true);
-    assert.equal(result.objective.some(item => item.key === 'trainingLoad'), true);
+    assert.equal(result.objective.some(item => item.key === 'trainingLoad'), false);
+    assert.equal(result.objectiveCount, 4);
     assert.equal(result.subjective.some(item => item.key === 'fatigue'), true);
     assert.ok(result.score >= 0 && result.score <= 100);
 });
