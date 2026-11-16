@@ -5,7 +5,7 @@
  * ============================================================ */
 import { state } from './state.js';
 import { renderMetricHistory } from './dashboard.js?v=3';
-import { calculateReadiness, summarizeRecoveryTrends } from './recovery-calculations.js?v=2';
+import { calculateReadiness, summarizeRecoveryTrends, summarizeSleepDeficit } from './recovery-calculations.js?v=3';
 import { escapeHtml, formatDateDDMMYY } from './utils.js';
 
 const todayKey = () => {
@@ -170,6 +170,7 @@ function renderRecoveryInsight() {
         .filter(([date]) => date >= daysAgoKey(6) && date <= today);
     const readiness = calculateReadiness(state.dailyCheckins);
     const recoveryTrends = summarizeRecoveryTrends(state.dailyCheckins, today);
+    const sleepDeficit = summarizeSleepDeficit(state.dailyCheckins, state.profile?.sleepNeedHours, today, 7);
     const trendFormat = (value, digits) => valid(value)
         ? Number(value).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: digits })
         : '—';
@@ -188,9 +189,18 @@ function renderRecoveryInsight() {
         ? 'Aktuell: ' + recoveryTrends.from + ' bis ' + recoveryTrends.to +
           ' · Vergleich: ' + recoveryTrends.previousFrom + ' bis ' + recoveryTrends.previousTo
         : 'Kein gültiger Zeitraum verfügbar.';
+    const sleepDeficitValue = sleepDeficit.target === null ? 'Zielwert fehlt'
+        : sleepDeficit.cumulativeShortfall === null ? 'Keine Schlafdaten'
+        : trendFormat(sleepDeficit.cumulativeShortfall, 1) + ' h';
+    const sleepDeficitDetail = sleepDeficit.target === null
+        ? 'Persönliches Schlafbedürfnis im Athletenprofil unter Regeneration hinterlegen.'
+        : 'Ziel: ' + trendFormat(sleepDeficit.target, 2) + ' h/Nacht · ' +
+          sleepDeficit.measuredNights + '/7 Nächte gemessen · ' +
+          sleepDeficit.nightsBelowTarget + ' Nächte unter Ziel.';
+    const sleepDeficitCard = metric('Schlafdefizit · 7 Tage', sleepDeficitValue, sleepDeficitDetail);
     const recoveryTrendMarkup =
-        '<div class="kajo-insight-grid">' + trendCards.join('') + '</div>' +
-        note(trendDates + '. Mittelwerte der vorhandenen Messungen; fehlende Tage werden nicht ergänzt. Veränderungen werden neutral angezeigt und sind keine medizinische Bewertung.');
+        '<div class="kajo-insight-grid">' + trendCards.join('') + sleepDeficitCard + '</div>' +
+        note(trendDates + '. Mittelwerte der vorhandenen Messungen; fehlende Tage werden nicht ergänzt. Das Schlafdefizit summiert ausschließlich dokumentierte Unterschreitungen des persönlichen Schlafziels; längere Nächte an anderen Tagen werden nicht gegengerechnet. Keine medizinische Bewertung.');
     const objective = Array.isArray(readiness.objective) ? readiness.objective : [];
     const findObjective = key => objective.find(item => item.key === key);
     const rhrBaseline = findObjective('rhr');
