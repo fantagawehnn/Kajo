@@ -159,21 +159,47 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
   const documentedHealthDates = new Set(Object.entries(healthLogs || {})
     .filter(([date, item]) => validDateKey(date) && (item?.status === 'sick' || item?.status === 'injured'))
     .map(([date]) => date));
-  const activityRows = (Array.isArray(activities) ? activities : []).map(activity => {
-    const date = itemDateKey(activity);
-    const rawDuration = activity?.duration;
-    const duration = rawDuration !== null && rawDuration !== undefined && rawDuration !== ''
-      && Number.isFinite(Number(rawDuration)) && Number(rawDuration) > 0
-      ? Number(rawDuration) : null;
-    return { date, duration };
-  }).filter(item => item.date);
+  // rawActivities sollte pro KAJO-Aktivitäts-ID genau einen Datensatz enthalten.
+  // Bei identischer ID, Datum und Startzeit wird ein versehentlich doppelt
+  // vorhandener Eintrag in dieser Analyse nur einmal berücksichtigt. Gleiche
+  // IDs mit abweichender Zeitzuordnung bleiben bewusst erhalten.
+  const deduplicateActivityRows = rows => {
+    const seen = new Set();
+    let excluded = 0;
+    const unique = rows.filter(item => {
+      if (item.id == null || item.id === '') return true;
+      const key = [String(item.id), item.date || '', item.startTime || ''].join('|');
+      if (seen.has(key)) {
+        excluded++;
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+    return { rows: unique, excluded };
+  };
+  const activityResult = deduplicateActivityRows(
+    (Array.isArray(activities) ? activities : []).map(activity => {
+      const date = itemDateKey(activity);
+      const rawDuration = activity?.duration;
+      const duration = rawDuration !== null && rawDuration !== undefined && rawDuration !== ''
+        && Number.isFinite(Number(rawDuration)) && Number(rawDuration) > 0
+        ? Number(rawDuration) : null;
+      return { id: activity?.id, date, startTime: activity?.startTime || '', duration };
+    }).filter(item => item.date)
+  );
+  const activityRows = activityResult.rows;
 
-  const loadRows = (Array.isArray(trainingLoadRecords) ? trainingLoadRecords : []).map(record => ({
-    id: record?.activity?.id,
-    date: itemDateKey(record?.activity),
-    value: record?.value !== null && record?.value !== undefined && record?.value !== ''
-      && Number.isFinite(Number(record.value)) ? Number(record.value) : null
-  })).filter(item => item.date && item.value !== null);
+  const loadResult = deduplicateActivityRows(
+    (Array.isArray(trainingLoadRecords) ? trainingLoadRecords : []).map(record => ({
+      id: record?.activity?.id,
+      date: itemDateKey(record?.activity),
+      startTime: record?.activity?.startTime || '',
+      value: record?.value !== null && record?.value !== undefined && record?.value !== ''
+        && Number.isFinite(Number(record.value)) ? Number(record.value) : null
+    })).filter(item => item.date && item.value !== null)
+  );
+  const loadRows = loadResult.rows;
   const validAsOfDate = validDateKey(asOfDate) ? asOfDate : null;
   const summarizeWindow = (from, to, excludeHealthDates = false, capAtAsOfDate = false) => {
     const requestedTo = to;
@@ -185,6 +211,8 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       trainingLoad: null, trainingLoadActivityCount: 0,
       averageTrainingLoadPerCalendarDay: null,
       trainingLoadMode: loadMode, trainingLoadUnit: loadUnit,
+      duplicateActivityRecordsExcluded: activityResult.excluded,
+      duplicateLoadRecordsExcluded: loadResult.excluded,
       daysWithActivity: 0, notStarted: true
     };
     const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
@@ -213,6 +241,8 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
         ? totalLoad / eligibleCalendarDays : null,
       trainingLoadMode: loadMode,
       trainingLoadUnit: loadUnit,
+      duplicateActivityRecordsExcluded: activityResult.excluded,
+      duplicateLoadRecordsExcluded: loadResult.excluded,
       daysWithActivity: new Set(rows.map(item => item.date)).size,
       notStarted: false,
       requestedTo
