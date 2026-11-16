@@ -56,7 +56,8 @@ function renderRings(timeline){
  const mode=last?.loadMode==='srpe'?'sRPE-Load':last?.loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':last?.loadMode==='garmin-native'?'Garmin Native Load':'Belastungsmodell';
  setText('training-load-status-title',mode);
  const automaticWarning=(!state.settings?.trainingLoadSource || state.settings.trainingLoadSource==='auto')?' Automatik priorisiert Garmin Native Load, kann bei veränderter Datenabdeckung aber auf den KAJO-Zonenindex oder sRPE wechseln und berechnet dann auch historische Werte auf dieser Skala neu. Für stabile Langzeitvergleiche eine feste Quelle in den Einstellungen wählen.':'';
-  setText('training-load-status-note',last?'CTL und ATL beruhen auf derselben Belastungsskala. TSB ist die Differenz aus CTL und ATL. Die Kreise zeigen Messwerte, keinen künstlichen Fortschritt oder Zielerreichungs-Prozentwert.'+automaticWarning:'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.'+automaticWarning);
+ const warmupWarning=last?.isProvisional?' Die Werte befinden sich noch in der Einlaufphase: Seit Beginn der letzten lückenlos abgedeckten Periode liegen weniger als 126 Tage vor. Die Initialisierung bei null kann CTL und ATL noch beeinflussen.':'';
+  setText('training-load-status-note',last?'CTL und ATL beruhen auf derselben Belastungsskala. TSB ist die Differenz aus CTL und ATL. Die Kreise zeigen Messwerte, keinen künstlichen Fortschritt oder Zielerreichungs-Prozentwert.'+warmupWarning+automaticWarning:'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.'+automaticWarning);
 }
 function renderVolumeSummary(activities,range){
  const hasDuration=item=>item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0;
