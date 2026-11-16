@@ -365,4 +365,4 @@ assert.ok(calendar.includes("totalReps=sets.reduce"), 'day editor totals repetit
 assert.ok(calendar.includes("volume=sets.reduce"), 'day editor calculates volume from recorded sets');
 assert.ok(calendar.includes("Sätze · '+totalReps+' Wdh."), 'day editor displays the number of recorded sets and repetitions');
 assert.ok(calendar.includes("item.exercise || 'Krafttraining', detail"), 'day timeline displays set details when available');
-assert.ok(calendar.includes("dateInput.value = toLocalDateString()"), 'race modal defaults to today rather than a stale hard-coded date');
+assert.ok(competitions.includes("dateInput.value = toLocalDateString()"), 'race modal defaults to today rather than a stale hard-coded date');
