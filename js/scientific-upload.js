@@ -164,7 +164,7 @@ function createFingerprint(userId, documentId) {
     };
 }
 
-function buildUploadOptions({ file, intent, userId, onProgress, onStatus, onSettled }) {
+function buildUploadOptions({ intent, userId, initialToken, onProgress, onSettled }) {
     return {
         endpoint: TUS_ENDPOINT,
         chunkSize: TUS_CHUNK_SIZE,
@@ -174,7 +174,7 @@ function buildUploadOptions({ file, intent, userId, onProgress, onStatus, onSett
         fingerprint: createFingerprint(userId, intent.document_id),
         headers: {
             apikey: SUPABASE_ANON_KEY,
-            Authorization: 'Bearer pending-token',
+            Authorization: `Bearer ${initialToken}`,
             'x-upsert': 'false'
         },
         metadata: {
@@ -314,12 +314,14 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
         removeResumeRecord(user.id, intent.document_id);
     }
 
+    const initialToken = await getFreshAccessToken();
+    let finishUpload;
     const upload = new tus.Upload(file, buildUploadOptions({
-        file,
         intent,
         userId: user.id,
+        initialToken,
         onProgress,
-        onStatus
+        onSettled: (...args) => finishUpload?.(...args)
     }));
     const controller = createCompletionController({
         documentId: intent.document_id,
@@ -328,6 +330,8 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
         onStatus,
         upload
     });
+
+    finishUpload = controller.finish;
 
     onStatus?.(canPersistResume && tus.canStoreURLs
         ? 'PDF wird übertragen. Eine sichere Wiederaufnahme wird vorbereitet …'
@@ -349,8 +353,8 @@ export async function listResumableScientificUploads() {
     const user = await getAuthenticatedUser();
     const records = [];
     try {
-        for (let index = 0; index < localStorage.length; index += 1) {
-            const key = localStorage.key(index);
+        const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index));
+        for (const key of keys) {
             if (!key?.startsWith(`${RESUME_KEY_PREFIX}${user.id}:`)) continue;
             try {
                 const record = JSON.parse(localStorage.getItem(key));
@@ -438,18 +442,34 @@ export async function resumeScientificPdfUpload({
 
     // For resume, the object path is already embedded in the saved TUS URL
     // and metadata. The client fingerprint is bound to user + document + bytes.
+    const initialToken = await getFreshAccessToken();
+    let finishUpload;
     const upload = new tus.Upload(file, {
         ...buildUploadOptions({
-            file,
             intent,
             userId: user.id,
+            initialToken,
             onProgress,
-            onStatus
+            onSettled: (...args) => finishUpload?.(...args)
         }),
         metadata: undefined
     });
 
     onStatus?.('Suche eine passende, zuvor gestartete TUS-Session …');
+    // If the TUS transfer completed but the browser closed before confirmation,
+    // confirm the existing Storage object before looking for a resumable URL.
+    try {
+        const alreadyUploaded = await confirmAndReadStatus(documentId);
+        removeResumeRecord(user.id, documentId);
+        return {
+            documentId,
+            promise: Promise.resolve({ documentId, processingStatus: alreadyUploaded.processing_status }),
+            abort: async () => {}
+        };
+    } catch {
+        // A pending object without a completed TUS session is handled below.
+    }
+
     const previousUploads = await upload.findPreviousUploads();
     const matching = previousUploads.filter(previous =>
         previous.metadata?.bucketName === EXPECTED_BUCKET &&
@@ -467,6 +487,7 @@ export async function resumeScientificPdfUpload({
         onStatus,
         upload
     });
+    finishUpload = controller.finish;
     onStatus?.('Unterbrochener PDF-Upload wird fortgesetzt …');
     upload.start();
 
