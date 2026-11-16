@@ -190,6 +190,54 @@ function summarizeHeartRateZones(activities, settings, profile) {
     };
 }
 
+function summarizeCompetitionResults(races) {
+    const entries = [];
+    races.forEach(race => {
+        const raceDate = dateKey(race?.date);
+        (Array.isArray(race?.results) ? race.results : []).forEach(result => {
+            const rank = validNumber(result?.rank) && Number(result.rank) > 0
+                ? Number(result.rank) : null;
+            entries.push({
+                race: race?.name ?? null,
+                date: raceDate,
+                discipline: result?.discipline ?? null,
+                format: result?.format ?? null,
+                rank,
+                time: result?.time ?? null,
+                gap: result?.gap ?? null
+            });
+        });
+    });
+    const groups = new Map();
+    entries.forEach(entry => {
+        const key = [entry.discipline || 'Nicht angegeben', entry.format || 'Nicht angegeben'].join('::');
+        if (!groups.has(key)) groups.set(key, {
+            discipline: entry.discipline,
+            format: entry.format,
+            resultCount: 0,
+            rankedResultCount: 0,
+            bestPlace: null
+        });
+        const group = groups.get(key);
+        group.resultCount++;
+        if (entry.rank !== null) {
+            group.rankedResultCount++;
+            group.bestPlace = group.bestPlace === null ? entry.rank : Math.min(group.bestPlace, entry.rank);
+        }
+    });
+    return {
+        raceCount: races.length,
+        resultCount: entries.length,
+        rankedResultCount: entries.filter(item => item.rank !== null).length,
+        bestPlacementsByDisciplineAndFormat: [...groups.values()],
+        recentResults: entries
+            .filter(item => item.date)
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .slice(0, 12),
+        interpretation: 'Platzierungen werden nur innerhalb derselben Disziplin- und Formatgruppe zusammengefasst. Unterschiedliche Wettkämpfe sind ohne weitere Kontextdaten nicht direkt leistungsdiagnostisch vergleichbar.'
+    };
+}
+
 function summarizeVo2max(checkIns) {
     const records = checkIns
         .filter(item => dateKey(item?.date) && validNumber(item?.vo2max) && Number(item.vo2max) > 0)
@@ -240,7 +288,7 @@ function summarizeCheckIns(checkIns) {
  * Erstellt transparente Kennzahlen aus den bereits ausgewählten Daten.
  * Die Zeitfensterwahl und Datenherkunft bleiben in dataCoverage/contextSelection.
  */
-export function buildCoachAnalysisSummary({ activities = [], timeline = [], checkIns = [], plannedSessions = [], today = null, settings = {}, profile = {} } = {}) {
+export function buildCoachAnalysisSummary({ activities = [], timeline = [], checkIns = [], plannedSessions = [], races = [], today = null, settings = {}, profile = {} } = {}) {
     const activitySummary = summarizeActivities(activities);
     const loadSummary = summarizeLoad(timeline);
     const checkInSummary = summarizeCheckIns(checkIns);
@@ -255,7 +303,10 @@ export function buildCoachAnalysisSummary({ activities = [], timeline = [], chec
         heartRateZoneDistribution: summarizeHeartRateZones(activities, settings, profile),
         calculatedLoadSummary: loadSummary,
         recoveryCheckInSummary: checkInSummary,
-        performanceSummary: { vo2max: summarizeVo2max(checkIns) },
+        performanceSummary: {
+            vo2max: summarizeVo2max(checkIns),
+            competitionResults: summarizeCompetitionResults(races)
+        },
         planningSummary: {
             plannedSessionCount: datedPlanned.length,
             nextPlannedSessions: datedPlanned.slice(0, 14).map(item => ({
