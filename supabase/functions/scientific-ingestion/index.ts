@@ -261,7 +261,7 @@ Deno.serve(async (request) => {
 
       const { data, error } = await admin
         .from("scientific_documents")
-        .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error,extraction_version,extraction_page_count,expected_chunk_count,extracted_character_count,upload_confirmed_at,upload_intent_expires_at,extraction_completed_at")
+        .select("id,source_id,storage_path,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error,extraction_version,extraction_page_count,expected_chunk_count,extracted_character_count,upload_confirmed_at,upload_intent_expires_at,extraction_completed_at")
         .eq("id", documentId)
         .eq("owner_id", authenticatedUserId!)
         .eq("visibility", "private")
