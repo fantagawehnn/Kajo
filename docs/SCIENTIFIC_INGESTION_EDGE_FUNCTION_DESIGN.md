@@ -444,3 +444,8 @@ Die Statusaktion `get-document-status` liefert für das eigene private Dokument 
 Ein Browser kann damit nach einem Neuladen unterscheiden, ob der Upload noch aussteht, die Extraktion begonnen wurde oder bereits `private_ready` erreicht ist. Für einen Neustart der lokalen Extraktion muss der Nutzer die Original-PDF erneut auswählen; PDF.js verarbeitet die Datei erneut und verwendet dieselbe Extraktionsversion. `begin-extraction` akzeptiert einen Wiederholungsaufruf nur bei identischer Version und identischen erwarteten Gesamtwerten. Bereits gespeicherte identische Chunk-Batches können erneut übertragen werden; die RPC prüft vorhandene Inhalte und lehnt abweichende Wiederholungen ab.
 
 Wichtig: Die Statusabfrage allein setzt keine Extraktion fort. Eine automatische Fortsetzung ohne erneute Dateiauswahl ist im aktuellen lokalen PDF.js-Konzept nicht vorgesehen. Auch eine sichere Bereinigung abgebrochener Uploads und eine zeitliche Gültigkeit offener Upload-Intents bleiben vor Aktivierung zu definieren.
+
+
+## 22. Frontend-Grenzen vor der PDF-Extraktion
+
+Die lokale PDF.js-Vorschau prüft jetzt dieselben maximalen Extraktionswerte wie die vorbereitete Edge Function und RPC: 10.000 Seiten, 20.000 Chunks und 20 Millionen extrahierte Zeichen. Die Prüfung erfolgt bereits im Browser während der Extraktion, sodass offensichtlich nicht persistierbare Dokumente nicht erst nach einem Upload abgewiesen würden. Die Grenzwerte sind technische MVP-Limits, keine Aussage über eine allgemein geeignete wissenschaftliche PDF-Größe. Eine maximale Dateigröße bleibt zusätzlich über `MAX_UPLOAD_BYTES` serverseitig festzulegen und muss vor Aktivierung mit dem Storage-Bucket abgestimmt werden.
