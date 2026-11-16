@@ -236,12 +236,25 @@ export function addRaceResult(encodedId) {
     if (!race || !form) return;
     const data = new FormData(form);
     const rank = Number(data.get('rank'));
-    if (!Number.isInteger(rank) || rank < 1) return;
+    const discipline = String(data.get('discipline') || '').trim();
+    const format = String(data.get('format') || '').trim();
+    if (!Number.isInteger(rank) || rank < 1) {
+        alert('Bitte gib eine gültige Platzierung als positive ganze Zahl an.');
+        return;
+    }
+    if (!['C1', 'C2', 'K1', 'K2'].includes(discipline)) {
+        alert('Bitte wähle eine gültige Wettkampfdisziplin.');
+        return;
+    }
+    if (!['Classic', 'Sprint', 'Sonstiges'].includes(format)) {
+        alert('Bitte wähle ein gültiges Rennformat.');
+        return;
+    }
     if (!Array.isArray(race.results)) race.results = [];
     race.results.push({
         id: Date.now().toString(),
-        discipline: String(data.get('discipline') || ''),
-        format: String(data.get('format') || ''),
+        discipline,
+        format,
         rank,
         time: String(data.get('time') || '').trim(),
         gap: String(data.get('gap') || '').trim(),
