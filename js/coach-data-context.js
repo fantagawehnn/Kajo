@@ -16,7 +16,7 @@ const ACTIVITY_FIELDS = [
     'waterType', 'garminTrainingLoad'
 ];
 const CHECKIN_FIELDS = [
-    'hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality',
+    'hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'vo2max',
     'fatigue', 'soreness', 'motivation', 'stress', 'respiration'
 ];
 const TIMELINE_FIELDS = [
@@ -124,7 +124,7 @@ function classifyQuestion(question, today) {
         mode,
         from: shiftDate(today, -days),
         to: null,
-        checkInDays: recoveryFocused || healthFocused ? 60 : 30,
+        checkInDays: performanceFocused ? 180 : recoveryFocused || healthFocused ? 60 : 30,
         includeHealth: healthFocused
     };
 }
