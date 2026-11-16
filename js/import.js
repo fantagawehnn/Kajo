@@ -102,19 +102,43 @@ function countNearTimeCrossSourcePairs(activities) {
     return count;
 }
 
-function consolidateVisibleCrossSourceDuplicates() {
-    let consolidated = 0;
-    const activities = state.rawActivities;
-    for (let i = 0; i < activities.length; i++) {
-        const first = activities[i];
-        if (!isGarminActivity(first)) continue;
-        for (let j = activities.length - 1; j > i; j--) {
-            const other = activities[j];
-            if (!isIntervalsActivity(other) || !crossSourceActivityMatch(first, other)) continue;
-            mergeActivityWithoutOverwrite(first, other);
-            activities.splice(j, 1);
-            consolidated++;
+export function consolidateVisibleCrossSourceDuplicates(activities = state.rawActivities) {
+    if (!Array.isArray(activities)) return 0;
+
+    // Nur eindeutige Eins-zu-eins-Zuordnungen zusammenführen. Bei mehreren
+    // plausiblen Gegenstücken bleiben alle Datensätze zur manuellen Prüfung erhalten.
+    const matchesByGarmin = new Map();
+    const matchesByIntervals = new Map();
+    const garminActivities = activities.filter(isGarminActivity);
+    const intervalsActivities = activities.filter(activity =>
+        isIntervalsActivity(activity) && !isGarminActivity(activity)
+    );
+
+    for (const garmin of garminActivities) {
+        for (const intervals of intervalsActivities) {
+            if (!crossSourceActivityMatch(garmin, intervals)) continue;
+            if (!matchesByGarmin.has(garmin)) matchesByGarmin.set(garmin, []);
+            if (!matchesByIntervals.has(intervals)) matchesByIntervals.set(intervals, []);
+            matchesByGarmin.get(garmin).push(intervals);
+            matchesByIntervals.get(intervals).push(garmin);
         }
+    }
+
+    const uniquePairs = [];
+    for (const [garmin, matches] of matchesByGarmin) {
+        if (matches.length !== 1) continue;
+        const intervals = matches[0];
+        if (matchesByIntervals.get(intervals)?.length === 1) {
+            uniquePairs.push([garmin, intervals]);
+        }
+    }
+
+    let consolidated = 0;
+    for (const [garmin, intervals] of uniquePairs) {
+        if (!activities.includes(garmin) || !activities.includes(intervals)) continue;
+        mergeActivityWithoutOverwrite(garmin, intervals);
+        activities.splice(activities.indexOf(intervals), 1);
+        consolidated++;
     }
     return consolidated;
 }
