@@ -8745,6 +8745,7 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-period-actions{display:flex;justify-content:flex-end;gap:7px}
 .kajo-period-actions button{padding:8px 12px;border-radius:8px;background:#e879a9;color:#1b1020;font-size:.68rem;font-weight:750}
 .kajo-period-actions button#kajo-period-cancel{background:var(--kajo-surface-subtle,#1c2835);color:var(--kajo-text-secondary,#a9b5c2)}
+.kajo-period-actions button#kajo-period-delete{background:rgba(225,75,90,.16);color:#ff9ba5;border:1px solid rgba(225,75,90,.35)}
 .kajo-period-feedback{min-height:0;color:#f0a2bf;font-size:.65rem}
 .kajo-period-list-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .kajo-period-list-heading span{color:var(--kajo-text-muted,#7d8a98);font-size:.65rem}
