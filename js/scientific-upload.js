@@ -28,8 +28,8 @@ function loadTusClient() {
     if (tusClientPromise) return tusClientPromise;
 
     tusClientPromise = new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[data-kajo-tus-client="true"]');
-        const script = existing || document.createElement('script');
+        document.querySelector('script[data-kajo-tus-client="true"]')?.remove();
+        const script = document.createElement('script');
 
         const fail = () => {
             tusClientPromise = null;
@@ -42,15 +42,11 @@ function loadTusClient() {
             else fail();
         }, { once: true });
 
-        if (!existing) {
-            script.src = TUS_SCRIPT_URL;
-            script.async = true;
-            script.crossOrigin = 'anonymous';
-            script.dataset.kajoTusClient = 'true';
-            document.head.append(script);
-        } else if (globalThis.tus?.Upload) {
-            resolve(globalThis.tus);
-        }
+        script.src = TUS_SCRIPT_URL;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.dataset.kajoTusClient = 'true';
+        document.head.append(script);
     });
 
     return tusClientPromise;
