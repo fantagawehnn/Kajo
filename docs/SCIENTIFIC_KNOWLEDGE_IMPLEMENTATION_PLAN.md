@@ -164,3 +164,7 @@ Die separate Function `scientific-upload-cleanup` verwendet ein eigenes Trigger-
 TUS (Supabase Resumable Upload) ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt, da Supabase ihn für Dateien über 6 MB und instabile Verbindungen empfiehlt. Die Upload-URL ist laut Supabase bis zu 24 Stunden gültig. `tus-js-client@4.3.1` ist im isolierten Frontend-Modul eingebunden; das maximale Dateilimit ist noch festzulegen. Das Dateilimit muss sowohl durch `MAX_UPLOAD_BYTES` als auch durch die Bucket-Konfiguration erzwungen werden und unter dem tatsächlichen globalen Projektlimit liegen.
 
 Der Upload-Code ist vorbereitet, aber noch nicht in die UI integriert. Die Scientific Library bleibt deshalb im aktuellen App-Betrieb eine lokale PDF.js-Vorschau; es wird nichts hochgeladen. Upload-/Cleanup-Scaffold ist nicht deployed und nicht migriert.
+
+## 11. Migrationsreihenfolge und Baseline-Sperre
+
+Die konkrete Abhängigkeit der wissenschaftlichen SQL-Entwürfe, Storage-Konfiguration, Edge Functions, TUS-Integration und Cleanup-Scheduler ist in [SCIENTIFIC_KNOWLEDGE_MIGRATION_SEQUENCE.md](./SCIENTIFIC_KNOWLEDGE_MIGRATION_SEQUENCE.md) festgehalten. Wegen der nicht deckungsgleichen Remote-Migrationshistorie werden die wissenschaftlichen Entwürfe noch nicht als versionierte Migrationen nach `supabase/migrations/` übernommen. Die Reihenfolge ist vorbereitet, aber bis zur Baseline-Klärung nicht ausführbar.
