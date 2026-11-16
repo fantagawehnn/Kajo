@@ -32,7 +32,84 @@ alter table public.scientific_documents
     add column if not exists extraction_completed_at timestamptz,
     add column if not exists upload_confirmed_at timestamptz;
 
--- 2. Claim extraction. A repeated call is accepted only if it repeats the
+-- 2. Create source metadata and its private document row atomically.
+-- The Edge Function supplies the owner only after validating the caller JWT.
+-- The function returns server-generated identifiers and the exact object path.
+create or replace function public.kajo_create_scientific_upload_intent(
+    p_owner_id uuid,
+    p_title text,
+    p_authors jsonb,
+    p_publication_year integer,
+    p_doi text,
+    p_source_url text,
+    p_language text,
+    p_publication_type text,
+    p_file_size_bytes bigint
+)
+returns table (
+    source_id uuid,
+    document_id uuid,
+    storage_path text
+)
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare
+    v_source_id uuid := pg_catalog.gen_random_uuid();
+    v_document_id uuid := pg_catalog.gen_random_uuid();
+    v_storage_path text;
+begin
+    if p_owner_id is null
+       or p_title is null or length(btrim(p_title)) = 0 or length(p_title) > 500
+       or p_authors is null or jsonb_typeof(p_authors) <> 'array'
+       or jsonb_array_length(p_authors) > 50
+       or (p_publication_year is not null and p_publication_year not between 1500 and 2200)
+       or (p_doi is not null and length(p_doi) > 255)
+       or (p_source_url is not null and length(p_source_url) > 2048)
+       or (p_language is not null and length(p_language) > 20)
+       or (p_publication_type is not null and p_publication_type not in (
+           'research_article', 'systematic_review', 'meta_analysis',
+           'position_statement', 'methodological', 'conference_paper', 'other'
+       ))
+       or p_file_size_bytes is null or p_file_size_bytes <= 0 then
+        raise exception 'invalid upload intent metadata' using errcode = '22023';
+    end if;
+
+    if exists (
+        select 1
+        from jsonb_array_elements(p_authors) as a(value)
+        where jsonb_typeof(a.value) <> 'string'
+           or length(btrim(a.value #>> '{}')) = 0
+           or length(a.value #>> '{}') > 300
+    ) then
+        raise exception 'invalid author metadata' using errcode = '22023';
+    end if;
+
+    v_storage_path := p_owner_id::text || '/' || v_document_id::text || '/original.pdf';
+
+    insert into public.scientific_sources (
+        id, owner_id, visibility, review_status, title, authors,
+        publication_year, doi, source_url, language, publication_type, access_basis
+    ) values (
+        v_source_id, p_owner_id, 'private', 'draft', btrim(p_title), p_authors,
+        p_publication_year, nullif(btrim(p_doi), ''), p_source_url,
+        p_language, p_publication_type, 'private_upload'
+    );
+
+    insert into public.scientific_documents (
+        id, source_id, owner_id, visibility, storage_path, mime_type,
+        file_size_bytes, processing_status
+    ) values (
+        v_document_id, v_source_id, p_owner_id, 'private', v_storage_path,
+        'application/pdf', p_file_size_bytes, 'pending'
+    );
+
+    return query select v_source_id, v_document_id, v_storage_path;
+end;
+$function$;
+
+-- 3. Claim extraction. A repeated call is accepted only if it repeats the
 --    exact same extraction version and expected totals.
 create or replace function public.kajo_begin_scientific_extraction(
     p_document_id uuid,
@@ -316,6 +393,11 @@ begin
 end;
 $function$;
 
+revoke all on function public.kajo_create_scientific_upload_intent(uuid, text, jsonb, integer, text, text, text, text, bigint)
+    from public, anon, authenticated;
+grant execute on function public.kajo_create_scientific_upload_intent(uuid, text, jsonb, integer, text, text, text, text, bigint)
+    to service_role;
+
 revoke all on function public.kajo_begin_scientific_extraction(uuid, text, integer, integer, bigint)
     from public, anon, authenticated;
 revoke all on function public.kajo_submit_scientific_chunk_batch(uuid, text, jsonb)
@@ -330,6 +412,8 @@ grant execute on function public.kajo_submit_scientific_chunk_batch(uuid, text, 
 grant execute on function public.kajo_complete_scientific_extraction(uuid, text)
     to service_role;
 
+comment on function public.kajo_create_scientific_upload_intent(uuid, text, jsonb, integer, text, text, text, text, bigint) is
+    'Atomically creates a private scientific source and its pending PDF document row.';
 comment on function public.kajo_begin_scientific_extraction(uuid, text, integer, integer, bigint) is
     'Claims a private uploaded document for a specific browser extraction version.';
 comment on function public.kajo_submit_scientific_chunk_batch(uuid, text, jsonb) is
