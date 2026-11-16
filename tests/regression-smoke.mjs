@@ -111,13 +111,12 @@ await storage.loadStateForUser('smoke-test-user');
 // Saving a sickness/injury entry must finish locally without waiting for a cloud request.
 setRefreshHandler(() => {});
 const healthModule = await import('../js/health.js?v=79');
-elements['health-log-date-from'].value = '2026-11-12';
-elements['health-log-date-to'].value = '2026-11-13';
-elements['health-log-status'].value = 'sick';
-elements['health-log-diagnosis'].value = 'Smoke test infection';
+document.getElementById('health-log-date-from').value = '2026-11-12';
+document.getElementById('health-log-date-to').value = '2026-11-13';
+document.getElementById('health-log-status').value = 'sick';
+document.getElementById('health-log-diagnosis').value = 'Smoke test infection';
 state.healthLogs = {};
 await healthModule.saveRetroactiveHealthLog();
-await storage.flushLocalPersistence();
 assert.equal(state.healthLogs['2026-11-12'].status, 'sick');
 assert.equal(state.healthLogs['2026-11-13'].diagnosis, 'Smoke test infection');
 assert.deepEqual(JSON.parse(store.get('endurance:user:smoke-test-user:health')), state.healthLogs);
