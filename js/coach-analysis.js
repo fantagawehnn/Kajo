@@ -102,14 +102,16 @@ function summarizeLoad(timeline) {
         } : null,
         interpretationLimit: modes.length > 1
             ? 'Mehrere Belastungsmodelle im ausgewählten Zeitraum; keine gemeinsame Summierung oder Trendberechnung.'
-            : statuses.incompleteDays || statuses.unknownDays
-                ? 'Die Zeitreihe enthält unvollständige oder unbekannte Tage.'
-                : null
+            : modes.length === 0
+                ? 'Keine einheitliche, auswertbare Load-Methode im ausgewählten Zeitraum vorhanden.'
+                : statuses.incompleteDays || statuses.unknownDays
+                    ? 'Die Zeitreihe enthält unvollständige oder unbekannte Tage.'
+                    : null
     };
 }
 
 function summarizeCheckIns(checkIns) {
-    const fields = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
+    const fields = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
     const result = {};
     fields.forEach(key => { result[key] = mean(checkIns, key); });
     return {
