@@ -77,7 +77,9 @@ Vorgesehene Transferierbarkeitswerte:
 
 Diese Werte sind Kontextlabels, keine Evidenzsicherheitsbewertung. Studiendesign, Stichprobe, Messverfahren und Limitationen müssen separat erhalten bleiben. Kein automatischer Gesamtscore wird ohne transparentes, fachlich freigegebenes Bewertungsmodell erzeugt.
 
-Für Kanusport müssen Filter und Zusammenfassungen – sofern die Studie diese Informationen tatsächlich enthält – Sportart, Kanudisziplin, Bootsklasse (K1/C1/C2), Gewässerkontext und Studien-Setting getrennt ausweisen. Das eigenständige Flachwasser-Event `canoe_sprint` darf nicht mit `wildwater_format = sprint` verwechselt werden. Classic/Sprint ist nur als Wildwasser-Wettkampfformat zu interpretieren. Fehlende Angaben dürfen nicht inferiert werden.\n\nDie Kontextmetadaten sind möglichst auf Studien- bzw. Befundebene zu liefern, nicht pauschal von der Publikation zu erben. Bei Reviews oder Publikationen mit mehreren Studien muss kenntlich bleiben, wenn ein Treffer nur Quellenmetadaten und keine aufgeschlüsselten Studienkontexte enthält. Maßgeblich ist `docs/SCIENTIFIC_METADATA_CONTRACT.md`.
+Für Kanusport müssen Filter und Zusammenfassungen – sofern die Studie diese Informationen tatsächlich enthält – Sportart, Kanudisziplin, Bootsklasse (K1/C1/C2), Gewässerkontext und Studien-Setting getrennt ausweisen. Das eigenständige Flachwasser-Event `canoe_sprint` darf nicht mit `wildwater_format = sprint` verwechselt werden. Classic/Sprint ist nur als Wildwasser-Wettkampfformat zu interpretieren. Fehlende Angaben dürfen nicht inferiert werden.
+
+Die Kontextmetadaten sind möglichst auf Studien- bzw. Befundebene zu liefern, nicht pauschal von der Publikation zu erben. Bei Reviews oder Publikationen mit mehreren Studien muss kenntlich bleiben, wenn ein Treffer nur Quellenmetadaten und keine aufgeschlüsselten Studienkontexte enthält. Maßgeblich ist `docs/SCIENTIFIC_METADATA_CONTRACT.md`.
 
 ## 7. Ranking und Ergebnisbegrenzung
 
