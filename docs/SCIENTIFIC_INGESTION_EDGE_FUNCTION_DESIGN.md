@@ -486,3 +486,12 @@ Der Service-Role-Key darf ausschließlich in Supabase Function Secrets verbleibe
 
 
 Ergänzende Lease-Prüfung: Die Action verwirft Claim-Zeilen, deren `lease_expires_at` fehlt, ungültig ist oder bereits erreicht wurde, bevor sie Storage-Operationen beginnt. Läuft die Lease während eines laufenden Storage-Aufrufs ab, schützt die Finalisierungs-RPC weiterhin vor einer Finalisierung mit abgelaufenem oder inzwischen ersetztem Claim-Token.
+
+
+## 26. Bevorzugter Storage-Upload: TUS
+
+Für die spätere Browser-Integration ist TUS (Supabase Resumable Upload) als bevorzugter Uploadweg festgelegt. Supabase empfiehlt TUS für Dateien über 6 MB und bei instabilen Verbindungen. Die erzeugte Upload-URL ist laut aktueller Supabase-Dokumentation bis zu 24 Stunden gültig. Nach Ablauf muss der Client eine neue Upload-Session starten. Die konkrete Clientbibliothek und Version sind vor Implementierung festzulegen.
+
+Das Upload-Intent bleibt serverseitig auf 24 Stunden begrenzt. Die bestehende siebentägige Cleanup-Karenz nach Intent-Ablauf liegt deutlich über der dokumentierten maximalen Gültigkeit einer TUS-Upload-URL; die zusätzliche 24-Stunden-Quieszenz ab erstem Cleanup-Claim bleibt als Sicherheitsreserve bestehen. Diese Kombination ist eine konservative Designentscheidung, keine Garantie gegen jede denkbare Storage-Störung. Vor Aktivierung müssen tatsächliches Projektlimit, Bucket-Limit, TUS-Konfiguration und Fehlerverhalten geprüft werden. Es wird keine unbegrenzte Session-Wiederaufnahme angenommen.
+
+Die Upload-Action selbst bleibt unverändert: Upload-Intent erstellen, direkt in den privaten Bucket hochladen, anschließend Storage-Objekt über confirm-upload serverseitig prüfen. Die Frontend-Integration ist noch nicht implementiert.
