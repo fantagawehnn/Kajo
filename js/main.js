@@ -235,6 +235,13 @@ function renderHealthAnalysis() {
                     + periodLine('Davor', impact.before)
                     + periodLine('Währenddessen', impact.during)
                     + periodLine('Danach', impact.after)
+                    + (['before', 'during', 'after'].some(key => impact[key].trainingLoad !== null)
+                        ? '<div><strong>Trainingsload (' + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit') + '):</strong> '
+                            + ['before', 'during', 'after'].map(key => impact[key].trainingLoad === null
+                                ? '—' : Number(impact[key].trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
+                                    + ' (' + impact[key].trainingLoadActivityCount + '/' + impact[key].activities + ' Aktivitäten)').join(' / ')
+                            + '</div><div>Verwendetes Load-Modell: ' + (impact.before.trainingLoadMode || impact.during.trainingLoadMode || impact.after.trainingLoadMode || 'nicht verfügbar') + '</div>'
+                        : '<div>Trainingsload: für diese Zeiträume nicht berechenbar.</div>')
                     + '<div>Durchschnitt pro berücksichtigtem Kalendertag: '
                     + formatHours(impact.before.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.during.averageMinutesPerCalendarDay) + ' / '
