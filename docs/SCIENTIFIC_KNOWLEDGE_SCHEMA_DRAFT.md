@@ -115,7 +115,15 @@ Jeder abgerufene Evidenztreffer muss mindestens enthalten:
 
 Der Worker darf nur aus tatsächlich übergebenen Evidenztreffern zitieren. Ohne Treffer muss der Coach offenlegen, dass keine passende Literaturquelle abgerufen wurde. Das Modell darf keine bibliografischen Angaben ergänzen.
 
-## 8. Noch nicht umgesetzt
+## 8. Migrations- und Sicherheitsleitplanken
+
+- Die vorhandene Remote-Migrationshistorie ist nicht deckungsgleich mit den vier SQL-Dateien im Repository. Eine neue Migration darf erst nach dokumentierter Reconciliation erstellt und angewendet werden.
+- Die Remote-Tabellen zeigen teilweise breite Grants für `anon` und `authenticated`, darunter Rechte, die über normale CRUD-Operationen hinausgehen. Neue Knowledge-Base-Tabellen sollen davon ausdrücklich nicht abgeleitet werden.
+- RLS schützt Zeilen, nicht jede Tabellenoperation. Insbesondere TRUNCATE-Rechte müssen separat betrachtet werden.
+- Bestehende Coach-Zugriffs-Policies verwenden `has_active_coach_access(uuid)`. Diese Funktion und ihre SECURITY DEFINER-Eigenschaften werden durch die Knowledge-Base-Einführung nicht verändert.
+- Der bestehende private Bucket `garmin-fit` bleibt unberührt. Paper erhalten einen getrennten privaten Bucket mit eigenen `storage.objects`-Policies.
+
+## 9. Noch nicht umgesetzt
 
 - Keine Scientific-Knowledge-Tabellen
 - Keine Vektor-Extension aktiviert
@@ -125,7 +133,7 @@ Der Worker darf nur aus tatsächlich übergebenen Evidenztreffern zitieren. Ohne
 - Keine Retrieval-Funktion oder Worker-Integration
 - Keine SQL-Migration angewendet
 
-## 9. Referenzen
+## 10. Referenzen
 
 - Supabase pgvector: https://supabase.com/docs/guides/database/extensions/pgvector
 - Supabase Semantic Search: https://supabase.com/docs/guides/ai/semantic-search
