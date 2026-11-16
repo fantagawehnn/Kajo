@@ -287,7 +287,7 @@ Cloudflare Workers Free haben laut aktueller Dokumentation 10 ms CPU-Zeit pro HT
 4. Der Browser extrahiert den Text seitenweise mit einer lokal eingebundenen und fest versionierten PDF.js-basierten Bibliothek.
 5. Der Browser sendet kleine, sequenzielle `submit-chunk-batch`-Requests. Die Edge Function prüft bei jedem Request erneut JWT, Eigentum, Sichtbarkeit, Dokumentstatus, Extraktionsversion, Seitenbezug sowie Batch-/Gesamtlimits.
 6. Die Funktion schreibt Chunks idempotent unter Nutzung des Unique Keys `(document_id, extraction_version, chunk_index)`.
-7. Eine Aktion `complete-extraction` prüft die erwartete Vollständigkeit und setzt erst dann `extracted` und anschließend `private_ready`. Teilweise übermittelte Chunks bleiben für Retrieval unsichtbar.
+7. Eine Aktion `complete-extraction` prüft die erwartete Vollständigkeit und setzt erst dann in derselben Transaktion direkt `private_ready`. Teilweise übermittelte Chunks bleiben für Retrieval unsichtbar.
 8. `get-document-status` bleibt für Statusabfragen bestehen.
 
 ### Zusätzliche Schutzregeln
