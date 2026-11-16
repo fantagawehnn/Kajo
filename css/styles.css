@@ -8780,3 +8780,22 @@ body.kajo-modal-open { overflow: hidden !important; }
  .kajo-selfmonitoring-health-options{grid-template-columns:1fr;gap:7px}
  .kajo-selfmonitoring-modal .kajo-color-slider{height:9px}
 }
+
+
+/* Kalender-Kopfnavigation: Zeitraum, Ansichtswechsel und Aktion in einer Zeile */
+#view-calendar .calendar-control-row{display:flex;align-items:center;gap:6px;width:100%;min-width:0}
+#view-calendar .calendar-control-row .calendar-nav-arrow{flex:0 0 34px;width:34px;height:38px}
+#view-calendar .calendar-control-row .calendar-period-title-button{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem;padding:0 2px}
+#view-calendar .calendar-control-row .calendar-format-wrap{flex:0 0 auto}
+#view-calendar .calendar-control-row .calendar-format-button{min-width:88px;max-width:104px;padding:9px 8px;gap:6px}
+#view-calendar .calendar-control-row .calendar-add-wrap{flex:0 0 auto}
+#view-calendar .calendar-control-row .calendar-add-button{width:38px;height:38px;border-radius:10px}
+@media(max-width:420px){
+ #view-calendar .calendar-topbar{padding:9px!important}
+ #view-calendar .calendar-control-row{gap:3px}
+ #view-calendar .calendar-control-row .calendar-nav-arrow{flex-basis:29px;width:29px;height:36px}
+ #view-calendar .calendar-control-row .calendar-period-title-button{font-size:.78rem;padding:0}
+ #view-calendar .calendar-control-row .calendar-format-button{min-width:76px;max-width:82px;padding:8px 6px;font-size:.7rem;gap:4px}
+ #view-calendar .calendar-control-row .calendar-format-button svg{width:12px;height:12px}
+ #view-calendar .calendar-control-row .calendar-add-button{width:36px;height:36px}
+}
