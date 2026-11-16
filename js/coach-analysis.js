@@ -333,7 +333,7 @@ function summarizeVo2max(checkIns) {
 }
 
 function summarizeCheckIns(checkIns) {
-    const fields = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
+    const fields = ['hrv', 'rhr', 'garminRhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
     const result = {};
     fields.forEach(key => { result[key] = mean(checkIns, key); });
     return {
