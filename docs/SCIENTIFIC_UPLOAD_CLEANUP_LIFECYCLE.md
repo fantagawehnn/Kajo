@@ -1,3 +1,7 @@
+## Ergänzung: Cleanup-Pfadvalidierung (16.11.2026)
+
+Die separate Cleanup-Function prüft jetzt zusätzlich, dass das erste Pfadsegment des Storage-Objekts exakt der vom Claim gelieferten `source_id` entspricht und das vollständige Objektmuster `<source-owner>/<document-id>/original.pdf` erfüllt. Die Datenbank-Claim-RPC bleibt die maßgebliche Quelle für die Zuordnung von Dokument, Quelle und Eigentümer; die Function validiert die Rückgabe vor jeder Storage-Löschung nochmals.
+
 ## Aktueller Implementierungsstatus (16.11.2026)
 
 Dieser Status hat Vorrang vor älteren Entwurfsabschnitten, die noch von einer Cleanup-Action innerhalb von `scientific-ingestion` oder einer fehlenden Cleanup-Function ausgehen.
