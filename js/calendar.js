@@ -122,7 +122,7 @@ export function openDayEditor(dateStr){
 }
 export function toggleDaySickFields(){document.getElementById('day-sick-fields')?.classList.toggle('hidden',!document.getElementById('day-sick')?.checked);}
 export function toggleDayCycleFields(){document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!document.getElementById('day-period')?.checked);}
-export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
+export function closeDayEditor(){const modal=document.getElementById('day-detail-modal');if(modal?.dataset.saving==='true')return;modal?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
 export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export async function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
@@ -149,10 +149,13 @@ export async function saveDayEditor(){
  const saveButton=document.querySelector('#day-detail-modal button[onclick="saveDayEditor()"]');
  const saveStatus=document.getElementById('day-save-status');
  const originalLabel=saveButton?.textContent||'Check-in speichern';
+ const modal=document.getElementById('day-detail-modal');
+ if(modal)modal.dataset.saving='true';
  if(saveButton){saveButton.disabled=true;saveButton.textContent='Speichert …';}
  if(saveStatus)saveStatus.textContent='Check-in wird lokal und in der Cloud gesichert …';
  const localSaved=saveDataToLocalStorage();
  if(!localSaved){
+  if(modal)modal.dataset.saving='false';
   if(saveStatus)saveStatus.textContent='Nicht gespeichert: Dein angemeldeter Datenspeicher ist nicht aktiv. Bitte melde dich erneut an.';
   if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
   return;
@@ -161,11 +164,13 @@ export async function saveDayEditor(){
   window.dispatchEvent(new CustomEvent('endurance:data-save-immediate',{detail:{resolve}}));
  });
  if(!cloudSaved){
+  if(modal)modal.dataset.saving='false';
   if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Bitte versuche es erneut und aktualisiere die App noch nicht.';
   if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
   return;
  }
  if(saveStatus)saveStatus.textContent='Check-in erfolgreich in der Cloud gespeichert.';
+ if(modal)modal.dataset.saving='false';
  closeDayEditor();refreshAll();
 }
 
