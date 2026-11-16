@@ -222,7 +222,7 @@ function renderHealthAnalysis() {
                     const missing = period.activitiesWithoutDuration
                         ? ' · ' + period.activitiesWithoutDuration + ' ohne Dauer' : '';
                     return '<div><strong>' + title + ':</strong> ' + formatHours(period.totalMinutes)
-                        + ' · ' + period.activities + ' Aktivitäten' + missing + '</div>';
+                        + ' · ' + period.activities + ' Aktivitäten · ' + period.eligibleCalendarDays + '/' + period.calendarDays + ' berücksichtigte Tage' + missing + '</div>';
                 };
                 const comparison = document.createElement('div');
                 comparison.className = 'mt-2 w-full text-xs text-slate-400 space-y-1';
@@ -234,7 +234,7 @@ function renderHealthAnalysis() {
                     + formatHours(impact.before.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.during.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.after.averageMinutesPerCalendarDay)
-                    + '</div><div>Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache.</div>';
+                    + '</div><div>Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache.</div>';
                 row.classList.remove('items-center');
                 row.classList.add('flex-col', 'items-stretch');
                 row.appendChild(comparison);
