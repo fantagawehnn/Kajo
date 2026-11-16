@@ -374,8 +374,8 @@ test('reports complete, partial and unavailable duration and load coverage per w
   assert.deepEqual(result.after.trainingLoadCoverage, {
     available: 1, total: 1, status: 'vollständig'
   });
-  assert.deepEqual(result.after.trainingLoadCoverage, {
-    available: 0, total: 1, status: 'eingeschränkt'
+  assert.deepEqual(result.during.trainingLoadCoverage, {
+    available: 0, total: 0, status: 'nicht berechenbar'
   });
   assert.deepEqual(result.during.durationCoverage, {
     available: 0, total: 0, status: 'nicht berechenbar'
