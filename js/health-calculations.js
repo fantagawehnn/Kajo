@@ -170,17 +170,22 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
 
   const summarizeWindow = (from, to, excludeHealthDates = false) => {
     const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
+    let eligibleCalendarDays = 0;
+    for (let offset = 0; offset < days; offset++) {
+      const date = addDays(from, offset);
+      if (!excludeHealthDates || !documentedHealthDates.has(date)) eligibleCalendarDays++;
+    }
     const rows = activityRows.filter(item => item.date >= from && item.date <= to
       && !(excludeHealthDates && documentedHealthDates.has(item.date)));
     const validDurations = rows.filter(item => item.duration !== null);
     const totalMinutes = validDurations.reduce((sum, item) => sum + item.duration, 0);
     return {
-      from, to, calendarDays: days,
+      from, to, calendarDays: days, eligibleCalendarDays,
       activities: rows.length,
       activitiesWithDuration: validDurations.length,
       activitiesWithoutDuration: rows.length - validDurations.length,
       totalMinutes,
-      averageMinutesPerCalendarDay: days > 0 ? totalMinutes / days : null,
+      averageMinutesPerCalendarDay: eligibleCalendarDays > 0 ? totalMinutes / eligibleCalendarDays : null,
       daysWithActivity: new Set(rows.map(item => item.date)).size
     };
   };
