@@ -1586,6 +1586,11 @@
               </label>
               <p class="kajo-settings-footnote">Die Auswahl wird auf diesem Gerät gespeichert. Die App-Daten und Trainingsberechnungen bleiben unverändert.</p>
             </section>
+            <section class="kajo-settings-card space-y-3" aria-labelledby="kajo-storage-diagnostics-title">
+              <div class="kajo-settings-section-head"><div><h3 id="kajo-storage-diagnostics-title">Lokale Speicherdiagnose</h3><p>Misst die Größe der Datenbereiche deines aktuellen KAJO-Snapshots direkt im Browser. Es werden keine Daten übertragen oder verändert.</p></div><span class="kajo-settings-section-icon"><i data-lucide="database"></i></span></div>
+              <button type="button" onclick="runKajoStorageDiagnostics()" class="kajo-settings-primary">Speichergrößen lokal messen</button>
+              <pre id="kajo-storage-diagnostics-output" class="hidden max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-700 bg-slate-950 p-3 text-[11px] text-slate-300" aria-live="polite"></pre>
+            </section>
             <p class="kajo-settings-footnote">Deine App-Daten sind deinem angemeldeten Konto zugeordnet. Die reguläre KAJO-Cloud-Synchronisierung deiner Trainings- und Kontodaten ist unabhängig von der lokalen Verarbeitung deiner Coach-Nachrichten.</p>
           </section>
         </div>
@@ -1643,7 +1648,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=140"></script>
+    <script type="module" src="js/main.js?v=141"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
