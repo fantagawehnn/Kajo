@@ -80,6 +80,52 @@ test('Garmin native training load is used when available', () => {
     assert.equal(day.loadMode, 'garmin-native');
 });
 
+test('CTL and ATL use daily exponential smoothing and TSB is their difference', () => {
+    const firstDay = offsetDate(today, -3);
+    const secondDay = offsetDate(today, -2);
+    const records = [
+        { id: 'ewma-1', source: 'garmin', date: firstDay, garminTrainingLoad: 42 },
+        { id: 'ewma-2', source: 'garmin', date: secondDay, garminTrainingLoad: 84 }
+    ];
+    const timeline = computePerformanceTimeline(records, {
+        garminActivityCoverageRanges: [covered(firstDay, secondDay)]
+    }, {});
+    const first = timeline.find(day => day.date === firstDay);
+    const second = timeline.find(day => day.date === secondDay);
+    const kCtl = 1 - Math.exp(-1 / 42);
+    const kAtl = 1 - Math.exp(-1 / 7);
+    const expectedCtl1 = 42 * kCtl;
+    const expectedAtl1 = 42 * kAtl;
+    const expectedCtl2 = expectedCtl1 + (84 - expectedCtl1) * kCtl;
+    const expectedAtl2 = expectedAtl1 + (84 - expectedAtl1) * kAtl;
+    assert.equal(first.ctl, Number(expectedCtl1.toFixed(1)));
+    assert.equal(first.atl, Number(expectedAtl1.toFixed(1)));
+    assert.equal(second.ctl, Number(expectedCtl2.toFixed(1)));
+    assert.equal(second.atl, Number(expectedAtl2.toFixed(1)));
+    assert.equal(second.tsb, Number((expectedCtl2 - expectedAtl2).toFixed(1)));
+    assert.equal(second.isProvisional, true);
+});
+
+test('changing the selected source recalculates the complete history on one scale', () => {
+    const firstDay = offsetDate(today, -3);
+    const secondDay = offsetDate(today, -2);
+    const records = [
+        { id: 'source-1', source: 'garmin', date: firstDay, garminTrainingLoad: 40,
+          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } },
+        { id: 'source-2', source: 'garmin', date: secondDay, garminTrainingLoad: 60,
+          garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } }
+    ];
+    const settings = { garminActivityCoverageRanges: [covered(firstDay, secondDay)] };
+    const native = computePerformanceTimeline(records, { ...settings, trainingLoadSource: 'garmin-native' }, {});
+    const zone = computePerformanceTimeline(records, { ...settings, trainingLoadSource: 'kajo-zone' }, { maxHr: 190, restingHr: 50 });
+    const nativeDays = native.filter(day => day.dataStatus === 'complete');
+    const zoneDays = zone.filter(day => day.dataStatus === 'complete');
+    assert.deepEqual(nativeDays.map(day => day.loadMode), ['garmin-native', 'garmin-native']);
+    assert.deepEqual(zoneDays.map(day => day.loadMode), ['garmin-zone', 'garmin-zone']);
+    assert.notEqual(nativeDays[0].load, zoneDays[0].load);
+    assert.notEqual(nativeDays[1].ctl, zoneDays[1].ctl);
+});
+
 test('automatic source keeps Garmin Native Load when HR-zone coverage becomes larger', () => {
     const records = [
         { id: 'g-native', source: 'garmin', date: completedDay, garminTrainingLoad: 35 },
