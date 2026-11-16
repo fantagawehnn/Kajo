@@ -16,7 +16,11 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js';
 
 const TUS_VERSION = '4.3.1';
 const TUS_SCRIPT_URL = `https://cdn.jsdelivr.net/npm/tus-js-client@${TUS_VERSION}/dist/tus.min.js`;
-const TUS_ENDPOINT = `${SUPABASE_URL.replace(/\\/$/, '')}/storage/v1/upload/resumable`;
+const SUPABASE_HOST = new URL(SUPABASE_URL).hostname;
+const STORAGE_HOST = SUPABASE_HOST.endsWith('.supabase.co')
+    ? SUPABASE_HOST.replace(/\.supabase\.co$/, '.storage.supabase.co')
+    : SUPABASE_HOST;
+const TUS_ENDPOINT = `https://${STORAGE_HOST}/storage/v1/upload/resumable`;
 const TUS_CHUNK_SIZE = 6 * 1024 * 1024;
 const TUS_RETRY_DELAYS = [0, 3000, 5000, 10000, 20000];
 const EXPECTED_BUCKET = 'kajo-scientific-documents';
