@@ -235,9 +235,7 @@ function calendarActivityRow(activity, planned) {
     const sport = calendarSport(activity.type);
     const color = sport.color || '#64748b';
     const id = encodeURIComponent(String(activity.id || '')).replace(/'/g, '%27');
-    const timeRaw = activity.startTime || activity.startTimeLocal || activity.time || '';
-    const timeMatch = String(timeRaw).match(/(?:T|\s)?(\d{1,2}:\d{2})/);
-    const time = timeMatch ? timeMatch[1] : '';
+    const time = calendarDayTime(activity.startTimeLocal || activity.start_time_local || activity.startTime || activity.time);
     const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
     const status = planned ? 'Geplant' : 'Abgeschlossen';
     const action = planned
@@ -259,10 +257,10 @@ function calendarDayTime(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
     const parsed = new Date(raw);
-    if (Number.isFinite(parsed.getTime()) && (raw.includes('T') || raw.includes(' ') || /^\\d{4}-\\d{2}-\\d{2}$/.test(raw))) {
+    if (Number.isFinite(parsed.getTime()) && (raw.includes('T') || raw.includes(' '))) {
         return parsed.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     }
-    const match = raw.match(/(?:T|\\s)?(\\d{1,2}):(\\d{2})/);
+    const match = raw.match(/(?:T|\s)?(\d{1,2}):(\d{2})/);
     return match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
 }
 function calendarDayHasCheckin(checkin) {
