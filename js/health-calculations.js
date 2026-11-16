@@ -154,7 +154,7 @@ export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
  * Missing duration is counted separately; missing activities are not inferred
  * to be rest days and no completeness/causality claim is made.
  */
-export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14) {
+export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14, trainingLoadRecords = [], loadMode = null, loadUnit = null) {
   if (!Number.isInteger(comparisonDays) || comparisonDays < 1 || comparisonDays > 90) return null;
   const documentedHealthDates = new Set(Object.entries(healthLogs || {})
     .filter(([date, item]) => validDateKey(date) && (item?.status === 'sick' || item?.status === 'injured'))
@@ -168,6 +168,11 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     return { date, duration };
   }).filter(item => item.date);
 
+  const loadRows = (Array.isArray(trainingLoadRecords) ? trainingLoadRecords : []).map(record => ({
+    id: record?.activity?.id,
+    date: itemDateKey(record?.activity),
+    value: Number.isFinite(Number(record?.value)) ? Number(record.value) : null
+  })).filter(item => item.date && item.value !== null);
   const summarizeWindow = (from, to, excludeHealthDates = false) => {
     const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
     let eligibleCalendarDays = 0;
@@ -186,6 +191,10 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       activitiesWithoutDuration: rows.length - validDurations.length,
       totalMinutes,
       averageMinutesPerCalendarDay: eligibleCalendarDays > 0 ? totalMinutes / eligibleCalendarDays : null,
+      trainingLoad: windowLoadRows.length ? Number(totalLoad.toFixed(1)) : null,
+      trainingLoadActivityCount: windowLoadRows.length,
+      trainingLoadMode: loadMode,
+      trainingLoadUnit: loadUnit,
       daysWithActivity: new Set(rows.map(item => item.date)).size
     };
   };
