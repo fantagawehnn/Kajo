@@ -197,3 +197,30 @@ test('rejects invalid comparison windows and skips invalid episodes', () => {
     { status: 'sick', startDate: '2026-02-30', endDate: '2026-03-01' }
   ]), []);
 });
+
+
+test('adds load values from one selected model without treating missing loads as zero', () => {
+  const healthLogs = { '2026-11-15': { status: 'sick' } };
+  const activities = [
+    { id: 'a', date: '2026-11-10', duration: 60 },
+    { id: 'b', date: '2026-11-15', duration: 30 },
+    { id: 'c', date: '2026-11-22', duration: 45 }
+  ];
+  const loadRecords = [
+    { activity: activities[0], value: 42 },
+    { activity: activities[1], value: 15 },
+    { activity: activities[2], value: null }
+  ];
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    healthLogs, activities,
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-15', documentedDays: 1 }],
+    14, loadRecords, 'srpe', 'AU'
+  );
+  assert.equal(result.before.trainingLoad, 42);
+  assert.equal(result.before.trainingLoadActivityCount, 1);
+  assert.equal(result.before.trainingLoadMode, 'srpe');
+  assert.equal(result.before.trainingLoadUnit, 'AU');
+  assert.equal(result.during.trainingLoad, 15);
+  assert.equal(result.after.trainingLoad, null);
+  assert.equal(result.after.trainingLoadActivityCount, 0);
+});
