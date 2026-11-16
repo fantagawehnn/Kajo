@@ -32,6 +32,13 @@ function setMessage(text, isError = false) {
     message.className = `text-xs min-h-10 ${isError ? 'text-rose-300' : 'text-emerald-300'}`;
 }
 
+function handleAuthCheckError(error) {
+    // Die Sitzung bleibt im lokalen Speicher erhalten; wir melden den Nutzer nicht ab.
+    showApp(null);
+    setMessage('Supabase ist momentan nicht erreichbar. Deine gespeicherten Daten und deine vorhandene Sitzung wurden nicht gelöscht. Bitte versuche die Anmeldung erneut, sobald die Verbindung wieder verfügbar ist.', true);
+    console.error('KAJO: Anmeldestatus konnte nicht geprüft werden:', error);
+}
+
 function showApp(session) {
     const signedIn = Boolean(session?.user);
     currentAuthUserId = session?.user?.id || null;
@@ -137,7 +144,15 @@ if (!supabase) {
 
     supabase.auth.onAuthStateChange((_event, session) => showApp(session));
     supabase.auth.getSession().then(({ data, error }) => {
-        if (error) setMessage(error.message, true);
+        if (error) {
+            handleAuthCheckError(error);
+            return;
+        }
         showApp(data?.session || null);
+    }).catch(handleAuthCheckError);
+
+    // Auch Fehler der parallelen Sitzungsprüfung in main.js beenden den endlosen Startbildschirm.
+    window.addEventListener('endurance:auth-check-error', (event) => {
+        handleAuthCheckError(event.detail?.error || new Error('Die Anmeldung konnte nicht überprüft werden.'));
     });
 }
