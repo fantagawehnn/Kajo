@@ -212,6 +212,9 @@ Deno.serve(async (request) => {
           !isUuid(item.document_id) ||
           !isUuid(item.source_id) ||
           !isUuid(item.claim_token) ||
+          typeof item.lease_expires_at !== "string" ||
+          !Number.isFinite(Date.parse(item.lease_expires_at)) ||
+          Date.parse(item.lease_expires_at) <= Date.now() ||
           typeof item.storage_path !== "string" ||
           item.storage_path.split("/").length !== 3 ||
           !isUuid(item.storage_path.split("/")[0]) ||
