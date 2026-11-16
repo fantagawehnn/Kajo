@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeRecoveryTrends } from '../js/recovery-calculations.js';
+import { summarizeRecoveryTrends, summarizeSleepDeficit } from '../js/recovery-calculations.js';
 
 test('compares the latest seven days with the preceding seven days', () => {
   const data = {
@@ -52,4 +52,31 @@ test('returns an empty result for an invalid date', () => {
   const result = summarizeRecoveryTrends({}, '2026-02-30');
   assert.equal(result.from, null);
   assert.deepEqual(result.metrics, []);
+});
+
+
+test('calculates accumulated shortfall against the personal target only for measured nights', () => {
+  const data = {
+    '2026-11-10': { sleepDuration: 7.5 },
+    '2026-11-11': { sleepDuration: 8.5 },
+    '2026-11-12': { sleepDuration: 6 },
+    '2026-11-13': { sleepDuration: null },
+    '2026-11-14': { sleepDuration: 20 }
+  };
+  const result = summarizeSleepDeficit(data, 8, '2026-11-16', 7);
+  assert.equal(result.target, 8);
+  assert.equal(result.measuredNights, 3);
+  assert.equal(result.nightsBelowTarget, 2);
+  assert.equal(result.cumulativeShortfall, 2.5);
+  assert.equal(result.averageDuration, 7.33);
+});
+
+test('does not estimate sleep deficit without a configured personal target or valid sleep data', () => {
+  const noTarget = summarizeSleepDeficit({ '2026-11-10': { sleepDuration: 6 } }, null, '2026-11-16');
+  assert.equal(noTarget.target, null);
+  assert.equal(noTarget.cumulativeShortfall, null);
+  const noSleep = summarizeSleepDeficit({}, 8, '2026-11-16');
+  assert.equal(noSleep.target, 8);
+  assert.equal(noSleep.measuredNights, 0);
+  assert.equal(noSleep.cumulativeShortfall, null);
 });
