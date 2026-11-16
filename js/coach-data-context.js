@@ -296,7 +296,8 @@ export function buildCoachRequestContext(appState, question) {
             activities: selectedActivityRecords,
             timeline: selectedTimelineRecords,
             checkIns: selectedCheckInRecords,
-            plannedSessions: selectedPlannedRecords
+            plannedSessions: selectedPlannedRecords,
+            today
         }),
         calculationSettings: {
             trainingLoadSource: state.settings?.trainingLoadSource ?? null,
