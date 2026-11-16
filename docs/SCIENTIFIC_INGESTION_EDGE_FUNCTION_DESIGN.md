@@ -524,3 +524,23 @@ Die Prüfung des aktuellen Branches bestätigt folgende Integrationsbedingungen:
 - Die Bibliothek darf keinen Upload starten, solange Bucket, Storage-Policies, Phase-1-/RPC-Migrationen und Edge-Function-Konfiguration nicht tatsächlich eingerichtet und freigegeben sind.
 
 **Status dieser Festlegung:** ausschließlich Architektur- und Integrationsdokumentation. Es wurde kein Upload-Button ergänzt, keine TUS-Bibliothek eingebunden, kein Upload ausgeführt und keine Infrastruktur aktiviert.
+
+## 28. Isolierter TUS-Upload-Baustein vorbereitet
+
+Das neue Modul `js/scientific-upload.js` enthält einen noch nicht aktivierten Upload-Ablauf. Es ist bewusst nicht in `js/main.js` importiert und es gibt weiterhin keinen Upload-Button.
+
+Die festgelegte Clientbibliothek ist `tus-js-client@4.3.1`. Da das Repository native Browser-ES-Module ohne Paketmanager verwendet, wird das UMD-Bundle bei explizitem Aufruf des Moduls dynamisch von jsDelivr geladen. Damit wird die zusätzliche Bibliothek nicht beim normalen App-Start geladen. Die Wahl ist dokumentiert und versioniert; eine spätere lokale Vendoring-/SRI-Entscheidung bleibt möglich.
+
+Der Baustein:
+- verwendet den bestehenden Supabase-Client;
+- erstellt das Upload-Intent über `scientific-ingestion`;
+- übernimmt Bucket, Pfad, Dokument-ID und Ablaufzeit ausschließlich aus der Function-Antwort;
+- verwendet den direkten Storage-Hostname `<project-ref>.storage.supabase.co`;
+- setzt TUS-Metadaten für Bucket, Objektpfad und PDF-MIME-Typ, `x-upsert: false`, 6-MB-Chunks und begrenzte Retry-Abstände;
+- liest vor jedem TUS-Request die aktuelle Supabase-Sitzung erneut, damit ein während eines längeren Uploads erneuerter Access Token verwendet werden kann;
+- speichert keine TUS-Fingerprints im Browser-Storage; eine Wiederaufnahme nach einem vollständigen Browser-Neustart ist damit ausdrücklich noch nicht vorgesehen;
+- ruft nach dem TUS-Abschluss zwingend `confirm-upload` auf und löst den Erfolgsstatus erst nach bestätigter Serverantwort aus.
+
+Der Baustein enthält keinen Service-Role-Key und wird von keiner UI aufgerufen. Er kann daher derzeit keine Datei übertragen. Vor Aktivierung sind insbesondere Storage-Bucket/Policies, Migrationen/RPCs, Function-Secrets und Deployment erforderlich. Zusätzlich müssen CDN-Abhängigkeit, TUS-CORS und der tatsächliche Storage-Host im Zielprojekt verifiziert werden.
+
+**Status:** Code vorbereitet, nicht integriert, nicht getestet und nicht deployed.
