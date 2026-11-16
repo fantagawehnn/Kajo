@@ -79,6 +79,7 @@ function dayNumber(value,min,max){if(value===''||value===null||value===undefined
 export function openDayEditor(dateStr){
  const modal=document.getElementById('day-detail-modal');
  if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
+ if(modal){modal.style.zIndex='2147483005';document.body.classList.add('kajo-modal-open');}
  const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{};
  document.getElementById('day-edit-date').value=dateStr;
  document.getElementById('day-detail-title').textContent='Tagesdaten · '+formatDateDDMMYY(dateStr);
@@ -104,7 +105,7 @@ export function openDayEditor(dateStr){
  document.getElementById('day-detail-modal').classList.remove('hidden');
 }
 export function toggleDayCycleFields(){const yes=document.getElementById('day-period')?.checked===true;document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!yes);}
-export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');}
+export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
 export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
