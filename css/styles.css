@@ -8605,3 +8605,34 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
 #backup-preview-modal:not(.hidden) {
   z-index: 2147483002 !important;
 }
+
+/* Geplante Trainingseinheit: liegt auch über der fixierten mobilen Navigation. */
+@media screen and (max-width: 640px) {
+  #planned-workout-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483003 !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(.65rem + env(safe-area-inset-top)) .65rem calc(5.25rem + env(safe-area-inset-bottom)) !important;
+  }
+  #planned-workout-modal > div {
+    box-sizing: border-box;
+    width: min(100%, 36rem) !important;
+    max-height: calc(100dvh - 6.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin: 0 auto !important;
+    padding: 1rem !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  #planned-workout-modal .flex.justify-end {
+    position: sticky;
+    bottom: -1rem;
+    padding: .75rem 0 .25rem;
+    background: #0F1420;
+  }
+}
