@@ -353,12 +353,24 @@ async function syncGarminHealthHistoryBatch(
 }
 
 function activityRows(payload: unknown): Record<string, unknown>[] {
-  if (Array.isArray(payload)) return payload.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"));
+  const isActivityRecord = (item: unknown): item is Record<string, unknown> =>
+    item !== null && typeof item === "object" && !Array.isArray(item);
+
+  if (Array.isArray(payload)) {
+    if (!payload.every(isActivityRecord)) {
+      throw new Error("Garmin-Aktivitätenliste enthält ungültige Einträge. Der Zeitraum wird nicht als vollständig synchronisiert markiert.");
+    }
+    return payload;
+  }
   if (payload && typeof payload === "object") {
     const record = payload as Record<string, unknown>;
     for (const key of ["activities", "activityList", "data"]) {
       if (Array.isArray(record[key])) {
-        return (record[key] as unknown[]).filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"));
+        const rows = record[key] as unknown[];
+        if (!rows.every(isActivityRecord)) {
+          throw new Error("Garmin-Aktivitätenliste enthält ungültige Einträge. Der Zeitraum wird nicht als vollständig synchronisiert markiert.");
+        }
+        return rows;
       }
     }
   }
