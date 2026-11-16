@@ -47,6 +47,7 @@ Trainingsdaten, Check-ins, Profile und Gesundheitsinformationen bleiben vollstä
 
 - Alle Primärschlüssel als UUID; Fremdschlüssel und Löschverhalten explizit.
 - DOI und SHA-256-Prüfsumme zur Dublettenprüfung nutzen, nicht als alleinige Identitätsprüfung.
+- DOI-Eindeutigkeit gilt nur für den gemeinsamen Katalog. Private Uploads dürfen dieselbe DOI mehrfach enthalten und nicht mit privaten Uploads anderer Nutzer oder einem Shared-Eintrag kollidieren. Ein nicht eindeutiger Index unterstützt die Suche innerhalb privater Uploads.
 - Autoren als strukturierte Liste speichern; Original-Schreibweise und Reihenfolge erhalten.
 - Seiten- und Abschnittsbezüge pro Chunk speichern.
 - Embedding-Modell, Modellversion und Dimension pro Indexgeneration dokumentieren.
@@ -158,3 +159,8 @@ Für die spätere private Chunk-Persistenz wurde `docs/drafts/SCIENTIFIC_INGESTI
 Die RPCs sind als `SECURITY INVOKER` konzipiert; Ausführung ist nur für `service_role` vorgesehen. Die Edge Function bleibt für JWT-Validierung, Eigentumsprüfung und private Sichtbarkeit verantwortlich, bevor sie einen RPC-Aufruf ausführt. Die RPCs sind nicht für Browser-Aufrufe freigegeben und erlauben keine Freigabe gemeinsamer Quellen.
 
 Der SQL-Entwurf ist nicht angewendet. Er muss mit der tatsächlichen Remote-Schemaversion, den bestehenden Grants und der Migration-Historie abgeglichen werden. Insbesondere bleibt zu entscheiden, wie Upload-Verifikation, Abbruch/Resume und die Kennzeichnung von PDFs ohne extrahierbaren Text umgesetzt werden.
+
+
+## 13. DOI-Deduplizierung nach Datenraum
+
+Die DOI-Unique-Constraint im ersten DDL-Entwurf war zu weit gefasst: Ein global eindeutiger DOI-Index hätte private Uploads nutzerübergreifend kollidieren lassen. Der Index ist deshalb auf Quellen mit `visibility = 'shared'` begrenzt. Für private Uploads gibt es nur einen nicht eindeutigen Suchindex über Eigentümer und normalisierte DOI. Damit können mehrere Nutzer dieselbe Publikation privat hochladen; ebenso bleibt ein privater Upload neben einem kuratierten Shared-Datensatz möglich. Diese Korrektur ist ausschließlich im Entwurf vorgenommen und noch nicht auf Supabase angewendet.
