@@ -200,3 +200,10 @@ Die 15-Minuten-Lease bleibt davon getrennt: Sie schützt den exklusiven Bearbeit
 Die Finalisierungs-RPC prüft jetzt zusätzlich selbst, dass `upload_cleanup_quiesced_at` mindestens 24 Stunden zurückliegt. Die Edge Function allein ist damit nicht die einzige Stelle, die den Wartezeitpunkt erzwingt. Auch ein direkter Aufruf der service_role-RPC mit gültigem Claim-Token kann vor Ablauf der Quieszenz keine Metadaten löschen.
 
 Das ist eine zusätzliche Schutzbedingung, kein Beweis für das Ende jedes Storage-Requests. Die Quieszenz ist erst belastbar, wenn die konkrete Uploadmethode begrenzt ist und keine fortsetzbaren Upload-Sessions über das Zeitfenster hinaus existieren können.
+
+
+## 13. TUS als bevorzugte Uploadmethode
+
+Der bevorzugte Uploadweg für die spätere Implementierung ist Supabase TUS Resumable Upload. Supabase dokumentiert eine Gültigkeit der erzeugten Upload-URL von bis zu 24 Stunden. Nach Ablauf muss eine neue Upload-Session angelegt werden. Zusammen mit dem 24-Stunden-Intent, der siebentägigen Karenz nach Intent-Ablauf und der zusätzlichen 24-Stunden-Quieszenz ergibt sich ein bewusst konservativer Cleanup-Abstand.
+
+Diese Werte sind nicht als absolute Garantie zu verstehen. Vor Aktivierung müssen die TUS-Clientbibliothek, das tatsächliche Projekt-/Bucket-Dateilimit und das Verhalten bei abgebrochenen bzw. abgelaufenen Sessions konkret verifiziert werden. Derzeit existiert noch kein Upload-Frontend; die Festlegung ist eine Architekturentscheidung für die nächste Implementierungsphase.
