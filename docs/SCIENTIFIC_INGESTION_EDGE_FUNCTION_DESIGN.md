@@ -1,6 +1,6 @@
 # KAJO – Technischer Entwurf der Scientific Ingestion Edge Function
 
-**Status:** Technischer Entwurf, nicht implementiert  
+**Status:** Technischer Entwurf mit vorbereitetem Edge-Function-Scaffold; nicht deployed, nicht migriert und nicht getestet  
 **Zielbranch:** `integration/coach-ai-v2-latest`  
 **Bezug:** `SCIENTIFIC_DOCUMENT_INGESTION_SPEC.md` und `drafts/SCIENTIFIC_KNOWLEDGE_PHASE1_DDL_DRAFT.sql`
 
