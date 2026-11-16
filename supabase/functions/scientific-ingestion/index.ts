@@ -161,7 +161,7 @@ Deno.serve(async (request) => {
       if (authError || !authData.user) {
         return json(401, { error: "Unauthorized" }, configuredOrigin);
       }
-      authenticatedUserId = authenticatedUserId!;
+      authenticatedUserId = authData.user.id;
     }
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
