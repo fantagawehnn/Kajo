@@ -260,3 +260,8 @@ Die Eigentümer-ID stammt weiterhin ausschließlich aus dem zuvor validierten Su
 ### Wiederaufnahme nach Unterbrechung
 
 Die Statusabfrage eines eigenen privaten Dokuments stellt die Extraktionsversion, die erwartete Chunk-Anzahl und die serverseitig gespeicherte Chunk-Anzahl bereit, jedoch keine Chunk-Texte oder Download-URL. Nach einem Browser-Neuladen muss die Original-PDF erneut ausgewählt und lokal verarbeitet werden. Identische Chunk-Batches sind für Wiederholungsversuche vorgesehen; abweichende Inhalte unter bereits verwendeten Chunk-Indizes werden abgewiesen. Eine automatische Fortsetzung ohne erneute Dateiauswahl sowie die Bereinigung abgelaufener Upload-Intents sind noch nicht implementiert.
+
+
+### Lokale Prüfung der Extraktionsgrenzen
+
+Die PDF.js-Vorschau bricht die Verarbeitung ab, wenn ein Dokument mehr als 10.000 Seiten, 20.000 Chunks oder 20 Millionen extrahierte Zeichen erzeugt. Diese Werte entsprechen den vorbereiteten Server-/RPC-Grenzen. Eine separate maximale Dateigröße wird vor Aktivierung über die Serverkonfiguration festgelegt; sie ist nicht durch die Seiten-/Textgrenzen ersetzt.
