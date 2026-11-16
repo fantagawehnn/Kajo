@@ -428,3 +428,4 @@ assert.ok(calendar.includes('!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)'), 'season ph
 
 assert.ok(calendar.includes("state.settings.calendarSeasonPhaseDismissed.push(id)"), 'deleting a confirmed phase also suppresses its generated suggestion');
 assert.ok(calendar.includes('Saisonphase bearbeiten'), 'phase editor uses a neutral label for training and competition periods');
+assert.ok(calendar.includes('<h3>Saisonphasen</h3>'), 'annual overview labels the mixed phase section as season phases');
