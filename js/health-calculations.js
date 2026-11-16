@@ -171,7 +171,8 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
   const loadRows = (Array.isArray(trainingLoadRecords) ? trainingLoadRecords : []).map(record => ({
     id: record?.activity?.id,
     date: itemDateKey(record?.activity),
-    value: Number.isFinite(Number(record?.value)) ? Number(record.value) : null
+    value: record?.value !== null && record?.value !== undefined && record?.value !== ''
+      && Number.isFinite(Number(record.value)) ? Number(record.value) : null
   })).filter(item => item.date && item.value !== null);
   const summarizeWindow = (from, to, excludeHealthDates = false) => {
     const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
