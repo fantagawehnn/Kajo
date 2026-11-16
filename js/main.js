@@ -262,7 +262,7 @@ function switchTab(requestedTab) {
             if (wasActivityMode && state.activeCalendarFormat === 'activities') {
                 setCalendarFormat(window.kajoCalendarFormatBeforeActivities || 'month');
                 window.kajoCalendarFormatBeforeActivities = null;
-            } else if (parent === 'calendar' && state.activeCalendarFormat === 'activities') {
+            } else if (parent === 'calendar' && state.activeCalendarFormat !== 'month') {
                 setCalendarFormat('month');
             }
         }
