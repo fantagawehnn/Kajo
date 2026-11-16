@@ -149,3 +149,6 @@ Der separate Entwurf [SCIENTIFIC_UPLOAD_CLEANUP_LIFECYCLE.md](./SCIENTIFIC_UPLOA
 Vorgesehen ist ein atomarer serverseitiger Claim mit Lease, danach die idempotente Löschung des exakt gespeicherten Storage-Pfads und erst anschließend die transaktionale Löschung der Metadaten. Ein Storage-Fehler lässt die Metadaten für einen Retry bestehen. Eine Karenzzeit von sieben Tagen nach Ablauf des 24-Stunden-Intents ist lediglich ein Vorschlag und noch nicht freigegeben.
 
 **Status:** Nur Lifecycle-Entwurf. Keine Cleanup-RPC, Schemafelder, Edge-Function-Action oder Scheduler implementiert. Keine Migration, Tests oder Deployments durchgeführt.
+
+
+Der Entwurf `docs/drafts/SCIENTIFIC_UPLOAD_CLEANUP_RPC_DRAFT.sql` konkretisiert die atomare Claim-/Lease-Mechanik (maximal 25 Datensätze, vorläufig 15 Minuten Lease, zufälliges Claim-Token). Die bestehende Uploadbestätigung prüft im Branch bereits, ob ein Cleanup-Claim gesetzt ist, und bindet auch das bedingte Status-UPDATE an einen leeren Claim-Token. Die Storage-INSERT-Policy verlangt ebenfalls einen leeren Claim-Token. Diese Code-/Policy-Anpassungen bleiben Scaffold bzw. Migrationsentwurf und sind erst nach Schema-Reconciliation gemeinsam aktivierbar.
