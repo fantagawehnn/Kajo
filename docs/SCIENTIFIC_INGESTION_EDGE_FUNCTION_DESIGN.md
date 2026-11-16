@@ -469,20 +469,19 @@ Die Ablaufzeit betrifft ausschließlich den noch nicht bestätigten Upload. Soba
 Die 24 Stunden sind ein vorläufiger MVP-Standardwert. Vor Aktivierung ist zu entscheiden, ob dieser Zeitraum zur realen Uploadgröße und Netzstabilität passt.
 
 
-## 25. Interner Cleanup-Aufruf und Aktivierungssperre
+## 25. Separater interner Cleanup-Aufruf und Aktivierungssperre
 
-Das Edge-Function-Scaffold enthält nun die Action `cleanup-expired-uploads`. Sie ist strikt vom normalen Nutzerpfad getrennt:
+Die Cleanup-Ausführung liegt nicht mehr innerhalb von `scientific-ingestion`, sondern in der separaten Function `scientific-upload-cleanup`:
 
-- Normale Actions validieren weiterhin das Nutzer-JWT über Supabase Auth und leiten die Eigentümer-ID aus dem validierten Nutzer ab.
-- Der Cleanup-Pfad akzeptiert ausschließlich einen serverseitigen Request, dessen Bearer-Token exakt dem konfigurierten `SUPABASE_SERVICE_ROLE_KEY` entspricht. Das Edge-Gateway bleibt auf `verify_jwt = true`; der Service-Role-JWT wird serverseitig verwendet.
-- Ein solcher interner Request darf ausschließlich die Cleanup-Action aufrufen. Alle anderen Actions werden für diesen Pfad abgelehnt.
-- Zusätzlich muss `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` als serverseitige Function-Umgebungsvariable gesetzt sein. Ohne diese explizite Aktivierung antwortet die Action mit `503` und führt keine Claim- oder Storage-Operation aus.
-- Die Batchgröße ist auf 1 bis 25 begrenzt. Die Function akzeptiert nur UUID-basierte Claim-Daten und den kanonischen Pfad `<owner-uuid>/<document-uuid>/original.pdf`.
-- Die Function entfernt das Objekt ausschließlich aus dem fest kodierten privaten Bucket. Bei Storage-Fehlern wird nicht finalisiert; bei Fehlern oder einem nicht mehr gültigen Claim-Token bleibt die Metadaten-Finalisierung aus.
+- Die normale `scientific-ingestion`-Function validiert für sämtliche Aktionen ein reguläres Nutzer-JWT über Supabase Auth und leitet die Eigentümer-ID ausschließlich aus dem validierten Nutzer ab.
+- Die separate Cleanup-Function verwendet ein eigenes Trigger-Secret im Header `x-kajo-cleanup-secret`, konfiguriert über `SCIENTIFIC_UPLOAD_CLEANUP_SECRET`. Das Secret muss mindestens 32 Zeichen lang sein und wird mit einem konstantzeitlichen Bytevergleich geprüft.
+- In `supabase/config.toml` ist für die Cleanup-Function `verify_jwt = false` gesetzt. Deshalb ist der eigene Secret-Check die maßgebliche Authentifizierung; die Function bietet keine Browser-CORS-Freigabe.
+- Der Service-Role-Key wird ausschließlich intern für Supabase-Datenbank- und Storage-Operationen verwendet und niemals als Trigger-Secret.
+- Zusätzlich muss `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` serverseitig gesetzt sein. Ohne diesen Schalter führt die Function keine Claim- oder Storage-Operation aus.
+- Pro Aufruf wird höchstens ein Datensatz beansprucht. Claim-Daten und kanonischer Pfad `<owner-uuid>/<document-uuid>/original.pdf` werden vor der Storage-Operation validiert.
+- Bei Storage- oder Finalisierungsfehlern liefert die Function HTTP 503 und löscht keine Metadaten. Eine noch nicht abgelaufene Quieszenz wird als `deferred: true` zurückgegeben.
 
-Der Service-Role-Key darf ausschließlich in Supabase Function Secrets verbleiben und niemals an Browser, Frontend oder Nutzerantworten ausgegeben werden. Die Cleanup-Action wird nicht durch die App-Oberfläche angeboten.
-
-**Aktivierungsstatus:** Das ist weiterhin nicht deployter Scaffold-Code. Die RPCs und Claim-Spalten existieren nur als SQL-Entwurf. `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED` wurde nicht gesetzt. Es wurde kein Scheduler eingerichtet. Die vorläufigen 7 Tage Karenzzeit und 15 Minuten Lease sind nicht fachlich freigegeben.
+**Aktivierungsstatus:** Die separate Function ist nur als Code vorbereitet. Sie ist nicht deployed; Trigger-Secret und Aktivierungsschalter sind nicht gesetzt. Die RPCs und Claim-Spalten existieren nur als SQL-Entwurf. Es gibt keinen Scheduler. Die vorläufigen 7 Tage Karenzzeit und 15 Minuten Lease sind nicht fachlich freigegeben.
 
 
 Ergänzende Lease-Prüfung: Die Action verwirft Claim-Zeilen, deren `lease_expires_at` fehlt, ungültig ist oder bereits erreicht wurde, bevor sie Storage-Operationen beginnt. Läuft die Lease während eines laufenden Storage-Aufrufs ab, schützt die Finalisierungs-RPC weiterhin vor einer Finalisierung mit abgelaufenem oder inzwischen ersetztem Claim-Token.
@@ -490,11 +489,11 @@ Ergänzende Lease-Prüfung: Die Action verwirft Claim-Zeilen, deren `lease_expir
 
 ## 26. Bevorzugter Storage-Upload: TUS
 
-Für die spätere Browser-Integration ist TUS (Supabase Resumable Upload) als bevorzugter Uploadweg festgelegt. Supabase empfiehlt TUS für Dateien über 6 MB und bei instabilen Verbindungen. Die erzeugte Upload-URL ist laut aktueller Supabase-Dokumentation bis zu 24 Stunden gültig. Nach Ablauf muss der Client eine neue Upload-Session starten. Die konkrete Clientbibliothek und Version sind vor Implementierung festzulegen.
+Für die Browser-Integration ist TUS (Supabase Resumable Upload) als bevorzugter Uploadweg festgelegt. Supabase empfiehlt TUS für Dateien über 6 MB und bei instabilen Verbindungen. Die erzeugte Upload-URL ist laut aktueller Supabase-Dokumentation bis zu 24 Stunden gültig. Nach Ablauf muss der Client eine neue Upload-Session starten. Die Clientbibliothek ist auf `tus-js-client@4.3.1` festgelegt und im isolierten Frontend-Modul eingebunden.
 
 Das Upload-Intent bleibt serverseitig auf 24 Stunden begrenzt. Die bestehende siebentägige Cleanup-Karenz nach Intent-Ablauf liegt deutlich über der dokumentierten maximalen Gültigkeit einer TUS-Upload-URL; die zusätzliche 24-Stunden-Quieszenz ab erstem Cleanup-Claim bleibt als Sicherheitsreserve bestehen. Diese Kombination ist eine konservative Designentscheidung, keine Garantie gegen jede denkbare Storage-Störung. Vor Aktivierung müssen tatsächliches Projektlimit, Bucket-Limit, TUS-Konfiguration und Fehlerverhalten geprüft werden. Es wird keine unbegrenzte Session-Wiederaufnahme angenommen.
 
-Die Upload-Action selbst bleibt unverändert: Upload-Intent erstellen, direkt in den privaten Bucket hochladen, anschließend Storage-Objekt über confirm-upload serverseitig prüfen. Die Frontend-Integration ist noch nicht implementiert.
+Der Upload-Baustein `js/scientific-upload.js` erstellt das Intent, lädt direkt in den privaten Bucket hoch und prüft anschließend das Storage-Objekt über `confirm-upload` sowie eine erneute Statusabfrage. Das Modul ist noch nicht in die UI integriert und nicht gegen den Ziel-Storage verifiziert.
 
 ## 27. Frontend-Anbindung: bestehende App-Struktur und TUS-Vertrag
 
