@@ -729,7 +729,7 @@
                 </div>
               </section>
             </div>
-            <div class="flex justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeDayEditor()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="button" onclick="saveDayEditor()" class="px-5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold">Check-in speichern</button></div>
+            <p id="day-save-status" class="text-[11px] text-slate-400" role="status" aria-live="polite"></p><div class="flex justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeDayEditor()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Abbrechen</button><button type="button" onclick="saveDayEditor()" class="px-5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold">Check-in speichern</button></div>
           </div>
         </div>
         <div id="view-races" class="hidden space-y-6">
@@ -1643,7 +1643,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=126"></script>
+    <script type="module" src="js/main.js?v=127"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
