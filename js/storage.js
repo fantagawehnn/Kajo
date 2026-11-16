@@ -372,6 +372,7 @@ export function saveActivitiesToLocalStorage() {
         activeUserStorage.setItem('activities', JSON.stringify(activities));
     } catch (error) {
         if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+        try { activeUserStorage.removeItem('activities'); } catch (_) {}
         console.warn('Aktivitäten passen nicht mehr in localStorage; sichere sie stattdessen in IndexedDB.');
     }
     const storageForThisSave = activeUserStorage;
@@ -421,6 +422,7 @@ export async function clearLocalGarminTelemetryCache() {
         activeUserStorage.setItem('activities', JSON.stringify(compactActivities));
     } catch (error) {
         if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+        try { activeUserStorage.removeItem('activities'); } catch (_) {}
         console.warn('Aktivitäten-Fallback wegen voller localStorage-Quote übersprungen; IndexedDB wird verwendet.');
     }
     await activeUserStorage.saveCollections({ activities: compactActivities });
