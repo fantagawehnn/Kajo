@@ -379,7 +379,48 @@ export function toggleCalendarFormatMenu(){const menu=document.getElementById('c
 export function closeCalendarFormatMenu(){document.getElementById('calendar-format-menu')?.classList.add('hidden');document.getElementById('calendar-format-button')?.setAttribute('aria-expanded','false');}
 function calendarSeason(){const s=state.settings?.calendarSeason;return s&&/^\d{4}-\d{2}-\d{2}$/.test(s.start||'')&&/^\d{4}-\d{2}-\d{2}$/.test(s.end||'')&&s.start<=s.end?s:null;}
 export function openCalendarHealthCreate(){window.openHealthLogForDate?.(state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate));}
-export function openCalendarPeriodCreate(){const date=state.selectedCalendarDay||toLocalDateString();openDayEditor(date);document.getElementById('day-period')?.closest('label')?.scrollIntoView?.({behavior:'smooth',block:'center'});}
+export function openCalendarPeriodCreate(){
+ const date=state.selectedCalendarDay||toLocalDateString();
+ const start=document.getElementById('period-range-start'),end=document.getElementById('period-range-end');
+ if(start)start.value=date;
+ if(end)end.value=date;
+ const modal=document.getElementById('calendar-period-modal');
+ if(modal){modal.classList.remove('hidden');modal.classList.add('flex');document.body.classList.add('kajo-modal-open');}
+}
+export function closeCalendarPeriodCreate(){
+ const modal=document.getElementById('calendar-period-modal');
+ modal?.classList.add('hidden');modal?.classList.remove('flex');
+ document.body.classList.remove('kajo-modal-open');
+}
+function eachPeriodDate(start,end,callback){
+ const current=new Date(start+'T12:00:00'),last=new Date(end+'T12:00:00');
+ while(current<=last){callback(toLocalDateString(current));current.setDate(current.getDate()+1);}
+}
+export function saveCalendarPeriod(){
+ const start=document.getElementById('period-range-start')?.value||'';
+ const end=document.getElementById('period-range-end')?.value||'';
+ if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(start)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(end)){alert('Bitte wähle einen gültigen Start- und Endtag.');return;}
+ if(start>end){alert('Der Starttag darf nicht nach dem Endtag liegen.');return;}
+ eachPeriodDate(start,end,date=>{
+  const entry={...(state.dailyCheckins[date]||{})};
+  entry.cycle={...(entry.cycle||{}),period:true};
+  state.dailyCheckins[date]=entry;
+ });
+ saveDataToLocalStorage();closeCalendarPeriodCreate();refreshAll();
+}
+export function removeCalendarPeriodRange(){
+ const start=document.getElementById('period-range-start')?.value||'';
+ const end=document.getElementById('period-range-end')?.value||'';
+ if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(start)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(end)||start>end){alert('Bitte wähle einen gültigen Zeitraum.');return;}
+ eachPeriodDate(start,end,date=>{
+  const entry=state.dailyCheckins[date];
+  if(!entry?.cycle)return;
+  const cycle={...entry.cycle};delete cycle.period;
+  if(Object.keys(cycle).length)entry.cycle=cycle;else delete entry.cycle;
+  if(Object.keys(entry).length)state.dailyCheckins[date]=entry;else delete state.dailyCheckins[date];
+ });
+ saveDataToLocalStorage();closeCalendarPeriodCreate();refreshAll();
+}
 
 export function setCalendarFormat(fmt) {
     const nextFormat = fmt==='season'&&calendarSeason()?'season':(['day','week','month','year','activities'].includes(fmt)?fmt:'week');
