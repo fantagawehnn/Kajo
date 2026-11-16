@@ -154,7 +154,7 @@ export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
  * Missing duration is counted separately; missing activities are not inferred
  * to be rest days and no completeness/causality claim is made.
  */
-export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14, trainingLoadRecords = [], loadMode = null, loadUnit = null, asOfDate = null) {
+export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14, trainingLoadRecords = [], loadMode = null, loadUnit = null, asOfDate = null, trainingLoadEligibleActivities = null) {
   if (!Number.isInteger(comparisonDays) || comparisonDays < 1 || comparisonDays > 90) return null;
   const documentedHealthDates = new Set(Object.entries(healthLogs || {})
     .filter(([date, item]) => validDateKey(date) && (item?.status === 'sick' || item?.status === 'injured'))
@@ -185,7 +185,7 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       const duration = rawDuration !== null && rawDuration !== undefined && rawDuration !== ''
         && Number.isFinite(Number(rawDuration)) && Number(rawDuration) > 0
         ? Number(rawDuration) : null;
-      return { id: activity?.id, date, startTime: activity?.startTime || '', duration };
+      return { id: activity?.id, date, startTime: activity?.startTime || '', duration, sourceActivity: activity };
     }).filter(item => item.date)
   );
   const activityRows = activityResult.rows;
@@ -212,6 +212,8 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     const key = activityIdentityKey(item);
     return key && knownActivityKeys.has(key);
   });
+  const eligibleLoadActivityObjects = Array.isArray(trainingLoadEligibleActivities)
+    ? new Set(trainingLoadEligibleActivities) : null;
   const validAsOfDate = validDateKey(asOfDate) ? asOfDate : null;
   const summarizeWindow = (from, to, excludeHealthDates = false, capAtAsOfDate = false) => {
     const requestedTo = to;
@@ -259,11 +261,16 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
       averageMinutesPerCalendarDay: eligibleCalendarDays > 0 ? totalMinutes / eligibleCalendarDays : null,
       trainingLoad: windowLoadRows.length ? Number(totalLoad.toFixed(1)) : null,
       trainingLoadActivityCount: windowLoadRows.length,
-      trainingLoadCoverage: {
-        available: windowLoadRows.length,
-        total: rows.length,
-        status: coverageStatus(windowLoadRows.length, rows.length)
-      },
+      trainingLoadCoverage: (() => {
+        const eligibleCount = eligibleLoadActivityObjects
+          ? rows.filter(item => eligibleLoadActivityObjects.has(item.sourceActivity)).length
+          : rows.length;
+        return {
+          available: windowLoadRows.length,
+          total: eligibleCount,
+          status: coverageStatus(windowLoadRows.length, eligibleCount)
+        };
+      })(),
       averageTrainingLoadPerCalendarDay: eligibleCalendarDays > 0 && windowLoadRows.length
         ? totalLoad / eligibleCalendarDays : null,
       trainingLoadMode: loadMode,
