@@ -85,6 +85,7 @@ create table public.scientific_documents (
             'extracted',
             'review_pending',
             'private_ready',
+            'manual_review_required',
             'failed',
             'rejected'
         )),
@@ -212,6 +213,7 @@ create policy "Authenticated users read chunks of readable documents"
                   (
                       d.visibility = 'shared'
                       and d.owner_id is null
+                      and d.processing_status = 'review_pending'
                       and s.visibility = 'shared'
                       and s.review_status = 'approved'
                   )
@@ -219,6 +221,7 @@ create policy "Authenticated users read chunks of readable documents"
                   (
                       d.visibility = 'private'
                       and d.owner_id = (select auth.uid())
+                      and d.processing_status = 'private_ready'
                       and s.visibility = 'private'
                       and s.owner_id = (select auth.uid())
                   )
