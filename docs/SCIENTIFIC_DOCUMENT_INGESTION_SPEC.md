@@ -214,3 +214,14 @@ Das konkrete Bucket-Größenlimit ist noch nicht entschieden. Der Bucket-Entwurf
 Die PDF-Extraktion wird nicht ungeprüft als lang laufender synchroner Edge-Function-Request umgesetzt. Die aktuelle Supabase-Dokumentation nennt für gehostete Edge Functions 256 MB maximalen Speicher und 2 Sekunden CPU-Zeit pro Request; die Wall-Clock-Grenze hängt vom Tarif ab. Vor einer Parserintegration ist deshalb eine dauerhafte Job-/Queue-Ausführung zu spezifizieren. `EdgeRuntime.waitUntil()` allein wird nicht als dauerhafte Queue oder verlässliche Wiederholungsinfrastruktur behandelt.
 
 `unpdf` ist als Deno-/Worker-fähiger Parserkandidat mit seitenweiser PDF.js-Extraktion vorgemerkt, aber noch nicht ausgewählt oder eingebunden. Ein Proof of Concept muss mit realistischen wissenschaftlichen PDFs Seitenbezug, Unicode, Tabellen-/Spaltenverluste, CPU, Speicher und Fehlerfälle prüfen. Details und Quellen stehen im [technischen Edge-Function-Entwurf](./SCIENTIFIC_INGESTION_EDGE_FUNCTION_DESIGN.md).
+
+
+## 16. Zielarchitektur mit Cloudflare und Supabase
+
+Die Ingestion wird auf die bereits genutzte Infrastruktur begrenzt. Supabase bleibt für Auth, PostgreSQL, private PDF-Dateien und Chunk-Metadaten zuständig. Cloudflare übernimmt die Upload-Abschlussprüfung und die asynchrone Verarbeitung über Queues.
+
+Der separate Cloudflare Worker `kajo-scientific-ingestion` bestätigt nach dem Upload die tatsächliche Datei, setzt den Status `uploaded` und sendet nur die Dokument-ID an die Queue. Ein dedizierter Queue Consumer verarbeitet das Dokument und schreibt die Ergebnisse nach Supabase zurück. Der bestehende Coach-Worker erhält keinen Service-Role-Key.
+
+Details, Sicherheitsgrenzen und offene Tarif-/Parserfragen: [Cloudflare Scientific Ingestion Architecture](./CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md).
+
+Die bisherige Supabase Edge Function bleibt für Upload-Intent und Status zuständig. Ihre `process-document`-Aktion bleibt HTTP 501, bis der separate Cloudflare-Queue-Pfad implementiert und geprüft ist.
