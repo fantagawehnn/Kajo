@@ -285,7 +285,16 @@ function renderCalendarDayDetail(date, target) {
     if (checkin.cycle?.period === true) events.push(calendarDayEvent('Menstruation dokumentiert', 'Zyklusdaten', '', 'health'));
     data.activities.forEach(item => events.push(calendarDayEvent(item.name || 'Trainingseinheit', calendarSport(item.type).label + (item.raceFormat ? ' · ' + item.raceFormat : ''), calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'completed')));
     data.planned.forEach(item => events.push(calendarDayEvent(item.name || 'Geplante Einheit', calendarSport(item.type).label, calendarDayTime(item.startTime || item.startTimeLocal || item.time), 'planned')));
-    data.races.forEach(item => events.push(calendarDayEvent(item.name || 'Wettkampf', item.location || 'Wettkampf', calendarDayTime(item.startTime || item.time), 'race')));
+    data.races.forEach(item => {
+        const results = Array.isArray(item.results) ? item.results : [];
+        const ranks = results.map(result => Number(result?.rank)).filter(rank => Number.isInteger(rank) && rank > 0);
+        const bestRank = ranks.length ? Math.min(...ranks) : null;
+        const resultSummary = results.length
+            ? results.length + ' dokumentierte ' + (results.length === 1 ? 'Ergebnis' : 'Ergebnisse') + (bestRank !== null ? ' · bestes Ergebnis: Platz ' + bestRank : '')
+            : '';
+        const detail = [item.location || 'Wettkampf', resultSummary].filter(Boolean).join(' · ');
+        events.push(calendarDayEvent(item.name || 'Wettkampf', detail, calendarDayTime(item.startTime || item.time), 'race'));
+    });
     strength.forEach(item => {
         const sets = Array.isArray(item.sets) ? item.sets : [];
         let detail = 'Kraftprotokoll';
