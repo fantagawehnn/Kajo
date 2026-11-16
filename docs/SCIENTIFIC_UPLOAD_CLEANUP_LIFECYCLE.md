@@ -1,3 +1,12 @@
+## Aktueller Implementierungsstatus (16.11.2026)
+
+Dieser Status hat Vorrang vor älteren Entwurfsabschnitten, die noch von einer Cleanup-Action innerhalb von `scientific-ingestion` oder einer fehlenden Cleanup-Function ausgehen.
+
+Die aktuelle Repository-Implementierung liegt in `supabase/functions/scientific-upload-cleanup/index.ts`. Sie verwendet ein separates Trigger-Secret, das unabhängig vom Service-Role-Key ist, bietet keine Browser-CORS-Freigabe und verarbeitet höchstens einen Datensatz je Aufruf. Die normale `scientific-ingestion`-Function enthält keinen internen Cleanup-Pfad mehr und validiert reguläre Nutzer-JWTs.
+
+Die Cleanup-Function ist ausschließlich als Code vorbereitet: Sie ist nicht deployed, das Trigger-Secret und der Aktivierungsschalter sind nicht gesetzt, die Datenbank-RPCs/Spalten sind nicht migriert, der Storage-Bucket/Policies sind nicht eingerichtet und ein Scheduler fehlt. Es wurden keine Tests ausgeführt.
+
+
 # KAJO – Lifecycle und Bereinigung privater wissenschaftlicher Uploads
 
 **Stand:** 16.11.2026  
