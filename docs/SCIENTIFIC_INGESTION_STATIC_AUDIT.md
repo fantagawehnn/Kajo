@@ -130,9 +130,9 @@ Statisch abgeglichen wurden:
 - TUS-Header, Metadaten, 6-MB-Chunkgröße und Retry-Abstände;
 - Aktualisierung des Bearer-Tokens über `onBeforeRequest`;
 - verpflichtender `confirm-upload`-Aufruf vor Auflösung des Upload-Erfolgs;
-- keine Speicherung von Resume-Fingerprints und keine Service-Role-Credentials im Browser.
+- Resume-Fingerprints werden im TUS-URL-Storage von `tus-js-client` gespeichert. Der eigene Fingerprint enthält Nutzer-ID, Dokument-ID, Dateigröße und einen segmentweise berechneten SHA-256-Inhaltsfingerabdruck. Zusätzlich wird nur eine lokale Intent-Zuordnung mit Dateiname, Dateigröße, `lastModified` und Ablaufzeit gespeichert. Es werden keine Service-Role-Credentials im Browser gespeichert.
 
-**Bewusste Einschränkung:** Der Code ermöglicht noch keine Wiederaufnahme nach einem Browser-Neustart. Er verwendet keine dauerhafte lokale Zuordnung zwischen Dokument-Intent und TUS-Upload-URL. Eine solche Zuordnung muss später nutzergebunden, intentgebunden und mit Ablauf-/Kontowechselbehandlung entworfen werden.
+**Bewusste Einschränkung:** Die Wiederaufnahme ist jetzt als Codepfad vorbereitet, aber noch nicht in der UI verfügbar und nicht gegen einen echten Supabase-Storage-Endpunkt verifiziert. Nach Browser-Neustart muss dieselbe PDF erneut ausgewählt werden. Die Wiederaufnahme verlangt eine passende, lokal gespeicherte TUS-Session sowie einen noch gültigen, serverseitig bestätigten Dokumentstatus. Fehlt eine passende Session, wird kein neuer Upload automatisch angelegt.
 
 **Nicht verifiziert:** CDN-Lieferkette/SRI, CORS und tatsächlicher TUS-Upload gegen den Zielbucket, Tokenrefresh während einer realen Übertragung, Upload-/Cleanup-Rennen sowie tatsächliche Storage-Response. Diese Punkte benötigen eine freigegebene Infrastruktur und kontrollierte Integration. Es wurden keine Tests ausgeführt.
 
