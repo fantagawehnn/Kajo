@@ -270,3 +270,8 @@ Die PDF.js-Vorschau bricht die Verarbeitung ab, wenn ein Dokument mehr als 10.00
 ### Storage-Policy und offene Aktivierungsvoraussetzungen
 
 Der Browser darf ausschließlich per INSERT in den serverseitig vorbereiteten Objektpfad `<owner_id>/<document_id>/original.pdf` hochladen, solange das zugehörige private Dokument dem authentifizierten Nutzer gehört und `pending` ist. Browserseitiges Lesen, Überschreiben und Löschen ist im Entwurf nicht erlaubt; Uploads müssen `upsert: false` verwenden. Die Edge Function prüft anschließend die tatsächliche Dateigröße und PDF-Signatur. Vor Aktivierung fehlen weiterhin Intent-Ablauf, Rate-Limits, Bereinigung verwaister Uploads sowie die abgestimmte Bucket-Größenbegrenzung.
+
+
+### Ablaufzeit für Upload-Intents
+
+Ein Upload-Intent ist ab seiner serverseitigen Erstellung 24 Stunden gültig. Nach Ablauf verweigert die Storage-Policy weitere Uploads; confirm-upload lehnt eine Bestätigung ebenfalls ab. Bereits bestätigte Dokumente bleiben unabhängig davon für die Extraktion verfügbar. Die 24 Stunden sind ein vorläufiger MVP-Wert und vor Aktivierung anhand der erwarteten Dateigrößen und Uploadzeiten zu bestätigen. Abgelaufene Datensätze und Objekte werden nicht automatisch gelöscht.
