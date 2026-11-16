@@ -199,6 +199,7 @@
                         <button type="button" class="kajo-area-card kajo-area-health" onclick="switchTab('garmin-health')"><span class="kajo-area-icon"><i data-lucide="heart-pulse"></i></span><span class="kajo-area-copy"><strong>Gesundheitsdaten</strong><small>Garmin-Messwerte, persönliche Baselines und zeitliche Verläufe</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
                         <button type="button" class="kajo-area-card" onclick="switchTab('routes')"><span class="kajo-area-icon"><i data-lucide="route"></i></span><span class="kajo-area-copy"><strong>Trainings- &amp; Wettkampfstrecken</strong><small>Gewässer, Abschnitte und Strecken verwalten</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
                         <button type="button" class="kajo-area-card" onclick="switchTab('nutrition')"><span class="kajo-area-icon"><i data-lucide="utensils"></i></span><span class="kajo-area-copy"><strong>Ernährung</strong><small>Ernährungsübersicht und Erinnerungen</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="switchTab('scientific-library')"><span class="kajo-area-icon"><i data-lucide="book-open-check"></i></span><span class="kajo-area-copy"><strong>Wissenschaftliche Bibliothek</strong><small>Sportwissenschaftliche Papers lokal prüfen und strukturieren</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
                     </div>
                 </section>
 
@@ -217,6 +218,47 @@
 
             </div>
         </section>
+        <section id="view-scientific-library" class="hidden space-y-5" aria-labelledby="scientific-library-title">
+          <div id="scientific-library-root" class="space-y-5">
+            <header class="space-y-1">
+              <p class="kajo-eyebrow">SPORTWISSENSCHAFT &amp; EVIDENZ</p>
+              <h1 id="scientific-library-title" class="text-xl font-bold text-white">Wissenschaftliche Bibliothek</h1>
+              <p class="text-xs leading-relaxed text-slate-400">Bereite wissenschaftliche PDFs für die spätere Evidenzdatenbank vor. Der aktuelle Schritt prüft ausschließlich die lokale Textextraktion im Browser.</p>
+            </header>
+
+            <section class="rounded-2xl border border-cyan-900/60 bg-cyan-950/20 p-4 space-y-2">
+              <div class="flex items-center gap-2 text-cyan-200"><i data-lucide="shield-check" class="w-4 h-4"></i><h2 class="text-sm font-semibold">Lokale Vorschau – kein Upload</h2></div>
+              <p class="text-xs leading-relaxed text-slate-300">Deine PDF-Datei und der extrahierte Text verlassen bei diesem Schritt nicht deinen Browser. Es wird nichts in Supabase gespeichert. Die Bibliothek ist noch nicht mit dem KI-Coach verbunden.</p>
+              <p class="text-[10px] leading-relaxed text-slate-500">Die PDF.js-Bibliothek wird beim ersten Start von einem CDN geladen. Für die Extraktion ist daher eine Internetverbindung erforderlich. Große oder komplexe PDFs können den verfügbaren Arbeitsspeicher deines Geräts beanspruchen.</p>
+            </section>
+
+            <section class="rounded-2xl border border-slate-800 bg-slate-900 p-4 space-y-4">
+              <div><h2 class="text-sm font-semibold text-white">PDF auswählen</h2><p class="mt-1 text-xs text-slate-400">Ein wissenschaftliches PDF pro Durchlauf. Scans ohne Textschicht werden erkannt, aber noch nicht per OCR verarbeitet.</p></div>
+              <label for="scientific-pdf-file" class="block cursor-pointer rounded-xl border-2 border-dashed border-slate-700 bg-slate-950 p-5 text-center hover:border-cyan-600">
+                <i data-lucide="file-up" class="mx-auto mb-2 h-8 w-8 text-cyan-300"></i>
+                <span class="block text-sm font-semibold text-slate-200">PDF-Datei auswählen</span>
+                <span class="mt-1 block text-[10px] text-slate-500">PDF · lokale Verarbeitung im Browser</span>
+                <input id="scientific-pdf-file" type="file" accept="application/pdf,.pdf" class="sr-only">
+              </label>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <button id="scientific-library-extract" type="button" class="flex-1 rounded-xl bg-cyan-600 px-4 py-3 text-xs font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50">PDF lokal analysieren</button>
+                <button id="scientific-library-reset" type="button" class="rounded-xl border border-slate-700 px-4 py-3 text-xs text-slate-300 hover:bg-slate-800">Zurücksetzen</button>
+              </div>
+              <p id="scientific-library-progress" class="text-[10px] text-slate-500" aria-live="polite"></p>
+              <div id="scientific-library-status" class="rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs leading-relaxed text-slate-300" role="status" aria-live="polite">Noch kein Dokument ausgewählt. Die Auswahl und Extraktion erfolgen lokal im Browser.</div>
+            </section>
+
+            <section id="scientific-library-file-meta" class="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Extraktionsmetadaten"></section>
+            <section id="scientific-library-results" class="space-y-3" aria-live="polite"></section>
+            <section id="scientific-library-chunk-preview" class="space-y-2" aria-label="Vorschau der Textabschnitte"></section>
+
+            <section class="rounded-2xl border border-amber-900/60 bg-amber-950/20 p-4 space-y-2">
+              <h2 class="text-xs font-semibold text-amber-200">Noch nicht produktiv angebunden</h2>
+              <p class="text-xs leading-relaxed text-amber-100/80">Die spätere Speicherung benötigt den dedizierten privaten Supabase-Storage-Bucket, geprüfte RLS-/Storage-Policies und neue Edge-Function-Aktionen für Uploadabschluss, Chunk-Batches und Extraktionsabschluss. Diese Infrastruktur ist noch nicht angelegt. Die hier erzeugten Chunks sind eine technische Vorschau und werden beim Verlassen oder Neuladen der Seite verworfen.</p>
+            </section>
+          </div>
+        </section>
+
         <section id="view-garmin-health" class="hidden space-y-5">
           <header class="space-y-1">
             <p class="kajo-eyebrow">GESUNDHEIT &amp; REGENERATION</p>
