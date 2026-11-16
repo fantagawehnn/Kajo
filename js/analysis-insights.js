@@ -5,7 +5,7 @@
  * ============================================================ */
 import { state } from './state.js';
 import { renderMetricHistory } from './dashboard.js?v=3';
-import { calculateReadiness, summarizeRecoveryTrends, summarizeSleepDeficit } from './recovery-calculations.js?v=3';
+import { calculateReadiness, summarizeRecoveryTrends, summarizeSleepDeficit } from './recovery-calculations.js?v=4';
 import { escapeHtml, formatDateDDMMYY } from './utils.js';
 
 const todayKey = () => {
