@@ -429,3 +429,8 @@ assert.ok(calendar.includes('!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)'), 'season ph
 assert.ok(calendar.includes("state.settings.calendarSeasonPhaseDismissed.push(id)"), 'deleting a confirmed phase also suppresses its generated suggestion');
 assert.ok(calendar.includes('Saisonphase bearbeiten'), 'phase editor uses a neutral label for training and competition periods');
 assert.ok(calendar.includes('<h3>Saisonphasen</h3>'), 'annual overview labels the mixed phase section as season phases');
+
+assert.ok(calendar.includes('const startsBeforeYear = item.start < yearStart;') && calendar.includes('date: startsBeforeYear ? yearStart : item.start'), 'confirmed phases crossing into the selected year appear at its first visible date');
+assert.ok(calendar.includes("startsBeforeYear ? 'Beginn im Vorjahr' : ''") && calendar.includes("endsAfterYear ? 'Ende im Folgejahr' : ''"), 'cross-year phases retain their full real date range and disclose year-boundary continuation');
+assert.ok(calendar.includes("({ race: 0, sick: 1, injured: 2, phase: 3 }[a.type] - ({ race: 0, sick: 1, injured: 2, phase: 3 }[b.type])"), 'same-day season timeline events use a deterministic type order');
+assert.ok(calendar.includes('timelineEvents.length > 18') && calendar.includes('chronologisch sortierten Ereignissen'), 'year timeline discloses when its display limit hides later events');
