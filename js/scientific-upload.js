@@ -1,14 +1,11 @@
 /**
  * KAJO Scientific Library – isolierter TUS-Upload-Baustein.
  *
- * Dieser Baustein ist absichtlich noch nicht in der UI verdrahtet.
- * Er darf erst aktiviert werden, wenn Datenbankmigrationen, privater
- * Storage-Bucket, Storage-Policies, Function-Secrets und Deployment
- * geprüft und freigegeben wurden.
+ * Noch nicht in der UI verdrahtet. Aktivierung erst nach Einrichtung und
+ * Freigabe von Migrationen, privatem Storage-Bucket, Policies und Function.
  *
- * Keine Service-Role-Credentials im Browser. Die bestehende Supabase-
- * Sitzung wird für Storage verwendet; die Edge Function authentifiziert
- * Nutzeraktionen erneut serverseitig.
+ * Keine Service-Role-Credentials im Browser. Upload-URLs und Resume-Metadaten
+ * bleiben lokal im Browser und werden an Nutzer, Dokument und Datei gebunden.
  */
 
 import { supabase } from './supabase-client.js';
@@ -22,8 +19,10 @@ const STORAGE_HOST = SUPABASE_HOST.endsWith('.supabase.co')
     : SUPABASE_HOST;
 const TUS_ENDPOINT = `https://${STORAGE_HOST}/storage/v1/upload/resumable`;
 const TUS_CHUNK_SIZE = 6 * 1024 * 1024;
+const HASH_CHUNK_SIZE = 4 * 1024 * 1024;
 const TUS_RETRY_DELAYS = [0, 3000, 5000, 10000, 20000];
 const EXPECTED_BUCKET = 'kajo-scientific-documents';
+const RESUME_KEY_PREFIX = 'kajo:scientific-upload:v1:';
 
 let tusClientPromise = null;
 
@@ -56,6 +55,12 @@ function loadTusClient() {
     return tusClientPromise;
 }
 
+function assertPdf(file) {
+    if (!(file instanceof File) || file.type !== 'application/pdf' || file.size <= 0) {
+        throw new Error('INVALID_PDF_FILE');
+    }
+}
+
 function validateIntent(intent, file) {
     if (!intent || typeof intent !== 'object' ||
         typeof intent.document_id !== 'string' ||
@@ -69,18 +74,20 @@ function validateIntent(intent, file) {
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
         throw new Error('UPLOAD_INTENT_EXPIRED');
     }
+    assertPdf(file);
+}
 
-    if (file.type !== 'application/pdf' || file.size <= 0) {
-        throw new Error('INVALID_PDF_FILE');
-    }
+async function getAuthenticatedUser() {
+    if (!supabase) throw new Error('SUPABASE_NOT_CONFIGURED');
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user?.id) throw new Error('AUTHENTICATION_REQUIRED');
+    return data.user;
 }
 
 async function getFreshAccessToken() {
     if (!supabase) throw new Error('SUPABASE_NOT_CONFIGURED');
     const { data, error } = await supabase.auth.getSession();
-    if (error || !data?.session?.access_token) {
-        throw new Error('AUTHENTICATION_REQUIRED');
-    }
+    if (error || !data?.session?.access_token) throw new Error('AUTHENTICATION_REQUIRED');
     return data.session.access_token;
 }
 
@@ -93,51 +100,81 @@ async function invokeIngestion(actionBody) {
     return data;
 }
 
+function resumeStorageKey(userId, documentId) {
+    return `${RESUME_KEY_PREFIX}${userId}:${documentId}`;
+}
+
+function saveResumeRecord(record) {
+    try {
+        localStorage.setItem(
+            resumeStorageKey(record.userId, record.documentId),
+            JSON.stringify(record)
+        );
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function readResumeRecord(userId, documentId) {
+    try {
+        const raw = localStorage.getItem(resumeStorageKey(userId, documentId));
+        if (!raw) return null;
+        const record = JSON.parse(raw);
+        if (record?.userId !== userId || record?.documentId !== documentId) return null;
+        return record;
+    } catch {
+        return null;
+    }
+}
+
+function removeResumeRecord(userId, documentId) {
+    try {
+        localStorage.removeItem(resumeStorageKey(userId, documentId));
+    } catch {
+        // Local storage can be unavailable in restricted browser contexts.
+    }
+}
+
 /**
- * Erstellt ein Upload-Intent und startet TUS.
- * Die Funktion wird derzeit von keinem UI-Element aufgerufen.
- *
- * @returns {Promise<{documentId: string, promise: Promise<object>, abort: Function}>}
+ * Content-bound fingerprint: SHA-256 over ordered SHA-256 digests of 4-MiB
+ * slices. This avoids loading the entire PDF into memory and distinguishes
+ * files that merely share name, size and lastModified metadata.
  */
-export async function startScientificPdfUpload({ file, source, onProgress, onStatus } = {}) {
-    if (!file || !(file instanceof File)) throw new Error('PDF_FILE_REQUIRED');
-    if (file.type !== 'application/pdf' || !file.size) throw new Error('INVALID_PDF_FILE');
-    if (!source || typeof source.title !== 'string' || !source.title.trim()) {
-        throw new Error('DOCUMENT_TITLE_REQUIRED');
+async function createContentFingerprint(file) {
+    if (!globalThis.crypto?.subtle) throw new Error('SECURE_FILE_HASH_UNAVAILABLE');
+
+    const chunkDigests = [];
+    for (let offset = 0; offset < file.size; offset += HASH_CHUNK_SIZE) {
+        const bytes = await file.slice(offset, Math.min(offset + HASH_CHUNK_SIZE, file.size)).arrayBuffer();
+        chunkDigests.push(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)));
     }
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !supabase) {
-        throw new Error('SUPABASE_NOT_CONFIGURED');
-    }
 
-    onStatus?.('Erstelle geschütztes Upload-Intent …');
-    const intent = await invokeIngestion({
-        action: 'create-upload-intent',
-        source,
-        file: { mime_type: 'application/pdf', size_bytes: file.size }
-    });
-    validateIntent(intent, file);
+    const joined = new Uint8Array(chunkDigests.length * 32);
+    chunkDigests.forEach((digest, index) => joined.set(digest, index * 32));
+    const finalDigest = new Uint8Array(await crypto.subtle.digest('SHA-256', joined));
+    const hex = Array.from(finalDigest, byte => byte.toString(16).padStart(2, '0')).join('');
+    return hex;
+}
 
-    const tus = await loadTusClient();
-    const initialToken = await getFreshAccessToken();
+function createFingerprint(userId, documentId) {
+    return async (file) => {
+        const contentHash = await createContentFingerprint(file);
+        return `kajo-scientific-v1:${userId}:${documentId}:${file.size}:${contentHash}`;
+    };
+}
 
-    let resolveUpload;
-    let rejectUpload;
-    let settled = false;
-    let tusFinished = false;
-    const completion = new Promise((resolve, reject) => {
-        resolveUpload = resolve;
-        rejectUpload = reject;
-    });
-
-    const upload = new tus.Upload(file, {
+function buildUploadOptions({ file, intent, userId, onProgress, onStatus, onSettled }) {
+    return {
         endpoint: TUS_ENDPOINT,
         chunkSize: TUS_CHUNK_SIZE,
         retryDelays: TUS_RETRY_DELAYS,
-        storeFingerprintForResuming: false,
+        storeFingerprintForResuming: true,
         removeFingerprintOnSuccess: true,
+        fingerprint: createFingerprint(userId, intent.document_id),
         headers: {
             apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${initialToken}`,
+            Authorization: 'Bearer pending-token',
             'x-upsert': 'false'
         },
         metadata: {
@@ -147,8 +184,6 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
             cacheControl: '3600'
         },
         onBeforeRequest: async (request) => {
-            // Access Tokens können während eines großen Uploads ablaufen.
-            // Vor jedem TUS-Request wird deshalb die aktuelle Sitzung gelesen.
             const token = await getFreshAccessToken();
             request.setHeader('Authorization', `Bearer ${token}`);
             request.setHeader('apikey', SUPABASE_ANON_KEY);
@@ -161,51 +196,69 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
                 percentage: totalBytes > 0 ? Math.min(100, uploadedBytes / totalBytes * 100) : 0
             });
         },
-        onError: (error) => {
-            if (settled) return;
+        onError: (error) => onSettled?.('error', error),
+        onSuccess: () => onSettled?.('success')
+    };
+}
+
+async function confirmAndReadStatus(documentId) {
+    const confirmation = await invokeIngestion({
+        action: 'confirm-upload',
+        document_id: documentId
+    });
+    if (confirmation?.processing_status !== 'uploaded' ||
+        confirmation?.document_id !== documentId) {
+        throw new Error('UPLOAD_CONFIRMATION_MISSING');
+    }
+
+    const statusResult = await invokeIngestion({
+        action: 'get-document-status',
+        document_id: documentId
+    });
+    if (statusResult?.document?.id !== documentId ||
+        statusResult?.document?.processing_status !== 'uploaded') {
+        throw new Error('UPLOAD_STATUS_NOT_CONFIRMED');
+    }
+    return statusResult.document;
+}
+
+function createCompletionController({ documentId, userId, onProgress, onStatus, upload }) {
+    let resolveUpload;
+    let rejectUpload;
+    let settled = false;
+    let tusFinished = false;
+
+    const promise = new Promise((resolve, reject) => {
+        resolveUpload = resolve;
+        rejectUpload = reject;
+    });
+
+    const finish = async (kind, error) => {
+        if (settled) return;
+        if (kind === 'error') {
             settled = true;
             onStatus?.('Upload fehlgeschlagen. Das Dokument wurde noch nicht bestätigt.');
             rejectUpload(error instanceof Error ? error : new Error('TUS_UPLOAD_FAILED'));
-        },
-        onSuccess: async () => {
-            if (settled) return;
-            tusFinished = true;
-            onStatus?.('Upload übertragen. Prüfe Datei und Eigentum serverseitig …');
-            try {
-                const confirmation = await invokeIngestion({
-                    action: 'confirm-upload',
-                    document_id: intent.document_id
-                });
-                if (confirmation?.processing_status !== 'uploaded' ||
-                    confirmation?.document_id !== intent.document_id) {
-                    throw new Error('UPLOAD_CONFIRMATION_MISSING');
-                }
-
-                const statusResult = await invokeIngestion({
-                    action: 'get-document-status',
-                    document_id: intent.document_id
-                });
-                if (statusResult?.document?.id !== intent.document_id ||
-                    statusResult?.document?.processing_status !== 'uploaded') {
-                    throw new Error('UPLOAD_STATUS_NOT_CONFIRMED');
-                }
-
-                settled = true;
-                onStatus?.('PDF wurde übertragen und serverseitig bestätigt.');
-                resolveUpload({
-                    documentId: intent.document_id,
-                    processingStatus: statusResult.document.processing_status
-                });
-            } catch (error) {
-                settled = true;
-                onStatus?.('Upload übertragen, aber serverseitig noch nicht bestätigt. Bitte Status erneut abrufen.');
-                rejectUpload(error);
-            }
+            return;
         }
-    });
 
-    onStatus?.('PDF wird sicher übertragen …');
-    upload.start();
+        tusFinished = true;
+        onStatus?.('Upload übertragen. Prüfe Datei und Eigentum serverseitig …');
+        try {
+            const document = await confirmAndReadStatus(documentId);
+            settled = true;
+            removeResumeRecord(userId, documentId);
+            onStatus?.('PDF wurde übertragen und serverseitig bestätigt.');
+            resolveUpload({
+                documentId,
+                processingStatus: document.processing_status
+            });
+        } catch (confirmationError) {
+            settled = true;
+            onStatus?.('Upload übertragen, aber serverseitig noch nicht bestätigt. Bitte Status erneut abrufen.');
+            rejectUpload(confirmationError);
+        }
+    };
 
     const abort = async () => {
         if (settled || tusFinished) return;
@@ -219,9 +272,207 @@ export async function startScientificPdfUpload({ file, source, onProgress, onSta
         }
     };
 
+    return { promise, abort, finish };
+}
+
+/**
+ * Erstellt ein Upload-Intent und startet einen neuen TUS-Upload.
+ * Das Modul ist derzeit nicht mit der UI verbunden.
+ */
+export async function startScientificPdfUpload({ file, source, onProgress, onStatus } = {}) {
+    assertPdf(file);
+    if (!source || typeof source.title !== 'string' || !source.title.trim()) {
+        throw new Error('DOCUMENT_TITLE_REQUIRED');
+    }
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !supabase) {
+        throw new Error('SUPABASE_NOT_CONFIGURED');
+    }
+
+    const user = await getAuthenticatedUser();
+    onStatus?.('Erstelle geschütztes Upload-Intent …');
+    const intent = await invokeIngestion({
+        action: 'create-upload-intent',
+        source,
+        file: { mime_type: 'application/pdf', size_bytes: file.size }
+    });
+    validateIntent(intent, file);
+
+    const record = {
+        userId: user.id,
+        documentId: intent.document_id,
+        fileName: file.name,
+        fileSize: file.size,
+        fileLastModified: file.lastModified,
+        expiresAt: intent.upload_intent_expires_at,
+        createdAt: new Date().toISOString()
+    };
+    const canPersistResume = saveResumeRecord(record);
+
+    const tus = await loadTusClient();
+    if (!tus.isSupported) throw new Error('TUS_NOT_SUPPORTED');
+    if (canPersistResume && !tus.canStoreURLs) {
+        removeResumeRecord(user.id, intent.document_id);
+    }
+
+    const upload = new tus.Upload(file, buildUploadOptions({
+        file,
+        intent,
+        userId: user.id,
+        onProgress,
+        onStatus
+    }));
+    const controller = createCompletionController({
+        documentId: intent.document_id,
+        userId: user.id,
+        onProgress,
+        onStatus,
+        upload
+    });
+
+    onStatus?.(canPersistResume && tus.canStoreURLs
+        ? 'PDF wird übertragen. Eine sichere Wiederaufnahme wird vorbereitet …'
+        : 'PDF wird übertragen. Wiederaufnahme ist in diesem Browser nicht verfügbar …');
+    upload.start();
+
     return {
         documentId: intent.document_id,
-        promise: completion,
-        abort
+        promise: controller.promise,
+        abort: controller.abort
+    };
+}
+
+/**
+ * Gibt lokal gespeicherte, noch nicht abgelaufene Resume-Metadaten des
+ * aktuell angemeldeten Nutzers zurück. Es werden keine Upload-URLs ausgegeben.
+ */
+export async function listResumableScientificUploads() {
+    const user = await getAuthenticatedUser();
+    const records = [];
+    try {
+        for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index);
+            if (!key?.startsWith(`${RESUME_KEY_PREFIX}${user.id}:`)) continue;
+            try {
+                const record = JSON.parse(localStorage.getItem(key));
+                if (record?.userId !== user.id || !record?.documentId) continue;
+                if (!Number.isFinite(Date.parse(record.expiresAt)) || Date.parse(record.expiresAt) <= Date.now()) {
+                    removeResumeRecord(user.id, record.documentId);
+                    continue;
+                }
+                records.push({
+                    documentId: record.documentId,
+                    fileName: record.fileName,
+                    fileSize: record.fileSize,
+                    createdAt: record.createdAt,
+                    expiresAt: record.expiresAt
+                });
+            } catch {
+                // Ungültige lokale Metadaten werden ignoriert.
+            }
+        }
+    } catch {
+        throw new Error('RESUME_STORAGE_UNAVAILABLE');
+    }
+    return records;
+}
+
+/**
+ * Setzt einen unterbrochenen Upload nach erneuter Dateiauswahl fort.
+ * Nutzer-ID, Dokumentstatus, Intent-Ablauf, Dateimetadaten und Dateiinhalt
+ * müssen übereinstimmen. Es wird niemals automatisch ein neuer TUS-Upload
+ * angelegt, wenn keine passende vorherige Session gefunden wird.
+ */
+export async function resumeScientificPdfUpload({
+    file,
+    documentId,
+    onProgress,
+    onStatus
+} = {}) {
+    assertPdf(file);
+    if (typeof documentId !== 'string' || !documentId) throw new Error('DOCUMENT_ID_REQUIRED');
+
+    const user = await getAuthenticatedUser();
+    const record = readResumeRecord(user.id, documentId);
+    if (!record) throw new Error('RESUME_RECORD_NOT_FOUND');
+    if (record.fileName !== file.name ||
+        record.fileSize !== file.size ||
+        record.fileLastModified !== file.lastModified) {
+        throw new Error('SELECTED_FILE_DOES_NOT_MATCH_RESUME_RECORD');
+    }
+    if (!Number.isFinite(Date.parse(record.expiresAt)) || Date.parse(record.expiresAt) <= Date.now()) {
+        removeResumeRecord(user.id, documentId);
+        throw new Error('UPLOAD_INTENT_EXPIRED');
+    }
+
+    onStatus?.('Prüfe Dokumentstatus und Upload-Berechtigung …');
+    const statusResult = await invokeIngestion({
+        action: 'get-document-status',
+        document_id: documentId
+    });
+    const document = statusResult?.document;
+    if (!document || document.id !== documentId) throw new Error('DOCUMENT_NOT_FOUND');
+    if (document.processing_status === 'uploaded') {
+        removeResumeRecord(user.id, documentId);
+        return {
+            documentId,
+            promise: Promise.resolve({ documentId, processingStatus: 'uploaded' }),
+            abort: async () => {}
+        };
+    }
+    if (document.processing_status !== 'pending') throw new Error('DOCUMENT_NOT_AWAITING_UPLOAD');
+    if (!document.upload_intent_expires_at ||
+        Date.parse(document.upload_intent_expires_at) <= Date.now()) {
+        removeResumeRecord(user.id, documentId);
+        throw new Error('UPLOAD_INTENT_EXPIRED');
+    }
+
+    const tus = await loadTusClient();
+    if (!tus.isSupported || !tus.canStoreURLs) throw new Error('RESUME_STORAGE_UNAVAILABLE');
+
+    const intent = {
+        document_id: documentId,
+        bucket_id: EXPECTED_BUCKET,
+        storage_path: null,
+        upload_intent_expires_at: document.upload_intent_expires_at
+    };
+
+    // For resume, the object path is already embedded in the saved TUS URL
+    // and metadata. The client fingerprint is bound to user + document + bytes.
+    const upload = new tus.Upload(file, {
+        ...buildUploadOptions({
+            file,
+            intent,
+            userId: user.id,
+            onProgress,
+            onStatus
+        }),
+        metadata: undefined
+    });
+
+    onStatus?.('Suche eine passende, zuvor gestartete TUS-Session …');
+    const previousUploads = await upload.findPreviousUploads();
+    const matching = previousUploads.filter(previous =>
+        previous.metadata?.bucketName === EXPECTED_BUCKET &&
+        previous.metadata?.contentType === 'application/pdf' &&
+        typeof previous.metadata?.objectName === 'string' &&
+        previous.metadata.objectName.endsWith(`/${documentId}/original.pdf`)
+    );
+    if (matching.length !== 1) throw new Error('MATCHING_TUS_SESSION_NOT_FOUND');
+
+    upload.resumeFromPreviousUpload(matching[0]);
+    const controller = createCompletionController({
+        documentId,
+        userId: user.id,
+        onProgress,
+        onStatus,
+        upload
+    });
+    onStatus?.('Unterbrochener PDF-Upload wird fortgesetzt …');
+    upload.start();
+
+    return {
+        documentId,
+        promise: controller.promise,
+        abort: controller.abort
     };
 }
