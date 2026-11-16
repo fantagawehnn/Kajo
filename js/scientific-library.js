@@ -13,6 +13,9 @@ const PDFJS_VERSION = '6.5.438';
 const PDFJS_MODULE_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.min.mjs`;
 const PDFJS_WORKER_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
 const PROVISIONAL_CHUNK_CHARS = 3200;
+const MAX_EXTRACTION_PAGES = 10000;
+const MAX_EXTRACTION_CHUNKS = 20000;
+const MAX_EXTRACTED_CHARACTERS = 20000000;
 
 let pdfJsPromise = null;
 let activeFile = null;
@@ -235,6 +238,9 @@ async function extractSelectedPdf() {
         if (runId !== extractionRunId) { await pdf.destroy(); return; }
         activePdf = pdf;
         const pageCount = pdf.numPages;
+        if (!Number.isInteger(pageCount) || pageCount < 1 || pageCount > MAX_EXTRACTION_PAGES) {
+            throw new Error('PDF_PAGE_LIMIT');
+        }
         let totalChars = 0;
         const chunks = [];
 
@@ -247,7 +253,9 @@ async function extractSelectedPdf() {
             if (runId !== extractionRunId) return;
             const pageText = normalizePageText(textContent.items);
             totalChars += pageText.length;
+            if (totalChars > MAX_EXTRACTED_CHARACTERS) throw new Error('PDF_CHARACTER_LIMIT');
             if (pageText) chunks.push(...splitPageIntoChunks(pageText, pageNumber, chunks.length));
+            if (chunks.length > MAX_EXTRACTION_CHUNKS) throw new Error('PDF_CHUNK_LIMIT');
             page.cleanup?.();
         }
 
@@ -276,9 +284,14 @@ async function extractSelectedPdf() {
     } catch (error) {
         if (runId !== extractionRunId) return;
         console.error('Scientific PDF preview failed:', error);
+        const limitMessages = {
+            PDF_PAGE_LIMIT: 'Das PDF überschreitet das aktuelle Limit von 10.000 Seiten.',
+            PDF_CHARACTER_LIMIT: 'Das PDF überschreitet das aktuelle Extraktionslimit von 20 Millionen Zeichen.',
+            PDF_CHUNK_LIMIT: 'Das PDF erzeugt mehr als 20.000 Textabschnitte und kann im aktuellen MVP nicht verarbeitet werden.'
+        };
         setStatus(error?.name === 'PasswordException'
             ? 'Das PDF ist passwortgeschützt. Geschützte Dokumente werden im MVP nicht verarbeitet.'
-            : 'Die PDF konnte nicht zuverlässig extrahiert werden. Bitte prüfe, ob die Datei intakt und nicht verschlüsselt ist.', 'error');
+            : (limitMessages[error?.message] || 'Die PDF konnte nicht zuverlässig extrahiert werden. Bitte prüfe, ob die Datei intakt und nicht verschlüsselt ist.'), 'error');
         if (progress) progress.textContent = 'Extraktion fehlgeschlagen';
     } finally {
         if (runId === extractionRunId) {
