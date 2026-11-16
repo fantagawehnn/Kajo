@@ -1,6 +1,6 @@
 # KAJO – Taxonomie für Sportwissenschaft und Sportprofile
 
-**Version:** 1.0 – Entwurf  
+**Version:** 1.1 – Entwurf  
 **Geltungsbereich:** Ausdauersport mit Schwerpunkt Kanusport  
 **Zweck:** Einheitliches Vokabular für Paper-Metadaten, Literatur-Retrieval und sportartspezifische Kontextualisierung.
 
@@ -34,14 +34,14 @@ Diese Taxonomie ist zunächst ein Klassifikationsschema. Sie behauptet nicht, da
 - `endurance-sport`: übergeordnete Kategorie für Ausdauersport.
 - `canoe-sport`: Kanusport als Schwerpunktmodul.
 
-### 2.2 Kanusport – Disziplin- und Kontextdimensionen
+### 2.2 Kanusport – Disziplin- und Kontextdimensionen\n\nDie eigenständige Disziplin **Kanu-Sprint (Flachwasser)** ist strikt vom **Sprintformat im Wildwasserrennsport** zu unterscheiden. Ein gemeinsames Feld „Sprint“ wäre mehrdeutig. Die detaillierten kontrollierten Werte und Regeln stehen im `SCIENTIFIC_METADATA_CONTRACT.md`.
 
 Diese Dimensionen sollten getrennt gespeichert werden, statt sie in einem einzelnen Freitextfeld zu vermischen:
 
 | Dimension | Vorgesehene Werte / Beispiele |
 |---|---|
 | Bootsklasse | K1, C1, C2, andere nur nach späterer fachlicher Ergänzung |
-| Wettkampfformat | Classic, Sprint, weitere Formate nur bei Bedarf |
+| Kanudisziplin | Wildwasserrennsport, Kanu-Sprint (Flachwasser), Kanu-Slalom, Kanu-Marathon, andere / unbekannt |\n| Wildwasser-Wettkampfformat | Classic, Sprint; nur für Wildwasserrennsport |\n| Bootsklasse | K1, C1, C2, andere / nicht berichtet |
 | Gewässer-/Umgebungskontext | Wildwasser, Flachwasser |
 | Aktivitätsrolle | Hauptdisziplin, ergänzende Trainingsform |
 | Trainingsziel | Technik, Ausdauer, Kraft, wettkampfspezifisch, Regeneration |
@@ -58,11 +58,11 @@ Laufen, Radfahren, Schwimmen und andere ergänzende Aktivitäten können in der 
 
 Jede Quelle sollte – sofern aus dem Paper feststellbar – mit folgenden kontrollierten Merkmalen versehen werden:
 
-- `sport_specificity`: `direct_canoe`, `other_endurance_sport`, `general_exercise`, `other`, `unknown`
+- `sport_specificity`: `direct_canoe`, `related_paddlesport`, `other_endurance`, `general_sport_science`, `unclear`
 - `evidence_type`: `systematic_review`, `meta_analysis`, `randomized_trial`, `controlled_trial`, `observational`, `cross_sectional`, `case_study`, `consensus_guideline`, `narrative_review`, `other`, `unknown`
 - `population_type`: z. B. elite, trained, recreational, mixed, unreported
 - `study_context`: training, competition, laboratory, field_test, recovery, mixed, unknown
-- `transferability_status`: `direct`, `indirect`, `uncertain`, `not_assessed`
+- `transferability_status`: keine globale Quelleneigenschaft; wird relativ zur konkreten Fragestellung als `direct_canoe`, `related_paddlesport`, `other_endurance`, `general_sport_science` oder `unclear` begründet.
 
 Diese Merkmale beschreiben die Quelle. Sie ergeben nicht automatisch eine Evidenzstärke oder eine Empfehlung.
 
@@ -87,3 +87,4 @@ Vor einer produktiven Taxonomie müssen noch geklärt werden:
 - Welche Sprachen und Dokumenttypen sollen beim Import unterstützt werden?
 
 Bis diese Fragen geklärt sind, bleiben die Kategorien erweiterbar und werden nicht als abschließende Sportwissenschaftssystematik verstanden.
+\n\n## 7. Präzisierung des Metadatenmodells\n\nDie Version 1.1 trennt Kanudisziplin und Wettkampfformat. Insbesondere darf `canoe_sprint` (Flachwasserdisziplin) nicht mit `wildwater_format = sprint` gleichgesetzt werden. Außerdem werden Quelle, Studienkontext und einzelner Befund getrennt klassifiziert; ein Review kann mehrere Sportarten, Populationen und Befunde umfassen. Fehlende Angaben werden nicht inferiert.\n\nDie verbindlichen Felddefinitionen, Werte und Regeln sind in `docs/SCIENTIFIC_METADATA_CONTRACT.md` festgehalten. Die hier genannten Werte sind Entwurfswerte und noch nicht in Datenbank oder App aktiviert.\n
