@@ -144,7 +144,7 @@ function recoveryMetric(key, label, value, detail = '') {
 
 let selectedRecoveryMetric = null;
 export function toggleRecoveryMetric(key) {
-    const supported = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'];
+    const supported = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration', 'bodyBattery', 'sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'];
     if (!supported.includes(key)) return;
     selectedRecoveryMetric = selectedRecoveryMetric === key ? null : key;
     document.querySelectorAll('[data-recovery-metric]').forEach(button => {
@@ -197,7 +197,8 @@ function renderRecoveryInsight() {
         recoveryMetric('rhr', 'Ruhepuls', valid(current.garminRhr ?? current.rhr) ? formatValue(current.garminRhr ?? current.rhr) : '—', rhrBaseline ? 'bpm · persönliche Basis ' + formatValue(rhrBaseline.baseline) : 'bpm'),
         recoveryMetric('sleepDuration', 'Schlafdauer', formatValue(current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null)), 'Stunden'),
         recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100'),
-        recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min')
+        recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min'),
+        recoveryMetric('bodyBattery', 'Body Battery', valid(current.bodyBattery) ? formatValue(current.bodyBattery, 0) : '—', 'Garmin-Wert · nicht im Readiness-Score')
     ];
     setPanel('recovery-analysis-metrics', objectiveCards.join(''));
     setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte angezeigt');
