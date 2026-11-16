@@ -1,3 +1,9 @@
+## Ergänzung: Exakte Pfadbindung bei TUS-Resume (16.11.2026)
+
+Die Status-Action `get-document-status` gibt für das authentifizierte Eigentümerkonto nun auch den serverseitig gespeicherten `storage_path` zurück. Das isolierte TUS-Modul prüft vor der Wiederaufnahme, dass dieser Pfad exakt `<auth.uid>/<document-id>/original.pdf` entspricht und dass die gespeicherte TUS-Session exakt denselben Objektpfad sowie den erwarteten Bucket und PDF-MIME-Typ enthält. Die vorherige Prüfung nur auf ein passendes Pfadsuffix wurde damit verschärft.
+
+Diese Änderung ist statisch geprüft, aber nicht getestet. Der TUS-Code bleibt nicht in der UI integriert.
+
 ## Aktueller Status nach Cleanup-Isolierung (16.11.2026)
 
 Dieser Abschnitt ist der maßgebliche aktuelle Stand und ersetzt widersprechende frühere Zwischenstände in den darunterliegenden historischen Prüfabschnitten.
