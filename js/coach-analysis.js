@@ -11,7 +11,7 @@ const validNumber = value =>
     && Number.isFinite(Number(value));
 
 function dateKey(value) {
-    return typeof value === 'string' && /^\\d{4}-\\d{2}-\\d{2}/.test(value)
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)
         ? value.slice(0, 10)
         : null;
 }
