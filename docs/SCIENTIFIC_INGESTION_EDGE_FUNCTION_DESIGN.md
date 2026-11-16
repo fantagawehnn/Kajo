@@ -495,3 +495,32 @@ Für die spätere Browser-Integration ist TUS (Supabase Resumable Upload) als be
 Das Upload-Intent bleibt serverseitig auf 24 Stunden begrenzt. Die bestehende siebentägige Cleanup-Karenz nach Intent-Ablauf liegt deutlich über der dokumentierten maximalen Gültigkeit einer TUS-Upload-URL; die zusätzliche 24-Stunden-Quieszenz ab erstem Cleanup-Claim bleibt als Sicherheitsreserve bestehen. Diese Kombination ist eine konservative Designentscheidung, keine Garantie gegen jede denkbare Storage-Störung. Vor Aktivierung müssen tatsächliches Projektlimit, Bucket-Limit, TUS-Konfiguration und Fehlerverhalten geprüft werden. Es wird keine unbegrenzte Session-Wiederaufnahme angenommen.
 
 Die Upload-Action selbst bleibt unverändert: Upload-Intent erstellen, direkt in den privaten Bucket hochladen, anschließend Storage-Objekt über confirm-upload serverseitig prüfen. Die Frontend-Integration ist noch nicht implementiert.
+
+## 27. Frontend-Anbindung: bestehende App-Struktur und TUS-Vertrag
+
+Die Prüfung des aktuellen Branches bestätigt folgende Integrationsbedingungen:
+
+- KAJO verwendet native Browser-ES-Module und lädt den gemeinsamen Supabase-Client aus `js/supabase-client.js`. Ein Root-`package.json` oder ein bestehender npm-Buildprozess ist im Repository nicht vorhanden.
+- Die wissenschaftliche Bibliothek wird in `js/main.js` bereits lazy geladen. Der lokale PDF.js-PoC liegt in `js/scientific-library.js`; dessen bestehende lokale Vorschau darf durch eine Upload-Integration nicht ersetzt oder automatisch hochgeladen werden.
+- Die Supabase-Konfiguration liegt in `js/supabase-config.js`. Der dortige Publishable Key ist für Browseranfragen vorgesehen; ein Secret-/Service-Role-Key gehört ausdrücklich nicht in das Frontend.
+- Authentifizierung und Datenzugriffe verwenden denselben Client-Singleton. Die spätere Upload-Implementierung soll deshalb keinen zweiten Supabase-Client und keine separate Loginlogik einführen.
+
+### Vorgesehener Ablauf der späteren UI-Integration
+
+1. Die Nutzerin wählt explizit eine PDF aus und löst einen separaten Upload-Schritt bewusst aus. Die bestehende lokale Vorschau bleibt davon unabhängig.
+2. Der Browser prüft zunächst Dateityp und deklarierte Dateigröße als reine UX-Prüfung.
+3. Über den gemeinsamen Supabase-Client wird ein gültiger Nutzerstatus festgestellt. Für den TUS-Storage-Request darf `auth.getSession()` verwendet werden, um den rohen Access Token weiterzureichen; die Authentifizierungsentscheidung trifft weiterhin Supabase Storage serverseitig.
+4. Das Upload-Intent wird über die authentifizierte Edge Function `scientific-ingestion` erstellt. Der Browser übernimmt ausschließlich den zurückgegebenen `bucket_id`, `storage_path`, `document_id` und Ablaufzeitpunkt. Er konstruiert weder Eigentümer-ID noch Storage-Pfad selbst.
+5. TUS verwendet den direkten Storage-Host `https://<project-ref>.storage.supabase.co/storage/v1/upload/resumable`, den Bucket- und Objektpfad aus dem Intent, `contentType: application/pdf`, `x-upsert: false`, 6-MB-Chunks und begrenzte Retry-Abstände.
+6. Erst nach erfolgreichem TUS-Abschluss ruft der Browser `confirm-upload` auf. Ein TUS-Erfolg allein darf in der UI nicht als serverseitig bestätigtes Dokument dargestellt werden.
+7. Der Status wird anschließend über `get-document-status` erneut vom Server abgerufen. Erst der bestätigte Status darf die lokale PDF-Extraktion für den späteren Persistenzschritt freigeben.
+
+### Noch nicht festgelegte technische Details
+
+- Da kein Paketmanager-/Buildmanifest vorhanden ist, ist die konkrete Einbindung und feste Version von `tus-js-client` vor dem ersten Frontend-Code festzulegen. Eine ungeprüfte CDN-Abhängigkeit wird nicht stillschweigend ergänzt.
+- Resume-Fingerprints müssen mindestens Nutzerkonto, Dokument-ID/Intent, Dateiidentität und Storage-Endpunkt berücksichtigen. Ein TUS-Upload darf nach einem Kontowechsel oder für eine andere Datei nicht wiederaufgenommen werden.
+- Eine abgelaufene TUS-URL (maximal 24 Stunden) darf nicht blind wiederverwendet werden. Ein neuer Upload benötigt einen neuen Intent und einen neuen serverseitigen Storage-Pfad; der alte Intent bleibt der Cleanup-Logik überlassen.
+- Die UI muss Uploadfortschritt, Abbruch, Netzwerkfehler, Intent-Ablauf, TUS-Session-Ablauf und den gesonderten Bestätigungsstatus darstellen.
+- Die Bibliothek darf keinen Upload starten, solange Bucket, Storage-Policies, Phase-1-/RPC-Migrationen und Edge-Function-Konfiguration nicht tatsächlich eingerichtet und freigegeben sind.
+
+**Status dieser Festlegung:** ausschließlich Architektur- und Integrationsdokumentation. Es wurde kein Upload-Button ergänzt, keine TUS-Bibliothek eingebunden, kein Upload ausgeführt und keine Infrastruktur aktiviert.
