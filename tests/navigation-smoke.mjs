@@ -223,6 +223,9 @@ assert.ok(calendar.includes('calendar-year-month-chart') && calendar.includes('c
 assert.ok(calendar.includes("label: 'Wettkampf-Einträge'") && calendar.includes('keine automatische Gruppierung zu Wochenenden'), 'year overview labels stored race records without claiming unique event weekends');
 assert.ok(calendar.includes("label: 'Starts mit Ergebnis'") && calendar.includes("label: 'Podiumsplätze'") && calendar.includes("label: 'Siege'"), 'year overview summarizes documented results separately from race records');
 assert.ok(calendar.includes('Number.isInteger(Number(result?.rank))') && calendar.includes('bestes Ergebnis: Platz '), 'season competition summaries use only positive integer placings and expose best results');
+assert.ok(calendar.includes("name: 'Wettkampfzeitraum'") && calendar.includes('const start = cluster.start;') && calendar.includes('const end = cluster.end;'), 'competition period suggestions use only recorded competition dates');
+assert.ok(calendar.includes('Vorbereitung, Tapering und Nachbereitung lassen sich daraus nicht ableiten'), 'competition suggestions do not infer preparation or recovery periods from event dates');
+assert.ok(!calendar.includes('startDate.setDate(startDate.getDate() - 7)') && !calendar.includes('endDate.setDate(endDate.getDate() + 2)'), 'competition suggestions do not add unsupported buffer days');
 assert.ok(calendar.includes('fasst keine Wettkämpfe automatisch zu einem Event zusammen'), 'suggested competition phases disclose that temporal clustering is not event deduplication');
 assert.ok(calendar.includes('calendarYearBuildPhaseSuggestions') && calendar.includes('confirmCalendarSeasonPhase'), 'year view suggests and persists reviewable training phases');
 assert.ok(calendar.includes('calendar-year-timeline') && calendar.includes('calendar-year-phase-editor'), 'year view includes season events and an editable phase workflow');
