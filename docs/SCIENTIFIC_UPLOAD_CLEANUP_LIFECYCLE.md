@@ -193,3 +193,10 @@ Die 24 Stunden sind ein konservatives Drain-Fenster, aber kein mathematischer Be
 Die 15-Minuten-Lease bleibt davon getrennt: Sie schützt den exklusiven Bearbeitungsanspruch eines Workers. Das 24-Stunden-Fenster schützt vor bereits autorisierten Uploads. Ein späterer Worker kann nach Ablauf der Lease denselben Datensatz erneut claimen, erhält aber denselben Quieszenz-Startzeitpunkt. Erst nach `cleanup_ready_at` darf er die Storage-Löschung versuchen.
 
 **Status:** SQL- und Edge-Function-Scaffold angepasst; nicht migriert, nicht deployed und nicht getestet.
+
+
+## 12. Datenbankseitige Durchsetzung der Quieszenz
+
+Die Finalisierungs-RPC prüft jetzt zusätzlich selbst, dass `upload_cleanup_quiesced_at` mindestens 24 Stunden zurückliegt. Die Edge Function allein ist damit nicht die einzige Stelle, die den Wartezeitpunkt erzwingt. Auch ein direkter Aufruf der service_role-RPC mit gültigem Claim-Token kann vor Ablauf der Quieszenz keine Metadaten löschen.
+
+Das ist eine zusätzliche Schutzbedingung, kein Beweis für das Ende jedes Storage-Requests. Die Quieszenz ist erst belastbar, wenn die konkrete Uploadmethode begrenzt ist und keine fortsetzbaren Upload-Sessions über das Zeitfenster hinaus existieren können.
