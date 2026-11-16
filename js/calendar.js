@@ -124,7 +124,7 @@ export function toggleDaySickFields(){document.getElementById('day-sick-fields')
 export function toggleDayCycleFields(){document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!document.getElementById('day-period')?.checked);}
 export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
 export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
-export function saveDayEditor(){
+export async function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
  const r={...(state.dailyCheckins[date]||{})};
  const subj=['sleepQuality','soreness','fatigue','motivation','stress'];
@@ -145,7 +145,28 @@ export function saveDayEditor(){
   if(severity?.dataset.touched==='true')health.severity=dayNumber(severity.value,1,5);
   state.healthLogs[date]=health;
  }else if(previousHealth.status==='sick'){delete state.healthLogs[date];}
- saveDataToLocalStorage();closeDayEditor();refreshAll();
+
+ const saveButton=document.querySelector('#day-detail-modal button[onclick="saveDayEditor()"]');
+ const saveStatus=document.getElementById('day-save-status');
+ const originalLabel=saveButton?.textContent||'Check-in speichern';
+ if(saveButton){saveButton.disabled=true;saveButton.textContent='Speichert …';}
+ if(saveStatus)saveStatus.textContent='Check-in wird lokal und in der Cloud gesichert …';
+ const localSaved=saveDataToLocalStorage();
+ if(!localSaved){
+  if(saveStatus)saveStatus.textContent='Nicht gespeichert: Dein angemeldeter Datenspeicher ist nicht aktiv. Bitte melde dich erneut an.';
+  if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
+  return;
+ }
+ const cloudSaved=await new Promise(resolve=>{
+  window.dispatchEvent(new CustomEvent('endurance:data-save-immediate',{detail:{resolve}}));
+ });
+ if(!cloudSaved){
+  if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Bitte versuche es erneut und aktualisiere die App noch nicht.';
+  if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
+  return;
+ }
+ if(saveStatus)saveStatus.textContent='Check-in erfolgreich in der Cloud gespeichert.';
+ closeDayEditor();refreshAll();
 }
 
 let selectedActivitySports = new Set();
