@@ -126,3 +126,9 @@ Ein separater SQL-Entwurf liegt jetzt unter [`docs/drafts/SCIENTIFIC_INGESTION_R
 Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen und sollen ausschließlich für `service_role` ausführbar sein. Die Edge Function muss vor jedem RPC-Aufruf weiterhin JWT, Dokumenteigentum und private Sichtbarkeit prüfen. Die clientseitigen Extraktionsangaben sind nicht vertrauenswürdig und dürfen nicht als Nachweis für den tatsächlichen PDF-Inhalt interpretiert werden.
 
 **Status:** Nur SQL-Entwurf und Dokumentation. Die vorhandene Edge Function wurde noch nicht um diese Aktionen erweitert. Keine Migration, Storage-Änderung, Funktionserstellung in Supabase, Tests, Merge oder Deployment.
+
+## 8. Edge-Function-Scaffold erweitert
+
+Der Branch enthält nun in `supabase/functions/scientific-ingestion/index.ts` die Actions `confirm-upload`, `begin-extraction`, `submit-chunk-batch`, `complete-extraction` und `mark-manual-review`. Die Uploadbestätigung prüft Storage-Metadaten und versucht, die PDF-Signatur über einen begrenzten Range-Request zu verifizieren. Chunk-Batches werden vor dem vorgesehenen RPC-Aufruf auf Eigentümer, private Sichtbarkeit, Status und Extraktionsversion geprüft; der Request-Body ist begrenzt.
+
+**Wichtige Einschränkung:** Die Function ist ein Code-Scaffold, kein aktivierter Uploadprozess. Sie hängt von der noch nicht angewendeten Schema-/RPC-Migration, dem privaten Bucket und dessen Storage-Policy ab. Das Verhalten der Range-Antwort muss im Zielprojekt vor Aktivierung verifiziert werden. Rate-Limits, Resume/Retry über Browserabbrüche und Bereinigung verwaister Uploads bleiben offen. Keine Tests, Migration, Bucket-Erstellung oder Deployment wurden durchgeführt.
