@@ -15,6 +15,7 @@ const dashboard = readFileSync('js/dashboard.js', 'utf8');
 const importer = readFileSync('js/import.js', 'utf8');
 const dataSource = readFileSync('js/data-source.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
+const uiActions = readFileSync('js/ui-actions.js', 'utf8');
 const competitions = readFileSync('js/competitions.js', 'utf8');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
@@ -43,6 +44,13 @@ assert.ok(css.includes('#analysis-subpage-recovery > #recovery-objective-group {
 assert.ok(css.includes('#analysis-subpage-recovery > #recovery-subjective-group { order:3; }'), 'subjective recovery metrics follow objective metrics');
 assert.ok(css.includes('#analysis-subpage-recovery > #view-health-data { order:5; }'), 'recovery history follows the summary sections');
 assert.ok(html.includes('id="health-trend-panel"'), 'Health detail trend has a stable analysis section target');
+assert.ok(main.includes('startManualCloudSync,') && html.includes('onclick="startManualCloudSync()"'), 'manual cloud sync button is connected to the global handler');
+assert.ok(uiActions.includes('window.kajoOpenProfile = function'), 'profile buttons are connected to their standalone action');
+assert.ok(analysisUI.includes('window.openPerformanceDetail = openPerformanceDetail') && analysisUI.includes('window.closePerformanceDetail = closePerformanceDetail'), 'performance detail navigation buttons are globally connected');
+assert.ok(analysisUI.includes('window.setPerformanceRange = setPerformanceRange') && analysisUI.includes('window.setHealthRange = setHealthRange'), 'performance and health range buttons are globally connected');
+assert.ok(html.includes('id="health-log-save-button"'), 'health log save button has a stable control id');
+assert.ok(health.includes('refreshAll();\\n    closeHealthLogModal();') && !health.includes("new CustomEvent('endurance:data-save-immediate'"), 'health log UI closes after local save without waiting for a cloud roundtrip');
+
 
 assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar'), 'adaptive personal baseline is not fabricated without an agreed method and data basis');
 
