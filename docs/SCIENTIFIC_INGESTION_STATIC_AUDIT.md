@@ -83,3 +83,12 @@ Der Claim allein kann nur neue Storage-INSERT-Autorisierungen verhindern. Er kan
 Dies reduziert das Rennen, ist aber nur unter einer klar begrenzten Uploadmethode belastbar. Vor Aktivierung müssen maximale Laufzeit und Fortsetzbarkeit der verwendeten Supabase-Storage-Uploadmethode bestätigt werden. Unbegrenzte resumable Sessions benötigen ein separates Session-Ablauf-/Widerrufsprotokoll. Die 24 Stunden sind noch ein vorläufiger Wert und keine verifizierte Supabase-Garantie.
 
 Die Edge Function meldet noch nicht löschbereite Einträge separat als `deferred_count`; sie löscht weder Objekt noch Metadaten vor Ablauf der Quieszenz.
+
+
+## 7. Präzisierung: Upload ist derzeit noch nicht implementiert
+
+Die aktuelle `js/scientific-library.js` führt ausschließlich eine lokale PDF.js-Extraktion durch. Sie enthält keinen Aufruf von Supabase Storage, keine Erzeugung eines Upload-Intents und keinen Aufruf von `confirm-upload`. Die Upload- und Cleanup-Rennen sind daher derzeit ein Architektur-/Zukunftsrisiko, kein aktuell laufender App-Workflow.
+
+Die konkrete Uploadmethode (Standard-Upload oder TUS/resumable), ein maximales Upload-Dateilimit und ein Abbruch-/Session-Ablauf sind noch nicht entschieden. Der vorläufige 24-Stunden-Quieszenzwert darf deshalb nicht als technisch verifiziert gelten.
+
+Zusätzlich wurde die 24-Stunden-Bedingung in die Finalisierungs-RPC aufgenommen. Die Datenbank soll Metadaten nicht nur dann löschen, wenn die Edge Function den Zeitpunkt geprüft hat, sondern verlangt dieselbe Bedingung nochmals selbst.
