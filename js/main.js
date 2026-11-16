@@ -23,7 +23,7 @@ import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=6';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=3';
-import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=37';
+import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=38';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=11';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=17';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=76';
@@ -2038,6 +2038,7 @@ let cloudSyncTimer = null;
 let cloudSyncInFlight = false;
 let cloudSyncPending = false;
 let cloudSyncBlocked = false;
+let cloudSyncWaiters = [];
 // Änderungen, die während der Kontoaktivierung gespeichert werden, werden
 // vorgemerkt und nach dem Ereignis endurance:user-ready erneut synchronisiert.
 let cloudSyncAwaitingReadyUserId = null;
@@ -2082,15 +2083,16 @@ function scheduleCloudSync(userId) {
 }
 
 async function flushCloudSync() {
-    if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return;
+    if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return false;
     if (cloudSyncInFlight) {
         cloudSyncPending = true;
-        return;
+        return await new Promise(resolve => cloudSyncWaiters.push(resolve));
     }
 
     const userId = activeAppUserId;
     cloudSyncInFlight = true;
     cloudSyncPending = false;
+    let saveSucceeded = false;
     setCloudSyncStatus('Cloud-Speicherung läuft …');
 
     try {
@@ -2124,6 +2126,7 @@ async function flushCloudSync() {
         }
 
         cloudSyncVersion = result.currentVersion;
+        saveSucceeded = true;
         setCloudSyncStatus(telemetryUpload.failed
             ? 'App-Daten in Cloud gespeichert; Garmin-Telemetrie wartet auf erneuten Versuch.'
             : 'In Cloud gespeichert (Version ' + cloudSyncVersion + ')' + (telemetryUpload.uploaded ? ' · ' + telemetryUpload.uploaded + ' neue Telemetrie-Datensätze' : ''));
@@ -2140,13 +2143,26 @@ async function flushCloudSync() {
         cloudSyncInFlight = false;
         if (cloudSyncPending && !cloudSyncBlocked && activeAppUserId === cloudSyncUserId) {
             cloudSyncPending = false;
-            scheduleCloudSync(cloudSyncUserId);
+            const pendingResult = await flushCloudSync();
+            cloudSyncWaiters.splice(0).forEach(resolve => resolve(pendingResult));
+        } else {
+            cloudSyncWaiters.splice(0).forEach(resolve => resolve(saveSucceeded));
         }
     }
+    return saveSucceeded;
 }
 
 window.addEventListener('endurance:data-saved', event => {
     scheduleCloudSync(event.detail?.userId || null);
+});
+
+window.addEventListener('endurance:data-save-immediate', async event => {
+    if (cloudSyncTimer) {
+        clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = null;
+    }
+    const saved = await flushCloudSync();
+    event.detail?.resolve?.(saved === true);
 });
 
 window.addEventListener('endurance:user-ready', event => {
