@@ -180,3 +180,16 @@ Die Storage-INSERT-Policy prüft `upload_cleanup_claim_token IS NULL`, und `conf
 Die Action gibt bei teilweisen Fehlern derzeit HTTP 200 mit `retry_required_count` zurück. Ein späterer Scheduler muss deshalb den Antwortkörper auswerten und darf HTTP 200 nicht allein als vollständig erfolgreiche Bereinigung interpretieren. Alternativ kann der Endpoint bei Teilfehlern einen expliziten Fehlerstatus liefern; diese Entscheidung ist vor Einrichtung eines Schedulers zu treffen.
 
 **Ergebnis:** Der aktuelle Scaffold ist fail-closed für Storage- und Finalisierungsfehler. Er ist noch nicht aktivierungsreif. Offen sind insbesondere getrennte Trigger-Authentifizierung, verifiziertes Verhalten bei fehlendem Objekt, Lease-Strategie, Konkurrenz mit laufenden Uploads und Scheduler-Fehlerauswertung.
+
+
+## 11. Upload-Quieszenz vor Storage-Löschung
+
+Die Claim-Policy verhindert neue Storage-INSERT-Autorisierungen, kann aber keinen Upload abbrechen, dessen Storage-Request die Policy bereits vor dem Claim erfolgreich passiert hat. Ein solcher Request könnte theoretisch erst nach einer unmittelbar folgenden Storage-Löschung fertig werden.
+
+Der Claim-Entwurf erhält deshalb zusätzlich `upload_cleanup_quiesced_at`. Beim ersten Claim wird dieser Zeitstempel einmalig gesetzt und bei späteren Lease-Reclaims beibehalten. Die RPC gibt `cleanup_ready_at` als Zeitpunkt 24 Stunden nach Beginn der Quieszenz zurück. Die Edge Function löscht das Objekt erst, wenn dieser Zeitpunkt erreicht ist. Vorher meldet sie den Eintrag als `deferred_count` und führt keine Storage- oder Metadatenlöschung aus.
+
+Die 24 Stunden sind ein konservatives Drain-Fenster, aber kein mathematischer Beweis, dass jede denkbare Upload-Verbindung beendet ist. Vor Aktivierung muss die Uploadmethode festgelegt werden; insbesondere dürfen keine unbegrenzt fortsetzbaren/resumable Upload-Sessions ohne eigenes Ablauf- und Widerrufsprotokoll verwendet werden. Das Zeitfenster muss anhand der tatsächlich unterstützten Supabase-Storage-Uploadmethode und ihrer maximalen Request-/Session-Laufzeit bestätigt werden.
+
+Die 15-Minuten-Lease bleibt davon getrennt: Sie schützt den exklusiven Bearbeitungsanspruch eines Workers. Das 24-Stunden-Fenster schützt vor bereits autorisierten Uploads. Ein späterer Worker kann nach Ablauf der Lease denselben Datensatz erneut claimen, erhält aber denselben Quieszenz-Startzeitpunkt. Erst nach `cleanup_ready_at` darf er die Storage-Löschung versuchen.
+
+**Status:** SQL- und Edge-Function-Scaffold angepasst; nicht migriert, nicht deployed und nicht getestet.
