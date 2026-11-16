@@ -696,8 +696,9 @@ function calendarYearPhaseCard(phase, suggested) {
 }
 
 export function confirmCalendarSeasonPhase(id) {
+    if (typeof id !== 'string' || !id) return;
     const suggestion = (state.calendarYearPhaseSuggestions || []).find(item => item.id === id);
-    if (!suggestion) return;
+    if (!suggestion || !suggestion.name?.trim() || !isValidCalendarPhaseDate(suggestion.start) || !isValidCalendarPhaseDate(suggestion.end) || suggestion.start > suggestion.end) return;
     const phases = calendarYearPhaseStore();
     if (!phases.some(item => item.id === id)) phases.push({ ...suggestion, confirmedAt: new Date().toISOString() });
     state.settings.calendarSeasonPhaseDismissed = (state.settings.calendarSeasonPhaseDismissed || []).filter(item => item !== id);
@@ -706,6 +707,7 @@ export function confirmCalendarSeasonPhase(id) {
 }
 
 export function dismissCalendarSeasonPhase(id) {
+    if (typeof id !== 'string' || !(state.calendarYearPhaseSuggestions || []).some(item => item.id === id)) return;
     calendarYearPhaseStore();
     if (!state.settings.calendarSeasonPhaseDismissed.includes(id)) state.settings.calendarSeasonPhaseDismissed.push(id);
     saveDataToLocalStorage();
@@ -713,7 +715,11 @@ export function dismissCalendarSeasonPhase(id) {
 }
 
 export function deleteCalendarSeasonPhase(id) {
-    state.settings.calendarSeasonPhases = calendarYearPhaseStore().filter(item => item.id !== id);
+    if (typeof id !== 'string' || !id) return;
+    const phases = calendarYearPhaseStore();
+    const remaining = phases.filter(item => item.id !== id);
+    if (remaining.length === phases.length) return;
+    state.settings.calendarSeasonPhases = remaining;
     saveDataToLocalStorage();
     renderYearView();
 }
@@ -746,14 +752,18 @@ export function saveCalendarPhaseEditor(event) {
     const name = document.getElementById('calendar-phase-name')?.value.trim();
     const start = document.getElementById('calendar-phase-start')?.value;
     const end = document.getElementById('calendar-phase-end')?.value;
-    if (!id || !name || !isValidCalendarPhaseDate(start) || !isValidCalendarPhaseDate(end) || start > end) {
+    if (!id || !name || name.length > 60 || !isValidCalendarPhaseDate(start) || !isValidCalendarPhaseDate(end) || start > end) {
         alert('Bitte prüfe Bezeichnung und Zeitraum der Trainingsphase.');
         return;
     }
     const phases = calendarYearPhaseStore();
     const existing = phases.find(item => item.id === id);
     const suggestion = (state.calendarYearPhaseSuggestions || []).find(item => item.id === id);
-    const updated = { ...(existing || suggestion || {}), id, name, start, end, confirmedAt: new Date().toISOString() };
+    if (!existing && !suggestion) {
+        alert('Diese Saisonphase ist nicht mehr verfügbar. Bitte öffne den aktuellen Vorschlag erneut.');
+        return;
+    }
+    const updated = { ...(existing || suggestion), id, name, start, end, confirmedAt: new Date().toISOString() };
     if (existing) Object.assign(existing, updated);
     else phases.push(updated);
     state.settings.calendarSeasonPhaseDismissed = (state.settings.calendarSeasonPhaseDismissed || []).filter(item => item !== id);
