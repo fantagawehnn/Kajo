@@ -137,7 +137,9 @@ Vor der Umsetzung sind aktuelle Produktlimits, Kosten, Embedding-Modelle, Vektor
 - Der einzige Storage-Bucket ist garmin-fit (privat). In storage wurden keine Policies gefunden; dieser Bucket wird nicht für Paper-Uploads wiederverwendet.
 - Die Extension vector ist verfügbar, aber nicht installiert.
 - Die Remote-Migrationshistorie enthält einen Eintrag, während das Repository vier SQL-Migrationsdateien enthält. Diese Abweichung muss vor neuen Schemaänderungen geklärt werden.
-- Die vorhandenen Tabellen-Grants für anon sind breit. RLS verhindert derzeit den Zugriff ohne passende Policies; vor Erweiterung der Daten-API sollten Grants nach Least-Privilege gehärtet werden.
+- Für mehrere persönliche Tabellen bestehen breite Tabellen-Grants an anon und authenticated, teils einschließlich TRUNCATE, TRIGGER und REFERENCES. RLS schützt nicht alle Tabellenoperationen; neue Knowledge-Base-Tabellen erhalten deshalb ausschließlich minimal erforderliche Grants. Bestehende Rechte werden separat und ohne pauschale Änderung geprüft.
+- Der Security Advisor meldet unter anderem zwei Funktionen mit SECURITY DEFINER und EXECUTE für anon/authenticated. Eine Änderung ist nicht Teil der Literatureinführung; insbesondere has_active_coach_access wird von bestehenden RLS-Policies verwendet.
+- Die Remote-Migrationshistorie enthält nur einen Eintrag, während vier zugehörige SQL-Dateien im Repository liegen und mehrere dieser Schemaänderungen bereits remote sichtbar sind. Vor neuen Migrationen ist eine Reconciliation erforderlich.
 
 ## 9. Umsetzungsreihenfolge
 
