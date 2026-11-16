@@ -298,7 +298,7 @@ Cloudflare Workers Free haben laut aktueller Dokumentation 10 ms CPU-Zeit pro HT
 - Serverseitige Chunk-Schreibvorgänge müssen idempotent sein; Wiederholungen dürfen keine Duplikate erzeugen.
 - Browser- und Clientvalidierung ersetzt keine serverseitige Prüfung.
 - Extraktionsversion muss eindeutig sein. Bei einem Neustart mit neuer Version muss eine explizite Bereinigungs-/Ablösestrategie für alte Teil-Chunks bestehen.
-- Die UI muss Fortschritt und Fehler transparent darstellen. Bei Tab-Schließen darf der Vorgang nicht als abgeschlossen gelten; ein Resume-/Checkpoint-Mechanismus ist vor Implementierung festzulegen.
+- Die UI muss Fortschritt und Fehler transparent darstellen. Bei Tab-Schließen darf der Vorgang nicht als abgeschlossen gelten. Ein nutzer- und dateigebundener TUS-Resume-Codepfad ist inzwischen im isolierten Frontend-Modul vorbereitet; seine reale Storage-Wiederaufnahme muss vor UI-Aktivierung noch verifiziert werden.
 - PDF.js wird erst nach einem PoC mit repräsentativen Papers ausgewählt und eingebunden. Seitenzuordnung, Unicode, Tabellen, Spaltenlayout und Ressourcenverbrauch sind zu bewerten.
 - OCR bleibt außerhalb des MVP; gescannte PDFs erhalten einen manuellen Prüfstatus.
 
