@@ -424,4 +424,4 @@ assert.ok(calendar.includes("!(state.calendarYearPhaseSuggestions || []).some(it
 assert.ok(calendar.includes('remaining.length === phases.length'), 'deleting an unknown phase does not trigger a destructive write');
 assert.ok(calendar.includes('name.length > 60'), 'phase names are limited consistently with the editor input');
 assert.ok(calendar.includes('if (!existing && !suggestion)'), 'stale or unknown phase editor records cannot create orphaned phases');
-assert.ok(calendar.includes(String.raw\`!\/^\d{4}-\d{2}-\d{2}$\/.test(value)\`), 'season phase date validator checks the exact ISO date shape');
+assert.ok(calendar.includes('!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)'), 'season phase date validator checks the exact ISO date shape');
