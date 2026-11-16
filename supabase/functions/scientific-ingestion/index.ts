@@ -219,62 +219,32 @@ Deno.serve(async (request) => {
       }
 
       const userId = authData.user.id;
-      const sourceId = crypto.randomUUID();
-      const documentId = crypto.randomUUID();
-      const storagePath = `${userId}/${documentId}/original.pdf`;
+      const { data: intentRows, error: intentError } = await admin.rpc(
+        "kajo_create_scientific_upload_intent",
+        {
+          p_owner_id: userId,
+          p_title: title,
+          p_authors: authors,
+          p_publication_year: publicationYear ?? null,
+          p_doi: doi,
+          p_source_url: sourceUrl,
+          p_language: language,
+          p_publication_type: publicationType ?? null,
+          p_file_size_bytes: sizeBytes,
+        },
+      );
 
-      const { error: sourceError } = await admin
-        .from("scientific_sources")
-        .insert({
-          id: sourceId,
-          owner_id: userId,
-          visibility: "private",
-          review_status: "draft",
-          title,
-          authors,
-          publication_year: publicationYear ?? null,
-          doi,
-          source_url: sourceUrl,
-          language,
-          publication_type: publicationType ?? null,
-          access_basis: "private_upload",
-        });
-
-      if (sourceError) {
-        console.error("Scientific upload intent: source insert failed.");
-        return json(500, { error: "Could not create upload intent" }, configuredOrigin);
-      }
-
-      const { error: documentError } = await admin
-        .from("scientific_documents")
-        .insert({
-          id: documentId,
-          source_id: sourceId,
-          owner_id: userId,
-          visibility: "private",
-          storage_path: storagePath,
-          mime_type: "application/pdf",
-          file_size_bytes: sizeBytes,
-          processing_status: "pending",
-        });
-
-      if (documentError) {
-        const { error: cleanupError } = await admin
-          .from("scientific_sources")
-          .delete()
-          .eq("id", sourceId)
-          .eq("owner_id", userId);
-        if (cleanupError) {
-          console.error("Scientific upload intent: source cleanup failed.");
-        }
-        console.error("Scientific upload intent: document insert failed.");
+      const intent = Array.isArray(intentRows) ? intentRows[0] : null;
+      if (intentError || !intent?.source_id || !intent?.document_id || !intent?.storage_path) {
+        console.error("Scientific upload intent: atomic database operation failed.");
         return json(500, { error: "Could not create upload intent" }, configuredOrigin);
       }
 
       return json(201, {
-        document_id: documentId,
+        source_id: intent.source_id,
+        document_id: intent.document_id,
         bucket_id: BUCKET_ID,
-        storage_path: storagePath,
+        storage_path: intent.storage_path,
         processing_status: "pending",
         upload: { upsert: false, content_type: "application/pdf" },
       }, configuredOrigin);
