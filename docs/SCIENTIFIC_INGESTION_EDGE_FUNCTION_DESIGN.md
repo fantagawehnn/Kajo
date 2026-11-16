@@ -435,3 +435,12 @@ Beim Abgleich der Edge Function mit dem RPC-/DDL-Entwurf wurden zwei kleine, abe
 - Die RPC kajo_begin_scientific_extraction erzwingt jetzt dieselben Obergrenzen wie die Edge Function: maximal 10.000 Seiten, 20.000 Chunks und 20 Millionen extrahierte Zeichen. Die Grenzen liegen damit nicht nur in der HTTP-Schicht, sondern auch in der Datenbankoperation.
 
 Diese Anpassungen sind weiterhin ausschließlich Repository-Änderungen an Entwürfen. Es wurden keine Tests ausgeführt und weder Migrationen noch Storage-Konfiguration oder Deployments vorgenommen.
+
+
+## 21. Wiederaufnahme nach Browserabbruch
+
+Die Statusaktion `get-document-status` liefert für das eigene private Dokument zusätzlich `extraction_version`, `extraction_page_count`, `expected_chunk_count`, `extracted_character_count`, `upload_confirmed_at` und `extraction_completed_at`. Wenn bereits eine Extraktionsversion existiert, wird außerdem die Anzahl der dazu gespeicherten Chunks serverseitig gezählt. Die Statusantwort enthält keine Chunk-Texte und keine Storage-URL.
+
+Ein Browser kann damit nach einem Neuladen unterscheiden, ob der Upload noch aussteht, die Extraktion begonnen wurde oder bereits `private_ready` erreicht ist. Für einen Neustart der lokalen Extraktion muss der Nutzer die Original-PDF erneut auswählen; PDF.js verarbeitet die Datei erneut und verwendet dieselbe Extraktionsversion. `begin-extraction` akzeptiert einen Wiederholungsaufruf nur bei identischer Version und identischen erwarteten Gesamtwerten. Bereits gespeicherte identische Chunk-Batches können erneut übertragen werden; die RPC prüft vorhandene Inhalte und lehnt abweichende Wiederholungen ab.
+
+Wichtig: Die Statusabfrage allein setzt keine Extraktion fort. Eine automatische Fortsetzung ohne erneute Dateiauswahl ist im aktuellen lokalen PDF.js-Konzept nicht vorgesehen. Auch eine sichere Bereinigung abgebrochener Uploads und eine zeitliche Gültigkeit offener Upload-Intents bleiben vor Aktivierung zu definieren.
