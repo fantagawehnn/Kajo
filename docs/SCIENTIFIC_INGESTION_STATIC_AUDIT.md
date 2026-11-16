@@ -92,3 +92,10 @@ Die aktuelle `js/scientific-library.js` führt ausschließlich eine lokale PDF.j
 Die konkrete Uploadmethode (Standard-Upload oder TUS/resumable), ein maximales Upload-Dateilimit und ein Abbruch-/Session-Ablauf sind noch nicht entschieden. Der vorläufige 24-Stunden-Quieszenzwert darf deshalb nicht als technisch verifiziert gelten.
 
 Zusätzlich wurde die 24-Stunden-Bedingung in die Finalisierungs-RPC aufgenommen. Die Datenbank soll Metadaten nicht nur dann löschen, wenn die Edge Function den Zeitpunkt geprüft hat, sondern verlangt dieselbe Bedingung nochmals selbst.
+
+
+## 8. Uploadmethoden-Entscheidung: TUS
+
+TUS ist als bevorzugter Uploadweg für wissenschaftliche PDFs festgelegt. Supabase empfiehlt den resumable Upload insbesondere oberhalb von 6 MB oder bei instabilen Netzwerken; eine erzeugte TUS-Upload-URL ist laut Dokumentation bis zu 24 Stunden gültig. Die bestehende Cleanup-Karenz von sieben Tagen nach Ablauf des Upload-Intents plus 24 Stunden Quieszenz bietet einen deutlichen zeitlichen Abstand zu dieser dokumentierten Session-Gültigkeit.
+
+Noch nicht verifiziert sind die konkrete TUS-Clientbibliothek, das Projektlimit, das Bucket-Limit und das Verhalten im Zielprojekt. Die Frontend-Integration fehlt weiterhin. Der statische Audit bestätigt daher nur die Konsistenz der Entwürfe, nicht den realen Storage-Lifecycle.
