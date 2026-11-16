@@ -14,6 +14,7 @@
 -- Fixed policy values in this draft:
 --   - 7-day grace period after the 24-hour upload intent expiry
 --   - 15-minute claim lease
+--   - 24-hour upload-quiescence period after the first claim, before deletion
 --   - maximum 25 documents per claim batch
 --
 -- These are provisional operating values and require approval before use.
@@ -24,7 +25,8 @@ begin;
 --    document after another worker has reclaimed an expired lease.
 alter table public.scientific_documents
     add column if not exists upload_cleanup_claimed_at timestamptz,
-    add column if not exists upload_cleanup_claim_token uuid;
+    add column if not exists upload_cleanup_claim_token uuid,
+    add column if not exists upload_cleanup_quiesced_at timestamptz;
 
 alter table public.scientific_documents
     add constraint scientific_documents_cleanup_claim_pair_check
@@ -50,7 +52,8 @@ returns table (
     source_id uuid,
     storage_path text,
     claim_token uuid,
-    lease_expires_at timestamptz
+    lease_expires_at timestamptz,
+    cleanup_ready_at timestamptz
 )
 language plpgsql
 security invoker
@@ -91,17 +94,20 @@ begin
         update public.scientific_documents d
            set upload_cleanup_claimed_at = now(),
                upload_cleanup_claim_token = pg_catalog.gen_random_uuid(),
+               upload_cleanup_quiesced_at = coalesce(d.upload_cleanup_quiesced_at, now()),
                updated_at = now()
           from candidates c
          where d.id = c.id
         returning d.id, d.source_id, d.storage_path,
-                  d.upload_cleanup_claim_token, d.upload_cleanup_claimed_at
+                  d.upload_cleanup_claim_token, d.upload_cleanup_claimed_at,
+                  d.upload_cleanup_quiesced_at
     )
     select c.id,
            c.source_id,
            c.storage_path,
            c.upload_cleanup_claim_token,
-           c.upload_cleanup_claimed_at + interval '15 minutes'
+           c.upload_cleanup_claimed_at + interval '15 minutes',
+           c.upload_cleanup_quiesced_at + interval '24 hours'
       from claimed c;
 end;
 $function$;
@@ -218,8 +224,11 @@ commit;
 --    confirmation must fail closed; if confirmation wins, the claim predicate
 --    no longer matches because the status is uploaded.
 -- 3. The Edge Function must use only the returned storage_path and the fixed
---    bucket ID. Treat Storage "object not found" as idempotent success; all
---    other delete errors must stop finalization.
+--    bucket ID. It must NOT delete before cleanup_ready_at. The 24-hour
+--    quiescence period is a conservative drain window for an upload request
+--    that may have passed Storage authorization before the claim committed.
+--    Treat Storage "object not found" as idempotent success only after the
+--    exact error semantics have been verified; all other errors stop finalization.
 -- 4. The Edge Function must call finalization with the returned claim token.
 --    A false result means the lease/token/state no longer matches; do not
 --    attempt an alternate metadata deletion.
