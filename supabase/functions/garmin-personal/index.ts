@@ -307,9 +307,10 @@ async function syncGarminHealthHistoryBatch(
   }).eq("user_id", userId).eq("sync_type", syncType);
   if (runningError) throw runningError;
 
-  // Three days stay below Garmin's conservative request-rate budget while
-  // reducing the number of browser round-trips for long historical imports.
-  const batchLimit = 3;
+  // Process one calendar day per Edge Function invocation to reduce the
+  // amount of sequential Garmin endpoint work within the worker time limit.
+  // The browser continues from the persisted cursor in the next request.
+  const batchLimit = 1;
   const processed: Array<Record<string, unknown>> = [];
   let failed = false;
   let rateLimited = false;
