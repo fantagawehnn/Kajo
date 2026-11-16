@@ -90,7 +90,7 @@ Die Retrieval-Antwort muss mindestens Quelle, Autor(en), Jahr, DOI/URL, Seiten- 
 
 ### Phase E – Ingestion und Coach-Anbindung
 
-Die Verarbeitung wird schrittweise aufgebaut: Dokumentaufnahme, Rechteprüfung, Metadatenextraktion, Textgewinnung, Chunking, Embedding, fachliche Kuratierung und Retrieval. Automatisch extrahierte Studienbefunde bleiben als ungeprüft gekennzeichnet, bis sie fachlich bestätigt wurden.
+Die Verarbeitung wird innerhalb der bestehenden Cloudflare-/Supabase-Infrastruktur umgesetzt. Supabase übernimmt Auth, Metadaten, private PDF-Dateien und Chunks. Eine separate Cloudflare Worker-Instanz bestätigt Uploads und produziert Aufträge in Cloudflare Queues; ein dedizierter Queue Consumer übernimmt die asynchrone Verarbeitung. Der bestehende Coach-Worker bleibt ohne Service-Role-Key. Details stehen in [CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md](./CLOUDFLARE_SCIENTIFIC_INGESTION_ARCHITECTURE.md).\n\nDie Verarbeitung wird schrittweise aufgebaut: Dokumentaufnahme, Rechteprüfung, Metadatenextraktion, Textgewinnung, Chunking, Embedding, fachliche Kuratierung und Retrieval. Automatisch extrahierte Studienbefunde bleiben als ungeprüft gekennzeichnet, bis sie fachlich bestätigt wurden. Cloudflare Workers besitzen eine 128-MB-Isolate-Speichergrenze; Queue-Laufzeit ersetzt keinen Parser-PoC. Der tatsächliche Cloudflare-Tarif und die CPU-Konfiguration müssen vor der Implementierung bestätigt werden.
 
 Der KI-Coach bleibt passiv: Er darf analysieren und Empfehlungen formulieren, aber keine Trainingspläne, Kalender, Profile oder gespeicherten Daten eigenständig verändern.
 
