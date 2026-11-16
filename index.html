@@ -776,13 +776,14 @@
         </div>
 
 
-        <!-- PERSONAL BESTS -->
+        <!-- KRAFTTRAINING -->
         <div id="view-strength" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between gap-3">
-                <div><h2 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-purple-400"></i> Personal Bests · Kraftleistungen</h2><p class="text-xs text-slate-400 mt-1">Dokumentiere deine höchsten Trainingsgewichte und Wiederholungsleistungen je Übung.</p></div>
-                <button type="button" onclick="openStrengthModal()" class="shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold">+ Personal Best</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="strength-history-grid"></div>
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="flex items-center gap-2 text-base font-bold text-white"><i data-lucide="dumbbell" class="h-5 w-5 text-cyan-400"></i> Krafttraining</h2><p class="mt-1 text-xs text-slate-400">Dokumentiere Übungen und jeden absolvierten Satz.</p></div><button type="button" onclick="openStrengthWorkoutModal()" class="rounded-xl bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-500">+ Training erfassen</button></div>
+                <div id="strength-workout-summary" class="grid grid-cols-3 gap-2"></div>
+            </section>
+            <section class="space-y-3"><h3 class="text-sm font-semibold text-white">Trainingsverlauf</h3><div id="strength-workout-history" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div></section>
+            <section class="space-y-3 border-t border-slate-800 pt-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-sm font-semibold text-white">Personal Bests</h3><p class="text-[11px] text-slate-400">Deine höchsten dokumentierten Gewichte und Wiederholungsleistungen.</p></div><button type="button" onclick="openStrengthModal()" class="rounded-xl bg-purple-600 px-3 py-2 text-xs font-semibold text-white hover:bg-purple-500">+ Personal Best</button></div><div class="grid grid-cols-1 gap-4 md:grid-cols-2" id="strength-history-grid"></div></section>
         </div>
 
         <!-- ========================================== -->
@@ -1449,6 +1450,22 @@
         <div class="flex flex-wrap justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeManualActivityModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button><button type="button" onclick="saveManualActivity()" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-xs">Training speichern</button></div>
         <p class="text-[10px] text-slate-500">Nur eingetragene Werte werden gespeichert. Nicht ausgefüllte Messwerte bleiben leer und werden nicht als 0 interpretiert.</p>
       </div>
+    </div>
+
+    <!-- MODAL: KRAFTTRAINING -->
+    <div id="strength-workout-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-slate-950/85 p-4 backdrop-blur-sm">
+        <div class="my-auto w-full max-w-lg space-y-4 rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <div><h3 class="text-base font-bold text-white">Krafttraining erfassen</h3><p class="mt-1 text-xs text-slate-400">Eine Übung mit den tatsächlich absolvierten Sätzen dokumentieren.</p></div>
+            <div class="space-y-3 text-xs">
+                <label class="block text-slate-400">Datum<input type="date" id="str-workout-date" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-white"></label>
+                <label class="block text-slate-400">Übung<input id="str-workout-exercise" list="str-workout-exercise-options" maxlength="100" placeholder="Übung auswählen oder eingeben" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-white"><datalist id="str-workout-exercise-options"><option value="Bankdrücken"><option value="Bankziehen mit Langhantel"><option value="Einarmiges Bankziehen"><option value="Kniebeugen"><option value="Kreuzheben"><option value="Klimmzüge"><option value="Schulterdrücken"><option value="Rumpfrotation"></datalist></label>
+                <div class="flex items-center justify-between gap-2"><h4 class="font-semibold text-white">Sätze</h4><button type="button" onclick="addStrengthSetRow()" class="rounded-lg bg-slate-800 px-3 py-2 text-[11px] text-cyan-300">+ Satz hinzufügen</button></div>
+                <div id="strength-set-rows" class="space-y-2"></div>
+                <label class="block text-slate-400">Notiz (optional)<textarea id="str-workout-notes" rows="2" maxlength="300" placeholder="z. B. RPE, Ausführung oder Besonderheiten" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-white"></textarea></label>
+                <p class="text-[10px] text-slate-500">Volumen = Summe aus Gewicht × Wiederholungen je Satz. Ein Dokumentationswert, keine Leistungsprognose.</p>
+            </div>
+            <div class="flex justify-end gap-2 border-t border-slate-800 pt-3"><button type="button" onclick="closeStrengthWorkoutModal()" class="rounded-xl bg-slate-800 px-4 py-2 text-xs text-slate-300">Abbrechen</button><button type="button" onclick="saveStrengthWorkoutLog()" class="rounded-xl bg-cyan-600 px-5 py-2 text-xs font-semibold text-white hover:bg-cyan-500">Speichern</button></div>
+        </div>
     </div>
 
     <!-- MODAL: PERSONAL BEST -->
