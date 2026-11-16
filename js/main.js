@@ -192,6 +192,10 @@ function renderHealthAnalysis() {
 }
 
 function switchTab(requestedTab) {
+    if (window.kajoCurrentTab === 'scientific-library' && requestedTab !== 'scientific-library') {
+        void loadScientificLibraryModule().then(module => module.clearScientificLibraryPreview())
+            .catch(error => console.warn('Lokale PDF-Vorschau konnte nicht zurückgesetzt werden:', error));
+    }
     const route = {
         dashboard: { parent: 'today', view: 'dashboard' },
         today: { parent: 'today', view: 'dashboard' },
