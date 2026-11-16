@@ -369,6 +369,12 @@ assert.ok(competitions.includes("dateInput.value = toLocalDateString()"), 'race 
 assert.ok(competitions.includes("Bitte gib eine gültige Platzierung als positive ganze Zahl an."), 'race result form validates ranking input');
 assert.ok(competitions.includes("!['C1', 'C2', 'K1', 'K2'].includes(discipline)"), 'race result form validates canoe discipline');
 assert.ok(competitions.includes("!['Classic', 'Sprint', 'Sonstiges'].includes(format)"), 'race result form validates race format');
+assert.ok(html.includes('id="race-modal" class="hidden" role="dialog" aria-modal="true"'), 'race modal has dialog semantics');
+assert.ok(html.includes('class="race-modal-panel'), 'race modal has a dedicated scrollable panel');
+assert.ok(competitions.includes("document.body.appendChild(modal)"), 'race modal is moved out of the scrollable app container');
+assert.ok(competitions.includes("document.body.classList.add('kajo-modal-open')"), 'race modal locks background scrolling');
+assert.ok(css.includes('#race-modal:not(.hidden)') && css.includes('#race-modal .race-modal-panel'), 'race modal uses viewport-level responsive styling');
+
 assert.ok(main.includes("async function startManualCloudSync()"), 'manual cloud sync action is implemented in the app module');
 assert.ok(main.includes("    startManualCloudSync,"), 'manual cloud sync action is exposed to the HTML control');
 assert.ok(html.includes('id="cloud-sync-manual-button"') && html.includes('onclick="startManualCloudSync()"'), 'cloud sync modal exposes the manual sync action');
