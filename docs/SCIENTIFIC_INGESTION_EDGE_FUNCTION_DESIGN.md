@@ -359,3 +359,49 @@ Die Function liest den Request-Body begrenzt ein und protokolliert keine Tokens,
 **Offene Verifikation vor Produktivsetzung:** Supabase Storage muss Range-Requests für die Signed-URL-Antwort im Zielprojekt tatsächlich mit HTTP 206 und passendem `Content-Range` beantworten; andernfalls schlägt die Bestätigung absichtlich geschlossen fehl. Der Bucket muss existieren und mit der maximalen Uploadgröße, PDF-MIME-Beschränkung und der separaten Storage-Policy übereinstimmen. Die drei RPCs und Zusatzspalten müssen zuerst nach Reconciliation als Migration freigegeben und angewendet werden. Außerdem fehlen noch Rate-Limits, Ablauf/Abbruchbereinigung und ein Resume-Protokoll für unterbrochene Uploads.
 
 Es wurden keine Tests ausgeführt, keine Migration angewendet, kein Bucket erstellt und keine Function deployed.
+
+
+## 19. Request-Vertrag der ergänzten Actions
+
+Alle Requests gehen als `POST` an die Function und benötigen einen gültigen Supabase-Bearer-Token. Die User-ID wird ausschließlich aus `auth.getUser()` abgeleitet. Es gibt kein clientseitiges `user_id`-Feld.
+
+```json
+{ "action": "confirm-upload", "document_id": "<uuid>" }
+
+{
+  "action": "begin-extraction",
+  "document_id": "<uuid>",
+  "extraction_version": "pdfjs-6.5.438-chunk-v1",
+  "page_count": 12,
+  "expected_chunk_count": 18,
+  "extracted_character_count": 42000
+}
+
+{
+  "action": "submit-chunk-batch",
+  "document_id": "<uuid>",
+  "extraction_version": "pdfjs-6.5.438-chunk-v1",
+  "chunks": [
+    {
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "section_heading": null,
+      "language": "en",
+      "content_text": "..."
+    }
+  ]
+}
+
+{
+  "action": "complete-extraction",
+  "document_id": "<uuid>",
+  "extraction_version": "pdfjs-6.5.438-chunk-v1"
+}
+
+{ "action": "mark-manual-review", "document_id": "<uuid>" }
+```
+
+Die Chunk-Indizes müssen dokumentweit eindeutig und lückenlos von 0 bis `expected_chunk_count - 1` sein. Die UI muss bei einem Fehler den Status erneut abrufen und darf nicht annehmen, dass ein fehlgeschlagener HTTP-Aufruf keine Daten geschrieben hat: Ein Timeout kann nach erfolgreicher serverseitiger Persistenz auftreten. Identische Batch-Retries sind deshalb vorgesehen; abweichende Inhalte unter demselben Index werden abgewiesen.
+
+Der Vertrag enthält absichtlich keine Aktion zur Shared-Freigabe, keine Änderung von Eigentümer oder Sichtbarkeit und keinen Download-Endpunkt. Der aktuelle lokale PDF.js-Prototyp ruft diese Actions noch nicht auf.
