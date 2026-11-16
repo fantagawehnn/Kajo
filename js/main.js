@@ -223,11 +223,12 @@ function renderHealthAnalysis() {
                     ? '—' : (minutes / 60).toLocaleString('de-DE', {
                     minimumFractionDigits: 1, maximumFractionDigits: 1
                 }) + ' h';
+                const coverageText = coverage => coverage.available + '/' + coverage.total
+                    + ' · ' + coverage.status;
                 const periodLine = (title, period) => {
-                    const missing = period.activitiesWithoutDuration
-                        ? ' · ' + period.activitiesWithoutDuration + ' ohne Dauer' : '';
                     return '<div><strong>' + title + ':</strong> ' + formatHours(period.totalMinutes)
-                        + ' · ' + period.activities + ' Aktivitäten · ' + period.eligibleCalendarDays + '/' + period.calendarDays + ' berücksichtigte Tage' + missing + '</div>';
+                        + ' · ' + period.activities + ' Aktivitäten · ' + period.eligibleCalendarDays + '/' + period.calendarDays
+                        + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(period.durationCoverage) + '</div>';
                 };
                 const comparison = document.createElement('div');
                 comparison.className = 'mt-2 w-full text-xs text-slate-400 space-y-1';
@@ -238,8 +239,9 @@ function renderHealthAnalysis() {
                     + (['before', 'during', 'after'].some(key => impact[key].trainingLoad !== null)
                         ? '<div><strong>Trainingsload (' + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit') + '):</strong> '
                             + ['before', 'during', 'after'].map(key => impact[key].trainingLoad === null
-                                ? '—' : Number(impact[key].trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
-                                    + ' (' + impact[key].trainingLoadActivityCount + '/' + impact[key].activities + ' Aktivitäten)').join(' / ')
+                                ? '— (' + coverageText(impact[key].trainingLoadCoverage) + ')'
+                                : Number(impact[key].trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
+                                    + ' (' + coverageText(impact[key].trainingLoadCoverage) + ')').join(' / ')
                             + '</div><div>Verwendetes Load-Modell: ' + (impact.before.trainingLoadMode || impact.during.trainingLoadMode || impact.after.trainingLoadMode || 'nicht verfügbar') + '</div>'
                         : '<div>Trainingsload: für diese Zeiträume nicht berechenbar.</div>')
                     + '<div>Durchschnitt pro berücksichtigtem Kalendertag: '
@@ -254,14 +256,14 @@ function renderHealthAnalysis() {
                             : (window.averageMinutesChangePercent > 0 ? '+' : '') + window.averageMinutesChangePercent.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' % gegenüber Referenz';
                         return '<div><strong>' + window.label + ':</strong> ' + (window.notStarted ? 'Zeitraum noch nicht begonnen' : formatHours(window.totalMinutes)
                             + ' · ' + window.activities + ' Aktivitäten · ' + window.eligibleCalendarDays + '/' + window.calendarDays
-                            + ' berücksichtigte Tage · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change)
-                            + (window.activitiesWithoutDuration ? ' · ' + window.activitiesWithoutDuration + ' ohne Dauer' : '') + '</div>';
+                            + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(window.durationCoverage)
+                            + ' · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change) + '</div>';
                     }).join('')
                     + '<div>Ausgewählter Trainingsload ('
                     + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit')
                     + '): ' + impact.returnToTraining.windows.map(window => window.trainingLoad === null ? '—'
                         : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
-                            + ' (' + window.trainingLoadActivityCount + '/' + window.activities + ' Aktivitäten)').join(' / ')
+                            + ' (' + coverageText(window.trainingLoadCoverage) + ')').join(' / ')
                     + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
                     + '</div><div>Identische Aktivitäts-IDs mit gleichem Datum und gleicher Startzeit werden nur einmal gezählt; gleiche IDs mit abweichender Zeitzuordnung bleiben getrennt. Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
                 row.classList.remove('items-center');
