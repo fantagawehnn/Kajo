@@ -144,6 +144,35 @@ globalThis.fetch = async url => url.includes('/activities')
     }] };
 const importer = await import('../js/import.js');
 
+const ambiguousGarmin = [
+    { id: 'garmin-a', source: 'garmin', type: 'kayak', startTime: '2026-11-10T08:00:00Z', duration: 60 },
+    { id: 'garmin-b', source: 'garmin', type: 'kayak', startTime: '2026-11-10T08:04:00Z', duration: 60 },
+    { id: 'icu-shared', source: 'intervals', sourceId: 'icu-shared', type: 'kayak', startTime: '2026-11-10T08:02:00Z', duration: 60 }
+];
+assert.equal(importer.consolidateVisibleCrossSourceDuplicates(ambiguousGarmin), 0,
+    'one Intervals activity matching multiple Garmin activities is not auto-merged');
+assert.equal(ambiguousGarmin.length, 3, 'ambiguous Garmin matches remain separate');
+
+const ambiguousIntervals = [
+    { id: 'garmin-shared', source: 'garmin', type: 'kayak', startTime: '2026-11-10T09:02:00Z', duration: 60 },
+    { id: 'icu-a', source: 'intervals', sourceId: 'icu-a', type: 'kayak', startTime: '2026-11-10T09:00:00Z', duration: 60 },
+    { id: 'icu-b', source: 'intervals', sourceId: 'icu-b', type: 'kayak', startTime: '2026-11-10T09:04:00Z', duration: 60 }
+];
+assert.equal(importer.consolidateVisibleCrossSourceDuplicates(ambiguousIntervals), 0,
+    'one Garmin activity matching multiple Intervals activities is not auto-merged');
+assert.equal(ambiguousIntervals.length, 3, 'ambiguous Intervals matches remain separate');
+
+const uniqueCrossSource = [
+    { id: 'garmin-unique', source: 'garmin', sourceRefs: { garminActivityId: '987' }, type: 'kayak', startTime: '2026-11-10T10:00:00Z', duration: 60, name: 'Garmin canonical' },
+    { id: 'icu-unique', source: 'intervals', sourceId: 'icu-unique', type: 'kayak', startTime: '2026-11-10T10:02:00Z', duration: 60, name: 'Intervals detail', tss: 42 }
+];
+assert.equal(importer.consolidateVisibleCrossSourceDuplicates(uniqueCrossSource), 1,
+    'unique one-to-one Garmin and Intervals activities are consolidated');
+assert.equal(uniqueCrossSource.length, 1, 'unique cross-source duplicate is removed');
+assert.equal(uniqueCrossSource[0].id, 'garmin-unique', 'Garmin remains the canonical activity');
+assert.equal(uniqueCrossSource[0].tss, 42, 'non-conflicting Intervals metrics are preserved');
+assert.deepEqual(uniqueCrossSource[0].sources.sort(), ['garmin', 'intervals'], 'both source labels are retained');
+
 storage.setUserLocalSetting('garmin_connected', 'true');
 let intervalsFetchesWhileGarminConnected = 0;
 globalThis.fetch = async () => {
