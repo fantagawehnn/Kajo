@@ -47,7 +47,7 @@ assert.ok(html.includes('id="health-trend-panel"'), 'Health detail trend has a s
 assert.ok(main.includes('startManualCloudSync,') && html.includes('onclick="startManualCloudSync()"'), 'manual cloud sync button is connected to the global handler');
 assert.ok(uiActions.includes('window.kajoOpenProfile = function'), 'profile buttons are connected to their standalone action');
 assert.ok(analysisUI.includes('window.openPerformanceDetail = openPerformanceDetail') && analysisUI.includes('window.closePerformanceDetail = closePerformanceDetail'), 'performance detail navigation buttons are globally connected');
-assert.ok(analysisUI.includes('window.setPerformanceRange = setPerformanceRange') && /window\\.setHealthRange\\s*=\\s*setHealthRange/.test(analysisUI), 'performance and health range buttons are globally connected');
+assert.ok(analysisUI.includes('window.setPerformanceRange = setPerformanceRange') && analysisUI.includes('window.setHealthRange=setHealthRange'), 'performance and health range buttons are globally connected');
 assert.ok(html.includes('id="health-log-save-button"'), 'health log save button has a stable control id');
 assert.ok(health.includes('refreshAll();\n    closeHealthLogModal();') && !health.includes("new CustomEvent('endurance:data-save-immediate'"), 'health log UI closes after local save without waiting for a cloud roundtrip');
 
