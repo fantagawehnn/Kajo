@@ -72,6 +72,59 @@ test('non-Garmin activity prevents a false confirmed-rest day', () => {
     assert.equal(day.loadMode, 'garmin-unavailable');
 });
 
+test('duplicate activity identity is counted once in daily load and activity coverage', () => {
+    const activity = {
+        id: 'duplicate-load', source: 'garmin', date: completedDay,
+        startTime: completedDay + 'T08:00:00Z', garminTrainingLoad: 35
+    };
+    const duplicate = { ...activity };
+    const day = entryOn(completedDay, [activity, duplicate], {
+        garminActivityCoverageRanges: [covered(completedDay)]
+    });
+    assert.equal(day.load, 35);
+    assert.equal(day.activityCount, 1);
+    assert.equal(day.loadActivityCount, 1);
+    assert.equal(day.dataStatus, 'complete');
+});
+
+test('same activity ID with a different date or start time remains a distinct session', () => {
+    const firstDate = offsetDate(today, -2);
+    const secondDate = completedDay;
+    const records = [
+        { id: 'reused-id', source: 'garmin', date: firstDate,
+          startTime: firstDate + 'T08:00:00Z', garminTrainingLoad: 20 },
+        { id: 'reused-id', source: 'garmin', date: secondDate,
+          startTime: secondDate + 'T08:00:00Z', garminTrainingLoad: 30 },
+        { id: 'same-day-distinct-start', source: 'garmin', date: secondDate,
+          startTime: secondDate + 'T10:00:00Z', garminTrainingLoad: 15 }
+    ];
+    const timeline = computePerformanceTimeline(records, {
+        garminActivityCoverageRanges: [covered(firstDate, secondDate)]
+    }, {});
+    const first = timeline.find(day => day.date === firstDate);
+    const second = timeline.find(day => day.date === secondDate);
+    assert.equal(first.activityCount, 1);
+    assert.equal(first.load, 20);
+    assert.equal(second.activityCount, 2);
+    assert.equal(second.load, 45);
+    assert.equal(second.loadActivityCount, 2);
+});
+
+test('repeated reference without an activity ID is counted once but separate anonymous sessions remain', () => {
+    const activity = {
+        source: 'garmin', date: completedDay, garminTrainingLoad: 12
+    };
+    const separate = {
+        source: 'garmin', date: completedDay, garminTrainingLoad: 18
+    };
+    const day = entryOn(completedDay, [activity, activity, separate], {
+        garminActivityCoverageRanges: [covered(completedDay)]
+    });
+    assert.equal(day.activityCount, 2);
+    assert.equal(day.load, 30);
+    assert.equal(day.loadActivityCount, 2);
+});
+
 test('Garmin native training load is used when available', () => {
     const records = [{ id: 'g-2', source: 'garmin', date: completedDay, garminTrainingLoad: 35 }];
     const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
