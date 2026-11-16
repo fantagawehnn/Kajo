@@ -356,3 +356,13 @@ assert.ok(charts.includes('export function focusActivityTelemetryPoint(index)'),
 assert.ok(activities.includes('canLinkRouteToChart'), 'GPS-to-chart interaction is enabled only for aligned time and metric arrays');
 assert.ok(importer.includes('avgPower: Number(lap.avg_power) || null'), 'FIT lap power is preserved only when supplied by the file');
 assert.ok(activities.includes("avgCadence !== null ? 'Ø ' + Math.round(avgCadence) + '/min' : null"), 'lap cadence is displayed only when available');
+
+
+// Calendar day summaries display set-level strength data without fabricating
+// details for legacy entries that do not contain individual sets.
+assert.ok(calendar.includes("const sets=Array.isArray(a.sets)?a.sets:[]"), 'day editor supports set-based strength logs');
+assert.ok(calendar.includes("totalReps=sets.reduce"), 'day editor totals repetitions from recorded sets');
+assert.ok(calendar.includes("volume=sets.reduce"), 'day editor calculates volume from recorded sets');
+assert.ok(calendar.includes("Sätze · '+totalReps+' Wdh."), 'day editor displays the number of recorded sets and repetitions');
+assert.ok(calendar.includes("item.exercise || 'Krafttraining', detail"), 'day timeline displays set details when available');
+assert.ok(calendar.includes("dateInput.value = toLocalDateString()"), 'race modal defaults to today rather than a stale hard-coded date');
