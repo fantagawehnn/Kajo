@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=8';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=9';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -170,7 +170,8 @@ function renderHealthAnalysis() {
     );
     const episodeTrainingImpact = summarizeHealthEpisodeTrainingImpact(
         state.healthLogs, state.rawActivities, episodes, 14,
-        healthComparisonLoad.records, healthComparisonLoad.mode, healthComparisonLoad.unit, to
+        healthComparisonLoad.records, healthComparisonLoad.mode, healthComparisonLoad.unit, to,
+        healthComparisonLoad.eligibleActivities
     ) || [];
     if (count) count.textContent = episodes.length ? String(episodes.length) + ' dokumentierte Phasen' : 'Keine Einträge';
     if (metrics && summary) {
@@ -229,7 +230,7 @@ function renderHealthAnalysis() {
                     return '<div><strong>' + title + ':</strong> ' + formatHours(period.totalMinutes)
                         + ' · ' + period.activities + ' Aktivitäten · ' + period.eligibleCalendarDays + '/' + period.calendarDays
                         + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(period.durationCoverage)
-                        + ' · Loadabdeckung ' + coverageText(period.trainingLoadCoverage) + '</div>';
+                        + ' · Loadabdeckung (modellberechtigt) ' + coverageText(period.trainingLoadCoverage) + '</div>';
                 };
                 const comparison = document.createElement('div');
                 comparison.className = 'mt-2 w-full text-xs text-slate-400 space-y-1';
@@ -256,7 +257,7 @@ function renderHealthAnalysis() {
                         return '<div><strong>' + window.label + ':</strong> ' + (window.notStarted ? 'Zeitraum noch nicht begonnen' : formatHours(window.totalMinutes)
                             + ' · ' + window.activities + ' Aktivitäten · ' + window.eligibleCalendarDays + '/' + window.calendarDays
                             + ' berücksichtigte Tage · Dauerabdeckung ' + coverageText(window.durationCoverage)
-                            + ' · Loadabdeckung ' + coverageText(window.trainingLoadCoverage)
+                            + ' · Loadabdeckung (modellberechtigt) ' + coverageText(window.trainingLoadCoverage)
                             + ' · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change) + '</div>';
                     }).join('')
                     + '<div>Ausgewählter Trainingsload ('
@@ -266,7 +267,7 @@ function renderHealthAnalysis() {
                         : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
                             + ' (' + coverageText(window.trainingLoadCoverage) + ')').join(' / ')
                     + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
-                    + '</div><div>Identische Aktivitäts-IDs mit gleichem Datum und gleicher Startzeit werden nur einmal gezählt; gleiche IDs mit abweichender Zeitzuordnung bleiben getrennt. Load-Werte ohne eindeutig passende Aktivität werden ausgeschlossen. Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
+                    + '</div><div>Identische Aktivitäts-IDs mit gleichem Datum und gleicher Startzeit werden nur einmal gezählt; gleiche IDs mit abweichender Zeitzuordnung bleiben getrennt. Load-Werte ohne eindeutig passende Aktivität werden ausgeschlossen; die Load-Abdeckung bezieht sich nur auf Aktivitäten, die für das ausgewählte Modell infrage kommen. Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
                 row.classList.remove('items-center');
                 row.classList.add('flex-col', 'items-stretch');
                 row.appendChild(comparison);
