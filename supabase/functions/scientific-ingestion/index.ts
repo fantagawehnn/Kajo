@@ -260,7 +260,7 @@ Deno.serve(async (request) => {
 
       const { data, error } = await admin
         .from("scientific_documents")
-        .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error")
+        .select("id,source_id,processing_status,mime_type,file_size_bytes,created_at,updated_at,processing_error,extraction_version,extraction_page_count,expected_chunk_count,extracted_character_count,upload_confirmed_at,extraction_completed_at")
         .eq("id", documentId)
         .eq("owner_id", authData.user.id)
         .eq("visibility", "private")
@@ -274,7 +274,30 @@ Deno.serve(async (request) => {
         return json(404, { error: "Document not found" }, configuredOrigin);
       }
 
-      return json(200, { document: data }, configuredOrigin);
+      let persistedChunkCount = 0;
+      if (data.extraction_version) {
+        const { count, error: chunkCountError } = await admin
+          .from("scientific_document_chunks")
+          .select("id", { count: "exact", head: true })
+          .eq("document_id", data.id)
+          .eq("extraction_version", data.extraction_version);
+        if (chunkCountError) {
+          console.error("Scientific document chunk checkpoint lookup failed.");
+          return json(500, { error: "Could not retrieve document status" }, configuredOrigin);
+        }
+        persistedChunkCount = count ?? 0;
+      }
+
+      return json(200, {
+        document: {
+          ...data,
+          persisted_chunk_count: persistedChunkCount,
+          can_resume_extraction: data.processing_status === "extracting" &&
+            Boolean(data.extraction_version) &&
+            Number.isInteger(data.expected_chunk_count) &&
+            data.expected_chunk_count > 0,
+        },
+      }, configuredOrigin);
     }
 
     if (body.action === "confirm-upload") {
