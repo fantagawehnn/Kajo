@@ -361,12 +361,7 @@ function renderCalendarDayDetail(date, target) {
         ...(checkin.cycle?.period === true
             ? [calendarDayEvent('Menstruation dokumentiert', 'Als Gesundheitseintrag erfasst', '', 'health')]
             : []),
-        ...data.races.map(item => calendarDayEvent(
-            item.name || 'Wettkampf',
-            item.result || item.prio || '',
-            calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time),
-            'race'
-        )),
+        ...data.races.map(item => calendarDayEvent(item.name || 'Wettkampf', item.result || item.prio || '', calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time), 'race')),
         ...strength.map(item => calendarDayEvent(
             item.exercise || 'Krafttraining',
             [item.sets, item.reps, item.weight != null ? item.weight + ' kg' : null].filter(value => value != null && value !== '').join(' × '),
