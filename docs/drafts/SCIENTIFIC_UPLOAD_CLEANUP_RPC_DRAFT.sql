@@ -147,6 +147,7 @@ begin
        and d.upload_intent_expires_at < now() - interval '7 days'
        and d.upload_cleanup_claim_token = p_claim_token
        and d.upload_cleanup_claimed_at > now() - interval '15 minutes'
+       and d.upload_cleanup_quiesced_at <= now() - interval '24 hours'
        and not exists (
            select 1
              from public.scientific_document_chunks c
