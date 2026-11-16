@@ -2995,6 +2995,8 @@ Object.assign(window, {
     toggleCheckinOptionalFields,
     toggleCycleFields,
     toggleDayCycleFields,
+    toggleDaySickFields,
+    updateSelfMonitoringSlider,
     updateCheckin,
     refreshSportAnalytics,
     openSupplementModal,
