@@ -648,15 +648,13 @@ function calendarYearBuildPhaseSuggestions(year, weeks) {
             else { current.end = race.date; current.count++; }
         });
         clusters.forEach((cluster, index) => {
-            const startDate = new Date(cluster.start + 'T12:00:00');
-            const endDate = new Date(cluster.end + 'T12:00:00');
-            startDate.setDate(startDate.getDate() - 7);
-            endDate.setDate(endDate.getDate() + 2);
-            const start = toLocalDateString(startDate) < year + '-01-01' ? year + '-01-01' : toLocalDateString(startDate);
-            const end = toLocalDateString(endDate) > year + '-12-31' ? year + '-12-31' : toLocalDateString(endDate);
+            // Only use dates that are actually documented. Adding presumed
+            // taper or recovery days would imply training intent we do not know.
+            const start = cluster.start;
+            const end = cluster.end;
             suggestions.push({
-                id: 'race-' + start + '-' + end, name: 'Wettkampfphase' + (clusters.length > 1 ? ' ' + (index + 1) : ''), type: 'competition',
-                start, end, reason: cluster.count + ' gespeicherte Wettkampf-Einträge in diesem Zeitraum. Die zeitliche Gruppierung dient nur als Phasenvorschlag und fasst keine Wettkämpfe automatisch zu einem Event zusammen; bitte prüfen.'
+                id: 'race-' + start + '-' + end, name: 'Wettkampfzeitraum' + (clusters.length > 1 ? ' ' + (index + 1) : ''), type: 'competition',
+                start, end, reason: cluster.count + ' gespeicherte Wettkampf-Einträge. Der Zeitraum umfasst nur die dokumentierten Wettkampftermine; Vorbereitung, Tapering und Nachbereitung lassen sich daraus nicht ableiten. Die zeitliche Gruppierung ist ein prüfbarer Vorschlag, keine automatische Zusammenfassung zu einem Event.'
             });
         });
     }
