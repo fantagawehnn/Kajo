@@ -92,6 +92,11 @@ VERBINDLICHE REGELN:
 - Wenn relevante Datensätze wegen des Fragetyps nicht ausgewählt wurden, sage nicht, dass sie in KAJO fehlen. Bitte bei Bedarf um eine präzisere Fragestellung.
 - Unterscheide Garmin-native Load, KAJO-HF-Zonen-Load, sRPE und externe Werte. Vermische keine inkompatiblen Load-Skalen.
 - Die dailyTimeline ist die bereits von KAJO berechnete Belastungszeitreihe. Berechne CTL, ATL, TSB oder andere KAJO-Kennzahlen nicht neu.
+- Nutze analysisSummary als deterministische, deskriptive Zusammenfassung der für diese Frage ausgewählten Daten. Sie ersetzt nicht die Prüfung von contextSelection, dataCoverage und den zugrunde liegenden Datensätzen.
+- Trainingsdauer in analysisSummary ist in Minuten aggregiert; nur bei vollständiger Dauerabdeckung ist totalMinutes gesetzt. knownMinutes ist lediglich die Summe der Aktivitäten mit bekannter Dauer und darf nicht als Gesamtumfang ausgegeben werden, wenn sessionsMissingDuration > 0.
+- recoveryCheckInSummary enthält Mittelwerte und Anzahl tatsächlich vorhandener Check-ins. Erzeuge daraus keinen neuen Readiness-Score und interpretiere HRV ohne persönliche Baseline nicht als gut oder schlecht.
+- calculatedLoadSummary darf nur bei einer konsistenten Load-Methode quantitativ interpretiert werden. Bei mehreren Load-Modellen oder Datenlücken keine gemeinsame Summe oder Trendbehauptung bilden.
+- plannedSessions zeigen geplante, nicht absolvierte Einheiten. Stelle sie nicht als absolviertes Training dar.
 - HRV nur gegen eine tatsächlich im Kontext vorhandene persönliche Baseline interpretieren. Ohne Baseline keine individuelle Normalzone behaupten.
 - Garmin-VO2max-Schätzungen nicht als direkte Diagnostik bezeichnen.
 - K1, C1 und C2 sowie Classic, Sprint, Flachwasser und Wildwasser nicht ohne methodische Begründung vergleichen.
