@@ -170,7 +170,7 @@ function renderHealthAnalysis() {
     );
     const episodeTrainingImpact = summarizeHealthEpisodeTrainingImpact(
         state.healthLogs, state.rawActivities, episodes, 14,
-        healthComparisonLoad.records, healthComparisonLoad.mode, healthComparisonLoad.unit
+        healthComparisonLoad.records, healthComparisonLoad.mode, healthComparisonLoad.unit, to
     ) || [];
     if (count) count.textContent = episodes.length ? String(episodes.length) + ' dokumentierte Phasen' : 'Keine Einträge';
     if (metrics && summary) {
@@ -252,9 +252,9 @@ function renderHealthAnalysis() {
                     + impact.returnToTraining.windows.map(window => {
                         const change = window.averageMinutesChangePercent === null ? 'kein sinnvoller Vergleich möglich'
                             : (window.averageMinutesChangePercent > 0 ? '+' : '') + window.averageMinutesChangePercent.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' % gegenüber Referenz';
-                        return '<div><strong>' + window.label + ':</strong> ' + formatHours(window.totalMinutes)
+                        return '<div><strong>' + window.label + ':</strong> ' + (window.notStarted ? 'Zeitraum noch nicht begonnen' : formatHours(window.totalMinutes)
                             + ' · ' + window.activities + ' Aktivitäten · ' + window.eligibleCalendarDays + '/' + window.calendarDays
-                            + ' berücksichtigte Tage · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change
+                            + ' berücksichtigte Tage · ' + formatHours(window.averageMinutesPerCalendarDay) + '/Tag · ' + change)
                             + (window.activitiesWithoutDuration ? ' · ' + window.activitiesWithoutDuration + ' ohne Dauer' : '') + '</div>';
                     }).join('')
                     + '<div>Ausgewählter Trainingsload ('
