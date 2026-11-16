@@ -467,3 +467,19 @@ Neue private Upload-Intents erhalten in der atomaren RPC ein serverseitiges Abla
 Die Ablaufzeit betrifft ausschließlich den noch nicht bestätigten Upload. Sobald ein Dokument erfolgreich nach uploaded überführt wurde, darf die spätere Extraktion unabhängig von diesem Zeitstempel fortgesetzt werden. Abgelaufene Datensätze und eventuell vorhandene Storage-Objekte werden durch diese Prüfung nicht automatisch gelöscht. Eine sichere Bereinigungsroutine mit zusätzlicher Altersgrenze und Statusprüfung bleibt ein eigener, noch nicht aktivierter Schritt.
 
 Die 24 Stunden sind ein vorläufiger MVP-Standardwert. Vor Aktivierung ist zu entscheiden, ob dieser Zeitraum zur realen Uploadgröße und Netzstabilität passt.
+
+
+## 25. Interner Cleanup-Aufruf und Aktivierungssperre
+
+Das Edge-Function-Scaffold enthält nun die Action `cleanup-expired-uploads`. Sie ist strikt vom normalen Nutzerpfad getrennt:
+
+- Normale Actions validieren weiterhin das Nutzer-JWT über Supabase Auth und leiten die Eigentümer-ID aus dem validierten Nutzer ab.
+- Der Cleanup-Pfad akzeptiert ausschließlich einen serverseitigen Request, dessen Bearer-Token exakt dem konfigurierten `SUPABASE_SERVICE_ROLE_KEY` entspricht. Das Edge-Gateway bleibt auf `verify_jwt = true`; der Service-Role-JWT wird serverseitig verwendet.
+- Ein solcher interner Request darf ausschließlich die Cleanup-Action aufrufen. Alle anderen Actions werden für diesen Pfad abgelehnt.
+- Zusätzlich muss `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED=true` als serverseitige Function-Umgebungsvariable gesetzt sein. Ohne diese explizite Aktivierung antwortet die Action mit `503` und führt keine Claim- oder Storage-Operation aus.
+- Die Batchgröße ist auf 1 bis 25 begrenzt. Die Function akzeptiert nur UUID-basierte Claim-Daten und den kanonischen Pfad `<owner-uuid>/<document-uuid>/original.pdf`.
+- Die Function entfernt das Objekt ausschließlich aus dem fest kodierten privaten Bucket. Bei Storage-Fehlern wird nicht finalisiert; bei Fehlern oder einem nicht mehr gültigen Claim-Token bleibt die Metadaten-Finalisierung aus.
+
+Der Service-Role-Key darf ausschließlich in Supabase Function Secrets verbleiben und niemals an Browser, Frontend oder Nutzerantworten ausgegeben werden. Die Cleanup-Action wird nicht durch die App-Oberfläche angeboten.
+
+**Aktivierungsstatus:** Das ist weiterhin nicht deployter Scaffold-Code. Die RPCs und Claim-Spalten existieren nur als SQL-Entwurf. `SCIENTIFIC_UPLOAD_CLEANUP_ENABLED` wurde nicht gesetzt. Es wurde kein Scheduler eingerichtet. Die vorläufigen 7 Tage Karenzzeit und 15 Minuten Lease sind nicht fachlich freigegeben.
