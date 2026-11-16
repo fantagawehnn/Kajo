@@ -117,11 +117,17 @@ declare
     v_inserted_count integer;
     v_mismatch_count integer;
 begin
-    if p_document_id is null
-       or p_extraction_version is null
-       or jsonb_typeof(p_chunks) <> 'array'
-       or jsonb_array_length(p_chunks) < 1
-       or jsonb_array_length(p_chunks) > 50 then
+    if p_document_id is null or p_extraction_version is null or p_chunks is null then
+        raise exception 'invalid chunk batch' using errcode = '22023';
+    end if;
+
+    -- Keep array_length outside the type check: jsonb_array_length throws
+    -- for non-array JSON values.
+    if jsonb_typeof(p_chunks) is distinct from 'array' then
+        raise exception 'invalid chunk batch' using errcode = '22023';
+    end if;
+
+    if jsonb_array_length(p_chunks) < 1 or jsonb_array_length(p_chunks) > 50 then
         raise exception 'invalid chunk batch' using errcode = '22023';
     end if;
 
