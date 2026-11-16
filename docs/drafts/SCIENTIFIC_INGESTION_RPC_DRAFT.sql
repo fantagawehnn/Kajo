@@ -30,7 +30,8 @@ alter table public.scientific_documents
     add column if not exists extracted_character_count bigint
         check (extracted_character_count is null or extracted_character_count >= 0),
     add column if not exists extraction_completed_at timestamptz,
-    add column if not exists upload_confirmed_at timestamptz;
+    add column if not exists upload_confirmed_at timestamptz,
+    add column if not exists upload_intent_expires_at timestamptz;
 
 -- 2. Create source metadata and its private document row atomically.
 -- The Edge Function supplies the owner only after validating the caller JWT.
@@ -49,7 +50,8 @@ create or replace function public.kajo_create_scientific_upload_intent(
 returns table (
     source_id uuid,
     document_id uuid,
-    storage_path text
+    storage_path text,
+    upload_intent_expires_at timestamptz
 )
 language plpgsql
 security invoker
@@ -99,13 +101,14 @@ begin
 
     insert into public.scientific_documents (
         id, source_id, owner_id, visibility, storage_path, mime_type,
-        file_size_bytes, processing_status
+        file_size_bytes, processing_status, upload_intent_expires_at
     ) values (
         v_document_id, v_source_id, p_owner_id, 'private', v_storage_path,
-        'application/pdf', p_file_size_bytes, 'pending'
+        'application/pdf', p_file_size_bytes, 'pending', now() + interval '24 hours'
     );
 
-    return query select v_source_id, v_document_id, v_storage_path;
+    return query
+        select v_source_id, v_document_id, v_storage_path, now() + interval '24 hours';
 end;
 $function$;
 
