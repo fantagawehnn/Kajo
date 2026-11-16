@@ -1,3 +1,7 @@
+## Ergänzung: Resume-Pfadbindung
+
+Bei der Wiederaufnahme nach erneuter Dateiauswahl ist der vom Server gelieferte `storage_path` maßgeblich. Das Frontend vergleicht ihn mit dem kanonischen Pfad aus authentifizierter Nutzer-ID und Dokument-ID. Eine gespeicherte TUS-Session wird nur bei exakter Übereinstimmung von Bucket, MIME-Typ und Objektpfad fortgesetzt; ein bloß passendes Pfadsuffix reicht nicht aus.
+
 # KAJO – Spezifikation der wissenschaftlichen Dokumentverarbeitung
 
 **Status:** Implementierungsspezifikation, noch keine produktive Upload- oder Ingestion-Funktion  
