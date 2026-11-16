@@ -132,3 +132,10 @@ Die Edge Function enthält jetzt `cleanup-expired-uploads` als internen Ausführ
 - Metadaten-Finalisierung mit dem zurückgegebenen Claim-Token.
 
 Die Funktion wurde nicht deployed. Die Variable wurde nicht gesetzt. Die SQL-RPCs und Claim-Spalten sind weiterhin nur Entwürfe; deshalb kann der Ablauf im aktuellen Supabase-Schema noch nicht funktionieren. Es gibt keinen Scheduler und keinen automatischen Aufruf.
+
+
+## 9. Noch zu verifizierendes Storage-Verhalten
+
+Vor Aktivierung muss im Zielprojekt geklärt werden, wie die verwendete Supabase-Storage-Version `remove([path])` behandelt, wenn das Objekt bereits nicht existiert. Der aktuelle Scaffold finalisiert nur dann, wenn der Storage-Aufruf ohne Fehler zurückkehrt. Ein als Fehler gemeldetes Nichtvorhandensein wird daher vorerst wie jeder andere Löschfehler behandelt: keine Metadatenlöschung, späterer Retry bzw. manuelle Prüfung. Es wird nicht pauschal jeder Storage-Fehler als „Objekt fehlt“ interpretiert.
+
+Die Lease wird vor Beginn jeder Objektlöschung geprüft. Läuft sie während eines Storage-Aufrufs ab, verhindert die Finalisierungs-RPC eine Finalisierung mit abgelaufenem oder ersetztem Claim-Token. In diesem Fall kann das Objekt bereits gelöscht sein, während die Metadaten bestehen bleiben; der spätere Retry muss diesen Zustand sicher auflösen können. Dieses Wiederanlaufverhalten ist vor einem produktiven Betrieb anhand des tatsächlichen Storage-Verhaltens zu verifizieren.
