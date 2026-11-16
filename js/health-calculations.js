@@ -147,3 +147,59 @@ export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
           new Date(Math.max(episode.startDate, from) + 'T12:00:00')) / 86400000) + 1)
     }));
 }
+
+/**
+ * Compares documented activity volume around each explicitly documented
+ * health episode. Activity.duration is stored in minutes in the activity model.
+ * Missing duration is counted separately; missing activities are not inferred
+ * to be rest days and no completeness/causality claim is made.
+ */
+export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities = [], episodes = [], comparisonDays = 14) {
+  if (!Number.isInteger(comparisonDays) || comparisonDays < 1 || comparisonDays > 90) return null;
+  const documentedHealthDates = new Set(Object.entries(healthLogs || {})
+    .filter(([date, item]) => validDateKey(date) && (item?.status === 'sick' || item?.status === 'injured'))
+    .map(([date]) => date));
+  const activityRows = (Array.isArray(activities) ? activities : []).map(activity => {
+    const date = itemDateKey(activity);
+    const rawDuration = activity?.duration;
+    const duration = rawDuration !== null && rawDuration !== undefined && rawDuration !== ''
+      && Number.isFinite(Number(rawDuration)) && Number(rawDuration) > 0
+      ? Number(rawDuration) : null;
+    return { date, duration };
+  }).filter(item => item.date);
+
+  const summarizeWindow = (from, to, excludeHealthDates = false) => {
+    const days = Math.round((new Date(to + 'T12:00:00') - new Date(from + 'T12:00:00')) / 86400000) + 1;
+    const rows = activityRows.filter(item => item.date >= from && item.date <= to
+      && !(excludeHealthDates && documentedHealthDates.has(item.date)));
+    const validDurations = rows.filter(item => item.duration !== null);
+    const totalMinutes = validDurations.reduce((sum, item) => sum + item.duration, 0);
+    return {
+      from, to, calendarDays: days,
+      activities: rows.length,
+      activitiesWithDuration: validDurations.length,
+      activitiesWithoutDuration: rows.length - validDurations.length,
+      totalMinutes,
+      averageMinutesPerCalendarDay: days > 0 ? totalMinutes / days : null,
+      daysWithActivity: new Set(rows.map(item => item.date)).size
+    };
+  };
+
+  return (Array.isArray(episodes) ? episodes : []).filter(episode =>
+    validDateKey(episode?.startDate) && validDateKey(episode?.endDate) && episode.startDate <= episode.endDate
+  ).map(episode => {
+    const beforeFrom = addDays(episode.startDate, -comparisonDays);
+    const beforeTo = addDays(episode.startDate, -1);
+    const afterFrom = addDays(episode.endDate, 1);
+    const afterTo = addDays(episode.endDate, comparisonDays);
+    return {
+      status: episode.status,
+      startDate: episode.startDate,
+      endDate: episode.endDate,
+      documentedDays: episode.documentedDays,
+      before: summarizeWindow(beforeFrom, beforeTo, true),
+      during: summarizeWindow(episode.startDate, episode.endDate),
+      after: summarizeWindow(afterFrom, afterTo, true)
+    };
+  });
+}
