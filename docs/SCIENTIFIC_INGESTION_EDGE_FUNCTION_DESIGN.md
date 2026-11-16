@@ -343,3 +343,19 @@ Die RPCs sind als `SECURITY INVOKER` mit leerem `search_path` entworfen. `EXECUT
 Die im Browser übermittelten Seiten-, Zeichen- und Chunk-Zahlen bleiben nicht vertrauenswürdige Extraktionsmetadaten. Sie dienen der Vollständigkeitskontrolle innerhalb des privaten Dokuments, nicht als unabhängiger Nachweis über den PDF-Inhalt. Ein gescanntes PDF ohne Text benötigt einen separaten Übergang zu `manual_review_required`; es darf nicht als leere erfolgreiche Extraktion abgeschlossen werden.
 
 Noch offen vor Implementierung: Upload-Objektverifikation für `confirm-upload`, Batch-/Gesamtlimits und Rate-Limits in der Edge Function, Resume nach Tab-Abbruch, Bereinigung fehlgeschlagener Extraktionsversionen sowie der Umgang mit OCR. Der vorhandene Function-Scaffold enthält diese RPC-Aktionen noch nicht. Keine Datenbankänderung, Migration, Storage-Konfiguration oder Deployment wurde vorgenommen.
+
+## 18. Edge-Function-Aktionen im Branch ergänzt
+
+Der Scaffold unter `supabase/functions/scientific-ingestion/index.ts` enthält jetzt zusätzlich folgende serverseitige Aktionen. Die Function ist weiterhin **nicht deployed**; die Aktionen sind wegen der noch nicht angewendeten Tabellen-/RPC-/Storage-Entwürfe noch nicht produktiv nutzbar.
+
+- `confirm-upload`: lädt die Dokumentmetadaten ausschließlich anhand von Dokument-ID, authentifiziertem Eigentümer und privater Sichtbarkeit. Storage `info()` prüft tatsächliche Dateigröße und Content-Type. Anschließend wird über eine kurzlebige Signed URL ein HTTP-Range-Request für die PDF-Signatur `%PDF-` versucht. Nur bei erfolgreicher Prüfung wechselt der Status bedingt von `pending` zu `uploaded`.
+- `begin-extraction`: begrenzt Seiten-, Chunk- und Zeichenangaben serverseitig und ruft danach die vorgesehene RPC auf.
+- `submit-chunk-batch`: begrenzt Batches auf 1–50 Chunks und prüft Eigentümer, Sichtbarkeit, Status und Extraktionsversion vor dem RPC-Aufruf. Der JSON-Request-Body ist auf 900.000 Bytes begrenzt.
+- `complete-extraction`: prüft Eigentümer, Status und Extraktionsversion und übergibt den Abschluss an die Vollständigkeits-RPC.
+- `mark-manual-review`: setzt private Dokumente ohne zuverlässig extrahierbaren Text auf `manual_review_required`; vorhandene Teil-Chunks bleiben durch die Status-RLS unsichtbar.
+
+Die Function liest den Request-Body begrenzt ein und protokolliert keine Tokens, Dokumentinhalte oder vollständigen Storage-Fehler. Die RPC-Aufrufe verwenden den serverseitigen Admin-Client, weshalb die Eigentumsprüfung vor jedem Aufruf zwingend ist. Die Actions erlauben keine Änderung auf `shared` und keine Quellenfreigabe.
+
+**Offene Verifikation vor Produktivsetzung:** Supabase Storage muss Range-Requests für die Signed-URL-Antwort im Zielprojekt tatsächlich mit HTTP 206 und passendem `Content-Range` beantworten; andernfalls schlägt die Bestätigung absichtlich geschlossen fehl. Der Bucket muss existieren und mit der maximalen Uploadgröße, PDF-MIME-Beschränkung und der separaten Storage-Policy übereinstimmen. Die drei RPCs und Zusatzspalten müssen zuerst nach Reconciliation als Migration freigegeben und angewendet werden. Außerdem fehlen noch Rate-Limits, Ablauf/Abbruchbereinigung und ein Resume-Protokoll für unterbrochene Uploads.
+
+Es wurden keine Tests ausgeführt, keine Migration angewendet, kein Bucket erstellt und keine Function deployed.
