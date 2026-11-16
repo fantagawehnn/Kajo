@@ -80,6 +80,7 @@ create policy "KAJO users upload only their pending private document intent"
               and d.processing_status = 'pending'
               and d.mime_type = 'application/pdf'
               and d.file_size_bytes > 0
+              and d.upload_intent_expires_at > now()
               and name = d.owner_id::text || '/' || d.id::text || '/original.pdf'
         )
     );
