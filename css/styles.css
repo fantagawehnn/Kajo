@@ -8607,12 +8607,12 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
 }
 
 
-/* Geplante Trainingseinheit: auf kleinen Viewports oberhalb der unteren Navigation halten. */
+/* Geplante Trainingseinheit: liegt auch über der fixierten mobilen Navigation. */
 @media screen and (max-width: 640px) {
   #planned-workout-modal {
     position: fixed !important;
     inset: 0 !important;
-    z-index: 1200 !important;
+    z-index: 2147483003 !important;
     align-items: flex-start !important;
     justify-content: center !important;
     overflow-y: auto !important;
