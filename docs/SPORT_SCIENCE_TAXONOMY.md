@@ -89,4 +89,10 @@ Vor einer produktiven Taxonomie müssen noch geklärt werden:
 - Welche Sprachen und Dokumenttypen sollen beim Import unterstützt werden?
 
 Bis diese Fragen geklärt sind, bleiben die Kategorien erweiterbar und werden nicht als abschließende Sportwissenschaftssystematik verstanden.
-\n\n## 7. Präzisierung des Metadatenmodells\n\nDie Version 1.1 trennt Kanudisziplin und Wettkampfformat. Insbesondere darf `canoe_sprint` (Flachwasserdisziplin) nicht mit `wildwater_format = sprint` gleichgesetzt werden. Außerdem werden Quelle, Studienkontext und einzelner Befund getrennt klassifiziert; ein Review kann mehrere Sportarten, Populationen und Befunde umfassen. Fehlende Angaben werden nicht inferiert.\n\nDie verbindlichen Felddefinitionen, Werte und Regeln sind in `docs/SCIENTIFIC_METADATA_CONTRACT.md` festgehalten. Die hier genannten Werte sind Entwurfswerte und noch nicht in Datenbank oder App aktiviert.\n
+
+
+## 7. Präzisierung des Metadatenmodells
+
+Die Version 1.1 trennt Kanudisziplin und Wettkampfformat. Insbesondere darf `canoe_sprint` (Flachwasserdisziplin) nicht mit `wildwater_format = sprint` gleichgesetzt werden. Außerdem werden Quelle, Studienkontext und einzelner Befund getrennt klassifiziert; ein Review kann mehrere Sportarten, Populationen und Befunde umfassen. Fehlende Angaben werden nicht inferiert.
+
+Die verbindlichen Felddefinitionen, Werte und Regeln sind in `docs/SCIENTIFIC_METADATA_CONTRACT.md` festgehalten. Die hier genannten Werte sind Entwurfswerte und noch nicht in Datenbank oder App aktiviert.
