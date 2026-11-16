@@ -65,6 +65,8 @@ Die Advisor-Meldungen sind Prüfhinweise, nicht automatisch der Nachweis einer a
 
 ### Phase B – Metadatenmodell ohne Vektorspalte
 
+Ein erster SQL-Arbeitsentwurf liegt unter [`docs/drafts/SCIENTIFIC_KNOWLEDGE_PHASE1_DDL_DRAFT.sql`](./drafts/SCIENTIFIC_KNOWLEDGE_PHASE1_DDL_DRAFT.sql). Er enthält ausschließlich Quellen- und Dokumentmetadaten mit RLS-Leseregeln; er ist ausdrücklich keine Migration und wurde nicht angewendet.
+
 Zunächst nur relationale Metadaten für Quellen, Dokumente, Themen und Sportkontexte entwerfen. Die erste Schemaerweiterung soll noch keine Embedding-Dimension festschreiben und keine Vektor-Extension voraussetzen.
 
 Vorgesehene Trennung:
