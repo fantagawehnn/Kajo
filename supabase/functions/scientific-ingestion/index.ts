@@ -146,131 +146,33 @@ Deno.serve(async (request) => {
     return json(401, { error: "Unauthorized" }, configuredOrigin);
   }
 
-  // Internal cleanup calls must present the exact server-side service-role
-  // credential. Ordinary user JWTs cannot invoke the privileged lifecycle.
-  const isInternalCleanupRequest = authorization === `Bearer ${serviceRoleKey}`;
-  let authenticatedUserId: string | null = null;
+  const userClient = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: authorization } },
+  });
+  const { data: authData, error: authError } = await userClient.auth.getUser();
+  if (authError || !authData.user) {
+    return json(401, { error: "Unauthorized" }, configuredOrigin);
+  }
+  const authenticatedUserId = authData.user.id;
 
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  let body: unknown;
   try {
-    if (!isInternalCleanupRequest) {
-      const userClient = createClient(supabaseUrl, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authorization } },
-      });
-      const { data: authData, error: authError } = await userClient.auth.getUser();
-      if (authError || !authData.user) {
-        return json(401, { error: "Unauthorized" }, configuredOrigin);
-      }
-      authenticatedUserId = authData.user.id;
-    }
-
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    let body: unknown;
-    try {
-      body = await readJsonLimited(request, 900_000);
-    } catch (error) {
-      return json(400, {
-        error: error instanceof Error && error.message === "BODY_TOO_LARGE"
-          ? "Request body too large"
-          : "Invalid request body",
-      }, configuredOrigin);
-    }
-    if (!isRecord(body) || typeof body.action !== "string") {
-      return json(400, { error: "Invalid request" }, configuredOrigin);
-    }
-
-    if (body.action === "cleanup-expired-uploads") {
-      if (!isInternalCleanupRequest) {
-        return json(403, { error: "Forbidden" }, configuredOrigin);
-      }
-      if (Deno.env.get("SCIENTIFIC_UPLOAD_CLEANUP_ENABLED") !== "true") {
-        return json(503, { error: "Scientific upload cleanup is disabled" }, configuredOrigin);
-      }
-
-      const batchSize = body.batch_size === undefined ? 10 : body.batch_size;
-      if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 25) {
-        return json(400, { error: "Invalid cleanup batch size" }, configuredOrigin);
-      }
-
-      const { data: claimedRows, error: claimError } = await admin.rpc(
-        "kajo_claim_expired_scientific_uploads",
-        { p_limit: batchSize },
-      );
-      if (claimError || !Array.isArray(claimedRows)) {
-        console.error("Scientific upload cleanup: claim operation failed.");
-        return json(503, { error: "Could not claim expired uploads" }, configuredOrigin);
-      }
-
-      let deletedCount = 0;
-      let failedCount = 0;
-      let deferredCount = 0;
-      for (const item of claimedRows) {
-        if (
-          !isRecord(item) ||
-          !isUuid(item.document_id) ||
-          !isUuid(item.source_id) ||
-          !isUuid(item.claim_token) ||
-          typeof item.lease_expires_at !== "string" ||
-          !Number.isFinite(Date.parse(item.lease_expires_at)) ||
-          Date.parse(item.lease_expires_at) <= Date.now() ||
-          typeof item.cleanup_ready_at !== "string" ||
-          !Number.isFinite(Date.parse(item.cleanup_ready_at)) ||
-          typeof item.storage_path !== "string" ||
-          item.storage_path.split("/").length !== 3 ||
-          !isUuid(item.storage_path.split("/")[0]) ||
-          item.storage_path !== `${item.storage_path.split("/")[0]}/${item.document_id}/original.pdf`
-        ) {
-          failedCount += 1;
-          console.error("Scientific upload cleanup: claim returned an invalid object reference.");
-          continue;
-        }
-
-        // A claim blocks new Storage INSERT authorizations, but cannot
-        // cancel a request that passed its policy check before the claim.
-        // Wait for the quiescence window before deleting the object.
-        if (Date.parse(item.cleanup_ready_at) > Date.now()) {
-          deferredCount += 1;
-          continue;
-        }
-
-        const { error: removeError } = await admin.storage
-          .from(BUCKET_ID)
-          .remove([item.storage_path]);
-        if (removeError) {
-          failedCount += 1;
-          console.error("Scientific upload cleanup: Storage deletion failed.");
-          continue;
-        }
-
-        const { data: finalized, error: finalizeError } = await admin.rpc(
-          "kajo_finalize_expired_scientific_upload",
-          {
-            p_document_id: item.document_id,
-            p_claim_token: item.claim_token,
-          },
-        );
-        if (finalizeError || finalized !== true) {
-          failedCount += 1;
-          console.error("Scientific upload cleanup: metadata finalization did not complete.");
-          continue;
-        }
-        deletedCount += 1;
-      }
-
-      return json(200, {
-        claimed_count: claimedRows.length,
-        finalized_count: deletedCount,
-        retry_required_count: failedCount,
-        deferred_count: deferredCount,
-      }, configuredOrigin);
-    }
-
-    if (isInternalCleanupRequest) {
-      return json(403, { error: "Forbidden" }, configuredOrigin);
-    }
+    body = await readJsonLimited(request, 900_000);
+  } catch (error) {
+    return json(400, {
+      error: error instanceof Error && error.message === "BODY_TOO_LARGE"
+        ? "Request body too large"
+        : "Invalid request body",
+    }, configuredOrigin);
+  }
+  if (!isRecord(body) || typeof body.action !== "string") {
+    return json(400, { error: "Invalid request" }, configuredOrigin);
+  }
 
     if (body.action === "create-upload-intent") {
       if (!isRecord(body.source) || !isRecord(body.file)) {
