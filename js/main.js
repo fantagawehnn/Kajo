@@ -10,6 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
+import { summarizeHealthDocumentation } from './health-calculations.js?v=1';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -146,17 +147,46 @@ function openCoach() {
 function renderHealthAnalysis() {
     const list = document.getElementById('health-event-list');
     const count = document.getElementById('health-event-count');
-    const status = document.getElementById('health-availability-status');
+    const metrics = document.getElementById('health-documentation-metrics');
     if (!list) return;
+
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const to = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const start = new Date(today);
+    start.setDate(start.getDate() - 89);
+    const from = start.getFullYear() + '-' + String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
+    const summary = summarizeHealthDocumentation(
+        state.healthLogs,
+        state.rawActivities,
+        state.plannedActivities,
+        from,
+        to
+    );
+
     const entries = Object.entries(state.healthLogs || {})
-        .filter(([, value]) => value && (value.status === 'sick' || value.status === 'injured'))
+        .filter(([date, value]) => date <= to && value && (value.status === 'sick' || value.status === 'injured'))
         .sort(([a], [b]) => b.localeCompare(a));
-    if (count) count.textContent = entries.length ? String(entries.length) + ' dokumentierte Ereignisse' : 'Keine Einträge';
+    if (count) count.textContent = entries.length ? String(entries.length) + ' dokumentierte Gesundheitstage' : 'Keine Einträge';
+    if (metrics && summary) {
+        const card = (label, value, detail = '') =>
+            '<div class="kajo-insight-metric"><span>' + label + '</span><strong>' + value + '</strong>' +
+            (detail ? '<small>' + detail + '</small>' : '') + '</div>';
+        metrics.innerHTML = '<div class="kajo-insight-grid">' +
+            card('Krankheitstage · 90 Tage', summary.sickDays) +
+            card('Verletzungstage · 90 Tage', summary.injuredDays) +
+            card('Aktivitäten an Krankheitstagen', summary.activitiesOnSickDays) +
+            card('Aktivitäten an Verletzungstagen', summary.activitiesOnInjuredDays) +
+            '</div><p class="kajo-insight-note">Geplante Tage ohne erfasste Aktivität: Krankheit ' +
+            summary.plannedSickDaysWithoutActivity + ' · Verletzung ' + summary.plannedInjuredDaysWithoutActivity +
+            '. Das sind keine bestätigten Trainingsausfälle; Einheiten können verschoben, abgesagt oder unvollständig dokumentiert sein. ' +
+            'Trainingsverfügbarkeit ist noch nicht berechenbar, weil gesunde Tage und Ausfallgründe nicht systematisch erfasst werden.</p>';
+    }
     list.replaceChildren();
     if (!entries.length) {
         const empty = document.createElement('p');
         empty.className = 'text-xs text-slate-500';
-        empty.textContent = 'Noch keine Krankheits- oder Verletzungsereignisse dokumentiert.';
+        empty.textContent = 'Noch keine Krankheits- oder Verletzungstage dokumentiert.';
         list.appendChild(empty);
     } else {
         entries.forEach(([date, value]) => {
@@ -172,7 +202,6 @@ function renderHealthAnalysis() {
             list.appendChild(row);
         });
     }
-    if (status) status.textContent = 'Noch nicht berechenbar – eine vollständige Verknüpfung von Gesundheits- und Planungsdaten für den betrachteten Zeitraum ist nicht nachgewiesen.';
 }
 
 function switchTab(requestedTab) {
