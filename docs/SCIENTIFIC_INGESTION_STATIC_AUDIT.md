@@ -74,3 +74,12 @@ Der Upload-Endpunkt erzeugt privilegiert Metadaten über eine Service-Role-RPC. 
 4. Rate Limits und Teilfehlervertrag festlegen.
 5. DDL, RPCs, Storage-Policies und Edge Function nochmals gegen den tatsächlichen Remote-Schema- und Migrationsstand abgleichen.
 6. Erst danach eine Migration und einen kontrollierten Deployment-Plan vorbereiten.
+
+
+## 6. Ergänzung: Upload-/Cleanup-Rennen
+
+Der Claim allein kann nur neue Storage-INSERT-Autorisierungen verhindern. Er kann einen Storage-Request, dessen Policy-Prüfung bereits vor dem Claim erfolgreich war, nicht rückwirkend abbrechen. Deshalb wurde im Cleanup-RPC-Entwurf ein persistenter Quieszenz-Zeitstempel ergänzt. Nach dem ersten Claim wartet die Edge Function bis `cleanup_ready_at` (derzeit 24 Stunden) und löscht erst dann das Storage-Objekt. Lease-Reclaims verändern den ursprünglichen Quieszenz-Zeitpunkt nicht.
+
+Dies reduziert das Rennen, ist aber nur unter einer klar begrenzten Uploadmethode belastbar. Vor Aktivierung müssen maximale Laufzeit und Fortsetzbarkeit der verwendeten Supabase-Storage-Uploadmethode bestätigt werden. Unbegrenzte resumable Sessions benötigen ein separates Session-Ablauf-/Widerrufsprotokoll. Die 24 Stunden sind noch ein vorläufiger Wert und keine verifizierte Supabase-Garantie.
+
+Die Edge Function meldet noch nicht löschbereite Einträge separat als `deferred_count`; sie löscht weder Objekt noch Metadaten vor Ablauf der Quieszenz.
