@@ -1,3 +1,7 @@
+## Korrektur: Cleanup-Claim-Vertragsform
+
+Die Cleanup-Claim-RPC liefert `owner_id` zusätzlich zu `source_id` und `document_id`. Die Function prüft den Storage-Pfad gegen `owner_id/document_id/original.pdf`. `source_id` bleibt ausschließlich die ID des wissenschaftlichen Quellen-Metadatensatzes.
+
 ## Ergänzung: Serverseitiger Speicherpfad für TUS-Resume
 
 Die Action `get-document-status` gibt `storage_path` nur zusammen mit einem erfolgreich über Nutzer-ID, private Sichtbarkeit und Dokument-ID eingeschränkten Dokumentdatensatz zurück. Das Frontend darf diesen Wert nicht aus lokal gespeicherten Metadaten ableiten. Für Resume muss es den Pfad exakt mit `<auth.uid>/<document-id>/original.pdf` vergleichen und eine vorherige TUS-Session nur akzeptieren, wenn deren Bucket-, MIME- und Objektpfad-Metadaten exakt übereinstimmen.
