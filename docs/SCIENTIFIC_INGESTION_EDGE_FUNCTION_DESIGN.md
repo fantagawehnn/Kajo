@@ -230,8 +230,8 @@ Unter `supabase/functions/scientific-ingestion/index.ts` liegt jetzt ein bewusst
 - POST/OPTIONS-Handling mit konfigurierter exakter `APP_ORIGIN`; kein Wildcard-CORS.
 - JWT wird zusätzlich über `auth.getUser()` validiert; die User-ID stammt ausschließlich aus diesem Ergebnis.
 - Privilegierter Client wird nur serverseitig aus `SUPABASE_SERVICE_ROLE_KEY` erstellt.
-- `create-upload-intent` validiert Metadaten, PDF-MIME-Angabe und deklarierte Dateigröße gegen `MAX_UPLOAD_BYTES`, erzeugt UUIDs serverseitig und legt private Quelle sowie Dokument mit exaktem Storage-Pfad an.
-- Bei fehlgeschlagener Dokumentanlage wird versucht, die zuvor angelegte Quelle wieder zu entfernen.
+- `create-upload-intent` validiert Metadaten, PDF-MIME-Angabe und deklarierte Dateigröße gegen `MAX_UPLOAD_BYTES` und ruft anschließend `kajo_create_scientific_upload_intent` auf. Die RPC legt private Quelle und Dokument in einer einzigen Datenbanktransaktion an und gibt die serverseitig erzeugten IDs sowie den exakten Storage-Pfad zurück.
+- Die RPC ist als `SECURITY INVOKER` mit leerem `search_path` entworfen und soll nur für `service_role` ausführbar sein. Die Edge Function übergibt die Eigentümer-ID ausschließlich aus dem zuvor validierten `auth.getUser()`-Ergebnis. Die RPC selbst ersetzt diese JWT-Prüfung nicht.
 - `get-document-status` gibt ausschließlich das private Dokument des authentifizierten Eigentümers zurück.
 - `process-document` antwortet vorerst ausdrücklich mit HTTP 501 (`PARSER_NOT_CONFIGURED`); es wird keine unvollständige oder fingierte PDF-Verarbeitung vorgetäuscht.
 - `supabase/config.toml` setzt `verify_jwt = true` für die neue Funktion explizit.
@@ -364,6 +364,26 @@ Es wurden keine Tests ausgeführt, keine Migration angewendet, kein Bucket erste
 ## 19. Request-Vertrag der ergänzten Actions
 
 Alle Requests gehen als `POST` an die Function und benötigen einen gültigen Supabase-Bearer-Token. Die User-ID wird ausschließlich aus `auth.getUser()` abgeleitet. Es gibt kein clientseitiges `user_id`-Feld.
+
+Beispiel für die Intent-Erstellung:
+
+```json
+{
+  "action": "create-upload-intent",
+  "source": {
+    "title": "Example paper title",
+    "authors": ["Author One", "Author Two"],
+    "publication_year": 2024,
+    "doi": "10.xxxx/example",
+    "source_url": "https://example.org/paper",
+    "language": "en",
+    "publication_type": "research_article"
+  },
+  "file": { "mime_type": "application/pdf", "size_bytes": 2450000 }
+}
+```
+
+Die Function leitet `owner_id` aus dem JWT ab. Quelle und Dokument werden über die neue atomare RPC gemeinsam angelegt; der Browser erhält anschließend nur die Dokument-ID, den Bucket und den serverseitig erzeugten Objektpfad.
 
 ```json
 { "action": "confirm-upload", "document_id": "<uuid>" }
