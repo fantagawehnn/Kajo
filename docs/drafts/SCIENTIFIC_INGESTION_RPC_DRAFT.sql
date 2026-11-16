@@ -175,7 +175,7 @@ begin
 end;
 $function$;
 
--- 3. Persist one small chunk batch atomically. Duplicate retries are accepted
+-- 4. Persist one small chunk batch atomically. Duplicate retries are accepted
 --    only when the existing row has byte-for-byte identical content/metadata.
 create or replace function public.kajo_submit_scientific_chunk_batch(
     p_document_id uuid,
@@ -327,7 +327,7 @@ begin
 end;
 $function$;
 
--- 4. Finalize only when every index from 0 to expected_chunk_count - 1 exists.
+-- 5. Finalize only when every index from 0 to expected_chunk_count - 1 exists.
 --    This single transaction makes private_ready visible only after the full
 --    set has been persisted. No intermediate/partial chunks are retrievable.
 create or replace function public.kajo_complete_scientific_extraction(
