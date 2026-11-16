@@ -110,10 +110,10 @@ Feststellungen:
 - Ein gemeinsamer Supabase-Client existiert bereits. Er wird aus `js/supabase-client.js` importiert und verwendet den öffentlichen Publishable Key aus `js/supabase-config.js`.
 - Die Scientific Library ist bereits lazy-loaded. Der lokale PDF.js-PoC ist getrennt und führt keinen Upload aus.
 - Die Edge Function liefert beim Erstellen eines Upload-Intents den Bucket, den serverseitig erzeugten Objektpfad, Dokument-ID und Ablaufzeit zurück. Damit ist die notwendige Intent-Grundlage im Scaffold vorhanden.
-- Die TUS-Frontend-Bibliothek, der tatsächliche Storage-Upload und die UI-Schritte für Upload/Bestätigung sind noch nicht implementiert.
+- Das isolierte TUS-Frontend-Modul einschließlich Resume-Codepfad ist vorbereitet. Es ist nicht in die UI integriert; tatsächlicher Storage-Upload und UI-Schritte für Upload/Bestätigung sind daher weiterhin nicht verfügbar.
 - Das Repository enthält weiterhin nur Entwürfe für Tabellen/RPCs/Policies; der Bucket und die Edge Function sind nicht produktiv aktiviert. Ein Upload-Button wäre deshalb derzeit eine nicht funktionsfähige bzw. irreführende Oberfläche und wurde nicht ergänzt.
 
-**Entscheidung:** Vor dem Frontend-Code muss die TUS-Bibliothek samt fester Version und browserkompatiblem Einbindungsweg festgelegt werden. Die spätere Integration muss den bestehenden Supabase-Client wiederverwenden, die Nutzer-Session ausschließlich als Storage-Bearer-Credential weiterreichen, den Intent-Pfad unverändert übernehmen und nach TUS-Abschluss zwingend `confirm-upload` sowie eine serverseitige Statusabfrage ausführen.
+**Entscheidung:** Die TUS-Bibliothek `tus-js-client@4.3.1` und der browserkompatible Einbindungsweg sind festgelegt. Bei einer späteren UI-Integration muss der bestehende Supabase-Client wiederverwendet, die Nutzer-Session ausschließlich als Storage-Bearer-Credential weitergereicht, der Intent-Pfad unverändert übernommen und nach TUS-Abschluss zwingend `confirm-upload` sowie eine serverseitige Statusabfrage ausgeführt werden.
 
 **Grenze der Prüfung:** reine Repository-/Code-Lektüre. Keine Tests, kein Upload, keine Datenbankänderung, keine Storage-Konfiguration und kein Deployment.
 
