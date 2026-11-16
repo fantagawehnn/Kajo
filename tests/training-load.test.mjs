@@ -623,7 +623,7 @@ test('cached Edwards zone analysis remains available without raw telemetry', () 
 
 
 test('readiness calculation is independent of the dashboard and reports insufficient data', () => {
-    const result = calculateReadiness({}, [], '2026-01-10');
+    const result = calculateReadiness({}, '2026-01-10');
     assert.equal(result.score, null);
     assert.equal(result.enoughData, false);
     assert.equal(result.totalCount, 0);
