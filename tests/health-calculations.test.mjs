@@ -350,12 +350,11 @@ test('reports complete, partial and unavailable duration and load coverage per w
   const activities = [
     { id: 'a', date: '2026-11-10', duration: 60 },
     { id: 'b', date: '2026-11-11', duration: null },
-    { id: 'c', date: '2026-11-12', duration: 30 },
     { id: 'd', date: '2026-11-22', duration: 45 }
   ];
   const loads = [
     { activity: activities[0], value: 40 },
-    { activity: activities[2], value: 20 }
+    { activity: activities[2], value: 15 }
   ];
   const [result] = summarizeHealthEpisodeTrainingImpact(
     { '2026-11-15': { status: 'sick' } },
@@ -364,13 +363,16 @@ test('reports complete, partial and unavailable duration and load coverage per w
     14, loads, 'srpe', 'AU', '2026-12-31'
   );
   assert.deepEqual(result.before.durationCoverage, {
-    available: 2, total: 2, status: 'vollständig'
+    available: 1, total: 2, status: 'eingeschränkt'
   });
   assert.deepEqual(result.before.trainingLoadCoverage, {
-    available: 2, total: 2, status: 'vollständig'
+    available: 1, total: 2, status: 'eingeschränkt'
   });
   assert.deepEqual(result.after.durationCoverage, {
-    available: 2, total: 2, status: 'vollständig'
+    available: 1, total: 1, status: 'vollständig'
+  });
+  assert.deepEqual(result.after.trainingLoadCoverage, {
+    available: 1, total: 1, status: 'vollständig'
   });
   assert.deepEqual(result.after.trainingLoadCoverage, {
     available: 0, total: 1, status: 'eingeschränkt'
