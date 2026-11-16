@@ -39,12 +39,36 @@ async function readSmallJson(request: Request): Promise<unknown> {
     throw new Error("INVALID_CONTENT_TYPE");
   }
   const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
-  if (declaredLength > MAX_BODY_BYTES) throw new Error("BODY_TOO_LARGE");
-  const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
     throw new Error("BODY_TOO_LARGE");
   }
-  return JSON.parse(text);
+  if (!request.body) throw new Error("INVALID_BODY");
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_BODY_BYTES) {
+        await reader.cancel();
+        throw new Error("BODY_TOO_LARGE");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 Deno.serve(async (request) => {
