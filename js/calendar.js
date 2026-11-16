@@ -773,6 +773,10 @@ export function saveCalendarPhaseEditor(event) {
     renderYearView();
 }
 
+function calendarYearHasNumericLoad(item) {
+    return item?.load !== null && item?.load !== undefined && item?.load !== '' && Number.isFinite(Number(item.load));
+}
+
 export function renderYearView() {
     const container = document.getElementById('cal-format-year');
     if (!container) return;
@@ -814,7 +818,7 @@ export function renderYearView() {
         const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= start && date <= end && item?.cycle?.period === true);
         const elapsedDates = dates.filter(date => date <= today);
         const dayLoads = elapsedDates.map(date => timelineByDate.get(date));
-        const knownLoads = dayLoads.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+        const knownLoads = dayLoads.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && calendarYearHasNumericLoad(item));
         const loadKnown = elapsedDates.length > 0 && knownLoads.length === elapsedDates.length;
         const loadModes = [...new Set(knownLoads.map(item => item.loadMode).filter(Boolean))];
         const loadStatus = loadKnown && loadModes.length === 1 && yearLoadModeConsistent && loadModes[0] === yearTimelineModes[0]
@@ -879,7 +883,7 @@ export function renderYearView() {
     const sessions = activities.length;
     const elapsedYearDates = calendarYearDateRange(year, yearStart, today > yearEnd ? yearEnd : today);
     const annualLoadEntries = elapsedYearDates.map(date => timelineByDate.get(date));
-    const annualLoadComplete = yearLoadModeConsistent && elapsedYearDates.length > 0 && annualLoadEntries.every(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+    const annualLoadComplete = yearLoadModeConsistent && elapsedYearDates.length > 0 && annualLoadEntries.every(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && calendarYearHasNumericLoad(item));
     const annualLoadModes = [...new Set(annualLoadEntries.map(item => item?.loadMode).filter(Boolean))];
     const annualLoad = annualLoadComplete && annualLoadModes.length === 1
         ? annualLoadEntries.reduce((sum, item) => sum + Number(item.load), 0) : null;
@@ -906,7 +910,7 @@ export function renderYearView() {
         const monthEnd = toLocalDateString(monthLastDate);
         const elapsed = calendarYearDateRange(year, monthStart, monthEnd < today ? monthEnd : today);
         const entries = elapsed.map(date => timelineByDate.get(date));
-        const known = entries.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
+        const known = entries.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && calendarYearHasNumericLoad(item));
         const complete = yearLoadModeConsistent && elapsed.length > 0 && known.length === elapsed.length;
         const modeSet = [...new Set(known.map(item => item.loadMode).filter(Boolean))];
         const value = complete && modeSet.length === 1 && modeSet[0] === yearTimelineModes[0] ? known.reduce((sum, item) => sum + Number(item.load), 0) : null;
