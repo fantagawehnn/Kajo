@@ -12,6 +12,7 @@
 - Unvollständige Dauern werden kenntlich gemacht; `totalMinutes` bleibt dann `null`. `knownMinutes` ist ausdrücklich nur die Summe der Aktivitäten mit bekannter Dauer.
 - Belastungsdaten werden nach Load-Modell getrennt gehalten. Fehlende oder gemischte Load-Daten werden nicht zu einem gemeinsamen Wert zusammengefasst.
 - Check-in-Mittelwerte enthalten jeweils die Anzahl der tatsächlich vorhandenen Messwerte. Es wird kein Readiness-Score erzeugt.
+- Dokumentierte VO₂max-Werte werden über bis zu 180 Tage für Performance-Fragen deskriptiv verglichen; Messanzahl, erster und letzter Wert sowie Veränderung werden ausgewiesen, ohne daraus eine gesicherte physiologische Anpassung abzuleiten.
 - Geplante Einheiten werden als Planung und nicht als absolviertes Training ausgegeben.
 - Saisonfragen mit explizitem Saisonbezug bzw. Jahresangabe wählen den vollständigen verfügbaren Historienmodus.
 
