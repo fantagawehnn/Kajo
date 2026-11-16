@@ -114,9 +114,10 @@ async function diagnoseGarminCloudTelemetry() {
 
     const summarize = (label, telemetry) => {
         if (!telemetry || typeof telemetry !== 'object') return [label + ': kein Telemetrieobjekt'];
+        const act = { ...activity, garminTelemetry: telemetry };
         const metricSeries = telemetry.metricSeries && typeof telemetry.metricSeries === 'object'
             ? telemetry.metricSeries : {};
-        const series = getGarminHeartRateSeries({ ...activity, garminTelemetry: telemetry });
+        const series = getGarminHeartRateSeries(act);
         const axis = series?.time
             || (Array.isArray(telemetry.metricSeriesTime) ? telemetry.metricSeriesTime : null)
             || (Array.isArray(telemetry.time) ? telemetry.time : null);
@@ -143,7 +144,7 @@ async function diagnoseGarminCloudTelemetry() {
         const hrCount = Array.isArray(series?.hr) ? series.hr.length : 0;
         const validHr = hrCount ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
             && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length : 0;
-        const load = calculateGarminZoneLoad({ ...activity, garminTelemetry: telemetry }, state.settings, state.profile, state.dailyCheckins);
+        const load = calculateGarminZoneLoad(act, state.settings, state.profile, state.dailyCheckins);
         const timeUnitAssessment = secondsConfirmed
             ? 'Sekunden bestätigt: Garmin-Zeitstempel wurden beim Import durch 1000 geteilt; Zeitachsenende stimmt mit durationSeconds überein'
             : 'nicht bestätigt: Importquelle und durationSeconds-Abgleich reichen für diesen Datensatz nicht aus';
