@@ -139,3 +139,44 @@ Die Funktion wurde nicht deployed. Die Variable wurde nicht gesetzt. Die SQL-RPC
 Vor Aktivierung muss im Zielprojekt geklärt werden, wie die verwendete Supabase-Storage-Version `remove([path])` behandelt, wenn das Objekt bereits nicht existiert. Der aktuelle Scaffold finalisiert nur dann, wenn der Storage-Aufruf ohne Fehler zurückkehrt. Ein als Fehler gemeldetes Nichtvorhandensein wird daher vorerst wie jeder andere Löschfehler behandelt: keine Metadatenlöschung, späterer Retry bzw. manuelle Prüfung. Es wird nicht pauschal jeder Storage-Fehler als „Objekt fehlt“ interpretiert.
 
 Die Lease wird vor Beginn jeder Objektlöschung geprüft. Läuft sie während eines Storage-Aufrufs ab, verhindert die Finalisierungs-RPC eine Finalisierung mit abgelaufenem oder ersetztem Claim-Token. In diesem Fall kann das Objekt bereits gelöscht sein, während die Metadaten bestehen bleiben; der spätere Retry muss diesen Zustand sicher auflösen können. Dieses Wiederanlaufverhalten ist vor einem produktiven Betrieb anhand des tatsächlichen Storage-Verhaltens zu verifizieren.
+
+
+## 10. Statische Prüfung der Cleanup-Ausführung (16.11.2026)
+
+Die aktuelle Edge-Function-Fassung wurde gegen die Claim-/Finalisierungs-RPC und die Storage-Policy geprüft. Die Prüfung ist statisch; sie ersetzt weder einen Storage-Integrationstest noch eine Datenbankmigration.
+
+### Authentifizierung: aktueller Stand und notwendige Trennung
+
+Die Action `cleanup-expired-uploads` liegt derzeit innerhalb von `scientific-ingestion`. Sie akzeptiert als internen Aufruf den exakten Service-Role-Bearer und weist normale Nutzer-JWTs für diese Action ab. Das ist nicht öffentlich nutzbar, solange der Service-Role-Key ausschließlich serverseitig gespeichert bleibt. Der Key ist jedoch ein umfassendes privilegiertes Credential und sollte nicht zugleich als eigenständiges Scheduler-/Trigger-Secret verwendet werden.
+
+Vor Aktivierung ist deshalb eine separate interne Cleanup-Function mit eigenem, rotierbarem Aufruf-Secret vorzuziehen. Der Service-Role-Key bleibt ausschließlich als serverseitiges Datenbank-/Storage-Credential in dieser Function. Die Cleanup-Function darf keine Browser-CORS-Freigabe benötigen. Eine bloße CORS-Prüfung ist keine Authentifizierung.
+
+### Storage-Löschung: bewusst fail-closed
+
+Die aktuelle Action finalisiert Metadaten nur, wenn `storage.remove([path])` ohne Fehler zurückkehrt. Das ist sicherer als einen beliebigen 404-Fehler als „Objekt fehlt“ zu behandeln.
+
+Die aktuelle Supabase-Dokumentation beschreibt `remove` als Löschoperation, die die gelöschten File-Objekte zurückgibt, dokumentiert aber nicht eindeutig den Rückgabefall für einen bereits fehlenden Objektpfad. Die Storage-Fehlerdokumentation unterscheidet unter anderem `NoSuchKey` und `NoSuchBucket`, beide mit HTTP 404. Daher darf nicht pauschal jeder 404 als idempotenter Erfolg interpretiert werden. Bis ein konkretes Verhalten mit der tatsächlich eingesetzten Storage-Version verifiziert ist, gilt:
+- erfolgreicher `remove`-Aufruf: Finalisierung darf versucht werden;
+- jeder `remove`-Fehler: keine Metadatenlöschung, Claim nach Lease-Ablauf erneut bearbeitbar;
+- fehlendes Bucket, fehlende Berechtigung und sonstige Storage-Fehler bleiben Fehler und müssen sichtbar bleiben.
+
+### Lease und Batchlauf
+
+Die RPC vergibt eine 15-Minuten-Lease pro Dokument. Die Function verarbeitet die beanspruchten Objekte derzeit sequenziell. Bei einer größeren Batchgröße kann die Lease einzelner späterer Einträge während der Verarbeitung ablaufen. Die Finalisierungs-RPC verhindert dann zwar eine veraltete Metadatenlöschung, aber ein bereits gelöschtes Storage-Objekt kann bis zum nächsten Claim-Lauf mit vorhandenen Metadaten zurückbleiben.
+
+Vor Aktivierung muss daher eine der folgenden Varianten verbindlich gewählt werden:
+- kleine Batchgröße passend zur gemessenen Laufzeit;
+- Lease-Erneuerung je Dokument vor der Storage-Operation;
+- oder parallele, begrenzte Verarbeitung mit einer konservativ dimensionierten Lease.
+
+Eine automatische Lease-Verlängerung ist noch nicht implementiert.
+
+### Upload-/Cleanup-Rennen
+
+Die Storage-INSERT-Policy prüft `upload_cleanup_claim_token IS NULL`, und `confirm-upload` prüft denselben Zustand beim Statuswechsel. Das schützt die normalen sequenziellen Abläufe. Die genaue Konkurrenz zwischen einem bereits laufenden Storage-Upload und einem gleichzeitig gesetzten Cleanup-Claim ist jedoch durch diese statische Prüfung allein nicht abschließend bewiesen. Vor Aktivierung muss geklärt werden, ob die Storage-Objektanlage und die Policy-Prüfung mit dem Claim-Update ausreichend serialisiert sind. Andernfalls ist ein zusätzliches Upload-Lease-/Abschlussprotokoll nötig, damit kein bereits autorisierter Upload erst nach der Cleanup-Löschung ein Objekt hinterlässt.
+
+### Teilfehler und Monitoring
+
+Die Action gibt bei teilweisen Fehlern derzeit HTTP 200 mit `retry_required_count` zurück. Ein späterer Scheduler muss deshalb den Antwortkörper auswerten und darf HTTP 200 nicht allein als vollständig erfolgreiche Bereinigung interpretieren. Alternativ kann der Endpoint bei Teilfehlern einen expliziten Fehlerstatus liefern; diese Entscheidung ist vor Einrichtung eines Schedulers zu treffen.
+
+**Ergebnis:** Der aktuelle Scaffold ist fail-closed für Storage- und Finalisierungsfehler. Er ist noch nicht aktivierungsreif. Offen sind insbesondere getrennte Trigger-Authentifizierung, verifiziertes Verhalten bei fehlendem Objekt, Lease-Strategie, Konkurrenz mit laufenden Uploads und Scheduler-Fehlerauswertung.
