@@ -449,3 +449,12 @@ Wichtig: Die Statusabfrage allein setzt keine Extraktion fort. Eine automatische
 ## 22. Frontend-Grenzen vor der PDF-Extraktion
 
 Die lokale PDF.js-Vorschau prüft jetzt dieselben maximalen Extraktionswerte wie die vorbereitete Edge Function und RPC: 10.000 Seiten, 20.000 Chunks und 20 Millionen extrahierte Zeichen. Die Prüfung erfolgt bereits im Browser während der Extraktion, sodass offensichtlich nicht persistierbare Dokumente nicht erst nach einem Upload abgewiesen würden. Die Grenzwerte sind technische MVP-Limits, keine Aussage über eine allgemein geeignete wissenschaftliche PDF-Größe. Eine maximale Dateigröße bleibt zusätzlich über `MAX_UPLOAD_BYTES` serverseitig festzulegen und muss vor Aktivierung mit dem Storage-Bucket abgestimmt werden.
+
+
+## 23. Storage-Policy-Review und Aktivierungsblocker
+
+Der Storage-Entwurf wurde statisch gegen den Upload-Intent abgeglichen. Die INSERT-Policy bindet den Upload an einen bereits angelegten privaten Datensatz mit `pending`-Status, Eigentümer `auth.uid()`, PDF-MIME-Typ und positiver deklarierter Dateigröße. Zusätzlich muss der Objektname dem kanonischen Muster `<owner_id>/<document_id>/original.pdf` entsprechen und exakt dem in der Dokumentzeile gespeicherten `storage_path` entsprechen. Es gibt bewusst keine Browser-Policies für SELECT, UPDATE oder DELETE. Der Upload muss `upsert: false` verwenden.
+
+Die Policy schützt nicht vor einer manipulierten Datei oder einer falschen tatsächlichen Dateigröße. Dafür bleibt `confirm-upload` zuständig, das Storage-Metadaten und die PDF-Signatur prüft. Die Upload-Policy setzt außerdem voraus, dass die Authenticated-SELECT-Policy auf `scientific_documents` den eigenen privaten `pending`-Datensatz sichtbar macht; dies ist im Phase-1-DDL-Entwurf vorgesehen. Vor einer Migration muss geprüft werden, dass im Zielprojekt keine bereits vorhandenen Storage-Policies diese Beschränkung erweitern.
+
+**Noch nicht ausreichend für Aktivierung:** Es gibt noch kein Ablaufdatum für Upload-Intents, kein serverseitiges Rate-Limit und keine Bereinigungsroutine für verwaiste `pending`-Datensätze bzw. Storage-Objekte. Der Bucket muss mit einem expliziten positiven Größenlimit und ausschließlich benötigtem PDF-MIME-Typ angelegt werden. Der RPC-Checkpoint-Entwurf ergänzt die Spalten, die die Statusabfrage und Extraktionsaktionen erwarten; er muss nach dem Phase-1-DDL und vor dem Storage-/Edge-Function-Rollout in einer kontrollierten Migration angewendet werden. Diese Reihenfolge ist eine notwendige Abhängigkeit, keine bereits erfolgte Aktivierung.
