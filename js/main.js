@@ -215,7 +215,8 @@ function renderHealthAnalysis() {
                 item.startDate === episode.startDate && item.endDate === episode.endDate && item.status === episode.status
             );
             if (impact) {
-                const formatHours = minutes => (minutes / 60).toLocaleString('de-DE', {
+                const formatHours = minutes => minutes === null || minutes === undefined || !Number.isFinite(Number(minutes))
+                    ? '—' : (minutes / 60).toLocaleString('de-DE', {
                     minimumFractionDigits: 1, maximumFractionDigits: 1
                 }) + ' h';
                 const periodLine = (title, period) => {
@@ -230,7 +231,7 @@ function renderHealthAnalysis() {
                     + periodLine('Davor', impact.before)
                     + periodLine('Währenddessen', impact.during)
                     + periodLine('Danach', impact.after)
-                    + '<div>Durchschnitt pro Kalendertag: '
+                    + '<div>Durchschnitt pro berücksichtigtem Kalendertag: '
                     + formatHours(impact.before.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.during.averageMinutesPerCalendarDay) + ' / '
                     + formatHours(impact.after.averageMinutesPerCalendarDay)
