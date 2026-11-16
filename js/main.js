@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=7';
+import { summarizeHealthDocumentation, summarizeHealthEpisodes, summarizeHealthEpisodeTrainingImpact } from './health-calculations.js?v=8';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -266,7 +266,7 @@ function renderHealthAnalysis() {
                         : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
                             + ' (' + coverageText(window.trainingLoadCoverage) + ')').join(' / ')
                     + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
-                    + '</div><div>Identische Aktivitäts-IDs mit gleichem Datum und gleicher Startzeit werden nur einmal gezählt; gleiche IDs mit abweichender Zeitzuordnung bleiben getrennt. Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
+                    + '</div><div>Identische Aktivitäts-IDs mit gleichem Datum und gleicher Startzeit werden nur einmal gezählt; gleiche IDs mit abweichender Zeitzuordnung bleiben getrennt. Load-Werte ohne eindeutig passende Aktivität werden ausgeschlossen. Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
                 row.classList.remove('items-center');
                 row.classList.add('flex-col', 'items-stretch');
                 row.appendChild(comparison);
