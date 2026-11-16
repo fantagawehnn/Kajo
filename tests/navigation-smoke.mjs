@@ -411,3 +411,11 @@ assert.ok(main.includes('openRaceModalForCreate, editRace,'), 'competition creat
 
 assert.ok(calendar.includes('window.openRaceModalForCreate?.()'), 'calendar opens a clean competition form before applying the selected date');
 assert.ok(calendar.includes("if (input) input.value = date;"), 'calendar-selected date is retained when creating a competition');
+
+// Season phase editing validates real calendar dates, not just the YYYY-MM-DD shape.
+assert.ok(calendar.includes('function isValidCalendarPhaseDate(value)'), 'season phases use a dedicated calendar-date validator');
+assert.ok(calendar.includes("parsed.toISOString().slice(0, 10) === value"), 'season phase dates must round-trip to the same real calendar day');
+assert.ok(calendar.includes('!isValidCalendarPhaseDate(start) || !isValidCalendarPhaseDate(end) || start > end'), 'season phase saving rejects impossible dates and reversed ranges');
+assert.ok(calendar.includes('if (existing) Object.assign(existing, updated)'), 'editing a confirmed season phase updates its existing record');
+assert.ok(calendar.includes("phases.push(updated)"), 'editing a suggestion creates one confirmed phase record');
+
