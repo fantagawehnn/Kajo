@@ -8599,3 +8599,9 @@ html[data-theme="light"] .activity-note-editor { color:#182431; background:#fff;
  .kajo-load-volume-summary strong{font-size:1.05rem}.kajo-load-chart-caption{align-items:flex-start;flex-wrap:wrap}
  .kajo-training-load-rings{gap:3px}.kajo-load-ring{width:clamp(62px,18vw,78px)}
 }
+
+
+/* Backup preview must sit above the fixed mobile header and navigation. */
+#backup-preview-modal:not(.hidden) {
+  z-index: 2147483002 !important;
+}
