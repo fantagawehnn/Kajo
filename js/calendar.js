@@ -78,7 +78,7 @@ function dayActivitySummary(dateStr){
 function dayNumber(value,min,max){if(value===''||value===null||value===undefined)return null;const n=Number(value);return Number.isFinite(n)&&n>=min&&n<=max?n:null;}
 function selfMonitoringSliderMarkup(label,key,value,inverted=false){
  const v=Number.isFinite(Number(value))?Math.min(5,Math.max(1,Number(value))):3;
- return '<label class="kajo-selfmonitoring-question"><span class="flex items-center justify-between gap-2"><span class="text-sm font-medium text-slate-200">'+label+'</span><output id="day-'+key+'-value" class="text-xs font-semibold text-cyan-300">'+(value==null?'—':v+' / 5')+'</output></span><input id="day-'+key+'" class="kajo-color-slider '+(inverted?'kajo-slider-negative':'kajo-slider-positive')+'" type="range" min="1" max="5" step="1" value="'+v+'" data-touched="'+(value==null?'false':'true')+'" oninput="updateSelfMonitoringSlider(this)"><span class="flex justify-between text-[10px] text-slate-500"><span>'+(inverted?'Günstig':'Sehr schlecht')+'</span><span>'+(inverted?'Sehr stark':'Sehr gut')+'</span></span></label>';
+ return '<label class="kajo-selfmonitoring-question"><span class="flex items-center justify-between gap-2"><span class="text-sm font-medium text-slate-200">'+label+'</span><output id="day-'+key+'-value" class="text-xs font-semibold text-cyan-300">'+(value==null?'—':v+' / 5')+'</output></span><input id="day-'+key+'" class="kajo-color-slider '+(inverted?'kajo-slider-negative':'kajo-slider-positive')+'" type="range" min="1" max="5" step="1" value="'+v+'" data-touched="'+(value==null?'false':'true')+'" oninput="updateSelfMonitoringSlider(this)"></label>';
 }
 export function updateSelfMonitoringSlider(input){
  if(!input)return;
