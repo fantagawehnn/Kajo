@@ -18,7 +18,7 @@ import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=5';
-import { renderAnalysisInsights } from './analysis-insights.js?v=2';
+import { renderAnalysisInsights } from './analysis-insights.js?v=3';
 import { renderAnalysisPageUI } from './analysis-ui.js?v=5';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=6';
