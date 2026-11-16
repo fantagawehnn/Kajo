@@ -385,9 +385,9 @@ export function openCalendarTrainingCreate() {
 }
 export function openCalendarRaceCreate() {
     const date = (['day', 'month'].includes(state.activeCalendarFormat) && state.selectedCalendarDay) ? state.selectedCalendarDay : toLocalDateString(state.currentCalendarDate);
+    window.openRaceModalForCreate?.();
     const input = document.getElementById('race-date');
     if (input) input.value = date;
-    window.toggleRaceModal?.();
 }
 
 
