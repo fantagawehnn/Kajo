@@ -277,14 +277,20 @@ Der Browser darf ausschließlich per INSERT in den serverseitig vorbereiteten Ob
 Ein Upload-Intent ist ab seiner serverseitigen Erstellung 24 Stunden gültig. Nach Ablauf verweigert die Storage-Policy weitere Uploads; confirm-upload lehnt eine Bestätigung ebenfalls ab. Bereits bestätigte Dokumente bleiben unabhängig davon für die Extraktion verfügbar. Die 24 Stunden sind ein vorläufiger MVP-Wert und vor Aktivierung anhand der erwarteten Dateigrößen und Uploadzeiten zu bestätigen. Abgelaufene Datensätze und Objekte werden nicht automatisch gelöscht.
 
 
-## 26. Uploadmethode noch nicht festgelegt – wichtiger Status
+## 26. Festlegung des bevorzugten Uploadwegs: TUS
 
-Die aktuelle Scientific-Library-Oberfläche extrahiert PDF-Dateien lokal mit PDF.js. Es findet noch kein Upload in Supabase Storage statt. Die Edge-Function-Actions für Upload-Intent und Uploadbestätigung sind vorbereitet, werden vom Frontend aber nicht aufgerufen. Daher existiert aktuell noch kein produktiver Uploadpfad und auch keine konkrete Uploadmethode, deren maximale Laufzeit wir als Grundlage für die Cleanup-Quieszenz verwenden könnten.
+Die aktuelle Scientific-Library-Oberfläche extrahiert PDF-Dateien weiterhin ausschließlich lokal mit PDF.js. Es findet noch kein Upload in Supabase Storage statt. Die Edge-Function-Actions für Upload-Intent und Uploadbestätigung sind vorbereitet, werden vom Frontend aber nicht aufgerufen.
 
-Vor Implementierung des Uploads müssen wir entscheiden:
-- Standard-Upload oder TUS/resumable Upload;
-- maximale Dateigröße und dazu passendes Bucket-Limit;
-- Verhalten bei Abbruch, Browser-Neustart und Netzwerkunterbrechung;
-- Ablauf und Widerruf etwaiger resumable Sessions.
+Für die spätere Umsetzung wird **TUS (Supabase Resumable Upload)** als bevorzugter Uploadweg festgelegt. Supabase empfiehlt TUS insbesondere für Dateien über 6 MB und bei instabilen Verbindungen. Die von Supabase ausgegebene Upload-URL ist laut aktueller Dokumentation bis zu 24 Stunden gültig. Nach Ablauf muss ein neuer Uploadvorgang gestartet werden. Damit ist TUS für wissenschaftliche PDFs robuster als ein ausschließlich einmaliger Standard-Upload. (Siehe Supabase-Dokumentation: Standard Uploads und Resumable Uploads.)
 
-Bis zu dieser Entscheidung ist das 24-Stunden-Fenster nur ein vorläufiger Schutzwert. Die Cleanup-Finalisierungs-RPC prüft nun zusätzlich selbst, dass die Quieszenz abgelaufen ist. Das verhindert ein versehentliches vorzeitiges Löschen über einen direkten RPC-Aufruf, ersetzt aber kein Upload-Session-Protokoll.
+Die Entscheidung legt noch keine konkrete maximale Dateigröße fest. Diese muss unter dem globalen Uploadlimit des tatsächlichen Supabase-Projekts liegen und zusätzlich als Bucket-Limit sowie in MAX_UPLOAD_BYTES durchgesetzt werden. Das Supabase-Free-Limit von derzeit 50 MB darf nicht ungeprüft auf das Projekt übertragen werden, da der tatsächliche Tarif hier nicht bestätigt ist.
+
+Für das Cleanup gilt: Der 24-Stunden-Upload-Intent begrenzt, wann eine neue Upload-Session begonnen werden darf. Eine bereits erzeugte TUS-Upload-URL kann laut Supabase bis zu 24 Stunden gültig bleiben. Deshalb bleibt die zusätzliche siebentägige Karenzzeit nach Ablauf des Intents bestehen; die separate 24-Stunden-Quieszenz nach dem ersten Cleanup-Claim ist eine weitere Sicherheitsreserve. Diese Zeitwerte sind Designannahmen und müssen vor Aktivierung mit der konkret verwendeten Supabase-Storage-Konfiguration abgeglichen werden.
+
+Vor Implementierung müssen noch festgelegt werden:
+- konkretes MAX_UPLOAD_BYTES und passendes Bucket-Limit;
+- TUS-Endpunkt und verwendete Clientbibliothek/Version;
+- Behandlung abgelaufener TUS-URLs und Wiederaufnahme nach erneuter Dateiauswahl;
+- Umgang mit parallelen Uploadversuchen und nicht abgeschlossenen Sessions.
+
+Die Cleanup-Finalisierungs-RPC prüft die Quieszenz inzwischen zusätzlich selbst. Weder Upload noch Cleanup sind produktiv aktiviert.
