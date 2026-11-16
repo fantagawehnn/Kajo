@@ -310,6 +310,133 @@ export function saveCheckin() {
     refreshAll();
 }
 
+
+// Eigenständige Periodenverwaltung in der Gesundheitsdaten-Ansicht.
+let editingPeriodRange = null;
+function getManagedPeriodRanges() {
+    const days = Object.keys(state.dailyCheckins || {})
+        .filter(date => state.dailyCheckins[date]?.cycle?.period === true)
+        .sort();
+    const ranges = [];
+    for (const date of days) {
+        const last = ranges[ranges.length - 1];
+        const next = last ? new Date(last.end + 'T12:00:00') : null;
+        if (last && next) {
+            next.setDate(next.getDate() + 1);
+            if (toLocalDateString(next) === date) { last.end = date; last.days++; continue; }
+        }
+        ranges.push({ start: date, end: date, days: 1 });
+    }
+    return ranges.sort((a, b) => b.start.localeCompare(a.start));
+}
+function formatPeriodDate(date) {
+    return new Date(date + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+export function renderManagedPeriods() {
+    const list = document.getElementById('kajo-period-list');
+    if (!list) return;
+    const today = toLocalDateString();
+    ['kajo-period-start','kajo-period-end'].forEach(id => { const input=document.getElementById(id); if(input) input.max=today; });
+    const ranges = getManagedPeriodRanges();
+    const count = document.getElementById('kajo-period-count');
+    if (count) count.textContent = ranges.length + (ranges.length === 1 ? ' Zeitraum' : ' Zeiträume');
+    list.replaceChildren();
+    if (!ranges.length) {
+        const empty=document.createElement('p'); empty.className='kajo-period-empty'; empty.textContent='Noch keine Periodentage eingetragen.'; list.appendChild(empty); return;
+    }
+    ranges.forEach(range => {
+        const card=document.createElement('article'); card.className='kajo-period-entry';
+        const copy=document.createElement('div'); copy.className='kajo-period-entry-copy';
+        const title=document.createElement('strong'); title.textContent=range.start===range.end?formatPeriodDate(range.start):formatPeriodDate(range.start)+' – '+formatPeriodDate(range.end);
+        const meta=document.createElement('span'); meta.textContent=range.days+' '+(range.days===1?'Tag':'Tage');
+        copy.append(title,meta);
+        const edit=document.createElement('button'); edit.type='button'; edit.className='kajo-period-edit'; edit.textContent='Bearbeiten'; edit.addEventListener('click',()=>editPeriodRange(range.start,range.end));
+        card.append(copy,edit); list.appendChild(card);
+    });
+}
+export function editPeriodRange(start,end) {
+    editingPeriodRange={start,end};
+    document.getElementById('kajo-period-start').value=start;
+    document.getElementById('kajo-period-end').value=end;
+    document.getElementById('kajo-period-form-title').textContent='Zeitraum bearbeiten';
+    document.getElementById('kajo-period-form-hint').textContent='Passe Beginn oder Ende an oder entferne den Zeitraum vollständig.';
+    document.getElementById('kajo-period-cancel').classList.remove('hidden');
+    document.getElementById('kajo-period-delete').classList.remove('hidden');
+    document.getElementById('kajo-period-feedback').textContent='';
+    document.getElementById('kajo-period-start').scrollIntoView({behavior:'smooth',block:'center'});
+}
+export function cancelPeriodEdit() {
+    editingPeriodRange=null;
+    document.getElementById('kajo-period-start').value='';
+    document.getElementById('kajo-period-end').value='';
+    document.getElementById('kajo-period-form-title').textContent='Periode eintragen';
+    document.getElementById('kajo-period-form-hint').textContent='Wähle den ersten und letzten Periodentag.';
+    document.getElementById('kajo-period-cancel').classList.add('hidden');
+    document.getElementById('kajo-period-delete').classList.add('hidden');
+    document.getElementById('kajo-period-feedback').textContent='';
+}
+function setPeriodFlag(date,enabled) {
+    const entry=state.dailyCheckins[date];
+    if (enabled) {
+        const next={...(entry||{})}; next.cycle={...(next.cycle||{}),period:true}; state.dailyCheckins[date]=next;
+    } else if(entry?.cycle) {
+        const cycle={...entry.cycle}; delete cycle.period;
+        if(Object.keys(cycle).length) entry.cycle=cycle; else delete entry.cycle;
+        if(Object.keys(entry).length) state.dailyCheckins[date]=entry; else delete state.dailyCheckins[date];
+    }
+}
+function applyPeriodRange(start,end,enabled) {
+    const date=new Date(start+'T12:00:00'),last=new Date(end+'T12:00:00');
+    while(date<=last){setPeriodFlag(toLocalDateString(date),enabled);date.setDate(date.getDate()+1);}
+}
+export function deleteManagedPeriod() {
+    if(!editingPeriodRange)return;
+    const range={...editingPeriodRange};
+    const snapshot={};
+    const cursor=new Date(range.start+'T12:00:00'),last=new Date(range.end+'T12:00:00');
+    while(cursor<=last){
+        const date=toLocalDateString(cursor),entry=state.dailyCheckins[date];
+        snapshot[date]=entry?{...entry,cycle:entry.cycle?{...entry.cycle}:undefined}:null;
+        cursor.setDate(cursor.getDate()+1);
+    }
+    applyPeriodRange(range.start,range.end,false);
+    if(saveDataToLocalStorage()!==true){
+        Object.entries(snapshot).forEach(([date,entry])=>{if(entry)state.dailyCheckins[date]=entry;else delete state.dailyCheckins[date];});
+        document.getElementById('kajo-period-feedback').textContent='Der Zeitraum konnte nicht gelöscht werden. Bitte prüfe deine Anmeldung.';
+        return;
+    }
+    cancelPeriodEdit();
+    renderManagedPeriods();
+    refreshAll();
+}
+export function saveManagedPeriod() {
+    const start=document.getElementById('kajo-period-start').value;
+    const end=document.getElementById('kajo-period-end').value;
+    const today=toLocalDateString(), feedback=document.getElementById('kajo-period-feedback');
+    if(!start||!end||start>end||end>today){feedback.textContent='Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';return;}
+    const previous=editingPeriodRange;
+    const snapshot={};
+    const snapshotStart=previous&&previous.start<start?previous.start:start;
+    const snapshotEnd=previous&&previous.end>end?previous.end:end;
+    const cursor=new Date(snapshotStart+'T12:00:00'),last=new Date(snapshotEnd+'T12:00:00');
+    while(cursor<=last){
+        const date=toLocalDateString(cursor),entry=state.dailyCheckins[date];
+        snapshot[date]=entry?{...entry,cycle:entry.cycle?{...entry.cycle}:undefined}:null;
+        cursor.setDate(cursor.getDate()+1);
+    }
+    if(previous) applyPeriodRange(previous.start,previous.end,false);
+    applyPeriodRange(start,end,true);
+    const saved=saveDataToLocalStorage();
+    if(saved!==true){
+        Object.entries(snapshot).forEach(([date,entry])=>{if(entry)state.dailyCheckins[date]=entry;else delete state.dailyCheckins[date];});
+        feedback.textContent='Die Änderungen konnten nicht gespeichert werden. Bitte prüfe deine Anmeldung und versuche es erneut.';
+        return;
+    }
+    cancelPeriodEdit();
+    renderManagedPeriods();
+    refreshAll();
+}
+
 export function openHealthLogModal() { document.getElementById('health-modal').classList.remove('hidden'); }
 
 export function openHealthLogForDate(dStr) {
