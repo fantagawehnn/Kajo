@@ -94,6 +94,9 @@ export function openDayEditor(dateStr){
  document.getElementById('day-activities-list').innerHTML=dayActivitySummary(dateStr);
  document.getElementById('day-health-status').value=h.status||'healthy';
  document.getElementById('day-health-diagnosis').value=h.diagnosis||'';
+ const impact=document.getElementById('day-health-training-impact');
+ if(impact)impact.value=h.trainingAvailability||'';
+ toggleDayHealthImpact();
  const subj=[['Schlafqualität','sleepQuality'],['Muskelkater','soreness'],['Müdigkeit','fatigue'],['Motivation','motivation'],['Stress','stress']];
  document.getElementById('day-subjective-fields').innerHTML=subj.map(([l,k])=>'<label class="text-xs text-slate-400">'+l+'<input id="day-'+k+'" type="number" min="1" max="5" value="'+(r[k]??'')+'" placeholder="—" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>').join('');
  const wear=[['HRV (ms)','hrv',1,300],['RHF (bpm)','rhr',20,250],['Schlafdauer (h)','sleepDuration',0.1,24],['Schlafscore','sleepScore',0,100],['Atemfrequenz (Atemzüge/min)','respiration',4,60],['Körpergewicht (kg)','weight',20,300]];
@@ -112,6 +115,10 @@ export function openDayEditor(dateStr){
  summary.innerHTML='<div class="text-xs font-bold text-rose-300">'+escapeHtml(info.label)+'</div><div class="text-[10px] text-slate-500 mt-1">'+escapeHtml(info.cycleDays||'')+'</div><p class="text-xs text-slate-300 mt-2">'+escapeHtml(info.recommendation)+'</p><p class="text-[10px] text-slate-500 mt-2">Kalenderbasierte Schätzung, keine hormonell bestätigte Phase. Empfehlung nach Beschwerden und Tagesform.</p>';
  document.getElementById('day-detail-modal').classList.remove('hidden');
 }
+export function toggleDayHealthImpact(){
+ const status=document.getElementById('day-health-status')?.value||'healthy';
+ document.getElementById('day-health-impact-fields')?.classList.toggle('hidden',status==='healthy');
+}
 export function toggleDayCycleFields(){const yes=document.getElementById('day-period')?.checked===true;document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!yes);}
 export function closeDayEditor(){document.getElementById('day-detail-modal')?.classList.add('hidden');}
 export function saveDayEditor(){
@@ -129,7 +136,13 @@ export function saveDayEditor(){
  }
  state.dailyCheckins[date]=r;
  const status=document.getElementById('day-health-status').value,diagnosis=document.getElementById('day-health-diagnosis').value.trim();
- if(status==='healthy')delete state.healthLogs[date];else state.healthLogs[date]={status,diagnosis:diagnosis||(status==='sick'?'Erkrankung':'Verletzung')};
+ const trainingAvailability=document.getElementById('day-health-training-impact')?.value||'';
+ if(status==='healthy')delete state.healthLogs[date];else {
+  const entry={...(state.healthLogs[date]||{}),status,diagnosis:diagnosis||(status==='sick'?'Erkrankung':'Verletzung')};
+  if(['unrestricted','reduced','unavailable'].includes(trainingAvailability))entry.trainingAvailability=trainingAvailability;
+  else delete entry.trainingAvailability;
+  state.healthLogs[date]=entry;
+ }
  saveDataToLocalStorage();closeDayEditor();refreshAll();
 }
 
