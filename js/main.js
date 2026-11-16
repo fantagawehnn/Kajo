@@ -1504,8 +1504,13 @@ function garminCandidateFromPreview(a, storedActivityId = null) {
     const idValue = a?.activityId ?? storedActivityId;
     const id = idValue == null ? '' : String(idValue);
     const localDate = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.slice(0, 10) : '';
-    const parsedStart = new Date(gmt || raw);
-    const startTime = Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : '';
+    const parsedGmt = gmt ? new Date(gmt) : null;
+    // Only normalize an explicitly supplied GMT timestamp. A local Garmin
+    // wall-clock value without an offset must remain local, not be interpreted
+    // in whichever timezone happens to run this browser.
+    const startTime = parsedGmt && Number.isFinite(parsedGmt.getTime())
+        ? parsedGmt.toISOString()
+        : raw;
     // Keep the same date precedence as the backend: local calendar date first,
     // otherwise the UTC date derived from Garmin's GMT start timestamp.
     const date = localDate || (startTime ? startTime.slice(0, 10) : '');
