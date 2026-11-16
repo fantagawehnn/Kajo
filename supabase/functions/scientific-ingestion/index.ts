@@ -206,6 +206,7 @@ Deno.serve(async (request) => {
 
       let deletedCount = 0;
       let failedCount = 0;
+      let deferredCount = 0;
       for (const item of claimedRows) {
         if (
           !isRecord(item) ||
@@ -215,6 +216,8 @@ Deno.serve(async (request) => {
           typeof item.lease_expires_at !== "string" ||
           !Number.isFinite(Date.parse(item.lease_expires_at)) ||
           Date.parse(item.lease_expires_at) <= Date.now() ||
+          typeof item.cleanup_ready_at !== "string" ||
+          !Number.isFinite(Date.parse(item.cleanup_ready_at)) ||
           typeof item.storage_path !== "string" ||
           item.storage_path.split("/").length !== 3 ||
           !isUuid(item.storage_path.split("/")[0]) ||
@@ -222,6 +225,14 @@ Deno.serve(async (request) => {
         ) {
           failedCount += 1;
           console.error("Scientific upload cleanup: claim returned an invalid object reference.");
+          continue;
+        }
+
+        // A claim blocks new Storage INSERT authorizations, but cannot
+        // cancel a request that passed its policy check before the claim.
+        // Wait for the quiescence window before deleting the object.
+        if (Date.parse(item.cleanup_ready_at) > Date.now()) {
+          deferredCount += 1;
           continue;
         }
 
@@ -253,6 +264,7 @@ Deno.serve(async (request) => {
         claimed_count: claimedRows.length,
         finalized_count: deletedCount,
         retry_required_count: failedCount,
+        deferred_count: deferredCount,
       }, configuredOrigin);
     }
 
