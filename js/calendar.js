@@ -3,7 +3,8 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { getVisibleActivities } from './activity-groups.js?v=1';
+import { getActivityGroupMembers, getVisibleActivities } from './activity-groups.js?v=1';
+import { getTrainingLoadData } from './training-load.js?v=5';
 import { getGarminTelemetry } from './data-source.js';
 import { calculateReadiness } from './dashboard.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=5';
@@ -1274,6 +1275,18 @@ export function renderListView() {
     const filtered = selectedActivitySports.size
         ? activities.filter(act => selectedActivitySports.has(act.type || 'Workout'))
         : activities;
+    // Berechne den Load für die gesamte Datenbasis mit genau der in den
+    // Einstellungen gewählten Methode. Bei gruppierten Einheiten werden die
+    // Segmentwerte addiert; unvollständige Gruppen erhalten bewusst keinen Wert.
+    const trainingLoad = getTrainingLoadData(
+        state.rawActivities || [], state.settings, state.profile, state.dailyCheckins
+    );
+    const loadByActivityId = new Map((trainingLoad.records || []).map(record => [
+        String(record.activity?.id), Number(record.value)
+    ]));
+    const loadLabel = state.settings?.trainingLoadSource === 'kajo-zone' || trainingLoad.mode === 'garmin-zone'
+        ? 'HF-Zonen-Load'
+        : trainingLoad.mode === 'srpe' ? 'sRPE-Load' : 'Training Load';
     const count = document.getElementById('activity-list-count');
     if (count) count.textContent = filtered.length + ' von ' + activities.length + ' Aktivitäten';
     if (!filtered.length) {
@@ -1296,7 +1309,16 @@ export function renderListView() {
         if (maxHr != null) hrValues.push('max. ' + maxHr + ' bpm');
         const hrHtml = hrValues.length ? '<span>HF ' + hrValues.join(' · ') + '</span>' : '';
         const distanceHtml = !isStrength && act.distance != null && Number.isFinite(Number(act.distance)) ? ' · ' + formatKm(act.distance) + ' km' : '';
-        const loadHtml = act.tss != null && Number.isFinite(Number(act.tss)) ? '<strong>' + Math.round(Number(act.tss)) + ' Load</strong>' : '';
+        const loadMembers = getActivityGroupMembers(act, state.rawActivities || []);
+        const hasCompleteLoad = loadMembers.length > 0
+            && loadMembers.every(member => loadByActivityId.has(String(member.id))
+                && Number.isFinite(loadByActivityId.get(String(member.id))));
+        const activityLoad = hasCompleteLoad
+            ? loadMembers.reduce((sum, member) => sum + loadByActivityId.get(String(member.id)), 0)
+            : null;
+        const loadHtml = activityLoad !== null
+            ? '<strong>' + Math.round(activityLoad) + ' ' + escapeHtml(loadLabel) + '</strong>'
+            : '<span class="activity-list-load-unavailable" title="Für diese Aktivität liegen keine ausreichenden Daten für die ausgewählte Load-Methode vor.">' + escapeHtml(loadLabel) + ' —</span>';
         const durationHtml = act.duration != null && Number.isFinite(Number(act.duration)) ? '<span>' + Math.round(Number(act.duration)) + ' min' + distanceHtml + '</span>' : (distanceHtml ? '<span>' + distanceHtml.slice(3) + '</span>' : '');
         const id = encodeURIComponent(String(act.id)).replace(/'/g, '%27');
         return '<button type="button" onclick="openCSVDetailsModal(\'' + id + '\')" class="activity-list-row" style="--activity-color:' + activityColor + '">' +
