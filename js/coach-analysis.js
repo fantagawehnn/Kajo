@@ -27,7 +27,7 @@ function summarizeActivities(activities) {
     const dated = activities.filter(item => dateKey(item?.date));
     const durationValues = dated.filter(item => validNumber(item.duration) && Number(item.duration) > 0);
     const missingDurationCount = dated.length - durationValues.length;
-    const totalMinutes = durationValues.reduce((sum, item) => sum + Number(item.duration), 0);
+    const totalMinutes = durationValues.reduce((sum, item) => sum + Number(item.duration) / 60, 0);
     const byType = new Map();
 
     dated.forEach(item => {
@@ -36,7 +36,7 @@ function summarizeActivities(activities) {
         const group = byType.get(type);
         group.sessions++;
         if (validNumber(item.duration) && Number(item.duration) > 0) {
-            group.durationMinutes += Number(item.duration);
+            group.durationMinutes += Number(item.duration) / 60;
             group.durationKnown++;
         } else {
             group.durationMissing++;
