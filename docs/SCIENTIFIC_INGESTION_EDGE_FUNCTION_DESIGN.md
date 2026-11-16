@@ -221,3 +221,23 @@ Bewusst nicht vorgesehen sind Browser-SELECT/LIST, UPDATE oder DELETE. Downloads
 Die tatsächliche Storage-Schemainspektion bestätigte die verwendeten Spalten `storage.buckets.id/name/public/file_size_limit/allowed_mime_types` sowie `storage.objects.bucket_id/name`. Das ist eine reine Lesebestätigung der Schemaform, keine Änderung der Datenbank.
 
 **Offen vor einer Migration:** Das konkrete positive `file_size_limit` muss anhand des gewählten PDF-Parsers und der Edge-Function-Laufzeit festgelegt werden. Der Bucket-Insert ist deshalb im SQL-Entwurf bewusst als nicht ausführbare Vorlage markiert. Außerdem muss vor Anwendung geprüft werden, ob bereits andere Storage-Policies auf dem Bucket weitergehende Rechte gewähren.
+
+
+## 12. Erster Code-Scaffold im Repository
+
+Unter `supabase/functions/scientific-ingestion/index.ts` liegt jetzt ein bewusst begrenzter, noch nicht deployter Scaffold:
+
+- POST/OPTIONS-Handling mit konfigurierter exakter `APP_ORIGIN`; kein Wildcard-CORS.
+- JWT wird zusätzlich über `auth.getUser()` validiert; die User-ID stammt ausschließlich aus diesem Ergebnis.
+- Privilegierter Client wird nur serverseitig aus `SUPABASE_SERVICE_ROLE_KEY` erstellt.
+- `create-upload-intent` validiert Metadaten, PDF-MIME-Angabe und deklarierte Dateigröße gegen `MAX_UPLOAD_BYTES`, erzeugt UUIDs serverseitig und legt private Quelle sowie Dokument mit exaktem Storage-Pfad an.
+- Bei fehlgeschlagener Dokumentanlage wird versucht, die zuvor angelegte Quelle wieder zu entfernen.
+- `get-document-status` gibt ausschließlich das private Dokument des authentifizierten Eigentümers zurück.
+- `process-document` antwortet vorerst ausdrücklich mit HTTP 501 (`PARSER_NOT_CONFIGURED`); es wird keine unvollständige oder fingierte PDF-Verarbeitung vorgetäuscht.
+- `supabase/config.toml` setzt `verify_jwt = true` für die neue Funktion explizit.
+
+Erforderliche serverseitige Konfiguration vor einem späteren Deployment: `APP_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` und `MAX_UPLOAD_BYTES`. Der Wert von `MAX_UPLOAD_BYTES` muss mit dem noch festzulegenden Storage-Bucket-Limit übereinstimmen oder darunter liegen. Secrets werden nicht im Repository hinterlegt.
+
+**Noch nicht produktionsfähig:** Tabellen/Policies/Bucket existieren noch nicht aufgrund dieses Scaffoldings; direkter Browser-Upload, PDF-Parser, tatsächliche Dateisignaturprüfung, serverseitige Größenprüfung des gespeicherten Objekts, atomare Chunk-Persistenz, Rate-Limits, Intent-Ablauf/Bereinigung und Download-/Delete-Aktionen fehlen. Der Prozess-Endpunkt bleibt deshalb deaktiviert (501).
+
+Der Code wurde nur im Repository angelegt. Er wurde nicht deployed und nicht getestet.
