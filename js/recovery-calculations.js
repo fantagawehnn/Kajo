@@ -127,3 +127,44 @@ export function summarizeRecoveryTrends(dailyCheckins = {}, dateKey = localToday
   });
   return { from, to, previousFrom, previousTo, metrics };
 }
+
+
+/**
+ * Calculates the accumulated shortfall against an explicitly configured
+ * personal sleep target. Nights without a valid duration are excluded.
+ * Extra sleep on another night is not treated as repayment of a shortfall.
+ */
+export function summarizeSleepDeficit(dailyCheckins = {}, sleepNeedHours, dateKey = localTodayKey(), windowDays = 7) {
+  const target = validNumber(sleepNeedHours) ? Number(sleepNeedHours) : null;
+  const days = Number(windowDays);
+  const parts = String(dateKey).split('-').map(Number);
+  if (target === null || target < 4 || target > 14 || !Number.isInteger(days) || days < 1 || days > 90 ||
+      parts.length !== 3 || parts.some(n => !Number.isInteger(n))) {
+    return { target: target !== null && target >= 4 && target <= 14 ? target : null, from: null, to: null, cumulativeShortfall: null, averageDuration: null, measuredNights: 0, nightsBelowTarget: 0 };
+  }
+  const end = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+  if (!Number.isFinite(end.getTime()) || end.getFullYear() !== parts[0] ||
+      end.getMonth() !== parts[1] - 1 || end.getDate() !== parts[2]) {
+    return { target, from: null, to: null, cumulativeShortfall: null, averageDuration: null, measuredNights: 0, nightsBelowTarget: 0 };
+  }
+  const keyFor = date => date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  const fromDate = new Date(end);
+  fromDate.setDate(fromDate.getDate() - (days - 1));
+  const values = [];
+  for (let offset = days - 1; offset >= 0; offset--) {
+    const date = new Date(end);
+    date.setDate(date.getDate() - offset);
+    const value = recoveryTrendValue((dailyCheckins || {})[keyFor(date)], 'sleepDuration');
+    if (value !== null) values.push(value);
+  }
+  const shortfall = values.reduce((sum, value) => sum + Math.max(0, target - value), 0);
+  return {
+    target: Number(target.toFixed(2)),
+    from: keyFor(fromDate),
+    to: keyFor(end),
+    cumulativeShortfall: Number(shortfall.toFixed(2)),
+    averageDuration: values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)) : null,
+    measuredNights: values.length,
+    nightsBelowTarget: values.filter(value => value < target).length
+  };
+}
