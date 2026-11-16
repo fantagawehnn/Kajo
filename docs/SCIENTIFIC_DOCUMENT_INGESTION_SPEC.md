@@ -193,6 +193,10 @@ Vor Freigabe eines ersten Upload-MVP müssen folgende Eigenschaften statisch und
 - Aufbewahrungs- und Löschprozess für private Uploads.
 - Ob private Uploads im ersten MVP überhaupt verarbeitet werden oder zunächst nur Metadaten und Dateiablage erhalten.
 
-## 12. Nicht durchgeführt
+## 12. Technischer Detailentwurf
+
+Der konkrete MVP-Aufbau der separaten Supabase Edge Function, einschließlich Authentifizierung, Upload-Intent, Storage-Policies, Prozessaktion, Idempotenz und Laufzeitgrenzen, ist in [SCIENTIFIC_INGESTION_EDGE_FUNCTION_DESIGN.md](./SCIENTIFIC_INGESTION_EDGE_FUNCTION_DESIGN.md) festgehalten. Dieser Entwurf ist noch keine Implementierung.
+
+## 13. Nicht durchgeführt
 
 Es wurden keine Storage-Buckets, Tabellen, Policies, Functions, Secrets oder API-Routen angelegt. Es wurde kein Dokument hochgeladen oder verarbeitet. Es wurden keine Tests ausgeführt, kein Merge vorgenommen und kein Deployment gestartet.
