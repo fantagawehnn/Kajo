@@ -19,7 +19,7 @@
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=146">
+    <link rel="stylesheet" href="css/styles.css?v=147">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -666,20 +666,18 @@
         <!-- TAB 2: KALENDER & PLANUNG -->
         <!-- ========================================== -->
         <div id="view-calendar" class="hidden space-y-4">
-            <div class="calendar-topbar bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
-                <div class="flex items-center justify-between gap-3">
+            <div class="calendar-topbar bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4">
+                <div class="calendar-control-row">
                     <button type="button" id="calendar-period-prev" onclick="navigateCalendarPeriod(-1)" aria-label="Vorheriger Zeitraum" class="calendar-nav-arrow"><i data-lucide="chevron-left"></i></button>
-                    <button type="button" id="calendar-period-title" onclick="openCalendarPeriodPicker()" aria-label="Zeitraum auswählen" class="calendar-period-title-button text-base font-semibold text-white text-center flex-1">November 2026</button><input type="date" id="calendar-period-picker" aria-label="Zeitraum auswählen" class="calendar-period-picker" onchange="applyCalendarPeriodDate(this.value)">
+                    <button type="button" id="calendar-period-title" onclick="openCalendarPeriodPicker()" aria-label="Zeitraum auswählen" class="calendar-period-title-button text-base font-semibold text-white text-center">November 2026</button><input type="date" id="calendar-period-picker" aria-label="Zeitraum auswählen" class="calendar-period-picker" onchange="applyCalendarPeriodDate(this.value)">
                     <button type="button" id="calendar-period-next" onclick="navigateCalendarPeriod(1)" aria-label="Nächster Zeitraum" class="calendar-nav-arrow"><i data-lucide="chevron-right"></i></button>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="relative flex-1">
+                    <div class="relative calendar-format-wrap">
                         <button type="button" id="calendar-format-button" onclick="toggleCalendarFormatMenu()" class="calendar-format-button" aria-haspopup="menu" aria-expanded="false"><span id="calendar-format-label">Woche</span><i data-lucide="chevron-down"></i></button>
                         <div id="calendar-format-menu" class="calendar-format-menu hidden" role="menu" aria-label="Kalenderzeitraum">
                             <button type="button" data-calendar-format="day" onclick="setCalendarFormat('day')">Tag</button><button type="button" data-calendar-format="week" onclick="setCalendarFormat('week')">Woche</button><button type="button" data-calendar-format="month" onclick="setCalendarFormat('month')">Monat</button><button type="button" data-calendar-format="year" onclick="setCalendarFormat('year')">Jahr</button><button type="button" id="calendar-season-format-option" data-calendar-format="season" onclick="setCalendarFormat('season')">Saison</button>
                         </div>
                     </div>
-                    <div class="relative">
+                    <div class="relative calendar-add-wrap">
                         <button type="button" id="calendar-add-button" aria-label="Eintrag hinzufügen" title="Eintrag hinzufügen" onclick="toggleCalendarAddMenu()" class="calendar-add-button"><i data-lucide="plus"></i></button>
                         <div id="calendar-add-menu" class="calendar-add-menu hidden" role="menu" aria-label="Eintrag hinzufügen">
                             <button type="button" onclick="closeCalendarAddMenu();openCalendarTrainingCreate()" class="calendar-add-menu-item"><i data-lucide="calendar-plus"></i> Einheit planen</button><button type="button" onclick="closeCalendarAddMenu();openManualActivityModal()" class="calendar-add-menu-item"><i data-lucide="clipboard-pen-line"></i> Training eintragen</button><button type="button" onclick="closeCalendarAddMenu();openCalendarRaceCreate()" class="calendar-add-menu-item"><i data-lucide="trophy"></i> Wettkampf</button><button type="button" onclick="closeCalendarAddMenu();openCalendarHealthCreate()" class="calendar-add-menu-item"><i data-lucide="thermometer"></i> Krankheit</button><button type="button" onclick="closeCalendarAddMenu();openCalendarPeriodCreate()" class="calendar-add-menu-item"><i data-lucide="droplet"></i> Periode</button>
