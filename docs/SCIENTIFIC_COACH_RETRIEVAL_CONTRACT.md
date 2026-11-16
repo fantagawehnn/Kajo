@@ -77,7 +77,7 @@ Vorgesehene Transferierbarkeitswerte:
 
 Diese Werte sind Kontextlabels, keine Evidenzsicherheitsbewertung. Studiendesign, Stichprobe, Messverfahren und Limitationen müssen separat erhalten bleiben. Kein automatischer Gesamtscore wird ohne transparentes, fachlich freigegebenes Bewertungsmodell erzeugt.
 
-Für Kanusport müssen Filter und Zusammenfassungen – sofern die Quelle diese Informationen tatsächlich enthält – mindestens K1/Kayaking, C1/C2, Classic/Sprint, Wildwasser/Flachwasser und Labor/Feld/Training/Wettkampf unterscheiden. Fehlende Angaben dürfen nicht inferiert werden.
+Für Kanusport müssen Filter und Zusammenfassungen – sofern die Studie diese Informationen tatsächlich enthält – Sportart, Kanudisziplin, Bootsklasse (K1/C1/C2), Gewässerkontext und Studien-Setting getrennt ausweisen. Das eigenständige Flachwasser-Event `canoe_sprint` darf nicht mit `wildwater_format = sprint` verwechselt werden. Classic/Sprint ist nur als Wildwasser-Wettkampfformat zu interpretieren. Fehlende Angaben dürfen nicht inferiert werden.\n\nDie Kontextmetadaten sind möglichst auf Studien- bzw. Befundebene zu liefern, nicht pauschal von der Publikation zu erben. Bei Reviews oder Publikationen mit mehreren Studien muss kenntlich bleiben, wenn ein Treffer nur Quellenmetadaten und keine aufgeschlüsselten Studienkontexte enthält. Maßgeblich ist `docs/SCIENTIFIC_METADATA_CONTRACT.md`.
 
 ## 7. Ranking und Ergebnisbegrenzung
 
@@ -132,3 +132,8 @@ Das Modell ist nicht die Quelle für die bibliografische Wahrheit. Die vom Retri
 - Keine Worker-Änderung oder automatische Literaturabfrage.
 - Keine neue Datenbankmigration, kein Storage-Setup, keine Tests und kein Deployment.
 
+
+
+## 12. Metadatenpräzisierung
+
+Der Metadatenvertrag trennt bibliografische Quelle, Studienkontext und einzelnen Befund. Das Retrieval darf diese Ebenen nicht zusammenziehen. Insbesondere dürfen Reviews nicht als einzelne Primärstudien ausgegeben und allgemeine Quellenmetadaten nicht als spezifische C1-/C2- oder Wildwasser-Evidenz dargestellt werden. Die konkrete Disziplinzuordnung muss aus dem Paper belegbar sein.
