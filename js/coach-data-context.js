@@ -295,11 +295,13 @@ export function buildCoachRequestContext(appState, question) {
             races: sanitizeRaces(raceWindow.records)
         },
         analysisSummary: buildCoachAnalysisSummary({
-            activities: selectedActivityRecords,
+            activities: selectedActivities.records,
             timeline: selectedTimelineRecords,
             checkIns: selectedCheckInRecords,
             plannedSessions: selectedPlannedRecords,
-            today
+            today,
+            settings: state.settings || {},
+            profile: state.profile || {}
         }),
         calculationSettings: {
             trainingLoadSource: state.settings?.trainingLoadSource ?? null,
