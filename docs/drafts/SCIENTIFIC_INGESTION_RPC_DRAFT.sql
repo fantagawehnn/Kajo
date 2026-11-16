@@ -130,10 +130,12 @@ begin
        or p_extraction_version is null
        or length(btrim(p_extraction_version)) = 0
        or length(p_extraction_version) > 100
-       or p_page_count is null or p_page_count <= 0
-       or p_expected_chunk_count is null or p_expected_chunk_count <= 0
+       or p_page_count is null or p_page_count <= 0 or p_page_count > 10000
+       or p_expected_chunk_count is null
+       or p_expected_chunk_count <= 0 or p_expected_chunk_count > 20000
        or p_extracted_character_count is null
-       or p_extracted_character_count <= 0 then
+       or p_extracted_character_count <= 0
+       or p_extracted_character_count > 20000000 then
         raise exception 'invalid extraction metadata' using errcode = '22023';
     end if;
 
