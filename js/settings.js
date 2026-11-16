@@ -301,7 +301,7 @@ export function saveSettings() {
   const sports = {}, categories = {};
   const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
   const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
-  if (!['auto', 'kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
+  if (!['auto', 'garmin-native', 'kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
   // Legacy-Zonengrenzen bleiben für ältere Datensätze erhalten; die aktive
   // Berechnung verwendet ausschließlich das adaptive Herzfrequenzreserve-Modell.
   const zones = { ...(state.settings?.heartRateZones || {}) };
