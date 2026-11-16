@@ -23,6 +23,38 @@ function mean(records, key) {
         : { mean: null, count: 0 };
 }
 
+function weekStartKey(value) {
+    const date = new Date(value + 'T12:00:00');
+    if (!Number.isFinite(date.getTime())) return null;
+    date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+}
+
+function summarizeWeeklyVolume(activities) {
+    const weeks = new Map();
+    activities.forEach(item => {
+        const date = dateKey(item?.date);
+        if (!date) return;
+        const weekStart = weekStartKey(date);
+        if (!weekStart) return;
+        if (!weeks.has(weekStart)) weeks.set(weekStart, { sessions: 0, knownMinutes: 0, missingDurationCount: 0 });
+        const week = weeks.get(weekStart);
+        week.sessions++;
+        if (validNumber(item.duration) && Number(item.duration) > 0) {
+            week.knownMinutes += Number(item.duration) / 60;
+        } else {
+            week.missingDurationCount++;
+        }
+    });
+    return [...weeks.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([weekStart, value]) => ({
+        weekStarting: weekStart,
+        sessions: value.sessions,
+        durationMinutes: value.missingDurationCount === 0 ? Number(value.knownMinutes.toFixed(1)) : null,
+        knownDurationMinutes: Number(value.knownMinutes.toFixed(1)),
+        sessionsMissingDuration: value.missingDurationCount
+    }));
+}
+
 function summarizeActivities(activities) {
     const dated = activities.filter(item => dateKey(item?.date));
     const durationValues = dated.filter(item => validNumber(item.duration) && Number(item.duration) > 0);
@@ -54,6 +86,7 @@ function summarizeActivities(activities) {
             sessionsMissingDuration: missingDurationCount,
             complete: dated.length > 0 && missingDurationCount === 0
         },
+        weeklyVolume: summarizeWeeklyVolume(dated),
         byActivityType: [...byType.entries()].map(([type, value]) => ({
             type,
             sessions: value.sessions,
