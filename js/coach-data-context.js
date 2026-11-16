@@ -5,6 +5,7 @@
  * behalten ausdrücklich die vollständige verfügbare Historie.
  */
 import { buildAthleteContext } from './coach-context.js';
+import { buildCoachAnalysisSummary } from './coach-analysis.js';
 
 const ACTIVITY_FIELDS = [
     'date', 'name', 'type', 'category', 'duration', 'distance',
@@ -208,6 +209,10 @@ export function buildCoachRequestContext(appState, question) {
 
     const healthEvents = scope.includeHealth ? sanitizeHealthLogs(state.healthLogs || {}) : [];
     const strengthRelevant = scope.mode === 'full_history' || scope.mode === 'strength_review';
+    const selectedActivityRecords = selectedActivities.records.map(item => pick(item, ACTIVITY_FIELDS));
+    const selectedTimelineRecords = selectedTimeline.records.map(item => pick(item, TIMELINE_FIELDS));
+    const selectedCheckInRecords = selectedCheckIns.records;
+    const selectedPlannedRecords = sanitizePlanned(plannedWindow.records);
 
     return {
         schemaVersion: 2,
@@ -270,9 +275,9 @@ export function buildCoachRequestContext(appState, question) {
             }
         },
         training: {
-            activities: selectedActivities.records.map(item => pick(item, ACTIVITY_FIELDS)),
-            calculatedLoadTimeline: selectedTimeline.records.map(item => pick(item, TIMELINE_FIELDS)),
-            plannedSessions: sanitizePlanned(plannedWindow.records),
+            activities: selectedActivityRecords,
+            calculatedLoadTimeline: selectedTimelineRecords,
+            plannedSessions: selectedPlannedRecords,
             strengthSessions: strengthRelevant ? sanitizeStrength(selectedStrength.records) : [],
             strengthPersonalBests: strengthRelevant
                 ? sanitizeStrength(Array.isArray(state.strengthPBs) ? state.strengthPBs : [])
@@ -287,6 +292,12 @@ export function buildCoachRequestContext(appState, question) {
         competitions: {
             races: sanitizeRaces(raceWindow.records)
         },
+        analysisSummary: buildCoachAnalysisSummary({
+            activities: selectedActivityRecords,
+            timeline: selectedTimelineRecords,
+            checkIns: selectedCheckInRecords,
+            plannedSessions: selectedPlannedRecords
+        }),
         calculationSettings: {
             trainingLoadSource: state.settings?.trainingLoadSource ?? null,
             heartRateZones: state.settings?.heartRateZones ?? {}
