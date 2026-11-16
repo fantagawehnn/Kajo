@@ -260,7 +260,8 @@ function renderHealthAnalysis() {
                     + '<div>Ausgewählter Trainingsload ('
                     + (impact.before.trainingLoadUnit || impact.during.trainingLoadUnit || impact.after.trainingLoadUnit || 'Einheit')
                     + '): ' + impact.returnToTraining.windows.map(window => window.trainingLoad === null ? '—'
-                        : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })).join(' / ')
+                        : Number(window.trainingLoad).toLocaleString('de-DE', { maximumFractionDigits: 1 })
+                            + ' (' + window.trainingLoadActivityCount + '/' + window.activities + ' Aktivitäten)').join(' / ')
                     + (impact.before.trainingLoadMode ? ' · Modell: ' + impact.before.trainingLoadMode : '')
                     + '</div><div>Andere dokumentierte Krankheits- und Verletzungstage sind aus den Vorher-/Nachher-Fenstern ausgeschlossen. Nur gespeicherte Aktivitäten und hinterlegte Dauer; keine Aussage zur Vollständigkeit oder Ursache. Die Auswertung ist keine medizinische Trainingsfreigabe.</div>';
                 row.classList.remove('items-center');
