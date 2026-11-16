@@ -31,6 +31,8 @@ jobs:
         run: node --experimental-default-type=module --test tests/test-segments.test.mjs
       - name: Run recovery calculation tests
         run: node --experimental-default-type=module --test tests/recovery-calculations.test.mjs
+      - name: Run health documentation tests
+        run: node --experimental-default-type=module --test tests/health-calculations.test.mjs
 
   deploy-cloudflare:
     needs: regression-smoke
