@@ -3,7 +3,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=2';
+import { saveDataToLocalStorage } from './storage.js?v=4';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate } from './utils.js';
 import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
 
