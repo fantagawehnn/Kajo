@@ -224,3 +224,49 @@ test('adds load values from one selected model without treating missing loads as
   assert.equal(result.after.trainingLoad, null);
   assert.equal(result.after.trainingLoadActivityCount, 0);
 });
+
+
+test('summarizes return-to-training in days 1–7, 8–14 and 15–28 against a pre-episode baseline', () => {
+  const healthLogs = {
+    '2026-11-15': { status: 'sick' },
+    '2026-11-16': { status: 'sick' },
+    '2026-11-19': { status: 'injured' }
+  };
+  const activities = [
+    { date: '2026-11-05', duration: 60 },
+    { date: '2026-11-17', duration: 60 },
+    { date: '2026-11-20', duration: 100 },
+    { date: '2026-11-22', duration: 30 },
+    { date: '2026-11-25', duration: 70 },
+    { date: '2026-12-02', duration: 140 }
+  ];
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    healthLogs, activities,
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14
+  );
+  const [first, second, third] = result.returnToTraining.windows;
+  assert.deepEqual([first.from, first.to, second.from, second.to, third.from, third.to], [
+    '2026-11-17', '2026-11-23', '2026-11-24', '2026-11-30', '2026-12-01', '2026-12-14'
+  ]);
+  assert.equal(result.returnToTraining.baseline.totalMinutes, 60);
+  assert.equal(first.totalMinutes, 90);
+  assert.equal(first.activities, 2);
+  assert.equal(first.eligibleCalendarDays, 6);
+  assert.equal(first.averageMinutesPerCalendarDay, 15);
+  assert.equal(first.averageMinutesChangePercent, 250);
+  assert.equal(second.totalMinutes, 70);
+  assert.equal(third.totalMinutes, 140);
+  assert.match(result.returnToTraining.note, /keine medizinische Freigabe/);
+});
+
+test('does not calculate relative return-to-training change when baseline is zero or unavailable', () => {
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [{ date: '2026-11-18', duration: 30 }],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14
+  );
+  assert.equal(result.returnToTraining.baseline.averageMinutesPerCalendarDay, 0);
+  assert.equal(result.returnToTraining.windows[0].averageMinutesChangePercent, null);
+});
