@@ -198,6 +198,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         || (Array.isArray(activity.sources) && activity.sources.includes('garmin'))
         || activity.garminTrainingLoad != null
         || activity.dailyHeartRateImported === true
+        || activity.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate'
     );
     const garminActivities = list.filter(isGarminEligible);
     const hasGarmin = garminActivities.length > 0;
