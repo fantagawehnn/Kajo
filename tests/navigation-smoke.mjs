@@ -201,7 +201,8 @@ assert.ok(calendar.includes('selectCalendarWeekDay') && calendar.includes('scrol
 assert.ok(calendar.includes('openPlannedCalendarDetail') && calendar.includes('openCSVDetailsModal'), 'completed and planned weekly sessions open their respective detail views');
 assert.ok(calendar.includes('Number(timeline.activityCount) === Number(timeline.loadActivityCount)'), 'daily training load is shown only with complete activity coverage');
 assert.ok(calendar.includes('data.durationComplete') && calendar.includes('data.durationTotal'), 'daily training time exposes incomplete duration coverage without adding an unagreed comparison panel');
-assert.ok(!calendar.includes('getTrainingLoadData'), 'calendar reuses central daily timeline rather than recalculating load');
+assert.ok(calendar.includes('state.dailyTimeline') && calendar.includes('Number(timeline.activityCount) === Number(timeline.loadActivityCount)'), 'daily calendar load reuses the central timeline');
+assert.ok(calendar.includes('getTrainingLoadData('), 'activity list reuses the central training-load calculation');
 assert.ok(css.includes('.calendar-year-matrix') && css.includes('.calendar-day-load-time') && css.includes('.calendar-time-bar-row'), 'calendar uses compact shared visual components');
 assert.ok(css.includes('var(--color-surface') && css.includes('var(--color-background'), 'calendar styling follows shared theme tokens');
 assert.ok(css.includes('var(--kajo-status-good') && css.includes('var(--kajo-status-critical'), 'semantic status colors remain separate from sport colors');
