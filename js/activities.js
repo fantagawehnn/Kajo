@@ -11,6 +11,7 @@ import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivity
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
+import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
 import { populateActivityRouteSelect } from './routes.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
@@ -676,6 +677,11 @@ export function openCSVDetailsModal(id) {
     const wasClosed = modal.classList.contains('hidden') || getComputedStyle(modal).display === 'none';
     if (wasClosed) activityDetailReturnFocus = document.activeElement;
     state.selectedActivityForModal = act;
+    const dailyHrAction = document.getElementById('daily-hr-activity-open');
+    const currentHrSeries = getGarminHeartRateSeries(act);
+    const hasCurrentHrSeries = Array.isArray(currentHrSeries?.hr) && Array.isArray(currentHrSeries?.time)
+        && currentHrSeries.hr.length >= 2 && currentHrSeries.hr.length === currentHrSeries.time.length;
+    if (dailyHrAction) dailyHrAction.hidden = !getGarminTelemetryActivityId(act) || hasCurrentHrSeries;
     renderActivityMergeControls(act);
     renderActivityGroupSummary(act);
     const displayAct = getVisibleActivities(activities).find(item => String(item.id) === String(act.id)
@@ -835,7 +841,10 @@ function renderActivityHeartRateSeriesStatus(activity) {
         ? 'rounded-lg border border-sky-800/50 bg-sky-950/20 px-3 py-2 text-xs text-sky-300'
         : 'rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-400';
     container.textContent = hasSeries
-        ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte' + (heartRateSeries.source !== 'hr' ? ' · Garmin-JSON' : '')
+        ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte'
+            + (activity?.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate'
+                ? ' · Garmin-Tagesaufzeichnung'
+                : heartRateSeries.source !== 'hr' ? ' · Garmin-JSON' : '')
         : 'Keine HF-Zeitreihe vorhanden';
 }
 

@@ -1,7 +1,7 @@
 /* Central access to Garmin-origin sensor time series.
- * Generic activity.telemetry is retained for data preservation. It is only
- * eligible through getActivityTelemetry when the activity explicitly records
- * FIT-file provenance; ambiguous legacy telemetry remains excluded.
+ * Recovered Garmin daily-heart-rate samples are merged read-only into this
+ * accessor; the original Garmin activity and its other telemetry stay intact.
+ * Ambiguous legacy generic telemetry remains excluded.
  */
 export function isGarminActivity(activity) {
     return activity?.source === 'garmin'
@@ -9,13 +9,28 @@ export function isGarminActivity(activity) {
         || activity?.garminData != null
         || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'))
         || activity?.garminFitImported === true
-        || activity?.garminTrainingLoad != null;
+        || activity?.garminTrainingLoad != null
+        || activity?.dailyHeartRateImported === true
+        || activity?.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate';
 }
 
 export function getGarminTelemetry(activity) {
     if (!isGarminActivity(activity)) return null;
-    const telemetry = activity?.garminTelemetry;
-    return telemetry && typeof telemetry === 'object' ? telemetry : null;
+    const telemetry = activity?.garminTelemetry && typeof activity.garminTelemetry === 'object'
+        ? activity.garminTelemetry : {};
+    const daily = activity?.dailyHeartRateSeries && typeof activity.dailyHeartRateSeries === 'object'
+        ? activity.dailyHeartRateSeries : null;
+    if (!daily || !Array.isArray(daily.hr) || !Array.isArray(daily.time)
+        || daily.hr.length < 2 || daily.hr.length !== daily.time.length) {
+        return Object.keys(telemetry).length ? telemetry : null;
+    }
+    const existingAligned = Array.isArray(telemetry.hr) && Array.isArray(telemetry.time)
+        && telemetry.hr.length >= 2 && telemetry.hr.length === telemetry.time.length;
+    return {
+        ...telemetry,
+        hr: existingAligned ? telemetry.hr : daily.hr,
+        time: existingAligned ? telemetry.time : daily.time
+    };
 }
 
 /** Mark legacy generic telemetry as excluded from analysis without deleting it.
@@ -23,7 +38,7 @@ export function getGarminTelemetry(activity) {
  * avoids destructive loss while the central accessor remains Garmin-only.
  */
 export function sanitizeGarminActivityTelemetry(activity) {
-    if (!isGarminActivity(activity) || activity.telemetry == null
+    if (!isGarminActivity(activity) || activity.dailyHeartRateImported === true || activity.telemetry == null
         || activity.dataOrigin?.legacyTelemetryExcluded?.policy === 'garmin-only-time-series') return false;
     activity.dataOrigin = {
         ...(activity.dataOrigin || {}),
@@ -44,7 +59,8 @@ export function sanitizeGarminActivityTelemetry(activity) {
 export function getActivityTelemetry(activity) {
     const garminTelemetry = getGarminTelemetry(activity);
     if (garminTelemetry) return garminTelemetry;
-    const explicitFitSource = activity?.source === 'fit'
+    const explicitFitSource = activity?.dailyHeartRateImported === true
+        || activity?.source === 'fit'
         || (Array.isArray(activity?.sources) && activity.sources.includes('fit'));
     if (!explicitFitSource) return null;
     const telemetry = activity?.telemetry;
