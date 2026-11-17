@@ -139,8 +139,23 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const intervals = validTime ? time.slice(1).map((value, index) => Number(value) - Number(time[index])) : [];
     const sortedIntervals = [...intervals].sort((a, b) => a - b);
     const medianInterval = sortedIntervals.length ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : 0;
+    const isDailyHrSeries = activity?.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate';
+    // Tages-HF-Aufzeichnungen liefern bei Garmin häufig nur etwa alle 2 Minuten
+    // einen Messpunkt. Diese Werte sind keine FIT-Qualität, aber die beste
+    // vorhandene Näherung: letzter Messwert gilt bis zum nächsten Messpunkt
+    // (zero-order hold), ohne neue HF-Werte zu interpolieren. Einzelne große
+    // Lücken werden auf 1,25 × Medianintervall (max. 5 min) begrenzt.
+    const dailyIntervalCap = Math.min(300, Math.max(30, medianInterval * 1.25));
     const sampleDurations = hr.map((_, index) => {
         if (!validTime) return durationSeconds / hr.length;
+        if (isDailyHrSeries) {
+            const sampleTime = Number(time[index]);
+            if (!Number.isFinite(sampleTime) || sampleTime < 0) return 0;
+            const nextDelta = index < time.length - 1
+                ? Number(time[index + 1]) - sampleTime : medianInterval;
+            const credited = Math.min(Number.isFinite(nextDelta) && nextDelta > 0 ? nextDelta : 0, dailyIntervalCap);
+            return durationSeconds === null ? credited : Math.max(0, Math.min(credited, durationSeconds - sampleTime));
+        }
         if (index < time.length - 1) return intervals[index] <= 30 ? intervals[index] : 0;
         return 0;
     });
@@ -172,7 +187,10 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
         restingHrWindowDays: adaptive.restingHrWindowDays, restingHrReadingCount: adaptive.restingHrReadingCount,
         restingHrQuality: adaptive.restingHrQuality, heartRateReserve: adaptive.heartRateReserve,
         excludedIntervalCount, excludedIntervalSeconds,
-        durationSource: validTime ? 'heart-rate-time-axis' : 'activity-duration-estimate',
+        durationSource: isDailyHrSeries ? 'daily-heart-rate-sample-estimate' : (validTime ? 'heart-rate-time-axis' : 'activity-duration-estimate'),
+        dataQuality: isDailyHrSeries ? 'limited' : 'standard',
+        dataQualityLabel: isDailyHrSeries ? 'Eingeschränkte Näherung aus Garmin-Tagesaufzeichnung' : 'Reguläre HF-Zeitreihe',
+        samplingIntervalSeconds: isDailyHrSeries && medianInterval > 0 ? Number(medianInterval.toFixed(1)) : null,
         recordedSeconds: validTime ? Number(time[time.length - 1]) - Number(time[0]) : totalSeconds
     };
 }
