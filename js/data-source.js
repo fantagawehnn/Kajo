@@ -1,7 +1,7 @@
 /* Central access to Garmin-origin sensor time series.
- * Generic activity.telemetry is retained for data preservation. It is only
- * eligible through getActivityTelemetry when the activity explicitly records
- * FIT-file provenance; ambiguous legacy telemetry remains excluded.
+ * Recovered Garmin daily-heart-rate samples are merged read-only into this
+ * accessor; the original Garmin activity and its other telemetry stay intact.
+ * Ambiguous legacy generic telemetry remains excluded.
  */
 export function isGarminActivity(activity) {
     return activity?.source === 'garmin'
