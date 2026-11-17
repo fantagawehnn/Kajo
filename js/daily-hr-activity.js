@@ -184,7 +184,7 @@ export function createDailyHrActivity() {
             date: selection.date,
             name: (value('daily-hr-activity-name') || sportLabel + ' – Garmin-Tages-HF').slice(0, 120),
             type,
-            category: 'ga',
+            category: value('daily-hr-activity-category') || 'ga',
             duration: durationMinutes,
             startTime: startIso,
             startTimeLocal: selection.date + 'T' + selection.startTime + ':00',
