@@ -142,9 +142,9 @@ export async function previewDailyHrActivity() {
 
 export function createDailyHrActivity() {
     try {
-        const window = getWindow();
-        if (!preview || preview.date !== window.date || preview.startMs !== window.startMs
-            || preview.endMs !== window.endMs || preview.samples.length < 2) {
+        const selection = getWindow();
+        if (!preview || preview.date !== selection.date || preview.startMs !== selection.startMs
+            || preview.endMs !== selection.endMs || preview.samples.length < 2) {
             throw new Error('Bitte lade die HF-Aufzeichnung für den aktuellen Zeitraum erneut.');
         }
         const type = value('daily-hr-activity-sport') || 'Kayaking';
@@ -158,16 +158,16 @@ export function createDailyHrActivity() {
             }
             if (type === 'Swim') distance /= 1000;
         }
-        const startIso = new Date(window.startMs).toISOString();
-        const endIso = new Date(window.endMs).toISOString();
+        const startIso = new Date(selection.startMs).toISOString();
+        const endIso = new Date(selection.endMs).toISOString();
         const existing = (state.rawActivities || []).some(activity =>
             activity.dailyHeartRateImported === true
             && activity.startTime === startIso && activity.endTime === endIso);
         if (existing) throw new Error('Für diesen Zeitraum existiert bereits eine rekonstruierte HF-Aktivität.');
 
         const hr = preview.samples.map(sample => sample.hr);
-        const time = preview.samples.map(sample => Math.round((sample.timestampMs - window.startMs) / 1000 * 10) / 10);
-        const durationMinutes = Math.round((window.endMs - window.startMs) / 60000 * 100) / 100;
+        const time = preview.samples.map(sample => Math.round((sample.timestampMs - selection.startMs) / 1000 * 10) / 10);
+        const durationMinutes = Math.round((selection.endMs - selection.startMs) / 60000 * 100) / 100;
         const averageHr = Math.round(hr.reduce((sum, value) => sum + value, 0) / hr.length);
         const maxHr = Math.max(...hr);
         const sportLabel = catalog[type]?.label || type;
@@ -176,15 +176,15 @@ export function createDailyHrActivity() {
             source: 'manual',
             manual: true,
             dailyHeartRateImported: true,
-            date: window.date,
+            date: selection.date,
             name: (value('daily-hr-activity-name') || sportLabel + ' – Garmin-Tages-HF').slice(0, 120),
             type,
             category: 'ga',
             duration: durationMinutes,
             startTime: startIso,
-            startTimeLocal: window.date + 'T' + window.startTime + ':00',
+            startTimeLocal: selection.date + 'T' + selection.startTime + ':00',
             endTime: endIso,
-            endTimeLocal: window.date + 'T' + window.endTime + ':00',
+            endTimeLocal: selection.date + 'T' + selection.endTime + ':00',
             hr: averageHr,
             maxHr,
             ...(distance !== null && !['WeightTraining', 'Workout'].includes(type) ? { distance } : {}),
@@ -203,7 +203,7 @@ export function createDailyHrActivity() {
                     source: 'garmin_health_records',
                     dataType: 'heart_rate',
                     method: 'dailyHeartRate',
-                    recordDate: window.date,
+                    recordDate: selection.date,
                     sampleCount: hr.length,
                     timeUnit: 'elapsed_seconds',
                     importedAt: new Date().toISOString(),
