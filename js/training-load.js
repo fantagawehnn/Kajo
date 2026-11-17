@@ -139,8 +139,23 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     const intervals = validTime ? time.slice(1).map((value, index) => Number(value) - Number(time[index])) : [];
     const sortedIntervals = [...intervals].sort((a, b) => a - b);
     const medianInterval = sortedIntervals.length ? sortedIntervals[Math.floor(sortedIntervals.length / 2)] : 0;
+    const isDailyHrSeries = activity?.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate';
+    // Tages-HF-Aufzeichnungen liefern bei Garmin häufig nur etwa alle 2 Minuten
+    // einen Messpunkt. Diese Werte sind keine FIT-Qualität, aber die beste
+    // vorhandene Näherung: letzter Messwert gilt bis zum nächsten Messpunkt
+    // (zero-order hold), ohne neue HF-Werte zu interpolieren. Einzelne große
+    // Lücken werden auf 1,25 × Medianintervall (max. 5 min) begrenzt.
+    const dailyIntervalCap = Math.min(300, Math.max(30, medianInterval * 1.25));
     const sampleDurations = hr.map((_, index) => {
         if (!validTime) return durationSeconds / hr.length;
+        if (isDailyHrSeries) {
+            const sampleTime = Number(time[index]);
+            if (!Number.isFinite(sampleTime) || sampleTime < 0) return 0;
+            const nextDelta = index < time.length - 1
+                ? Number(time[index + 1]) - sampleTime : medianInterval;
+            const credited = Math.min(Number.isFinite(nextDelta) && nextDelta > 0 ? nextDelta : 0, dailyIntervalCap);
+            return durationSeconds === null ? credited : Math.max(0, Math.min(credited, durationSeconds - sampleTime));
+        }
         if (index < time.length - 1) return intervals[index] <= 30 ? intervals[index] : 0;
         return 0;
     });
@@ -149,9 +164,10 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     if (Array.isArray(time) && time.length === hr.length) {
         for (let i = 0; i < time.length - 1; i++) {
             const delta = Number(time[i + 1]) - Number(time[i]);
-            if (Number.isFinite(delta) && delta > 30) {
+            const exclusionThreshold = isDailyHrSeries ? dailyIntervalCap : 30;
+            if (Number.isFinite(delta) && delta > exclusionThreshold) {
                 excludedIntervalCount++;
-                excludedIntervalSeconds += delta;
+                excludedIntervalSeconds += delta - exclusionThreshold;
             }
         }
     }
@@ -172,7 +188,10 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
         restingHrWindowDays: adaptive.restingHrWindowDays, restingHrReadingCount: adaptive.restingHrReadingCount,
         restingHrQuality: adaptive.restingHrQuality, heartRateReserve: adaptive.heartRateReserve,
         excludedIntervalCount, excludedIntervalSeconds,
-        durationSource: validTime ? 'heart-rate-time-axis' : 'activity-duration-estimate',
+        durationSource: isDailyHrSeries ? 'daily-heart-rate-sample-estimate' : (validTime ? 'heart-rate-time-axis' : 'activity-duration-estimate'),
+        dataQuality: isDailyHrSeries ? 'limited' : 'standard',
+        dataQualityLabel: isDailyHrSeries ? 'Eingeschränkte Näherung aus Garmin-Tagesaufzeichnung' : 'Reguläre HF-Zeitreihe',
+        samplingIntervalSeconds: isDailyHrSeries && medianInterval > 0 ? Number(medianInterval.toFixed(1)) : null,
         recordedSeconds: validTime ? Number(time[time.length - 1]) - Number(time[0]) : totalSeconds
     };
 }
@@ -210,7 +229,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         const zoneValues = garminActivities
             .map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
-            .map(item => ({ activity: item.activity, value: item.load.value }));
+            .map(item => ({ activity: item.activity, value: item.load.value, dataQuality: item.load.dataQuality || 'standard', dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe', durationSource: item.load.durationSource, samplingIntervalSeconds: item.load.samplingIntervalSeconds }));
         return {
             mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
             unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
@@ -227,7 +246,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
     if (hasGarmin) {
         const zoneValues = garminActivities.map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
-            .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone' }));
+            .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone', dataQuality: item.load.dataQuality || 'standard', dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe', durationSource: item.load.durationSource, samplingIntervalSeconds: item.load.samplingIntervalSeconds }));
         // Count all activities with native Garmin Load when comparing source
         // coverage; the chosen model will use this source exclusively.
         const nativeValues = garminActivities
