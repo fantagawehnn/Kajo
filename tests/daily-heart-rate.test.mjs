@@ -62,7 +62,7 @@ test('daily HR activity is eligible for the explicit KAJO HR-zone load model', (
         dailyHeartRateImported: true,
         date: '2026-11-17',
         duration: 1,
-        telemetry: { hr: [140, 150, 160, 170], time: [0, 15, 30, 45] }
+        telemetry: { hr: [140, 150, 160, 170], time: [0, 20, 40, 60] }
     };
     const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, {
         maxHr: 190,
@@ -71,6 +71,23 @@ test('daily HR activity is eligible for the explicit KAJO HR-zone load model', (
     assert.equal(result.mode, 'garmin-zone');
     assert.equal(result.records.length, 1);
     assert.ok(result.records[0].value > 0);
+});
+
+test('sparse daily HR samples are not interpolated into a false training load', () => {
+    const activity = {
+        id: 'daily-hr-sparse-test',
+        source: 'manual',
+        dailyHeartRateImported: true,
+        date: '2026-11-17',
+        duration: 6,
+        telemetry: { hr: [140, 150, 160, 170], time: [0, 120, 240, 360] }
+    };
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, {
+        maxHr: 190,
+        restingHr: 50
+    });
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
 });
 
 test('unmarked manual telemetry remains excluded', () => {
