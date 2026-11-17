@@ -31,7 +31,7 @@ import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, clo
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=2';
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=2';
-import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActivity, createDailyHrActivity, invalidateDailyHrActivityPreview } from './daily-hr-activity.js?v=1';
+import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActivity, attachDailyHrSeriesToActivity, invalidateDailyHrActivityPreview } from './daily-hr-activity.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=11';
