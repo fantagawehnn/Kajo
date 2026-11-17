@@ -127,8 +127,13 @@ export async function previewDailyHrActivity() {
         if (create) create.disabled = false;
         const first = new Date(samples[0].timestampMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const last = new Date(samples[samples.length - 1].timestampMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        setStatus(samples.length + ' HF-Messpunkte gefunden (' + first + '–' + last +
-            '). Nur tatsächlich aufgezeichnete Werte werden übernommen; fehlende Messpunkte werden nicht ergänzt.');
+        const gaps = samples.slice(1).map((sample, index) => (sample.timestampMs - samples[index].timestampMs) / 1000);
+        const longGaps = gaps.filter(seconds => seconds > 30).length;
+        const maxGap = gaps.length ? Math.max(...gaps) : 0;
+        setStatus(samples.length + ' HF-Messpunkte gefunden (' + first + '–' + last + '). ' +
+            'Größte Messlücke: ' + Math.round(maxGap) + ' s; ' + longGaps +
+            ' Zeitabstände liegen über 30 s. Solche Lücken werden in der HF-Zonen-Load-Berechnung nicht hochgerechnet. ' +
+            'Es werden ausschließlich vorhandene Messpunkte übernommen.');
     } catch (error) {
         preview = null;
         const create = $('daily-hr-activity-create');
