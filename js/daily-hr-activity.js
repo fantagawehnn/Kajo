@@ -18,6 +18,8 @@ function setStatus(message, error = false) {
     const output = $('daily-hr-activity-status');
     if (!output) return;
     output.textContent = message;
+    output.classList.toggle('hidden', !message);
+    output.hidden = !message;
     output.classList.toggle('text-rose-300', error);
     output.classList.toggle('text-slate-300', !error);
     output.hidden = !message;
@@ -67,6 +69,7 @@ export function openDailyHrActivityModal(date = '') {
     $('daily-hr-activity-end').value = '';
     $('daily-hr-activity-name').value = '';
     $('daily-hr-activity-distance').value = '';
+    if ($('daily-hr-activity-category')) $('daily-hr-activity-category').value = 'ga';
     renderSports('Kayaking');
     resetPreview();
     modal.classList.remove('hidden');
