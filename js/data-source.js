@@ -23,11 +23,12 @@ export function getGarminTelemetry(activity) {
         || daily.hr.length < 2 || daily.hr.length !== daily.time.length) {
         return Object.keys(telemetry).length ? telemetry : null;
     }
+    const existingAligned = Array.isArray(telemetry.hr) && Array.isArray(telemetry.time)
+        && telemetry.hr.length >= 2 && telemetry.hr.length === telemetry.time.length;
     return {
         ...telemetry,
-        hr: Array.isArray(telemetry.hr) && telemetry.hr.length >= 2 ? telemetry.hr : daily.hr,
-        time: Array.isArray(telemetry.time) && telemetry.time.length === telemetry.hr?.length
-            ? telemetry.time : daily.time
+        hr: existingAligned ? telemetry.hr : daily.hr,
+        time: existingAligned ? telemetry.time : daily.time
     };
 }
 
