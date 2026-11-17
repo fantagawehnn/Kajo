@@ -2933,7 +2933,7 @@ Object.assign(window, {
     openDailyHrActivityModal,
     closeDailyHrActivityModal,
     previewDailyHrActivity,
-    createDailyHrActivity,
+    attachDailyHrSeriesToActivity,
     invalidateDailyHrActivityPreview,
     saveTelemetrySettings,
     focusActivityLap,
