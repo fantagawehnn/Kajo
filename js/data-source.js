@@ -9,7 +9,8 @@ export function isGarminActivity(activity) {
         || activity?.garminData != null
         || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'))
         || activity?.garminFitImported === true
-        || activity?.garminTrainingLoad != null;
+        || activity?.garminTrainingLoad != null
+        || activity?.dailyHeartRateImported === true;
 }
 
 export function getGarminTelemetry(activity) {
@@ -23,7 +24,7 @@ export function getGarminTelemetry(activity) {
  * avoids destructive loss while the central accessor remains Garmin-only.
  */
 export function sanitizeGarminActivityTelemetry(activity) {
-    if (!isGarminActivity(activity) || activity.telemetry == null
+    if (!isGarminActivity(activity) || activity.dailyHeartRateImported === true || activity.telemetry == null
         || activity.dataOrigin?.legacyTelemetryExcluded?.policy === 'garmin-only-time-series') return false;
     activity.dataOrigin = {
         ...(activity.dataOrigin || {}),
@@ -44,7 +45,8 @@ export function sanitizeGarminActivityTelemetry(activity) {
 export function getActivityTelemetry(activity) {
     const garminTelemetry = getGarminTelemetry(activity);
     if (garminTelemetry) return garminTelemetry;
-    const explicitFitSource = activity?.source === 'fit'
+    const explicitFitSource = activity?.dailyHeartRateImported === true
+        || activity?.source === 'fit'
         || (Array.isArray(activity?.sources) && activity.sources.includes('fit'));
     if (!explicitFitSource) return null;
     const telemetry = activity?.telemetry;
