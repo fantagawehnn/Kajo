@@ -2,7 +2,6 @@ import { state, refreshAll } from './state.js';
 import { supabase } from './supabase-client.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { selectGarminDailyHeartRateWindow } from './daily-heart-rate.js';
-import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
 import { getGarminHeartRateSeries } from './data-source.js';
 
 const $ = id => document.getElementById(id);
@@ -56,9 +55,6 @@ function getWindow() {
 function selectedActivity() {
     const activity = state.selectedActivityForModal;
     if (!activity) throw new Error('Es ist keine Aktivität geöffnet.');
-    if (!getGarminTelemetryActivityId(activity)) {
-        throw new Error('Diese Aktivität besitzt keine eindeutige Garmin-Aktivitäts-ID. Eine Zuordnung der Tages-HF wäre deshalb nicht sicher möglich.');
-    }
     return activity;
 }
 
@@ -98,7 +94,7 @@ export function openDailyHrActivityModal() {
         setStatus('Für diese Aktivität ist bereits eine HF-Zeitreihe vorhanden. Sie wird nicht überschrieben.', true);
         if (attach) attach.disabled = true;
     } else {
-        setStatus('Prüfe Start- und Endzeit. Die HF-Reihe wird anschließend dieser bestehenden Garmin-Aktivität zugeordnet.');
+        setStatus('Prüfe Start- und Endzeit. Die HF-Reihe wird anschließend dieser bestehenden Aktivität zugeordnet.');
     }
     modal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
