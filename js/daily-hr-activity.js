@@ -86,11 +86,11 @@ export function openDailyHrActivityModal() {
     const fallbackEnd = start && Number.isFinite(durationMinutes) && durationMinutes > 0
         ? new Date(new Date(start.date + 'T' + start.time + ':00').getTime() + durationMinutes * 60000)
         : null;
-    const date = start?.date || String(activity.date || '').slice(0, 10);
+    const date = String(activity.date || start?.date || '').slice(0, 10);
     $('daily-hr-activity-date').value = date;
     $('daily-hr-activity-start').value = start?.time || '';
     $('daily-hr-activity-end').value = end?.time || (fallbackEnd && Number.isFinite(fallbackEnd.getTime())
-        ? dateAndTime(fallbackEnd.toISOString())?.time || '' : '');
+        ? String(fallbackEnd.getHours()).padStart(2, '0') + ':' + String(fallbackEnd.getMinutes()).padStart(2, '0') : '');
     const activityLabel = activity.name || activity.type || 'Aktivität';
     $('daily-hr-activity-target').textContent = activityLabel + ' · ' + date;
     preview = null;
