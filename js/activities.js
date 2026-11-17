@@ -678,10 +678,7 @@ export function openCSVDetailsModal(id) {
     if (wasClosed) activityDetailReturnFocus = document.activeElement;
     state.selectedActivityForModal = act;
     const dailyHrAction = document.getElementById('daily-hr-activity-open');
-    const currentHrSeries = getGarminHeartRateSeries(act);
-    const hasCurrentHrSeries = Array.isArray(currentHrSeries?.hr) && Array.isArray(currentHrSeries?.time)
-        && currentHrSeries.hr.length >= 2 && currentHrSeries.hr.length === currentHrSeries.time.length;
-    if (dailyHrAction) dailyHrAction.hidden = !getGarminTelemetryActivityId(act) || hasCurrentHrSeries;
+    if (dailyHrAction) dailyHrAction.hidden = false;
     renderActivityMergeControls(act);
     renderActivityGroupSummary(act);
     const displayAct = getVisibleActivities(activities).find(item => String(item.id) === String(act.id)
