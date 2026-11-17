@@ -840,7 +840,10 @@ function renderActivityHeartRateSeriesStatus(activity) {
         ? 'rounded-lg border border-sky-800/50 bg-sky-950/20 px-3 py-2 text-xs text-sky-300'
         : 'rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-400';
     container.textContent = hasSeries
-        ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte' + (heartRateSeries.source !== 'hr' ? ' · Garmin-JSON' : '')
+        ? 'HF-Zeitreihe vorhanden · ' + validCount.toLocaleString('de-DE') + ' Messpunkte'
+            + (activity?.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate'
+                ? ' · Garmin-Tagesaufzeichnung'
+                : heartRateSeries.source !== 'hr' ? ' · Garmin-JSON' : '')
         : 'Keine HF-Zeitreihe vorhanden';
 }
 
