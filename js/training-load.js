@@ -164,9 +164,10 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
     if (Array.isArray(time) && time.length === hr.length) {
         for (let i = 0; i < time.length - 1; i++) {
             const delta = Number(time[i + 1]) - Number(time[i]);
-            if (Number.isFinite(delta) && delta > 30) {
+            const exclusionThreshold = isDailyHrSeries ? dailyIntervalCap : 30;
+            if (Number.isFinite(delta) && delta > exclusionThreshold) {
                 excludedIntervalCount++;
-                excludedIntervalSeconds += delta;
+                excludedIntervalSeconds += delta - exclusionThreshold;
             }
         }
     }
@@ -228,7 +229,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         const zoneValues = garminActivities
             .map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
-            .map(item => ({ activity: item.activity, value: item.load.value }));
+            .map(item => ({ activity: item.activity, value: item.load.value, dataQuality: item.load.dataQuality || 'standard', dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe', durationSource: item.load.durationSource, samplingIntervalSeconds: item.load.samplingIntervalSeconds }));
         return {
             mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
             unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
@@ -245,7 +246,7 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
     if (hasGarmin) {
         const zoneValues = garminActivities.map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
             .filter(item => item.load)
-            .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone' }));
+            .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone', dataQuality: item.load.dataQuality || 'standard', dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe', durationSource: item.load.durationSource, samplingIntervalSeconds: item.load.samplingIntervalSeconds }));
         // Count all activities with native Garmin Load when comparing source
         // coverage; the chosen model will use this source exclusively.
         const nativeValues = garminActivities
