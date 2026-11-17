@@ -183,16 +183,16 @@ export async function previewDailyHrActivity() {
 
 export function createDailyHrActivity() {
     try {
-        const window = getWindow();
+        const selection = getWindow();
         const activity = selectedActivity();
-        if (!preview || preview.date !== window.date || preview.startMs !== window.startMs
-            || preview.endMs !== window.endMs || preview.activityId !== String(activity.id)
+        if (!preview || preview.date !== selection.date || preview.startMs !== selection.startMs
+            || preview.endMs !== selection.endMs || preview.activityId !== String(activity.id)
             || preview.samples.length < 2) {
             throw new Error('Bitte lade die HF-Aufzeichnung für die aktuell geöffnete Aktivität erneut.');
         }
         if (existingHeartRate(activity)) throw new Error('Diese Aktivität besitzt inzwischen bereits eine HF-Zeitreihe. Es wurde nichts überschrieben.');
         const hr = preview.samples.map(sample => sample.hr);
-        const time = preview.samples.map(sample => Math.round((sample.timestampMs - window.startMs) / 1000 * 10) / 10);
+        const time = preview.samples.map(sample => Math.round((sample.timestampMs - selection.startMs) / 1000 * 10) / 10);
         const averageHr = Math.round(hr.reduce((sum, value) => sum + value, 0) / hr.length);
         const maxHr = Math.max(...hr);
         const previous = activity.dailyHeartRateSeries;
@@ -202,8 +202,8 @@ export function createDailyHrActivity() {
             source: 'garmin-daily-heart-rate',
             timeUnit: 'elapsed_seconds',
             sampleCount: hr.length,
-            startTimeIso: new Date(window.startMs).toISOString(),
-            endTimeIso: new Date(window.endMs).toISOString(),
+            startTimeIso: new Date(selection.startMs).toISOString(),
+            endTimeIso: new Date(selection.endMs).toISOString(),
             averageHr,
             maxHr,
             attachedAt: new Date().toISOString()
@@ -214,7 +214,7 @@ export function createDailyHrActivity() {
                 source: 'garmin_health_records',
                 dataType: 'heart_rate',
                 method: 'dailyHeartRate',
-                recordDate: window.date,
+                recordDate: selection.date,
                 sampleCount: hr.length,
                 selectedStart: activity.dailyHeartRateSeries.startTimeIso,
                 selectedEnd: activity.dailyHeartRateSeries.endTimeIso
