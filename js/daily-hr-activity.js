@@ -64,7 +64,8 @@ function selectedActivity() {
 
 function existingHeartRate(activity) {
     const series = getGarminHeartRateSeries(activity);
-    return Array.isArray(series?.hr) && series.hr.length >= 2;
+    return Array.isArray(series?.hr) && Array.isArray(series?.time)
+        && series.hr.length >= 2 && series.hr.length === series.time.length;
 }
 
 export function openDailyHrActivityModal() {
