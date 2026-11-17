@@ -67,6 +67,16 @@ function existingHeartRate(activity) {
 export function openDailyHrActivityModal() {
     const modal = $('daily-hr-activity-modal');
     if (!modal) return;
+
+    // Render the HR dialog inside the currently opened activity dialog.
+    // This keeps the selected activity context alive and guarantees that the
+    // HR dialog is painted above the activity details/edit panel.
+    const activityDialog = $('csv-details-modal');
+    if (activityDialog && modal.parentElement !== activityDialog) {
+        activityDialog.appendChild(modal);
+    }
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '9999';
     let activity;
     try {
         activity = selectedActivity();
