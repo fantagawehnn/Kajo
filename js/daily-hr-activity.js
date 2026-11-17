@@ -172,7 +172,7 @@ export function createDailyHrActivity() {
         const maxHr = Math.max(...hr);
         const sportLabel = catalog[type]?.label || type;
         const activity = {
-            id: 'daily-hr-' + window.startMs,
+            id: 'daily-hr-' + selection.startMs,
             source: 'manual',
             manual: true,
             dailyHeartRateImported: true,
@@ -195,7 +195,7 @@ export function createDailyHrActivity() {
                 timeUnit: 'elapsed_seconds',
                 startTimeIso: startIso,
                 endTimeIso: endIso,
-                durationSeconds: (window.endMs - window.startMs) / 1000,
+                durationSeconds: (selection.endMs - selection.startMs) / 1000,
                 sampleCount: hr.length
             },
             dataOrigin: {
