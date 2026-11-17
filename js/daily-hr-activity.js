@@ -3,6 +3,7 @@ import { supabase } from './supabase-client.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { selectGarminDailyHeartRateWindow } from './daily-heart-rate.js';
 import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
+import { getGarminHeartRateSeries } from './data-source.js';
 
 const $ = id => document.getElementById(id);
 const value = id => $(id)?.value?.trim() ?? '';
@@ -62,12 +63,8 @@ function selectedActivity() {
 }
 
 function existingHeartRate(activity) {
-    const series = activity?.garminTelemetry;
-    const hr = Array.isArray(series?.hr) ? series.hr : [];
-    const time = Array.isArray(series?.time) ? series.time : [];
-    const daily = activity?.dailyHeartRateSeries;
-    return (hr.length >= 2 && time.length === hr.length)
-        || (Array.isArray(daily?.hr) && daily.hr.length >= 2);
+    const series = getGarminHeartRateSeries(activity);
+    return Array.isArray(series?.hr) && series.hr.length >= 2;
 }
 
 export function openDailyHrActivityModal() {
