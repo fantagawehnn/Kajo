@@ -1,8 +1,8 @@
 import { state, refreshAll } from './state.js';
 import { supabase } from './supabase-client.js';
-import { getEnabledSportsCatalog, escapeHtml, toLocalDateString } from './utils.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { selectGarminDailyHeartRateWindow } from './daily-heart-rate.js';
+import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
 
 const $ = id => document.getElementById(id);
 const value = id => $(id)?.value?.trim() ?? '';
@@ -10,8 +10,18 @@ let preview = null;
 let previewBusy = false;
 
 function localDateTimeMs(date, time) {
-    const parsed = new Date(date + 'T' + time + ':00');
-    return parsed.getTime();
+    return new Date(date + 'T' + time + ':00').getTime();
+}
+
+function dateAndTime(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return null;
+    const pad = number => String(number).padStart(2, '0');
+    return {
+        date: date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()),
+        time: pad(date.getHours()) + ':' + pad(date.getMinutes())
+    };
 }
 
 function setStatus(message, error = false) {
@@ -22,14 +32,6 @@ function setStatus(message, error = false) {
     output.hidden = !message;
     output.classList.toggle('text-rose-300', error);
     output.classList.toggle('text-slate-300', !error);
-    output.hidden = !message;
-}
-
-function resetPreview(message = 'Bitte wähle Datum, Start- und Endzeit und lade zunächst die HF-Aufzeichnung.') {
-    preview = null;
-    const create = $('daily-hr-activity-create');
-    if (create) create.disabled = true;
-    setStatus(message);
 }
 
 function getWindow() {
@@ -50,28 +52,56 @@ function getWindow() {
     return { date, startTime, endTime, startMs, endMs };
 }
 
-function renderSports(selected = 'Kayaking') {
-    const select = $('daily-hr-activity-sport');
-    if (!select) return;
-    const catalog = getEnabledSportsCatalog();
-    const order = ['Kayaking', 'C1', 'C2', 'PaddleErgo', 'Run', 'Ride', 'Swim', 'WeightTraining', 'Workout'];
-    const keys = [...order.filter(key => catalog[key]), ...Object.keys(catalog).filter(key => !order.includes(key))];
-    select.innerHTML = keys.map(key => '<option value="' + escapeHtml(key) + '">' +
-        escapeHtml(catalog[key].label || key) + '</option>').join('');
-    if (keys.includes(selected)) select.value = selected;
+function selectedActivity() {
+    const activity = state.selectedActivityForModal;
+    if (!activity) throw new Error('Es ist keine Aktivität geöffnet.');
+    if (!getGarminTelemetryActivityId(activity)) {
+        throw new Error('Diese Aktivität besitzt keine eindeutige Garmin-Aktivitäts-ID. Eine Zuordnung der Tages-HF wäre deshalb nicht sicher möglich.');
+    }
+    return activity;
 }
 
-export function openDailyHrActivityModal(date = '') {
+function existingHeartRate(activity) {
+    const series = activity?.garminTelemetry;
+    const hr = Array.isArray(series?.hr) ? series.hr : [];
+    const time = Array.isArray(series?.time) ? series.time : [];
+    const daily = activity?.dailyHeartRateSeries;
+    return (hr.length >= 2 && time.length === hr.length)
+        || (Array.isArray(daily?.hr) && daily.hr.length >= 2);
+}
+
+export function openDailyHrActivityModal() {
     const modal = $('daily-hr-activity-modal');
     if (!modal) return;
-    $('daily-hr-activity-date').value = date || state.selectedCalendarDay || toLocalDateString();
-    $('daily-hr-activity-start').value = '';
-    $('daily-hr-activity-end').value = '';
-    $('daily-hr-activity-name').value = '';
-    $('daily-hr-activity-distance').value = '';
-    if ($('daily-hr-activity-category')) $('daily-hr-activity-category').value = 'ga';
-    renderSports('Kayaking');
-    resetPreview();
+    let activity;
+    try {
+        activity = selectedActivity();
+    } catch (error) {
+        window.alert(error.message);
+        return;
+    }
+    const start = dateAndTime(activity.startTimeLocal || activity.start_time_local || activity.startTime || activity.start_time);
+    const end = dateAndTime(activity.endTimeLocal || activity.end_time_local || activity.endTime || activity.end_time);
+    const durationMinutes = Number(activity.duration);
+    const fallbackEnd = start && Number.isFinite(durationMinutes) && durationMinutes > 0
+        ? new Date(new Date(start.date + 'T' + start.time + ':00').getTime() + durationMinutes * 60000)
+        : null;
+    const date = start?.date || String(activity.date || '').slice(0, 10);
+    $('daily-hr-activity-date').value = date;
+    $('daily-hr-activity-start').value = start?.time || '';
+    $('daily-hr-activity-end').value = end?.time || (fallbackEnd && Number.isFinite(fallbackEnd.getTime())
+        ? dateAndTime(fallbackEnd.toISOString())?.time || '' : '');
+    const activityLabel = activity.name || activity.type || 'Aktivität';
+    $('daily-hr-activity-target').textContent = activityLabel + ' · ' + date;
+    preview = null;
+    const attach = $('daily-hr-activity-create');
+    if (attach) attach.disabled = true;
+    if (existingHeartRate(activity)) {
+        setStatus('Für diese Aktivität ist bereits eine HF-Zeitreihe vorhanden. Sie wird nicht überschrieben.', true);
+        if (attach) attach.disabled = true;
+    } else {
+        setStatus('Prüfe Start- und Endzeit. Die HF-Reihe wird anschließend dieser bestehenden Garmin-Aktivität zugeordnet.');
+    }
     modal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
 }
@@ -85,14 +115,22 @@ export function closeDailyHrActivityModal() {
 
 export function invalidateDailyHrActivityPreview() {
     if (previewBusy) return;
-    resetPreview('Zeitraum geändert. Bitte lade die HF-Aufzeichnung erneut.');
+    preview = null;
+    const attach = $('daily-hr-activity-create');
+    if (attach) attach.disabled = true;
+    setStatus('Zeitraum geändert. Bitte lade die HF-Aufzeichnung erneut.');
 }
 
 export async function previewDailyHrActivity() {
     if (previewBusy) return;
     let window;
+    let activity;
     try {
         window = getWindow();
+        activity = selectedActivity();
+        if (existingHeartRate(activity)) throw new Error('Diese Aktivität besitzt bereits eine HF-Zeitreihe. Sie wird nicht überschrieben.');
+        const activityDate = String(activity.date || window.date).slice(0, 10);
+        if (window.date !== activityDate) throw new Error('Das Datum muss zum Trainingstag der geöffneten Aktivität passen (' + activityDate + ').');
     } catch (error) {
         setStatus(error.message, true);
         return;
@@ -109,7 +147,6 @@ export async function previewDailyHrActivity() {
         const { data: auth, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
         if (!auth?.user?.id) throw new Error('Bitte melde dich an, um deine Garmin-Daten abzurufen.');
-
         const { data, error } = await supabase
             .from('garmin_health_records')
             .select('record_date,payload')
@@ -125,22 +162,18 @@ export async function previewDailyHrActivity() {
         if (samples.length < 2) {
             throw new Error('Im gewählten Zeitraum wurden weniger als zwei gültige HF-Messpunkte gefunden. Prüfe Start- und Endzeit.');
         }
-        preview = { ...window, samples };
-        const create = $('daily-hr-activity-create');
-        if (create) create.disabled = false;
-        const first = new Date(samples[0].timestampMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const last = new Date(samples[samples.length - 1].timestampMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        preview = { ...window, samples, activityId: String(activity.id) };
+        const attach = $('daily-hr-activity-create');
+        if (attach) attach.disabled = false;
         const gaps = samples.slice(1).map((sample, index) => (sample.timestampMs - samples[index].timestampMs) / 1000);
         const longGaps = gaps.filter(seconds => seconds > 30).length;
         const maxGap = gaps.length ? Math.max(...gaps) : 0;
-        setStatus(samples.length + ' HF-Messpunkte gefunden (' + first + '–' + last + '). ' +
-            'Größte Messlücke: ' + Math.round(maxGap) + ' s; ' + longGaps +
-            ' Zeitabstände liegen über 30 s. Solche Lücken werden in der HF-Zonen-Load-Berechnung nicht hochgerechnet. ' +
-            'Es werden ausschließlich vorhandene Messpunkte übernommen.');
+        setStatus(samples.length + ' HF-Messpunkte gefunden. Größte Messlücke: ' + Math.round(maxGap)
+            + ' s; ' + longGaps + ' Zeitabstände liegen über 30 s. Fehlende Werte werden nicht ergänzt.');
     } catch (error) {
         preview = null;
-        const create = $('daily-hr-activity-create');
-        if (create) create.disabled = true;
+        const attach = $('daily-hr-activity-create');
+        if (attach) attach.disabled = true;
         setStatus(error?.message || 'Die Tages-HF-Aufzeichnung konnte nicht geladen werden.', true);
     } finally {
         previewBusy = false;
@@ -150,87 +183,58 @@ export async function previewDailyHrActivity() {
 
 export function createDailyHrActivity() {
     try {
-        const selection = getWindow();
-        if (!preview || preview.date !== selection.date || preview.startMs !== selection.startMs
-            || preview.endMs !== selection.endMs || preview.samples.length < 2) {
-            throw new Error('Bitte lade die HF-Aufzeichnung für den aktuellen Zeitraum erneut.');
+        const window = getWindow();
+        const activity = selectedActivity();
+        if (!preview || preview.date !== window.date || preview.startMs !== window.startMs
+            || preview.endMs !== window.endMs || preview.activityId !== String(activity.id)
+            || preview.samples.length < 2) {
+            throw new Error('Bitte lade die HF-Aufzeichnung für die aktuell geöffnete Aktivität erneut.');
         }
-        const type = value('daily-hr-activity-sport') || 'Kayaking';
-        const catalog = getEnabledSportsCatalog();
-        const distanceRaw = value('daily-hr-activity-distance');
-        let distance = null;
-        if (distanceRaw) {
-            distance = Number(distanceRaw);
-            if (!Number.isFinite(distance) || distance < 0 || distance > 1000) {
-                throw new Error('Bitte gib eine gültige Distanz zwischen 0 und 1.000 ein.');
-            }
-            if (type === 'Swim') distance /= 1000;
-        }
-        const startIso = new Date(selection.startMs).toISOString();
-        const endIso = new Date(selection.endMs).toISOString();
-        const existing = (state.rawActivities || []).some(activity =>
-            activity.dailyHeartRateImported === true
-            && activity.startTime === startIso && activity.endTime === endIso);
-        if (existing) throw new Error('Für diesen Zeitraum existiert bereits eine rekonstruierte HF-Aktivität.');
-
+        if (existingHeartRate(activity)) throw new Error('Diese Aktivität besitzt inzwischen bereits eine HF-Zeitreihe. Es wurde nichts überschrieben.');
         const hr = preview.samples.map(sample => sample.hr);
-        const time = preview.samples.map(sample => Math.round((sample.timestampMs - selection.startMs) / 1000 * 10) / 10);
-        const durationMinutes = Math.round((selection.endMs - selection.startMs) / 60000 * 100) / 100;
+        const time = preview.samples.map(sample => Math.round((sample.timestampMs - window.startMs) / 1000 * 10) / 10);
         const averageHr = Math.round(hr.reduce((sum, value) => sum + value, 0) / hr.length);
         const maxHr = Math.max(...hr);
-        const sportLabel = catalog[type]?.label || type;
-        const activity = {
-            id: 'daily-hr-' + selection.startMs,
-            source: 'manual',
-            manual: true,
-            dailyHeartRateImported: true,
-            date: selection.date,
-            name: (value('daily-hr-activity-name') || sportLabel + ' – Garmin-Tages-HF').slice(0, 120),
-            type,
-            category: value('daily-hr-activity-category') || 'ga',
-            duration: durationMinutes,
-            startTime: startIso,
-            startTimeLocal: selection.date + 'T' + selection.startTime + ':00',
-            endTime: endIso,
-            endTimeLocal: selection.date + 'T' + selection.endTime + ':00',
-            hr: averageHr,
+        const previous = activity.dailyHeartRateSeries;
+        activity.dailyHeartRateSeries = {
+            hr,
+            time,
+            source: 'garmin-daily-heart-rate',
+            timeUnit: 'elapsed_seconds',
+            sampleCount: hr.length,
+            startTimeIso: new Date(window.startMs).toISOString(),
+            endTimeIso: new Date(window.endMs).toISOString(),
+            averageHr,
             maxHr,
-            ...(distance !== null && !['WeightTraining', 'Workout'].includes(type) ? { distance } : {}),
-            telemetry: {
-                hr,
-                time,
-                source: 'garmin-daily-heart-rate',
-                timeUnit: 'elapsed_seconds',
-                startTimeIso: startIso,
-                endTimeIso: endIso,
-                durationSeconds: (selection.endMs - selection.startMs) / 1000,
-                sampleCount: hr.length
-            },
-            dataOrigin: {
-                heartRateSeries: {
-                    source: 'garmin_health_records',
-                    dataType: 'heart_rate',
-                    method: 'dailyHeartRate',
-                    recordDate: selection.date,
-                    sampleCount: hr.length,
-                    timeUnit: 'elapsed_seconds',
-                    importedAt: new Date().toISOString(),
-                    selectedStart: startIso,
-                    selectedEnd: endIso
-                }
+            attachedAt: new Date().toISOString()
+        };
+        activity.dataOrigin = {
+            ...(activity.dataOrigin || {}),
+            dailyHeartRateSeries: {
+                source: 'garmin_health_records',
+                dataType: 'heart_rate',
+                method: 'dailyHeartRate',
+                recordDate: window.date,
+                sampleCount: hr.length,
+                selectedStart: activity.dailyHeartRateSeries.startTimeIso,
+                selectedEnd: activity.dailyHeartRateSeries.endTimeIso
             }
         };
-
-        state.rawActivities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
-        state.rawActivities.push(activity);
         if (saveDataToLocalStorage() === false) {
-            state.rawActivities = state.rawActivities.filter(item => item !== activity);
-            throw new Error('Die Aktivität konnte nicht gespeichert werden. Bitte prüfe deine Anmeldung.');
+            if (previous) activity.dailyHeartRateSeries = previous;
+            else delete activity.dailyHeartRateSeries;
+            throw new Error('Die HF-Zeitreihe konnte nicht gespeichert werden. Bitte prüfe deine Anmeldung.');
         }
-        refreshAll();
+        preview = null;
         closeDailyHrActivityModal();
-        window.openCSVDetailsModal?.(encodeURIComponent(String(activity.id)));
+        refreshAll();
+        // Keep the same activity detail open and redraw its newly attached series.
+        const current = (state.rawActivities || []).find(item => String(item.id) === String(activity.id));
+        if (current) {
+            state.selectedActivityForModal = current;
+            window.openCSVDetailsModal?.(encodeURIComponent(String(current.id)));
+        }
     } catch (error) {
-        setStatus(error?.message || 'Die Aktivität konnte nicht erstellt werden.', true);
+        setStatus(error?.message || 'Die HF-Zeitreihe konnte nicht ergänzt werden.', true);
     }
 }
