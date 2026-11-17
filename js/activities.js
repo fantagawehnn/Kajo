@@ -11,6 +11,7 @@ import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivity
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
+import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
 import { populateActivityRouteSelect } from './routes.js';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
@@ -676,6 +677,8 @@ export function openCSVDetailsModal(id) {
     const wasClosed = modal.classList.contains('hidden') || getComputedStyle(modal).display === 'none';
     if (wasClosed) activityDetailReturnFocus = document.activeElement;
     state.selectedActivityForModal = act;
+    const dailyHrAction = document.getElementById('daily-hr-activity-open');
+    if (dailyHrAction) dailyHrAction.hidden = !getGarminTelemetryActivityId(act);
     renderActivityMergeControls(act);
     renderActivityGroupSummary(act);
     const displayAct = getVisibleActivities(activities).find(item => String(item.id) === String(act.id)
