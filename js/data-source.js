@@ -10,7 +10,8 @@ export function isGarminActivity(activity) {
         || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'))
         || activity?.garminFitImported === true
         || activity?.garminTrainingLoad != null
-        || activity?.dailyHeartRateImported === true;
+        || activity?.dailyHeartRateImported === true
+        || activity?.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate';
 }
 
 export function getGarminTelemetry(activity) {
