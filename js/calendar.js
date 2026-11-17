@@ -255,7 +255,8 @@ function calendarActivitySourceLabel(activity) {
     const labels = [];
     if (sources.has('garmin') || activity?.garminData || activity?.garminFitImported) labels.push('Garmin');
     if (sources.has('intervals')) labels.push('Intervals.icu');
-    if (sources.has('manual')) labels.push('Manuell');
+    if (activity?.dailyHeartRateImported === true) labels.push('Garmin-Tages-HF');
+    else if (sources.has('manual')) labels.push('Manuell');
     if (sources.has('csv') || sources.has('fit') || sources.has('file') || sources.has('import')) labels.push('Dateiimport');
     return labels.length ? [...new Set(labels)].join(' + ') : 'Quelle nicht ausgewiesen';
 }
