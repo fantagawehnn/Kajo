@@ -41,28 +41,39 @@ test('daily heart-rate window is sorted, deduplicated and inclusive at both boun
     ]);
 });
 
-test('daily heart-rate provenance explicitly enables generic activity telemetry', () => {
+test('daily HR series is exposed on the existing Garmin activity without replacing its identity', () => {
     const activity = {
-        id: 'daily-hr-1',
-        source: 'manual',
-        dailyHeartRateImported: true,
+        id: '123456789',
+        source: 'garmin',
         date: '2026-11-17',
         duration: 60,
-        telemetry: { hr: [140, 150, 160, 170], time: [0, 20, 40, 60] }
+        distance: 8.4,
+        name: 'Manuell in Garmin eingetragenes Training',
+        dailyHeartRateSeries: {
+            hr: [140, 150, 160, 170],
+            time: [0, 20, 40, 60],
+            source: 'garmin-daily-heart-rate'
+        }
     };
     assert.equal(isGarminActivity(activity), true);
-    assert.equal(getActivityTelemetry(activity), activity.telemetry);
-    assert.deepEqual(getGarminHeartRateSeries(activity).hr, [140, 150, 160, 170]);
+    assert.deepEqual(getActivityTelemetry(activity).hr, [140, 150, 160, 170]);
+    assert.deepEqual(getGarminHeartRateSeries(activity).time, [0, 20, 40, 60]);
+    assert.equal(activity.id, '123456789');
+    assert.equal(activity.distance, 8.4);
+    assert.equal(activity.duration, 60);
 });
 
-test('daily HR activity is eligible for the explicit KAJO HR-zone load model', () => {
+test('daily HR series on an existing Garmin activity is eligible for the explicit KAJO HR-zone load model', () => {
     const activity = {
-        id: 'daily-hr-load-test',
-        source: 'manual',
-        dailyHeartRateImported: true,
+        id: '123456790',
+        source: 'garmin',
         date: '2026-11-17',
         duration: 1,
-        telemetry: { hr: [140, 150, 160, 170], time: [0, 20, 40, 60] }
+        dailyHeartRateSeries: {
+            hr: [140, 150, 160, 170],
+            time: [0, 20, 40, 60],
+            source: 'garmin-daily-heart-rate'
+        }
     };
     const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, {
         maxHr: 190,
@@ -73,14 +84,17 @@ test('daily HR activity is eligible for the explicit KAJO HR-zone load model', (
     assert.ok(result.records[0].value > 0);
 });
 
-test('sparse daily HR samples are not interpolated into a false training load', () => {
+test('sparse daily HR samples on an existing activity are not interpolated into false training load', () => {
     const activity = {
-        id: 'daily-hr-sparse-test',
-        source: 'manual',
-        dailyHeartRateImported: true,
+        id: '123456791',
+        source: 'garmin',
         date: '2026-11-17',
         duration: 6,
-        telemetry: { hr: [140, 150, 160, 170], time: [0, 120, 240, 360] }
+        dailyHeartRateSeries: {
+            hr: [140, 150, 160, 170],
+            time: [0, 120, 240, 360],
+            source: 'garmin-daily-heart-rate'
+        }
     };
     const result = getTrainingLoadData([activity], { trainingLoadSource: 'kajo-zone' }, {
         maxHr: 190,
