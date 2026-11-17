@@ -100,8 +100,12 @@ test('sparse daily HR samples on an existing activity are not interpolated into 
         maxHr: 190,
         restingHr: 50
     });
-    assert.equal(result.mode, 'garmin-unavailable');
-    assert.equal(result.records.length, 0);
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.records.length, 1);
+    assert.ok(result.records[0].value > 0);
+    assert.equal(result.records[0].dataQuality, 'limited');
+    assert.equal(result.records[0].durationSource, 'daily-heart-rate-sample-estimate');
+    assert.equal(result.records[0].samplingIntervalSeconds, 120);
 });
 
 test('unmarked manual telemetry remains excluded', () => {
