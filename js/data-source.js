@@ -15,8 +15,20 @@ export function isGarminActivity(activity) {
 
 export function getGarminTelemetry(activity) {
     if (!isGarminActivity(activity)) return null;
-    const telemetry = activity?.garminTelemetry;
-    return telemetry && typeof telemetry === 'object' ? telemetry : null;
+    const telemetry = activity?.garminTelemetry && typeof activity.garminTelemetry === 'object'
+        ? activity.garminTelemetry : {};
+    const daily = activity?.dailyHeartRateSeries && typeof activity.dailyHeartRateSeries === 'object'
+        ? activity.dailyHeartRateSeries : null;
+    if (!daily || !Array.isArray(daily.hr) || !Array.isArray(daily.time)
+        || daily.hr.length < 2 || daily.hr.length !== daily.time.length) {
+        return Object.keys(telemetry).length ? telemetry : null;
+    }
+    return {
+        ...telemetry,
+        hr: Array.isArray(telemetry.hr) && telemetry.hr.length >= 2 ? telemetry.hr : daily.hr,
+        time: Array.isArray(telemetry.time) && telemetry.time.length === telemetry.hr?.length
+            ? telemetry.time : daily.time
+    };
 }
 
 /** Mark legacy generic telemetry as excluded from analysis without deleting it.
