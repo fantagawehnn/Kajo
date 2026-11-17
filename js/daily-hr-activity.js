@@ -178,7 +178,7 @@ export async function previewDailyHrActivity() {
     }
 }
 
-export function createDailyHrActivity() {
+export function attachDailyHrSeriesToActivity() {
     try {
         const selection = getWindow();
         const activity = selectedActivity();
@@ -193,6 +193,7 @@ export function createDailyHrActivity() {
         const averageHr = Math.round(hr.reduce((sum, value) => sum + value, 0) / hr.length);
         const maxHr = Math.max(...hr);
         const previous = activity.dailyHeartRateSeries;
+        const previousOrigin = activity.dataOrigin;
         activity.dailyHeartRateSeries = {
             hr,
             time,
@@ -220,6 +221,8 @@ export function createDailyHrActivity() {
         if (saveDataToLocalStorage() === false) {
             if (previous) activity.dailyHeartRateSeries = previous;
             else delete activity.dailyHeartRateSeries;
+            if (previousOrigin) activity.dataOrigin = previousOrigin;
+            else delete activity.dataOrigin;
             throw new Error('Die HF-Zeitreihe konnte nicht gespeichert werden. Bitte prüfe deine Anmeldung.');
         }
         preview = null;
