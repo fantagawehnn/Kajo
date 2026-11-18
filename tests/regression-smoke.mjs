@@ -370,6 +370,8 @@ const garminLeaseMigration = await readFile(new URL('../supabase/migrations/2026
 assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
 assert.ok(garminBackendSource.includes('lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.'), 'Concurrent health-history requests must atomically claim only an unowned or expired lease');
 assert.ok(garminBackendSource.includes('.eq("lock_token", lockToken)'), 'Cursor mutations must be restricted to the invocation that owns the lease');
+assert.ok(garminBackendSource.includes('if (!markedRunning) throw new Error'), 'The invocation must verify lease ownership before beginning cursor work');
+assert.ok(garminBackendSource.includes('if (!released) throw new Error'), 'The invocation must verify that it still owns the lease when releasing it');
 assert.ok(garminBackendSource.includes('lock_expires_at: leaseExpiry()'), 'The health-history lease must be renewed during processing');
 assert.ok(garminBackendSource.includes('Eine andere Gesundheitsdaten-Synchronisierung verarbeitet diesen Fortschritt derzeit.'), 'A concurrent health-history request must exit without modifying the active cursor');
 assert.ok(garminBackendSource.includes('Die Sperre für die Garmin-Gesundheitssynchronisierung ist abgelaufen'), 'A worker that loses its lease must stop before advancing the cursor');
