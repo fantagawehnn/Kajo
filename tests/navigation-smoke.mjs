@@ -386,3 +386,13 @@ assert.ok(garminArchive.includes('function collectGarminFields'), 'Garmin archiv
 assert.ok(garminArchive.includes('fieldInventory: {}') && garminArchive.includes('collectGarminFields(parsed, category'), 'Garmin archive analysis stores a compact field inventory in the archive manifest');
 assert.ok(garminArchive.includes('Erkannte Datenfelder anzeigen') && garminArchive.includes('field.occurrences'), 'Garmin archive history exposes the recognized field inventory to the user');
 assert.ok(garminArchive.includes('keine Messwerte importiert oder als Rohwerte gespeichert'), 'Garmin field preview does not import or persist raw measurement values');
+
+
+assert.ok(garminArchive.includes('fitnessagedata|metricsmaxmet|vo2|max.?met|benchmark'), 'Garmin fitness-age and VO2max exports are classified as performance data');
+assert.ok(garminArchive.includes('summarizedactivities|activitydetails'), 'Garmin activity files are identified by concrete activity filenames');
+assert.ok(garminArchive.includes('trainingplan|_workout.json|workout'), 'Garmin workout definitions are separated from completed activities');
+assert.ok(garminArchive.includes('customer_data|di-connect-user|trainingplan|_workout.json'), 'profile and workout-plan dates are excluded from the historical measurement period');
+assert.ok(garminArchive.includes('birth|created|updated|modified|deleted|expiry|expiration|upload|export'), 'metadata timestamps are excluded from the historical measurement period');
+assert.ok(garminArchive.includes('timestamp <= Date.now() + 24 * 60 * 60 * 1000'), 'future plan dates do not extend the historical measurement period');
+assert.ok(garminArchive.includes('analysisVersion: 2') && garminArchive.includes('preview?.analysisVersion !== 2'), 'existing Garmin archives can be re-analysed with the corrected field and date rules');
+assert.ok(garminArchive.includes("if (/summarizedactivities|activitydetails/.test(value)) return 'activities';"), 'only concrete completed-activity exports are classified as activities');
