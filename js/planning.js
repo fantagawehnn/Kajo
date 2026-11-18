@@ -28,18 +28,18 @@ export function renderPlannedWorkouts() {
     list.forEach(p=>{
         const cat=categories[p.category||'ga']||categories.ga, sport=(sports[p.type]||sports.Workout).label;
         const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
-        el.insertAdjacentHTML('beforeend', \`
+        el.insertAdjacentHTML('beforeend', `
             <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <span class="text-[10px] \${cat.text}">\${formatDateDDMMYY(p.date)} · \${escapeHtml(cat.label)}</span>
-                    <h4 class="text-sm font-bold text-white">\${escapeHtml(p.name)}</h4>
-                    <p class="text-xs text-slate-400">\${escapeHtml(sport)} · \${p.duration||'—'} min · Ziel-Load \${p.targetTss??'—'}</p>
+                    <span class="text-[10px] ${cat.text}">${formatDateDDMMYY(p.date)} · ${escapeHtml(cat.label)}</span>
+                    <h4 class="text-sm font-bold text-white">${escapeHtml(p.name)}</h4>
+                    <p class="text-xs text-slate-400">${escapeHtml(sport)} · ${p.duration||'—'} min · Ziel-Load ${p.targetTss??'—'}</p>
                 </div>
                 <div class="flex shrink-0 items-center gap-3">
-                    <button type="button" onclick="openPlannedWorkoutModal('\${id}')" class="text-xs text-cyan-400 hover:text-white">Bearbeiten</button>
-                    <button type="button" onclick="deletePlannedWorkout('\${id}')" class="text-xs text-rose-400 hover:text-white">Löschen</button>
+                    <button type="button" onclick="openPlannedWorkoutModal('${id}')" class="text-xs text-cyan-400 hover:text-white">Bearbeiten</button>
+                    <button type="button" onclick="deletePlannedWorkout('${id}')" class="text-xs text-rose-400 hover:text-white">Löschen</button>
                 </div>
-            </div>\`);
+            </div>`);
     });
 }
 export function deletePlannedWorkout(id){
