@@ -256,7 +256,7 @@ async function processZip(zip, prefix, context, depth = 0) {
             category,
             file_extension: extension || null,
             file_size_bytes: Number(entry._data?.uncompressedSize || 0),
-            record_count: null,
+            top_level_item_count: null,
             date_from: null,
             date_to: null,
             is_json: extension === 'json',
