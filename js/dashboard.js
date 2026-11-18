@@ -8,7 +8,7 @@ import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog } from './util
 import { getTrainingLoadData } from './training-load.js';
 import { calculateReadiness as calculateReadinessFromData } from './recovery-calculations.js';
 import { loadCheckinInputs } from './health.js';
-import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=2';
+import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=4';
 import { showChartPointReadout } from './chart-readout.js';
 
 
