@@ -14,6 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
+import { normalizeGarminWeight, countGarminMetricUpdates } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
@@ -516,6 +517,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         const sleepPayload = records.sleep_detail ?? records.sleep_summaries;
         const summaryPayload = records.daily_summary;
 
+        const weightMeasurement = normalizeGarminWeight(records.weight);
         const candidates = {
             garminHrv: findGarminNumber(hrvPayload, ['lastNightAvg', 'lastNightAverage', 'averageHrv', 'avgHrv', 'hrv']),
             garminRhr: findGarminNumber(heartPayload, ['restingHeartRate', 'restingHr', 'restingHR']),
@@ -523,7 +525,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             garminSleepScore: findGarminSleepScore(sleepPayload),
             garminRespiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
             garminStress: findGarminNumber(records.stress, ['overallStressLevel', 'averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
-            garminWeight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
+            garminWeight: weightMeasurement?.value ?? findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
             garminBodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery', ['latestValue']),
             garminSpo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
             garminSteps: findGarminNumber(records.steps, ['totalSteps']),
@@ -543,7 +545,10 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             garminSleepScore: { source: 'garmin', metric: 'sleep_score', unit: 'points' },
             garminRespiration: { source: 'garmin', metric: 'respiration_rate', unit: 'breaths/min' },
             garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' },
-            garminWeight: { source: 'garmin', metric: 'body_weight', unit: 'kg' },
+            garminWeight: {
+                source: 'garmin', metric: 'body_weight', unit: 'kg',
+                ...(weightMeasurement?.sourceType ? { sourceType: weightMeasurement.sourceType } : {})
+            },
             garminBodyBattery: { source: 'garmin', metric: 'body_battery', unit: 'points' },
             garminSpo2: { source: 'garmin', metric: 'oxygen_saturation', unit: '%' },
             garminSteps: { source: 'garmin', metric: 'steps', unit: 'steps' },
@@ -569,10 +574,10 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
                 [key]: sourceMetadata[key]
             };
         }
-        const keys = Object.keys(updates);
-        if (!keys.length) continue;
+        const metricCount = countGarminMetricUpdates(updates);
+        if (!metricCount) continue;
         if (!dryRun) state.dailyCheckins[date] = { ...existing, ...updates };
-        importedValues += keys.length;
+        importedValues += metricCount;
         changedDays++;
     }
 
