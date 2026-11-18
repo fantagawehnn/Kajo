@@ -443,7 +443,7 @@ async function syncGarminHealthHistoryBatch(
 }
 
 type GarminSyncEventInput = {
-  source: "manual_range" | "daily_sync" | "manual_activities" | "background";
+  source: "manual_range" | "daily_sync" | "manual_activities" | "manual_health_history" | "background";
   syncType: "activity_list" | "health_history";
   startDate: string | null;
   endDate: string | null;
@@ -1497,10 +1497,13 @@ Deno.serve(async (req) => {
       }, () => syncGarminActivitiesForUser(admin, userId, date, date, false));
       // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
       // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
+      // A daily refresh must not reuse or reset the historical backfill cursor.
+      // It writes the same idempotent per-day records directly; the leased batch
+      // cursor remains dedicated to the user's selected historical range.
       const healthSync = await runTrackedGarminSync(admin, userId, {
         source: "daily_sync", syncType: "health_history", startDate: date, endDate: date,
         timezoneBasis: "client_local_date", timezoneOffsetMinutes,
-      }, () => syncGarminHealthHistoryBatch(admin, userId, date, date, true, true));
+      }, () => syncGarminHealthDay(admin, userId, date, true));
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 
@@ -1532,7 +1535,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "sync-health-history-batch") {
-      const result = await syncGarminHealthHistoryBatch(admin, userId, "2020-01-01", new Date().toISOString().slice(0, 10));
+      const startDate = "2020-01-01";
+      const endDate = new Date().toISOString().slice(0, 10);
+      const result = await runTrackedGarminSync(admin, userId, {
+        source: "manual_health_history", syncType: "health_history", startDate, endDate,
+        timezoneBasis: "utc",
+      }, () => syncGarminHealthHistoryBatch(admin, userId, startDate, endDate));
       return json(200, { ok: true, sync: result });
     }
 
