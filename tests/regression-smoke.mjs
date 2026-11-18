@@ -362,6 +362,11 @@ assert.ok(mainSource.includes('const today = getLocalCalendarDate();'),
     'Garmin range validation in the app must use the local calendar date');
 assert.ok(mainSource.includes('scannedDays + skippedDays !== totalDays'),
     'Garmin coverage must only be recorded when the backend accounts for every requested day');
+assert.ok(mainSource.includes("if (sync.activitySync.status !== 'ok')"), 'Range imports must stop on any non-success activity-list status');
+assert.ok(mainSource.includes("if (health.status === 'in_progress')"), 'A busy health-history lease must not be interpreted as zero remaining days');
+assert.ok(mainSource.includes("!['complete', 'partial', 'rate_limited'].includes(String(health.status || ''))"), 'Range imports must fail closed on missing or unknown health-history status');
+assert.ok(mainSource.includes("const partial = activitySync?.status !== 'ok'"), 'Daily sync must not be marked current when the activity-list import is incomplete');
+assert.ok(mainSource.includes("|| health?.status !== 'complete'"), 'Daily sync must not be marked current when health history is not complete');
 
 
 // Garmin sync audit history must record outcome, source and timezone without exposing it to clients.
