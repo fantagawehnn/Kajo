@@ -290,7 +290,10 @@ function switchTab(requestedTab) {
     if (view === 'strength') renderStrengthView();
     if (view === 'nutrition') renderNutritionView();
     if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); }
-    if (view === 'upload') renderImportHistory();
+    if (view === 'upload') {
+        renderImportHistory();
+        void renderGarminExportArchiveHistory();
+    }
     if (view === 'health-data') renderMetricHistory('health');
     if (view === 'training-analysis') renderMetricHistory('training');
     if (view === 'routes') renderRoutesView();
