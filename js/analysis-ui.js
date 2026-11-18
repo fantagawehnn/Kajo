@@ -282,7 +282,7 @@ function renderPerformanceTrend(key) {
     labels = entries.map(([date])=>dateLabel(date));
     values = entries.map(([,row])=>getGarminCheckinMetric(row, 'vo2max'));
     heading = 'VO₂max · Garmin-Schätzwert'; unit = 'ml/kg/min';
-    explanation = 'Verlauf der importierten Garmin-Schätzwerte. Das Garmin-Aktivitätsprofil belegt nicht die tatsächlich ausgeübte Sportart; der Wert ist daher nicht automatisch paddelspezifisch. Keine direkte Spiroergometrie oder Labordiagnostik.';
+    explanation = 'Verlauf der importierten Garmin-Schätzwerte. Das Garmin-Aktivitätsprofil belegt nicht die tatsächlich ausgeübte Sportart; der Wert ist daher nicht automatisch paddelspezifisch. keine direkte Spiroergometrie oder Labordiagnostik.';
     color = '#f97316';
   } else if (key.startsWith('strength:')) {
     const exercise = decodeURIComponent(key.slice(9));
