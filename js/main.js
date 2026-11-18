@@ -14,7 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
-import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js';
+import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
@@ -2814,6 +2814,8 @@ async function handleAuthSession(session) {
             try {
                 initializeSettings();
                 initEngine();
+                // Garmin-Archivhistorie erst nach bestätigter Anmeldung und geladenem Kontospeicher abrufen.
+                void renderGarminExportArchiveHistory();
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
                 void syncGarminTodayOnOpen(userId);
