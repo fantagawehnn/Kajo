@@ -398,7 +398,8 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                 const recordCount = Array.isArray(parsed) ? parsed.length
                     : parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 1;
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
-                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);\n                if (category === 'activities') collectSummarizedActivities(parsed, summary.activityRecords);
+                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);
+                if (category === 'activities') collectSummarizedActivities(parsed, summary.activityRecords);
                 const dates = [];
                 collectDateValues(parsed, dates, { count: 0 }, path);
                 for (const date of dates) summary.dates.push(date);
@@ -453,7 +454,8 @@ export async function analyzeGarminExportArchive(importId) {
             categories: {},
             topLevelRecords: {},
             fieldInventory: {},
-            fieldInventoryBudget: { counts: {}, truncated: [] },\n            activityRecords: [],
+            fieldInventoryBudget: { counts: {}, truncated: [] },
+            activityRecords: [],
             otherFiles: {},
             dates: [],
             errors: []
