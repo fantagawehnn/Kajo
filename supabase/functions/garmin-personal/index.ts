@@ -1309,7 +1309,7 @@ async function syncGarminActivitiesForUserUnlocked(
       return {
         user_id: userId,
         garmin_activity_id: activityId,
-        activity: item,
+        activity: { ...activity, raw: item },
         start_time: startTime,
         activity_type: activity.activityType == null ? null : String(activity.activityType),
         duration_seconds: Number.isFinite(duration) && duration > 0 ? duration : null,
