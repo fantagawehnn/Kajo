@@ -55,7 +55,7 @@ function individualTrendScore(value, historyValues, direction, minimumScale) {
     const scale = Math.max(1.4826 * mad, sd * 0.5, minimumScale);
     const deviation = (Number(value) - baseline) / scale;
     const favourableDeviation = deviation * direction;
-    const score = Math.round(clamp(50 + 15 * Math.max(-3, Math.min(3, favourableDeviation))));
+    const score = Math.round(clamp(70 + 10 * Math.max(-3, Math.min(0, favourableDeviation))));
     return {
         score,
         baseline: Number(baseline.toFixed(1)),
@@ -156,7 +156,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
                 // only a meaningful shortfall below the athlete's own baseline is penalized.
                 sleepItems.push({
                     key: 'sleepDuration', label: 'Schlafdauer', value: Number(duration),
-                    score: Math.min(50, baseline.score), baseline: baseline.baseline,
+                    score: baseline.score, baseline: baseline.baseline,
                     deviation: baseline.deviation, observations: baseline.observations
                 });
             } else {
