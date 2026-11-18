@@ -12,7 +12,7 @@ import {
 
 const BUCKET = 'garmin-exports';
 const PROJECT_ID = 'zgvargkfzgekokuisarv';
-const LARGE_JSON_BYTES = 750 * 1024;
+const LARGE_JSON_BYTES = 150 * 1024;
 const TUS_THRESHOLD_BYTES = 6 * 1024 * 1024;
 const FILE_BATCH_SIZE = 25;
 const PERFORMANCE_BATCH_SIZE = 100;
@@ -216,12 +216,10 @@ async function updateImportManifest(importId, userId, manifest, dataImport) {
     return nextManifest;
 }
 
-async function insertInBatches(table, rows, size, conflict = null) {
+async function insertInBatches(table, rows, size) {
     for (let offset = 0; offset < rows.length; offset += size) {
         const batch = rows.slice(offset, offset + size);
-        let request = supabase.from(table).insert(batch);
-        if (conflict) request = supabase.from(table).upsert(batch, { onConflict: conflict, ignoreDuplicates: true });
-        const { error } = await request;
+        const { error } = await supabase.from(table).insert(batch);
         if (error) throw error;
     }
 }
