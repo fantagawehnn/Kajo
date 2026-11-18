@@ -199,8 +199,8 @@ export function buildCoachRequestContext(appState, question) {
     const strength = Array.isArray(state.strengthLogs) ? state.strengthLogs : [];
     const races = Array.isArray(state.races) ? state.races : [];
 
-    const selectedActivities = selectWindow(activities, item => item?.date, scope.from, scope.to, LIMITS.activities);
-    const selectedTimeline = selectWindow(timeline, item => item?.date, scope.from, scope.to, LIMITS.timeline);
+    const selectedActivities = selectWindow(activities, item => item?.date, scope.from, scope.to || today, LIMITS.activities);
+    const selectedTimeline = selectWindow(timeline, item => item?.date, scope.from, scope.to || today, LIMITS.timeline);
     const checkInRecords = Object.entries(checkins).map(([date, value]) => ({
         date,
         ...pick(value, CHECKIN_FIELDS)
