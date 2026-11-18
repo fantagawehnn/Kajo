@@ -101,6 +101,27 @@ test('HRV baseline uses matching source, metric identity and unit', () => {
     });
 });
 
+test('manual health values are not used as Garmin recovery data', () => {
+    const source = makeState({
+        dailyCheckins: {
+            [day]: {
+                hrv: 75,
+                rhr: 45,
+                respiration: 13,
+                sleepDuration: 8,
+                sleepScore: 95,
+                measurementSources: {
+                    hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' }
+                }
+            }
+        }
+    });
+    const result = calculateReadiness(day, source);
+    assert.equal(result.objective.length, 0);
+    assert.equal(result.domains.physiology, null);
+    assert.equal(result.domains.sleep, null);
+});
+
 test('sleep duration and sleep score are not counted twice in the sleep domain', () => {
     const source = makeState({
         dailyCheckins: { [day]: { garminHrv: 60, garminSleepDuration: 4, garminSleepScore: 90, sleepQuality: 4 } }
