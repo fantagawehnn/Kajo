@@ -184,7 +184,8 @@ const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-
   '<span class="kajo-recovery-metric-label">' + performanceEscape(label) + '</span><small>' + performanceEscape(unit || detail || 'Nicht erfasst') + '</small></button>';
 function renderFitness() {
   const vo2 = latestCheckin('vo2max');
-  const vo2Color = vo2 ? historyRingColor('vo2max', vo2.value, vo2.date) : 'var(--kajo-status-info)';
+  // No validated Garmin-specific VO2max status threshold is defined; keep the indicator neutral.
+  const vo2Color = 'var(--kajo-status-info)';
   const vo2Circle = performanceCircle('vo2max','VO₂max',vo2 ? fmt(vo2.value,1) : '—','ml/kg/min',
     vo2 ? 'Garmin-Schätzwert · nicht automatisch paddelspezifisch' : 'Nicht erfasst',vo2Color);
   renderMetrics('fitness-aerobic-metrics',[vo2Circle]);
