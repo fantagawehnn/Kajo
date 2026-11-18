@@ -97,6 +97,21 @@ test('keeps full episode boundaries when the selected window starts mid-episode'
   assert.equal(episodes[0].daysInWindow, 2);
 });
 
+test('keeps full episode boundaries when the selected window ends mid-episode', () => {
+  const episodes = summarizeHealthEpisodes({
+    '2026-11-01': { status: 'sick' },
+    '2026-11-02': { status: 'sick' },
+    '2026-11-03': { status: 'sick' },
+    '2026-11-04': { status: 'sick' },
+    '2026-11-05': { status: 'sick' }
+  }, '2026-11-01', '2026-11-03');
+  assert.equal(episodes.length, 1);
+  assert.equal(episodes[0].startDate, '2026-11-01');
+  assert.equal(episodes[0].endDate, '2026-11-05');
+  assert.equal(episodes[0].documentedDays, 5);
+  assert.equal(episodes[0].daysInWindow, 3);
+});
+
 test('does not infer an episode across missing days or healthy-status gaps', () => {
   const episodes = summarizeHealthEpisodes({
     '2026-11-01': { status: 'sick' },
