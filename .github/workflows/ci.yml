@@ -2,7 +2,7 @@ name: KAJO V2 CI
 
 on:
   push:
-    branches: [v2, feat/garmin-data-quality-v2]
+    branches: [v2, feat/garmin-data-quality-v2, design/kajo-new-interface-v1]
   pull_request:
     branches: [v2]
 
@@ -18,7 +18,7 @@ jobs:
       run:
         # Windows nutzt cmd.exe, damit die lokale PowerShell-Execution-Policy nicht blockiert.
         # Pull Requests laufen auf Ubuntu und verwenden bash.
-        shell: ${{ github.event_name == 'push' && 'cmd' || 'bash' }}
+        shell: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'cmd' || 'bash' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -53,3 +53,18 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4.162.0"
           command: deploy
+
+  deploy-design-preview:
+    needs: regression-smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/design/kajo-new-interface-v1'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout design preview
+        uses: actions/checkout@v5
+      - name: Deploy isolated KAJO design preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.162.0"
+          command: deploy --config wrangler.preview.jsonc
