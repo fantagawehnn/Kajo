@@ -403,6 +403,7 @@ assert.ok(garminBackendSource.includes('async function syncGarminHealthDayUnlock
 assert.ok(garminBackendSource.includes('async function syncGarminHealthDay('), 'Daily refresh and historical backfill must share the same health-day lease wrapper');
 assert.ok(garminBackendSource.includes('type: "vo2_max", path: `/metrics-service/metrics/maxmet/daily/${date}/${date}`'), 'Daily Garmin imports must preserve VO2 Max history even when KAJO does not yet analyse it');
 assert.ok(garminBackendSource.includes('type: "effective_weight_goals", path: `/goal-service/goal/user/effective/weightgoal/${date}/${date}`'), 'Daily Garmin imports must preserve effective weight-goal data');
+assert.ok(garminBackendSource.includes('() => syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, true, false)'), 'Manual Garmin history sync must rescan completed ranges so newly added endpoint datasets are backfilled');
 assert.ok(garminBackendSource.includes('type: "activity_types", path: "/activity-service/activity/activityTypes/simple"'), 'Garmin activity type catalog must be archived');
 assert.ok(garminBackendSource.includes('type: "heart_rate_zones", path: "/biometric-service/heartRateZones/v2"'), 'Garmin heart-rate zones must be archived');
 assert.ok(garminBackendSource.includes('type: "profile_settings", path: "/userprofile-service/userprofile/settings"'), 'Garmin profile settings must be archived');
