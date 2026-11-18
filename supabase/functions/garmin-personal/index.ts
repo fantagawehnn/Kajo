@@ -1269,7 +1269,7 @@ Deno.serve(async (req) => {
       const results = [];
       for (const connection of connections ?? []) {
         try {
-          results.push(await syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10)));
+          results.push(await syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10), true));
         } catch (syncError) {
           const message = syncError instanceof Error ? syncError.message.slice(0, 300) : "Unbekannter Fehler.";
           await admin.from("garmin_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", connection.user_id);
