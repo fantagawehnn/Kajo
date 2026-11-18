@@ -26,6 +26,7 @@ test('accepts only complete, finite, nonnegative and strictly increasing elapsed
     assert.equal(isValidElapsedTimeAxis([0, null, 2], 3), false);
     assert.equal(isValidElapsedTimeAxis([0, '', 2], 3), false);
     assert.equal(isValidElapsedTimeAxis([0, 'not-a-time', 2], 3), false);
+    assert.equal(isValidElapsedTimeAxis([1700000000, 1700000001], 2), false);
     assert.equal(isValidElapsedTimeAxis([0], 1), false);
 });
 
@@ -40,4 +41,66 @@ test('prefers the explicit metric-series elapsed-time axis and rejects invalid a
         time: [0, 1, 2]
     }, 3), [0, 1, 2]);
     assert.equal(getValidatedElapsedTimeAxis({ time: [0, 1] }, 3), null);
+});
+
+test('resolves Garmin paddling speed from m/s to km/h without applying metadata scale factor', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const resolved = resolvePaddlingPerformanceSeries({ type: 'Kayaking' }, [{
+        key: 'directSpeed', unit: 'mps', scaleFactor: 0.1, values: [2, 2.5, null], time: [0, 1, 2]
+    }], 'speed');
+    assert.equal(resolved.unit, 'km/h');
+    assert.deepEqual(resolved.values, [7.2, 9, null]);
+    assert.equal(resolved.sourceDetail, 'Gerätemesswert');
+    assert.match(resolved.conversionNote, /m\/s.*3,6/);
+});
+
+test('resolves device-reported power and explicit stroke cadence only from matching source units', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const power = resolvePaddlingPerformanceSeries({ type: 'C1' }, [{
+        key: 'directPower', unit: 'watt', values: [120, 130], time: [0, 1]
+    }], 'power');
+    assert.equal(power.unit, 'W');
+    assert.deepEqual(power.values, [120, 130]);
+    assert.equal(power.sourceDetail, 'Gerätemesswert');
+    const cadence = resolvePaddlingPerformanceSeries({ type: 'C2' }, [{
+        key: 'directStrokeCadence', unit: 'strokesPerMinute', values: [60, 62], time: [0, 1]
+    }], 'cadence');
+    assert.equal(cadence.unit, '/min');
+    assert.deepEqual(cadence.values, [60, 62]);
+});
+
+test('prefers normalized FIT series and rejects unknown units or non-paddling activity', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const standard = resolvePaddlingPerformanceSeries({ type: 'C1' }, [
+        { key: 'speed', unit: 'km/h', values: [7, 8], time: [0, 1] },
+        { key: 'directSpeed', unit: 'mps', values: [2, 2.2], time: [0, 1] }
+    ], 'speed');
+    assert.deepEqual(standard.values, [7, 8]);
+    assert.equal(standard.unit, 'km/h');
+    assert.equal(resolvePaddlingPerformanceSeries({ type: 'C1' }, [
+        { key: 'directSpeed', unit: 'unknown', values: [2, 2.2], time: [0, 1] }
+    ], 'speed'), null);
+    assert.equal(resolvePaddlingPerformanceSeries({ type: 'Run' }, [
+        { key: 'directSpeed', unit: 'mps', values: [2, 2.2], time: [0, 1] }
+    ], 'speed'), null);
+    assert.equal(resolvePaddlingPerformanceSeries({ type: 'Kayaking' }, [
+        { key: 'directFractionalCadence', unit: 'stepsPerMinute', values: [70, 72], time: [0, 1] }
+    ], 'cadence'), null);
+});
+
+test('uses a time-aligned raw Garmin series when the standard series has no valid time axis', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const resolved = resolvePaddlingPerformanceSeries({ type: 'Kayaking' }, [
+        { key: 'speed', unit: 'km/h', values: [6, 7], time: null },
+        { key: 'directSpeed', unit: 'mps', values: [2, 2.2], time: [0, 1] }
+    ], 'speed');
+    assert.equal(resolved.values[0], 7.2);
+    assert.ok(Math.abs(resolved.values[1] - 7.92) < 1e-9);
+    assert.equal(resolved.unit, 'km/h');
+});
+
+test('keeps a standard HR series available for sample-index trends when its time axis is missing', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const standard = { key: 'hr', unit: 'bpm', values: [120, 130], time: null };
+    assert.equal(resolvePaddlingPerformanceSeries({ type: 'C1' }, [standard], 'hr'), standard);
 });

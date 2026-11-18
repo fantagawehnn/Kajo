@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
-import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis } from './performance-data-quality.js';
+import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -168,11 +168,12 @@ const performanceActivities = () => (Array.isArray(state.rawActivities) ? state.
   }).sort((a,b) => String(a.date || a.startTime).localeCompare(String(b.date || b.startTime)));
 const performanceActivityMetric = (key, label, unit) => {
   const matches = performanceActivities().map(activity => {
-    const series = getActivityTelemetrySeries(activity).find(item => item.key === key);
+    const series = resolvePaddlingPerformanceSeries(activity, getActivityTelemetrySeries(activity), key);
     if (!series || !isValidElapsedTimeAxis(series.time, series.values.length)) return null;
     const values = series.values.filter(valid).map(Number);
     if (!values.length) return null;
-    return { activity, series, value: values.reduce((sum,v)=>sum+v,0)/values.length, count: values.length, label, unit };
+    return { activity, series, value: values.reduce((sum,v)=>sum+v,0)/values.length,
+      count: values.length, label, unit: series.unit || unit, sourceDetail: series.sourceDetail || '' };
   }).filter(Boolean);
   return matches.length ? matches[matches.length-1] : null;
 };
@@ -212,8 +213,9 @@ function renderPerformanceDetail() {
   ];
   const paddleCircles = paddleDefs.map(([key,label,unit]) => {
     const entry = performanceActivityMetric(key,label,unit);
+    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel · letzte Einheit'].filter(Boolean).join(' · ') : unit;
     return performanceCircle(key,label,entry ? fmt(entry.value, key==='hr'||key==='cadence'?0:1) : '—',
-      unit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
+      displayUnit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
   });
   renderMetrics('performance-paddling-metrics',paddleCircles);
 
@@ -298,7 +300,7 @@ function renderPerformanceTrend(key) {
   } else {
     const metricMeta = {speed:['Geschwindigkeit','km/h'],hr:['Herzfrequenz','bpm'],power:['Leistung','W'],cadence:['Kadenz','/min']};
     const activity = performanceActivities().slice().reverse().map(item => ({
-      activity:item, series:getActivityTelemetrySeries(item).find(series=>series.key===key)
+      activity:item, series:resolvePaddlingPerformanceSeries(item, getActivityTelemetrySeries(item), key)
     })).find(item=>item.series);
     if (activity) {
       values = activity.series.values.map(value=>valid(value)?Number(value):null);
@@ -317,8 +319,11 @@ function renderPerformanceTrend(key) {
       heading = metricMeta[key][0] + ' · einzelne Trainingseinheit'; unit = metricMeta[key][1];
       const date = String(activity.activity.date || activity.activity.startTime || '').slice(0,10);
       const sport = activity.activity.sport || activity.activity.type || 'Training';
+      unit = activity.series.unit || metricMeta[key][1];
+      const sourceNote = activity.series.conversionNote || activity.series.sourceDetail;
       explanation = (date ? dateLabel(date)+' · ' : '') + sport +
-        (hasElapsedTime ? '. Zeitachse: Zeit seit Start.' : '. Keine verlässliche Zeitachse; angezeigt wird nur die Messpunktfolge.') +
+        (sourceNote ? '. ' + sourceNote + '.' : '') +
+        (hasElapsedTime ? ' Zeitachse: Zeit seit Start.' : ' Keine verlässliche Zeitachse; angezeigt wird nur die Messpunktfolge.') +
         ' Verlauf innerhalb einer Einheit; kein Vergleich zwischen unterschiedlichen Strecken, Gewässern oder Bedingungen.';
       color = '#38bdf8';
     } else {
