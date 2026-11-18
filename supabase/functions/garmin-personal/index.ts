@@ -586,7 +586,7 @@ async function syncGarminHealthHistoryBatch(
 
 type GarminSyncEventInput = {
   source: "manual_range" | "daily_sync" | "manual_activities" | "manual_health_history" | "background";
-  syncType: "activity_list" | "health_history";
+  syncType: "activity_list" | "activity_files" | "health_history";
   startDate: string | null;
   endDate: string | null;
   timezoneBasis: "client_offset" | "client_local_date" | "utc";
@@ -1684,10 +1684,16 @@ Deno.serve(async (req) => {
       const startDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
       for (const connection of connections ?? []) {
         try {
-          results.push(await runTrackedGarminSync(admin, connection.user_id, {
+          const activityList = await runTrackedGarminSync(admin, connection.user_id, {
             source: "background", syncType: "activity_list", startDate, endDate,
             timezoneBasis: "utc", metadata: { only_missing_days: true },
-          }, () => syncGarminActivitiesForUser(admin, connection.user_id, startDate, endDate, true)));
+          }, () => syncGarminActivitiesForUser(admin, connection.user_id, startDate, endDate, true));
+          const activityFiles = await runTrackedGarminSync(admin, connection.user_id, {
+            source: "background", syncType: "activity_files", startDate, endDate,
+            timezoneBasis: "utc", metadata: { batch_size: 5 },
+          }, () => withGarminActivityLease(admin, connection.user_id, startDate, endDate,
+            (renewLease) => syncActivityFilesBatch(admin, connection.user_id, 5, renewLease)));
+          results.push({ userId: connection.user_id, activityList, activityFiles });
         } catch (syncError) {
           const message = syncError instanceof Error ? syncError.message.slice(0, 300) : "Unbekannter Fehler.";
           await admin.from("garmin_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", connection.user_id);
@@ -1742,6 +1748,11 @@ Deno.serve(async (req) => {
         source: "daily_sync", syncType: "activity_list", startDate: date, endDate: date,
         timezoneBasis: "client_local_date", timezoneOffsetMinutes,
       }, () => syncGarminActivitiesForUser(admin, userId, date, date, false));
+      const activityFilesSync = await runTrackedGarminSync(admin, userId, {
+        source: "daily_sync", syncType: "activity_files", startDate: date, endDate: date,
+        timezoneBasis: "client_local_date", timezoneOffsetMinutes, metadata: { batch_size: 5 },
+      }, () => withGarminActivityLease(admin, userId, date, date,
+        (renewLease) => syncActivityFilesBatch(admin, userId, 5, renewLease)));
       // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
       // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
       // A daily refresh must not reuse or reset the historical backfill cursor.
@@ -1752,7 +1763,7 @@ Deno.serve(async (req) => {
         source: "daily_sync", syncType: "health_history", startDate: date, endDate: date,
         timezoneBasis: "client_local_date", timezoneOffsetMinutes,
       }, () => syncGarminHealthDay(admin, userId, date, forceHealthRefresh));
-      return json(200, { ok: true, sync: { date, activitySync, healthSync } });
+      return json(200, { ok: true, sync: { date, activitySync, activityFilesSync, healthSync } });
     }
 
     if (action === "sync-range") {
@@ -1799,6 +1810,20 @@ Deno.serve(async (req) => {
         source: "manual_activities", syncType: "activity_list", startDate, endDate,
         timezoneBasis: "utc",
       }, () => syncGarminActivitiesForUser(admin, userId, startDate, endDate));
+      return json(200, { ok: true, sync: result });
+    }
+
+    if (action === "sync-activity-files-batch") {
+      const date = new Date().toISOString().slice(0, 10);
+      const requestedBatchSize = Number(body.batchSize);
+      const batchSize = Number.isInteger(requestedBatchSize)
+        ? Math.min(20, Math.max(1, requestedBatchSize))
+        : 5;
+      const result = await runTrackedGarminSync(admin, userId, {
+        source: "manual_activities", syncType: "activity_files", startDate: date, endDate: date,
+        timezoneBasis: "utc", metadata: { batch_size: batchSize },
+      }, () => withGarminActivityLease(admin, userId, date, date,
+        (renewLease) => syncActivityFilesBatch(admin, userId, batchSize, renewLease)));
       return json(200, { ok: true, sync: result });
     }
 
