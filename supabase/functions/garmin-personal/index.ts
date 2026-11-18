@@ -702,6 +702,7 @@ function activityRows(payload: unknown): Record<string, unknown>[] {
 
 async function probeGarminEndpoint(label: string, token: string, path: string) {
   try {
+    await waitForGarminRequestSlot();
     const response = await fetch(`https://personal.connectapi.garmin.com${path}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     });
@@ -754,6 +755,7 @@ function safeActivityPreview(item: Record<string, unknown>) {
 }
 
 async function garminDownloadFit(token: string, activityId: string): Promise<string> {
+  await waitForGarminRequestSlot();
   const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/zip, application/octet-stream, */*" },
   });
@@ -864,6 +866,8 @@ async function syncActivityFilesBatch(
   const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
   const token = await garminToken(apiKey);
   const results = [];
+  let rateLimited = false;
+  let retryInSeconds = 0;
 
   for (const activity of selected) {
     const activityId = String(activity.garmin_activity_id);
@@ -895,13 +899,18 @@ async function syncActivityFilesBatch(
         result.details = "saved";
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Details.";
+        if (/HTTP 429/.test(message)) {
+          rateLimited = true;
+          const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+          retryInSeconds = retryMatch ? Number(retryMatch[1]) : 30;
+        }
         if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
         errors.push(`Details: ${message.slice(0, 220)}`);
         result.details = "error";
       }
     }
 
-    if (!saved?.workouts_synced_at) {
+    if (!rateLimited && !saved?.workouts_synced_at) {
       try {
         await renewLease();
         const workouts = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}/workouts`);
@@ -917,13 +926,18 @@ async function syncActivityFilesBatch(
         result.workouts = workouts == null ? "no_data" : "saved";
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Workouts.";
+        if (/HTTP 429/.test(message)) {
+          rateLimited = true;
+          const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+          retryInSeconds = retryMatch ? Number(retryMatch[1]) : 30;
+        }
         if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
         errors.push(`Workouts: ${message.slice(0, 220)}`);
         result.workouts = "error";
       }
     }
 
-    if (!saved?.fit_synced_at) {
+    if (!rateLimited && !saved?.fit_synced_at) {
       try {
         await renewLease();
         const fitFile = await garminDownloadFitFile(token, activityId);
@@ -948,6 +962,11 @@ async function syncActivityFilesBatch(
         result.fileSizeBytes = fitFile.bytes.length;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim FIT-Download.";
+        if (/HTTP 429/.test(message)) {
+          rateLimited = true;
+          const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+          retryInSeconds = retryMatch ? Number(retryMatch[1]) : 30;
+        }
         if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
         errors.push(`FIT: ${message.slice(0, 220)}`);
         result.fit = "error";
@@ -971,7 +990,12 @@ async function syncActivityFilesBatch(
       }).eq("user_id", userId).eq("garmin_activity_id", activityId);
       result.errors = [];
     }
+    if (errors.length) {
+      result.status = rateLimited ? "rate_limited" : "error";
+      result.error = errors.join(" | ").slice(0, 500);
+    }
     results.push(result);
+    if (rateLimited) break;
   }
 
   const failed = results.filter((item) => item.details === "error" || item.workouts === "error" || item.fit === "error").length;
@@ -979,7 +1003,9 @@ async function syncActivityFilesBatch(
   return {
     // A processed batch is not the end of the archive. The next invocation
     // scans all pages again and reports complete only when no pending item remains.
-    status: failed ? "partial" : "in_progress",
+    status: rateLimited ? "rate_limited" : failed ? "partial" : "in_progress",
+    rateLimited,
+    retryInSeconds,
     totalActivities,
     pendingActivities: selected.length,
     processed: selected.length,
