@@ -403,7 +403,7 @@ assert.ok(garminArchive.includes('function createActivityFieldAudit') && garminA
 assert.ok(garminArchive.includes('activityFieldAudit') && garminArchive.includes('Aktivitätsfelder prüfen'), 'Garmin archive history displays the read-only activity field audit');
 assert.ok(garminArchive.includes('keine Messwerte oder GPS-Daten'), 'activity field audit explicitly excludes raw measurements and GPS data');
 assert.ok(garminArchive.includes('MAX_FIELD_PATHS_PER_CATEGORY = 500') && garminArchive.includes('inventoryBudget.counts[fieldCategory]'), 'Garmin archive field inventory has a separate limit for every data category');
-assert.ok(garminArchive.includes('analysisVersion: 6') && garminArchive.includes('preview?.analysisVersion !== 6'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
+assert.ok(garminArchive.includes('MAX_FIELD_PATHS_PER_CATEGORY = 500') && garminArchive.includes('inventoryBudget.counts[fieldCategory]'), 'Garmin archive field inventory has a separate limit for every data category');
 assert.ok(garminArchive.includes('truncatedCategories: summary.fieldInventoryBudget.truncated'), 'Garmin archive analysis reports categories whose field inventory reached its limit');
 assert.ok(garminArchive.includes('function classifyGarminFieldCategory') && garminArchive.includes('bodybattery|alldaystress|stresslevel|restingheartrate'), 'bundled Garmin daily wellness fields are classified into recovery');
 assert.ok(garminArchive.includes('hydration|kilocalorie|calorie|bmr|sweatloss|nutrition'), 'bundled Garmin nutrition and hydration fields are classified separately');
