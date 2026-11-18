@@ -517,70 +517,58 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         const summaryPayload = records.daily_summary;
 
         const candidates = {
-            hrv: findGarminNumber(hrvPayload, ['lastNightAvg', 'lastNightAverage', 'averageHrv', 'avgHrv', 'hrv']),
-            rhr: findGarminNumber(heartPayload, ['restingHeartRate', 'restingHr', 'restingHR']),
-            sleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
-            sleepScore: findGarminSleepScore(sleepPayload),
-            respiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
+            garminHrv: findGarminNumber(hrvPayload, ['lastNightAvg', 'lastNightAverage', 'averageHrv', 'avgHrv', 'hrv']),
+            garminRhr: findGarminNumber(heartPayload, ['restingHeartRate', 'restingHr', 'restingHR']),
+            garminSleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
+            garminSleepScore: findGarminSleepScore(sleepPayload),
+            garminRespiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
             garminStress: findGarminNumber(records.stress, ['overallStressLevel', 'averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
-            weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
-            bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery', ['latestValue']),
-            spo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
-            steps: findGarminNumber(records.steps, ['totalSteps']),
-            fitnessAge: findGarminNumber(records.fitness_age, ['fitnessAge'])
+            garminWeight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
+            garminBodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery', ['latestValue']),
+            garminSpo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
+            garminSteps: findGarminNumber(records.steps, ['totalSteps']),
+            garminFitnessAge: findGarminNumber(records.fitness_age, ['fitnessAge'])
         };
-
-        // Fallbacks aus der Tageszusammenfassung, wenn ein spezialisierter Datensatz fehlt.
-        if (candidates.rhr === null) candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
-        if (candidates.respiration === null) candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
+        if (candidates.garminRhr === null) candidates.garminRhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
+        if (candidates.garminRespiration === null) candidates.garminRespiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
         if (candidates.garminStress === null) candidates.garminStress = findGarminNumber(summaryPayload, ['avgLevel']);
-        if (candidates.bodyBattery === null) candidates.bodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
-        if (candidates.spo2 === null) candidates.spo2 = findGarminNumber(summaryPayload, ['avgValue']);
-        if (candidates.steps === null) candidates.steps = findGarminNumber(summaryPayload, ['value']);
-
-        if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
-
+        if (candidates.garminBodyBattery === null) candidates.garminBodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
+        if (candidates.garminSpo2 === null) candidates.garminSpo2 = findGarminNumber(summaryPayload, ['avgValue']);
+        if (candidates.garminSteps === null) candidates.garminSteps = findGarminNumber(summaryPayload, ['value']);
+        if (candidates.garminSleepDuration !== null) candidates.garminSleepDuration /= 3600;
+        const sourceMetadata = {
+            garminHrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' },
+            garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' },
+            garminSleepDuration: { source: 'garmin', metric: 'sleep_duration', unit: 'h' },
+            garminSleepScore: { source: 'garmin', metric: 'sleep_score', unit: 'points' },
+            garminRespiration: { source: 'garmin', metric: 'respiration_rate', unit: 'breaths/min' },
+            garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' },
+            garminWeight: { source: 'garmin', metric: 'body_weight', unit: 'kg' },
+            garminBodyBattery: { source: 'garmin', metric: 'body_battery', unit: 'points' },
+            garminSpo2: { source: 'garmin', metric: 'oxygen_saturation', unit: '%' },
+            garminSteps: { source: 'garmin', metric: 'steps', unit: 'steps' },
+            garminFitnessAge: { source: 'garmin', metric: 'fitness_age', unit: 'years' }
+        };
         for (const [key, value] of Object.entries(candidates)) {
             if (value === null || !Number.isFinite(value)) continue;
-            if (key === 'hrv' && value <= 0) continue;
-            if (key === 'rhr' && (value <= 0 || value > 250)) continue;
-            if (key === 'sleepDuration' && (value <= 0 || value > 24)) continue;
-            if (key === 'sleepScore' && (value < 0 || value > 100)) continue;
-            if (key === 'respiration' && (value < 4 || value > 60)) continue;
+            if (key === 'garminHrv' && value <= 0) continue;
+            if (key === 'garminRhr' && (value <= 0 || value > 250)) continue;
+            if (key === 'garminSleepDuration' && (value <= 0 || value > 24)) continue;
+            if (key === 'garminSleepScore' && (value < 0 || value > 100)) continue;
+            if (key === 'garminRespiration' && (value < 4 || value > 60)) continue;
             if (key === 'garminStress' && (value < 0 || value > 100)) continue;
-            if (key === 'weight' && (value <= 0 || value > 400)) continue;
-            if (key === 'bodyBattery' && (value < 0 || value > 100)) continue;
-            if (key === 'spo2' && (value < 50 || value > 100)) continue;
-            if (key === 'steps' && (value < 0 || value > 200000)) continue;
-            if (key === 'fitnessAge' && (value <= 0 || value > 120)) continue;
-
-            // Garmin-Ruhe-HF separat speichern: manuelle/andere rhr-Werte bleiben unangetastet,
-            // während die adaptive Zonenberechnung gezielt den Garmin-Tageswert bevorzugt.
-            const targetKey = key === 'rhr' ? 'garminRhr' : key;
-            if (existing[targetKey] !== null && existing[targetKey] !== undefined && existing[targetKey] !== '') continue;
-            updates[targetKey] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
-            if (key === 'hrv') {
-                // Garmin-HRV wird mit Quelle und Einheit gespeichert. Die konkrete
-                // HRV-Metrik ist im generischen Exportfeld nicht sicher identifizierbar.
-                updates.measurementSources = {
-                    ...(updates.measurementSources || existing.measurementSources || {}),
-                    hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
-                };
-            }
-            if (key === 'rhr') {
-                updates.measurementSources = {
-                    ...(updates.measurementSources || existing.measurementSources || {}),
-                    garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' }
-                };
-            }
-            if (key === 'garminStress') {
-                updates.measurementSources = {
-                    ...(updates.measurementSources || existing.measurementSources || {}),
-                    garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' }
-                };
-            }
+            if (key === 'garminWeight' && (value <= 0 || value > 400)) continue;
+            if (key === 'garminBodyBattery' && (value < 0 || value > 100)) continue;
+            if (key === 'garminSpo2' && (value < 50 || value > 100)) continue;
+            if (key === 'garminSteps' && (value < 0 || value > 200000)) continue;
+            if (key === 'garminFitnessAge' && (value <= 0 || value > 120)) continue;
+            // Garmin-eigene Felder werden aktualisiert; manuelle Check-ins bleiben getrennt.
+            updates[key] = key === 'garminSleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            updates.measurementSources = {
+                ...(updates.measurementSources || existing.measurementSources || {}),
+                [key]: sourceMetadata[key]
+            };
         }
-
         const keys = Object.keys(updates);
         if (!keys.length) continue;
         if (!dryRun) state.dailyCheckins[date] = { ...existing, ...updates };
@@ -619,8 +607,8 @@ async function previewGarminHealthRange() {
         const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate, { dryRun: true });
         status.textContent = result.records === 0
             ? 'Vorschau: Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
-            : 'Vorschau: ' + result.values + ' fehlende Werte an ' + result.days +
-                ' Tagen könnten ergänzt werden. Geprüft: ' + result.records + ' Rohdatensätze an ' +
+            : 'Vorschau: ' + result.values + ' Garmin-Werte an ' + result.days +
+                ' Tagen könnten aktualisiert/ergänzt werden. Geprüft: ' + result.records + ' Rohdatensätze an ' +
                 result.dates + ' Tagen. Es wurde noch nichts verändert.';
     } catch (error) {
         status.textContent = 'Vorschau fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
@@ -652,9 +640,9 @@ async function restoreGarminHealthRange() {
         const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
         status.textContent = result.records === 0
             ? 'Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
-            : 'Wiederherstellung abgeschlossen: ' + result.values + ' Werte an ' + result.days +
-                ' Tagen ergänzt. Geprüft: ' + result.records + ' Rohdatensätze an ' + result.dates +
-                ' Tagen. Bestehende Check-in-Werte wurden nicht überschrieben.';
+            : 'Wiederherstellung abgeschlossen: ' + result.values + ' Garmin-Werte an ' + result.days +
+                ' Tagen aktualisiert/ergänzt. Geprüft: ' + result.records + ' Rohdatensätze an ' + result.dates +
+                ' Tagen. Manuelle Check-in-Angaben bleiben getrennt.';
     } catch (error) {
         console.error('Garmin-Gesundheitsdaten konnten nicht wiederhergestellt werden:', error);
         status.textContent = 'Wiederherstellung fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
