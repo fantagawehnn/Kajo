@@ -87,6 +87,20 @@ async function handleCoach(request, env) {
   const authUser = await authResponse.json();
   if (!authUser?.id) return json({ error: "Ungültige Sitzung." }, 401);
 
+  if (!env.COACH_RATE_LIMITER || typeof env.COACH_RATE_LIMITER.limit !== "function") {
+    return json({ error: "Der Schutz vor zu vielen KI-Anfragen ist noch nicht konfiguriert." }, 503);
+  }
+
+  let rateLimit;
+  try {
+    rateLimit = await env.COACH_RATE_LIMITER.limit({ key: authUser.id });
+  } catch {
+    return json({ error: "Der Anfrageschutz ist momentan nicht erreichbar. Bitte versuche es später erneut." }, 503);
+  }
+  if (!rateLimit?.success) {
+    return json({ error: "Du hast gerade viele Coach-Anfragen gestellt. Bitte warte eine Minute und versuche es erneut." }, 429);
+  }
+
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
   if (declaredLength > MAX_CONTEXT_CHARS + 50_000) {
     return json({ error: "Die Anfrage ist zu groß. Bitte grenze die Analyse zeitlich ein." }, 413);
