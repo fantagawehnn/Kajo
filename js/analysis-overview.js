@@ -7,6 +7,7 @@ import { getSportsCatalog, escapeHtml } from './utils.js';
 import { renderHeartRateZoneDistribution } from './charts.js';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
+import { getGarminCheckinMetric } from './garmin-metric-access.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -69,14 +70,14 @@ function buildSeries(dates) {
     return day && valid(day.load) ? Number(day.load) : null;
   });
   const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
-  const performance = dates.map(date => valid(checkins[date]?.vo2max) ? Number(checkins[date].vo2max) : null);
+  const performance = dates.map(date => getGarminCheckinMetric(checkins[date], 'vo2max'));
   // Health availability is deliberately not inferred from illness/injury logs.
   // No continuous availability series exists in the current data model.
   const health = dates.map(() => null);
   return [
     { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'performance', label: 'Fitness · VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance },
+    { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance },
     { key: 'health', label: 'Health · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
   ];
 }
