@@ -19,6 +19,10 @@ test('extracts only explicit numeric Garmin VO2max records from MetricsMaxMetDat
     ]);
     assert.equal(result[1].unit, 'ml/kg/min');
     assert.equal(result[1].source, 'garmin-export-metrics-max-met');
+    // RUNNING is retained as Garmin's source activity-profile label only;
+    // it must not be converted into a claim about the athlete's actual sport.
+    assert.equal(result[0].sport, 'RUNNING');
+    assert.equal(result[0].subSport, 'GENERIC');
 });
 test('does not interpret MET or fitness-age fields as VO2max', () => {
     assert.deepEqual(extractGarminVo2MaxRecords([
