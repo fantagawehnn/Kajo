@@ -443,7 +443,10 @@ function renderActivityDataQuality(activity) {
 
 function getActivityZoneConfig(activity) {
     const maxHr = Number(state.profile?.maxHr);
-    const windowDays = state.settings?.heartRateZoneSettings?.restingHrWindowDays ?? 7;
+    const zoneSettings = state.settings?.heartRateZoneSettings || {};
+    const windowDays = Number(zoneSettings.restingHrWindowVersion) >= 2
+        ? (zoneSettings.restingHrWindowDays ?? 14)
+        : 14;
     const resting = getAdaptiveRestingHr(
         state.dailyCheckins || {},
         String(activity?.date || '').slice(0, 10),
