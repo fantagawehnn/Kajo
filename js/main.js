@@ -14,7 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
-import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js';
+import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
@@ -88,6 +88,11 @@ function renderNutritionView() {
     void loadNutritionModule().then(module => module.renderNutritionView())
         .catch(error => console.error('Ernährungsbereich konnte nicht geladen werden:', error));
 }
+
+// Die Archivübersicht erst nach abgeschlossener Kontoaktivierung laden.
+window.addEventListener('endurance:user-ready', () => {
+    void renderGarminExportArchiveHistory();
+});
 async function openSupplementModal(...args) {
     const module = await loadNutritionModule();
     return module.openSupplementModal(...args);
