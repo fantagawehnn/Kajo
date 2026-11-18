@@ -6,6 +6,7 @@ import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { isPaddlingPerformanceActivity } from './performance-data-quality.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -161,6 +162,7 @@ const performanceRangeStart = () => {
 };
 const performanceActivities = () => (Array.isArray(state.rawActivities) ? state.rawActivities : [])
   .filter(activity => {
+    if (!isPaddlingPerformanceActivity(activity)) return false;
     const date = String(activity?.date || activity?.startTime || '').slice(0,10);
     return date && date >= performanceRangeStart() && date <= todayKey();
   }).sort((a,b) => String(a.date || a.startTime).localeCompare(String(b.date || b.startTime)));
