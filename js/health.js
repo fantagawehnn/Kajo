@@ -266,8 +266,7 @@ export function saveCheckin() {
     const isSick = document.getElementById('input-sick')?.checked === true;
     const hDiag = document.getElementById('input-health-diagnosis')?.value.trim() || '';
 
-    // Preserve sync data like HRV, rhr if they exist
-    const existing = state.dailyCheckins[todayStr] || {};
+    // Preserve synchronized wearable values and their original provenance.
     
     const measurementSources = { ...(existing.measurementSources || {}) };
     if (Object.prototype.hasOwnProperty.call(wearableUpdates, 'hrv')) {
