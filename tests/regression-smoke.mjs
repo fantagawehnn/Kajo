@@ -379,6 +379,8 @@ assert.ok(garminLeaseMigration.includes('add column if not exists lock_token uui
 assert.ok(garminLeaseMigration.includes('add column if not exists lock_expires_at timestamptz'), 'The lease migration must add an expiry timestamp');
 assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), 'Garmin sync calls must be wrapped in event logging');
 assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, true)'), 'Daily health refresh must not reset the shared historical backfill cursor');
+assert.ok(garminBackendSource.includes('.select("payload,fetched_at")'), 'The no-data retry cooldown must use the stored fetch timestamp');
+assert.ok(mainSource.includes('forceHealthRefresh: attempt === 0'), 'Rate-limit retries must not force-refresh already imported daily health endpoints');
 assert.ok(garminBackendSource.includes('source: "manual_health_history", syncType: "health_history"'), 'Manual historical health batches must be tracked as their own event source');
 assert.ok(garminSyncMigration.includes("'manual_health_history'"), 'The sync event schema must allow manual historical health batch events');
 assert.ok(garminBackendSource.includes('.from("garmin_sync_events").insert({'), 'Garmin sync attempts must be recorded before the operation');
