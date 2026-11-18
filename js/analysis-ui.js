@@ -302,12 +302,26 @@ function renderPerformanceTrend(key) {
     })).find(item=>item.series);
     if (activity) {
       values = activity.series.values.map(value=>valid(value)?Number(value):null);
-      labels = values.map((_,i)=>'Messpunkt '+(i+1));
+      const time = activity.series.time;
+      const hasElapsedTime = Array.isArray(time) && time.length === values.length
+        && time.every((value,index)=>valid(value) && Number(value)>=0
+          && (index===0 || Number(value)>Number(time[index-1])));
+      const formatElapsed = seconds => {
+        const total = Math.max(0,Math.round(Number(seconds)));
+        const hours = Math.floor(total/3600);
+        const minutes = Math.floor((total%3600)/60);
+        const remainder = total%60;
+        return hours
+          ? hours+':'+String(minutes).padStart(2,'0')+':'+String(remainder).padStart(2,'0')
+          : minutes+':'+String(remainder).padStart(2,'0');
+      };
+      labels = values.map((_,i)=>hasElapsedTime ? formatElapsed(time[i]) : 'Messpunkt '+(i+1));
       heading = metricMeta[key][0] + ' · einzelne Trainingseinheit'; unit = metricMeta[key][1];
       const date = String(activity.activity.date || activity.activity.startTime || '').slice(0,10);
       const sport = activity.activity.sport || activity.activity.type || 'Training';
       explanation = (date ? dateLabel(date)+' · ' : '') + sport +
-        '. Verlauf innerhalb einer Einheit; kein Vergleich zwischen unterschiedlichen Strecken, Gewässern oder Bedingungen.';
+        (hasElapsedTime ? '. Zeitachse: Zeit seit Start.' : '. Keine verlässliche Zeitachse; angezeigt wird nur die Messpunktfolge.') +
+        ' Verlauf innerhalb einer Einheit; kein Vergleich zwischen unterschiedlichen Strecken, Gewässern oder Bedingungen.';
       color = '#38bdf8';
     } else {
       heading = metricMeta[key]?.[0] || 'Leistungswert';
