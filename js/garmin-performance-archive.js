@@ -23,7 +23,7 @@ export function extractGarminVo2MaxRecords(value, filePath = '') {
         }
         const date = node.calendarDate;
         const vo2Max = node.vo2MaxValue;
-        if (validDate(date) && typeof vo2Max === 'number' && Number.isFinite(vo2Max) && vo2Max > 0 && vo2Max <= 100) {
+        if (validDate(date) && typeof vo2Max === 'number' && Number.isFinite(vo2Max) && vo2Max > 0) {
             const sport = optionalString(node.sport);
             const subSport = optionalString(node.subSport);
             const updateTimestamp = optionalString(node.updateTimestamp);
@@ -47,7 +47,7 @@ export function extractGarminVo2MaxRecords(value, filePath = '') {
 export function summarizeGarminVo2MaxRecords(records = []) {
     const validRecords = (Array.isArray(records) ? records : []).filter(record =>
         record && validDate(record.date) && typeof record.value === 'number' &&
-        Number.isFinite(record.value) && record.value > 0 && record.value <= 100
+        Number.isFinite(record.value) && record.value > 0
     );
     const sports = {};
     validRecords.forEach(record => {
