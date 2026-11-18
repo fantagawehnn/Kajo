@@ -12,6 +12,18 @@ const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
 const analysisInsights = readFileSync('js/analysis-insights.js', 'utf8');
 const charts = readFileSync('js/charts.js', 'utf8');
 const dashboard = readFileSync('js/dashboard.js', 'utf8');
+for (const exportName of [
+  'applyDashboardWidgetPreferences',
+  'toggleDashboardSetup',
+  'saveDashboardWidgetPreferences',
+  'resetDashboardLayout'
+]) {
+  assert.ok(
+    dashboard.includes(`export function ${exportName}(`),
+    `dashboard module exports ${exportName} for main.js and inline handlers`
+  );
+}
+
 const importer = readFileSync('js/import.js', 'utf8');
 const dataSource = readFileSync('js/data-source.js', 'utf8');
 const health = readFileSync('js/health.js', 'utf8');
