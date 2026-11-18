@@ -216,7 +216,7 @@ async function processZip(zip, prefix, context, depth = 0) {
                 if (vo2Records.length) context.performanceRecords.push(...vo2Records);
 
                 if (!context.existingPaths.has(sourcePath)) {
-                    if (new TextEncoder().encode(raw).byteLength <= LARGE_JSON_BYTES) {
+                    if (parsed !== null && new TextEncoder().encode(raw).byteLength <= LARGE_JSON_BYTES) {
                         row.payload = parsed;
                     } else {
                         const objectPath = context.userId + '/' + context.importId + '/data/' + safeStoragePath(sourcePath);
@@ -405,14 +405,12 @@ export async function importGarminExportArchive(importId) {
             throw new Error('Die VO₂max-Datensätze konnten nach dem Speichern nicht vollständig bestätigt werden.');
         }
 
-        if (activityImport.added || activityImport.enriched) {
-            if (!saveDataToLocalStorage()) throw new Error('Die importierten Aktivitäten konnten nicht lokal gesichert werden.');
-            refreshAll();
-            const cloudSaved = await new Promise(resolve => {
-                window.dispatchEvent(new CustomEvent('endurance:data-save-immediate', { detail: { resolve } }));
-            });
-            if (cloudSaved !== true) throw new Error('Die Aktivitäten wurden lokal gespeichert, aber die Cloud-Synchronisierung wurde nicht bestätigt. Bitte den Import nach Prüfung erneut starten.');
-        }
+        if (!saveDataToLocalStorage()) throw new Error('Die importierten Aktivitäten konnten nicht lokal gesichert werden.');
+        refreshAll();
+        const cloudSaved = await new Promise(resolve => {
+            window.dispatchEvent(new CustomEvent('endurance:data-save-immediate', { detail: { resolve } }));
+        });
+        if (cloudSaved !== true) throw new Error('Die Aktivitäten wurden lokal gespeichert, aber die Cloud-Synchronisierung wurde nicht bestätigt. Bitte den Import nach Prüfung erneut starten.');
 
         const fileCounts = { ...context.categories };
         const completedAt = new Date().toISOString();
