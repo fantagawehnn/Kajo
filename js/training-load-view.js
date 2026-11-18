@@ -71,7 +71,7 @@ function renderRings(timeline){
  ];
  root.replaceChildren();items.forEach(item=>{
   const card=document.createElement('div');card.className='kajo-load-metric';
-  const ring=document.createElement('span');ring.className='kajo-load-ring';ring.style.setProperty('--load-ring-color',item.status.color);ring.dataset.metric=item.key;ring.dataset.valueLevel=item.status.level;ring.title=item.label+': '+item.status.label;
+  const ring=document.createElement('span');ring.className='kajo-load-ring';ring.style.setProperty('--load-ring-color',item.status.color);ring.style.borderColor=item.status.color;ring.dataset.metric=item.key;ring.dataset.valueLevel=item.status.level;ring.title=item.label+': '+item.status.label;
   const value=document.createElement('strong');value.textContent=fmt(item.value);ring.appendChild(value);
   const label=document.createElement('span');label.className='kajo-load-label';label.textContent=item.label;
   const detail=document.createElement('small');detail.textContent=item.detail;
