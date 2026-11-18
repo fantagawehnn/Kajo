@@ -158,3 +158,23 @@ test('Coach endpoint returns the AI answer for an authenticated request', async 
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { answer: 'Coach-Antwort' });
 });
+
+test('Coach endpoint handles an unreadable Supabase auth response', async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.after(() => { globalThis.fetch = originalFetch; });
+    globalThis.fetch = async () => new Response('not-json', { status: 200 });
+    const response = await worker.fetch(validCoachRequest(), {
+        SUPABASE_URL: 'https://project.supabase.co',
+        SUPABASE_ANON_KEY: 'public-anon-key',
+        COACH_RATE_LIMITER: { limit: async () => ({ success: true }) },
+        AI: { run: async () => ({ response: 'unused' }) }
+    });
+    assert.equal(response.status, 502);
+});
+
+test('Coach endpoint fails closed when the AI binding is missing', async (t) => {
+    const env = authorizedEnv(t);
+    delete env.AI;
+    const response = await worker.fetch(validCoachRequest(), env);
+    assert.equal(response.status, 503);
+});
