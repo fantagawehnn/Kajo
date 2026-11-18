@@ -385,6 +385,10 @@ assert.ok(garminLeaseMigration.includes('add column if not exists lock_expires_a
 assert.ok(garminLeaseMigration.includes('create table if not exists public.garmin_activity_sync_leases'), 'Activity-list leases must have an independent service-only table');
 assert.ok(garminLeaseMigration.includes('revoke all on table public.garmin_activity_sync_leases from anon, authenticated'), 'Activity-list lease rows must not be accessible to browser roles');
 assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), 'Garmin sync calls must be wrapped in event logging');
+assert.ok(garminBackendSource.includes('const collectFailures = (value: unknown) =>'), 'Nested sync results must be inspected for partial and failed child operations');
+assert.ok(garminBackendSource.includes('resultStatus === "ok" || resultStatus === "complete" ? (failureRows.length ? "partial" : "complete")'), 'A parent sync event must be partial when nested results contain failures');
+assert.ok(garminBackendSource.includes('const recognizedStatus = knownStatuses.has(resultStatus);'), 'Unknown sync result statuses must not be treated as successful');
+assert.ok(garminBackendSource.includes('!recognizedStatus ? "error"'), 'Unknown sync result statuses must be logged as errors');
 assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, true)'), 'Daily health refresh must not reset the shared historical backfill cursor');
 assert.ok(garminBackendSource.includes('.select("payload,fetched_at")'), 'The no-data retry cooldown must use the stored fetch timestamp');
 assert.ok(mainSource.includes('forceHealthRefresh: attempt === 0'), 'Rate-limit retries must not force-refresh already imported daily health endpoints');
