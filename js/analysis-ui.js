@@ -5,6 +5,7 @@
 import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
+import { getGarminCheckinMetric } from './garmin-metric-access.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -41,8 +42,8 @@ const renderMetrics = (id, items) => {
 function latestCheckin(key) {
   const entries = Object.entries(state.dailyCheckins || {}).sort(([a], [b]) => b.localeCompare(a));
   for (const [date, row] of entries) {
-    let value = row?.[key];
-    if (key === 'sleepDuration') value = row?.sleepDuration ?? (Number(row?.sleep) > 5 ? row.sleep : null);
+    const objectiveKeys = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration', 'vo2max'];
+    const value = objectiveKeys.includes(key) ? getGarminCheckinMetric(row, key) : row?.[key];
     if (['sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'].includes(key) && (!valid(value) || Number(value) < 1 || Number(value) > 5)) continue;
     if (valid(value)) return { value: Number(value), date };
   }
@@ -103,11 +104,11 @@ function renderRecovery() {
     'Readiness', '', score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
-    ['HRV', 'hrv', 'ms', 1],
-    ['Ruhepuls', 'rhr', 'bpm', 0],
-    ['Schlafdauer', 'sleepDuration', 'h', 1],
-    ['Sleep Score', 'sleepScore', '/100', 0],
-    ['Atemfrequenz', 'respiration', '/min', 1]
+    ['HRV', 'hrv', 'Garmin · ms', 1],
+    ['Ruhepuls', 'rhr', 'Garmin · bpm', 0],
+    ['Schlafdauer', 'sleepDuration', 'Garmin · h', 1],
+    ['Sleep Score', 'sleepScore', 'Garmin · /100', 0],
+    ['Atemfrequenz', 'respiration', 'Garmin · /min', 1]
   ];
   renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
     const entry = latestCheckin(key);
@@ -275,10 +276,10 @@ function renderPerformanceTrend(key) {
   let labels = [], values = [], heading = '', unit = '', explanation = '', color = '#38bdf8';
   if (key === 'vo2max') {
     const entries = Object.entries(state.dailyCheckins || {}).filter(([date,row]) =>
-      date >= performanceRangeStart() && date <= todayKey() && valid(row?.vo2max))
+      date >= performanceRangeStart() && date <= todayKey() && getGarminCheckinMetric(row, 'vo2max') !== null)
       .sort(([a],[b])=>a.localeCompare(b));
     labels = entries.map(([date])=>dateLabel(date));
-    values = entries.map(([,row])=>Number(row.vo2max));
+    values = entries.map(([,row])=>getGarminCheckinMetric(row, 'vo2max'));
     heading = 'VO₂max · Garmin-Schätzwert'; unit = 'ml/kg/min';
     explanation = 'Verlauf der importierten Garmin-Wellnesswerte. Garmin-Schätzwert, keine direkte Spiroergometrie oder Labordiagnostik.';
     color = '#f97316';
