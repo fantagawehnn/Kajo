@@ -251,6 +251,25 @@ async function processZip(zip, prefix, context, depth = 0) {
     }
 }
 
+function applyGarminVo2MaxToDailyCheckins(records) {
+    const latestByDate = new Map();
+    for (const record of Array.isArray(records) ? records : []) {
+        if (!record?.date || !Number.isFinite(Number(record.value)) || Number(record.value) <= 0) continue;
+        const previous = latestByDate.get(record.date);
+        const nextStamp = String(record.updateTimestamp || '');
+        const previousStamp = String(previous?.updateTimestamp || '');
+        if (!previous || nextStamp > previousStamp) latestByDate.set(record.date, record);
+    }
+    let added = 0;
+    for (const [date, record] of latestByDate) {
+        const current = state.dailyCheckins?.[date] && typeof state.dailyCheckins[date] === 'object' ? state.dailyCheckins[date] : {};
+        if (current.vo2max !== null && current.vo2max !== undefined && current.vo2max !== '') continue;
+        state.dailyCheckins[date] = { ...current, vo2max: Number(record.value), vo2maxSource: 'garmin-estimate', vo2maxSourceProfile: record.sport || null };
+        added++;
+    }
+    return added;
+}
+
 function importActivitiesIntoApp(records) {
     const byId = new Map();
     for (const activity of Array.isArray(state.rawActivities) ? state.rawActivities : []) {
@@ -363,6 +382,7 @@ export async function importGarminExportArchive(importId) {
             if (/^\d+$/.test(id) && !uniqueActivities.has(id)) uniqueActivities.set(id, record);
         }
         const activityImport = importActivitiesIntoApp([...uniqueActivities.values()]);
+        const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
 
         const uniquePerformance = new Map();
         for (const record of context.performanceRecords) {
@@ -424,6 +444,7 @@ export async function importGarminExportArchive(importId) {
             fileCounts,
             activities: activityImport,
             vo2maxRecords: uniquePerformance.size,
+            vo2maxDailyValuesAdded,
             warnings: context.errors.slice(0, 30),
             warningCount: context.errors.length
         };
