@@ -330,6 +330,7 @@ assert.ok(performanceUi.includes('isPaddlingPerformanceActivity(activity)'), 'Pa
 assert.ok(charts.includes('alignedElapsedTimeAxis(telem, values.length)'), 'activity telemetry retains only a validated elapsed-time axis');
 assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
+assert.ok(performanceUi.includes('Zeitachse: Zeit seit Start') && performanceUi.includes('Keine verlässliche Zeitachse'), 'performance trend distinguishes elapsed-time axes from sample-index-only series');
 assert.ok(performanceUi.includes('state.strengthPBs'), 'strength progression uses stored exercise-specific personal best records');
 assert.ok(html.includes('<span>Fitness</span>') && html.includes('id="fitness-aerobic-metrics"'), 'analysis navigation identifies the fitness view separately from performance');
 
