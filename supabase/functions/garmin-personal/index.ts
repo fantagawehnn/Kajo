@@ -358,6 +358,74 @@ async function syncGarminHealthHistoryBatch(
   };
 }
 
+type GarminSyncEventInput = {
+  source: "manual_range" | "daily_sync" | "manual_activities" | "background";
+  syncType: "activity_list" | "health_history" | "health_day";
+  startDate: string | null;
+  endDate: string | null;
+  timezoneBasis: "client_offset" | "client_local_date" | "utc";
+  timezoneOffsetMinutes?: number | null;
+  metadata?: Record<string, unknown>;
+};
+
+async function runTrackedGarminSync<T extends Record<string, unknown>>(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  input: GarminSyncEventInput,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const startedAt = new Date().toISOString();
+  let eventId: string | null = null;
+  try {
+    const { data, error } = await admin.from("garmin_sync_events").insert({
+      user_id: userId, source: input.source, sync_type: input.syncType, status: "running",
+      start_date: input.startDate, end_date: input.endDate, timezone_basis: input.timezoneBasis,
+      timezone_offset_minutes: input.timezoneOffsetMinutes ?? null, started_at: startedAt,
+      metadata: input.metadata ?? {},
+    }).select("id").single();
+    if (error) throw error;
+    eventId = typeof data?.id === "string" ? data.id : null;
+  } catch (error) {
+    console.error("Garmin sync event could not be started:", error);
+  }
+
+  try {
+    const result = await operation();
+    const resultStatus = String(result.status ?? "complete");
+    const status = resultStatus === "ok" || resultStatus === "complete" ? "complete"
+      : resultStatus === "partial" || resultStatus === "rate_limited" ? "partial"
+      : resultStatus === "in_progress" ? "in_progress"
+      : resultStatus === "skipped" ? "skipped" : "complete";
+    const numberOrNull = (value: unknown) =>
+      typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : null;
+    if (eventId) {
+      const { error } = await admin.from("garmin_sync_events").update({
+        status, finished_at: new Date().toISOString(),
+        scanned_days: numberOrNull(result.scannedDays), skipped_days: numberOrNull(result.skippedDays),
+        fetched_count: numberOrNull(result.fetched), stored_count: numberOrNull(result.stored),
+        processed_days: numberOrNull(result.processedDays), remaining_days: numberOrNull(result.remainingDays),
+        metadata: {
+          ...(input.metadata ?? {}), result_status: resultStatus,
+          ...(typeof result.checkedOnlyMissingDays === "boolean" ? { checked_only_missing_days: result.checkedOnlyMissingDays } : {}),
+          ...(typeof result.recentRescanDays === "number" ? { recent_rescan_days: result.recentRescanDays } : {}),
+          ...(typeof result.batchLimit === "number" ? { batch_limit: result.batchLimit } : {}),
+        },
+      }).eq("id", eventId).eq("user_id", userId);
+      if (error) console.error("Garmin sync event could not be completed:", error);
+    }
+    return result;
+  } catch (error) {
+    if (eventId) {
+      const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
+      const { error: updateError } = await admin.from("garmin_sync_events").update({
+        status: "error", finished_at: new Date().toISOString(), error_message: message.slice(0, 500),
+      }).eq("id", eventId).eq("user_id", userId);
+      if (updateError) console.error("Garmin sync event error could not be saved:", updateError);
+    }
+    throw error;
+  }
+}
+
 function activityRows(payload: unknown): Record<string, unknown>[] {
   const isActivityRecord = (item: unknown): item is Record<string, unknown> =>
     item !== null && typeof item === "object" && !Array.isArray(item);
@@ -1267,9 +1335,14 @@ Deno.serve(async (req) => {
         .from("garmin_connections").select("user_id").eq("status", "connected");
       if (connectionError) throw connectionError;
       const results = [];
+      const endDate = new Date().toISOString().slice(0, 10);
+      const startDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
       for (const connection of connections ?? []) {
         try {
-          results.push(await syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10), true));
+          results.push(await runTrackedGarminSync(admin, connection.user_id, {
+            source: "background", syncType: "activity_list", startDate, endDate,
+            timezoneBasis: "utc", metadata: { only_missing_days: true },
+          }, () => syncGarminActivitiesForUser(admin, connection.user_id, startDate, endDate, true)));
         } catch (syncError) {
           const message = syncError instanceof Error ? syncError.message.slice(0, 300) : "Unbekannter Fehler.";
           await admin.from("garmin_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", connection.user_id);
@@ -1318,10 +1391,18 @@ Deno.serve(async (req) => {
     if (action === "sync-today") {
       const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : "";
       if (!date) return json(400, { error: "Für den Garmin-Tagesabgleich wurde kein gültiges lokales Datum übergeben." });
-      const activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false);
+      const offset = Number(body.timezoneOffsetMinutes);
+      const timezoneOffsetMinutes = Number.isInteger(offset) && Math.abs(offset) <= 840 ? offset : null;
+      const activitySync = await runTrackedGarminSync(admin, userId, {
+        source: "daily_sync", syncType: "activity_list", startDate: date, endDate: date,
+        timezoneBasis: "client_local_date", timezoneOffsetMinutes,
+      }, () => syncGarminActivitiesForUser(admin, userId, date, date, false));
       // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
       // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
-      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, true);
+      const healthSync = await runTrackedGarminSync(admin, userId, {
+        source: "daily_sync", syncType: "health_day", startDate: date, endDate: date,
+        timezoneBasis: "client_local_date", timezoneOffsetMinutes,
+      }, () => syncGarminHealthDay(admin, userId, date, true));
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 
@@ -1333,12 +1414,21 @@ Deno.serve(async (req) => {
         return json(400, { error: "Bitte wähle einen gültigen Zeitraum bis einschließlich heute." });
       }
       const onlyMissingDays = body.onlyMissingDays === true;
+      const rawOffset = Number(body.timezoneOffsetMinutes);
+      const timezoneOffsetMinutes = Number.isInteger(rawOffset) && Math.abs(rawOffset) <= 840 ? rawOffset : null;
       const activitySync = body.includeActivities === false
         ? null
-        : await syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays);
+        : await runTrackedGarminSync(admin, userId, {
+            source: "manual_range", syncType: "activity_list", startDate, endDate,
+            timezoneBasis: "client_offset", timezoneOffsetMinutes,
+            metadata: { only_missing_days: onlyMissingDays },
+          }, () => syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays));
       // Activity coverage and health-history cursor are independent. Do not restart
       // a completed health range just because activity sync is incremental.
-      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, false, false);
+      const healthSync = await runTrackedGarminSync(admin, userId, {
+        source: "manual_range", syncType: "health_history", startDate, endDate,
+        timezoneBasis: "client_offset", timezoneOffsetMinutes,
+      }, () => syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, false, false));
       return json(200, { ok: true, sync: { startDate, endDate, activitySync, healthSync } });
     }
 
@@ -1350,7 +1440,10 @@ Deno.serve(async (req) => {
     if (action === "sync-activities") {
       const endDate = new Date().toISOString().slice(0, 10);
       const startDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
-      const result = await syncGarminActivitiesForUser(admin, userId, startDate, endDate);
+      const result = await runTrackedGarminSync(admin, userId, {
+        source: "manual_activities", syncType: "activity_list", startDate, endDate,
+        timezoneBasis: "utc",
+      }, () => syncGarminActivitiesForUser(admin, userId, startDate, endDate));
       return json(200, { ok: true, sync: result });
     }
 
@@ -1543,10 +1636,15 @@ Deno.serve(async (req) => {
         .select("status, cursor_date, range_end_date, last_success_at, last_error")
         .eq("user_id", userId).eq("sync_type", "health_history").maybeSingle();
       if (syncStateError) throw syncStateError;
+      const { data: events, error: eventsError } = await admin.from("garmin_sync_events")
+        .select("id, source, sync_type, status, start_date, end_date, timezone_basis, timezone_offset_minutes, started_at, finished_at, scanned_days, skipped_days, fetched_count, stored_count, processed_days, remaining_days, error_message, metadata")
+        .eq("user_id", userId).order("started_at", { ascending: false }).limit(20);
+      if (eventsError) throw eventsError;
       return json(200, {
         ok: true,
         connection: data ?? { status: "disconnected" },
         syncState: syncState ?? null,
+        events: events ?? [],
       });
     }
 
