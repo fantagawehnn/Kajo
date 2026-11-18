@@ -44,3 +44,20 @@ test('maps Garmin activity summary without trusting Garmin profile as actual spo
     assert.equal(mapped.sourceRefs.garminActivityId, '123');
     assert.equal(mapped.garminData, undefined);
 });
+
+test('does not choose arbitrary VO2max values when a day has conflicting profiles', async () => {
+    const { selectGarminVo2MaxDailyRecords } = await import('../js/garmin-export-import-core.js');
+    const result = selectGarminVo2MaxDailyRecords([
+        { date: '2025-01-01', value: 50, sport: 'RUNNING' },
+        { date: '2025-01-01', value: 51, sport: 'WALKING' },
+        { date: '2025-01-02', value: 49, sport: 'RUNNING' },
+        { date: '2025-01-02', value: 49, sport: 'CYCLING' },
+        { date: '2025-01-03', value: 52, sport: 'RUNNING', updateTimestamp: '2025-01-03T10:00:00Z' },
+        { date: '2025-01-03', value: 51, sport: 'WALKING', updateTimestamp: '2025-01-02T10:00:00Z' }
+    ]);
+    assert.deepEqual(result.ambiguousDates, ['2025-01-01']);
+    assert.deepEqual(result.selected.map(record => [record.date, record.value]), [
+        ['2025-01-02', 49],
+        ['2025-01-03', 52]
+    ]);
+});
