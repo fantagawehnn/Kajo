@@ -227,3 +227,45 @@ test('multiple planned sessions are explicitly considered in the daily recommend
     assert.match(recommendation.detail, /Morgens K1/);
     assert.match(recommendation.detail, /Abends Kraft/);
 });
+
+
+test('a planned lactate or strength test becomes the main daily load, not an invented training load', () => {
+    const source = makeState({
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 4 } },
+        plannedActivities: [
+            { date: day, name: 'Laktattest', category: 'diagnostic-lactate', duration: null, targetTss: null },
+            { date: day, name: 'K1 locker', category: 'ga', duration: 45 }
+        ]
+    });
+    const recommendation = buildTrainingRecommendation(day, source.plannedActivities, source);
+    assert.equal(recommendation.decision, 'assessment-day');
+    assert.match(recommendation.title, /Leistungsdiagnostik/);
+    assert.match(recommendation.detail, /keine zusätzliche intensive/);
+    assert.match(recommendation.detail, /nicht als Garmin-Load/);
+});
+
+test('the day before a planned diagnostic test receives a reduced-load recommendation', () => {
+    const tomorrow = new Date(day + 'T12:00:00');
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowKey = tomorrow.toISOString().slice(0, 10);
+    const source = makeState({
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 4 } },
+        plannedActivities: [
+            { date: tomorrowKey, name: 'Krafttest', category: 'diagnostic-strength' },
+            { date: day, name: 'Intervalle', category: 'interval', duration: 60 }
+        ]
+    });
+    const recommendation = buildTrainingRecommendation(day, source.plannedActivities, source);
+    assert.equal(recommendation.decision, 'assessment-preparation');
+    assert.match(recommendation.title, /reduzieren/);
+    assert.match(recommendation.detail, /schweres Krafttraining/);
+});
+
+test('illness still overrides a planned diagnostic test', () => {
+    const source = makeState({
+        healthLogs: { [day]: { status: 'sick' } },
+        plannedActivities: [{ date: day, name: 'Laktattest', category: 'diagnostic-lactate' }]
+    });
+    const recommendation = buildTrainingRecommendation(day, source.plannedActivities, source);
+    assert.equal(recommendation.decision, 'health-review');
+});
