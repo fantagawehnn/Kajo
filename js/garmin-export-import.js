@@ -7,6 +7,7 @@ import { SUPABASE_ANON_KEY } from './supabase-config.js';
 import {
     classifyGarminExportFile,
     collectGarminSummaryActivities,
+    collectGarminActivityNames,
     mapGarminExportActivity,
     selectGarminVo2MaxDailyRecords
 } from './garmin-export-import-core.js';
@@ -278,6 +279,7 @@ async function processZip(zip, prefix, context, depth = 0) {
                 row.date_to = dates[dates.length - 1] || null;
                 row.retained_in_original_archive = false;
 
+                collectGarminActivityNames(parsed, context.activityNames);
                 const summaries = collectGarminSummaryActivities(parsed);
                 if (summaries.length) context.activities.push(...summaries);
                 const vo2Records = extractGarminVo2MaxRecords(parsed, sourcePath);
@@ -395,6 +397,7 @@ export async function importGarminExportArchive(importId) {
         nestedArchives: 0,
         categories: {},
         activities: [],
+        activityNames: new Map(),
         performanceRecords: [],
         errors: []
     };
@@ -453,7 +456,13 @@ export async function importGarminExportArchive(importId) {
         const uniqueActivities = new Map();
         for (const record of context.activities) {
             const id = String(record.activityId ?? record.id ?? '');
-            if (/^\d+$/.test(id) && !uniqueActivities.has(id)) uniqueActivities.set(id, record);
+            if (/^\d+$/.test(id) && !uniqueActivities.has(id)) {
+                const activityName = context.activityNames.get(id);
+                const enrichedRecord = !record.activityName && activityName
+                    ? { ...record, activityName }
+                    : record;
+                uniqueActivities.set(id, enrichedRecord);
+            }
         }
         const uniqueActivityRecords = [...uniqueActivities.values()];
 
