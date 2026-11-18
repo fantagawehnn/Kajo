@@ -94,10 +94,11 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
             dayStatus = 'incomplete-activity-load';
         }
 
-        if (dayStatus === 'activity-load-only') {
-            // Show the measured session/day load, but do not treat missing
-            // activity-list coverage as proof that the day's total is complete.
-            // This breaks the EWMA chain rather than inventing rest-day zeros.
+        if (dayStatus === 'activity-load-only'
+            && !['garmin-zone', 'garmin-native'].includes(loadData.mode)) {
+            // Keep non-Garmin/sRPE behaviour conservative when activity-list
+            // coverage is missing: expose the session load but do not infer
+            // the day's total or advance the model.
             ctl = 0;
             atl = 0;
             modelActive = false;
@@ -108,6 +109,35 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
                 loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
                 dataStatus: dayStatus, ctl: null, atl: null, tsb: null, formPct: null, acwr: null,
                 statusLabel: 'Tagesload vorhanden · Tagesabdeckung unbestätigt', isProvisional: true
+            });
+            continue;
+        }
+
+        if (dayStatus === 'activity-load-only') {
+            // Garmin load is measured for every recorded activity on this day,
+            // but the activity-list coverage is not confirmed. Advance CTL/ATL
+            // provisionally with the known load (never add a rest-day zero).
+            // Any subsequent unknown day still breaks the model chain below.
+            if (!modelActive) {
+                ctl = 0;
+                atl = 0;
+                modelActive = true;
+                segmentDays = 0;
+            }
+            ctl += (dayLoad - ctl) * kCtl;
+            atl += (dayLoad - atl) * kAtl;
+            segmentDays++;
+            const ctlDisplay = Number(ctl.toFixed(1));
+            const atlDisplay = Number(atl.toFixed(1));
+            const form = ctlDisplay - atlDisplay;
+            const formPct = ctlDisplay > 0 ? form / ctlDisplay * 100 : null;
+            timeline.push({
+                date: dateStr, tss: Number(dayLoad.toFixed(1)), load: Number(dayLoad.toFixed(1)),
+                activityCount, loadActivityCount: loadedCount,
+                loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
+                dataStatus: dayStatus, ctl: ctlDisplay, atl: atlDisplay,
+                tsb: Number(form.toFixed(1)), formPct: formPct === null ? null : Number(formPct.toFixed(1)),
+                acwr: null, statusLabel: 'Vorläufig · Tagesabdeckung unbestätigt', isProvisional: true
             });
             continue;
         }
