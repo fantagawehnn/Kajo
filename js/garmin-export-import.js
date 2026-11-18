@@ -15,7 +15,8 @@ import {
 const BUCKET = 'garmin-exports';
 const PROJECT_ID = 'zgvargkfzgekokuisarv';
 const LARGE_JSON_BYTES = 150 * 1024;
-const TUS_THRESHOLD_BYTES = 6 * 1024 * 1024;
+// JSON-Dateien bis 16 MiB direkt hochladen; vermeidet TUS-Metadatenfehler bei den Garmin-Aktivitätsblöcken.
+const TUS_THRESHOLD_BYTES = 16 * 1024 * 1024;
 const FILE_BATCH_SIZE = 25;
 const PERFORMANCE_BATCH_SIZE = 100;
 let activeImportId = null;
