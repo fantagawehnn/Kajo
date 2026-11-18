@@ -221,7 +221,7 @@ export async function renderGarminExportArchiveHistory() {
             const fieldList = fieldRows.length
                 ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(field.category) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
                 : '';
-            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
+            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
             const analyzeButton = item.status === 'indexed' && !preview?.fieldInventory ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Datenfelder erkennen</button>" : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
@@ -241,10 +241,13 @@ export async function renderGarminExportArchiveHistory() {
 // and save only a compact metadata preview. No raw health values are imported.
 function classifyGarminPath(path) {
     const value = String(path || '').toLowerCase();
-    if (/activity|summarizedactivities|fit/.test(value)) return 'activities';
-    if (/sleep|hrv|heart.?rate|wellness|stress|spo2|body.?battery/.test(value)) return 'recovery';
+    // Match concrete export filenames before broad topic words. In particular,
+    // "fitnessAgeData" is a wellness/performance file, not an activity file.
+    if (/summarizedactivities|activitydetails|\\/activities?\\//.test(value)) return 'activities';
+    if (/fitnessagedata|metricsmaxmet|vo2|max.?met|benchmark/.test(value)) return 'performance';
+    if (/sleep|hrv|heart.?rate|healthstatus|stress|spo2|body.?battery|wellness/.test(value)) return 'recovery';
     if (/weight|hydration|nutrition|calorie/.test(value)) return 'body-nutrition';
-    if (/training|vo2|max.?met|fitness|benchmark/.test(value)) return 'performance';
+    if (/trainingplan|_workout\\.json|workout/.test(value)) return 'training-plans';
     return 'other';
 }
 
@@ -277,23 +280,34 @@ function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 }
 
-function collectDateValues(value, output, budget) {
+function collectDateValues(value, output, budget, filePath = '') {
     if (!value || typeof value !== 'object' || budget.count > 25000) return;
+    const sourcePath = String(filePath || '').toLowerCase();
+    // Profile metadata and workout definitions are not historical measurement
+    // records and must not widen the reported training/health data period.
+    if (/customer_data|di-connect-user|trainingplan|_workout\\.json/.test(sourcePath)) return;
     budget.count++;
     if (Array.isArray(value)) {
-        for (const item of value) collectDateValues(item, output, budget);
+        for (const item of value) collectDateValues(item, output, budget, filePath);
         return;
     }
     for (const [key, item] of Object.entries(value)) {
-        if (/date|time|timestamp/i.test(key) && (typeof item === 'string' || typeof item === 'number')) {
+        const fieldName = String(key).toLowerCase();
+        const isDateField = /date|time|timestamp/i.test(key);
+        const isMetadataDate = /birth|created|updated|modified|deleted|expiry|expiration|upload|export/i.test(fieldName);
+        if (isDateField && !isMetadataDate && (typeof item === 'string' || typeof item === 'number')) {
             const parsed = typeof item === 'number'
                 ? new Date(item > 1e12 ? item : item * 1000)
                 : new Date(item);
-            if (Number.isFinite(parsed.getTime()) && parsed.getUTCFullYear() >= 2000 && parsed.getUTCFullYear() <= 2100) {
+            const timestamp = parsed.getTime();
+            // Future plan entries and malformed clocks are not historical
+            // measurements. A one-day tolerance avoids timezone-edge effects.
+            if (Number.isFinite(timestamp) && parsed.getUTCFullYear() >= 2000 && parsed.getUTCFullYear() <= 2100
+                && timestamp <= Date.now() + 24 * 60 * 60 * 1000) {
                 output.push(parsed.toISOString().slice(0, 10));
             }
         }
-        if (item && typeof item === 'object') collectDateValues(item, output, budget);
+        if (item && typeof item === 'object') collectDateValues(item, output, budget, filePath);
     }
 }
 
@@ -324,7 +338,7 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
                 collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 });
                 const dates = [];
-                collectDateValues(parsed, dates, { count: 0 });
+                collectDateValues(parsed, dates, { count: 0 }, path);
                 for (const date of dates) summary.dates.push(date);
             } catch (error) {
                 summary.errors.push({ file: path, reason: String(error?.message || error).slice(0, 180) });
