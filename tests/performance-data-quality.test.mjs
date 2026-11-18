@@ -45,7 +45,7 @@ test('prefers the explicit metric-series elapsed-time axis and rejects invalid a
 test('resolves Garmin paddling speed from m/s to km/h without applying metadata scale factor', async () => {
     const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
     const resolved = resolvePaddlingPerformanceSeries({ type: 'Kayaking' }, [{
-        key: 'directSpeed', unit: 'mps', values: [2, 2.5, null], time: [0, 1, 2]
+        key: 'directSpeed', unit: 'mps', scaleFactor: 0.1, values: [2, 2.5, null], time: [0, 1, 2]
     }], 'speed');
     assert.equal(resolved.unit, 'km/h');
     assert.deepEqual(resolved.values, [7.2, 9, null]);
@@ -82,4 +82,7 @@ test('prefers normalized FIT series and rejects unknown units or non-paddling ac
     assert.equal(resolvePaddlingPerformanceSeries({ type: 'Run' }, [
         { key: 'directSpeed', unit: 'mps', values: [2, 2.2], time: [0, 1] }
     ], 'speed'), null);
+    assert.equal(resolvePaddlingPerformanceSeries({ type: 'Kayaking' }, [
+        { key: 'directFractionalCadence', unit: 'stepsPerMinute', values: [70, 72], time: [0, 1] }
+    ], 'cadence'), null);
 });
