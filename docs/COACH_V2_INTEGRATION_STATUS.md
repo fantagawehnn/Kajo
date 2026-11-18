@@ -7,10 +7,12 @@ Stand: 2026-11-18
 - Zielbasis: `v2`
 - Arbeitsbranch: `feature/coach-v2-integration`
 - Ausgangspunkt: `39107f3dc56bd0779133ee7534fc7ff1bd49b387`
-- Die Coach-Integration bleibt isoliert auf dem Feature-Branch.
-- `v2` wurde durch diese Arbeiten nicht verändert.
-- Es wurde kein Merge, Rebase, Pull Request oder Deployment ausgeführt.
-- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 40 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
+- Die Coach-Integration liegt weiterhin auf `feature/coach-v2-integration`; der Abgleich mit `v2` erfolgte durch einen Merge-Commit ausschließlich auf dem Feature-Branch.
+- `v2` wurde durch diese Integrationsarbeiten nicht verändert.
+- PR [#81](https://github.com/fantagawehnn/Kajo/pull/81) ist geöffnet und weiterhin Draft.
+- Aktueller Branchvergleich am 18.11.2026: 45 Commits voraus, 0 Commits zurück; Merge-Basis `42002a94dfafd0762c5937253dde4d290a499e88`.
+- GitHub meldet für PR #81 `mergeable: true`. Der PR ist jedoch noch nicht zusammengeführt.
+- Die neueren Garmin-Archiv- und Readiness-Änderungen aus `v2` bleiben erhalten. In `index.html` ist `main.js?v=149` gesetzt; `js/main.js` verwendet `garmin-export-archive.js?v=3` und lädt `coach.js?v=2`.
 
 ## Umgesetzte Coach-Integration
 
@@ -44,9 +46,11 @@ Am 18.11.2026 wurden mehrere CI-Läufe auf dem Feature-Branch erfolgreich abgesc
 - Run [44363998803](https://github.com/fantagawehnn/Kajo/actions/runs/44363998803): erweiterte Worker-Fehlerpfadtests erfolgreich. Abgedeckt sind nun zusätzlich fehlendes/ausgefallenes Rate Limiting, überschrittene Limits, fehlerhaftes JSON, zu großer Kontext, AI-Fehler, leere AI-Antwort und erfolgreicher Antwortpfad.
 - Run [44364080844](https://github.com/fantagawehnn/Kajo/actions/runs/44364080844): vollständige CI nach zusätzlicher Absicherung fehlerhafter Supabase-Antworten und fehlender AI-Binding-Konfiguration erfolgreich. Die Coach-Worker-Tests prüfen jetzt auch diese beiden Fälle.
 - Run [44364801873](https://github.com/fantagawehnn/Kajo/actions/runs/44364801873): vollständige CI nach Ergänzung der Tests für die harte Streaming-Requestgrößenbegrenzung sowie Pflichtfelder und Kontextform erfolgreich; zu diesem Zeitpunkt waren 17 Worker-Tests enthalten. Danach wurde die serverseitige Supabase-Sessionprüfung mit einem 8-Sekunden-Timeout abgesichert; ein Timeout wird kontrolliert mit HTTP 504 beantwortet. Der zusätzliche Timeout-Regressionstest und die vollständige CI waren in Run [44365416489](https://github.com/fantagawehnn/Kajo/actions/runs/44365416489) erfolgreich. `tests/coach-worker.test.mjs` enthält nun 18 Worker-Tests.
-- Der Cloudflare-Deploy-Job wurde erwartungsgemäß übersprungen, da es keine Pushes auf `v2` waren.
+- Aktueller Integrationsstand: PR-CI Run [44368060304](https://github.com/fantagawehnn/Kajo/actions/runs/44368060304) und Push-CI Run [44368049007](https://github.com/fantagawehnn/Kajo/actions/runs/44368049007) erfolgreich. Beide Läufe umfassen Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Coach-Worker-Sicherheitstests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, Readiness-Tests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests.
+- Für beide Läufe war der produktive Cloudflare-Deploy-Job erwartungsgemäß übersprungen, da kein Push auf `v2` erfolgte.
+- Cloudflare hat für Commit `c3736e2113f2acbe7bfb79d3b7041300bcedc391` einen Preview-Worker erfolgreich gebaut und bereitgestellt. Preview-URL: https://feature-coach-v2-integration-kajo.fantagawehn.workers.dev. Das ist eine Preview-Bereitstellung, kein Produktionsdeploy und kein Nachweis eines vollständigen Browser-/Coach-Funktionstests.
 
-Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetzt noch keinen Browser-/Runtime-Test gegen einen tatsächlich konfigurierten Worker und kein Deployment.
+Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Die Cloudflare-Preview wurde erfolgreich bereitgestellt; ein vollständiger Browser-/Runtime-Test mit gültiger und abgelaufener Supabase-Sitzung steht weiterhin aus.
 
 ## Vor Livebetrieb zwingend offen
 
@@ -66,6 +70,7 @@ Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetz
 - Browser-/Runtime-Test: noch nicht durchgeführt.
 - Supabase-Auth-Timeout: im Code mit 8 Sekunden begrenzt; automatisierter Regressionstest und CI erfolgreich (Run 44365416489).
 - Cloudflare-Variablen: nicht gesetzt bzw. nicht verifiziert.
-- Cloudflare-Deployment: nicht ausgeführt.
+- Cloudflare-Preview: Build und Deployment erfolgreich (Commit `c3736e2`); vollständiger Runtime-Test noch offen.
+- Cloudflare-Produktionsdeployment: nicht ausgeführt.
 - Supabase-Änderungen oder Datenbankmigrationen: nicht ausgeführt.
-- Kein Merge in `v2`; keine Änderung am stabilen Branch.
+- PR #81 ist offen und Draft; kein Merge in `v2`. Der stabile Branch wurde nicht verändert.
