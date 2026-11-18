@@ -126,7 +126,7 @@ async function syncGarminHealthDay(
       // later (including cycle data) can still be picked up.
       const { data: existing, error: existingError } = await admin
         .from("garmin_health_records")
-        .select("payload")
+        .select("payload,fetched_at")
         .eq("user_id", userId)
         .eq("data_type", endpoint.type)
         .eq("record_date", date)
@@ -1500,10 +1500,11 @@ Deno.serve(async (req) => {
       // A daily refresh must not reuse or reset the historical backfill cursor.
       // It writes the same idempotent per-day records directly; the leased batch
       // cursor remains dedicated to the user's selected historical range.
+      const forceHealthRefresh = body.forceHealthRefresh !== false;
       const healthSync = await runTrackedGarminSync(admin, userId, {
         source: "daily_sync", syncType: "health_history", startDate: date, endDate: date,
         timezoneBasis: "client_local_date", timezoneOffsetMinutes,
-      }, () => syncGarminHealthDay(admin, userId, date, true));
+      }, () => syncGarminHealthDay(admin, userId, date, forceHealthRefresh));
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 
