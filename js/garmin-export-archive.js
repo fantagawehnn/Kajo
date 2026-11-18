@@ -222,8 +222,12 @@ export async function renderGarminExportArchiveHistory() {
             const fieldList = fieldRows.length
                 ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(garminCategoryLabel(field.category)) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
                 : '';
-            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
-            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 4 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
+            const comparison = preview?.activityComparison;
+            const comparisonText = comparison
+                ? '<p class="mt-2 text-[10px] text-cyan-200">Aktivitätsabgleich (nur Vorschau): ' + Number(comparison.archiveRecords || 0) + ' Archivdatensätze · ' + Number(comparison.uniqueArchiveIds || 0) + ' eindeutige IDs · ' + Number(comparison.alreadyExisting || 0) + ' bereits vorhanden · ' + Number(comparison.newActivities || 0) + ' neu · ' + Number(comparison.duplicateArchiveIds || 0) + ' doppelte Archiv-IDs · ' + Number(comparison.existingWithoutDetails || 0) + ' vorhandene Aktivitäten ohne Detaildatensatz</p>'
+                : '';
+            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + comparisonText + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
+            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 5 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
@@ -307,6 +311,33 @@ function collectGarminFields(value, category, filePath, inventory, budget, path 
     }
 }
 
+function collectSummarizedActivities(value, output, depth = 0) {
+    if (!value || typeof value !== 'object' || depth > 12) return;
+    if (Array.isArray(value)) {
+        for (const item of value) collectSummarizedActivities(item, output, depth + 1);
+        return;
+    }
+    for (const [key, item] of Object.entries(value)) {
+        if (key.toLowerCase() === 'summarizedactivitiesexport' && Array.isArray(item)) {
+            for (const activity of item) {
+                if (!activity || typeof activity !== 'object' || Array.isArray(activity)) continue;
+                const id = activity.activityId ?? activity.id;
+                if (id === null || id === undefined || !/^\\d+$/.test(String(id))) continue;
+                output.push({
+                    id: String(id),
+                    hasStart: activity.startTimeGmt != null || activity.startTimeGMT != null || activity.startTimeLocal != null,
+                    hasDuration: activity.duration != null || activity.elapsedDuration != null,
+                    hasDistance: activity.distance != null,
+                    hasSplits: Array.isArray(activity.splits) && activity.splits.length > 0,
+                    hasSplitSummaries: Array.isArray(activity.splitSummaries) && activity.splitSummaries.length > 0
+                });
+            }
+        } else if (item && typeof item === 'object') {
+            collectSummarizedActivities(item, output, depth + 1);
+        }
+    }
+}
+
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 }
@@ -367,7 +398,7 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                 const recordCount = Array.isArray(parsed) ? parsed.length
                     : parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 1;
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
-                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);
+                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);\n                if (category === 'activities') collectSummarizedActivities(parsed, summary.activityRecords);
                 const dates = [];
                 collectDateValues(parsed, dates, { count: 0 }, path);
                 for (const date of dates) summary.dates.push(date);
@@ -415,20 +446,55 @@ export async function analyzeGarminExportArchive(importId) {
         const archiveBlob = new Blob(blobs, { type: 'application/zip' });
         const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
         const summary = {
-            analysisVersion: 4,
+            analysisVersion: 5,
             analyzedAt: new Date().toISOString(),
             jsonFiles: 0,
             nestedArchives: 0,
             categories: {},
             topLevelRecords: {},
             fieldInventory: {},
-            fieldInventoryBudget: { counts: {}, truncated: [] },
+            fieldInventoryBudget: { counts: {}, truncated: [] },\n            activityRecords: [],
             otherFiles: {},
             dates: [],
             errors: []
         };
         setAnalysisStatus('JSON-Dateien, Datenfelder und Unterarchive werden geprüft …');
         await inspectGarminZip(zip, '', summary);
+        const archiveActivityIds = new Set(summary.activityRecords.map(record => record.id));
+        const { data: existingActivityRows, error: existingActivityError } = await supabase
+            .from('garmin_activities')
+            .select('garmin_activity_id')
+            .eq('user_id', userId)
+            .limit(5000);
+        if (existingActivityError) throw existingActivityError;
+        const existingActivityIds = new Set((existingActivityRows || []).map(row => String(row.garmin_activity_id)));
+        const { data: detailRows, error: detailError } = await supabase
+            .from('garmin_activity_details')
+            .select('garmin_activity_id')
+            .eq('user_id', userId)
+            .limit(5000);
+        if (detailError) throw detailError;
+        const detailIds = new Set((detailRows || []).map(row => String(row.garmin_activity_id)));
+        const uniqueRecords = new Map();
+        for (const record of summary.activityRecords) {
+            if (!uniqueRecords.has(record.id)) uniqueRecords.set(record.id, record);
+        }
+        const uniqueArchiveRecords = [...uniqueRecords.values()];
+        summary.activityComparison = {
+            archiveRecords: summary.activityRecords.length,
+            uniqueArchiveIds: archiveActivityIds.size,
+            duplicateArchiveIds: summary.activityRecords.length - archiveActivityIds.size,
+            alreadyExisting: uniqueArchiveRecords.filter(record => existingActivityIds.has(record.id)).length,
+            newActivities: uniqueArchiveRecords.filter(record => !existingActivityIds.has(record.id)).length,
+            existingWithoutDetails: uniqueArchiveRecords.filter(record => existingActivityIds.has(record.id) && !detailIds.has(record.id)).length,
+            recordsWithStartTime: uniqueArchiveRecords.filter(record => record.hasStart).length,
+            recordsWithDuration: uniqueArchiveRecords.filter(record => record.hasDuration).length,
+            recordsWithDistance: uniqueArchiveRecords.filter(record => record.hasDistance).length,
+            recordsWithSplits: uniqueArchiveRecords.filter(record => record.hasSplits).length,
+            recordsWithSplitSummaries: uniqueArchiveRecords.filter(record => record.hasSplitSummaries).length,
+            comparisonAt: new Date().toISOString()
+        };
+        delete summary.activityRecords;
         summary.fieldInventoryLimits = {
             perCategory: MAX_FIELD_PATHS_PER_CATEGORY,
             counts: summary.fieldInventoryBudget.counts,
@@ -447,7 +513,7 @@ export async function analyzeGarminExportArchive(importId) {
             .eq('id', importId).eq('user_id', userId);
         if (saveError) throw saveError;
         if (fill) fill.style.width = '100%';
-        setAnalysisStatus('Feldanalyse abgeschlossen. Erkannte Datenfelder und Zeiträume wurden katalogisiert; es wurden keine Messwerte importiert oder als Rohwerte gespeichert.');
+        setAnalysisStatus('Aktivitätsabgleich und Feldanalyse abgeschlossen. Es wurde nur eine Zählvorschau gespeichert; keine Aktivitäten oder Messwerte wurden importiert oder überschrieben.');
         if (status) status.className = 'text-xs text-emerald-300';
         await renderGarminExportArchiveHistory();
     } catch (error) {

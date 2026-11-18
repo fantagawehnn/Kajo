@@ -383,9 +383,12 @@ assert.ok(activities.includes("avgCadence !== null ? 'Ø ' + Math.round(avgCaden
 
 const garminArchive = readFileSync('js/garmin-export-archive.js', 'utf8').replace(/\\r\\n/g, '\\n');
 assert.ok(garminArchive.includes('function collectGarminFields'), 'Garmin archive analysis inventories actual JSON field paths and value types');
+assert.ok(garminArchive.includes('function collectSummarizedActivities') && garminArchive.includes('activityComparison'), 'Garmin archive preview compares unique activity IDs with existing records without importing them');
+assert.ok(garminArchive.includes('existingWithoutDetails') && garminArchive.includes('duplicateArchiveIds'), 'Garmin archive comparison reports existing detail gaps and duplicate archive IDs');
+assert.ok(garminArchive.includes('delete summary.activityRecords'), 'Garmin archive comparison stores only aggregate counts, not raw activity identifiers');
 assert.ok(garminArchive.includes('fieldInventory: {}') && garminArchive.includes('collectGarminFields(parsed, category'), 'Garmin archive analysis stores a compact field inventory in the archive manifest');
 assert.ok(garminArchive.includes('Erkannte Datenfelder anzeigen') && garminArchive.includes('field.occurrences'), 'Garmin archive history exposes the recognized field inventory to the user');
-assert.ok(garminArchive.includes('keine Messwerte importiert oder als Rohwerte gespeichert'), 'Garmin field preview does not import or persist raw measurement values');
+assert.ok(garminArchive.includes('keine Aktivitäten oder Messwerte wurden importiert oder überschrieben'), 'Garmin archive comparison remains read-only and does not import or overwrite measurement data');
 
 
 assert.ok(garminArchive.includes('fitnessagedata|metricsmaxmet|vo2|max.?met|benchmark'), 'Garmin fitness-age and VO2max exports are classified as performance data');
@@ -394,9 +397,9 @@ assert.ok(garminArchive.includes('trainingplan|_workout.json|workout'), 'Garmin 
 assert.ok(garminArchive.includes('customer_data|di-connect-user|trainingplan|_workout.json'), 'profile and workout-plan dates are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('birth|created|updated|modified|deleted|expiry|expiration|upload|export'), 'metadata timestamps are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('timestamp <= Date.now() + 24 * 60 * 60 * 1000'), 'future plan dates do not extend the historical measurement period');
-assert.ok(garminArchive.includes('analysisVersion: 4') && garminArchive.includes('preview?.analysisVersion !== 4'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
+assert.ok(garminArchive.includes('analysisVersion: 5') && garminArchive.includes('preview?.analysisVersion !== 5'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
 assert.ok(garminArchive.includes('MAX_FIELD_PATHS_PER_CATEGORY = 500') && garminArchive.includes('inventoryBudget.counts[fieldCategory]'), 'Garmin archive field inventory has a separate limit for every data category');
-assert.ok(garminArchive.includes('analysisVersion: 4') && garminArchive.includes('preview?.analysisVersion !== 4'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
+assert.ok(garminArchive.includes('analysisVersion: 5') && garminArchive.includes('preview?.analysisVersion !== 5'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
 assert.ok(garminArchive.includes('truncatedCategories: summary.fieldInventoryBudget.truncated'), 'Garmin archive analysis reports categories whose field inventory reached its limit');
 assert.ok(garminArchive.includes('function classifyGarminFieldCategory') && garminArchive.includes('bodybattery|alldaystress|stresslevel|restingheartrate'), 'bundled Garmin daily wellness fields are classified into recovery');
 assert.ok(garminArchive.includes('hydration|kilocalorie|calorie|bmr|sweatloss|nutrition'), 'bundled Garmin nutrition and hydration fields are classified separately');
