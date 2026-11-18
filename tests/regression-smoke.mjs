@@ -292,6 +292,30 @@ const streamed = state.rawActivities.find(a => a.id === 'streamed-activity');
 assert.deepEqual(streamed.telemetry.hr, [120, 130, 140]);
 assert.deepEqual(streamed.telemetry.time, [0, 1, 2]);
 
+// Stream lookup must not attach an Intervals time series to a Garmin activity
+// merely because both providers happen to use the same numeric ID.
+state.rawActivities = [{
+    id: '55555', source: 'garmin', sourceRefs: { garminActivityId: '55555' },
+    date: todayKey, startTime: todayKey + 'T06:00:00Z',
+    type: 'kayak', duration: 30, name: 'Garmin morning session'
+}];
+let streamRequestsForCollidingId = 0;
+globalThis.fetch = async url => url.includes('/activities')
+    ? { ok: true, json: async () => [{
+        id: '55555', start_date_local: todayKey + 'T18:00:00',
+        moving_time: 1800, distance: 4000, type: 'Run', name: 'Intervals evening run'
+    }] }
+    : url.includes('/streams.json')
+        ? (streamRequestsForCollidingId++, { ok: true, json: async () => [
+            { type: 'time', data: [0, 1] }, { type: 'heartrate', data: [120, 130] }
+        ] })
+        : { ok: true, json: async () => [] };
+document.getElementById('icu-load-activities').checked = false;
+document.getElementById('icu-load-streams').checked = true;
+await importer.performIntervalsLiveSync();
+assert.equal(streamRequestsForCollidingId, 0, 'Intervals streams must not be attached to Garmin by colliding provider ID');
+assert.equal(state.rawActivities[0].telemetry, undefined, 'Garmin activity telemetry remains untouched by unrelated Intervals streams');
+
 // Numeric IDs from different providers are not interchangeable.
 state.rawActivities = [{
     id: '12345', source: 'garmin', sourceRefs: { garminActivityId: '12345' },
