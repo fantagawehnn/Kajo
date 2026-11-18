@@ -155,6 +155,8 @@ async function syncGarminHealthDayUnlocked(
         await new Promise((resolve) => setTimeout(resolve, 2000));
         payload = await garminGet(token, endpoint.path);
       }
+      // A slow Garmin response may outlive the lease; re-check ownership before any write.
+      await renewLease();
       const hasData = !isEmptyGarminPayload(payload);
       const now = new Date().toISOString();
 
@@ -199,6 +201,7 @@ async function syncGarminHealthDayUnlocked(
   const rateLimited = results.some((item) => item.status === "rate_limited");
   const retryInSeconds = Number(results.find((item) => item.status === "rate_limited")?.retryInSeconds || 0);
   if (!failed) {
+    await renewLease();
     const { error } = await admin.from("garmin_connections").update({
       last_health_sync_at: new Date().toISOString(),
     }).eq("user_id", userId);
@@ -242,7 +245,7 @@ async function syncGarminHealthDay(
   }
 
   const { data: claimed, error: claimError } = await admin.from("garmin_health_day_sync_leases")
-    .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), updated_at: now })
+    .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), started_at: now, updated_at: now })
     .eq("user_id", userId)
     .eq("record_date", date)
     .or(`lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.${now}`)
