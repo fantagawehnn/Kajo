@@ -843,7 +843,7 @@ async function syncActivityFilesBatch(
   if (!selected.length) {
     return {
       status: "complete",
-      totalActivities: activities?.length ?? 0,
+      totalActivities,
       pendingActivities: 0,
       processed: 0,
       succeeded: 0,
@@ -895,6 +895,7 @@ async function syncActivityFilesBatch(
         result.details = "saved";
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Details.";
+        if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
         errors.push(`Details: ${message.slice(0, 220)}`);
         result.details = "error";
       }
@@ -916,6 +917,7 @@ async function syncActivityFilesBatch(
         result.workouts = workouts == null ? "no_data" : "saved";
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Workouts.";
+        if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
         errors.push(`Workouts: ${message.slice(0, 220)}`);
         result.workouts = "error";
       }
@@ -946,12 +948,14 @@ async function syncActivityFilesBatch(
         result.fileSizeBytes = fitFile.bytes.length;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim FIT-Download.";
+        if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
         errors.push(`FIT: ${message.slice(0, 220)}`);
         result.fit = "error";
       }
     }
 
     if (errors.length) {
+      await renewLease();
       result.errors = errors;
       await admin.from("garmin_activity_details").upsert({
         user_id: userId,
@@ -960,6 +964,7 @@ async function syncActivityFilesBatch(
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,garmin_activity_id" });
     } else {
+      await renewLease();
       await admin.from("garmin_activity_details").update({
         last_error: null,
         updated_at: new Date().toISOString(),
