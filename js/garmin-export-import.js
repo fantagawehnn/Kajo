@@ -200,7 +200,7 @@ async function importActivitiesIntoGarminIndex(records, userId) {
     const verifiedIds = await loadExistingGarminActivityIds(userId);
     const missing = records.filter(record => {
         const id = String(record.activityId ?? record.id ?? '');
-        return /^\\d+$/.test(id) && !verifiedIds.has(id);
+        return /^\d+$/.test(id) && !verifiedIds.has(id);
     }).length;
     if (missing) throw new Error(missing + ' Garmin-Aktivitäten fehlen nach dem Indeximport noch in der Cloud.');
     return rows.length;
