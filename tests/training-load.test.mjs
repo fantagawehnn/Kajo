@@ -110,7 +110,9 @@ test('a day with multiple activities is incomplete if any activity lacks the sel
 
 test('Garmin native load does not advance CTL or ATL without a KAJO zone load', () => {
     const records = [{ id: 'g-no-coverage', source: 'garmin', date: completedDay, garminTrainingLoad: 25 }];
-    const timeline = computePerformanceTimeline(records, {}, {});
+    const timeline = computePerformanceTimeline(records, {
+        garminActivityCoverageRanges: [covered(completedDay)]
+    }, {});
     const day = timeline.find(item => item.date === completedDay);
     assert.equal(day.load, null);
     assert.equal(day.dataStatus, 'incomplete-activity-load');
@@ -142,18 +144,19 @@ test('an unknown day breaks the CTL model instead of carrying load across the ga
     const threeDaysAgo = offsetDate(today, -3);
     const gapDate = offsetDate(today, -2);
     const records = [
-        { id: 'g-5', source: 'garmin', date: threeDaysAgo, garminTrainingLoad: 50 },
-        { id: 'g-6', source: 'garmin', date: completedDay, garminTrainingLoad: 40 }
+        { id: 'manual-5', source: 'manual', date: threeDaysAgo, duration: 60, perceivedEffort: 5 },
+        { id: 'manual-6', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 4 }
     ];
     const timeline = computePerformanceTimeline(records, {
+        trainingLoadSource: 'srpe',
         garminActivityCoverageRanges: [covered(threeDaysAgo), covered(completedDay)]
     }, {});
     const gap = timeline.find(day => day.date === gapDate);
     const current = timeline.find(day => day.date === completedDay);
     assert.equal(gap.load, null);
     assert.equal(gap.dataStatus, 'unknown');
-    assert.equal(current.load, 40);
-    assert.equal(current.ctl, Number((40 * (1 - Math.exp(-1 / 42))).toFixed(1)));
+    assert.equal(current.load, 240);
+    assert.equal(current.ctl, Number((240 * (1 - Math.exp(-1 / 42))).toFixed(1)));
 });
 
 test('KAJO primary model calculates HR-zone load when usable HR data exists', () => {
