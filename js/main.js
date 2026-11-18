@@ -803,7 +803,7 @@ async function loadGarminSyncHistory() {
         container.textContent = 'Bitte anmelden, um die Synchronisierungshistorie zu sehen.';
         return;
     }
-    container.textContent = 'Synchronisierungshistorie wird geladen …';
+    container.textContent = 'Garmin-Datenbestand wird geladen …';
     let syncStatusMarkup = '<p class="mb-3 text-[10px] text-slate-500">Live-Sync-Status derzeit nicht verfügbar.</p>';
     try {
         const statusResult = await callGarminFunction({ action: 'status' });
@@ -909,9 +909,9 @@ async function loadGarminSyncHistory() {
               </tbody>
             </table>
           </div>
-          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei. Der Zeitraum beschreibt vorhandene Daten und belegt nicht, dass jeder Tag vollständig abgerufen wurde. Ein vollständiges, historisches Abrufprotokoll wird derzeit nicht gespeichert.</p>`;
+          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei. Der Zeitraum beschreibt vorhandene Daten und belegt nicht, dass jeder Tag vollständig abgerufen wurde. Die Zeitzone der täglichen Scan-Abdeckung wird nicht separat protokolliert; ein vollständiges, historisches Abrufprotokoll wird derzeit nicht gespeichert.</p>`;
     } catch (error) {
-        container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
+        container.textContent = 'Garmin-Datenbestand konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
     }
 }
 
