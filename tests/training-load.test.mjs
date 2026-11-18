@@ -482,14 +482,14 @@ test('Edwards TRIMP excludes telemetry gaps longer than 30 seconds', () => {
 
 test('adaptive resting HR uses the median of the trailing window and excludes future readings', () => {
     const checkins = {
-        '2026-01-01': { rhr: 48 },
-        '2026-01-02': { rhr: 52 },
-        '2026-01-03': { rhr: 49 },
-        '2026-01-04': { rhr: 90 },
-        '2026-01-05': { rhr: 50 },
-        '2026-01-06': { rhr: 46 },
-        '2026-01-07': { rhr: 44 },
-        '2026-01-08': { rhr: 35 }
+        '2026-01-01': { garminRhr: 48 },
+        '2026-01-02': { garminRhr: 52 },
+        '2026-01-03': { garminRhr: 49 },
+        '2026-01-04': { garminRhr: 90 },
+        '2026-01-05': { garminRhr: 50 },
+        '2026-01-06': { garminRhr: 46 },
+        '2026-01-07': { garminRhr: 44 },
+        '2026-01-08': { garminRhr: 35 }
     };
     const result = getAdaptiveRestingHr(checkins, '2026-01-07', 7, {});
     assert.equal(result.value, 49);
@@ -506,8 +506,8 @@ test('Karvonen zones use HR reserve rather than fixed percentages of maximum HR'
 
 test('adaptive resting HR requires at least three readings unless profile fallback exists', () => {
     const checkins = {
-        '2026-01-01': { rhr: 50 },
-        '2026-01-02': { rhr: 51 }
+        '2026-01-01': { garminRhr: 50 },
+        '2026-01-02': { garminRhr: 51 }
     };
     assert.equal(getAdaptiveRestingHr(checkins, '2026-01-02', 7, {}).value, null);
     const fallback = getAdaptiveRestingHr(checkins, '2026-01-02', 7, { restingHr: 49 });
@@ -518,12 +518,12 @@ test('adaptive resting HR requires at least three readings unless profile fallba
 
 test('each historical activity uses its own trailing adaptive resting-HR window', () => {
     const checkins = {
-        '2026-01-01': { rhr: 50 },
-        '2026-01-02': { rhr: 50 },
-        '2026-01-03': { rhr: 50 },
-        '2026-01-04': { rhr: 60 },
-        '2026-01-05': { rhr: 60 },
-        '2026-01-06': { rhr: 60 }
+        '2026-01-01': { garminRhr: 50 },
+        '2026-01-02': { garminRhr: 50 },
+        '2026-01-03': { garminRhr: 50 },
+        '2026-01-04': { garminRhr: 60 },
+        '2026-01-05': { garminRhr: 60 },
+        '2026-01-06': { garminRhr: 60 }
     };
     const first = getAdaptiveRestingHr(checkins, '2026-01-03', 3, { maxHr: 200 });
     const later = getAdaptiveRestingHr(checkins, '2026-01-06', 3, { maxHr: 200 });
@@ -541,7 +541,7 @@ test('Garmin HR-zone load adapts Karvonen boundaries to each activity date RHR w
         garminTelemetry: { hr: [145, 150, 160, 170], time: [0, 20, 40, 60] }
     };
     const makeCheckins = value => Object.fromEntries(
-        Array.from({ length: 7 }, (_, index) => [offsetDate('2026-01-07', index - 6), { rhr: value }])
+        Array.from({ length: 7 }, (_, index) => [offsetDate('2026-01-07', index - 6), { garminRhr: value }])
     );
     const profile = { maxHr: 200 };
     const settings = { heartRateZoneSettings: { restingHrWindowDays: 7 } };
