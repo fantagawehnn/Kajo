@@ -1785,10 +1785,18 @@ Deno.serve(async (req) => {
       // It writes the same idempotent per-day records directly; the leased batch
       // cursor remains dedicated to the user's selected historical range.
       const forceHealthRefresh = body.forceHealthRefresh !== false;
-      const healthSync = await runTrackedGarminSync(admin, userId, {
-        source: "daily_sync", syncType: "health_history", startDate: date, endDate: date,
-        timezoneBasis: "client_local_date", timezoneOffsetMinutes,
-      }, () => syncGarminHealthDay(admin, userId, date, forceHealthRefresh));
+      const healthSync = activityFilesSync.rateLimited
+        ? {
+            status: "in_progress",
+            deferred: true,
+            rateLimited: true,
+            retryInSeconds: activityFilesSync.retryInSeconds,
+            message: "Der Gesundheitsdatenabruf wartet auf das Ende der Garmin-Abrufpause.",
+          }
+        : await runTrackedGarminSync(admin, userId, {
+            source: "daily_sync", syncType: "health_history", startDate: date, endDate: date,
+            timezoneBasis: "client_local_date", timezoneOffsetMinutes,
+          }, () => syncGarminHealthDay(admin, userId, date, forceHealthRefresh));
       return json(200, { ok: true, sync: { date, activitySync, activityFilesSync, healthSync } });
     }
 
