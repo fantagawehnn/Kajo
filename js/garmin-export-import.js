@@ -443,15 +443,17 @@ export async function importGarminExportArchive(importId) {
             if (/^\d+$/.test(id) && !uniqueActivities.has(id)) uniqueActivities.set(id, record);
         }
         const uniqueActivityRecords = [...uniqueActivities.values()];
-        const activityImport = importActivitiesIntoApp(uniqueActivityRecords);
-        const activityIndexRowsAdded = await importActivitiesIntoGarminIndex(uniqueActivityRecords, userId);
-        const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
 
         const uniquePerformance = new Map();
         for (const record of context.performanceRecords) {
             const key = [record.date, record.sport || '', record.subSport || '', record.value].join('|');
             uniquePerformance.set(key, record);
         }
+
+        const activityImport = importActivitiesIntoApp(uniqueActivityRecords);
+        const activityIndexRowsAdded = await importActivitiesIntoGarminIndex(uniqueActivityRecords, userId);
+        const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
+
         const performanceRows = [...uniquePerformance.entries()].map(([recordKey, record]) => ({
             user_id: userId,
             import_id: importId,
@@ -516,7 +518,7 @@ export async function importGarminExportArchive(importId) {
         setImportStatus(
             'Import abgeschlossen: ' + dataImport.jsonFiles + ' JSON-Dateien verarbeitet · ' +
             dataImport.storedFileRows + ' Datei-Einträge gesichert · ' + activityImport.added +
-            ' neue Aktivitäten · ' + activityIndexRowsAdded + ' Garmin-IDs ergänzt · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' vo2maxDailyValuesAdded + ' Tageswerte ergänzt. ' +
+            ' neue Aktivitäten · ' + activityIndexRowsAdded + ' Garmin-IDs ergänzt · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' + vo2maxDailyValuesAdded + ' Tageswerte ergänzt. ' +
             (context.errors.length ? context.errors.length + ' Dateien mit Hinweisen.' : 'Keine Importfehler.'),
             100,
             context.errors.length ? 'info' : 'success'
