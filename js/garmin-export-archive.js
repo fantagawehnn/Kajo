@@ -222,7 +222,7 @@ export async function renderGarminExportArchiveHistory() {
                 ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(field.category) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
                 : '';
             const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
-            const analyzeButton = item.status === 'indexed' && !preview?.fieldInventory ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Datenfelder erkennen</button>" : '';
+            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 2 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
@@ -243,7 +243,7 @@ function classifyGarminPath(path) {
     const value = String(path || '').toLowerCase();
     // Match concrete export filenames before broad topic words. In particular,
     // "fitnessAgeData" is a wellness/performance file, not an activity file.
-    if (/summarizedactivities|activitydetails|activity/.test(value)) return 'activities';
+    if (/summarizedactivities|activitydetails/.test(value)) return 'activities';
     if (/fitnessagedata|metricsmaxmet|vo2|max.?met|benchmark/.test(value)) return 'performance';
     if (/sleep|hrv|heart.?rate|healthstatus|stress|spo2|body.?battery|wellness/.test(value)) return 'recovery';
     if (/weight|hydration|nutrition|calorie/.test(value)) return 'body-nutrition';
@@ -384,6 +384,7 @@ export async function analyzeGarminExportArchive(importId) {
         const archiveBlob = new Blob(blobs, { type: 'application/zip' });
         const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
         const summary = {
+            analysisVersion: 2,
             analyzedAt: new Date().toISOString(),
             jsonFiles: 0,
             nestedArchives: 0,
