@@ -21,8 +21,9 @@ export function getGarminCheckinMetric(checkin, key) {
             ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
     } else if (key === 'vo2max') {
         // Prefer the dedicated field; retain explicitly marked legacy archive values.
-        value = checkin.garminVo2max
-            ?? (checkin.vo2maxSource === 'garmin-estimate' ? checkin.vo2max : null);
+        value = checkin.garminVo2maxSource === 'garmin-export-metrics-max-met'
+            ? checkin.garminVo2max
+            : (checkin.vo2maxSource === 'garmin-estimate' ? checkin.vo2max : null);
     } else if (Object.prototype.hasOwnProperty.call(GARMIN_FIELDS, key)) {
         value = checkin[GARMIN_FIELDS[key]];
     } else {
