@@ -318,4 +318,15 @@ assert.ok(mainSource.includes('const nativeLoadValue = a.trainingLoad ?? a.activ
 assert.ok(mainSource.includes("nativeLoadValue != null && nativeLoadValue !== ''"));
 assert.ok(mainSource.includes('garminTrainingLoad: Number.isFinite(nativeLoad) && nativeLoad >= 0 ? nativeLoad : null,'));
 
+// Garmin backend validation must use real digit classes, not a literal escaped \\d sequence.
+const garminBackendSource = await readFile(new URL('../supabase/functions/garmin-personal/index.ts', import.meta.url), 'utf8');
+assert.ok(garminBackendSource.includes('if (!/^\\d+$/.test(activityId))'),
+    'Garmin activity IDs must be validated with a digit character class');
+assert.ok(garminBackendSource.includes('const activityDate = /^\\d{4}-\\d{2}-\\d{2}/.test(localStart)'),
+    'Garmin local activity dates must be recognized as YYYY-MM-DD');
+assert.ok(garminBackendSource.includes('if (!activityDate || !/^\\d{4}-\\d{2}-\\d{2}$/.test(activityDate))'),
+    'Garmin activity dates must be validated as YYYY-MM-DD');
+assert.ok(!garminBackendSource.includes('\\\\\\\\d'),
+    'Garmin backend must not contain double-escaped digit classes');
+
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load and backup restore.');
