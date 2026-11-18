@@ -137,6 +137,11 @@ storage.applyCloudDataSnapshot(coverageSnapshot);
 assert.deepEqual(state.settings.garminActivityCoverageRanges, persistedCoverage);
 await storage.loadStateForUser('smoke-test-user');
 assert.deepEqual(state.settings.garminActivityCoverageRanges, persistedCoverage);
+const backupSettings = { ...state.settings };
+await storage.importDatabaseBackup({
+    text: async () => JSON.stringify({ settings: backupSettings })
+}, { confirmed: true, categories: ['settings'] });
+assert.deepEqual(state.settings.garminActivityCoverageRanges, persistedCoverage);
 
 
 // Garmin raw telemetry remains available in memory for charts but is never
