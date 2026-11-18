@@ -369,7 +369,7 @@ const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261
 const garminLeaseMigration = await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8');
 assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
 assert.ok(garminBackendSource.includes('async function withGarminActivityLease'), 'Activity-list sync must use a separate per-user lease');
-assert.ok(garminBackendSource.includes('const syncType = "activity_list";'), 'Activity-list lease must be isolated from health-history cursor state');
+assert.ok(garminBackendSource.includes('.from("garmin_activity_sync_leases")'), 'Activity-list lease must use its own table, isolated from the health-history cursor');
 assert.ok(garminBackendSource.includes('async function syncGarminActivitiesForUserUnlocked'), 'The activity importer must run only behind its lease wrapper');
 assert.ok(garminBackendSource.includes('Die Sperre für die Garmin-Aktivitätsliste ist abgelaufen'), 'An activity worker that loses its lease must stop safely');
 assert.ok(garminBackendSource.includes('await renewLease();'), 'Activity-list lease must be renewed during page and database processing');
@@ -382,6 +382,8 @@ assert.ok(garminBackendSource.includes('Eine andere Gesundheitsdaten-Synchronisi
 assert.ok(garminBackendSource.includes('Die Sperre für die Garmin-Gesundheitssynchronisierung ist abgelaufen'), 'A worker that loses its lease must stop before advancing the cursor');
 assert.ok(garminLeaseMigration.includes('add column if not exists lock_token uuid'), 'The lease migration must add an owner token');
 assert.ok(garminLeaseMigration.includes('add column if not exists lock_expires_at timestamptz'), 'The lease migration must add an expiry timestamp');
+assert.ok(garminLeaseMigration.includes('create table if not exists public.garmin_activity_sync_leases'), 'Activity-list leases must have an independent service-only table');
+assert.ok(garminLeaseMigration.includes('revoke all on table public.garmin_activity_sync_leases from anon, authenticated'), 'Activity-list lease rows must not be accessible to browser roles');
 assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), 'Garmin sync calls must be wrapped in event logging');
 assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, true)'), 'Daily health refresh must not reset the shared historical backfill cursor');
 assert.ok(garminBackendSource.includes('.select("payload,fetched_at")'), 'The no-data retry cooldown must use the stored fetch timestamp');
