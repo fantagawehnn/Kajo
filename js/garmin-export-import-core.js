@@ -37,25 +37,42 @@ export function collectGarminSummaryActivities(value, output = [], depth = 0) {
 }
 
 function parseStart(record) {
+    const localValue = record?.startTimeLocal;
     const candidates = [
-        record?.startTimeLocal,
-        record?.startTimeGmt,
-        record?.startTimeGMT,
-        record?.startTime,
-        record?.beginTimestamp
+        [record?.startTimeGmt, true],
+        [record?.startTimeGMT, true],
+        [record?.startTime, false],
+        [record?.beginTimestamp, false],
+        [localValue, false]
     ];
-    for (const value of candidates) {
+    let startTime = null;
+    for (const [value, assumeUtc] of candidates) {
         if (value === null || value === undefined || value === '') continue;
-        const date = typeof value === 'number'
-            ? new Date(value > 1e12 ? value : value * 1000)
-            : new Date(value);
+        let date;
+        if (typeof value === 'number') {
+            date = new Date(value > 1e12 ? value : value * 1000);
+        } else {
+            const source = String(value);
+            const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(source);
+            date = new Date(assumeUtc && !hasZone ? source + 'Z' : source);
+        }
         if (Number.isFinite(date.getTime())) {
-            const localDate = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)
-                ? value.slice(0, 10) : date.toISOString().slice(0, 10);
-            return { startTime: date.toISOString(), date: localDate };
+            startTime = date.toISOString();
+            break;
         }
     }
-    return { startTime: null, date: null };
+
+    let localDate = null;
+    if (typeof localValue === 'string' && /^\d{4}-\d{2}-\d{2}/.test(localValue)) {
+        localDate = localValue.slice(0, 10);
+    } else if (localValue !== null && localValue !== undefined && localValue !== '') {
+        const localParsed = typeof localValue === 'number'
+            ? new Date(localValue > 1e12 ? localValue : localValue * 1000)
+            : new Date(localValue);
+        if (Number.isFinite(localParsed.getTime())) localDate = localParsed.toISOString().slice(0, 10);
+    }
+    const fallbackDate = startTime ? startTime.slice(0, 10) : null;
+    return { startTime, date: localDate || fallbackDate };
 }
 
 function durationMinutes(value) {
