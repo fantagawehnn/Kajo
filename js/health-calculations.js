@@ -143,8 +143,8 @@ export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
     .map(episode => ({
       ...episode,
       daysInWindow: Math.max(0,
-        Math.round((new Date(Math.min(episode.endDate, to) + 'T12:00:00') -
-          new Date(Math.max(episode.startDate, from) + 'T12:00:00')) / 86400000) + 1)
+        Math.round((new Date((episode.endDate < to ? episode.endDate : to) + 'T12:00:00') -
+          new Date((episode.startDate > from ? episode.startDate : from) + 'T12:00:00')) / 86400000) + 1)
     }));
 }
 
