@@ -11,7 +11,9 @@ permissions:
 
 jobs:
   regression-smoke:
-    runs-on: ubuntu-24.04
+    # Eigene Pushes auf beiden Entwicklungsbranches laufen lokal.
+    # Pull Requests bleiben auf GitHub-hosted Runnern (Sicherheit).
+    runs-on: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'self-hosted' || 'ubuntu-24.04' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -35,7 +37,7 @@ jobs:
   deploy-cloudflare:
     needs: regression-smoke
     if: github.event_name == 'push' && github.ref == 'refs/heads/v2'
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
