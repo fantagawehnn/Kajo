@@ -395,6 +395,9 @@ assert.ok(garminArchive.includes('customer_data|di-connect-user|trainingplan|_wo
 assert.ok(garminArchive.includes('birth|created|updated|modified|deleted|expiry|expiration|upload|export'), 'metadata timestamps are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('timestamp <= Date.now() + 24 * 60 * 60 * 1000'), 'future plan dates do not extend the historical measurement period');
 assert.ok(garminArchive.includes('analysisVersion: 3') && garminArchive.includes('preview?.analysisVersion !== 3'), 'existing Garmin archives can be re-analysed with the field-domain classification rules');
+assert.ok(garminArchive.includes('MAX_FIELD_PATHS_PER_CATEGORY = 500') && garminArchive.includes('inventoryBudget.counts[fieldCategory]'), 'Garmin archive field inventory has a separate limit for every data category');
+assert.ok(garminArchive.includes('analysisVersion: 4') && garminArchive.includes('preview?.analysisVersion !== 4'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
+assert.ok(garminArchive.includes('truncatedCategories: summary.fieldInventoryBudget.truncated'), 'Garmin archive analysis reports categories whose field inventory reached its limit');
 assert.ok(garminArchive.includes('function classifyGarminFieldCategory') && garminArchive.includes('bodybattery|alldaystress|stresslevel|restingheartrate'), 'bundled Garmin daily wellness fields are classified into recovery');
 assert.ok(garminArchive.includes('hydration|kilocalorie|calorie|bmr|sweatloss|nutrition'), 'bundled Garmin nutrition and hydration fields are classified separately');
 assert.ok(garminArchive.includes('activeseconds|highlyactiveseconds|floorsascended|floorsdescended'), 'bundled daily activity fields are distinguished from training sessions');
