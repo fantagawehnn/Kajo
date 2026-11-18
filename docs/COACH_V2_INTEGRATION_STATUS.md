@@ -45,6 +45,12 @@ Stand: 2026-11-18
 6. Regressionstest: Garmin-Synchronisierung, Kalender, Aktivitäten, Profil, Training Load und bisherige Coach-Navigation.
 7. Prüfen, ob die gewählte Modell-ID `@cf/zai-org/glm-4.7-flash` im Zielkonto aktuell verfügbar ist.
 
+## CI-Erweiterung
+
+- Die bestehende GitHub-Actions-Syntaxprüfung umfasst nun zusätzlich `js/coach-context.js`, `js/coach-data-context.js`, `js/coach-analysis.js` und `worker.js`.
+- Die Workflow-Trigger wurden nicht verändert. Auf diesem Feature-Branch läuft die CI daher nicht automatisch bei jedem Push; bei einem späteren Pull Request gegen `v2` greift der bestehende Pull-Request-Trigger.
+- Die CI wurde durch diese Änderung noch nicht ausgeführt. Die Ergänzung erweitert nur die künftig ausgeführte Syntaxprüfung und ersetzt keine Coach-Funktionstests.
+
 ## Test- und Deploymentstatus
 
 - GitHub-Dateien und Branchvergleich geprüft.
