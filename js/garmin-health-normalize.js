@@ -57,3 +57,9 @@ export function normalizeGarminWeight(payload) {
 export function countGarminMetricUpdates(updates) {
     return Object.keys(updates || {}).filter(key => key !== 'measurementSources').length;
 }
+
+/** Classifies a normalized Garmin value against the existing Garmin-only field. */
+export function classifyGarminMetricUpdate(existingValue, nextValue) {
+    if (existingValue === null || existingValue === undefined || existingValue === '') return 'added';
+    return Number(existingValue) === Number(nextValue) ? 'unchanged' : 'updated';
+}
