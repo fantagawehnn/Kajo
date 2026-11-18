@@ -60,8 +60,16 @@ async function handleCoach(request, env) {
   const requestOrigin = new URL(request.url).origin;
   if (origin && origin !== requestOrigin) return json({ error: "Origin not allowed." }, 403);
 
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    return json({ error: "Die serverseitige Supabase-Prüfung ist noch nicht konfiguriert." }, 503);
+  const missingSupabaseConfig = [
+    !env.SUPABASE_URL ? "SUPABASE_URL" : null,
+    !env.SUPABASE_ANON_KEY ? "SUPABASE_ANON_KEY" : null
+  ].filter(Boolean);
+  if (missingSupabaseConfig.length) {
+    return json({
+      error: `Die serverseitige Supabase-Prüfung ist noch nicht vollständig konfiguriert. Fehlend: ${missingSupabaseConfig.join(", ")}.`,
+      code: "SUPABASE_CONFIG_MISSING",
+      missing: missingSupabaseConfig
+    }, 503);
   }
   if (!env.AI || typeof env.AI.run !== "function") {
     return json({ error: "Cloudflare Workers AI ist noch nicht mit diesem Worker verbunden." }, 503);
