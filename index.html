@@ -1383,7 +1383,7 @@
     <div id="planned-workout-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4">
             <h3 id="planned-workout-modal-title" class="text-base font-bold text-white flex items-center gap-2">
-                <i data-lucide="calendar-plus" class="w-5 h-5 text-cyan-400"></i> Trainingseinheit planen
+                <i data-lucide="calendar-plus" class="w-5 h-5 text-cyan-400"></i> Training oder Leistungsdiagnostik planen
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
@@ -1416,7 +1416,7 @@
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">Trainingskategorie</label>
-                    <select id="plan-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <select id="plan-category" onchange="if(this.value.startsWith('diagnostic-')){document.getElementById('plan-duration').value='';document.getElementById('plan-tss').value='';}" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                         <option value="ga">GA Ausdauer</option>
                         <option value="interval">Intervalle</option>
                         <option value="reg">Regeneration</option>
@@ -1427,6 +1427,7 @@
                     </select>
                 </div>
             </div>
+            <p class="text-[10px] text-slate-500">Bei Leistungsdiagnostik werden Dauer und Ziel-Load nicht als reguläre Trainingsbelastung verbucht.</p>
             <div>
                 <label class="block text-slate-400 mb-1 text-xs">Beschreibung & Inhalte</label>
                 <textarea id="plan-desc" rows="2" placeholder="Intervalle im Schwellenbereich..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
