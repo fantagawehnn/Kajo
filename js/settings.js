@@ -176,7 +176,7 @@ function renderRows() {
   if (!sportBox || !catBox || !zoneBox) return;
   renderTelemetrySettings();
   const loadSource = document.getElementById('training-load-source');
-  if (loadSource) loadSource.value = state.settings?.trainingLoadSource || 'auto';
+  if (loadSource) loadSource.value = state.settings?.trainingLoadSource === 'srpe' ? 'srpe' : 'kajo-zone';
   sportBox.innerHTML = Object.entries(sports).map(([key,v]) => `<div class="grid grid-cols-[auto_minmax(0,1fr)_minmax(145px,1fr)_auto] gap-2 items-center rounded-lg border border-slate-800 bg-slate-950/60 p-2" data-sport-row data-key="${key}"><input data-enabled type="checkbox" ${selectedSports.has(key) ? 'checked' : ''} aria-label="Sportart ${escapeHtml(v.label)} im Kalender verwenden" class="h-4 w-4 accent-sky-500"><input data-label value="${escapeHtml(v.label)}" class="min-w-0 w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">${sportColorEditor(v.color)}${key.startsWith('custom-') ? '<button type="button" data-remove class="text-xs text-rose-400" title="Entfernen">×</button>' : '<span class="text-[10px] text-slate-600">Standard</span>'}</div>`).join('');
   catBox.innerHTML = Object.entries(categories).map(([key,v]) => `<div class="grid grid-cols-[1fr_76px_auto] gap-2 items-center" data-category-row data-key="${key}"><input data-label value="${escapeHtml(v.label)}" class="min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"><input data-color type="color" value="${v.color||'#64748b'}" class="w-full h-9 bg-slate-950 border border-slate-700 rounded-lg">${key.startsWith('custom-') ? '<button type="button" data-remove class="text-xs text-rose-400" title="Entfernen">×</button>' : '<span class="text-[10px] text-slate-600">Standard</span>'}</div>`).join('');
   const activeSports = Object.fromEntries(Object.entries(sports).filter(([key]) => selectedSports.has(key)));
@@ -299,9 +299,9 @@ export function saveTelemetrySettings() {
 
 export function saveSettings() {
   const sports = {}, categories = {};
-  const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
+  const trainingLoadSource = document.getElementById('training-load-source')?.value || 'kajo-zone';
   const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
-  if (!['auto', 'kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
+  if (!['kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
   // Legacy-Zonengrenzen bleiben für ältere Datensätze erhalten; die aktive
   // Berechnung verwendet ausschließlich das adaptive Herzfrequenzreserve-Modell.
   const zones = { ...(state.settings?.heartRateZones || {}) };
