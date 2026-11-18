@@ -120,6 +120,25 @@ assert.equal(store.get('endurance_checkins'), legacyCheckins);
 // Subsequent import checks run inside an isolated authenticated-user storage scope.
 await storage.loadStateForUser('smoke-test-user');
 
+// Confirmed Garmin activity-list coverage is durable user data and survives
+// both the cloud-snapshot apply path and a fresh local user-state load.
+const persistedCoverage = [{
+    startDate: '2026-10-01', endDate: '2026-10-14',
+    status: 'complete', source: 'garmin_activity_list',
+    syncedAt: '2026-10-15T08:00:00.000Z'
+}];
+state.settings = {
+    ...(state.settings || {}),
+    garminActivityCoverageRanges: persistedCoverage
+};
+const coverageSnapshot = storage.getUserDataSnapshot();
+assert.deepEqual(coverageSnapshot.settings.garminActivityCoverageRanges, persistedCoverage);
+storage.applyCloudDataSnapshot(coverageSnapshot);
+assert.deepEqual(state.settings.garminActivityCoverageRanges, persistedCoverage);
+await storage.loadStateForUser('smoke-test-user');
+assert.deepEqual(state.settings.garminActivityCoverageRanges, persistedCoverage);
+
+
 // Garmin raw telemetry remains available in memory for charts but is never
 // written to the persistent per-user activity or telemetry collections.
 state.rawActivities = [{
