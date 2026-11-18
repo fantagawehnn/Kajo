@@ -2709,7 +2709,7 @@ async function syncGarminTodayOnOpen(userId) {
         let health = null;
         for (let attempt = 0; attempt < 4; attempt++) {
             try {
-                response = await callGarminFunction({ action: 'sync-today', date, timezoneOffsetMinutes: new Date().getTimezoneOffset() });
+                response = await callGarminFunction({ action: 'sync-today', date, timezoneOffsetMinutes: new Date().getTimezoneOffset(), forceHealthRefresh: attempt === 0 });
             } catch (syncError) {
                 const rateLimited = /HTTP 429|rate.?limit/i.test(syncError?.message || '');
                 if (!rateLimited || attempt === 3) throw syncError;
