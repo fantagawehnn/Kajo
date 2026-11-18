@@ -279,7 +279,7 @@ assert.ok(charts.includes('activity-lap-highlight'), 'selected timed laps are hi
 assert.ok(charts.includes('state.activitySelectedLap'), 'chart highlight uses the selected lap time range');
 
 assert.ok(charts.includes("const hasElapsedTime = times.length === timeSource.values.length") && charts.includes("validCount.toLocaleString('de-DE')") && charts.includes('Messreihen gleichzeitig'), 'activity telemetry reports measured-value coverage and whether the time axis is reliable');
-assert.ok(activities.includes('grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-b border-slate-800 py-2 w-full text-left'), 'time-aligned laps are directly selectable without duplicate class attributes');
+assert.ok(activities.includes('grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs py-2 w-full text-left') && activities.includes('class="flex items-center gap-2 border-b border-slate-800"'), 'time-aligned laps are selectable and row separators remain on the wrapper rather than duplicating button classes');
 
 assert.ok(activities.includes('Math.round(otherDistance * 100) === Math.round(distance * 100)'), 'comparisons use the same recorded distance rather than arbitrary duration bands');
 assert.ok(activities.includes('levelA !== levelB'), 'canoe comparisons require identical documented water level');
