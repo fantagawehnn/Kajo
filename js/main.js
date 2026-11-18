@@ -831,18 +831,17 @@ async function loadGarminSyncHistory() {
         };
         const timezoneLabel = event => {
             if (event.timezone_basis === 'utc') return 'UTC';
-            if (event.timezone_basis === 'client_local_date') return 'Lokales Datum' +
-                (Number.isInteger(event.timezone_offset_minutes) ? ' · UTC' +
-                    (event.timezone_offset_minutes <= 0 ? '+' : '-') +
-                    Math.abs(event.timezone_offset_minutes / 60) : '');
-            if (Number.isInteger(event.timezone_offset_minutes)) {
-                const utcOffset = -event.timezone_offset_minutes;
-                const sign = utcOffset >= 0 ? '+' : '−';
-                const hours = Math.floor(Math.abs(utcOffset) / 60);
-                const minutes = Math.abs(utcOffset) % 60;
-                return 'UTC' + sign + hours + (minutes ? ':' + String(minutes).padStart(2, '0') : '');
+            if (!Number.isInteger(event.timezone_offset_minutes)) {
+                return event.timezone_basis === 'client_local_date'
+                    ? 'Lokales Datum · Offset unbekannt'
+                    : 'Zeitzone nicht dokumentiert';
             }
-            return 'Zeitzone nicht dokumentiert';
+            const utcOffset = -event.timezone_offset_minutes;
+            const sign = utcOffset >= 0 ? '+' : '−';
+            const hours = Math.floor(Math.abs(utcOffset) / 60);
+            const minutes = Math.abs(utcOffset) % 60;
+            const formatted = 'UTC' + sign + hours + (minutes ? ':' + String(minutes).padStart(2, '0') : '');
+            return event.timezone_basis === 'client_local_date' ? 'Lokales Datum · ' + formatted : formatted;
         };
         const eventRows = events.map(event => {
             const period = event.start_date
