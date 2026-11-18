@@ -22,7 +22,9 @@ export const typeColorMap = {
     interval: { bg: 'bg-amber-950', text: 'text-amber-400', border: 'border-amber-800', bar: 'bg-amber-500', label: 'Intervalle', color: '#f59e0b' },
     reg: { bg: 'bg-blue-950', text: 'text-blue-400', border: 'border-blue-800', bar: 'bg-blue-500', label: 'Regeneration', color: '#3b82f6' },
     strength: { bg: 'bg-purple-950', text: 'text-purple-400', border: 'border-purple-800', bar: 'bg-purple-500', label: 'Kraft', color: '#8b5cf6' },
-    tech: { bg: 'bg-cyan-950', text: 'text-cyan-400', border: 'border-cyan-800', bar: 'bg-cyan-500', label: 'Technik', color: '#06b6d4' }
+    tech: { bg: 'bg-cyan-950', text: 'text-cyan-400', border: 'border-cyan-800', bar: 'bg-cyan-500', label: 'Technik', color: '#06b6d4' },
+    'diagnostic-lactate': { bg: 'bg-rose-950', text: 'text-rose-300', border: 'border-rose-800', bar: 'bg-rose-500', label: 'Laktattest', color: '#f43f5e' },
+    'diagnostic-strength': { bg: 'bg-purple-950', text: 'text-purple-300', border: 'border-purple-800', bar: 'bg-purple-500', label: 'Krafttest', color: '#a855f7' }
 };
 
 export function formatDateDDMMYY(dateStr) {
