@@ -427,7 +427,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     // Home zeigt bei fehlenden Tageswerten den letzten tatsächlich erfassten
     // Check-in bis einschließlich des ausgewählten Tages. Die Daten bleiben
     // datumsgebunden; es werden keine Werte aus der Zukunft übernommen.
-    const homeMetricKeys = ['rhr','garminRhr','hrv','sleepScore','sleepDuration','sleep','respiration','sleepQuality','soreness','fatigue','motivation','stress','weight'];
+    const homeMetricKeys = ['garminHrv','garminRhr','garminSleepScore','garminSleepDuration','garminRespiration','garminBodyBattery','garminStress','sleepQuality','soreness','fatigue','motivation','stress','weight'];
     const hasHomeMetrics = record => Boolean(record && typeof record === 'object' &&
         homeMetricKeys.some(key => record[key] !== null && record[key] !== undefined && record[key] !== ''));
     const checkinEntries = Object.entries(state.dailyCheckins || {})
@@ -443,7 +443,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     if (dailyLabel && checkinDate && checkinDate !== selectedDate) {
         dailyLabel.textContent = 'LETZTE MESSUNG · ' + formatDateDDMMYY(checkinDate);
     }
-    const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
+    const sleepDuration = checkin.garminSleepDuration;
     const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     const setCircle = (id, value, stateName = 'neutral') => {
         const el = document.getElementById(id); if (!el) return;
@@ -465,11 +465,12 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             valueEl.classList.add('kajo-wearable-value');
         }
     };
-    metric('home-wear-rhr','home-wear-rhr-ring',format(checkin.garminRhr ?? checkin.rhr,'rhr'),wearableState('rhr',checkin.garminRhr ?? checkin.rhr));
-    metric('home-wear-hrv','home-wear-hrv-ring',format(checkin.hrv,'hrv'),wearableState('hrv',checkin.hrv));
-    metric('home-wear-score','home-wear-score-ring',format(checkin.sleepScore,'sleepScore'),wearableState('sleepScore',checkin.sleepScore));
+    metric('home-wear-rhr','home-wear-rhr-ring',format(checkin.garminRhr,'rhr'),wearableState('rhr',checkin.garminRhr));
+    const garminHrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    metric('home-wear-hrv','home-wear-hrv-ring',format(garminHrv,'hrv'),wearableState('hrv',garminHrv));
+    metric('home-wear-score','home-wear-score-ring',format(checkin.garminSleepScore,'sleepScore'),wearableState('sleepScore',checkin.garminSleepScore));
     metric('home-wear-duration','home-wear-duration-ring',validNumber(sleepDuration) ? historyDisplay(Number(sleepDuration),'sleepDuration').replace('.',',') + ' h' : '—',wearableState('sleepDuration',sleepDuration));
-    metric('home-wear-resp','home-wear-resp-ring',format(checkin.respiration,'respiration'),wearableState('respiration',checkin.respiration));
+    metric('home-wear-resp','home-wear-resp-ring',format(checkin.garminRespiration,'respiration'),wearableState('respiration',checkin.garminRespiration));
     const subjective = [
         ['sleepQuality','home-self-sleep','home-self-sleep-ring',false],
         ['soreness','home-self-soreness','home-self-soreness-ring',true],
