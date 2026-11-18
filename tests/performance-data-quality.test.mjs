@@ -93,6 +93,7 @@ test('uses a time-aligned raw Garmin series when the standard series has no vali
         { key: 'speed', unit: 'km/h', values: [6, 7], time: null },
         { key: 'directSpeed', unit: 'mps', values: [2, 2.2], time: [0, 1] }
     ], 'speed');
-    assert.deepEqual(resolved.values, [7.2, 7.920000000000001]);
+    assert.equal(resolved.values[0], 7.2);
+    assert.ok(Math.abs(resolved.values[1] - 7.92) < 1e-9);
     assert.equal(resolved.unit, 'km/h');
 });
