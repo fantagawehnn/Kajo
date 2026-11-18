@@ -1400,9 +1400,9 @@ Deno.serve(async (req) => {
       // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
       // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
       const healthSync = await runTrackedGarminSync(admin, userId, {
-        source: "daily_sync", syncType: "health_day", startDate: date, endDate: date,
+        source: "daily_sync", syncType: "health_history", startDate: date, endDate: date,
         timezoneBasis: "client_local_date", timezoneOffsetMinutes,
-      }, () => syncGarminHealthDay(admin, userId, date, true));
+      }, () => syncGarminHealthHistoryBatch(admin, userId, date, date, true, true));
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 
