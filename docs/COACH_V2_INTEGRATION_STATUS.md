@@ -10,7 +10,7 @@ Stand: 2026-11-18
 - Die Coach-Integration bleibt isoliert auf dem Feature-Branch.
 - `v2` wurde durch diese Arbeiten nicht verändert.
 - Es wurde kein Merge, Rebase, Pull Request oder Deployment ausgeführt.
-- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 30 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
+- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 34 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
 
 ## Umgesetzte Coach-Integration
 
@@ -40,7 +40,9 @@ Am 18.11.2026 wurden mehrere CI-Läufe auf dem Feature-Branch erfolgreich abgesc
 
 - Run [44362793490](https://github.com/fantagawehnn/Kajo/actions/runs/44362793490) und Run [44362844729](https://github.com/fantagawehnn/Kajo/actions/runs/44362844729): Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests erfolgreich.
 - Run [44363230293](https://github.com/fantagawehnn/Kajo/actions/runs/44363230293): dieselben Prüfschritte nach der Aktualisierung der Integrationsdokumentation erfolgreich.
-- Run [44363590191](https://github.com/fantagawehnn/Kajo/actions/runs/44363590191): zusätzlich die neuen Coach-Worker-Sicherheitstests erfolgreich. Diese prüfen unter anderem HTTP-Methode, fremde Origin, fehlende Supabase-Konfiguration und ungültige/abgelaufene Sitzungen sowie, dass bei ungültiger Sitzung weder Rate Limiter noch KI aufgerufen werden.
+- Run [44363590191](https://github.com/fantagawehnn/Kajo/actions/runs/44363590191): Coach-Worker-Sicherheitstests erfolgreich. Diese prüfen unter anderem HTTP-Methode, fremde Origin, fehlende Supabase-Konfiguration und ungültige/abgelaufene Sitzungen sowie, dass bei ungültiger Sitzung weder Rate Limiter noch KI aufgerufen werden.
+- Run [44363998803](https://github.com/fantagawehnn/Kajo/actions/runs/44363998803): erweiterte Worker-Fehlerpfadtests erfolgreich. Abgedeckt sind nun zusätzlich fehlendes/ausgefallenes Rate Limiting, überschrittene Limits, fehlerhaftes JSON, zu großer Kontext, AI-Fehler, leere AI-Antwort und erfolgreicher Antwortpfad.
+- Run [44364080844](https://github.com/fantagawehnn/Kajo/actions/runs/44364080844): vollständige CI nach zusätzlicher Absicherung fehlerhafter Supabase-Antworten und fehlender AI-Binding-Konfiguration erfolgreich. Die Coach-Worker-Tests prüfen jetzt auch diese beiden Fälle.
 - Der Cloudflare-Deploy-Job wurde erwartungsgemäß übersprungen, da es keine Pushes auf `v2` waren.
 
 Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetzt noch keinen Browser-/Runtime-Test gegen einen tatsächlich konfigurierten Worker und kein Deployment.
@@ -53,7 +55,7 @@ Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetz
 4. Die Wrangler-Version muss die Rate-Limit-Binding-Konfiguration unterstützen (mindestens 4.36.0).
 5. Die Modell-ID `@cf/zai-org/glm-4.7-flash` muss im Zielkonto praktisch getestet werden.
 6. Browser-/Runtime-Test mit gültiger und abgelaufener Supabase-Sitzung.
-7. Fehlerfälle testen: fehlende Worker-Konfiguration, AI-Kontingent erschöpft, ungültiger JSON-Body, zu großer Kontext und leere AI-Antwort.
+7. Im Livebetrieb noch prüfen: AI-Kontingent erschöpft, reale Cloudflare-Binding-Fehler und Verhalten bei Netzwerk-Timeouts.
 8. Regressionstest im laufenden System: Garmin-Synchronisierung, Kalender, Aktivitäten, Profil, Training Load und Coach-Navigation.
 9. Rate-Limit-Konfiguration gegen das tatsächliche Cloudflare-Konto validieren.
 
