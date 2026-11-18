@@ -476,25 +476,34 @@ async function runTrackedGarminSync<T extends Record<string, unknown>>(
   try {
     const result = await operation();
     const resultStatus = String(result.status ?? "complete");
-    const status = resultStatus === "ok" || resultStatus === "complete" ? "complete"
-      : resultStatus === "partial" || resultStatus === "rate_limited" ? "partial"
-      : resultStatus === "in_progress" ? "in_progress"
-      : resultStatus === "skipped" ? "skipped" : "complete";
     const numberOrNull = (value: unknown) =>
       typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : null;
-    const resultRows = Array.isArray(result.results)
-      ? result.results.filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
-      : [];
-    const failureRows = resultRows.flatMap(item => {
-      const children = Array.isArray(item.results)
-        ? item.results.filter((child): child is Record<string, unknown> => child !== null && typeof child === "object")
-        : [];
-      if (children.length) return children.filter(child => child.status === "error" || child.status === "rate_limited");
-      return item.status === "error" || item.status === "rate_limited" ? [item] : [];
-    });
-    const failureSummary = failureRows.map(item =>
-      String(item.error ?? item.dataType ?? "Teilabruf fehlgeschlagen")
-    ).filter(Boolean).slice(0, 3).join(" · ").slice(0, 500);
+
+    // Walk nested batch/day/endpoint results. A parent must never be logged as
+    // complete when one of its children reports a partial or failed import.
+    const failureRows: Array<Record<string, unknown>> = [];
+    const collectFailures = (value: unknown) => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return;
+      const row = value as Record<string, unknown>;
+      if (row.status === "error" || row.status === "rate_limited" || row.status === "partial") {
+        failureRows.push(row);
+      }
+      if (Array.isArray(row.results)) row.results.forEach(collectFailures);
+    };
+    collectFailures(result);
+
+    const knownStatuses = new Set(["ok", "complete", "partial", "rate_limited", "in_progress", "skipped", "error"]);
+    const recognizedStatus = knownStatuses.has(resultStatus);
+    const status = !recognizedStatus ? "error"
+      : resultStatus === "ok" || resultStatus === "complete" ? (failureRows.length ? "partial" : "complete")
+      : resultStatus === "partial" || resultStatus === "rate_limited" ? "partial"
+      : resultStatus === "in_progress" ? "in_progress"
+      : resultStatus === "skipped" ? "skipped" : "error";
+    const failureSummary = [
+      ...failureRows.map(item => String(item.error ?? item.dataType ?? item.message ?? "Teilabruf fehlgeschlagen")),
+      ...(!recognizedStatus ? [`Unbekannter Synchronisierungsstatus: ${resultStatus}`] : []),
+    ].filter(Boolean).filter((value, index, values) => values.indexOf(value) === index)
+      .slice(0, 3).join(" · ").slice(0, 500);
     if (eventId) {
       const { error } = await admin.from("garmin_sync_events").update({
         status, finished_at: new Date().toISOString(),
