@@ -421,7 +421,6 @@ assert.ok(garminBackendSource.includes('.order("garmin_activity_id", { ascending
 assert.ok(garminBackendSource.includes('async function syncActivityFilesBatch('), 'A resumable Garmin detail/workout/FIT archive batch must exist');
 assert.ok(garminBackendSource.includes('action === "sync-activity-files-batch"'), 'The Garmin detail/workout/FIT archive must be callable as a dedicated sync action');
 assert.ok(garminBackendSource.includes('while (selected.length < batchSize)'), 'The activity archive must keep paging until a pending batch is found or the full history is exhausted');
-assert.ok(garminBackendSource.includes('status: failed ? "partial" : "in_progress"'), 'A successfully processed activity batch must remain resumable until a later scan confirms the archive is complete');
 assert.ok(garminBackendSource.includes('if (rateLimited) break;'), 'The activity archive must stop requesting Garmin data after a rate limit');
 assert.ok(garminBackendSource.includes('status: rateLimited ? "rate_limited" : failed ? "partial" : "in_progress"'), 'Activity archive results must distinguish rate limiting from ordinary partial failures');
 assert.ok(garminBackendSource.includes('if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;'), 'A lost activity lease must abort archival instead of being swallowed as an endpoint error');
