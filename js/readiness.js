@@ -345,6 +345,9 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     } else {
         detail += ' Geplant: ' + sessionText + '. Der Planinhalt und der beabsichtigte Trainingsreiz müssen bei der endgültigen Entscheidung zusätzlich berücksichtigt werden.';
     }
+    if (sessions.some(item => isValid(item.targetTss))) {
+        detail += ' Der eingetragene Ziel-Load wird nicht automatisch mit Garmin Load oder KAJO-HF-Punkten verrechnet: Diese Belastungsskalen sind ohne validierte Umrechnung nicht direkt vergleichbar.';
+    }
 
     detail += ' Readiness ist ein Orientierungswert und keine medizinische Diagnose oder validierte Leistungsprognose.';
     return { title, detail, decision, readiness };
