@@ -5143,7 +5143,7 @@ html[data-theme="light"] .kajo-load-model-nav button.active,html.theme-light .ka
   width:104px;
   height:104px;
   aspect-ratio:1;
-  border:6px solid var(--kajo-ring-track,var(--kajo-border));
+  border:6px solid var(--load-ring-color,var(--kajo-ring-track,var(--kajo-border)));
   border-radius:50%;
   background:transparent;
 }
