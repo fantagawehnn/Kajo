@@ -151,6 +151,27 @@ function sanitizeHealthLogs(logs = {}) {
     })).filter(item => item.status || item.diagnosis || item.notes || item.description);
 }
 
+function findHealthCompetitionOverlaps(healthEvents = [], races = []) {
+    const overlaps = [];
+    for (const event of healthEvents) {
+        const eventStart = dateOnly(event.startDate) || dateOnly(event.date);
+        const eventEnd = dateOnly(event.endDate) || eventStart;
+        if (!eventStart) continue;
+        for (const race of races) {
+            const raceDate = dateOnly(race.date);
+            if (!raceDate || raceDate < eventStart || raceDate > eventEnd) continue;
+            overlaps.push({
+                date: raceDate,
+                competition: race.name || null,
+                healthStatus: event.status || null,
+                healthDiagnosis: event.diagnosis || null,
+                interpretation: 'Zeitliche Überschneidung dokumentierter Gesundheits- und Wettkampfdaten; tatsächliche Teilnahme und gesundheitliche Situation sind damit nicht geklärt.'
+            });
+        }
+    }
+    return overlaps;
+}
+
 function sanitizeRaces(races = []) {
     return races.map(race => ({
         ...pick(race, ['name', 'date', 'location', 'prio', 'label', 'sport', 'target']),
@@ -243,6 +264,8 @@ export function buildCoachRequestContext(appState, question) {
         : selectWindow(races, item => item?.date, shiftDate(today, -365), shiftDate(today, 365), LIMITS.races);
 
     const healthEvents = scope.includeHealth ? sanitizeHealthLogs(state.healthLogs || {}) : [];
+    const selectedRaceRecords = raceWindow.records;
+    const healthCompetitionOverlaps = findHealthCompetitionOverlaps(healthEvents, selectedRaceRecords);
     const strengthRelevant = scope.mode === 'full_history' || scope.mode === 'strength_review';
     const selectedActivityRecords = selectedActivities.records.map(sanitizeActivity);
     const selectedTimelineRecords = selectedTimeline.records.map(item => pick(item, TIMELINE_FIELDS));
@@ -333,6 +356,10 @@ export function buildCoachRequestContext(appState, question) {
         },
         competitions: {
             races: sanitizeRaces(raceWindow.records)
+        },
+        dataIntegrity: {
+            healthCompetitionOverlaps,
+            note: 'Zeitliche Überschneidungen werden deterministisch aus dokumentierten Datumsangaben erkannt. Sie beweisen weder Wettkampfteilnahme noch eine medizinische Ursache oder einen Kausalzusammenhang.'
         },
         analysisSummary: buildCoachAnalysisSummary({
             activities: selectedActivities.records,
