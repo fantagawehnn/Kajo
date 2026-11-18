@@ -3,7 +3,7 @@
 create table if not exists public.garmin_sync_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  source text not null check (source in ('manual_range', 'daily_sync', 'manual_activities', 'background')),
+  source text not null check (source in ('manual_range', 'daily_sync', 'manual_activities', 'manual_health_history', 'background')),
   sync_type text not null check (sync_type in ('activity_list', 'health_history')),
   status text not null check (status in ('running', 'complete', 'partial', 'in_progress', 'error', 'skipped')),
   start_date date,
