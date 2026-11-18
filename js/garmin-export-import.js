@@ -460,7 +460,10 @@ export async function importGarminExportArchive(importId) {
         const uniquePerformance = new Map();
         for (const record of context.performanceRecords) {
             const key = [record.date, record.sport || '', record.subSport || '', record.value].join('|');
-            uniquePerformance.set(key, record);
+            const previous = uniquePerformance.get(key);
+            if (!previous || String(record.updateTimestamp || '') > String(previous.updateTimestamp || '')) {
+                uniquePerformance.set(key, record);
+            }
         }
 
         const activityIndexRowsAdded = await importActivitiesIntoGarminIndex(uniqueActivityRecords, userId);
