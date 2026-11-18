@@ -388,6 +388,7 @@ assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), '
 assert.ok(garminBackendSource.includes('const collectFailures = (value: unknown) =>'), 'Nested sync results must be inspected for partial and failed child operations');
 assert.ok(garminBackendSource.includes('resultStatus === "ok" || resultStatus === "complete" ? (failureRows.length ? "partial" : "complete")'), 'A parent sync event must be partial when nested results contain failures');
 assert.ok(garminBackendSource.includes('const recognizedStatus = knownStatuses.has(resultStatus);'), 'Unknown sync result statuses must not be treated as successful');
+assert.ok(garminBackendSource.includes('const resultStatus = String(result.status ?? "missing");'), 'Missing sync result statuses must not default to complete');
 assert.ok(garminBackendSource.includes('!recognizedStatus ? "error"'), 'Unknown sync result statuses must be logged as errors');
 assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, true)'), 'Daily health refresh must not reset the shared historical backfill cursor');
 assert.ok(garminBackendSource.includes('.select("payload,fetched_at")'), 'The no-data retry cooldown must use the stored fetch timestamp');
