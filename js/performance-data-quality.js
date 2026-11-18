@@ -60,7 +60,7 @@ export function resolvePaddlingPerformanceSeries(activity, seriesList, metricKey
     if (!definition) return null;
     const raw = seriesList.find(series => series?.key === definition.key && series.unit === definition.sourceUnit);
     if (!raw || !Array.isArray(raw.values)) return standard || null;
-    return {
+    const resolved = {
         ...raw,
         key: metricKey,
         unit: definition.unit,
@@ -69,4 +69,5 @@ export function resolvePaddlingPerformanceSeries(activity, seriesList, metricKey
         sourceDetail: 'Gerätemesswert',
         conversionNote: definition.note
     };
+    return isValidElapsedTimeAxis(resolved.time, resolved.values.length) ? resolved : standard || resolved;
 }
