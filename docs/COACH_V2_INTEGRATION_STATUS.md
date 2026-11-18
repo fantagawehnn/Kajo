@@ -30,7 +30,7 @@ Stand: 2026-11-18
 
 1. In Cloudflare müssen `SUPABASE_URL` und `SUPABASE_ANON_KEY` als Worker-Variablen gesetzt sein. Der Supabase-Service-Role-Key wird dafür nicht benötigt und darf nicht eingebunden werden.
 2. Workers AI muss für das Cloudflare-Konto verfügbar sein; Kosten-/Kontingentgrenzen sind zu prüfen.
-3. Request-Body-Limit und Rate-Limiting des Coach-Endpunkts müssen vor öffentlichem Betrieb geprüft bzw. ergänzt werden. Der aktuelle Code prüft den deklarierten Content-Length-Header und die serialisierte Kontextgröße; ein fehlender oder manipulierter Content-Length-Header ist damit nicht vollständig begrenzt.
+3. Das Request-Body-Limit wird serverseitig zusätzlich zum Content-Length-Header während des Stream-Lesens durchgesetzt (maximal 350.000 Bytes); die serialisierte Kontextgröße wird separat begrenzt. Ein Rate-Limit pro Nutzer bzw. Konto muss vor öffentlichem Betrieb noch ergänzt und getestet werden.
 4. Browser-/Runtime-Test mit gültiger und abgelaufener Supabase-Sitzung.
 5. Fehlerfälle testen: fehlende Worker-Konfiguration, AI-Kontingent erschöpft, ungültiger JSON-Body, zu großer Kontext, leere AI-Antwort.
 6. Regressionstest: Garmin-Synchronisierung, Kalender, Aktivitäten, Profil, Training Load und bisherige Coach-Navigation.
