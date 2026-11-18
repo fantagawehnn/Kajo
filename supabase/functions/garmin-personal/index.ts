@@ -271,7 +271,6 @@ async function syncGarminHealthHistoryBatch(
   const { data: claimed, error: claimError } = await admin
     .from("garmin_sync_state")
     .update({
-      status: "running",
       lock_token: lockToken,
       lock_expires_at: leaseExpiry(),
       last_started_at: new Date().toISOString(),
@@ -280,7 +279,7 @@ async function syncGarminHealthHistoryBatch(
     })
     .eq("user_id", userId)
     .eq("sync_type", syncType)
-    .or(`status.neq.running,lock_expires_at.is.null,lock_expires_at.lt.${new Date().toISOString()}`)
+    .or(`lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.${new Date().toISOString()}`)
     .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
     .maybeSingle();
   if (claimError) throw claimError;
@@ -311,6 +310,11 @@ async function syncGarminHealthHistoryBatch(
     if (currentError) throw currentError;
     state = current;
     cursorDate = state.cursor_date ?? startDate;
+    const { error: markRunningError } = await admin.from("garmin_sync_state").update({
+      status: "running",
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    if (markRunningError) throw markRunningError;
 
     if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
       const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
