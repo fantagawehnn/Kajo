@@ -293,8 +293,8 @@ function switchTab(requestedTab) {
     if (view === 'analyses' && sub === 'load') renderTrainingLoadView();
     if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
     if (view === 'strength') renderStrengthView();
-    if (view === 'nutrition') { renderNutritionView(); void renderGarminExportArchiveHistory(); }
-    if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); }
+    if (view === 'nutrition') renderNutritionView();
+    if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); void renderGarminExportArchiveHistory(); }
     if (view === 'upload') renderImportHistory();
     if (view === 'health-data') renderMetricHistory('health');
     if (view === 'training-analysis') renderMetricHistory('training');
