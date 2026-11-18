@@ -57,6 +57,22 @@ test('successfully synchronized day without activities is a confirmed rest day',
     assert.equal(day.dataStatus, 'confirmed-rest');
 });
 
+test('coverage without Garmin activity-list provenance cannot confirm a rest day', () => {
+    const earlierDate = offsetDate(today, -2);
+    const records = [{
+        id: 'provenance-anchor', source: 'garmin', date: earlierDate, garminTrainingLoad: 20
+    }];
+    const timeline = computePerformanceTimeline(records, {
+        garminActivityCoverageRanges: [{
+            startDate: completedDay, endDate: completedDay,
+            status: 'complete', source: 'manual_or_unknown'
+        }]
+    }, {});
+    const day = timeline.find(item => item.date === completedDay);
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'unknown');
+});
+
 test('Garmin activity without a calculable load remains unknown', () => {
     const records = [{ id: 'g-1', source: 'garmin', date: completedDay, duration: 60 }];
     const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
