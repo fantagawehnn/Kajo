@@ -327,7 +327,8 @@ assert.ok(html.includes('id="performance-paddling-metrics"') && html.includes('i
 assert.ok(html.includes('id="performance-trend-chart"') && html.includes('data-performance-range="28d"'), 'Performance has a dedicated selectable trend chart and time ranges');
 assert.ok(performanceUi.includes('getActivityTelemetrySeries(activity)'), 'Performance reads existing provenance-gated activity telemetry');
 assert.ok(performanceUi.includes('isPaddlingPerformanceActivity(activity)'), 'Paddling performance excludes non-paddling activities');
-assert.ok(charts.includes('alignedElapsedTimeAxis(telem, values.length)'), 'activity telemetry retains only a validated elapsed-time axis');
+assert.ok(performanceUi.includes('isValidElapsedTimeAxis(series.time, series.values.length)'), 'paddling summary metrics require aligned elapsed-time data');
+assert.ok(charts.includes('getValidatedElapsedTimeAxis(telem, values.length)'), 'activity telemetry retains only a validated elapsed-time axis');
 assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
 assert.ok(performanceUi.includes('Zeitachse: Zeit seit Start') && performanceUi.includes('Keine verlässliche Zeitachse'), 'performance trend distinguishes elapsed-time axes from sample-index-only series');
