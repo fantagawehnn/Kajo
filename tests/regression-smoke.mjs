@@ -408,7 +408,7 @@ assert.ok(garminBackendSource.includes('type: "heart_rate_zones", path: "/biomet
 assert.ok(garminBackendSource.includes('type: "profile_settings", path: "/userprofile-service/userprofile/settings"'), 'Garmin profile settings must be archived');
 assert.ok(garminBackendSource.includes('record_key: "current"'), 'Reference endpoint payloads must be retained as raw current snapshots');
 assert.ok(garminBackendSource.includes('Date.now() - fetchedAt < 24 * 60 * 60 * 1000'), 'Reference snapshots must be refreshed at most once per 24 hours when successful');
-assert.ok(garminBackendSource.includes('activity: item,'), 'The full raw Garmin activity-list object must be stored instead of a reduced preview');
+assert.ok(garminBackendSource.includes('activity: { ...activity, raw: item }'), 'The full raw Garmin activity-list object must be stored alongside normalized preview fields');
 assert.ok(garminBackendSource.includes('.range(offset, offset + pageSize - 1)'), 'FIT/detail archiving must paginate through the complete activity history');
 assert.ok(garminBackendSource.includes('.order("start_time", { ascending: true })'), 'FIT/detail archiving must begin with the oldest pending activities');
 assert.ok(garminBackendSource.includes('async function syncActivityFilesBatch('), 'A resumable Garmin detail/workout/FIT archive batch must exist');
