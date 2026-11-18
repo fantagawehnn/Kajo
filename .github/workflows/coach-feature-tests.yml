@@ -1,0 +1,29 @@
+name: KAJO Coach Feature Tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coach-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Check Coach JavaScript syntax
+        run: |
+          node --check js/coach.js
+          node --check js/coach-context.js
+          node --check js/coach-data-context.js
+          node --check js/coach-analysis.js
+          node --check worker.js
+      - name: Run Coach context regression tests
+        run: node --experimental-default-type=module --test tests/coach-context.test.mjs
