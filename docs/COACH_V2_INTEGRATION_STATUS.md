@@ -44,6 +44,7 @@ Stand: 2026-11-18
 - Keine lokalen Build-, Lint- oder Browser-Tests ausgeführt.
 - Keine Cloudflare-Variablen gesetzt.
 - Kein Cloudflare-Deployment ausgeführt.
+- Die Modell-ID `@cf/zai-org/glm-4.7-flash` wurde gegen den aktuellen Cloudflare-Modellkatalog geprüft; sie ist dort gelistet und wird für Workers Free als verfügbar genannt.
 - Die neue Rate-Limit-Binding-Konfiguration ist im Repository hinterlegt, aber noch nicht gegen das Cloudflare-Konto bzw. dessen Wrangler-Version validiert.
 - Keine Supabase-Änderungen oder Datenbankmigrationen ausgeführt.
 
