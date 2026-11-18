@@ -9,10 +9,10 @@ for (let index = 1; index <= 14; index++) {
     date.setDate(date.getDate() - index);
     const key = date.toISOString().slice(0, 10);
     history[key] = {
-        hrv: 60 + (index % 3) - 1,
+        garminHrv: 60 + (index % 3) - 1,
         garminRhr: 48 + (index % 2),
-        respiration: 14 + (index % 2) * 0.2,
-        sleepDuration: 8
+        garminRespiration: 14 + (index % 2) * 0.2,
+        garminSleepDuration: 8
     };
 }
 
@@ -27,7 +27,7 @@ function makeState(overrides = {}) {
 
 test('readiness requires at least two independent domains', () => {
     const oneDomain = makeState({
-        dailyCheckins: { [day]: { hrv: 60, garminRhr: 48 } }
+        dailyCheckins: { [day]: { garminHrv: 60, garminRhr: 48 } }
     });
     const result = calculateReadiness(day, oneDomain);
     assert.equal(result.score, null);
@@ -38,7 +38,7 @@ test('readiness requires at least two independent domains', () => {
 test('individual physiological baseline uses recent history and ignores future readings', () => {
     const source = makeState({
         dailyCheckins: {
-            [day]: { hrv: 75, sleepScore: 90 }
+            [day]: { garminHrv: 75, garminSleepScore: 90 }
         },
         dailyTimeline: [{ date: day, load: 100, ctl: 20, atl: 40, acwr: 2.0 }]
     });
@@ -55,9 +55,9 @@ test('HRV baseline does not mix explicit Garmin provenance with legacy or manual
         dailyCheckins: {
             [day]: {
                 hrv: 75,
-                sleepScore: 90,
+                garminSleepScore: 90,
                 measurementSources: {
-                    hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+                    hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' }
                 }
             }
         }
@@ -76,7 +76,7 @@ test('HRV baseline uses matching source, metric identity and unit', () => {
         {
             ...record,
             measurementSources: {
-                hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+                garminHrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
             }
         }
     ]));
@@ -84,10 +84,10 @@ test('HRV baseline uses matching source, metric identity and unit', () => {
         dailyCheckins: {
             ...garminHistory,
             [day]: {
-                hrv: 75,
-                sleepScore: 90,
+                garminHrv: 75,
+                garminSleepScore: 90,
                 measurementSources: {
-                    hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+                    garminHrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
                 }
             }
         }
@@ -103,7 +103,7 @@ test('HRV baseline uses matching source, metric identity and unit', () => {
 
 test('sleep duration and sleep score are not counted twice in the sleep domain', () => {
     const source = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepDuration: 4, sleepScore: 90, sleepQuality: 4 } }
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepDuration: 4, garminSleepScore: 90, sleepQuality: 4 } }
     });
     const result = calculateReadiness(day, source);
     assert.equal(result.objective.filter(item => item.key === 'sleepDuration').length, 0);
@@ -113,7 +113,7 @@ test('sleep duration and sleep score are not counted twice in the sleep domain',
 
 test('missing subjective check-in values remain missing, not negative', () => {
     const source = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90 } }
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90 } }
     });
     const result = calculateReadiness(day, source);
     assert.equal(result.subjective.length, 0);
@@ -123,11 +123,11 @@ test('missing subjective check-in values remain missing, not negative', () => {
 
 test('training load and ACWR are kept outside the readiness composite', () => {
     const lowLoad = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 3 } },
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 3 } },
         dailyTimeline: [{ date: day, load: 20, ctl: 20, atl: 20, acwr: 1 }]
     });
     const highLoad = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 3 } },
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 3 } },
         dailyTimeline: [{ date: day, load: 200, ctl: 20, atl: 40, acwr: 2 }]
     });
     assert.equal(calculateReadiness(day, lowLoad).score, calculateReadiness(day, highLoad).score);
@@ -135,7 +135,7 @@ test('training load and ACWR are kept outside the readiness composite', () => {
 
 test('illness overrides a favourable readiness score in the recommendation', () => {
     const source = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 95, sleepQuality: 5, motivation: 5 } },
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 95, sleepQuality: 5, motivation: 5 } },
         healthLogs: { [day]: { status: 'sick', diagnosis: 'Erkältung' } }
     });
     const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Intervalle', duration: 60 }], source);
@@ -146,7 +146,7 @@ test('illness overrides a favourable readiness score in the recommendation', () 
 test('a marked adverse physiological deviation is not averaged away by good sleep and wellness', () => {
     const source = makeState({
         dailyCheckins: {
-            [day]: { hrv: 45, sleepScore: 95, sleepQuality: 5, motivation: 5, fatigue: 1, soreness: 1, stress: 1 }
+            [day]: { garminHrv: 45, garminSleepScore: 95, sleepQuality: 5, motivation: 5, fatigue: 1, soreness: 1, stress: 1 }
         }
     });
     const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Intervalle', duration: 60, category: 'interval' }], source);
@@ -155,7 +155,7 @@ test('a marked adverse physiological deviation is not averaged away by good slee
 });
 
 test('insufficient data does not produce a false training clearance', () => {
-    const source = makeState({ dailyCheckins: { [day]: { hrv: 60 } } });
+    const source = makeState({ dailyCheckins: { [day]: { garminHrv: 60 } } });
     const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Intervalle' }], source);
     assert.equal(recommendation.decision, 'insufficient-data');
     assert.match(recommendation.title, /nicht sicher beurteilbar/);
@@ -166,7 +166,7 @@ test('stale training-load status is not used as current-day context', () => {
     staleDate.setDate(staleDate.getDate() - 3);
     const staleKey = staleDate.toISOString().slice(0, 10);
     const source = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 4 } },
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 4 } },
         dailyTimeline: [{ date: staleKey, load: 200, ctl: 20, atl: 50, tsb: -30, statusLabel: 'Hohe Ermüdung' }]
     });
     const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Technik', duration: 45, category: 'tech' }], source);
@@ -175,7 +175,7 @@ test('stale training-load status is not used as current-day context', () => {
 
 test('planned target load is not equated with Garmin or KAJO load units', () => {
     const source = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 4 } }
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 4 } }
     });
     const recommendation = buildTrainingRecommendation(day, [{
         date: day, name: 'Intervalle', duration: 60, category: 'interval', targetTss: 100
@@ -185,7 +185,7 @@ test('planned target load is not equated with Garmin or KAJO load units', () => 
 
 test('multiple planned sessions are explicitly considered in the daily recommendation', () => {
     const source = makeState({
-        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 4 } }
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 4 } }
     });
     const planned = [
         { date: day, name: 'Morgens K1', duration: 60, time: '08:00' },
