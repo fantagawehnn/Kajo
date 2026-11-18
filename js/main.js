@@ -844,6 +844,12 @@ async function loadGarminSyncHistory() {
             return event.timezone_basis === 'client_local_date' ? 'Lokales Datum · ' + formatted : formatted;
         };
         const eventRows = events.map(event => {
+            const startedAtMs = Date.parse(event.started_at || '');
+            const hasNoRecentCompletion = event.status === 'running' &&
+                Number.isFinite(startedAtMs) && Date.now() - startedAtMs > 15 * 60 * 1000;
+            const displayedStatus = hasNoRecentCompletion
+                ? 'Kein Abschluss protokolliert'
+                : (statusLabels[event.status] || event.status);
             const period = event.start_date
                 ? event.start_date + (event.end_date && event.end_date !== event.start_date ? ' – ' + event.end_date : '')
                 : 'Zeitraum nicht dokumentiert';
@@ -861,7 +867,7 @@ async function loadGarminSyncHistory() {
                 '</strong><span class="text-[10px] ' +
                     (event.status === 'error' || event.status === 'partial' ? 'text-amber-300' :
                      event.status === 'complete' ? 'text-emerald-300' : 'text-slate-400') + '">' +
-                    escapeText(statusLabels[event.status] || event.status) + '</span></div>' +
+                    escapeText(displayedStatus) + '</span></div>' +
                 '<p class="text-[10px] text-slate-400">' + escapeText(formatTimestamp(event.started_at)) +
                     ' · ' + escapeText(period) + ' · ' + escapeText(timezoneLabel(event)) + '</p>' +
                 (counts.length ? '<p class="text-[10px] text-slate-300">' + escapeText(counts.join(' · ')) + '</p>' : '') +
@@ -879,7 +885,9 @@ async function loadGarminSyncHistory() {
             (healthSync?.last_error ? '<p class="text-[10px] text-amber-300">Gesundheitsdaten-Fehler: ' + escapeText(healthSync.last_error) + '</p>' : '') +
             '</div>' +
             '<div class="mb-3 space-y-2"><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Letzte Synchronisierungsvorgänge</p>' +
-            (eventRows || '<p class="text-[10px] text-slate-500">Noch keine protokollierten Abrufvorgänge.</p>') + '</div>';
+            (!statusResult.eventsAvailable
+                ? '<p class="text-[10px] text-amber-300">' + escapeText(statusResult.eventsNotice || 'Das Sync-Ereignisprotokoll ist derzeit nicht verfügbar.') + '</p>'
+                : (eventRows || '<p class="text-[10px] text-slate-500">Noch keine protokollierten Abrufvorgänge.</p>')) + '</div>';
     } catch (_) {
         // Keep the saved-data inventory visible even when the live status endpoint is unavailable.
     }
