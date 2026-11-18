@@ -3,6 +3,7 @@ import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { inferSport, inferCategory } from './activities.js';
 import { extractGarminVo2MaxRecords } from './garmin-performance-archive.js';
+import { SUPABASE_ANON_KEY } from './supabase-config.js';
 import {
     classifyGarminExportFile,
     collectGarminSummaryActivities,
@@ -10,7 +11,9 @@ import {
 } from './garmin-export-import-core.js';
 
 const BUCKET = 'garmin-exports';
+const PROJECT_ID = 'zgvargkfzgekokuisarv';
 const LARGE_JSON_BYTES = 750 * 1024;
+const TUS_THRESHOLD_BYTES = 6 * 1024 * 1024;
 const FILE_BATCH_SIZE = 25;
 const PERFORMANCE_BATCH_SIZE = 100;
 let activeImportId = null;
@@ -31,6 +34,47 @@ function safeStoragePath(path) {
     return String(path || 'garmin-file.json').split('/').map(part =>
         encodeURIComponent(part.replace(/\.\./g, '_')).replace(/%2F/gi, '_')
     ).join('/');
+}
+
+async function uploadJsonObject(objectPath, blob) {
+    if (blob.size <= TUS_THRESHOLD_BYTES) {
+        const { error } = await supabase.storage.from(BUCKET).upload(objectPath, blob, {
+            contentType: 'application/json',
+            upsert: true,
+            cacheControl: '3600'
+        });
+        if (error) throw error;
+        return;
+    }
+    if (typeof tus === 'undefined' || typeof tus.Upload !== 'function') {
+        throw new Error('Der resumierbare Upload-Dienst ist für eine große JSON-Datei nicht verfügbar.');
+    }
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const token = sessionData?.session?.access_token;
+    if (!token) throw new Error('Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.');
+    await new Promise((resolve, reject) => {
+        const upload = new tus.Upload(blob, {
+            endpoint: 'https://' + PROJECT_ID + '.storage.supabase.co/storage/v1/upload/resumable',
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            headers: { authorization: 'Bearer ' + token, apikey: SUPABASE_ANON_KEY },
+            uploadDataDuringCreation: true,
+            removeFingerprintOnSuccess: true,
+            metadata: {
+                bucketName: BUCKET,
+                objectName: objectPath,
+                contentType: 'application/json',
+                cacheControl: '3600'
+            },
+            chunkSize: 6 * 1024 * 1024,
+            onError: reject,
+            onSuccess: resolve
+        });
+        upload.findPreviousUploads().then(previous => {
+            if (previous.length) upload.resumeFromPreviousUpload(previous[0]);
+            upload.start();
+        }).catch(reject);
+    });
 }
 
 function topLevelRecordCount(value) {
@@ -176,12 +220,7 @@ async function processZip(zip, prefix, context, depth = 0) {
                         row.payload = parsed;
                     } else {
                         const objectPath = context.userId + '/' + context.importId + '/data/' + safeStoragePath(sourcePath);
-                        const { error: uploadError } = await supabase.storage.from(BUCKET).upload(
-                            objectPath,
-                            new Blob([raw], { type: 'application/json' }),
-                            { contentType: 'application/json', upsert: true, cacheControl: '3600' }
-                        );
-                        if (uploadError) throw uploadError;
+                        await uploadJsonObject(objectPath, new Blob([raw], { type: 'application/json' }));
                         row.storage_path = objectPath;
                     }
                     context.fileRows.push(row);
@@ -343,8 +382,17 @@ export async function importGarminExportArchive(importId) {
             source_update_timestamp: record.updateTimestamp,
             source_file: 'MetricsMaxMetData'
         }));
-        if (performanceRows.length) {
-            await insertInBatches('garmin_export_performance_records', performanceRows, PERFORMANCE_BATCH_SIZE, 'user_id,import_id,record_key');
+        const { data: existingPerformanceRows, error: existingPerformanceError } = await supabase
+            .from('garmin_export_performance_records')
+            .select('record_key')
+            .eq('user_id', userId)
+            .eq('import_id', importId)
+            .limit(2000);
+        if (existingPerformanceError) throw existingPerformanceError;
+        const existingPerformanceKeys = new Set((existingPerformanceRows || []).map(row => String(row.record_key)));
+        const missingPerformanceRows = performanceRows.filter(row => !existingPerformanceKeys.has(row.record_key));
+        if (missingPerformanceRows.length) {
+            await insertInBatches('garmin_export_performance_records', missingPerformanceRows, PERFORMANCE_BATCH_SIZE);
         }
 
         const performanceVerified = await supabase.from('garmin_export_performance_records')
@@ -353,7 +401,7 @@ export async function importGarminExportArchive(importId) {
             .eq('import_id', importId)
             .limit(2000);
         if (performanceVerified.error) throw performanceVerified.error;
-        if ((performanceVerified.data || []).length !== performanceRows.length) {
+        if ((performanceVerified.data || []).length !== uniquePerformance.size) {
             throw new Error('Die VO₂max-Datensätze konnten nach dem Speichern nicht vollständig bestätigt werden.');
         }
 
@@ -377,7 +425,7 @@ export async function importGarminExportArchive(importId) {
             storedFileRows: context.existingPaths.size + context.insertedFiles,
             fileCounts,
             activities: activityImport,
-            vo2maxRecords: performanceRows.length,
+            vo2maxRecords: uniquePerformance.size,
             warnings: context.errors.slice(0, 30),
             warningCount: context.errors.length
         };
