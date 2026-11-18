@@ -104,7 +104,7 @@ test('a day with multiple activities is incomplete if any activity lacks the sel
     const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
     assert.equal(day.load, null);
     assert.equal(day.activityCount, 2);
-    assert.equal(day.loadActivityCount, 1);
+    assert.equal(day.loadActivityCount, 0);
     assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
@@ -137,7 +137,7 @@ test('current-day activity remains unknown until the day is fully covered', () =
         garminActivityCoverageRanges: [covered(completedDay)]
     });
     assert.equal(day.load, null);
-    assert.equal(day.dataStatus, 'unknown');
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
 test('an unknown day breaks the CTL model instead of carrying load across the gap', () => {
@@ -157,6 +157,19 @@ test('an unknown day breaks the CTL model instead of carrying load across the ga
     assert.equal(gap.dataStatus, 'unknown');
     assert.equal(current.load, 240);
     assert.equal(current.ctl, Number((240 * (1 - Math.exp(-1 / 42))).toFixed(1)));
+});
+
+test('legacy automatic setting maps to the stable KAJO model and retains native load separately', () => {
+    const activity = {
+        id: 'g-auto-zone', source: 'garmin', date: completedDay, duration: 60,
+        garminTrainingLoad: 35,
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
+    };
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'auto' }, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.records.length, 1);
+    assert.equal(result.comparisonRecords.length, 1);
+    assert.equal(result.comparisonRecords[0].value, 35);
 });
 
 test('KAJO primary model calculates HR-zone load when usable HR data exists', () => {
