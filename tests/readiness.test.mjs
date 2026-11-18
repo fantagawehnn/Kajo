@@ -91,6 +91,17 @@ test('illness overrides a favourable readiness score in the recommendation', () 
     assert.match(recommendation.title, /Gesundheit/);
 });
 
+test('a marked adverse physiological deviation is not averaged away by good sleep and wellness', () => {
+    const source = makeState({
+        dailyCheckins: {
+            [day]: { hrv: 45, sleepScore: 95, sleepQuality: 5, motivation: 5, fatigue: 1, soreness: 1, stress: 1 }
+        }
+    });
+    const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Intervalle', duration: 60, category: 'interval' }], source);
+    assert.equal(recommendation.decision, 'modify');
+    assert.match(recommendation.title, /anpassen/);
+});
+
 test('insufficient data does not produce a false training clearance', () => {
     const source = makeState({ dailyCheckins: { [day]: { hrv: 60 } } });
     const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Intervalle' }], source);
