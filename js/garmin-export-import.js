@@ -49,6 +49,13 @@ async function uploadJsonObject(objectPath, blob) {
     if (typeof tus === 'undefined' || typeof tus.Upload !== 'function') {
         throw new Error('Der resumierbare Upload-Dienst ist für eine große JSON-Datei nicht verfügbar.');
     }
+    const slash = objectPath.lastIndexOf('/');
+    const directory = objectPath.slice(0, slash);
+    const fileName = objectPath.slice(slash + 1);
+    const { data: existingObjects, error: listError } = await supabase.storage.from(BUCKET)
+        .list(directory, { search: fileName, limit: 100 });
+    if (listError) throw listError;
+    if ((existingObjects || []).some(object => object.name === fileName)) return;
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw sessionError;
     const token = sessionData?.session?.access_token;
