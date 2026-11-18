@@ -61,7 +61,7 @@ test('calculates accumulated shortfall against the personal target only for meas
     '2026-11-11': { sleepDuration: 8.5 },
     '2026-11-12': { sleepDuration: 6 },
     '2026-11-13': { sleepDuration: null },
-    '2026-11-14': { sleepDuration: 20 }
+    '2026-11-14': { sleepDuration: 25 }
   };
   const result = summarizeSleepDeficit(data, 8, '2026-11-16', 7);
   assert.equal(result.target, 8);
