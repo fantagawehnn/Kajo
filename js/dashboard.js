@@ -30,10 +30,20 @@ export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=
   value.textContent=r.score===null?'—':r.score;
   status.textContent=r.score===null?'Noch nicht genügend Messdaten':r.dataQuality;
   const tile=(label,score,count,total,color)=>'<div class="bg-slate-950 rounded-xl p-3 border border-slate-800"><div class="text-[10px] text-slate-500 uppercase">'+label+'</div><div class="text-xl font-bold '+color+'">'+(score===null?'—':score+'/100')+'</div><div class="text-[10px] text-slate-500">'+count+'/'+total+(label==='Objektiv'?' Messgrößen':' Angaben')+'</div></div>';
-  if(updateDetails) details.innerHTML='<div class="grid grid-cols-2 gap-3">'+
-    tile('Objektiv',r.objectiveScore,r.objectiveCount,5,'text-sky-400')+
-    tile('Subjektiv',r.subjectiveScore,r.subjectiveCount,6,'text-emerald-400')+
-    '</div><p class="mt-2 text-[10px] text-slate-400">'+escapeHtml(r.dataMode)+' · '+escapeHtml(r.dataQuality)+'</p>';
+  if(updateDetails) {
+    const domainValue = value => value === null || value === undefined ? '—' : Math.round(value) + '/100';
+    const domainLine = [
+      ['Physiologie', r.domains?.physiology],
+      ['Schlaf', r.domains?.sleep],
+      ['Befinden', r.domains?.subjective]
+    ].map(([label, score]) => '<span>'+label+': <strong>'+domainValue(score)+'</strong></span>').join(' · ');
+    details.innerHTML='<div class="grid grid-cols-2 gap-3">'+
+      tile('Objektiv',r.objectiveScore,r.objectiveCount,4,'text-sky-400')+
+      tile('Subjektiv',r.subjectiveScore,r.subjectiveCount,6,'text-emerald-400')+
+      '</div><p class="mt-2 text-[10px] text-slate-300">'+domainLine+'</p>'+
+      '<p class="mt-1 text-[10px] text-slate-400">'+escapeHtml(r.dataMode)+' · '+escapeHtml(r.dataQuality)+
+      ' · Trainingsbelastung wird separat beurteilt und nicht in den Readiness-Wert eingerechnet.</p>';
+  }
 }
 export function updateZoneGaugeMarker(currentTSB, mode = 'tss') {
     const gaugeText = document.getElementById('zone-gauge-text');
