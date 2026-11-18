@@ -417,6 +417,7 @@ assert.ok(garminBackendSource.includes('Date.now() - fetchedAt < 24 * 60 * 60 * 
 assert.ok(garminBackendSource.includes('activity: { ...activity, raw: item }'), 'The full raw Garmin activity-list object must be stored alongside normalized preview fields');
 assert.ok(garminBackendSource.includes('.range(offset, offset + pageSize - 1)'), 'FIT/detail archiving must paginate through the complete activity history');
 assert.ok(garminBackendSource.includes('.order("start_time", { ascending: true })'), 'FIT/detail archiving must begin with the oldest pending activities');
+assert.ok(garminBackendSource.includes('.order("garmin_activity_id", { ascending: true })'), 'Garmin activity archive pagination must use a stable tie-breaker for identical start times');
 assert.ok(garminBackendSource.includes('async function syncActivityFilesBatch('), 'A resumable Garmin detail/workout/FIT archive batch must exist');
 assert.ok(garminBackendSource.includes('action === "sync-activity-files-batch"'), 'The Garmin detail/workout/FIT archive must be callable as a dedicated sync action');
 assert.ok(garminBackendSource.includes('while (selected.length < batchSize)'), 'The activity archive must keep paging until a pending batch is found or the full history is exhausted');
