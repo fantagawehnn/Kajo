@@ -208,10 +208,150 @@ export async function renderGarminExportArchiveHistory() {
     target.innerHTML = data.map(item => {
         const size = (Number(item.file_size_bytes || 0) / (1024 * 1024)).toFixed(1);
         const files = Number(item.manifest?.entryCount || 0);
+        const preview = item.manifest?.analysisPreview;
+        const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien ausgewertet · ' + Number(preview.nestedArchives || 0) + ' Unterarchive geöffnet' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' : '';
+        const analyzeButton = item.status === 'indexed' && !preview ? '<button type="button" onclick="analyzeGarminExportArchive(\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Archiv analysieren</button>' : '';
         const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
             : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
             : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
         const date = new Date(item.created_at).toLocaleString('de-DE');
-        return '<div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3"><div class="flex items-center justify-between gap-3"><span class="truncate text-xs font-semibold text-slate-200"></span><span class="shrink-0 text-[10px] text-slate-400">' + size + ' MB</span></div><p class="mt-1 text-[10px] text-slate-400">' + status + ' · ' + date + '</p></div>';
+        return '<div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3"><div class="flex items-center justify-between gap-3"><span class="truncate text-xs font-semibold text-slate-200"></span><span class="shrink-0 text-[10px] text-slate-400">' + size + ' MB</span></div><p class="mt-1 text-[10px] text-slate-400">' + status + ' · ' + date + '</p>' + previewText + analyzeButton + '</div>';
     }).map((html, index) => html.replace('<span class="truncate text-xs font-semibold text-slate-200"></span>', '<span class="truncate text-xs font-semibold text-slate-200">' + String(data[index].original_file_name).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])) + '</span>')).join('');
+}
+
+
+// Read-only first pass: reconstruct the split archive, inspect JSON structure,
+// and save only a compact metadata preview. No raw health values are imported.
+function classifyGarminPath(path) {
+    const value = String(path || '').toLowerCase();
+    if (/activity|summarizedactivities|fit/.test(value)) return 'activities';
+    if (/sleep|hrv|heart.?rate|wellness|stress|spo2|body.?battery/.test(value)) return 'recovery';
+    if (/weight|hydration|nutrition|calorie/.test(value)) return 'body-nutrition';
+    if (/training|vo2|max.?met|fitness|benchmark/.test(value)) return 'performance';
+    return 'other';
+}
+
+function collectDateValues(value, output, budget) {
+    if (!value || typeof value !== 'object' || budget.count > 25000) return;
+    budget.count++;
+    if (Array.isArray(value)) {
+        for (const item of value) collectDateValues(item, output, budget);
+        return;
+    }
+    for (const [key, item] of Object.entries(value)) {
+        if (/date|time|timestamp/i.test(key) && (typeof item === 'string' || typeof item === 'number')) {
+            const parsed = typeof item === 'number'
+                ? new Date(item > 1e12 ? item : item * 1000)
+                : new Date(item);
+            if (Number.isFinite(parsed.getTime()) && parsed.getUTCFullYear() >= 2000 && parsed.getUTCFullYear() <= 2100) {
+                output.push(parsed.toISOString().slice(0, 10));
+            }
+        }
+        if (item && typeof item === 'object') collectDateValues(item, output, budget);
+    }
+}
+
+async function inspectGarminZip(zip, prefix, summary, depth = 0) {
+    if (depth > 4) return;
+    const entries = Object.values(zip.files).filter(entry => !entry.dir);
+    for (const entry of entries) {
+        const path = prefix ? prefix + '/' + entry.name : entry.name;
+        const extension = path.split('.').pop().toLowerCase();
+        if (extension === 'zip') {
+            summary.nestedArchives++;
+            try {
+                const bytes = await entry.async('uint8array');
+                const nested = await JSZip.loadAsync(bytes, { checkCRC32: false });
+                await inspectGarminZip(nested, path, summary, depth + 1);
+            } catch (error) {
+                summary.errors.push({ file: path, reason: String(error?.message || error).slice(0, 180) });
+            }
+        } else if (extension === 'json') {
+            summary.jsonFiles++;
+            const category = classifyGarminPath(path);
+            summary.categories[category] = (summary.categories[category] || 0) + 1;
+            try {
+                const raw = await entry.async('string');
+                const parsed = JSON.parse(raw);
+                const recordCount = Array.isArray(parsed) ? parsed.length
+                    : parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 1;
+                summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
+                const dates = [];
+                collectDateValues(parsed, dates, { count: 0 });
+                for (const date of dates) summary.dates.push(date);
+            } catch (error) {
+                summary.errors.push({ file: path, reason: String(error?.message || error).slice(0, 180) });
+            }
+        } else {
+            const ext = extension || '[ohne Endung]';
+            summary.otherFiles[ext] = (summary.otherFiles[ext] || 0) + 1;
+        }
+    }
+}
+
+export async function analyzeGarminExportArchive(importId) {
+    const status = document.getElementById('garmin-archive-status');
+    const progress = document.getElementById('garmin-archive-progress');
+    const fill = document.getElementById('garmin-archive-progress-fill');
+    const setAnalysisStatus = message => {
+        if (status) { status.textContent = message; status.className = 'text-xs text-slate-300'; }
+        if (progress) progress.classList.remove('hidden');
+        if (fill) fill.style.width = '0%';
+    };
+    try {
+        if (typeof JSZip === 'undefined') throw new Error('ZIP-Parser ist nicht verfügbar. Bitte KAJO neu laden.');
+        const { data: auth, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        const userId = auth?.user?.id;
+        if (!userId) throw new Error('Bitte melde dich erneut bei KAJO an.');
+        const { data: item, error } = await supabase.from('garmin_export_imports')
+            .select('id, user_id, storage_path, manifest, status')
+            .eq('id', importId).eq('user_id', userId).single();
+        if (error) throw error;
+        if (item.status !== 'indexed') throw new Error('Das Archiv ist noch nicht vollständig indexiert.');
+        const parts = item.manifest?.archiveStorage?.parts;
+        if (!Array.isArray(parts) || !parts.length) throw new Error('Die Archiv-Teilstücke fehlen im Manifest.');
+        const blobs = [];
+        for (let i = 0; i < parts.length; i++) {
+            setAnalysisStatus('Archiv wird geladen … Teil ' + (i + 1) + ' von ' + parts.length);
+            const { data, error: downloadError } = await supabase.storage.from(BUCKET).download(parts[i].path);
+            if (downloadError) throw downloadError;
+            blobs.push(data);
+            if (fill) fill.style.width = Math.round(((i + 1) / parts.length) * 35) + '%';
+        }
+        setAnalysisStatus('Archiv wird zusammengesetzt und geöffnet …');
+        const archiveBlob = new Blob(blobs, { type: 'application/zip' });
+        const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
+        const summary = {
+            analyzedAt: new Date().toISOString(),
+            jsonFiles: 0,
+            nestedArchives: 0,
+            categories: {},
+            topLevelRecords: {},
+            otherFiles: {},
+            dates: [],
+            errors: []
+        };
+        setAnalysisStatus('JSON-Dateien und Unterarchive werden geprüft …');
+        await inspectGarminZip(zip, '', summary);
+        summary.dates.sort();
+        summary.dateFrom = summary.dates[0] || null;
+        summary.dateTo = summary.dates[summary.dates.length - 1] || null;
+        delete summary.dates;
+        summary.errorCount = summary.errors.length;
+        summary.errors = summary.errors.slice(0, 20);
+        const nextManifest = { ...item.manifest, analysisPreview: summary };
+        const { error: saveError } = await supabase.from('garmin_export_imports')
+            .update({ manifest: nextManifest })
+            .eq('id', importId).eq('user_id', userId);
+        if (saveError) throw saveError;
+        if (fill) fill.style.width = '100%';
+        setAnalysisStatus('Analyse abgeschlossen. Es wurden nur Dateistrukturen und Zeiträume erfasst; noch keine Garmin-Messwerte in KAJO importiert.');
+        if (status) status.className = 'text-xs text-emerald-300';
+        await renderGarminExportArchiveHistory();
+    } catch (error) {
+        console.error('[KAJO Garmin-Archivanalyse]', error);
+        setAnalysisStatus('Archiv-Analyse fehlgeschlagen: ' + String(error?.message || error));
+        if (status) status.className = 'text-xs text-rose-300';
+    }
 }
