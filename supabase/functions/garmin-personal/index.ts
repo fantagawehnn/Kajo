@@ -115,6 +115,8 @@ async function syncGarminHealthDayUnlocked(
     { type: "spo2", path: `/wellness-service/wellness/daily/spo2acclimation/${date}` },
     { type: "weight", path: `/weight-service/weight/range/${date}/${date}?includeAll=true` },
     { type: "fitness_age", path: `/fitnessage-service/fitnessage/v2/${date}` },
+    { type: "vo2_max", path: `/metrics-service/metrics/maxmet/daily/${date}/${date}` },
+    { type: "effective_weight_goals", path: `/goal-service/goal/user/effective/weightgoal/${date}/${date}` },
     { type: "wellness_activity", path: `/wellnessactivity-service/activity/summary/range/${date}/${date}` },
     { type: "nutrition", path: `/nutrition-service/food/logs/${date}` },
   ];
@@ -193,6 +195,73 @@ async function syncGarminHealthDayUnlocked(
       });
       // Garmin has rate-limited this account: stop immediately instead of
       // sending the remaining endpoint requests and making the limit worse.
+      if (isRateLimited) break;
+    }
+  }
+
+  // Garmin's documented Personal API also exposes account-level reference data.
+  // Keep these raw JSON snapshots even when KAJO does not yet interpret their fields.
+  const referenceEndpoints = [
+    { type: "activity_types", path: "/activity-service/activity/activityTypes/simple" },
+    { type: "heart_rate_zones", path: "/biometric-service/heartRateZones/v2" },
+    { type: "profile_settings", path: "/userprofile-service/userprofile/settings" },
+  ];
+  const referenceDate = new Date().toISOString().slice(0, 10);
+  for (const endpoint of referenceEndpoints) {
+    await renewLease();
+    try {
+      const { data: existing, error: existingError } = await admin
+        .from("garmin_health_records")
+        .select("payload,fetched_at")
+        .eq("user_id", userId)
+        .eq("data_type", endpoint.type)
+        .eq("record_key", "current")
+        .order("fetched_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingError) throw existingError;
+      const fetchedAt = typeof existing?.fetched_at === "string" ? Date.parse(existing.fetched_at) : NaN;
+      const isNoData = JSON.stringify(existing?.payload) === JSON.stringify({ no_data: true });
+      const noDataFetchedAt = Number.isFinite(fetchedAt) ? fetchedAt : NaN;
+      const noDataNeedsRetry = isNoData &&
+        (!Number.isFinite(noDataFetchedAt) || Date.now() - noDataFetchedAt >= 30 * 24 * 60 * 60 * 1000);
+      if (existing?.payload && !isEmptyGarminPayload(existing.payload) &&
+          (!isNoData || !noDataNeedsRetry) &&
+          Number.isFinite(fetchedAt) && Date.now() - fetchedAt < 24 * 60 * 60 * 1000) {
+        results.push({ dataType: endpoint.type, status: "already_saved" });
+        continue;
+      }
+
+      const payload = await garminGet(token, endpoint.path);
+      await renewLease();
+      const hasData = !isEmptyGarminPayload(payload);
+      if (!hasData && existing?.payload && !isEmptyGarminPayload(existing.payload) && !isNoData) {
+        results.push({ dataType: endpoint.type, status: "preserved_existing_data" });
+        continue;
+      }
+      const now = new Date().toISOString();
+      const { error } = await admin.from("garmin_health_records").upsert({
+        user_id: userId,
+        data_type: endpoint.type,
+        record_date: referenceDate,
+        record_key: "current",
+        source_endpoint: endpoint.path,
+        payload: hasData ? payload : { no_data: true },
+        fetched_at: now,
+        updated_at: now,
+      }, { onConflict: "user_id,data_type,record_date,record_key" });
+      if (error) throw error;
+      results.push({ dataType: endpoint.type, status: hasData ? "saved" : "no_data" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
+      const isRateLimited = /HTTP 429/.test(message);
+      const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+      results.push({
+        dataType: endpoint.type,
+        status: isRateLimited ? "rate_limited" : "error",
+        error: message.slice(0, 220),
+        ...(isRateLimited ? { retryInSeconds: retryMatch ? Number(retryMatch[1]) : 30 } : {}),
+      });
       if (isRateLimited) break;
     }
   }
