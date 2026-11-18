@@ -126,7 +126,6 @@ function getExistingActivityId(activity) {
 }
 
 function mergeArchiveActivity(existing, incoming) {
-    if (!existing.garminData) existing.garminData = incoming.garminData;
     if (!existing.sourceRefs?.garminActivityId) {
         existing.sourceRefs = { ...(existing.sourceRefs || {}), garminActivityId: incoming.sourceRefs.garminActivityId };
     }
@@ -136,7 +135,7 @@ function mergeArchiveActivity(existing, incoming) {
         'garminCalories', 'garminAverageSpeed', 'garminMaxSpeed', 'garminElevationGain',
         'garminElevationLoss', 'garminAveragePower', 'garminMaxPower', 'garminNormalizedPower'
     ]) {
-        if ((existing[key] === null || existing[key] === undefined || existing[key] === '') && incoming[key] !== null) {
+        if ((existing[key] === null || existing[key] === undefined || existing[key] === '') && incoming[key] !== null && incoming[key] !== undefined) {
             existing[key] = incoming[key];
         }
     }
