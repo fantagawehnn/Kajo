@@ -50,14 +50,24 @@ test('individual physiological baseline uses recent history and ignores future r
     assert.equal(result.score, 79); // Baseline physiology plus strong sleep score
 });
 
-test('HRV baseline does not mix explicit Garmin provenance with legacy or manual values', () => {
+test('HRV baseline does not mix explicit Garmin provenance with legacy values', () => {
+    const legacyHistory = Object.fromEntries(Object.entries(history).map(([date, record]) => [
+        date,
+        {
+            hrv: record.garminHrv,
+            garminRhr: record.garminRhr,
+            garminRespiration: record.garminRespiration,
+            garminSleepDuration: record.garminSleepDuration
+        }
+    ]));
     const source = makeState({
         dailyCheckins: {
+            ...legacyHistory,
             [day]: {
-                hrv: 75,
+                garminHrv: 75,
                 garminSleepScore: 90,
                 measurementSources: {
-                    hrv: { source: 'manual', metric: 'unspecified', unit: 'ms' }
+                    garminHrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
                 }
             }
         }
