@@ -56,9 +56,11 @@ function valueLevel(value,timeline,key){
 }
 function tsbLevel(value){
  if(!valid(value))return{level:'unavailable',label:'Kein Wert',color:'#64748b'};
- if(Number(value)<0)return{level:'negative',label:'Negativer TSB · höhere akute Belastung als CTL',color:'#D96A78'};
- if(Number(value)>0)return{level:'positive',label:'Positiver TSB · niedrigere akute Belastung als CTL',color:'#55B6A4'};
- return{level:'neutral',label:'TSB bei null · akute und langfristige Belastung gleich',color:'#E5C45B'};
+ const tsb=Number(value);
+ if(tsb < -20)return{level:'high-fatigue',label:'Deutlich unter dem Aufbau-Zielbereich · hohe akute Belastung',color:'#D96A78'};
+ if(tsb < -5)return{level:'build-target',label:'Im Orientierungsbereich für Grundlagen/Aufbau (−20 bis −5)',color:'#55B6A4'};
+ if(tsb <= 5)return{level:'low-load',label:'Über dem Aufbau-Zielbereich · aktuell vergleichsweise geringe akute Belastung',color:'#E5C45B'};
+ return{level:'recovery',label:'Deutlich positive Belastungsbilanz · geringe akute Belastung',color:'#6DA8F7'};
 }
 function renderRings(timeline){
  const root=document.getElementById('training-load-rings');if(!root)return;const last=lastValidLoadDay(timeline);
@@ -78,7 +80,7 @@ function renderRings(timeline){
  setText('training-load-status-date',last?'Stand '+new Date(last.date+'T12:00:00').toLocaleDateString('de-DE'):'Keine gültigen Modellwerte');
  const mode=last?.loadMode==='srpe'?'sRPE-Load':last?.loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Belastungsmodell';
  setText('training-load-status-title',mode);
- setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum; TSB zeigt die Belastungsbilanz (negativ, neutral oder positiv). Die Kreise zeigen Messwerte, keinen künstlichen Fortschritt oder Zielerreichungs-Prozentwert.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
+ setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum. TSB wird aktuell an der Grundlagen-/Aufbauphase der Winter-Off-Season ausgerichtet: Grün −20 bis −5, Gelb −5 bis +5, Blau über +5 (geringe akute Belastung), Rot unter −20 (hohe akute Belastung). Orientierungsbereiche, keine starre Vorgabe; TSB allein bewertet weder Regeneration noch Trainingsbereitschaft.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
 }
 function renderVolumeSummary(activities,range){
  const hasDuration=item=>item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0;

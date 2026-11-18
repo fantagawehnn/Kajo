@@ -1,11 +1,12 @@
 /* ============================================================
- * planning.js – Geplante Trainingseinheiten (Liste, Anlegen, Löschen)
+ * planning.js – Geplante Trainingseinheiten (Liste, Anlegen, Bearbeiten, Löschen)
  * ============================================================ */
-
-import { state, refreshAll } from './state.js';
+import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
+import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
 import { renderCalendar } from './calendar.js';
+
+let editingPlannedWorkoutId = null;
 
 export function renderPlannedWorkouts() {
     const sports=getSportsCatalog(), categories=getTypeColorMap();
@@ -17,8 +18,7 @@ export function renderPlannedWorkouts() {
     const monday=new Date(today);
     monday.setDate(today.getDate()-(today.getDay()+6)%7);
     const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
-    const end=toLocalDateString(sunday);
-    const todayKey=toLocalDateString(today);
+    const end=toLocalDateString(sunday), todayKey=toLocalDateString(today);
     const list=[...state.plannedActivities].filter(p=>p.date>=todayKey&&p.date<=end).sort((a,b)=>a.date.localeCompare(b.date));
     section.classList.remove('hidden');
     if(!list.length){
@@ -26,8 +26,8 @@ export function renderPlannedWorkouts() {
         return;
     }
     list.forEach(p=>{
-        const cat=categories[p.category||'ga']||categories.ga;
-        const sport=(sports[p.type]||sports.Workout).label;
+        const cat=categories[p.category||'ga']||categories.ga, sport=(sports[p.type]||sports.Workout).label;
+        const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
         el.insertAdjacentHTML('beforeend', `
             <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
                 <div class="min-w-0">
@@ -35,34 +35,53 @@ export function renderPlannedWorkouts() {
                     <h4 class="text-sm font-bold text-white">${escapeHtml(p.name)}</h4>
                     <p class="text-xs text-slate-400">${escapeHtml(sport)} · ${p.duration||'—'} min · Ziel-Load ${p.targetTss??'—'}</p>
                 </div>
-                <button onclick="deletePlannedWorkout('${encodeURIComponent(String(p.id)).replace(/'/g,'%27')}')" class="shrink-0 text-xs text-rose-400 hover:text-white">Löschen</button>
+                <div class="flex shrink-0 items-center gap-3">
+                    <button type="button" onclick="openPlannedWorkoutModal('${id}')" class="text-xs text-cyan-400 hover:text-white">Bearbeiten</button>
+                    <button type="button" onclick="deletePlannedWorkout('${id}')" class="text-xs text-rose-400 hover:text-white">Löschen</button>
+                </div>
             </div>`);
     });
 }
-
 export function deletePlannedWorkout(id){
-    const decodedId = decodeURIComponent(id);
-    state.plannedActivities = state.plannedActivities.filter(p => String(p.id) !== decodedId);
-    saveDataToLocalStorage();
-    renderPlannedWorkouts();
-    renderCalendar();
+    const decodedId=decodeURIComponent(id);
+    state.plannedActivities=state.plannedActivities.filter(p=>String(p.id)!==decodedId);
+    saveDataToLocalStorage();renderPlannedWorkouts();renderCalendar();
 }
-
-export function openPlannedWorkoutModal() { document.getElementById('planned-workout-modal').classList.remove('hidden'); }
-export function closePlannedWorkoutModal() { document.getElementById('planned-workout-modal').classList.add('hidden'); }
-
-export function savePlannedWorkout() {
-    const date = document.getElementById('plan-date').value || toLocalDateString();
-    const name = document.getElementById('plan-name').value || 'Geplante Einheit';
-    const type = document.getElementById('plan-sport').value;
-    const duration = parseInt(document.getElementById('plan-duration').value) || 60;
-    const targetTss = parseInt(document.getElementById('plan-tss').value) || 60;
-    const category = document.getElementById('plan-category').value;
-    const desc = document.getElementById('plan-desc').value;
-
-    state.plannedActivities.push({ id: 'p-' + Date.now(), date, name, type, duration, targetTss, category, desc });
-    saveDataToLocalStorage();
-    closePlannedWorkoutModal();
-    renderCalendar();
-
+function setPlanField(id,value){const field=document.getElementById(id);if(field)field.value=value??'';}
+export function openPlannedWorkoutModal(id=null){
+    const item=id==null?null:state.plannedActivities.find(p=>String(p.id)===decodeURIComponent(String(id)));
+    if(id!=null&&!item)return;
+    editingPlannedWorkoutId=item?String(item.id):null;
+    setPlanField('plan-date',item?.date||toLocalDateString());
+    setPlanField('plan-name',item?.name||'');
+    setPlanField('plan-sport',item?.type||'Kayaking');
+    setPlanField('plan-duration',item?.duration??60);
+    setPlanField('plan-tss',item?.targetTss??70);
+    setPlanField('plan-category',item?.category||'ga');
+    setPlanField('plan-desc',item?.desc||'');
+    const title=document.getElementById('planned-workout-modal-title');
+    if(title)title.textContent=item?'Trainingseinheit bearbeiten':'Trainingseinheit planen';
+    const button=document.getElementById('planned-workout-save-button');
+    if(button)button.textContent=item?'Änderungen speichern':'Einheit speichern';
+    document.getElementById('planned-workout-modal')?.classList.remove('hidden');
+    globalThis.lucide?.createIcons?.();
+}
+export function closePlannedWorkoutModal(){
+    document.getElementById('planned-workout-modal')?.classList.add('hidden');
+    editingPlannedWorkoutId=null;
+}
+export function savePlannedWorkout(){
+    const date=document.getElementById('plan-date').value||toLocalDateString();
+    const name=document.getElementById('plan-name').value||'Geplante Einheit';
+    const type=document.getElementById('plan-sport').value;
+    const duration=parseInt(document.getElementById('plan-duration').value,10)||60;
+    const targetTss=parseInt(document.getElementById('plan-tss').value,10)||60;
+    const category=document.getElementById('plan-category').value;
+    const desc=document.getElementById('plan-desc').value;
+    if(editingPlannedWorkoutId!==null){
+        const index=state.plannedActivities.findIndex(p=>String(p.id)===editingPlannedWorkoutId);
+        if(index<0)return;
+        state.plannedActivities[index]={...state.plannedActivities[index],date,name,type,duration,targetTss,category,desc};
+    }else state.plannedActivities.push({id:'p-'+Date.now(),date,name,type,duration,targetTss,category,desc});
+    saveDataToLocalStorage();closePlannedWorkoutModal();renderPlannedWorkouts();renderCalendar();
 }
