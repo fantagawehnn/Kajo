@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCoachRequestContext } from '../js/coach-data-context.js';
+import { buildCoachAnalysisSummary } from '../js/coach-analysis.js';
 
 function localDate(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -96,4 +97,46 @@ test('heart-rate zone summary remains explicitly empty when no usable Garmin tel
 
     assert.equal(context.analysisSummary.heartRateZoneDistribution.analyzedActivities, 0);
     assert.deepEqual(context.analysisSummary.heartRateZoneDistribution.groups, []);
+});
+
+
+test('weekly volume reports correct ISO calendar week numbers and Monday-Sunday ranges', () => {
+    const summary = buildCoachAnalysisSummary({
+        activities: [
+            { date: '2026-11-02', type: 'C1', duration: 60 },
+            { date: '2026-11-09', type: 'C1', duration: 45 },
+            { date: '2026-11-16', type: 'C1', duration: 30 }
+        ],
+        today: '2026-11-18'
+    });
+    assert.deepEqual(
+        summary.activitySummary.weeklyVolume.map(week => [
+            week.isoWeekLabel, week.weekStarting, week.weekEnding
+        ]),
+        [
+            ['KW 45', '2026-11-02', '2026-11-08'],
+            ['KW 46', '2026-11-09', '2026-11-15'],
+            ['KW 47', '2026-11-16', '2026-11-22']
+        ]
+    );
+});
+
+test('coach context flags a health event that overlaps a competition date without inferring participation', () => {
+    const context = buildCoachRequestContext({
+        healthLogs: {
+            '2026-11-16': {
+                status: 'ill',
+                diagnosis: 'Lungenentzündung'
+            }
+        },
+        races: [{
+            name: 'WM/EM',
+            date: '2026-11-16',
+            results: []
+        }]
+    }, 'Analysiere meine Krankheit und den Wettkampf');
+    assert.equal(context.dataIntegrity.healthCompetitionOverlaps.length, 1);
+    assert.equal(context.dataIntegrity.healthCompetitionOverlaps[0].date, '2026-11-16');
+    assert.equal(context.dataIntegrity.healthCompetitionOverlaps[0].healthDiagnosis, 'Lungenentzündung');
+    assert.match(context.dataIntegrity.healthCompetitionOverlaps[0].interpretation, /Teilnahme/);
 });
