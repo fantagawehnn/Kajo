@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check js/storage.js && node --check js/user-storage.js && node --check js/local-db.js && node --check js/garmin-cloud-telemetry.js && node --check js/daily-heart-rate.js && node --check js/daily-hr-activity.js && node --check js/main.js && node --check js/analysis-insights.js && node --check js/calculations.js && node --check js/training-load.js && node --check js/data-source.js && node --check js/coach.js && node --check js/profile.js && node --check js/settings.js && node --check js/theme.js && node --check js/calendar.js && node --check js/activity-groups.js && node --check js/dashboard.js && node --check js/readiness.js && node --check js/charts.js && node --check js/analysis-ui.js && node --check js/training-load-view.js && node --check js/analysis-overview.js && node --check js/activities.js && node --check js/import.js && node --check js/garmin-export-archive.js
+        run: node --check js/storage.js && node --check js/user-storage.js && node --check js/local-db.js && node --check js/garmin-cloud-telemetry.js && node --check js/daily-heart-rate.js && node --check js/daily-hr-activity.js && node --check js/main.js && node --check js/analysis-insights.js && node --check js/calculations.js && node --check js/training-load.js && node --check js/data-source.js && node --check js/coach.js && node --check js/profile.js && node --check js/settings.js && node --check js/theme.js && node --check js/calendar.js && node --check js/activity-groups.js && node --check js/dashboard.js && node --check js/readiness.js && node --check js/charts.js && node --check js/analysis-ui.js && node --check js/training-load-view.js && node --check js/analysis-overview.js && node --check js/activities.js && node --check js/import.js && node --check js/garmin-export-archive.js && node --check js/garmin-performance-archive.js
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
       - name: Run Garmin load and coverage tests
@@ -36,6 +36,8 @@ jobs:
         run: node --experimental-default-type=module --test tests/training-load-zones.test.mjs
       - name: Run readiness and training recommendation tests
         run: node --experimental-default-type=module --test tests/readiness.test.mjs
+      - name: Run Garmin VO2max archive tests
+        run: node --experimental-default-type=module --test tests/garmin-performance-archive.test.mjs
       - name: Run daily Garmin HR recovery tests
         run: node --experimental-default-type=module --test tests/daily-heart-rate.test.mjs
       - name: Run navigation smoke tests
