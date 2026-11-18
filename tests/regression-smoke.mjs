@@ -400,6 +400,12 @@ assert.ok(garminBackendSource.includes('!recognizedStatus ? "error"'), 'Unknown 
 assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, forceHealthRefresh)'), 'Daily health refresh must use the per-day lease without resetting the historical backfill cursor');
 assert.ok(garminBackendSource.includes('async function syncGarminHealthDayUnlocked'), 'The health-day importer must run behind a shared per-day lease wrapper');
 assert.ok(garminBackendSource.includes('async function syncGarminHealthDay('), 'Daily refresh and historical backfill must share the same health-day lease wrapper');
+assert.ok(garminBackendSource.includes('const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);'), 'Historical backfill must acquire the same per-day lease as the daily refresh');
+assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, userId, date, date, false)'), 'Daily activity sync must pass through the shared activity-list lease');
+assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays)'), 'Manual range activity sync must pass through the shared activity-list lease');
+assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, userId, startDate, endDate)'), 'Manual recent-activity sync must pass through the shared activity-list lease');
+assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, connection.user_id, startDate, endDate, true)'), 'Background activity sync must pass through the shared activity-list lease');
+
 assert.ok(garminBackendSource.includes('.from("garmin_health_day_sync_leases")'), 'Health-day leases must be stored independently by user and date');
 assert.ok(garminBackendSource.includes('await renewLease();'), 'Health-day lease ownership must be renewed during endpoint processing');
 assert.ok(garminBackendSource.includes('payload = await garminGet(token, endpoint.path);\n      }\n      // A slow Garmin response may outlive the lease; re-check ownership before any write.\n      await renewLease();'), 'A health-day lease must be revalidated after Garmin responds and before the payload is written');
