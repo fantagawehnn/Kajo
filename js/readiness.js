@@ -289,6 +289,13 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     const subjective = sourceState?.dailyCheckins?.[dateKey] || {};
     const severeSubjectiveSignal = ['fatigue', 'soreness', 'stress']
         .some(key => isValid(subjective[key]) && Number(subjective[key]) >= 4);
+    const physiologicalMarkers = readiness.objective.filter(item =>
+        ['hrv', 'rhr', 'respiration'].includes(item.key)
+    );
+    // A marked adverse deviation in one physiological marker must not be
+    // averaged away by a good sleep score or subjective response.
+    const criticalPhysiologySignal = physiologicalMarkers.some(item => item.score <= 40);
+    const cautionPhysiologySignal = physiologicalMarkers.some(item => item.score <= 50);
     const lowDomain = Object.values(readiness.domains)
         .some(value => Number.isFinite(value) && value < 35);
     const highLoadLabel = (() => {
@@ -308,13 +315,13 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     let detail = 'Die verfügbaren Bereiche ergeben einen Readiness-Orientierungswert von ' + readiness.score
         + '/100. Das ist keine Trainingsfreigabe: Beginne mit dem geplanten Aufwärmen und prüfe, ob Belastungsgefühl und Leistung zu deinem üblichen Niveau passen.';
 
-    if (readiness.score < 45 || severeSubjectiveSignal || (lowDomain && readiness.score < 60)) {
+    if (readiness.score < 45 || severeSubjectiveSignal || criticalPhysiologySignal || (lowDomain && readiness.score < 60)) {
         decision = 'modify';
         title = 'Training heute anpassen';
         detail = highDemandSession
             ? 'Mindestens ein Readiness-Bereich oder dein subjektives Befinden weist auf eine mögliche Einschränkung hin. Für die geplante intensive, kraftbetonte oder lange Einheit solltest du Umfang oder Intensität reduzieren oder sie durch lockere Grundlagen-/Technikarbeit ersetzen. Bei deutlicher Verschlechterung Training abbrechen und Ursache klären.'
             : 'Mindestens ein Readiness-Bereich oder dein subjektives Befinden weist auf eine mögliche Einschränkung hin. Halte die Einheit heute leicht und vermeide zusätzliche Belastungsspitzen. Bei deutlicher Verschlechterung Training abbrechen und Ursache klären.';
-    } else if (readiness.score < 65 || lowDomain) {
+    } else if (readiness.score < 65 || lowDomain || cautionPhysiologySignal) {
         decision = 'caution';
         title = 'Kontrolliert trainieren';
         detail = highDemandSession
