@@ -11,14 +11,13 @@ permissions:
 
 jobs:
   regression-smoke:
-    # Eigene Pushes auf beiden Entwicklungsbranches laufen lokal.
-    # Pull Requests bleiben auf GitHub-hosted Runnern (Sicherheit).
-    runs-on: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'self-hosted' || 'ubuntu-24.04' }}
+    # Eigene Pushes und PRs aus demselben Repository laufen auf dem lokalen Runner.
+    # PRs aus Forks bleiben aus Sicherheitsgründen auf GitHub-hosted Runnern.
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2')) && 'self-hosted' || 'ubuntu-24.04' }}
     defaults:
       run:
-        # Windows nutzt cmd.exe, damit die lokale PowerShell-Execution-Policy nicht blockiert.
-        # Pull Requests laufen auf Ubuntu und verwenden bash.
-        shell: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'cmd' || 'bash' }}
+        # Der lokale Windows-Runner nutzt cmd.exe; GitHub-hosted Ubuntu nutzt bash.
+        shell: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2')) && 'cmd' || 'bash' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
