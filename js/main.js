@@ -804,6 +804,31 @@ async function loadGarminSyncHistory() {
         return;
     }
     container.textContent = 'Synchronisierungshistorie wird geladen …';
+    let syncStatusMarkup = '<p class="mb-3 text-[10px] text-slate-500">Live-Sync-Status derzeit nicht verfügbar.</p>';
+    try {
+        const statusResult = await callGarminFunction({ action: 'status' });
+        const connection = statusResult.connection || {};
+        const healthSync = statusResult.syncState || null;
+        const formatTimestamp = value => {
+            if (!value) return 'Noch nicht dokumentiert';
+            const date = new Date(value);
+            return Number.isFinite(date.getTime()) ? date.toLocaleString('de-DE') : 'Zeitstempel ungültig';
+        };
+        const escapeText = value => String(value ?? '').replace(/[&<>"']/g, char =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+        syncStatusMarkup = '<div class="mb-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3 space-y-1">' +
+            '<p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Letzter dokumentierter Sync-Status</p>' +
+            '<p class="text-[11px] text-slate-200">Aktivitätsliste: <strong>' + escapeText(formatTimestamp(connection.last_activity_sync_at)) + '</strong></p>' +
+            '<p class="text-[11px] text-slate-200">Gesundheitsdaten: <strong>' +
+                escapeText(healthSync?.last_success_at ? formatTimestamp(healthSync.last_success_at) : 'Kein erfolgreicher Abschlusszeitpunkt hinterlegt') +
+                '</strong>' + (healthSync?.cursor_date ? ' · Cursor ' + escapeText(healthSync.cursor_date) +
+                (healthSync.range_end_date ? ' / ' + escapeText(healthSync.range_end_date) : '') : '') + '</p>' +
+            (connection.last_error ? '<p class="pt-1 text-[10px] text-amber-300">Letzter gespeicherter Garmin-Fehler: ' + escapeText(connection.last_error) + '</p>' : '') +
+            (healthSync?.last_error ? '<p class="text-[10px] text-amber-300">Gesundheitsdaten-Fehler: ' + escapeText(healthSync.last_error) + '</p>' : '') +
+            '</div>';
+    } catch (_) {
+        // Keep the saved-data inventory visible even when the live status endpoint is unavailable.
+    }
     try {
         const healthRows = [];
         const pageSize = 1000;
@@ -842,7 +867,7 @@ async function loadGarminSyncHistory() {
         }
 
         if (!groups.size) {
-            container.textContent = 'Noch keine Garmin-Daten gespeichert.';
+            container.innerHTML = syncStatusMarkup + '<p>Noch keine Garmin-Daten gespeichert.</p>';
             return;
         }
         const labels = {
@@ -871,7 +896,7 @@ async function loadGarminSyncHistory() {
             if (b[0] === 'activities') return 1;
             return a[0].localeCompare(b[0]);
         });
-        container.innerHTML = `
+        container.innerHTML = syncStatusMarkup + `
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px]">
               <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2 pr-2 font-medium">Datenfeld</th><th class="py-2 px-2 text-right font-medium">Anzahl</th><th class="py-2 pl-2 text-right font-medium">Zeitraum</th></tr></thead>
@@ -884,7 +909,7 @@ async function loadGarminSyncHistory() {
               </tbody>
             </table>
           </div>
-          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
+          <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei. Der Zeitraum beschreibt vorhandene Daten und belegt nicht, dass jeder Tag vollständig abgerufen wurde. Ein vollständiges, historisches Abrufprotokoll wird derzeit nicht gespeichert.</p>`;
     } catch (error) {
         container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
     }
