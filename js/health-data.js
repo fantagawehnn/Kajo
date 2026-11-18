@@ -117,7 +117,7 @@ function metricCards() {
       const baseline=latest ? personalBaseline(metric.key,latest.date) : null;
       const delta=baseline && baseline!==0 && latest ? (latest.value-baseline)/baseline*100 : null;
       const noData=!latest;
-      const sourceHint=metric.key==='vo2max' && latest && state.dailyCheckins?.[latest.date]?.vo2maxSource==='garmin-estimate' ? 'Garmin-Schätzung · ' : (latest ? 'Garmin · ' : '');
+      const sourceHint=metric.key==='vo2max' ? (latest && state.dailyCheckins?.[latest.date]?.vo2maxSource==='garmin-estimate' ? 'Garmin-Schätzung · ' : (latest ? 'Quelle nicht eindeutig · ' : '')) : (latest ? 'Garmin · ' : '');
       const status=noData?'Keine Werte vorhanden':sourceHint+(baseline===null?'Persönliche Baseline noch offen':signedPercent(delta)+' zum persönlichen Median');
       return `<button type="button" class="kajo-health-data-card ${noData?'is-empty':''}" onclick="openGarminHealthMetric('${metric.key}')" style="--health-metric-color:${metric.color}">
         <span class="kajo-health-data-icon"><i data-lucide="${metric.icon}"></i></span>
