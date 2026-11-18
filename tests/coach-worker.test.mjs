@@ -178,3 +178,22 @@ test('Coach endpoint fails closed when the AI binding is missing', async (t) => 
     const response = await worker.fetch(validCoachRequest(), env);
     assert.equal(response.status, 503);
 });
+
+test('Coach endpoint enforces the streamed request-size limit', async (t) => {
+    let aiCalls = 0;
+    const body = { question: 'Analysiere meine Daten', context: { data: 'x'.repeat(360_000) } };
+    const env = authorizedEnv(t, {
+        AI: { run: async () => { aiCalls++; return { response: 'unused' }; } }
+    });
+    const response = await worker.fetch(validCoachRequest(body), env);
+    assert.equal(response.status, 413);
+    assert.equal(aiCalls, 0);
+});
+
+test('Coach endpoint rejects a missing question and an invalid context shape', async (t) => {
+    const env = authorizedEnv(t);
+    const missingQuestion = await worker.fetch(validCoachRequest({ context: {} }), env);
+    assert.equal(missingQuestion.status, 400);
+    const invalidContext = await worker.fetch(validCoachRequest({ question: 'Test', context: [] }), env);
+    assert.equal(invalidContext.status, 400);
+});
