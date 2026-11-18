@@ -721,7 +721,9 @@ export function getActivityTelemetrySeries(act) {
         if (/respirat|breathing|atemfrequenz/.test(descriptor)) return 'respiration';
         if (/temperature|temperatur/.test(descriptor)) return 'temperature';
         if (/altitude|elevation|height|höhe/.test(descriptor)) return 'altitude';
+        if (/vertical.?speed|vertikale geschwindigkeit/.test(descriptor)) return 'verticalSpeed';
         if (/speed|geschwindigkeit/.test(descriptor)) return 'speed';
+        if (/accumulated.?power|summierte leistung/.test(descriptor)) return 'accumulatedPower';
         if (/power|leistung|watt/.test(descriptor)) return 'power';
         if (/pace|tempo/.test(descriptor)) return 'pace';
         if (['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
