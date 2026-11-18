@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 import { calculateReadiness, buildTrainingRecommendation } from '../js/readiness.js';
 
 const day = '2026-11-18';
