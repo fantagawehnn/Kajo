@@ -68,7 +68,7 @@ function buildSeries(dates) {
     const day = timeline.get(date);
     return day && valid(day.load) ? Number(day.load) : null;
   });
-  const recovery = dates.map(date => valid(checkins[date]?.hrv) ? Number(checkins[date].hrv) : null);
+  const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
   const performance = dates.map(date => valid(checkins[date]?.vo2max) ? Number(checkins[date].vo2max) : null);
   // Health availability is deliberately not inferred from illness/injury logs.
   // No continuous availability series exists in the current data model.
