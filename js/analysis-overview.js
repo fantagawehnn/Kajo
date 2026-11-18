@@ -317,6 +317,31 @@ function renderPeriodSummary() {
       '. Trainingstage zählen nur Tage mit gespeicherten Aktivitäten; fehlende Einträge werden nicht als Ruhetage interpretiert.' +
       (incompleteDuration ? ' Die Trainingszeit ist unvollständig, weil nicht für alle Einheiten eine Dauer vorliegt.' : '');
   }
+  const canoeRoot = document.getElementById('analysis-period-canoe-summary');
+  const canoeNote = document.getElementById('analysis-period-canoe-note');
+  if (canoeRoot) {
+    const canoe = summary.canoeCount ? [
+      ['K1', summary.canoeClasses.K1, 'Dokumentierte K1-Einheiten'],
+      ['C1', summary.canoeClasses.C1, 'Dokumentierte C1-Einheiten'],
+      ['C2', summary.canoeClasses.C2, 'Dokumentierte C2-Einheiten'],
+      ['Classic', summary.canoeFormats.classic, 'Explizit als Classic markiert'],
+      ['Sprint', summary.canoeFormats.sprint, 'Explizit als Sprint markiert'],
+      ['Wildwasser / Flachwasser', summary.canoeWaterTypes.wildwater + ' / ' + summary.canoeWaterTypes.flatwater, 'Explizit dokumentierter Gewässertyp']
+    ] : [];
+    canoeRoot.innerHTML = canoe.map(([label, value, detail]) =>
+      '<div class="kajo-insight-metric"><span>' + escapeHtml(label) + '</span><strong>' +
+      escapeHtml(String(value)) + '</strong><small>' + escapeHtml(detail) + '</small></div>'
+    ).join('') || '<p class="kajo-analysis-chart-note">Keine Kanuaktivitäten im gewählten Zeitraum.</p>';
+  }
+  if (canoeNote) {
+    canoeNote.textContent = summary.canoeCount
+      ? 'Kanuaktivitäten: ' + summary.canoeCount + ' · Rennformat bei ' +
+        (summary.canoeCount - summary.canoeFormatUnspecifiedCount) + ' / ' + summary.canoeCount +
+        ' Einheiten hinterlegt · Gewässertyp bei ' +
+        (summary.canoeCount - summary.canoeWaterTypeUnspecifiedCount) + ' / ' + summary.canoeCount +
+        ' Einheiten hinterlegt. Nicht zugeordnete Einheiten bleiben unklassifiziert.'
+      : 'Die Kanu-Aufschlüsselung erscheint, sobald im Zeitraum Kanuaktivitäten dokumentiert sind.';
+  }
 }
 
 function renderIntensityDistribution() {

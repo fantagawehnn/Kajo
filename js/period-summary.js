@@ -18,6 +18,21 @@ export function calculatePeriodSummary({ activities = [], races = [], healthLogs
   const dates = new Set(periodActivities.map(activityDate).filter(Boolean));
   const durations = periodActivities.map(activity => Number(activity?.duration))
     .filter(value => Number.isFinite(value) && value > 0);
+  const canoeActivities = periodActivities.filter(activity => ['Kayaking', 'C1', 'C2'].includes(activity?.type));
+  const canoeClasses = {
+    K1: canoeActivities.filter(activity => activity.type === 'Kayaking').length,
+    C1: canoeActivities.filter(activity => activity.type === 'C1').length,
+    C2: canoeActivities.filter(activity => activity.type === 'C2').length
+  };
+  const canoeFormats = {
+    classic: canoeActivities.filter(activity => activity.raceFormat === 'classic').length,
+    sprint: canoeActivities.filter(activity => activity.raceFormat === 'sprint').length
+  };
+  const canoeWaterTypes = {
+    wildwater: canoeActivities.filter(activity => (activity.waterConditions?.type || activity.waterType) === 'wildwater').length,
+    flatwater: canoeActivities.filter(activity => (activity.waterConditions?.type || activity.waterType) === 'flatwater').length
+  };
+
   const periodRaces = (Array.isArray(races) ? races : []).filter(race =>
     validDate(race?.date) && race.date >= from && race.date <= to);
   const results = periodRaces.flatMap(race => Array.isArray(race.results) ? race.results : [])
@@ -30,6 +45,12 @@ export function calculatePeriodSummary({ activities = [], races = [], healthLogs
     trainingDays: dates.size,
     durationMinutes: durations.length ? durations.reduce((sum, value) => sum + value, 0) : null,
     durationCount: durations.length,
+    canoeCount: canoeActivities.length,
+    canoeClasses,
+    canoeFormats,
+    canoeFormatUnspecifiedCount: canoeActivities.length - canoeFormats.classic - canoeFormats.sprint,
+    canoeWaterTypes,
+    canoeWaterTypeUnspecifiedCount: canoeActivities.length - canoeWaterTypes.wildwater - canoeWaterTypes.flatwater,
     raceCount: periodRaces.length,
     resultCount: results.length,
     podiumCount: results.filter(rank => rank <= 3).length,

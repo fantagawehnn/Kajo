@@ -4,9 +4,9 @@ import { calculatePeriodSummary } from '../js/period-summary.js';
 const result = calculatePeriodSummary({
   from: '2026-01-01', to: '2026-01-31',
   activities: [
-    { date: '2026-01-01T08:00:00', duration: 60 },
-    { date: '2026-01-01T17:00:00', duration: 45 },
-    { date: '2026-01-12', duration: null },
+    { date: '2026-01-01T08:00:00', duration: 60, type: 'C1' },
+    { date: '2026-01-01T17:00:00', duration: 45, type: 'Kayaking', raceFormat: 'classic', waterType: 'flatwater' },
+    { date: '2026-01-12', duration: null, type: 'C2', raceFormat: 'sprint', waterConditions: { type: 'wildwater' } },
     { date: '2025-12-31', duration: 30 },
     { date: '2026-02-01', duration: 30 }
   ],
@@ -23,6 +23,12 @@ const result = calculatePeriodSummary({
 });
 assert.deepEqual(result, {
   validRange: true, activityCount: 3, trainingDays: 2, durationMinutes: 105, durationCount: 2,
+  canoeCount: 3,
+  canoeClasses: { K1: 1, C1: 1, C2: 1 },
+  canoeFormats: { classic: 1, sprint: 1 },
+  canoeFormatUnspecifiedCount: 1,
+  canoeWaterTypes: { wildwater: 1, flatwater: 1 },
+  canoeWaterTypeUnspecifiedCount: 1,
   raceCount: 1, resultCount: 2, podiumCount: 2, winCount: 1,
   sickDays: 1, injuredDays: 1, healthEntryCount: 3
 });
