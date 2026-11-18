@@ -54,7 +54,7 @@ assert.ok(uiActions.includes('window.kajoOpenProfile = function'), 'profile butt
 assert.ok(analysisUI.includes('window.openPerformanceDetail = openPerformanceDetail') && analysisUI.includes('window.closePerformanceDetail = closePerformanceDetail'), 'performance detail navigation buttons are globally connected');
 assert.ok(analysisUI.includes('window.setPerformanceRange = setPerformanceRange') && analysisUI.includes('window.setHealthRange=setHealthRange'), 'performance and health range buttons are globally connected');
 assert.ok(html.includes('id="health-log-save-button"'), 'health log save button has a stable control id');
-assert.ok(health.includes('refreshAll();\n    closeHealthLogModal();') && !health.includes("new CustomEvent('endurance:data-save-immediate'"), 'health log UI closes after local save without waiting for a cloud roundtrip');
+assert.ok(/refreshAll\(\);\s*closeHealthLogModal\(\);/.test(health) && !health.includes("new CustomEvent('endurance:data-save-immediate'"), 'health log UI closes after local save without waiting for a cloud roundtrip');
 
 
 assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar'), 'adaptive personal baseline is not fabricated without an agreed method and data basis');
