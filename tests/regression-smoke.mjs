@@ -352,5 +352,13 @@ assert.ok(garminBackendSource.includes('if (!activityDate || !/^\\d{4}-\\d{2}-\\
     'Garmin activity dates must be validated as YYYY-MM-DD');
 assert.ok(!garminBackendSource.includes('\\\\d'),
     'Garmin backend must not contain double-escaped digit classes');
+assert.ok(garminBackendSource.includes('function localDateForOffset(timezoneOffsetMinutes: unknown)'),
+    'Garmin sync-range date validation must use the requested local timezone offset');
+assert.ok(garminBackendSource.includes('const today = localDateForOffset(body.timezoneOffsetMinutes);'),
+    'Garmin sync-range must compare the requested end date with the local calendar date');
+assert.ok(mainSource.includes('const today = getLocalCalendarDate();'),
+    'Garmin range validation in the app must use the local calendar date');
+assert.ok(mainSource.includes('scannedDays + skippedDays !== totalDays'),
+    'Garmin coverage must only be recorded when the backend accounts for every requested day');
 
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load and backup restore.');
