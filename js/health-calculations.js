@@ -163,12 +163,22 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
   // Bei identischer ID, Datum und Startzeit wird ein versehentlich doppelt
   // vorhandener Eintrag in dieser Analyse nur einmal berücksichtigt. Gleiche
   // IDs mit abweichender Zeitzuordnung bleiben bewusst erhalten.
+  const activitySourceKey = activity => {
+    const sources = new Set([
+      activity?.source,
+      ...(Array.isArray(activity?.sources) ? activity.sources : []),
+      activity?.sourceRefs?.garminActivityId != null ? 'garmin' : null,
+      activity?.sourceRefs?.intervalsActivityId != null ? 'intervals' : null,
+      activity?.manual === true ? 'manual' : null
+    ].filter(Boolean).map(String));
+    return [...sources].sort().join('+') || 'unknown';
+  };
   const deduplicateActivityRows = rows => {
     const seen = new Set();
     const duplicates = [];
     const unique = rows.filter(item => {
       if (item.id == null || item.id === '') return true;
-      const key = [String(item.id), item.date || '', item.startTime || ''].join('|');
+      const key = [activitySourceKey(item.sourceActivity), String(item.id), item.date || '', item.startTime || ''].join('|');
       if (seen.has(key)) {
         duplicates.push(item);
         return false;
@@ -201,7 +211,7 @@ export function summarizeHealthEpisodeTrainingImpact(healthLogs = {}, activities
     })).filter(item => item.date && item.value !== null)
   );
   const activityIdentityKey = item => item.id == null || item.id === ''
-    ? null : [String(item.id), item.date || '', item.startTime || ''].join('|');
+    ? null : [activitySourceKey(item.sourceActivity), String(item.id), item.date || '', item.startTime || ''].join('|');
   const knownActivityKeys = new Set(activityRows.map(activityIdentityKey).filter(Boolean));
   const knownActivityObjects = new Set(activityRows.map(item => item.sourceActivity));
   // Bevorzugt wird die Objektidentität aus getTrainingLoadData genutzt.
