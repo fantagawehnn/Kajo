@@ -213,7 +213,7 @@ function renderPerformanceDetail() {
   ];
   const paddleCircles = paddleDefs.map(([key,label,unit]) => {
     const entry = performanceActivityMetric(key,label,unit);
-    const displayUnit = entry ? [entry.unit, entry.sourceDetail].filter(Boolean).join(' · ') : unit;
+    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel'].filter(Boolean).join(' · ') : unit;
     return performanceCircle(key,label,entry ? fmt(entry.value, key==='hr'||key==='cadence'?0:1) : '—',
       displayUnit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
   });
@@ -320,8 +320,9 @@ function renderPerformanceTrend(key) {
       const date = String(activity.activity.date || activity.activity.startTime || '').slice(0,10);
       const sport = activity.activity.sport || activity.activity.type || 'Training';
       unit = activity.series.unit || metricMeta[key][1];
+      const sourceNote = activity.series.conversionNote || activity.series.sourceDetail;
       explanation = (date ? dateLabel(date)+' · ' : '') + sport +
-        (activity.series.conversionNote ? '. ' + activity.series.conversionNote + '.' : '') +
+        (sourceNote ? '. ' + sourceNote + '.' : '') +
         (hasElapsedTime ? ' Zeitachse: Zeit seit Start.' : ' Keine verlässliche Zeitachse; angezeigt wird nur die Messpunktfolge.') +
         ' Verlauf innerhalb einer Einheit; kein Vergleich zwischen unterschiedlichen Strecken, Gewässern oder Bedingungen.';
       color = '#38bdf8';
