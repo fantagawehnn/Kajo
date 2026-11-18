@@ -43,7 +43,7 @@ export function resolvePaddlingPerformanceSeries(activity, seriesList, metricKey
     if (!isPaddlingPerformanceActivity(activity) || !Array.isArray(seriesList)) return null;
 
     const standard = seriesList.find(series => series?.key === metricKey);
-    if (standard) {
+    if (standard && isValidElapsedTimeAxis(standard.time, standard.values?.length)) {
         return {
             ...standard,
             unit: standard.unit || ({ speed: 'km/h', hr: 'bpm', power: 'W', cadence: '/min' }[metricKey] || ''),
@@ -59,7 +59,7 @@ export function resolvePaddlingPerformanceSeries(activity, seriesList, metricKey
     const definition = rawDefinitions[metricKey];
     if (!definition) return null;
     const raw = seriesList.find(series => series?.key === definition.key && series.unit === definition.sourceUnit);
-    if (!raw || !Array.isArray(raw.values)) return null;
+    if (!raw || !Array.isArray(raw.values)) return standard || null;
     return {
         ...raw,
         key: metricKey,
