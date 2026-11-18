@@ -191,12 +191,16 @@ function renderRecoveryInsight() {
         (readiness.dataQuality || 'Keine ausreichende Datengrundlage') +
         ' · ' + (readiness.totalCount || 0) + ' berücksichtigte Messgrößen. Die Einordnung ersetzt keine Tagesformprüfung.');
 
+    // Objective wearable values are read from Garmin-owned fields only.
+    // Legacy HRV is accepted solely when its source metadata explicitly says Garmin.
+    const garminHrv = current.garminHrv ??
+        (current.measurementSources?.hrv?.source === 'garmin' ? current.hrv : null);
     const objectiveCards = [
-        recoveryMetric('hrv', 'HRV', valid(current.hrv) ? formatValue(current.hrv) : '—', 'ms'),
-        recoveryMetric('rhr', 'Ruhepuls', valid(current.garminRhr ?? current.rhr) ? formatValue(current.garminRhr ?? current.rhr) : '—', rhrBaseline ? 'bpm · persönliche Basis ' + formatValue(rhrBaseline.baseline) : 'bpm'),
-        recoveryMetric('sleepDuration', 'Schlafdauer', formatValue(current.sleepDuration ?? (Number(current.sleep) > 5 ? current.sleep : null)), 'Stunden'),
-        recoveryMetric('sleepScore', 'Sleep Score', valid(current.sleepScore) ? formatValue(current.sleepScore, 0) : '—', 'von 100'),
-        recoveryMetric('respiration', 'Atemfrequenz', valid(current.respiration) ? formatValue(current.respiration) : '—', 'Atemzüge/min')
+        recoveryMetric('hrv', 'HRV', valid(garminHrv) ? formatValue(garminHrv) : '—', 'Garmin · ms'),
+        recoveryMetric('rhr', 'Ruhepuls', valid(current.garminRhr) ? formatValue(current.garminRhr) : '—', rhrBaseline ? 'Garmin · bpm · persönliche Basis ' + formatValue(rhrBaseline.baseline) : 'Garmin · bpm'),
+        recoveryMetric('sleepDuration', 'Schlafdauer', valid(current.garminSleepDuration) ? formatValue(current.garminSleepDuration) : '—', 'Garmin · Stunden'),
+        recoveryMetric('sleepScore', 'Sleep Score', valid(current.garminSleepScore) ? formatValue(current.garminSleepScore, 0) : '—', 'Garmin · von 100'),
+        recoveryMetric('respiration', 'Atemfrequenz', valid(current.garminRespiration) ? formatValue(current.garminRespiration) : '—', 'Garmin · Atemzüge/min')
     ];
     setPanel('recovery-analysis-metrics', objectiveCards.join(''));
     setRecoveryText('recovery-objective-count', objectiveCards.length + ' Messwerte');
