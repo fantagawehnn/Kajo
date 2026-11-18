@@ -22,15 +22,17 @@ Stand: 2026-11-18
 ## Statische Kompatibilitätsprüfung
 
 - Der aktuelle `v2`-State enthält die vom Kontextmodul verwendeten Felder `rawActivities`, `dailyTimeline`, `dailyCheckins`, `plannedActivities`, `strengthLogs`, `strengthPBs`, `races`, `profile` und `settings`.
-- `v2/js/training-load.js` exportiert `calculateGarminZoneLoad), das vom Analysemodul verwendet wird.
-- `v2/js/data-source.js` exportiert `isGarminActivity), das vom Analysemodul verwendet wird.
-- Der Branchvergleich gegen `v2` zeigt acht geänderte bzw. hinzugefügte Dateien; keine weiteren Dateien sind betroffen.
+- `v2/js/training-load.js` exportiert `calculateGarminZoneLoad`, das vom Analysemodul verwendet wird.
+- `v2/js/data-source.js` exportiert `isGarminActivity`, das vom Analysemodul verwendet wird.
+- Der Branchvergleich gegen `v2` zeigt derzeit neun geänderte bzw. hinzugefügte Dateien; die Änderungen sind auf Coach-Integration und Statusdokumentation begrenzt.
 
 ## Vor Livebetrieb zwingend offen
 
 1. In Cloudflare müssen `SUPABASE_URL` und `SUPABASE_ANON_KEY` als Worker-Variablen gesetzt sein. Der Supabase-Service-Role-Key wird dafür nicht benötigt und darf nicht eingebunden werden.
 2. Workers AI muss für das Cloudflare-Konto verfügbar sein; Kosten-/Kontingentgrenzen sind zu prüfen.
-3. Das Request-Body-Limit wird serverseitig zusätzlich zum Content-Length-Header während des Stream-Lesens durchgesetzt (maximal 350.000 Bytes); die serialisierte Kontextgröße wird separat begrenzt. Ein Rate-Limit pro Nutzer bzw. Konto muss vor öffentlichem Betrieb noch ergänzt und getestet werden.
+3. Das Request-Body-Limit wird serverseitig zusätzlich zum Content-Length-Header während des Stream-Lesens durchgesetzt (maximal 350.000 Bytes); die serialisierte Kontextgröße wird separat begrenzt.
+4. Cloudflare Rate Limiting ist in `wrangler.jsonc` mit 10 Anfragen pro Nutzer und 60 Sekunden konfiguriert. Die Namespace-ID `987654321` muss im Cloudflare-Konto auf Eindeutigkeit geprüft werden. Cloudflares Limit ist näherungsweise und je Standort; es ist kein global striktes Kontingent.
+5. Für die Rate-Limit-Konfiguration ist eine Wrangler-CLI-Version ab 4.36.0 erforderlich.
 4. Browser-/Runtime-Test mit gültiger und abgelaufener Supabase-Sitzung.
 5. Fehlerfälle testen: fehlende Worker-Konfiguration, AI-Kontingent erschöpft, ungültiger JSON-Body, zu großer Kontext, leere AI-Antwort.
 6. Regressionstest: Garmin-Synchronisierung, Kalender, Aktivitäten, Profil, Training Load und bisherige Coach-Navigation.
@@ -42,6 +44,7 @@ Stand: 2026-11-18
 - Keine lokalen Build-, Lint- oder Browser-Tests ausgeführt.
 - Keine Cloudflare-Variablen gesetzt.
 - Kein Cloudflare-Deployment ausgeführt.
+- Die neue Rate-Limit-Binding-Konfiguration ist im Repository hinterlegt, aber noch nicht gegen das Cloudflare-Konto bzw. dessen Wrangler-Version validiert.
 - Keine Supabase-Änderungen oder Datenbankmigrationen ausgeführt.
 
 ## Sicherheits- und Produktgrenzen
