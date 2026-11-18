@@ -48,7 +48,7 @@ let healthDataModulePromise = null;
 let nutritionModulePromise = null;
 
 function loadCoachModule() {
-    if (!coachModulePromise) coachModulePromise = import('./coach.js?v=1');
+    if (!coachModulePromise) coachModulePromise = import('./coach.js?v=2');
     return coachModulePromise;
 }
 function loadHealthDataModule() {
