@@ -295,7 +295,8 @@ async function processZip(zip, prefix, context, depth = 0) {
                 row.parse_error = String(error?.message || error).slice(0, 220);
                 row.retained_in_original_archive = true;
                 context.errors.push({ file: sourcePath, reason: row.parse_error });
-                if (!context.existingPaths.has(sourcePath)) context.fileRows.push(row);
+                // Do not index failed files as completed. A later run can retry them;
+                // the original ZIP remains the byte-exact fallback in the meantime.
             }
         } else if (!context.existingPaths.has(sourcePath)) {
             context.fileRows.push(row);
