@@ -217,7 +217,7 @@ export async function renderGarminExportArchiveHistory() {
             const files = Number(item.manifest?.entryCount || 0);
             const preview = item.manifest?.analysisPreview;
             const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien ausgewertet · ' + Number(preview.nestedArchives || 0) + ' Unterarchive geöffnet' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' : '';
-            const analyzeButton = item.status === 'indexed' && !preview ? '<button type="button" onclick="analyzeGarminExportArchive(\\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Archiv analysieren</button>' : '';
+            const analyzeButton = item.status === 'indexed' && !preview ? '<button type="button" onclick="analyzeGarminExportArchive(\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Archiv analysieren</button>' : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
