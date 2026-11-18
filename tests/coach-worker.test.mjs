@@ -172,6 +172,25 @@ test('Coach endpoint handles an unreadable Supabase auth response', async (t) =>
     assert.equal(response.status, 502);
 });
 
+test('Coach endpoint times out a stalled Supabase auth verification', async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.after(() => { globalThis.fetch = originalFetch; });
+    let receivedSignal;
+    globalThis.fetch = async (_url, options) => {
+        receivedSignal = options.signal;
+        throw new DOMException('The auth request timed out', 'TimeoutError');
+    };
+    const response = await worker.fetch(validCoachRequest(), {
+        SUPABASE_URL: 'https://project.supabase.co',
+        SUPABASE_ANON_KEY: 'public-anon-key',
+        COACH_RATE_LIMITER: { limit: async () => ({ success: true }) },
+        AI: { run: async () => ({ response: 'unused' }) }
+    });
+    assert.equal(receivedSignal instanceof AbortSignal, true);
+    assert.equal(response.status, 504);
+    assert.match((await response.json()).error, /zu lange gedauert/);
+});
+
 test('Coach endpoint fails closed when the AI binding is missing', async (t) => {
     const env = authorizedEnv(t);
     delete env.AI;
