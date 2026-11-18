@@ -53,7 +53,7 @@ function loadCoachModule() {
     return coachModulePromise;
 }
 function loadHealthDataModule() {
-    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=2');
+    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=3');
     return healthDataModulePromise;
 }
 function loadNutritionModule() {
