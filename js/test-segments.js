@@ -15,7 +15,8 @@ export function deriveSFormTestSegments(laps = []) {
     const segments = [];
     for (let i = 0; i < boundaries.length - 1; i++) {
         const startLapIndex = boundaries[i] + 1;
-        const endLapIndex = boundaries[i + 1];
+        // The ending manual marker closes the preceding lap; it is not a split itself.
+        const endLapIndex = boundaries[i + 1] - 1;
         if (startLapIndex > endLapIndex) continue;
         segments.push({
             index: segments.length + 1,
