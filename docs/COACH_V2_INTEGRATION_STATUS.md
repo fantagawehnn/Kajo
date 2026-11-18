@@ -10,7 +10,7 @@ Stand: 2026-11-18
 - Die Coach-Integration liegt weiterhin auf `feature/coach-v2-integration`; der Abgleich mit `v2` erfolgte durch einen Merge-Commit ausschließlich auf dem Feature-Branch.
 - `v2` wurde durch diese Integrationsarbeiten nicht verändert.
 - PR [#81](https://github.com/fantagawehnn/Kajo/pull/81) ist geöffnet und weiterhin Draft.
-- Aktueller Branchvergleich am 18.11.2026: 47 Commits voraus, 0 Commits zurück; Merge-Basis `54cb4b3dff21e0ad04158e5063279b70e8c4c048`.
+- Beim Integrationsabgleich mit dem aktuellen `v2`-Stand (Merge-Commit `25423042af0dc5ac4955ef1713ff4a2fabc92b5a`) lag der Feature-Branch 47 Commits voraus und 0 Commits zurück; Merge-Basis `54cb4b3dff21e0ad04158e5063279b70e8c4c048`. Anschließende Commits aktualisieren Dokumentation und PR-Metadaten.
 - GitHub meldet für PR #81 `mergeable: true`. Der PR ist jedoch noch nicht zusammengeführt.
 - Die neueren Garmin-Archiv- und Readiness-Änderungen aus `v2` bleiben erhalten. Auch der aktuelle Garmin-Archiv-Fix (numerische Aktivitäts-IDs, Analyseversion 6 und aktualisierte Navigation-Smoke-Tests) wurde in den Feature-Branch übernommen. In `index.html` ist `main.js?v=150` gesetzt; `js/main.js` verwendet `garmin-export-archive.js?v=4` und lädt `coach.js?v=2`.
 
