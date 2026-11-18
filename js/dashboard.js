@@ -378,6 +378,67 @@ function formatHomeDate(date) {
     return new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
 }
 
+function buildReadinessBasedRecommendation(dateKey, planned) {
+    const readiness = calculateReadiness(dateKey);
+    const health = state.healthLogs?.[dateKey] || {};
+    const healthStatus = String(health.status || '').toLowerCase();
+    const plannedSession = planned
+        .filter(item => String(item?.date || '').slice(0, 10) === dateKey)
+        .sort((a, b) => String(a.time || a.startTime || '').localeCompare(String(b.time || b.startTime || '')))[0] || null;
+    const latestLoad = [...(Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [])]
+        .filter(day => day?.date <= dateKey && validNumber(day?.load) && validNumber(day?.ctl))
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
+    const loadCaution = latestLoad && ['Hohe Ermüdung', 'Belastung'].includes(latestLoad.statusLabel);
+    const loadNote = latestLoad
+        ? 'Belastungsmodell: letzter auswertbarer Stand vom ' + formatDateDDMMYY(latestLoad.date) + '.'
+        : 'Die aktuelle Load-Zeitreihe ist lückenhaft; die Empfehlung stützt sich deshalb vorrangig auf Readiness und Check-in.';
+    const sessionNote = plannedSession
+        ? 'Geplant: ' + String(plannedSession.name || 'Trainingseinheit') +
+          (validNumber(plannedSession.duration) ? ' (' + Number(plannedSession.duration) + ' min)' : '') + '.'
+        : 'Für diesen Tag ist keine Trainingseinheit im Kalender geplant.';
+
+    if (healthStatus === 'sick' || healthStatus === 'injured') {
+        return {
+            title: healthStatus === 'sick' ? 'Gesundheit hat Vorrang' : 'Verletzungsstatus berücksichtigen',
+            detail: 'Im Gesundheitsprotokoll ist für diesen Tag eine Einschränkung hinterlegt. Keine intensive Einheit aus der App-Empfehlung ableiten; Belastung erst nach deinem tatsächlichen Befinden und gegebenenfalls medizinischer Rücksprache wählen. ' + sessionNote
+        };
+    }
+
+    if (readiness.score === null) {
+        return null;
+    }
+
+    if (!readiness.enoughData) {
+        return {
+            title: 'Tagesform nur eingeschränkt beurteilbar',
+            detail: 'Es liegen nur ' + readiness.totalCount + ' verwertbare Messgröße(n) vor. Vermeide es, daraus eine intensive Trainingsfreigabe abzuleiten. ' + loadNote + ' ' + sessionNote
+        };
+    }
+
+    let title;
+    let advice;
+    if (readiness.score >= 80) {
+        title = 'Gute Tagesform – geplante Einheit möglich';
+        advice = 'Die verfügbaren Readiness-Daten sprechen für eine gute Tagesform. Setze die geplante Einheit wie vorgesehen um, sofern sich das Aufwärmen und dein subjektives Befinden ebenfalls gut anfühlen.';
+    } else if (readiness.score >= 65) {
+        title = 'Solide Tagesform – kontrolliert trainieren';
+        advice = 'Die Tagesform wirkt insgesamt solide. Halte dich an den geplanten Trainingsreiz, steuere die Intensität aber bewusst und vermeide zusätzliche Belastungsspitzen.';
+    } else if (readiness.score >= 50) {
+        title = 'Belastung heute reduzieren';
+        advice = 'Die Readiness liegt im mittleren bis niedrigeren Bereich. Reduziere bei Bedarf Umfang oder Intensität und prüfe während des Aufwärmens, ob die geplante Einheit sinnvoll ist.';
+    } else {
+        title = 'Regeneration priorisieren';
+        advice = 'Die verfügbaren Readiness-Daten fallen niedrig aus. Bevorzuge heute Erholung oder sehr lockere Bewegung und verschiebe intensive Belastungen, wenn sich die Tagesform nicht verbessert.';
+    }
+
+    if (loadCaution) {
+        title = 'Belastung vorsichtig steuern';
+        advice += ' Zusätzlich weist der letzte auswertbare Belastungsstand auf erhöhte Ermüdung bzw. kurzfristige Belastung hin.';
+    }
+    const qualityNote = readiness.dataQuality + ' · Readiness ' + readiness.score + '/100 (Orientierungswert, keine medizinische Diagnose).';
+    return { title, detail: advice + ' ' + qualityNote + ' ' + loadNote + ' ' + sessionNote };
+}
+
 export function renderHomeDashboard(dateKey=localTodayKey()) {
     const selectedDate = dateKey || localTodayKey();
     const sportFocus = state.homeWeekSportFocus || null;
@@ -389,10 +450,19 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     const dayPlanned = planned.filter(p => String(p?.date || '').slice(0, 10) === selectedDate && (!sportFocus || p.type === sportFocus))
         .sort((a,b)=>String(a.time||a.startTime||'').localeCompare(String(b.time||b.startTime||'')));
 
-    // Die Trainingsempfehlung nutzt ausschließlich die bereits berechnete
-    // Readiness-/Belastungseinordnung. Sie erfindet keine konkrete Einheit.
-    const recommendation = document.getElementById('kpi-rec-short')?.textContent?.trim();
-    const detail = document.getElementById('kpi-rec-sub')?.textContent?.trim();
+    // Load-KPIs bleiben unabhängig. Wenn die Load-Zeitreihe lückenhaft ist,
+    // erzeugt das Dashboard eine vorsichtige Tagesempfehlung aus Readiness,
+    // Gesundheitsstatus und vorhandener Planung – ohne eine Einheit zu erfinden.
+    const loadRecommendation = document.getElementById('kpi-rec-short')?.textContent?.trim();
+    const loadDetail = document.getElementById('kpi-rec-sub')?.textContent?.trim();
+    const fallbackRecommendation = buildReadinessBasedRecommendation(selectedDate, planned);
+    const useReadinessFallback = Boolean(fallbackRecommendation) && (
+        !loadRecommendation ||
+        ['Noch keine Grundlage','Noch keine Empfehlung','Noch keine belastbare Empfehlung',
+         'Keine aktuelle Belastungsbasis','Modell im Aufbau'].includes(loadRecommendation)
+    );
+    const recommendation = useReadinessFallback ? fallbackRecommendation.title : loadRecommendation;
+    const detail = useReadinessFallback ? fallbackRecommendation.detail : loadDetail;
     let recommendationTitle = recommendation && !['Noch keine Grundlage','Noch keine Empfehlung'].includes(recommendation)
         ? recommendation : 'Noch keine belastbare Empfehlung';
     let recommendationDetail = detail && !detail.startsWith('Warte') && detail !== 'Belastungsdaten fehlen'
