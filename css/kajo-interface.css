@@ -533,3 +533,534 @@ body{
 #app-main hr{
   border-color:var(--kajo-ui-border);
 }
+
+
+/* ============================================================
+   KAJO DESIGN SYSTEM – COMPLETE APP PASS
+   Visual-only layer. Existing routes, data and calculations
+   remain untouched in this preview.
+   ============================================================ */
+:root{
+  --kajo-ui-bg:#07111d;
+  --kajo-ui-panel:rgba(15,29,45,.72);
+  --kajo-ui-panel-strong:rgba(17,34,52,.94);
+  --kajo-ui-panel-soft:rgba(12,25,40,.52);
+  --kajo-ui-line:rgba(139,169,196,.14);
+  --kajo-ui-line-strong:rgba(139,169,196,.23);
+  --kajo-ui-text:#edf5fb;
+  --kajo-ui-muted:#91a6ba;
+  --kajo-ui-faint:#6f8499;
+  --kajo-ui-cyan:#58cbe0;
+  --kajo-ui-blue:#6c9df2;
+  --kajo-ui-mint:#69d6b0;
+  --kajo-ui-violet:#aa91f4;
+  --kajo-ui-amber:#efbd70;
+  --kajo-ui-red:#f17e86;
+  --kajo-ui-radius:18px;
+  --kajo-ui-radius-sm:12px;
+  --kajo-ui-shadow:0 16px 38px rgba(0,0,0,.16);
+}
+
+/* App canvas and page rhythm */
+body{
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(52,139,164,.105),transparent 32%),
+    radial-gradient(ellipse at 92% 8%,rgba(89,105,181,.09),transparent 30%),
+    var(--kajo-ui-bg) !important;
+  color:var(--kajo-ui-text);
+}
+#app-main{
+  width:min(100%,1600px);
+  padding-top:clamp(18px,2.3vw,34px);
+  padding-bottom:clamp(36px,5vw,72px);
+}
+#app-main > [id^="view-"]{
+  min-width:0;
+  gap:clamp(16px,2vw,24px);
+  animation:kajo-view-enter .22s ease both;
+}
+@keyframes kajo-view-enter{
+  from{opacity:.72;transform:translateY(4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+#app-main :is(h1,h2,h3,h4){
+  letter-spacing:-.025em;
+}
+#app-main h1{
+  color:var(--kajo-ui-text);
+  font-size:clamp(1.35rem,2.2vw,1.85rem);
+  line-height:1.16;
+  font-weight:800;
+}
+#app-main h2{
+  color:var(--kajo-ui-text);
+  font-size:clamp(.98rem,1.4vw,1.12rem);
+  line-height:1.25;
+  font-weight:760;
+}
+#app-main h3{
+  color:#dce9f3;
+  font-size:.88rem;
+  line-height:1.3;
+  font-weight:730;
+}
+#app-main :is(p,.text-slate-400,.text-slate-500){
+  text-wrap:pretty;
+}
+#app-main .kajo-eyebrow,
+#app-main .kajo-analysis-eyebrow,
+#app-main .kajo-more-eyebrow{
+  color:var(--kajo-ui-cyan);
+  font-size:.64rem;
+  line-height:1.3;
+  font-weight:800;
+  letter-spacing:.105em;
+}
+#app-main > [id^="view-"] > header{
+  margin-bottom:2px;
+}
+#app-main > [id^="view-"] > header > p:not(.kajo-eyebrow):not(.kajo-analysis-eyebrow){
+  max-width:760px;
+  color:var(--kajo-ui-muted);
+  font-size:.78rem;
+  line-height:1.55;
+}
+#app-main .kajo-back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:0 3px;
+  color:var(--kajo-ui-muted);
+  font-size:.75rem;
+  font-weight:700;
+}
+#app-main .kajo-back-link:hover{color:var(--kajo-ui-cyan)}
+
+/* Surfaces: integrated and layered, not a grid of heavy tiles */
+#app-main :is(
+  #view-garmin-health .kajo-period-manager,
+  #view-garmin-health .kajo-health-detail-panel,
+  #view-routes .kajo-route-summary,
+  #view-data .kajo-data-section,
+  #view-backup .kajo-data-section,
+  #view-methods .kajo-methods-section,
+  #view-ai > div,
+  #view-calendar .calendar-topbar,
+  #view-calendar .calendar-grid-shell,
+  #view-strength > .bg-slate-900,
+  #view-nutrition > section,
+  #view-races > section,
+  #view-upload > div,
+  #view-profile > section
+){
+  border-color:var(--kajo-ui-line) !important;
+  border-radius:var(--kajo-ui-radius) !important;
+  background:linear-gradient(145deg,rgba(18,35,53,.88),rgba(11,23,37,.88)) !important;
+  box-shadow:var(--kajo-ui-shadow);
+}
+#app-main :is(.bg-slate-900.border,.bg-slate-900.border-slate-800,.bg-slate-950.border-slate-800){
+  border-color:var(--kajo-ui-line) !important;
+  background-color:rgba(15,29,45,.76) !important;
+}
+#app-main :is(.rounded-2xl,.rounded-xl){
+  border-radius:var(--kajo-ui-radius-sm);
+}
+#app-main :is(.border-slate-800,.border-slate-700){
+  border-color:var(--kajo-ui-line) !important;
+}
+#app-main .text-white{color:var(--kajo-ui-text) !important}
+#app-main .text-slate-300{color:#c2d1de !important}
+#app-main .text-slate-400{color:var(--kajo-ui-muted) !important}
+#app-main .text-slate-500{color:var(--kajo-ui-faint) !important}
+#app-main hr{border-color:var(--kajo-ui-line) !important}
+
+/* Shared buttons, filters and form controls */
+#app-main button{
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease;
+}
+#app-main button:not(:disabled):active{transform:translateY(1px)}
+#app-main :is(input,select,textarea){
+  color:var(--kajo-ui-text);
+  border-color:var(--kajo-ui-line-strong) !important;
+  border-radius:11px;
+  background:rgba(4,14,25,.62) !important;
+  accent-color:var(--kajo-ui-cyan);
+}
+#app-main :is(input,select,textarea)::placeholder{color:#71869a}
+#app-main :is(input,select,textarea):focus{
+  outline:none;
+  border-color:rgba(88,203,224,.65) !important;
+  box-shadow:0 0 0 3px rgba(88,203,224,.1);
+}
+#app-main button[class*="bg-cyan-"],
+#app-main button[class*="bg-sky-"]{
+  border:1px solid rgba(88,203,224,.25);
+  background:linear-gradient(135deg,#167f9c,#286fae) !important;
+  box-shadow:0 5px 16px rgba(27,132,166,.16);
+}
+#app-main button[class*="bg-cyan-"]:hover,
+#app-main button[class*="bg-sky-"]:hover{
+  filter:brightness(1.12);
+  box-shadow:0 7px 20px rgba(27,132,166,.24);
+}
+#app-main button:disabled{opacity:.42;cursor:not-allowed}
+#app-main :is(button,a,[role="button"]):focus-visible{
+  outline:2px solid var(--kajo-ui-cyan);
+  outline-offset:3px;
+}
+
+/* Dashboard: preserve the embedded readiness circles and reduce tile feeling */
+#view-dashboard.kajo-dashboard-design .kajo-home-status{
+  border:1px solid rgba(88,203,224,.13);
+  background:
+    radial-gradient(circle at 50% 0%,rgba(88,203,224,.095),transparent 54%),
+    linear-gradient(140deg,rgba(16,34,51,.74),rgba(9,22,36,.48));
+}
+#view-dashboard.kajo-dashboard-design .kajo-ring-card{
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+#view-dashboard.kajo-dashboard-design .kajo-ring-card:hover{
+  background:rgba(88,203,224,.045);
+}
+#view-dashboard.kajo-dashboard-design .kajo-health-circle-item{
+  border:0;
+  background:transparent;
+}
+#view-dashboard.kajo-dashboard-design .kajo-home-section{
+  border-color:rgba(139,169,196,.12);
+  background:linear-gradient(145deg,rgba(15,30,46,.74),rgba(10,23,37,.52));
+}
+#view-dashboard.kajo-dashboard-design .kajo-home-recommendation,
+#view-dashboard.kajo-dashboard-design .kajo-home-race{
+  border-color:rgba(139,169,196,.13);
+  background:linear-gradient(145deg,rgba(18,35,53,.78),rgba(10,23,37,.62));
+}
+
+/* Primary navigation and page hierarchy */
+#app-navigation:not(.hidden){
+  background:rgba(7,17,29,.88) !important;
+  border-bottom:1px solid var(--kajo-ui-line) !important;
+}
+#app-navigation .kajo-primary-nav{
+  border-color:rgba(139,169,196,.12);
+  background:rgba(3,12,22,.5);
+}
+#app-navigation .kajo-nav-item.is-active{
+  background:linear-gradient(135deg,rgba(88,203,224,.18),rgba(108,157,242,.12));
+  border-color:rgba(88,203,224,.23);
+  color:#effcff;
+}
+#app-main .kajo-subnav{
+  width:max-content;
+  max-width:100%;
+  border:1px solid var(--kajo-ui-line);
+  border-radius:14px;
+  background:rgba(10,24,39,.68);
+  box-shadow:0 7px 20px rgba(0,0,0,.1);
+}
+#app-main .kajo-subnav-item.is-active{
+  background:linear-gradient(135deg,rgba(88,203,224,.17),rgba(108,157,242,.1));
+  border-color:rgba(88,203,224,.22);
+}
+#area-back-link{
+  margin:0 0 2px;
+}
+
+/* Training area: activities, planning, competitions and strength */
+#view-calendar .calendar-topbar{
+  padding:clamp(12px,1.6vw,20px);
+}
+#view-calendar :is(.calendar-control-row,.calendar-view-switcher){
+  gap:8px;
+}
+#view-calendar :is(.calendar-nav-arrow,.calendar-view-button,.calendar-format-button){
+  border:1px solid var(--kajo-ui-line);
+  border-radius:10px;
+  color:#c4d5e3;
+  background:rgba(8,22,36,.72);
+}
+#view-calendar :is(.calendar-nav-arrow,.calendar-view-button,.calendar-format-button):hover{
+  border-color:rgba(88,203,224,.35);
+  color:#fff;
+}
+#view-calendar :is(.calendar-day,.calendar-cell,.calendar-week-cell){
+  border-color:rgba(139,169,196,.12);
+}
+#view-calendar :is(.calendar-day.is-selected,.calendar-cell.is-selected){
+  outline:1px solid rgba(88,203,224,.55);
+  background:rgba(88,203,224,.08);
+}
+#view-races{
+  gap:18px;
+}
+#view-races > .grid{
+  gap:12px;
+}
+#view-races :is(section,.bg-slate-900){
+  border-color:var(--kajo-ui-line) !important;
+}
+#view-strength > .bg-slate-900:first-child{
+  background:
+    radial-gradient(circle at 95% 0%,rgba(170,145,244,.12),transparent 36%),
+    linear-gradient(145deg,rgba(18,35,53,.9),rgba(11,23,37,.9)) !important;
+}
+#view-nutrition > section{
+  padding:clamp(15px,2vw,24px);
+}
+#view-strength :is(button,select,input){min-height:36px}
+
+/* Analysis: the four dimensions become a connected navigation system */
+#view-analyses{
+  gap:18px;
+}
+#view-analyses .kajo-analysis-overview{
+  display:flex;
+  flex-direction:column;
+  gap:clamp(18px,2.2vw,26px);
+}
+#view-analyses .kajo-analysis-circles{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:clamp(10px,2vw,24px);
+  padding:clamp(16px,2vw,24px);
+  border:1px solid rgba(139,169,196,.12);
+  border-radius:var(--kajo-ui-radius);
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(88,203,224,.075),transparent 62%),
+    rgba(13,27,43,.55);
+}
+#view-analyses .kajo-analysis-circle-item{
+  min-width:0;
+  border:0;
+  border-radius:14px;
+  background:transparent;
+  transition:background .18s ease,transform .18s ease;
+}
+#view-analyses .kajo-analysis-circle-item:hover{
+  background:rgba(88,203,224,.055);
+  transform:translateY(-2px);
+}
+#view-analyses :is(.kajo-analysis-hero-ring,.kajo-analysis-circle){
+  filter:drop-shadow(0 5px 15px rgba(0,0,0,.12));
+}
+#view-analyses .kajo-analysis-section,
+#view-analyses .kajo-analysis-panel,
+#view-analyses .kajo-analysis-chart-panel{
+  border:1px solid var(--kajo-ui-line);
+  border-radius:var(--kajo-ui-radius);
+  background:linear-gradient(145deg,rgba(16,32,49,.78),rgba(10,23,37,.68));
+}
+#view-analyses :is(#analysis-subpage-load,#analysis-subpage-recovery,#analysis-subpage-performance,#analysis-subpage-health){
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+#view-health-data .kajo-recovery-group,
+#view-health-data .kajo-recovery-detail{
+  border-color:var(--kajo-ui-line);
+  border-radius:var(--kajo-ui-radius);
+  background:linear-gradient(145deg,rgba(16,32,49,.78),rgba(10,23,37,.68));
+}
+#view-garmin-health .kajo-health-data-intro{
+  border:1px solid rgba(88,203,224,.16);
+  border-radius:14px;
+  background:rgba(88,203,224,.055);
+  color:#c4d9e6;
+}
+#view-garmin-health .kajo-health-metric-card,
+#view-garmin-health .kajo-health-metric-item{
+  border-color:var(--kajo-ui-line);
+  background:rgba(15,30,46,.58);
+}
+#view-garmin-health .kajo-health-detail-current{
+  border-top:1px solid var(--kajo-ui-line);
+  border-bottom:1px solid var(--kajo-ui-line);
+}
+
+/* More: grouped destinations as compact integrated rows, not dashboard tiles */
+#view-more{
+  gap:18px;
+}
+#view-more .kajo-more-header{
+  padding:2px 0 8px;
+}
+#view-more .kajo-more-groups{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+#view-more .kajo-more-group{
+  min-width:0;
+  padding:8px 14px;
+  border:1px solid var(--kajo-ui-line);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(15,30,46,.68),rgba(9,22,36,.56));
+}
+#view-more .kajo-area-list{gap:0}
+#view-more .kajo-area-card{
+  display:flex;
+  min-height:70px;
+  padding:12px 4px;
+  border:0;
+  border-bottom:1px solid rgba(139,169,196,.1);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#view-more .kajo-area-card:last-child{border-bottom:0}
+#view-more .kajo-area-card:hover{
+  background:rgba(88,203,224,.045);
+  transform:none;
+}
+#view-more .kajo-area-icon{
+  width:38px;
+  height:38px;
+  border:1px solid rgba(88,203,224,.18);
+  border-radius:12px;
+  background:rgba(88,203,224,.08);
+}
+#view-more .kajo-area-copy strong{
+  color:var(--kajo-ui-text);
+  font-size:.82rem;
+}
+#view-more .kajo-area-copy small{
+  color:var(--kajo-ui-muted);
+  font-size:.68rem;
+  line-height:1.45;
+}
+#view-more .kajo-area-chevron{color:var(--kajo-ui-faint)}
+
+/* Data, methods, import, backup and route management */
+#view-data .kajo-data-page-header,
+#view-backup .kajo-data-page-header,
+#view-methods .kajo-methods-header{
+  padding:clamp(15px,2vw,24px);
+  border:1px solid var(--kajo-ui-line);
+  border-radius:var(--kajo-ui-radius);
+  background:
+    radial-gradient(circle at 95% 0%,rgba(108,157,242,.1),transparent 34%),
+    rgba(14,29,45,.72);
+}
+#view-data .kajo-sync-source-grid,
+#view-data .kajo-data-grid{
+  gap:12px;
+}
+#view-data :is(.kajo-sync-source-card,.kajo-data-card,.kajo-data-section),
+#view-methods :is(.kajo-methods-section,.kajo-method-card),
+#view-backup .kajo-data-section{
+  border:1px solid var(--kajo-ui-line);
+  border-radius:16px;
+  background:rgba(14,29,45,.68);
+}
+#view-data :is(.kajo-sync-source-card,.kajo-data-card):hover{
+  border-color:rgba(88,203,224,.3);
+}
+#view-routes .kajo-route-summary{
+  padding:16px;
+}
+#view-upload > div{
+  margin-inline:auto;
+  max-width:780px;
+}
+#view-upload #import-history,
+#view-backup pre{
+  border:1px solid var(--kajo-ui-line);
+  border-radius:12px;
+  background:rgba(4,14,25,.7);
+}
+
+/* Coach: conversational workspace, visually distinct but in the same system */
+#view-ai{
+  max-width:1100px;
+  margin-inline:auto;
+}
+#view-ai > div{
+  min-height:min(74vh,820px);
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(105,214,176,.075),transparent 48%),
+    linear-gradient(145deg,rgba(16,33,50,.94),rgba(9,22,36,.96)) !important;
+}
+#view-ai > div > div:first-child{
+  border-bottom:1px solid var(--kajo-ui-line) !important;
+  background:rgba(15,30,46,.62) !important;
+}
+#view-ai :is(textarea,input){
+  background:rgba(4,14,25,.78) !important;
+}
+#view-ai .kajo-coach-message,
+#view-ai [data-coach-message]{
+  line-height:1.65;
+}
+
+/* Profile and athlete settings */
+#view-profile{
+  max-width:1100px;
+  margin-inline:auto;
+}
+#view-profile > #athlete-profile-content{
+  min-width:0;
+}
+#view-profile :is(.profile-section,.athlete-profile-section){
+  border-color:var(--kajo-ui-line);
+  border-radius:16px;
+  background:rgba(14,29,45,.68);
+}
+
+/* Charts, tables, maps and status elements */
+#app-main canvas{max-width:100%}
+#app-main table{
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border-radius:12px;
+}
+#app-main :is(th,td){
+  border-color:rgba(139,169,196,.12) !important;
+}
+#app-main th{
+  color:#a9bdcf;
+  font-size:.66rem;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+#app-main td{
+  color:#d5e1eb;
+  font-size:.76rem;
+}
+#app-main .leaflet-container{
+  border:1px solid var(--kajo-ui-line);
+  border-radius:14px;
+  overflow:hidden;
+}
+#app-main :is(.text-emerald-300,.text-emerald-400){color:#75d8b5 !important}
+#app-main :is(.text-amber-300,.text-amber-400){color:#f0c47c !important}
+#app-main :is(.text-rose-300,.text-rose-400,.text-red-400){color:#f28a91 !important}
+
+/* Responsive hierarchy */
+@media(max-width:900px){
+  #view-more .kajo-more-groups{grid-template-columns:1fr}
+  #view-analyses .kajo-analysis-circles{gap:8px}
+}
+@media(max-width:640px){
+  #app-main{padding-left:12px;padding-right:12px}
+  #app-main > [id^="view-"]{gap:14px}
+  #view-analyses .kajo-analysis-circles{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    padding:12px;
+    gap:6px;
+  }
+  #view-more .kajo-more-group{padding:5px 12px}
+  #view-more .kajo-area-card{min-height:66px;padding:10px 2px}
+  #view-calendar .calendar-topbar{padding:12px}
+  #view-ai > div{min-height:calc(100dvh - 150px)}
+  #app-main :is(.kajo-data-page-header,.kajo-methods-header){padding:15px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app-main > [id^="view-"]{animation:none}
+  #app-main *,#app-navigation *{scroll-behavior:auto !important;transition:none !important}
+}
