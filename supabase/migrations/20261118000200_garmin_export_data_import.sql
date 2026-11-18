@@ -11,7 +11,7 @@ create table if not exists public.garmin_export_data_files (
     category text not null default 'other',
     file_extension text,
     file_size_bytes bigint not null default 0 check (file_size_bytes >= 0),
-    record_count integer,
+    top_level_item_count integer,
     date_from date,
     date_to date,
     is_json boolean not null default false,
