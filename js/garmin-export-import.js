@@ -450,9 +450,7 @@ export async function importGarminExportArchive(importId) {
             uniquePerformance.set(key, record);
         }
 
-        const activityImport = importActivitiesIntoApp(uniqueActivityRecords);
         const activityIndexRowsAdded = await importActivitiesIntoGarminIndex(uniqueActivityRecords, userId);
-        const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
 
         const performanceRows = [...uniquePerformance.entries()].map(([recordKey, record]) => ({
             user_id: userId,
@@ -489,6 +487,9 @@ export async function importGarminExportArchive(importId) {
         if ((performanceVerified.data || []).length !== uniquePerformance.size) {
             throw new Error('Die VO₂max-Datensätze konnten nach dem Speichern nicht vollständig bestätigt werden.');
         }
+
+        const activityImport = importActivitiesIntoApp(uniqueActivityRecords);
+        const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
 
         if (!saveDataToLocalStorage()) throw new Error('Die importierten Aktivitäten konnten nicht lokal gesichert werden.');
         refreshAll();
