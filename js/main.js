@@ -1198,7 +1198,8 @@ function recordGarminActivityCoverageRange(startDate, endDate) {
         ? state.settings.garminActivityCoverageRanges.filter(range =>
             /^\d{4}-\d{2}-\d{2}$/.test(range?.startDate || '')
             && /^\d{4}-\d{2}-\d{2}$/.test(range?.endDate || '')
-            && range.startDate <= range.endDate && range.status === 'complete')
+            && range.startDate <= range.endDate && range.status === 'complete'
+            && range.source === 'garmin_activity_list')
         : [];
     ranges.push({
         startDate, endDate: completeEndDate, status: 'complete',
