@@ -2,7 +2,7 @@ name: KAJO V2 CI
 
 on:
   push:
-    branches: [v2, feat/garmin-data-quality-v2]
+    branches: [v2, feat/garmin-data-quality-v2, feature/coach-v2-integration]
   pull_request:
     branches: [v2]
 
@@ -11,14 +11,14 @@ permissions:
 
 jobs:
   regression-smoke:
-    # Eigene Pushes auf beiden Entwicklungsbranches laufen lokal.
-    # Pull Requests bleiben auf GitHub-hosted Runnern (Sicherheit).
+    # Pushes auf v2 und feat/garmin-data-quality-v2 laufen auf dem lokalen Windows-Runner.
+    # Weitere Entwicklungsbranches und Pull Requests nutzen GitHub-hosted Ubuntu-Runner.
     runs-on: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'self-hosted' || 'ubuntu-24.04' }}
     defaults:
       run:
         # Windows nutzt cmd.exe, damit die lokale PowerShell-Execution-Policy nicht blockiert.
         # Pull Requests laufen auf Ubuntu und verwenden bash.
-        shell: ${{ github.event_name == 'push' && 'cmd' || 'bash' }}
+        shell: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'cmd' || 'bash' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
