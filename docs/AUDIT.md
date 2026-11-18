@@ -44,7 +44,7 @@ Vorhanden sind drei unterschiedliche Pfade:
 **Wichtige Abweichungen bzw. offene Entscheidungen:**
 
 - Der Code wählt bei vorhandenen Garmin-Datensätzen automatisch zwischen nativem Garmin Load und dem eigenen HF-Zonen-Modell – abhängig davon, welches Modell mehr berechenbare Aktivitäten liefert. Diese automatische Methodenwahl muss gegen die verbindliche Vorgabe geprüft werden, dass Garmin Training Load, KAJO-HF-Zonen-Load/Edwards TRIMP und sRPE getrennte Kennzahlen bleiben.
-- Das sRPE-Modell akzeptiert derzeit ganzzahlige RPE-Werte von 1 bis 10. Das Berechnungsdokument definiert die Skala als 0 bis 10. Die Skala muss vor einer Anpassung eindeutig festgelegt und durch Tests abgesichert werden.
+- **Erledigt (18.11.2026):** Die RPE-Skala ist auf ganzzahlige Werte von 0 bis 10 vereinheitlicht. Ein expliziter Wert 0 ist eine gültige Bewertung und ergibt 0 AU; fehlende Werte (null/undefined/leer) bleiben davon getrennt und werden nicht als 0 interpretiert. Eingaben, Aktivitätsdetails, sRPE-Berechnung und Tests verwenden dieselbe Skala.
 - Für HF-Zonen werden sportartspezifische Grenzen verwendet, wenn vorhanden. Fehlen diese, erzeugt der Code ersatzweise Grenzen aus Prozentwerten der maximalen Herzfrequenz. Das Berechnungsdokument bevorzugt individuelle Schwellenzonen.
 - Die Intensitätsverteilung nach drei Schwellenzonen ist als eigene Kennzahl von der fünfstufigen gewichteten HF-Zonenbelastung zu trennen.
 - Die Performance-Timeline verwendet eine tägliche EWMA-Logik mit 42 Tagen für CTL und 7 Tagen für ATL. Tage ohne berechenbare Belastung erhalten aktuell im Zeitverlauf den Wert 0. Das darf nur als Ruhetag gelten, wenn die Tagesdaten vollständig genug sind; andernfalls ist der Datenstatus eingeschränkt bzw. nicht berechenbar auszuweisen.
