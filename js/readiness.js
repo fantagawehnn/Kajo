@@ -248,12 +248,25 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
         .filter(item => String(item?.date || '').slice(0, 10) === dateKey)
         .sort((a, b) => String(a.time || a.startTime || '').localeCompare(String(b.time || b.startTime || '')));
 
+    const categoryLabels = {
+        ga: 'GA-Ausdauer', interval: 'Intervalle', reg: 'Regeneration',
+        strength: 'Kraft', tech: 'Technik', race: 'Wettkampf'
+    };
     const sessionText = sessions.length
         ? sessions.map(item => {
             const duration = isValid(item.duration) ? ' (' + Number(item.duration) + ' min)' : '';
-            return String(item.name || 'Trainingseinheit') + duration;
+            const category = categoryLabels[item.category] ? ' · ' + categoryLabels[item.category] : '';
+            const sport = item.type ? ' · ' + String(item.type) : '';
+            return String(item.name || 'Trainingseinheit') + duration + sport + category;
         }).join('; ')
         : 'Keine Trainingseinheit im Kalender geplant';
+    const highDemandSession = sessions.some(item =>
+        ['interval', 'race', 'strength'].includes(String(item.category || '').toLowerCase())
+        || (isValid(item.duration) && Number(item.duration) >= 90)
+    );
+    const lowDemandOnly = sessions.length > 0 && sessions.every(item =>
+        ['reg', 'tech'].includes(String(item.category || '').toLowerCase())
+    );
 
     if (healthStatus === 'sick' || healthStatus === 'injured') {
         return {
@@ -298,11 +311,17 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     if (readiness.score < 45 || severeSubjectiveSignal || (lowDomain && readiness.score < 60)) {
         decision = 'modify';
         title = 'Training heute anpassen';
-        detail = 'Mindestens ein Readiness-Bereich oder dein subjektives Befinden weist auf eine mögliche Einschränkung hin. Wenn eine intensive oder umfangreiche Einheit geplant ist, reduziere zunächst Intensität oder Umfang oder ersetze sie durch lockere Technik-/Grundlagenarbeit. Bei deutlicher Verschlechterung Training abbrechen und Ursache klären.';
+        detail = highDemandSession
+            ? 'Mindestens ein Readiness-Bereich oder dein subjektives Befinden weist auf eine mögliche Einschränkung hin. Für die geplante intensive, kraftbetonte oder lange Einheit solltest du Umfang oder Intensität reduzieren oder sie durch lockere Grundlagen-/Technikarbeit ersetzen. Bei deutlicher Verschlechterung Training abbrechen und Ursache klären.'
+            : 'Mindestens ein Readiness-Bereich oder dein subjektives Befinden weist auf eine mögliche Einschränkung hin. Halte die Einheit heute leicht und vermeide zusätzliche Belastungsspitzen. Bei deutlicher Verschlechterung Training abbrechen und Ursache klären.';
     } else if (readiness.score < 65 || lowDomain) {
         decision = 'caution';
         title = 'Kontrolliert trainieren';
-        detail = 'Die Datenlage spricht für eine vorsichtige Steuerung. Halte den geplanten Trainingszweck im Blick, vermeide zusätzliche Belastungsspitzen und passe die Einheit an, wenn Aufwärmen oder Belastungsgefühl auffällig sind.';
+        detail = highDemandSession
+            ? 'Die Datenlage spricht für eine vorsichtige Steuerung. Eine geplante intensive, kraftbetonte oder lange Einheit sollte angepasst werden; reduziere zunächst Umfang oder Intensität und bewerte das Aufwärmen.'
+            : lowDemandOnly
+                ? 'Die Datenlage spricht für eine vorsichtige Steuerung. Eine lockere Technik- oder Regenerationseinheit kann passend sein, sofern Befinden und Aufwärmen unauffällig sind; vermeide zusätzliche Intensität.'
+                : 'Die Datenlage spricht für eine vorsichtige Steuerung. Halte den geplanten Trainingszweck im Blick, vermeide zusätzliche Belastungsspitzen und passe die Einheit an, wenn Aufwärmen oder Belastungsgefühl auffällig sind.';
     }
 
     if (highLoadLabel) {
