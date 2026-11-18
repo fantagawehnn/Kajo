@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { calculatePeriodSummary } from '../js/period-summary.js';
+import { getVisibleActivities } from '../js/activity-groups.js';
 
 const result = calculatePeriodSummary({
   from: '2026-01-01', to: '2026-01-31',
@@ -39,4 +40,17 @@ assert.equal(empty.trainingDays, 0);
 const invalid = calculatePeriodSummary({ from: '2026-02-01', to: '2026-01-01' });
 assert.equal(invalid.validRange, false);
 assert.equal(invalid.durationMinutes, null);
+
+const mergedActivities = getVisibleActivities([
+  { id: 'a', date: '2026-01-10', duration: 30, type: 'C1', mergedGroupId: 'group-1', mergedGroupRole: 'primary' },
+  { id: 'b', date: '2026-01-10', duration: 45, type: 'C1', mergedGroupId: 'group-1', mergedGroupRole: 'segment' }
+]);
+const mergedSummary = calculatePeriodSummary({
+  from: '2026-01-01', to: '2026-01-31', activities: mergedActivities
+});
+assert.equal(mergedSummary.activityCount, 1);
+assert.equal(mergedSummary.trainingDays, 1);
+assert.equal(mergedSummary.durationMinutes, 75);
+assert.equal(mergedSummary.canoeClasses.C1, 1);
+
 console.log('Period summary tests passed.');
