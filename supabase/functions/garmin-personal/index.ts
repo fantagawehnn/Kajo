@@ -1833,7 +1833,7 @@ Deno.serve(async (req) => {
       const result = await runTrackedGarminSync(admin, userId, {
         source: "manual_health_history", syncType: "health_history", startDate, endDate,
         timezoneBasis: "utc",
-      }, () => syncGarminHealthHistoryBatch(admin, userId, startDate, endDate));
+      }, () => syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, true, false));
       return json(200, { ok: true, sync: result });
     }
 
