@@ -38,3 +38,11 @@ test('summarizes available records without inventing missing sport labels', () =
         sports: { RUNNING: 1, CYCLING: 1, 'nicht zugeordnet': 1 }
     });
 });
+
+test('keeps distinct same-day measurements instead of silently choosing one', () => {
+    const result = extractGarminVo2MaxRecords([
+        { calendarDate: '2026-03-01', vo2MaxValue: 51, sport: 'RUNNING' },
+        { calendarDate: '2026-03-01', vo2MaxValue: 52, sport: 'RUNNING' }
+    ], 'MetricsMaxMetData_20260301.json');
+    assert.deepEqual(result.map(item => item.value), [51, 52]);
+});
