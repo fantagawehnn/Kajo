@@ -10,7 +10,7 @@ Stand: 2026-11-18
 - Die Coach-Integration bleibt isoliert auf dem Feature-Branch.
 - `v2` wurde durch diese Arbeiten nicht verändert.
 - Es wurde kein Merge, Rebase, Pull Request oder Deployment ausgeführt.
-- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 35 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
+- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 39 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
 
 ## Umgesetzte Coach-Integration
 
@@ -43,7 +43,7 @@ Am 18.11.2026 wurden mehrere CI-Läufe auf dem Feature-Branch erfolgreich abgesc
 - Run [44363590191](https://github.com/fantagawehnn/Kajo/actions/runs/44363590191): Coach-Worker-Sicherheitstests erfolgreich. Diese prüfen unter anderem HTTP-Methode, fremde Origin, fehlende Supabase-Konfiguration und ungültige/abgelaufene Sitzungen sowie, dass bei ungültiger Sitzung weder Rate Limiter noch KI aufgerufen werden.
 - Run [44363998803](https://github.com/fantagawehnn/Kajo/actions/runs/44363998803): erweiterte Worker-Fehlerpfadtests erfolgreich. Abgedeckt sind nun zusätzlich fehlendes/ausgefallenes Rate Limiting, überschrittene Limits, fehlerhaftes JSON, zu großer Kontext, AI-Fehler, leere AI-Antwort und erfolgreicher Antwortpfad.
 - Run [44364080844](https://github.com/fantagawehnn/Kajo/actions/runs/44364080844): vollständige CI nach zusätzlicher Absicherung fehlerhafter Supabase-Antworten und fehlender AI-Binding-Konfiguration erfolgreich. Die Coach-Worker-Tests prüfen jetzt auch diese beiden Fälle.
-- Run [44364801873](https://github.com/fantagawehnn/Kajo/actions/runs/44364801873): vollständige CI nach Ergänzung der Tests für die harte Streaming-Requestgrößenbegrenzung sowie Pflichtfelder und Kontextform erfolgreich. Insgesamt enthält `tests/coach-worker.test.mjs` nun 17 Worker-Tests.
+- Run [44364801873](https://github.com/fantagawehnn/Kajo/actions/runs/44364801873): vollständige CI nach Ergänzung der Tests für die harte Streaming-Requestgrößenbegrenzung sowie Pflichtfelder und Kontextform erfolgreich. Insgesamt enthält `tests/coach-worker.test.mjs` nun 18 Worker-Tests. Ergänzend wurde die serverseitige Supabase-Sessionprüfung mit einem 8-Sekunden-Timeout abgesichert; ein Timeout wird kontrolliert mit HTTP 504 beantwortet. Der zugehörige neue Regressionstest läuft in den CI-Läufen 44365409954 und 44365416489 noch.
 - Der Cloudflare-Deploy-Job wurde erwartungsgemäß übersprungen, da es keine Pushes auf `v2` waren.
 
 Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetzt noch keinen Browser-/Runtime-Test gegen einen tatsächlich konfigurierten Worker und kein Deployment.
@@ -64,6 +64,7 @@ Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetz
 
 - GitHub-Actions-Syntax- und Regressionstests: erfolgreich.
 - Browser-/Runtime-Test: noch nicht durchgeführt.
+- Supabase-Auth-Timeout: im Code mit 8 Sekunden begrenzt; automatisierter Test ergänzt, CI-Ergebnis noch ausstehend.
 - Cloudflare-Variablen: nicht gesetzt bzw. nicht verifiziert.
 - Cloudflare-Deployment: nicht ausgeführt.
 - Supabase-Änderungen oder Datenbankmigrationen: nicht ausgeführt.
