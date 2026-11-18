@@ -11,6 +11,38 @@ function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }
 
+async function readJsonBodyLimited(request, maxBytes) {
+  const reader = request.body?.getReader();
+  if (!reader) throw new Error("empty_body");
+
+  const chunks = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        const error = new Error("body_too_large");
+        error.status = 413;
+        throw error;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
 function extractAnswer(result) {
   if (typeof result === "string") return result.trim();
   if (typeof result?.response === "string") return result.response.trim();
@@ -62,8 +94,11 @@ async function handleCoach(request, env) {
 
   let payload;
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readJsonBodyLimited(request, MAX_CONTEXT_CHARS + 50_000);
+  } catch (error) {
+    if (error?.status === 413 || error?.message === "body_too_large") {
+      return json({ error: "Die Anfrage ist zu groß. Bitte grenze die Analyse zeitlich ein." }, 413);
+    }
     return json({ error: "Ungültige Anfrage." }, 400);
   }
   const question = typeof payload?.question === "string" ? payload.question.trim() : "";
