@@ -103,13 +103,17 @@ test('a day with multiple activities is incomplete if any activity lacks the sel
     assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
-test('without confirmed activity-list coverage measured activity loads remain visible', () => {
+test('Garmin activity load advances CTL and ATL provisionally without confirmed activity-list coverage', () => {
     const records = [{ id: 'g-no-coverage', source: 'garmin', date: completedDay, garminTrainingLoad: 25 }];
     const timeline = computePerformanceTimeline(records, {}, {});
     const day = timeline.find(item => item.date === completedDay);
     assert.equal(day.load, 25);
     assert.equal(day.dataStatus, 'activity-load-only');
-    assert.equal(day.ctl, null);
+    assert.equal(day.ctl, Number((25 * (1 - Math.exp(-1 / 42))).toFixed(1)));
+    assert.equal(day.atl, Number((25 * (1 - Math.exp(-1 / 7))).toFixed(1)));
+    assert.equal(day.tsb, Number((day.ctl - day.atl).toFixed(1)));
+    assert.equal(day.isProvisional, true);
+    assert.match(day.statusLabel, /vorläufig/i);
 });
 
 test('a day outside confirmed activity-list coverage remains unknown', () => {
