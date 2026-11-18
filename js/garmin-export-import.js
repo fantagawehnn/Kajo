@@ -7,7 +7,8 @@ import { SUPABASE_ANON_KEY } from './supabase-config.js';
 import {
     classifyGarminExportFile,
     collectGarminSummaryActivities,
-    mapGarminExportActivity
+    mapGarminExportActivity,
+    selectGarminVo2MaxDailyRecords
 } from './garmin-export-import-core.js';
 
 const BUCKET = 'garmin-exports';
@@ -320,22 +321,33 @@ async function processZip(zip, prefix, context, depth = 0) {
 }
 
 function applyGarminVo2MaxToDailyCheckins(records) {
-    const latestByDate = new Map();
-    for (const record of Array.isArray(records) ? records : []) {
-        if (!record?.date || !Number.isFinite(Number(record.value)) || Number(record.value) <= 0) continue;
-        const previous = latestByDate.get(record.date);
-        const nextStamp = String(record.updateTimestamp || '');
-        const previousStamp = String(previous?.updateTimestamp || '');
-        if (!previous || nextStamp > previousStamp) latestByDate.set(record.date, record);
-    }
+    if (!state.dailyCheckins || typeof state.dailyCheckins !== 'object') state.dailyCheckins = {};
+    const selection = selectGarminVo2MaxDailyRecords(records);
     let added = 0;
-    for (const [date, record] of latestByDate) {
-        const current = state.dailyCheckins?.[date] && typeof state.dailyCheckins[date] === 'object' ? state.dailyCheckins[date] : {};
+    let ambiguousDates = 0;
+
+    for (const date of selection.ambiguousDates) {
+        const current = state.dailyCheckins[date];
+        if (!current || current.vo2max === null || current.vo2max === undefined || current.vo2max === '') {
+            ambiguousDates++;
+        }
+    }
+    for (const record of selection.selected) {
+        const current = state.dailyCheckins[record.date] && typeof state.dailyCheckins[record.date] === 'object'
+            ? state.dailyCheckins[record.date] : {};
         if (current.vo2max !== null && current.vo2max !== undefined && current.vo2max !== '') continue;
-        state.dailyCheckins[date] = { ...current, vo2max: Number(record.value), vo2maxSource: 'garmin-estimate', vo2maxSourceProfile: record.sport || null };
+        const profiles = new Set((records || [])
+            .filter(item => item.date === record.date && item.sport)
+            .map(item => String(item.sport)));
+        state.dailyCheckins[record.date] = {
+            ...current,
+            vo2max: Number(record.value),
+            vo2maxSource: 'garmin-estimate',
+            vo2maxSourceProfile: profiles.size === 1 ? [...profiles][0] : null
+        };
         added++;
     }
-    return added;
+    return { added, ambiguousDates };
 }
 
 function importActivitiesIntoApp(records) {
@@ -490,7 +502,9 @@ export async function importGarminExportArchive(importId) {
         }
 
         const activityImport = importActivitiesIntoApp(uniqueActivityRecords);
-        const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
+        const vo2maxDailyImport = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
+        const vo2maxDailyValuesAdded = vo2maxDailyImport.added;
+        const vo2maxAmbiguousDates = vo2maxDailyImport.ambiguousDates;
 
         if (!saveDataToLocalStorage()) throw new Error('Die importierten Aktivitäten konnten nicht lokal gesichert werden.');
         refreshAll();
@@ -513,6 +527,7 @@ export async function importGarminExportArchive(importId) {
             activityIndexRowsAdded,
             vo2maxRecords: uniquePerformance.size,
             vo2maxDailyValuesAdded,
+            vo2maxAmbiguousDates,
             warnings: context.errors.slice(0, 30),
             warningCount: context.errors.length
         };
@@ -520,7 +535,7 @@ export async function importGarminExportArchive(importId) {
         setImportStatus(
             'Import abgeschlossen: ' + dataImport.jsonFiles + ' JSON-Dateien verarbeitet · ' +
             dataImport.storedFileRows + ' Datei-Einträge gesichert · ' + activityImport.added +
-            ' neue Aktivitäten · ' + activityIndexRowsAdded + ' Garmin-IDs ergänzt · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' + vo2maxDailyValuesAdded + ' Tageswerte ergänzt. ' +
+            ' neue Aktivitäten · ' + activityIndexRowsAdded + ' Garmin-IDs ergänzt · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' + vo2maxDailyValuesAdded + ' Tageswerte ergänzt · ' + vo2maxAmbiguousDates + ' mehrdeutige Tage ausgelassen. ' +
             (context.errors.length ? context.errors.length + ' Dateien mit Hinweisen.' : 'Keine Importfehler.'),
             100,
             context.errors.length ? 'info' : 'success'
