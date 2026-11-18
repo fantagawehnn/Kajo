@@ -230,7 +230,7 @@ test('summarizes return-to-training in days 1–7, 8–14 and 15–28 against a 
   const healthLogs = {
     '2026-11-15': { status: 'sick' },
     '2026-11-16': { status: 'sick' },
-    '2026-11-19': { status: 'injured' }
+    '2026-11-20': { status: 'injured' }
   };
   const activities = [
     { date: '2026-11-05', duration: 60 },
