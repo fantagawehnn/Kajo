@@ -469,12 +469,13 @@ export async function performIntervalsLiveSync() {
             } else if (garminMatches.length > 1) {
                 streamDiagnostics.ambiguous++;
             } else {
-                activity = state.rawActivities.find(a =>
-                    String(a.id) === String(item.id) ||
-                    (a.sourceId != null && String(a.sourceId) === String(item.id)) ||
-                    (a.sourceRefs?.intervalsActivityId != null &&
-                        String(a.sourceRefs.intervalsActivityId) === String(item.id))
-                );
+                // Exakte Intervals-IDs dürfen nur einem Intervals-Datensatz
+                // zugeordnet werden, niemals einem fremden Provider mit gleicher ID.
+                activity = state.rawActivities.find(a => {
+                    if (isGarminActivity(a) || !isIntervalsActivity(a)) return false;
+                    const intervalsId = a.sourceRefs?.intervalsActivityId ?? a.sourceId ?? a.id;
+                    return String(intervalsId) === String(item.id);
+                });
                 if (activity) streamDiagnostics.exactMatches++;
             }
             if (!activity) {
