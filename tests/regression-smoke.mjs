@@ -370,6 +370,10 @@ assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), '
 assert.ok(garminBackendSource.includes('.from("garmin_sync_events").insert({'), 'Garmin sync attempts must be recorded before the operation');
 assert.ok(garminBackendSource.includes('status: "error", finished_at:'), 'Failed Garmin sync attempts must be recorded as errors');
 assert.ok(garminBackendSource.includes('.order("started_at", { ascending: false }).limit(20)'), 'The status endpoint must return the latest sync events only');
+assert.ok(garminBackendSource.includes('eventsAvailable: !eventsError'), 'A missing or unavailable event table must not hide the remaining Garmin status');
+assert.ok(garminBackendSource.includes('events: eventsError ? [] : (events ?? [])'), 'Unavailable event history must return an empty list instead of failing the status response');
+assert.ok(mainSource.includes("'Kein Abschluss protokolliert'"), 'Stale running events must not be presented as confirmed active or failed syncs');
+assert.ok(mainSource.includes("Date.now() - startedAtMs > 15 * 60 * 1000"), 'A running event older than 15 minutes must be marked as lacking a recorded completion');
 assert.ok(garminBackendSource.includes('timezoneBasis: "utc"'), 'Background sync events must explicitly use UTC');
 assert.ok(garminBackendSource.includes('timezoneBasis: "client_offset"'), 'Manual range sync events must preserve the client UTC offset');
 assert.ok(mainSource.includes("timezoneOffsetMinutes: new Date().getTimezoneOffset()"), 'Daily sync must pass the client timezone offset');
