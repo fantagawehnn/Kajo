@@ -40,4 +40,6 @@ test('maps Garmin activity summary without trusting Garmin profile as actual spo
     assert.equal(mapped.garminTrainingLoad, null);
     assert.equal(mapped.garminSportLabel, 'RUNNING');
     assert.equal(mapped.garminExportImported, true);
+    assert.equal(mapped.sourceRefs.garminActivityId, '123');
+    assert.equal(mapped.garminData, undefined);
 });
