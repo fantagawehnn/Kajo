@@ -326,7 +326,7 @@ assert.ok(garminBackendSource.includes('const activityDate = /^\\d{4}-\\d{2}-\\d
     'Garmin local activity dates must be recognized as YYYY-MM-DD');
 assert.ok(garminBackendSource.includes('if (!activityDate || !/^\\d{4}-\\d{2}-\\d{2}$/.test(activityDate))'),
     'Garmin activity dates must be validated as YYYY-MM-DD');
-assert.ok(!garminBackendSource.includes('\\\\\\\\d'),
+assert.ok(!garminBackendSource.includes('\\\\d'),
     'Garmin backend must not contain double-escaped digit classes');
 
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load and backup restore.');
