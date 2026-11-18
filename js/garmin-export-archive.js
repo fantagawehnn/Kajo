@@ -243,11 +243,11 @@ function classifyGarminPath(path) {
     const value = String(path || '').toLowerCase();
     // Match concrete export filenames before broad topic words. In particular,
     // "fitnessAgeData" is a wellness/performance file, not an activity file.
-    if (/summarizedactivities|activitydetails|\\/activities?\\//.test(value)) return 'activities';
+    if (/summarizedactivities|activitydetails|activity/.test(value)) return 'activities';
     if (/fitnessagedata|metricsmaxmet|vo2|max.?met|benchmark/.test(value)) return 'performance';
     if (/sleep|hrv|heart.?rate|healthstatus|stress|spo2|body.?battery|wellness/.test(value)) return 'recovery';
     if (/weight|hydration|nutrition|calorie/.test(value)) return 'body-nutrition';
-    if (/trainingplan|_workout\\.json|workout/.test(value)) return 'training-plans';
+    if (/trainingplan|_workout.json|workout/.test(value)) return 'training-plans';
     return 'other';
 }
 
@@ -285,7 +285,7 @@ function collectDateValues(value, output, budget, filePath = '') {
     const sourcePath = String(filePath || '').toLowerCase();
     // Profile metadata and workout definitions are not historical measurement
     // records and must not widen the reported training/health data period.
-    if (/customer_data|di-connect-user|trainingplan|_workout\\.json/.test(sourcePath)) return;
+    if (/customer_data|di-connect-user|trainingplan|_workout.json/.test(sourcePath)) return;
     budget.count++;
     if (Array.isArray(value)) {
         for (const item of value) collectDateValues(item, output, budget, filePath);
