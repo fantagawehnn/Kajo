@@ -104,11 +104,11 @@ function renderRecovery() {
     'Readiness', '', score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
-    ['HRV', 'hrv', 'ms', 1],
-    ['Ruhepuls', 'rhr', 'bpm', 0],
-    ['Schlafdauer', 'sleepDuration', 'h', 1],
-    ['Sleep Score', 'sleepScore', '/100', 0],
-    ['Atemfrequenz', 'respiration', '/min', 1]
+    ['HRV', 'hrv', 'Garmin · ms', 1],
+    ['Ruhepuls', 'rhr', 'Garmin · bpm', 0],
+    ['Schlafdauer', 'sleepDuration', 'Garmin · h', 1],
+    ['Sleep Score', 'sleepScore', 'Garmin · /100', 0],
+    ['Atemfrequenz', 'respiration', 'Garmin · /min', 1]
   ];
   renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
     const entry = latestCheckin(key);
