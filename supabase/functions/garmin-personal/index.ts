@@ -920,12 +920,97 @@ async function garminToken(apiKey: string): Promise<string> {
   return token.trim();
 }
 
+async function withGarminActivityLease<T extends Record<string, unknown>>(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  startDate: string,
+  endDate: string,
+  operation: (renewLease: () => Promise<void>) => Promise<T>,
+): Promise<T | Record<string, unknown>> {
+  const syncType = "activity_list";
+  const lockToken = crypto.randomUUID();
+  const leaseMinutes = 15;
+  const leaseExpiry = () => new Date(Date.now() + leaseMinutes * 60_000).toISOString();
+  const now = new Date().toISOString();
+
+  const { data: existing, error: existingError } = await admin.from("garmin_sync_state")
+    .select("sync_type")
+    .eq("user_id", userId).eq("sync_type", syncType).maybeSingle();
+  if (existingError) throw existingError;
+  if (!existing) {
+    const { error: createError } = await admin.from("garmin_sync_state").insert({
+      user_id: userId, sync_type: syncType, cursor_date: startDate,
+      range_start_date: startDate, range_end_date: endDate, status: "pending",
+      cursor_offset: 0, lock_token: null, lock_expires_at: null, updated_at: now,
+    });
+    if (createError && createError.code !== "23505") throw createError;
+  }
+
+  const { data: claimed, error: claimError } = await admin.from("garmin_sync_state")
+    .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), last_started_at: now, updated_at: now })
+    .eq("user_id", userId).eq("sync_type", syncType)
+    .or(`lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.${now}`)
+    .select("sync_type").maybeSingle();
+  if (claimError) throw claimError;
+  if (!claimed) {
+    const { data: active, error: activeError } = await admin.from("garmin_sync_state")
+      .select("lock_expires_at")
+      .eq("user_id", userId).eq("sync_type", syncType).maybeSingle();
+    if (activeError) throw activeError;
+    return {
+      status: "in_progress", locked: true, startDate, endDate,
+      lockExpiresAt: active?.lock_expires_at ?? null, fetched: 0, stored: 0,
+      message: "Eine andere Garmin-Aktivitätslistensynchronisierung läuft bereits.",
+    };
+  }
+
+  const renewLease = async () => {
+    const { data, error } = await admin.from("garmin_sync_state")
+      .update({ lock_expires_at: leaseExpiry(), updated_at: new Date().toISOString() })
+      .eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+      .select("lock_token").maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Die Sperre für die Garmin-Aktivitätsliste ist abgelaufen; der Vorgang wurde sicher angehalten.");
+  };
+
+  try {
+    await renewLease();
+    return await operation(renewLease);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
+    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+      status: "error", lock_token: null, lock_expires_at: null,
+      last_error: message.slice(0, 500), updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    if (releaseError) console.error("Garmin activity-list lease could not be released:", releaseError);
+    throw error;
+  } finally {
+    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+      lock_token: null, lock_expires_at: null, updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    if (releaseError) console.error("Garmin activity-list lease could not be released:", releaseError);
+  }
+}
+
 async function syncGarminActivitiesForUser(
   admin: ReturnType<typeof createClient>,
   userId: string,
   startDate: string,
   endDate: string,
   onlyMissingDays = false,
+) {
+  return await withGarminActivityLease(admin, userId, startDate, endDate, (renewLease) =>
+    syncGarminActivitiesForUserUnlocked(admin, userId, startDate, endDate, onlyMissingDays, renewLease)
+  );
+}
+
+async function syncGarminActivitiesForUserUnlocked(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  startDate: string,
+  endDate: string,
+  onlyMissingDays = false,
+  renewLease: () => Promise<void>,
 ) {
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
@@ -993,6 +1078,7 @@ async function syncGarminActivitiesForUser(
   for (const range of syncRanges) {
     const rows: Record<string, unknown>[] = [];
     for (let page = 0; page < maxPages; page++) {
+      await renewLease();
       const params = new URLSearchParams({
         start: String(page * pageSize),
         limit: String(pageSize),
@@ -1049,6 +1135,7 @@ async function syncGarminActivitiesForUser(
     }).filter((row) => row !== null);
 
     for (let offset = 0; offset < records.length; offset += 100) {
+      await renewLease();
       const { error: upsertError } = await admin.from("garmin_activities").upsert(records.slice(offset, offset + 100), {
         onConflict: "user_id,garmin_activity_id",
         ignoreDuplicates: false,
@@ -1068,6 +1155,7 @@ async function syncGarminActivitiesForUser(
       scannedDays++;
     }
     if (coverageRows.length) {
+      await renewLease();
       const { error: coverageError } = await admin
         .from("garmin_activity_sync_days")
         .upsert(coverageRows, { onConflict: "user_id,sync_date" });
