@@ -7,6 +7,7 @@ const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 // Supabase Free projects have a global per-object limit of 50 MB.
 // Keep each stored part below that ceiling; the complete archive may be larger.
 const ARCHIVE_PART_BYTES = 40 * 1024 * 1024;
+const MAX_FIELD_PATHS_PER_CATEGORY = 500;
 
 function safeFileName(name) {
     return String(name || 'garmin-export.zip').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-120);
@@ -222,7 +223,7 @@ export async function renderGarminExportArchiveHistory() {
                 ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(garminCategoryLabel(field.category)) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
                 : '';
             const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
-            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 3 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
+            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 4 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
@@ -275,27 +276,32 @@ function garminCategoryLabel(category) {
     })[category] || category;
 }
 
-function collectGarminFields(value, category, filePath, inventory, budget, path = '', depth = 0) {
+function collectGarminFields(value, category, filePath, inventory, budget, path = '', depth = 0, inventoryBudget = { counts: {}, truncated: [] }) {
     if (budget.count >= 25000 || depth > 9) return;
     budget.count++;
     const type = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
     if (path) {
         const fieldCategory = classifyGarminFieldCategory(filePath, path, category);
         const key = fieldCategory + '|' + path;
-        if (inventory[key] || Object.keys(inventory).length < 500) {
+        const currentCount = inventoryBudget.counts[fieldCategory] || 0;
+        if (inventory[key] || currentCount < MAX_FIELD_PATHS_PER_CATEGORY) {
+            const isNewField = !inventory[key];
             const field = inventory[key] || (inventory[key] = { category: fieldCategory, path, types: {}, occurrences: 0, files: [] });
+            if (isNewField) inventoryBudget.counts[fieldCategory] = currentCount + 1;
             field.types[type] = (field.types[type] || 0) + 1;
             field.occurrences++;
             if (field.files.length < 5 && !field.files.includes(filePath)) field.files.push(filePath);
+        } else if (!inventoryBudget.truncated.includes(fieldCategory)) {
+            inventoryBudget.truncated.push(fieldCategory);
         }
     }
     if (Array.isArray(value)) {
-        value.slice(0, 10).forEach(item => collectGarminFields(item, category, filePath, inventory, budget, path ? path + '[]' : '[]', depth + 1));
+        value.slice(0, 10).forEach(item => collectGarminFields(item, category, filePath, inventory, budget, path ? path + '[]' : '[]', depth + 1, inventoryBudget));
         return;
     }
     if (value && typeof value === 'object') {
         for (const [key, item] of Object.entries(value)) {
-            collectGarminFields(item, category, filePath, inventory, budget, path ? path + '.' + String(key).slice(0, 100) : String(key).slice(0, 100), depth + 1);
+            collectGarminFields(item, category, filePath, inventory, budget, path ? path + '.' + String(key).slice(0, 100) : String(key).slice(0, 100), depth + 1, inventoryBudget);
             if (budget.count >= 25000) break;
         }
     }
@@ -361,7 +367,7 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                 const recordCount = Array.isArray(parsed) ? parsed.length
                     : parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 1;
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
-                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 });
+                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);
                 const dates = [];
                 collectDateValues(parsed, dates, { count: 0 }, path);
                 for (const date of dates) summary.dates.push(date);
@@ -409,19 +415,26 @@ export async function analyzeGarminExportArchive(importId) {
         const archiveBlob = new Blob(blobs, { type: 'application/zip' });
         const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
         const summary = {
-            analysisVersion: 3,
+            analysisVersion: 4,
             analyzedAt: new Date().toISOString(),
             jsonFiles: 0,
             nestedArchives: 0,
             categories: {},
             topLevelRecords: {},
             fieldInventory: {},
+            fieldInventoryBudget: { counts: {}, truncated: [] },
             otherFiles: {},
             dates: [],
             errors: []
         };
         setAnalysisStatus('JSON-Dateien, Datenfelder und Unterarchive werden geprüft …');
         await inspectGarminZip(zip, '', summary);
+        summary.fieldInventoryLimits = {
+            perCategory: MAX_FIELD_PATHS_PER_CATEGORY,
+            counts: summary.fieldInventoryBudget.counts,
+            truncatedCategories: summary.fieldInventoryBudget.truncated
+        };
+        delete summary.fieldInventoryBudget;
         summary.dates.sort();
         summary.dateFrom = summary.dates[0] || null;
         summary.dateTo = summary.dates[summary.dates.length - 1] || null;
