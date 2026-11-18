@@ -478,3 +478,58 @@ body{
   }
   #app-main{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 }
+
+/* Shared component language across all v2 content views. */
+#app-main .bg-slate-900.border,
+#app-main .bg-slate-900.border-slate-800,
+#app-main .bg-slate-950.border-slate-800{
+  border-color:var(--kajo-ui-border) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.105);
+}
+#app-main .bg-slate-900.border-slate-800{
+  background:linear-gradient(145deg,rgba(17,30,46,.96),rgba(12,22,35,.96)) !important;
+}
+#app-main .bg-slate-950.border-slate-800{
+  background:rgba(5,13,23,.62) !important;
+}
+#app-main h1{
+  color:var(--kajo-ui-text);
+  letter-spacing:-.035em;
+}
+#app-main h2{
+  letter-spacing:-.02em;
+}
+#app-main :is(input,select,textarea){
+  border-color:rgba(148,170,196,.22) !important;
+  background-color:rgba(5,13,23,.82) !important;
+  color:var(--kajo-ui-text) !important;
+  border-radius:10px;
+}
+#app-main :is(input,select,textarea)::placeholder{
+  color:#708198;
+}
+#app-main :is(input,select,textarea):focus{
+  border-color:rgba(72,199,223,.62) !important;
+  box-shadow:0 0 0 3px rgba(72,199,223,.1);
+  outline:none;
+}
+#app-main button[class*="bg-cyan-"],
+#app-main button[class*="bg-sky-"]{
+  box-shadow:0 4px 14px rgba(34,160,190,.12);
+}
+#app-main button:disabled{
+  cursor:not-allowed;
+  filter:saturate(.55);
+}
+#app-main canvas{
+  max-width:100%;
+}
+#app-main table{
+  border-color:var(--kajo-ui-border);
+}
+#app-main :is(th,td){
+  border-color:var(--kajo-ui-border);
+}
+#app-main hr{
+  border-color:var(--kajo-ui-border);
+}
