@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
-import { isPaddlingPerformanceActivity } from './performance-data-quality.js';
+import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis } from './performance-data-quality.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -169,7 +169,7 @@ const performanceActivities = () => (Array.isArray(state.rawActivities) ? state.
 const performanceActivityMetric = (key, label, unit) => {
   const matches = performanceActivities().map(activity => {
     const series = getActivityTelemetrySeries(activity).find(item => item.key === key);
-    if (!series) return null;
+    if (!series || !isValidElapsedTimeAxis(series.time, series.values.length)) return null;
     const values = series.values.filter(valid).map(Number);
     if (!values.length) return null;
     return { activity, series, value: values.reduce((sum,v)=>sum+v,0)/values.length, count: values.length, label, unit };
@@ -303,9 +303,7 @@ function renderPerformanceTrend(key) {
     if (activity) {
       values = activity.series.values.map(value=>valid(value)?Number(value):null);
       const time = activity.series.time;
-      const hasElapsedTime = Array.isArray(time) && time.length === values.length
-        && time.every((value,index)=>valid(value) && Number(value)>=0
-          && (index===0 || Number(value)>Number(time[index-1])));
+      const hasElapsedTime = isValidElapsedTimeAxis(time, values.length);
       const formatElapsed = seconds => {
         const total = Math.max(0,Math.round(Number(seconds)));
         const hours = Math.floor(total/3600);
