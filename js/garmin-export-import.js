@@ -144,6 +144,23 @@ function mergeArchiveActivity(existing, incoming) {
     existing.garminExportImported = true;
 }
 
+async function loadExistingPaths(userId, importId) {
+    const paths = new Set();
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase.from('garmin_export_data_files')
+            .select('source_path')
+            .eq('user_id', userId)
+            .eq('import_id', importId)
+            .order('source_path', { ascending: true })
+            .range(from, from + pageSize - 1);
+        if (error) throw error;
+        for (const row of data || []) paths.add(String(row.source_path));
+        if (!data || data.length < pageSize) break;
+    }
+    return paths;
+}
+
 async function updateImportManifest(importId, userId, manifest, dataImport) {
     const nextManifest = { ...(manifest || {}), dataImport };
     const { error } = await supabase.from('garmin_export_imports')
@@ -347,13 +364,7 @@ export async function importGarminExportArchive(importId) {
             throw new Error('Bitte aktualisiere zuerst die Garmin-Feldanalyse auf Version 8.');
         }
 
-        const { data: existingRows, error: existingError } = await supabase.from('garmin_export_data_files')
-            .select('source_path')
-            .eq('user_id', userId)
-            .eq('import_id', importId)
-            .limit(5000);
-        if (existingError) throw existingError;
-        context.existingPaths = new Set((existingRows || []).map(row => String(row.source_path)));
+        context.existingPaths = await loadExistingPaths(userId, importId);
 
         context.totalExpectedFiles = Number(manifest.entryCount || 0);
         const parts = manifest.archiveStorage?.parts;
