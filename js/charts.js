@@ -690,6 +690,17 @@ function getActivityTelemetryColor(key, label = '') {
     return palette[hash % palette.length];
 }
 
+function alignedElapsedTimeAxis(telemetry, length) {
+    const candidates = [telemetry?.metricSeriesTime, telemetry?.time];
+    for (const axis of candidates) {
+        if (!Array.isArray(axis) || axis.length !== length) continue;
+        const values = axis.map(Number);
+        if (values.every(value => Number.isFinite(value) && value >= 0)
+            && values.slice(1).every((value, index) => value > values[index])) return values;
+    }
+    return null;
+}
+
 export function getActivityTelemetrySeries(act) {
     const telem = getActivityTelemetry(act) || {};
     const fields = act?.garminFitData?.recordFields || {};
@@ -748,11 +759,13 @@ export function getActivityTelemetrySeries(act) {
         const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
             && (key === 'speed' || key === 'power')
             ? meta.label + ' (Gerätemesswert)' : meta.label;
-        result.push({ key, label: displayLabel, unit: meta.unit, color: metricColor, values: values.map(value =>
-            value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
-                || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
-                ? null : Number(value)
-        ) });
+        result.push({ key, label: displayLabel, unit: meta.unit, color: metricColor,
+            time: alignedElapsedTimeAxis(telem, values.length),
+            values: values.map(value =>
+                value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
+                    || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
+                    ? null : Number(value)
+            ) });
     }
 
     // Zusätzliche Garmin-JSON-Messreihen bleiben verfügbar, sofern sie zur Sportart passen.
@@ -779,10 +792,7 @@ export function getActivityTelemetrySeries(act) {
             key,
             label: displayLabel,
             unit: typeof metric.unit === 'string' ? metric.unit : '',
-            time: Array.isArray(metric.time) && metric.time.length === metric.values.length
-                ? metric.time
-                : Array.isArray(telem.metricSeriesTime) && telem.metricSeriesTime.length === metric.values.length
-                    ? telem.metricSeriesTime : null,
+            time: alignedElapsedTimeAxis(telem, metric.values.length),
             color: getActivityTelemetryColor(key, displayLabel),
             values: metric.values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
