@@ -367,6 +367,7 @@ assert.ok(mainSource.includes("if (health.status === 'in_progress')"), 'A busy h
 assert.ok(mainSource.includes("!['complete', 'partial', 'rate_limited'].includes(String(health.status || ''))"), 'Range imports must fail closed on missing or unknown health-history status');
 assert.ok(mainSource.includes("const partial = activitySync?.status !== 'ok'"), 'Daily sync must not be marked current when the activity-list import is incomplete');
 assert.ok(mainSource.includes("|| health?.status !== 'complete'"), 'Daily sync must not be marked current when health history is not complete');
+assert.ok(mainSource.includes("setGarminSyncIndicator('partial', 'Synchronisierung unvollständig')"), 'Thrown daily sync errors must not leave the indicator in a connected/current state');
 
 
 // Garmin sync audit history must record outcome, source and timezone without exposing it to clients.
