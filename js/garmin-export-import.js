@@ -85,7 +85,7 @@ async function uploadJsonObject(objectPath, blob) {
     });
 }
 
-function topLevelRecordCount(value) {
+function topLevelItemCount(value) {
     if (Array.isArray(value)) return value.length;
     if (value && typeof value === 'object') return Object.keys(value).length;
     return 1;
@@ -271,7 +271,7 @@ async function processZip(zip, prefix, context, depth = 0) {
                 const raw = await entry.async('string');
                 const jsonText = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
                 const parsed = JSON.parse(jsonText);
-                row.record_count = topLevelRecordCount(parsed);
+                row.top_level_item_count = topLevelItemCount(parsed);
                 const dates = dateBounds(parsed);
                 dates.sort();
                 row.date_from = dates[0] || null;
