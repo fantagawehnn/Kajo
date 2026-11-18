@@ -42,7 +42,8 @@ export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=
       tile('Subjektiv',r.subjectiveScore,r.subjectiveCount,6,'text-emerald-400')+
       '</div><p class="mt-2 text-[10px] text-slate-300">'+domainLine+'</p>'+
       '<p class="mt-1 text-[10px] text-slate-400">'+escapeHtml(r.dataMode)+' · '+escapeHtml(r.dataQuality)+
-      ' · Trainingsbelastung wird separat beurteilt und nicht in den Readiness-Wert eingerechnet.</p>';
+      ' · Trainingsbelastung wird separat beurteilt und nicht in den Readiness-Wert eingerechnet. Basisgewichtung: Physiologie 40 %, Schlaf 30 %, Befinden 30 %; fehlende Bereiche werden nicht ersetzt. Interner Orientierungsindex, keine validierte Trainingsfreigabe.</p>'+
+      (r.baselineRequirements?.length ? '<p class="mt-1 text-[10px] text-amber-300">Noch nicht in der Wertung (persönliche Basis benötigt): '+r.baselineRequirements.map(item=>escapeHtml(item.label)+' '+item.observations+'/'+item.required).join(', ')+'.</p>' : '');
   }
 }
 export function updateZoneGaugeMarker(currentTSB, mode = 'tss') {
