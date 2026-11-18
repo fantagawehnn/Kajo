@@ -92,7 +92,7 @@ assert.ok(html.includes('id="health-trend-chart"') && html.includes('data-health
 assert.ok(analysisUI.includes('Tage ohne Balken sind nicht dokumentiert'), 'missing health entries are not interpreted as healthy days');
 assert.ok(analysisUI.includes('item?.cycle?.period===true'), 'cycle trends use only explicitly documented cycle entries');
 assert.ok(analysisUI.includes('keine medizinische Interpretation') || analysisUI.includes('keine medizinische Interpretation.'), 'Health trend avoids medical interpretation');
-assert.ok(analysisUI.includes("['HRV', 'hrv', 'ms', 1]") && analysisUI.includes('const entry = latestCheckin(key)'), 'recovery exposes the latest raw HRV measurement as a separate metric');
+assert.ok(analysisUI.includes("['HRV', 'hrv', 'Garmin · ms', 1]") && analysisUI.includes('getGarminCheckinMetric(row, key)'), 'recovery exposes only Garmin-sourced HRV as an objective metric');
 assert.ok(analysisUI.includes('const readiness = calculateReadiness(todayKey())') && analysisUI.includes('const score = readiness.enoughData ? readiness.score : null'), 'aggregate recovery value reuses the existing calculation for the analysis overview');
 assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes('id="recovery-hero-note" class="kajo-analysis-hero-note"'), 'Recovery detail does not display a readiness summary');
 assert.ok(!html.includes('id="health-hero-ring"') && !html.includes('id="health-availability-status"'), 'Health does not display an unsupported availability score');
