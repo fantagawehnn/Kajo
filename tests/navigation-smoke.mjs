@@ -194,7 +194,7 @@ assert.ok(calendar.includes('item?.cycle?.period === true'), 'calendar shows rec
 assert.ok(calendar.includes('calendar-year-week-cell') && calendar.includes('calendar-year-month-label') && calendar.includes('calendar-year-sport-segment'), 'year view is a month and calendar-week matrix with sport-specific bars');
 assert.ok(calendar.includes('calendar-year-planned-segment'), 'year view distinguishes planned sessions from completed training time');
 assert.ok(calendar.includes('calendar-week-strip') && calendar.includes('calendar-week-dot'), 'week view includes a seven-day horizontal overview with activity and health markers');
-assert.ok(css.includes('grid-template-columns:repeat(7,minmax(0,1fr))') && css.includes('.calendar-week-strip-day {\n  min-width:0;'), 'mobile week strip keeps all seven day cells in one equal-width row');
+assert.ok(css.includes('grid-template-columns:repeat(7,minmax(0,1fr))') && /\.calendar-week-strip-day \{\s*min-width:0;/.test(css), 'mobile week strip keeps all seven day cells in one equal-width row');
 assert.ok(css.includes('grid-template-columns:repeat(4,minmax(0,1fr))') && css.includes('.calendar-view-switch'), 'calendar view selector keeps all four views in one row');
 assert.ok(calendar.includes('calendar-week-agenda-day') && calendar.includes('calendar-week-agenda'), 'week view keeps all seven days in a vertical agenda');
 assert.ok(calendar.includes('selectCalendarWeekDay') && calendar.includes('scrollIntoView'), 'horizontal day selection focuses the matching agenda section');
