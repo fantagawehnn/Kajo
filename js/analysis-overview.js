@@ -5,6 +5,8 @@
 import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
 import { renderHeartRateZoneDistribution } from './charts.js';
+import { calculatePeriodSummary } from './period-summary.js';
+import { getVisibleActivities } from './activity-groups.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -279,6 +281,72 @@ function renderActivityChart() {
   }).join('') || '<p class="kajo-analysis-chart-note">Für diese Darstellung liegen keine auswertbaren Werte vor.</p>';
   updateActivitySwitch();
 }
+
+function renderPeriodSummary() {
+  const root = document.getElementById('analysis-period-summary');
+  const note = document.getElementById('analysis-period-summary-note');
+  if (!root) return;
+  const range = currentRange();
+  // Use the same de-duplicated, grouped activity view as the period charts.
+  const summaryActivities = getVisibleActivities(getActivitiesInRange(rangeDates(range)));
+  const summary = calculatePeriodSummary({
+    activities: summaryActivities, races: state.races, healthLogs: state.healthLogs,
+    from: range.from, to: range.to
+  });
+  if (!summary.validRange) {
+    root.innerHTML = '';
+    if (note) note.textContent = 'Bitte einen gültigen Zeitraum auswählen.';
+    return;
+  }
+  const duration = summary.durationMinutes === null ? '—' : fmt(summary.durationMinutes / 60) + ' h';
+  const durationDetail = summary.durationCount
+    ? 'Dauer für ' + summary.durationCount + ' / ' + summary.activityCount + ' Einheiten erfasst'
+    : 'Keine auswertbaren Dauern';
+  const cards = [
+    ['Einheiten', summary.activityCount, 'Dokumentierte Aktivitäten'],
+    ['Trainingstage', summary.trainingDays, 'Tage mit mindestens einer Aktivität'],
+    ['Erfasste Trainingszeit', duration, durationDetail],
+    ['Wettkämpfe', summary.raceCount, summary.resultCount + ' Starts mit Ergebnis'],
+    ['Podien / Siege', summary.podiumCount + ' / ' + summary.winCount, 'Nur dokumentierte Platzierungen'],
+    ['Krankheit / Verletzung', summary.sickDays + ' / ' + summary.injuredDays, 'Dokumentierte Tage']
+  ];
+  root.innerHTML = cards.map(([label, value, detail]) =>
+    '<div class="kajo-insight-metric"><span>' + escapeHtml(label) + '</span><strong>' +
+    escapeHtml(String(value)) + '</strong><small>' + escapeHtml(detail) + '</small></div>'
+  ).join('');
+  if (note) {
+    const incompleteDuration = summary.durationCount < summary.activityCount;
+    note.textContent = 'Zeitraum ' + dateLabel(range.from) + ' – ' + dateLabel(range.to) +
+      '. Trainingstage zählen nur Tage mit gespeicherten Aktivitäten; fehlende Einträge werden nicht als Ruhetage interpretiert.' +
+      (incompleteDuration ? ' Die Trainingszeit ist unvollständig, weil nicht für alle Einheiten eine Dauer vorliegt.' : '');
+  }
+  const canoeRoot = document.getElementById('analysis-period-canoe-summary');
+  const canoeNote = document.getElementById('analysis-period-canoe-note');
+  if (canoeRoot) {
+    const canoe = summary.canoeCount ? [
+      ['K1', summary.canoeClasses.K1, 'Dokumentierte K1-Einheiten'],
+      ['C1', summary.canoeClasses.C1, 'Dokumentierte C1-Einheiten'],
+      ['C2', summary.canoeClasses.C2, 'Dokumentierte C2-Einheiten'],
+      ['Classic', summary.canoeFormats.classic, 'Explizit als Classic markiert'],
+      ['Sprint', summary.canoeFormats.sprint, 'Explizit als Sprint markiert'],
+      ['Wildwasser / Flachwasser', summary.canoeWaterTypes.wildwater + ' / ' + summary.canoeWaterTypes.flatwater, 'Explizit dokumentierter Gewässertyp']
+    ] : [];
+    canoeRoot.innerHTML = canoe.map(([label, value, detail]) =>
+      '<div class="kajo-insight-metric"><span>' + escapeHtml(label) + '</span><strong>' +
+      escapeHtml(String(value)) + '</strong><small>' + escapeHtml(detail) + '</small></div>'
+    ).join('') || '<p class="kajo-analysis-chart-note">Keine Kanuaktivitäten im gewählten Zeitraum.</p>';
+  }
+  if (canoeNote) {
+    canoeNote.textContent = summary.canoeCount
+      ? 'Kanuaktivitäten: ' + summary.canoeCount + ' · Rennformat bei ' +
+        (summary.canoeCount - summary.canoeFormatUnspecifiedCount) + ' / ' + summary.canoeCount +
+        ' Einheiten hinterlegt · Gewässertyp bei ' +
+        (summary.canoeCount - summary.canoeWaterTypeUnspecifiedCount) + ' / ' + summary.canoeCount +
+        ' Einheiten hinterlegt. Nicht zugeordnete Einheiten bleiben unklassifiziert.'
+      : 'Die Kanu-Aufschlüsselung erscheint, sobald im Zeitraum Kanuaktivitäten dokumentiert sind.';
+  }
+}
+
 function renderIntensityDistribution() {
   const dates = rangeDates(currentRange());
   const activities = getActivitiesInRange(dates);
@@ -296,4 +364,5 @@ export function renderAnalysisOverview() {
   renderTrendChart();
   renderActivityChart();
   renderIntensityDistribution();
+  renderPeriodSummary();
 }
