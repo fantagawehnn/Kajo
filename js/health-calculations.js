@@ -108,7 +108,7 @@ export function summarizeHealthEpisodes(healthLogs = {}, from, to) {
   if (!validDateKey(from) || !validDateKey(to) || from > to) return null;
 
   const days = Object.entries(healthLogs || {})
-    .filter(([date, item]) => validDateKey(date) && date <= to &&
+    .filter(([date, item]) => validDateKey(date) &&
       (item?.status === 'sick' || item?.status === 'injured'))
     .sort(([a], [b]) => a.localeCompare(b));
 
