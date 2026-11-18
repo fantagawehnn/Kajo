@@ -208,9 +208,12 @@ function renderRecoveryInsight() {
         ['motivation', 'Motivation', false],
         ['stress', 'Stress', true]
     ];
-    const subjectiveCards = subjectiveLabels.map(([key, label, reverse]) =>
-        recoveryMetric(key, label, valid(current[key]) ? formatValue(current[key]) : '—',
-            reverse ? 'Skala 1–10 · höher = mehr' : 'Skala 1–10'));
+    const subjectiveCards = subjectiveLabels.map(([key, label, reverse]) => {
+        const value = Number(current[key]);
+        const hasValue = valid(current[key]) && value >= 1 && value <= 5;
+        return recoveryMetric(key, label, hasValue ? formatValue(value, 0) : '—',
+            reverse ? 'Skala 1–5 · höher = mehr' : 'Skala 1–5');
+    });
     setPanel('recovery-subjective-metrics', subjectiveCards.join(''));
     setRecoveryText('recovery-subjective-count', subjectiveCards.length + ' Angaben');
     selectedRecoveryMetric = null;
@@ -221,7 +224,7 @@ function renderRecoveryInsight() {
         button.setAttribute('aria-pressed', 'false');
     });
 
-    const avgFor = key => mean(checkins.map(([, entry]) => entry?.[key]).filter(valid));
+    const avgFor = key => mean(checkins.map(([, entry]) => entry?.[key]).filter(value => valid(value) && Number(value) >= 1 && Number(value) <= 5));
     const weeklySleep = avgFor('sleepQuality');
     const weeklyFatigue = avgFor('fatigue');
     const weeklySoreness = avgFor('soreness');
@@ -229,9 +232,9 @@ function renderRecoveryInsight() {
     const entries = [
         metric('Readiness heute', readinessText, readiness.dataQuality),
         metric('Check-ins / 7 Tage', checkins.length),
-        metric('Ø Schlafqualität', weeklySleep === null ? '—' : fmt(weeklySleep) + ' / 10'),
-        metric('Ø Müdigkeit', weeklyFatigue === null ? '—' : fmt(weeklyFatigue) + ' / 10'),
-        metric('Ø Muskelkater', weeklySoreness === null ? '—' : fmt(weeklySoreness) + ' / 10')
+        metric('Ø Schlafqualität', weeklySleep === null ? '—' : fmt(weeklySleep) + ' / 5'),
+        metric('Ø Müdigkeit', weeklyFatigue === null ? '—' : fmt(weeklyFatigue) + ' / 5'),
+        metric('Ø Muskelkater', weeklySoreness === null ? '—' : fmt(weeklySoreness) + ' / 5')
     ];
     const interpretation = !checkins.length
         ? 'Keine Check-ins in den letzten 7 Tagen.'

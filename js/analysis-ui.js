@@ -43,6 +43,7 @@ function latestCheckin(key) {
   for (const [date, row] of entries) {
     let value = row?.[key];
     if (key === 'sleepDuration') value = row?.sleepDuration ?? (Number(row?.sleep) > 5 ? row.sleep : null);
+    if (['sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'].includes(key) && (!valid(value) || Number(value) < 1 || Number(value) > 5)) continue;
     if (valid(value)) return { value: Number(value), date };
   }
   return null;
@@ -126,7 +127,7 @@ function renderRecovery() {
     const entry = latestCheckin(key);
     const color = entry ? historyRingColor(key, entry.value, entry.date) : 'var(--kajo-status-info)';
     return recoveryCircleMetric(label, key, entry ? fmt(entry.value, 0) : '—',
-      '/10', entry?.date || '', true, color);
+      '/5', entry?.date || '', true, color);
   }));
 
   const objectiveRoot = document.getElementById('recovery-analysis-metrics');

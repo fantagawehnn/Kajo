@@ -48,11 +48,14 @@ export function calculateReadiness(dateKey=localTodayKey()){
     objective.push({key:'trainingLoad',label:'Trainingsbelastung',value:ratio,unit:'ACWR',score:Math.round(loadScore)});
   }
   const subjective=[];
-  const addSubjective=(key,label,reverse)=>{if(!validNumber(current[key]))return;const v=Number(current[key]);if(v<1||v>10)return;subjective.push({key,label,value:v,score:Math.round(reverse?(10-v)/9*100:(v-1)/9*100)});};
+  // Self-monitoring is recorded on a 1–5 scale. Higher values are favorable
+  // for sleep quality and motivation, but indicate more strain for fatigue,
+  // soreness and stress.
+  const addSubjective=(key,label,reverse)=>{if(!validNumber(current[key]))return;const v=Number(current[key]);if(v<1||v>5)return;subjective.push({key,label,value:v,score:Math.round(reverse?(5-v)/4*100:(v-1)/4*100)});};
   addSubjective('sleepQuality','Schlafqualität',false);addSubjective('motivation','Motivation',false);addSubjective('fatigue','Müdigkeit',true);addSubjective('soreness','Muskelkater',true);addSubjective('stress','Stress',true);
   const cycleImpact=Number(current.cycle?.trainingImpact);
-  if(current.cycle?.period===true&&Number.isFinite(cycleImpact)&&cycleImpact>0&&cycleImpact<=10){
-    subjective.push({key:'cycleTrainingImpact',label:'Zyklusbedingte Trainingsbeeinträchtigung',value:cycleImpact,score:Math.round(clamp((10-cycleImpact)/10*100))});
+  if(current.cycle?.period===true&&Number.isFinite(cycleImpact)&&cycleImpact>=1&&cycleImpact<=5){
+    subjective.push({key:'cycleTrainingImpact',label:'Zyklusbedingte Trainingsbeeinträchtigung',value:cycleImpact,score:Math.round(clamp((5-cycleImpact)/4*100))});
   }
   const mean=a=>a.length?a.reduce((s,x)=>s+x.score,0)/a.length:null;
   const objectiveScore=mean(objective),subjectiveScore=mean(subjective);
@@ -998,11 +1001,11 @@ const historyMetricDefinitions = {
     sleepScore: { label: 'Sleep Score', short: 'Sleep Score', unit: '/ 100', group: 'wearable', icon: 'moon-star', color: '#a78bfa' },
     sleepDuration: { label: 'Schlafdauer', short: 'Schlafdauer', unit: 'h', group: 'wearable', icon: 'bed-double', color: '#818cf8' },
     respiration: { label: 'Atemfrequenz', short: 'Atemfrequenz', unit: '/min', group: 'wearable', icon: 'wind', color: '#2dd4bf' },
-    sleepQuality: { label: 'Schlafqualität', short: 'Schlafqualität', unit: '/ 10', group: 'self', icon: 'bed', color: '#c084fc' },
-    soreness: { label: 'Muskelkater', short: 'Muskelkater', unit: '/ 10', group: 'self', icon: 'biceps-flexed', color: '#fb7185' },
-    fatigue: { label: 'Müdigkeit', short: 'Müdigkeit', unit: '/ 10', group: 'self', icon: 'battery-low', color: '#f59e0b' },
-    motivation: { label: 'Motivation', short: 'Motivation', unit: '/ 10', group: 'self', icon: 'zap', color: '#34d399' },
-    stress: { label: 'Stress', short: 'Stress', unit: '/ 10', group: 'self', icon: 'brain', color: '#38bdf8' },
+    sleepQuality: { label: 'Schlafqualität', short: 'Schlafqualität', unit: '/ 5', group: 'self', icon: 'bed', color: '#c084fc' },
+    soreness: { label: 'Muskelkater', short: 'Muskelkater', unit: '/ 5', group: 'self', icon: 'biceps-flexed', color: '#fb7185' },
+    fatigue: { label: 'Müdigkeit', short: 'Müdigkeit', unit: '/ 5', group: 'self', icon: 'battery-low', color: '#f59e0b' },
+    motivation: { label: 'Motivation', short: 'Motivation', unit: '/ 5', group: 'self', icon: 'zap', color: '#34d399' },
+    stress: { label: 'Stress', short: 'Stress', unit: '/ 5', group: 'self', icon: 'brain', color: '#38bdf8' },
     weight: { label: 'Körpergewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#94a3b8' }
 };
 const trainingMetricDefinitions = {
@@ -1027,7 +1030,11 @@ function historyValue(checkin, key) {
         : key === 'sleepQuality'
             ? (checkin.sleepQuality ?? (Number(checkin.sleep) >= 1 && Number(checkin.sleep) < 5 ? checkin.sleep : null))
             : key === 'rhr' ? (checkin.garminRhr ?? checkin.rhr) : checkin[key];
-    return validNumber(raw) ? Number(raw) : null;
+    if (!validNumber(raw)) return null;
+    const value = Number(raw);
+    return ['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)
+        ? (value >= 1 && value <= 5 ? value : null)
+        : value;
 }
 function historyWindow(range, endKey = historyTodayKey()) {
     const end = endKey;
@@ -1069,10 +1076,10 @@ function historyRecommendation(key, value, dateKey) {
             ? ['Sleep Score im mittleren Bereich', 'Beobachte den Trend und gleiche den Score mit deinem subjektiven Erholungsempfinden ab.']
             : ['Hoher Sleep Score', 'Der Wearable-Score fällt günstig aus. Entscheidend bleibt, ob du dich tatsächlich erholt fühlst.'];
     const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    if (value >= 8) return reverse
+    if (value >= 4) return reverse
         ? ['Hohe Beanspruchung', 'Der subjektive Wert ist deutlich erhöht. Prüfe, ob Umfang oder Intensität angepasst werden sollten und berücksichtige weitere Erholungssignale.']
         : ['Günstige Selbsteinschätzung', 'Deine subjektive Einschätzung fällt positiv aus. Gleiche sie mit Trainingsbelastung und körperlichem Befinden ab.'];
-    if (value <= 3) return reverse
+    if (value <= 2) return reverse
         ? ['Geringe Beanspruchung', 'Deine subjektive Einschätzung fällt niedrig aus. Berücksichtige trotzdem Schlaf, Belastungsverlauf und weitere Signale.']
         : ['Niedrige Selbsteinschätzung', 'Prüfe mögliche Einflussfaktoren und beobachte, ob sich der Wert über mehrere Tage verändert.'];
     return ['Mittlere Selbsteinschätzung', 'Der Wert liegt im mittleren Skalenbereich. Beobachte die Entwicklung über mehrere Tage.'];
@@ -1166,7 +1173,8 @@ export function historyRingColor(key, value, dateKey) {
     if (key === 'sleepDuration') return value >= 7 && value <= 9 ? STATUS_COLORS.good : value >= 6 && value <= 10 ? STATUS_COLORS.attention : value >= 5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
     if (key === 'sleepScore') return value >= 90 ? STATUS_COLORS.good : value >= 70 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
     const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    const goodness = reverse ? (10 - value) / 9 * 100 : (value - 1) / 9 * 100;
+    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key) && (value < 1 || value > 5)) return STATUS_COLORS.info;
+    const goodness = reverse ? (5 - value) / 4 * 100 : (value - 1) / 4 * 100;
     return fiveLevelColor(goodness);
 }
 function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null) {
