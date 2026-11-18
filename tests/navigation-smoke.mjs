@@ -394,5 +394,9 @@ assert.ok(garminArchive.includes('trainingplan|_workout.json|workout'), 'Garmin 
 assert.ok(garminArchive.includes('customer_data|di-connect-user|trainingplan|_workout.json'), 'profile and workout-plan dates are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('birth|created|updated|modified|deleted|expiry|expiration|upload|export'), 'metadata timestamps are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('timestamp <= Date.now() + 24 * 60 * 60 * 1000'), 'future plan dates do not extend the historical measurement period');
-assert.ok(garminArchive.includes('analysisVersion: 2') && garminArchive.includes('preview?.analysisVersion !== 2'), 'existing Garmin archives can be re-analysed with the corrected field and date rules');
+assert.ok(garminArchive.includes('analysisVersion: 3') && garminArchive.includes('preview?.analysisVersion !== 3'), 'existing Garmin archives can be re-analysed with the field-domain classification rules');
+assert.ok(garminArchive.includes('function classifyGarminFieldCategory') && garminArchive.includes('bodybattery|alldaystress|stresslevel|restingheartrate'), 'bundled Garmin daily wellness fields are classified into recovery');
+assert.ok(garminArchive.includes('hydration|kilocalorie|calorie|bmr|sweatloss|nutrition'), 'bundled Garmin nutrition and hydration fields are classified separately');
+assert.ok(garminArchive.includes('activeseconds|highlyactiveseconds|floorsascended|floorsdescended'), 'bundled daily activity fields are distinguished from training sessions');
+assert.ok(garminArchive.includes('function garminCategoryLabel'), 'field inventory categories use readable German labels');
 assert.ok(garminArchive.includes("if (/summarizedactivities|activitydetails/.test(value)) return 'activities';"), 'only concrete completed-activity exports are classified as activities');
