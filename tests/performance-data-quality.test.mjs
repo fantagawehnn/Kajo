@@ -15,3 +15,29 @@ test('excludes non-paddling and unknown activity types from paddling performance
     assert.equal(isPaddlingPerformanceActivity(null), false);
     assert.equal(isPaddlingPerformanceActivity({}), false);
 });
+
+test('accepts only complete, finite, nonnegative and strictly increasing elapsed-time axes', async () => {
+    const { isValidElapsedTimeAxis } = await import('../js/performance-data-quality.js');
+    assert.equal(isValidElapsedTimeAxis([0, 1, 2], 3), true);
+    assert.equal(isValidElapsedTimeAxis(['0', '0.5', '1'], 3), true);
+    assert.equal(isValidElapsedTimeAxis([0, 1], 3), false);
+    assert.equal(isValidElapsedTimeAxis([0, 1, 1], 3), false);
+    assert.equal(isValidElapsedTimeAxis([0, -1, 2], 3), false);
+    assert.equal(isValidElapsedTimeAxis([0, null, 2], 3), false);
+    assert.equal(isValidElapsedTimeAxis([0, '', 2], 3), false);
+    assert.equal(isValidElapsedTimeAxis([0, 'not-a-time', 2], 3), false);
+    assert.equal(isValidElapsedTimeAxis([0], 1), false);
+});
+
+test('prefers the explicit metric-series elapsed-time axis and rejects invalid axes', async () => {
+    const { getValidatedElapsedTimeAxis } = await import('../js/performance-data-quality.js');
+    assert.deepEqual(getValidatedElapsedTimeAxis({
+        metricSeriesTime: [0, 2, 4],
+        time: [0, 1, 2]
+    }, 3), [0, 2, 4]);
+    assert.deepEqual(getValidatedElapsedTimeAxis({
+        metricSeriesTime: [0, 1, 1],
+        time: [0, 1, 2]
+    }, 3), [0, 1, 2]);
+    assert.equal(getValidatedElapsedTimeAxis({ time: [0, 1] }, 3), null);
+});
