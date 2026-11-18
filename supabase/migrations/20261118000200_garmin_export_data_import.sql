@@ -73,6 +73,12 @@ create policy "Users can insert their own Garmin export performance records"
     on public.garmin_export_performance_records for insert to authenticated
     with check ((select auth.uid()) = user_id);
 
+-- Keep archive-imported activity IDs in the same index used by Garmin live sync.
+grant insert on public.garmin_activities to authenticated;
+create policy "Users can insert their own Garmin activities"
+    on public.garmin_activities for insert to authenticated
+    with check ((select auth.uid()) = user_id);
+
 -- Large JSON files are stored as private objects under the importing user's folder.
 update storage.buckets
    set allowed_mime_types = array[
