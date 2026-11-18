@@ -10,7 +10,11 @@
   "ai": {
     "binding": "AI"
   },
-  "previews": {},
+  "previews": {
+    "vars": {
+      "SUPABASE_URL": "https://zgvargkfzgekokuisarv.supabase.co"
+    }
+  },
   "ratelimits": [
     {
       "name": "COACH_RATE_LIMITER",
