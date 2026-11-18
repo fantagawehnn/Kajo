@@ -1,4 +1,4 @@
--- Append-only audit trail for Garmin synchronization attempts.
+-- Audit trail for Garmin synchronization attempts.
 -- Rows are written by the trusted garmin-personal Edge Function only.
 create table if not exists public.garmin_sync_events (
   id uuid primary key default gen_random_uuid(),
@@ -40,7 +40,7 @@ alter table public.garmin_sync_events enable row level security;
 -- The browser must not read or write this audit log directly.
 -- Only the service-role Edge Function may access it.
 revoke all on table public.garmin_sync_events from anon, authenticated;
-grant all on table public.garmin_sync_events to service_role;
+grant select, insert, update on table public.garmin_sync_events to service_role;
 
 comment on table public.garmin_sync_events is
   'Per-user Garmin synchronization attempt log. Written by the trusted Edge Function; contains no Garmin payloads or credentials.';
