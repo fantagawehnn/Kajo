@@ -102,7 +102,7 @@ export function mapGarminExportActivity(record, inferSport, inferCategory) {
     const id = String(rawId ?? '');
     if (!/^\d+$/.test(id)) return null;
 
-    const name = String(record.activityName ?? record.name ?? 'Garmin-Aktivität');
+    const name = String(record.activityName || record.name || 'Garmin-Aktivität').trim() || 'Garmin-Aktivität';
     const sourceSportLabel = activityTypeLabel(record);
     const start = parseStart(record);
     const duration = durationMinutes(record.duration ?? record.elapsedDuration ?? record.movingDuration);
