@@ -37,5 +37,7 @@ test('maps Garmin activity summary without trusting Garmin profile as actual spo
     assert.equal(mapped.distance, 10);
     assert.equal(mapped.hr, 145);
     assert.equal(mapped.maxHr, 178);
-    assert.equal(mapped.garminData, raw);
+    assert.equal(mapped.garminTrainingLoad, null);
+    assert.equal(mapped.garminSportLabel, 'RUNNING');
+    assert.equal(mapped.garminExportImported, true);
 });
