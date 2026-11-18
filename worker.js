@@ -198,7 +198,10 @@ VERBINDLICHE REGELN:
           content: `Nutzerfrage:\n${question}\n\nKAJO-Datenkontext (JSON):\n${contextText}`
         }
       ],
-      max_tokens: 1400,
+      max_completion_tokens: 1800,
+      chat_template_kwargs: {
+        enable_thinking: false
+      },
       temperature: 0.3
     });
   } catch (error) {
