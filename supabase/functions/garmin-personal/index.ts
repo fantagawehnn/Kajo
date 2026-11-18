@@ -475,7 +475,7 @@ async function runTrackedGarminSync<T extends Record<string, unknown>>(
 
   try {
     const result = await operation();
-    const resultStatus = String(result.status ?? "complete");
+    const resultStatus = String(result.status ?? "missing");
     const numberOrNull = (value: unknown) =>
       typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : null;
 
