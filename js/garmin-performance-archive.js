@@ -1,6 +1,8 @@
 /* Pure parser for Garmin Connect export performance records.
  * Only the explicitly named VO2max field is treated as VO2max.
  * MET values and fitness-age values remain separate and are not converted.
+ * Garmin sport/subSport fields are retained as source labels only; they do not
+ * prove which sport the athlete actually performed during that session.
  */
 function validDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
