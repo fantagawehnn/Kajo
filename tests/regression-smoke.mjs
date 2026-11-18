@@ -368,6 +368,11 @@ assert.ok(mainSource.includes('scannedDays + skippedDays !== totalDays'),
 const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
 const garminLeaseMigration = await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8');
 assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
+assert.ok(garminBackendSource.includes('async function withGarminActivityLease'), 'Activity-list sync must use a separate per-user lease');
+assert.ok(garminBackendSource.includes('const syncType = "activity_list";'), 'Activity-list lease must be isolated from health-history cursor state');
+assert.ok(garminBackendSource.includes('async function syncGarminActivitiesForUserUnlocked'), 'The activity importer must run only behind its lease wrapper');
+assert.ok(garminBackendSource.includes('Die Sperre für die Garmin-Aktivitätsliste ist abgelaufen'), 'An activity worker that loses its lease must stop safely');
+assert.ok(garminBackendSource.includes('await renewLease();'), 'Activity-list lease must be renewed during page and database processing');
 assert.ok(garminBackendSource.includes('lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.'), 'Concurrent health-history requests must atomically claim only an unowned or expired lease');
 assert.ok(garminBackendSource.includes('.eq("lock_token", lockToken)'), 'Cursor mutations must be restricted to the invocation that owns the lease');
 assert.ok(garminBackendSource.includes('if (!markedRunning) throw new Error'), 'The invocation must verify lease ownership before beginning cursor work');
