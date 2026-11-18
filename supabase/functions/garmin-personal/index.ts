@@ -208,6 +208,7 @@ async function syncGarminHealthDayUnlocked(
   ];
   const referenceDate = new Date().toISOString().slice(0, 10);
   for (const endpoint of referenceEndpoints) {
+    if (results.some((item) => item.status === "rate_limited")) break;
     await renewLease();
     try {
       const { data: existing, error: existingError } = await admin
@@ -256,7 +257,7 @@ async function syncGarminHealthDayUnlocked(
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
       const isRateLimited = /HTTP 429/.test(message);
-      const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+      const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
       results.push({
         dataType: endpoint.type,
         status: isRateLimited ? "rate_limited" : "error",
@@ -901,7 +902,7 @@ async function syncActivityFilesBatch(
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Details.";
         if (/HTTP 429/.test(message)) {
           rateLimited = true;
-          const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+          const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
           retryInSeconds = retryMatch ? Number(retryMatch[1]) : 30;
         }
         if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
@@ -928,7 +929,7 @@ async function syncActivityFilesBatch(
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim Abruf der Workouts.";
         if (/HTTP 429/.test(message)) {
           rateLimited = true;
-          const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+          const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
           retryInSeconds = retryMatch ? Number(retryMatch[1]) : 30;
         }
         if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
@@ -964,7 +965,7 @@ async function syncActivityFilesBatch(
         const message = error instanceof Error ? error.message : "Unbekannter Fehler beim FIT-Download.";
         if (/HTTP 429/.test(message)) {
           rateLimited = true;
-          const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+          const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
           retryInSeconds = retryMatch ? Number(retryMatch[1]) : 30;
         }
         if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;
