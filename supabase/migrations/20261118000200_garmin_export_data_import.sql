@@ -1,5 +1,8 @@
 -- KAJO: persist all structured Garmin export files and normalized VO2max history.
 -- Original ZIP archives remain untouched in the private garmin-exports bucket.
+create unique index if not exists garmin_export_imports_user_id_id_uidx
+    on public.garmin_export_imports(user_id, id);
+
 create table if not exists public.garmin_export_data_files (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
