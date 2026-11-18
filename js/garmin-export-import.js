@@ -268,7 +268,8 @@ async function processZip(zip, prefix, context, depth = 0) {
             context.jsonFiles++;
             try {
                 const raw = await entry.async('string');
-                const parsed = JSON.parse(raw);
+                const jsonText = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
+                const parsed = JSON.parse(jsonText);
                 row.record_count = topLevelRecordCount(parsed);
                 const dates = dateBounds(parsed);
                 dates.sort();
