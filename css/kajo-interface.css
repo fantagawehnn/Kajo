@@ -816,7 +816,7 @@ body{
 #view-analyses{
   gap:18px;
 }
-#view-analyses .kajo-analysis-overview{
+#view-analyses .kajo-analysis-overview:not(.hidden){
   display:flex;
   flex-direction:column;
   gap:clamp(18px,2.2vw,26px);
@@ -853,7 +853,7 @@ body{
   border-radius:var(--kajo-ui-radius);
   background:linear-gradient(145deg,rgba(16,32,49,.78),rgba(10,23,37,.68));
 }
-#view-analyses :is(#analysis-subpage-load,#analysis-subpage-recovery,#analysis-subpage-performance,#analysis-subpage-health){
+#view-analyses :is(#analysis-subpage-load,#analysis-subpage-recovery,#analysis-subpage-performance,#analysis-subpage-health):not(.hidden){
   display:flex;
   flex-direction:column;
   gap:16px;
