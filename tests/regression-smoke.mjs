@@ -373,6 +373,7 @@ assert.ok(mainSource.includes("setGarminSyncIndicator('partial', 'Synchronisieru
 // Garmin sync audit history must record outcome, source and timezone without exposing it to clients.
 const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
 const garminLeaseMigration = await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8');
+const garminHealthDayLeaseMigration = await readFile(new URL('../supabase/migrations/20261118140000_garmin_health_day_sync_lease.sql', import.meta.url), 'utf8');
 assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
 assert.ok(garminBackendSource.includes('async function withGarminActivityLease'), 'Activity-list sync must use a separate per-user lease');
 assert.ok(garminBackendSource.includes('.from("garmin_activity_sync_leases")'), 'Activity-list lease must use its own table, isolated from the health-history cursor');
@@ -396,7 +397,16 @@ assert.ok(garminBackendSource.includes('resultStatus === "ok" || resultStatus ==
 assert.ok(garminBackendSource.includes('const recognizedStatus = knownStatuses.has(resultStatus);'), 'Unknown sync result statuses must not be treated as successful');
 assert.ok(garminBackendSource.includes('const resultStatus = String(result.status ?? "missing");'), 'Missing sync result statuses must not default to complete');
 assert.ok(garminBackendSource.includes('!recognizedStatus ? "error"'), 'Unknown sync result statuses must be logged as errors');
-assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, true)'), 'Daily health refresh must not reset the shared historical backfill cursor');
+assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, forceHealthRefresh)'), 'Daily health refresh must use the per-day lease without resetting the historical backfill cursor');
+assert.ok(garminBackendSource.includes('async function syncGarminHealthDayUnlocked'), 'The health-day importer must run behind a shared per-day lease wrapper');
+assert.ok(garminBackendSource.includes('async function syncGarminHealthDay('), 'Daily refresh and historical backfill must share the same health-day lease wrapper');
+assert.ok(garminBackendSource.includes('.from("garmin_health_day_sync_leases")'), 'Health-day leases must be stored independently by user and date');
+assert.ok(garminBackendSource.includes('await renewLease();'), 'Health-day lease ownership must be renewed during endpoint processing');
+assert.ok(garminBackendSource.includes('if (dayResult.status === "in_progress")'), 'Historical backfill must not advance its cursor when the same day is already being refreshed');
+assert.ok(garminBackendSource.includes('dayAlreadyRunning ? "in_progress"'), 'A busy health-day lease must be returned as in-progress rather than a failed day');
+assert.ok(garminHealthDayLeaseMigration.includes('primary key (user_id, record_date)'), 'Health-day lease rows must be unique per user and calendar date');
+assert.ok(garminHealthDayLeaseMigration.includes('revoke all on table public.garmin_health_day_sync_leases from anon, authenticated'), 'Health-day lease rows must not be accessible to browser roles');
+
 assert.ok(garminBackendSource.includes('.select("payload,fetched_at")'), 'The no-data retry cooldown must use the stored fetch timestamp');
 assert.ok(mainSource.includes('forceHealthRefresh: attempt === 0'), 'Rate-limit retries must not force-refresh already imported daily health endpoints');
 assert.ok(mainSource.includes("manual_health_history: 'Manueller Gesundheitsdaten-Backfill'"), 'Manual health-history events must have a readable source label');
