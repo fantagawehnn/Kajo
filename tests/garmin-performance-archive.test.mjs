@@ -13,9 +13,9 @@ const fixture = [
 ];
 test('extracts only explicit numeric Garmin VO2max records from MetricsMaxMetData files', () => {
     const result = extractGarminVo2MaxRecords(fixture, 'DI_CONNECT/DI-Connect-Metrics/MetricsMaxMetData_20260101.json');
-    assert.equal(result.length, 2);
+    assert.equal(result.length, 3);
     assert.deepEqual(result.map(item => [item.date, item.value, item.sport]), [
-        ['2026-01-01', 54.2, 'RUNNING'], ['2026-01-02', 52.8, 'CYCLING']
+        ['2026-01-01', 54.2, 'RUNNING'], ['2026-01-02', 52.8, 'CYCLING'], ['2026-01-04', 101, 'RUNNING']
     ]);
     assert.equal(result[1].unit, 'ml/kg/min');
     assert.equal(result[1].source, 'garmin-export-metrics-max-met');
