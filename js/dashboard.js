@@ -74,7 +74,7 @@ function checkinValuesBetween(dateKey,key,days,includeCurrent=false){
       const ms=new Date(date+'T12:00:00').getTime();
       return Number.isFinite(ms)&&ms>=startMs&&(includeCurrent?date<=dateKey:date<dateKey);
     })
-    .map(([,record])=>({hrv:record.garminHrv??(record.measurementSources?.hrv?.source==='garmin'?record.hrv:null),rhr:record.garminRhr,sleepDuration:record.garminSleepDuration,sleepScore:record.garminSleepScore,respiration:record.garminRespiration}[key]??record[key])).filter(validNumber).map(Number);
+    .map(([,record])=>key==='hrv'?(record.garminHrv??(record.measurementSources?.hrv?.source==='garmin'?record.hrv:null)):key==='rhr'?record.garminRhr:key==='sleepDuration'?record.garminSleepDuration:key==='sleepScore'?record.garminSleepScore:key==='respiration'?record.garminRespiration:record[key]).filter(validNumber).map(Number);
 }
 function mean(values){return values.reduce((sum,value)=>sum+value,0)/values.length;}
 function standardDeviation(values,avg){
