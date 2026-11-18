@@ -143,3 +143,30 @@ export function mapGarminExportActivity(record, inferSport, inferCategory) {
         garminExportImported: true
     };
 }
+
+export function selectGarminVo2MaxDailyRecords(records = []) {
+    const byDate = new Map();
+    for (const record of Array.isArray(records) ? records : []) {
+        if (!record?.date || !Number.isFinite(Number(record.value)) || Number(record.value) <= 0) continue;
+        if (!byDate.has(record.date)) byDate.set(record.date, []);
+        byDate.get(record.date).push(record);
+    }
+
+    const selected = [];
+    const ambiguousDates = [];
+    for (const [date, dayRecords] of byDate) {
+        const dated = dayRecords.filter(record => record.updateTimestamp);
+        let candidates = dayRecords;
+        if (dated.length) {
+            const latestStamp = dated.map(record => String(record.updateTimestamp)).sort().at(-1);
+            candidates = dated.filter(record => String(record.updateTimestamp) === latestStamp);
+        }
+        const values = new Set(candidates.map(record => Number(record.value)));
+        if (values.size !== 1) {
+            ambiguousDates.push(date);
+            continue;
+        }
+        selected.push(candidates[0]);
+    }
+    return { selected, ambiguousDates };
+}
