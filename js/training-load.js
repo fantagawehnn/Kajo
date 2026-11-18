@@ -204,13 +204,25 @@ function calculateSessionRpeLoad(activity) {
 }
 export function getTrainingLoadData(records, settings, profile, dailyCheckins = {}) {
     const list = Array.isArray(records) ? records : [];
+    const eligible = list.filter(activity => activity?.date);
     const srpeData = () => {
-        const eligible = list.filter(activity => activity?.date);
-        const srpeRecords = eligible.map(activity => ({ activity, value: calculateSessionRpeLoad(activity) })).filter(item => item.value !== null);
-        return { mode: 'srpe', unit: 'AU', records: srpeRecords, coverage: { eligibleActivityCount: eligible.length, loadedActivityCount: srpeRecords.length, excludedActivityCount: eligible.length - srpeRecords.length } };
+        const srpeRecords = eligible.map(activity => ({ activity, value: calculateSessionRpeLoad(activity) }))
+            .filter(item => item.value !== null);
+        return {
+            mode: 'srpe', unit: 'AU', records: srpeRecords, comparisonRecords: [],
+            coverage: {
+                eligibleActivityCount: eligible.length,
+                loadedActivityCount: srpeRecords.length,
+                excludedActivityCount: eligible.length - srpeRecords.length
+            }
+        };
     };
     if (settings?.trainingLoadSource === 'srpe') return srpeData();
 
+    // KAJO-HF-Zonenindex ist das feste Standardmodell. Auch ältere Konten mit
+    // trainingLoadSource='auto' werden bewusst auf dieses Modell abgebildet:
+    // eine wechselnde Datenabdeckung darf CTL/ATL/TSB nicht auf eine andere
+    // Belastungsskala umstellen.
     const isGarminEligible = activity => activity?.date && (
         activity.source === 'garmin' || activity.sourceRefs?.garminActivityId != null
         || activity.garminData || activity.garminFitImported
@@ -220,72 +232,37 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         || activity.dailyHeartRateSeries?.source === 'garmin-daily-heart-rate'
     );
     const garminActivities = list.filter(isGarminEligible);
-    const hasGarmin = garminActivities.length > 0;
-
-    // Explizit gewähltes KAJO-Modell: ausschließlich gewichtete Zeit in den
-    // adaptiven HF-Reserve-Zonen verwenden. Garmin Native Load und sRPE werden
-    // in diesem Modus niemals als Ersatz oder Ergänzung beigemischt.
-    if (settings?.trainingLoadSource === 'kajo-zone') {
-        const zoneValues = garminActivities
-            .map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
-            .filter(item => item.load)
-            .map(item => ({ activity: item.activity, value: item.load.value, dataQuality: item.load.dataQuality || 'standard', dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe', durationSource: item.load.durationSource, samplingIntervalSeconds: item.load.samplingIntervalSeconds }));
-        return {
-            mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
-            unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
-            records: zoneValues,
-            coverage: {
-                eligibleActivityCount: garminActivities.length,
-                loadedActivityCount: zoneValues.length,
-                excludedActivityCount: Math.max(0, garminActivities.length - zoneValues.length),
-                availableZoneActivities: zoneValues.length
-            }
-        };
-    }
-
-    if (hasGarmin) {
-        const zoneValues = garminActivities.map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
-            .filter(item => item.load)
-            .map(item => ({ activity: item.activity, value: item.load.value, sourceMode: 'garmin-zone', dataQuality: item.load.dataQuality || 'standard', dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe', durationSource: item.load.durationSource, samplingIntervalSeconds: item.load.samplingIntervalSeconds }));
-        // Count all activities with native Garmin Load when comparing source
-        // coverage; the chosen model will use this source exclusively.
-        const nativeValues = garminActivities
-            .filter(activity => activity.garminTrainingLoad != null
-                && Number.isFinite(Number(activity.garminTrainingLoad))
-                && Number(activity.garminTrainingLoad) >= 0)
-            .map(activity => ({ activity, value: Number(activity.garminTrainingLoad), sourceMode: 'garmin-native' }));
-        // CTL/ATL require one consistent load scale across the time series.
-        // Never combine Garmin native Load with the KAJO HR-zone index.
-        const useZone = zoneValues.length > nativeValues.length;
-        const selected = useZone ? zoneValues : nativeValues;
-        if (selected.length) {
-            return {
-                mode: useZone ? 'garmin-zone' : 'garmin-native',
-                unit: useZone ? 'KAJO-HF-Punkte' : 'Garmin Load',
-                records: selected.map(({ activity, value }) => ({ activity, value })),
-                coverage: {
-                    eligibleActivityCount: garminActivities.length,
-                    loadedActivityCount: selected.length,
-                    excludedActivityCount: Math.max(0, garminActivities.length - selected.length),
-                    availableZoneActivities: zoneValues.length,
-                    availableNativeActivities: nativeValues.length
-                }
-            };
+    const zoneValues = garminActivities
+        .map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
+        .filter(item => item.load)
+        .map(item => ({
+            activity: item.activity,
+            value: item.load.value,
+            dataQuality: item.load.dataQuality || 'standard',
+            dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe',
+            durationSource: item.load.durationSource,
+            samplingIntervalSeconds: item.load.samplingIntervalSeconds
+        }));
+    // Garmin Native Load bleibt als eigenständige Vergleichsquelle verfügbar,
+    // wird aber niemals in den KAJO-CTL-/ATL-/TSB-Verlauf übernommen.
+    const nativeValues = garminActivities
+        .filter(activity => activity.garminTrainingLoad != null
+            && Number.isFinite(Number(activity.garminTrainingLoad))
+            && Number(activity.garminTrainingLoad) >= 0)
+        .map(activity => ({ activity, value: Number(activity.garminTrainingLoad), sourceMode: 'garmin-native' }));
+    return {
+        mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
+        unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
+        records: zoneValues,
+        comparisonRecords: nativeValues,
+        coverage: {
+            eligibleActivityCount: garminActivities.length,
+            loadedActivityCount: zoneValues.length,
+            excludedActivityCount: Math.max(0, garminActivities.length - zoneValues.length),
+            availableZoneActivities: zoneValues.length,
+            availableNativeActivities: nativeValues.length
         }
-        if (settings?.trainingLoadSource !== 'garmin') {
-            const subjective = srpeData();
-            if (subjective.records.length) return subjective;
-        }
-        return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: garminActivities.length, loadedActivityCount: 0, excludedActivityCount: garminActivities.length } };
-    }
-    // In automatic mode, use sRPE when no Garmin-native or HR-zone load can be
-    // calculated. The two scales are never mixed within one time series.
-    if (settings?.trainingLoadSource !== 'garmin') {
-        const subjective = srpeData();
-        if (subjective.records.length) return subjective;
-    }
-    // External TSS is not an approved source for KAJO training-load calculations.
-    return { mode: 'garmin-unavailable', unit: null, records: [], coverage: { eligibleActivityCount: list.filter(a => a?.date).length, loadedActivityCount: 0, excludedActivityCount: list.filter(a => a?.date).length } };
+    };
 }
 
 /**
