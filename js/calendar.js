@@ -267,7 +267,7 @@ function calendarActivityRow(activity, planned) {
     const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
     const status = planned ? 'Geplant' : 'Abgeschlossen';
     const action = planned
-        ? 'switchTab(\'training-planning\')'
+        ? 'openPlannedWorkoutModal(\'' + id + '\')'
         : 'openCSVDetailsModal(\'' + id + '\')';
     return '<button type="button" class="calendar-day-activity-row ' + (planned ? 'is-planned' : 'is-completed') + '" style="--activity-color:' + color + '" onclick="' + action + '">' +
         '<span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label + (activity.raceFormat ? ' · ' + activity.raceFormat : '')) + '</span>' +
@@ -1127,7 +1127,7 @@ export function openPlannedCalendarDetail(id) {
         '<div class="calendar-planned-detail-sport" style="--activity-color:' + (sport.color || '#64748b') + '">' + escapeHtml(sport.label) + '</div>' +
         '<dl><div><dt>Datum</dt><dd>' + escapeHtml(calendarDateLabel(item.date)) + '</dd></div><div><dt>Dauer</dt><dd>' + (item.duration == null ? '—' : escapeHtml(item.duration) + ' min') + '</dd></div><div><dt>Ziel-Load</dt><dd>' + (item.targetTss == null ? '—' : escapeHtml(item.targetTss)) + '</dd></div><div><dt>Trainingsform</dt><dd>' + escapeHtml(item.category || '—') + '</dd></div></dl>' +
         (item.desc ? '<p class="calendar-planned-detail-description">' + escapeHtml(item.desc) + '</p>' : '') +
-        '<div class="flex justify-end"><button type="button" class="calendar-planned-detail-action" onclick="closePlannedCalendarDetail();switchTab(\'training-planning\')">Zur Trainingsplanung</button></div></section>';
+        '<div class="flex justify-end"><button type="button" class="calendar-planned-detail-action" onclick="closePlannedCalendarDetail();openPlannedWorkoutModal(\'' + encodeURIComponent(String(item.id)) + '\')">Einheit bearbeiten</button></div></section>';
     globalThis.lucide?.createIcons?.();
 }
 export function closePlannedCalendarDetail() {
