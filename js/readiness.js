@@ -33,6 +33,20 @@ function readMetric(record, key) {
     return record[key] ?? null;
 }
 
+// HRV-Werte dürfen nur dann eine gemeinsame persönliche Baseline bilden,
+// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Fehlende Metadaten
+// bleiben als Legacy/Unbekannt gekennzeichnet und werden nicht mit einer
+// explizit dokumentierten Quelle vermischt.
+function measurementIdentity(record, key) {
+    const source = record?.measurementSources?.[key];
+    if (!source || typeof source !== 'object') return 'legacy:unspecified:ms';
+    return [
+        String(source.source || 'unknown').toLowerCase(),
+        String(source.metric || 'unspecified').toLowerCase(),
+        String(source.unit || 'ms').toLowerCase()
+    ].join(':');
+}
+
 /**
  * Scores a current physiological value against the athlete's own recent
  * distribution. Seven prior observations are the minimum; 28 days are used
@@ -97,9 +111,12 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     const addPhysiological = (key, label, direction, floor) => {
         const value = readMetric(current, key);
         if (!isValid(value)) return;
+        const compatibleHistory = key === 'hrv'
+            ? history.filter(record => measurementIdentity(record, key) === measurementIdentity(current, key))
+            : history;
         const baseline = individualTrendScore(
             value,
-            history.map(record => readMetric(record, key)),
+            compatibleHistory.map(record => readMetric(record, key)),
             direction,
             floor
         );
@@ -110,7 +127,8 @@ export function calculateReadiness(dateKey, sourceState = appState) {
         physiological.push({
             key, label, value: Number(value), score: baseline.score,
             baseline: baseline.baseline, deviation: baseline.deviation,
-            observations: baseline.observations
+            observations: baseline.observations,
+            ...(key === 'hrv' ? { measurementSource: current.measurementSources?.hrv || null } : {})
         });
     };
 
