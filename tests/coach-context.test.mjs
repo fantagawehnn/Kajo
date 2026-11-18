@@ -14,9 +14,11 @@ function offsetDate(days) {
 
 test('natural-language request for last season selects complete available history', () => {
     const oldDate = offsetDate(-240);
+    const futureDate = offsetDate(7);
     const context = buildCoachRequestContext({
         rawActivities: [
-            { date: oldDate, name: 'Historische Einheit', type: 'C1', duration: 75 }
+            { date: oldDate, name: 'Historische Einheit', type: 'C1', duration: 75 },
+            { date: futureDate, name: 'Zukünftige Fehlzuordnung', type: 'C1', duration: 75 }
         ]
     }, 'Analysiere meine letzte Saison');
 
@@ -24,6 +26,8 @@ test('natural-language request for last season selects complete available histor
     assert.equal(context.contextSelection.historyPolicy, 'complete_available_history');
     assert.equal(context.training.activities.length, 1);
     assert.equal(context.training.activities[0].date, oldDate);
+    assert.equal(context.dataCoverage.activities.includedCount, 1);
+    assert.equal(context.dataCoverage.activities.matchedCount, 1);
 });
 
 test('retrospective activity and load windows exclude future records while planned sessions remain future-inclusive', () => {
