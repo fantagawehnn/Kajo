@@ -425,6 +425,7 @@ assert.ok(garminBackendSource.includes('if (rateLimited) break;'), 'The activity
 assert.ok(garminBackendSource.includes('status: rateLimited ? "rate_limited" : failed ? "partial" : "in_progress"'), 'Activity archive results must distinguish rate limiting from ordinary partial failures');
 assert.ok(garminBackendSource.includes('if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;'), 'A lost activity lease must abort archival instead of being swallowed as an endpoint error');
 assert.ok(garminBackendSource.includes('const healthSync = activityFilesSync.rateLimited'), 'The daily health import must pause when activity archival has triggered a Garmin rate limit');
+assert.ok(garminBackendSource.includes('status: "in_progress",\n            deferred: true,\n            retryInSeconds: activityFilesSync.retryInSeconds'), 'A deferred health import must not trigger the short in-request rate-limit retry loop');
 assert.ok(mainSource.includes("activityFilesSync?.status !== 'complete'"), 'The daily sync indicator must not report complete while raw activity files remain unarchived');
 assert.ok(mainSource.includes('activityFilesSync?.rateLimited'), 'The daily sync retry must account for rate-limited activity archive batches');
 
