@@ -208,7 +208,7 @@ assert.ok(calendar.includes("activity.raceFormat ? ' · ' + activity.raceFormat"
 
 assert.ok(calendar.includes("calendarDayEvent('Menstruation dokumentiert'") && calendar.includes("calendarDayEvent(item.name || 'Wettkampf'"), 'health, cycle and competition events remain in the chronological timeline');
 assert.ok(calendar.includes("const results = Array.isArray(item.results) ? item.results : [];") && calendar.includes("' dokumentierte ' + (results.length === 1 ? 'Ergebnis' : 'Ergebnisse')"), 'calendar day timeline summarizes results stored on each competition');
-assert.ok(calendar.includes("'bestes Ergebnis: Platz ' + bestRank"), 'calendar shows the best documented placing without inventing missing results');
+assert.ok(calendar.includes("' · bestes Ergebnis: Platz ' + bestRank") && calendar.includes('Number.isInteger(Number(result?.rank))') && calendar.includes('Number(result?.rank) > 0'), 'calendar shows the best valid documented placing without inventing missing results');
 
 assert.ok(!dayDetail.includes('calendar-day-events') && !dayDetail.includes('calendarRaceRow') && !dayDetail.includes('calendar-day-duration-comparison') && !dayDetail.includes('calendar-day-edit-row'), 'day view excludes unagreed duplicate sections and controls');
 assert.ok(calendar.includes('calendar-day-kpis') && calendar.includes('calendar-day-timeline'), 'day view renders a KPI cockpit and chronological event timeline');
