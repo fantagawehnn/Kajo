@@ -215,6 +215,12 @@ async function syncGarminHealthDay(
   };
 }
 
+function localDateForOffset(timezoneOffsetMinutes: unknown): string {
+  const offset = Number(timezoneOffsetMinutes);
+  const safeOffset = Number.isInteger(offset) && Math.abs(offset) <= 840 ? offset : 0;
+  return new Date(Date.now() - safeOffset * 60_000).toISOString().slice(0, 10);
+}
+
 function addUtcDays(date: string, days: number): string {
   const value = new Date(`${date}T00:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -1322,7 +1328,7 @@ Deno.serve(async (req) => {
     if (action === "sync-range") {
       const startDate = typeof body.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.startDate) ? body.startDate : "";
       const endDate = typeof body.endDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.endDate) ? body.endDate : "";
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localDateForOffset(body.timezoneOffsetMinutes);
       if (!startDate || !endDate || startDate > endDate || endDate > today) {
         return json(400, { error: "Bitte wähle einen gültigen Zeitraum bis einschließlich heute." });
       }
