@@ -1164,9 +1164,31 @@ function renderActivityRouteMap(activity) {
 }
 
 
+function getActivityLapRecords(activity) {
+    const storedLaps = Array.isArray(activity?.laps) ? activity.laps
+        : Array.isArray(activity?.intervals) ? activity.intervals : [];
+    if (storedLaps.length) return storedLaps;
+    const fitLaps = Array.isArray(activity?.garminFitData?.laps) ? activity.garminFitData.laps : [];
+    return fitLaps.map((lap, index) => ({
+        name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
+        kind: 'automatic',
+        duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationUnit: 'seconds',
+        distance: Number.isFinite(Number(lap.distanceKm)) ? Number(lap.distanceKm) * 1000 : null,
+        avgHr: lap.averageHeartRate ?? null,
+        maxHr: lap.maxHeartRate ?? null,
+        avgSpeed: lap.averageSpeedKmh ?? null,
+        maxSpeed: lap.maxSpeedKmh ?? null,
+        startTime: lap.startTime ?? null,
+        startTimeSeconds: lap.startTimeSeconds ?? null,
+        endTimeSeconds: lap.endTimeSeconds ?? null
+    }));
+}
+
 export function focusActivityLap(index) {
     const activity = state.selectedActivityForModal;
-    const lap = Array.isArray(activity?.laps) ? activity.laps[index] : null;
+    const lap = getActivityLapRecords(activity)[index] || null;
     if (!lap || !Number.isFinite(Number(lap.startTimeSeconds)) || !Number.isFinite(Number(lap.endTimeSeconds))) return;
     state.activitySelectedLap = { startTimeSeconds: Number(lap.startTimeSeconds), endTimeSeconds: Number(lap.endTimeSeconds) };
     const chartActivity = activity.garminTelemetry ? { ...activity, telemetry: activity.garminTelemetry } : activity;
@@ -1308,21 +1330,7 @@ function renderOptionalActivityViews(act) {
     // Runden getrennt ausweisen: automatische Runden dürfen keinen Intervallvergleich beeinflussen.
     // FIT-Runden liegen nach dem Garmin-Import unter garminFitData.laps und
     // werden hier in das bestehende Anzeigeformat überführt.
-    const storedLaps = Array.isArray(act.laps) ? act.laps : Array.isArray(act.intervals) ? act.intervals : [];
-    const fitLaps = Array.isArray(act.garminFitData?.laps) ? act.garminFitData.laps : [];
-    const laps = storedLaps.length ? storedLaps : fitLaps.map((lap, index) => ({
-        name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
-        kind: 'automatic',
-        duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
-        durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
-        durationUnit: 'seconds',
-        distance: Number.isFinite(Number(lap.distanceKm)) ? Number(lap.distanceKm) * 1000 : null,
-        avgHr: lap.averageHeartRate ?? null,
-        maxHr: lap.maxHeartRate ?? null,
-        avgSpeed: lap.averageSpeedKmh ?? null,
-        maxSpeed: lap.maxSpeedKmh ?? null,
-        startTime: lap.startTime ?? null
-    }));
+    const laps = getActivityLapRecords(act);
     if (laps.length) {
         const manualCount = laps.filter(lap => lap.kind === 'manual').length;
         const automaticCount = laps.filter(lap => lap.kind === 'automatic').length;
@@ -1395,7 +1403,7 @@ function renderOptionalActivityViews(act) {
                     return '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + detail + '</div></div>';
                 }).join('') + '</div>'
             : '';
-        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote + workoutStepHtml);
+        setPanel('activity-intervals-panel', 'Runden & Trainingsintervalle', summary + rows + comparisonNote + workoutStepHtml);
     } else {
         const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
         const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
