@@ -90,6 +90,7 @@ function selectWindow(records, getDate, from, to, limit) {
 function classifyQuestion(question, today) {
     const q = String(question || '').toLocaleLowerCase('de');
     const fullHistory = /\b(saisonrückblick|saisonanalyse|gesamte trainingshistorie|gesamte historie|gesamten verlauf|über die gesamte saison|ganze saison|seit saisonbeginn|langfristig|langfristige entwicklung)\b/.test(q)
+        || /\b(letzte|vergangene|gesamte|komplette|bisherige)\s+saison\b/.test(q)
         || /\b(analysiere|analysier|bewerte|rückblick|verlauf|entwicklung)\b.{0,40}\bsaison\b/.test(q)
         || /\bsaison\s+20\d{2}\b/.test(q);
     const healthFocused = /\b(krank|krankheit|infekt|verletz|beschwerd|symptom|gesundheit|schmerz|fieber)\b/.test(q);
