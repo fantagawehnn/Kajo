@@ -145,12 +145,32 @@ export function consolidateVisibleCrossSourceDuplicates(activities = state.rawAc
     return consolidated;
 }
 
-function isDuplicateImportedActivity(candidate, existingActivities) {
+function getActivitySourceIdentities(activity) {
+    const sources = new Set([
+        activity?.source,
+        ...(Array.isArray(activity?.sources) ? activity.sources : []),
+        activity?.sourceRefs?.garminActivityId != null ? 'garmin' : null,
+        activity?.sourceRefs?.intervalsActivityId != null ? 'intervals' : null,
+        activity?.manual === true ? 'manual' : null
+    ].filter(value => typeof value === 'string' && value.trim()));
+    return sources;
+}
+
+export function isDuplicateImportedActivity(candidate, existingActivities) {
     const candidateId = candidate.sourceId != null ? String(candidate.sourceId) : null;
+    const candidateSources = getActivitySourceIdentities(candidate);
     return existingActivities.some(existing => {
-        // Eindeutige externe IDs sind der stärkste Duplikat-Hinweis.
-        if (candidateId && existing.sourceId != null && String(existing.sourceId) === candidateId) return true;
-        if (String(existing.id) === String(candidate.id)) return true;
+        const existingSources = getActivitySourceIdentities(existing);
+        const knownDifferentSources = candidateSources.size > 0 && existingSources.size > 0
+            && ![...candidateSources].some(source => existingSources.has(source));
+
+        // Provider-IDs sind nur innerhalb derselben bekannten Quelle eindeutig.
+        // Gleiche numerische IDs von Garmin, Intervals oder FIT dürfen keine
+        // voneinander unabhängigen Aktivitäten unterdrücken.
+        if (!knownDifferentSources) {
+            if (candidateId && existing.sourceId != null && String(existing.sourceId) === candidateId) return true;
+            if (String(existing.id) === String(candidate.id)) return true;
+        }
 
         // Ohne Startzeit niemals allein anhand von Datum und Namen aussortieren:
         // Mehrere gleich benannte Einheiten am selben Tag sind im Leistungssport normal.
