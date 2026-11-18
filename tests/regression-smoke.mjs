@@ -179,6 +179,14 @@ globalThis.fetch = async url => url.includes('/activities')
         id: '2026-11-10', sleepSecs: 28800, weight: null, restingHR: 48, hrv: 72, respiration: 15.2
     }] };
 const importer = await import('../js/import.js');
+assert.equal(importer.isDuplicateImportedActivity(
+    { id: '12345', sourceId: '12345', source: 'fit', date: '2026-11-10', startTime: '2026-11-10T18:00:00Z', type: 'run', duration: 30 },
+    [{ id: '12345', sourceId: '12345', source: 'garmin', date: '2026-11-10', startTime: '2026-11-10T06:00:00Z', type: 'run', duration: 30 }]
+), false, 'identical provider IDs from different known sources must not suppress an import');
+assert.equal(importer.isDuplicateImportedActivity(
+    { id: '12345', sourceId: '12345', source: 'fit', date: '2026-11-10', startTime: '2026-11-10T06:00:00Z', type: 'run', duration: 30 },
+    [{ id: '12345', sourceId: '12345', source: 'fit', date: '2026-11-10', startTime: '2026-11-10T06:00:00Z', type: 'run', duration: 30 }]
+), true, 'identical provider IDs from the same source remain duplicates');
 
 const ambiguousGarmin = [
     { id: 'garmin-a', source: 'garmin', type: 'kayak', startTime: '2026-11-10T08:00:00Z', duration: 60 },
