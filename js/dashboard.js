@@ -74,7 +74,7 @@ function checkinValuesBetween(dateKey,key,days,includeCurrent=false){
       const ms=new Date(date+'T12:00:00').getTime();
       return Number.isFinite(ms)&&ms>=startMs&&(includeCurrent?date<=dateKey:date<dateKey);
     })
-    .map(([,record])=>key==='sleepDuration'?(record.sleepDuration??(Number(record.sleep)>5?record.sleep:null)):record[key]).filter(validNumber).map(Number);
+    .map(([,record])=>({hrv:record.garminHrv??(record.measurementSources?.hrv?.source==='garmin'?record.hrv:null),rhr:record.garminRhr,sleepDuration:record.garminSleepDuration,sleepScore:record.garminSleepScore,respiration:record.garminRespiration}[key]??record[key])).filter(validNumber).map(Number);
 }
 function mean(values){return values.reduce((sum,value)=>sum+value,0)/values.length;}
 function standardDeviation(values,avg){
@@ -792,17 +792,17 @@ export function inspectDay(dayObj) {
     if (stressInspect) stressInspect.textContent = `${checkin.stress ?? '—'} / 10`;
     document.getElementById('inspect-weight-val').textContent = checkin.weight ? `Gewicht: ${checkin.weight} kg` : 'Gewicht: nicht erfasst';
 
-    const sleepDuration=checkin.sleepDuration ?? (Number(checkin.sleep)>5?checkin.sleep:null);
-    const sleepScore=validNumber(checkin.sleepScore)?Math.round(Number(checkin.sleepScore)):null;
-    document.getElementById('wear-rhr').textContent=validNumber(checkin.rhr)?checkin.rhr:'—';
+    const sleepDuration=checkin.garminSleepDuration;
+    const sleepScore=validNumber(checkin.garminSleepScore)?Math.round(Number(checkin.garminSleepScore)):null;
+    document.getElementById('wear-rhr').textContent=validNumber(checkin.garminRhr)?checkin.garminRhr:'—';
     document.getElementById('wear-sleep').textContent=validNumber(sleepDuration)?sleepDuration+' h':'—';
-    const respirationEl=document.getElementById('wear-respiration'); if(respirationEl) respirationEl.textContent=validNumber(checkin.respiration)?Number(checkin.respiration).toFixed(1):'—';
+    const respirationEl=document.getElementById('wear-respiration'); if(respirationEl) respirationEl.textContent=validNumber(checkin.garminRespiration)?Number(checkin.garminRespiration).toFixed(1):'—';
     updateRespirationRange(dayObj.date);
-    document.getElementById('wear-hrv').textContent=validNumber(checkin.hrv)?checkin.hrv:'—';
+    document.getElementById('wear-hrv').textContent=validNumber(checkin.garminHrv??(checkin.measurementSources?.hrv?.source==='garmin'?checkin.hrv:null))?(checkin.garminHrv??checkin.hrv):'—';
     const sleepScoreEl=document.getElementById('wear-sleep-score');
     if(sleepScoreEl)sleepScoreEl.textContent=sleepScore===null?'—':sleepScore;
-    updateWearableRange('wear-rhr','wear-rhr-range',checkin.rhr,'rhr',dayObj.date,'lower');
-    updateWearableRange('wear-hrv','wear-hrv-range',checkin.hrv,'hrv',dayObj.date,'higher');
+    updateWearableRange('wear-rhr','wear-rhr-range',checkin.garminRhr,'rhr',dayObj.date,'lower');
+    updateWearableRange('wear-hrv','wear-hrv-range',checkin.garminHrv??(checkin.measurementSources?.hrv?.source==='garmin'?checkin.hrv:null),'hrv',dayObj.date,'higher');
     updateWearableRange('wear-sleep-score','wear-sleep-score-range',sleepScore,'sleepScore',dayObj.date,'higher');
     updateWearableRange('wear-sleep','wear-sleep-range',sleepDuration,'sleepDuration',dayObj.date,'higher');
     const applySleepColor=(id,color)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('text-white','text-purple-400','text-sky-400','text-rose-400','text-amber-400','text-amber-300','text-emerald-400','text-cyan-300');el.classList.add(color);};
