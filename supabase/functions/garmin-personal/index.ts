@@ -310,11 +310,13 @@ async function syncGarminHealthHistoryBatch(
     if (currentError) throw currentError;
     state = current;
     cursorDate = state.cursor_date ?? startDate;
-    const { error: markRunningError } = await admin.from("garmin_sync_state").update({
+    const { data: markedRunning, error: markRunningError } = await admin.from("garmin_sync_state").update({
       status: "running",
       updated_at: new Date().toISOString(),
-    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+      .select("lock_token").maybeSingle();
     if (markRunningError) throw markRunningError;
+    if (!markedRunning) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung ging vor dem Start verloren.");
 
     if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
       const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
@@ -335,9 +337,12 @@ async function syncGarminHealthHistoryBatch(
 
     if (state.status === "completed" && cursorDate > endDate) {
       if (!rescanCompleted) {
-        await admin.from("garmin_sync_state").update({
+        const { data: released, error: releaseError } = await admin.from("garmin_sync_state").update({
           lock_token: null, lock_expires_at: null, updated_at: new Date().toISOString(),
-        }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+        }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+          .select("sync_type").maybeSingle();
+        if (releaseError) throw releaseError;
+        if (!released) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung konnte nicht freigegeben werden.");
         return {
           status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
           message: "Der ausgewählte Garmin-Zeitraum ist bereits vollständig importiert.",
@@ -381,8 +386,6 @@ async function syncGarminHealthHistoryBatch(
         retryInSeconds = Number(dayResult.retryInSeconds || 0);
         const { error } = await admin.from("garmin_sync_state").update({
           status: "error",
-          lock_token: null,
-          lock_expires_at: null,
           last_error: `Abruffehler am ${cursorDate}; derselbe Tag wird beim nächsten Lauf erneut versucht.`,
           updated_at: new Date().toISOString(),
         }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
@@ -408,13 +411,15 @@ async function syncGarminHealthHistoryBatch(
     const remainingDays = cursorDate > endDate ? 0 :
       Math.floor((new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${cursorDate}T00:00:00Z`).getTime()) / 86400000) + 1;
     const finalStatus = failed ? "error" : remainingDays === 0 ? "completed" : "pending";
-    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+    const { data: released, error: releaseError } = await admin.from("garmin_sync_state").update({
       status: finalStatus,
       lock_token: null,
       lock_expires_at: null,
       updated_at: new Date().toISOString(),
-    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+      .select("sync_type").maybeSingle();
     if (releaseError) throw releaseError;
+    if (!released) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung konnte nicht freigegeben werden.");
 
     return {
       status: rateLimited ? "rate_limited" : failed ? "partial" : remainingDays === 0 ? "complete" : "in_progress",
