@@ -2793,7 +2793,9 @@ async function syncGarminTodayOnOpen(userId) {
         }
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
-        if (activeAppUserId === userId && appUserReady) setGarminSyncIndicator('current', 'Verbunden');
+        if (activeAppUserId === userId && appUserReady) {
+            setGarminSyncIndicator('partial', 'Synchronisierung unvollständig');
+        }
     } finally {
         garminDailySyncInFlight.delete(runKey);
     }
