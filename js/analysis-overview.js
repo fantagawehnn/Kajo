@@ -6,6 +6,7 @@ import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
 import { renderHeartRateZoneDistribution } from './charts.js';
 import { calculatePeriodSummary } from './period-summary.js';
+import { getVisibleActivities } from './activity-groups.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -286,8 +287,10 @@ function renderPeriodSummary() {
   const note = document.getElementById('analysis-period-summary-note');
   if (!root) return;
   const range = currentRange();
+  // Use the same de-duplicated, grouped activity view as the period charts.
+  const summaryActivities = getVisibleActivities(getActivitiesInRange(rangeDates(range)));
   const summary = calculatePeriodSummary({
-    activities: state.rawActivities, races: state.races, healthLogs: state.healthLogs,
+    activities: summaryActivities, races: state.races, healthLogs: state.healthLogs,
     from: range.from, to: range.to
   });
   if (!summary.validRange) {
