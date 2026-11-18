@@ -337,13 +337,13 @@ activities.updateActivityRPE(8);
 assert.equal(editable.perceivedEffort, 8);
 assert.equal(editable.sRpeLoad, 480);
 // Garmin-Load: explicit zero is valid, but absent/null values must stay missing.
-const mainSource = await readFile(new URL('../js/main.js', import.meta.url), 'utf8');
+const mainSource = (await readFile(new URL('../js/main.js', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
 assert.ok(mainSource.includes('const nativeLoadValue = a.trainingLoad ?? a.activityTrainingLoad ?? a.aerobicTrainingLoad;'));
 assert.ok(mainSource.includes("nativeLoadValue != null && nativeLoadValue !== ''"));
 assert.ok(mainSource.includes('garminTrainingLoad: Number.isFinite(nativeLoad) && nativeLoad >= 0 ? nativeLoad : null,'));
 
 // Garmin backend validation must use real digit classes, not a literal escaped \\d sequence.
-const garminBackendSource = await readFile(new URL('../supabase/functions/garmin-personal/index.ts', import.meta.url), 'utf8');
+const garminBackendSource = (await readFile(new URL('../supabase/functions/garmin-personal/index.ts', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
 assert.ok(garminBackendSource.includes('if (!/^\\d+$/.test(activityId))'),
     'Garmin activity IDs must be validated with a digit character class');
 assert.ok(garminBackendSource.includes('const activityDate = /^\\d{4}-\\d{2}-\\d{2}/.test(localStart)'),
@@ -371,10 +371,10 @@ assert.ok(mainSource.includes("setGarminSyncIndicator('partial', 'Synchronisieru
 
 
 // Garmin sync audit history must record outcome, source and timezone without exposing it to clients.
-const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
-const garminLeaseMigration = await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8');
-const garminHealthDayLeaseMigration = await readFile(new URL('../supabase/migrations/20261118140000_garmin_health_day_sync_lease.sql', import.meta.url), 'utf8');
-const garminSyncEventsMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
+const garminSyncMigration = (await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+const garminLeaseMigration = (await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+const garminHealthDayLeaseMigration = (await readFile(new URL('../supabase/migrations/20261118140000_garmin_health_day_sync_lease.sql', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+const garminSyncEventsMigration = (await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
 assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
 assert.ok(garminBackendSource.includes('async function withGarminActivityLease'), 'Activity-list sync must use a separate per-user lease');
 assert.ok(garminBackendSource.includes('.from("garmin_activity_sync_leases")'), 'Activity-list lease must use its own table, isolated from the health-history cursor');
