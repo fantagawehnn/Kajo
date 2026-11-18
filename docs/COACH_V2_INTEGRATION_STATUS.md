@@ -10,7 +10,7 @@ Stand: 2026-11-18
 - Die Coach-Integration bleibt isoliert auf dem Feature-Branch.
 - `v2` wurde durch diese Arbeiten nicht verändert.
 - Es wurde kein Merge, Rebase, Pull Request oder Deployment ausgeführt.
-- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 27 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
+- Der aktuelle Branchvergleich zeigt: `feature/coach-v2-integration` liegt 30 Commits vor und 2 Commits hinter `v2`. Die zwei neueren `v2`-Commits betreffen die Garmin-Archivfeldanalyse sowie Cache-Buster in `index.html` und `js/main.js`; sie wurden noch nicht übernommen. Die überlappenden Änderungen an `js/main.js` müssen beim späteren Abgleich bewusst zusammengeführt werden.
 
 ## Umgesetzte Coach-Integration
 
@@ -36,13 +36,14 @@ Stand: 2026-11-18
 
 Die bestehende GitHub-Actions-CI wurde so erweitert, dass sie auch auf Pushes nach `feature/coach-v2-integration` läuft. Der Feature-Branch nutzt dabei GitHub-hosted Ubuntu; der produktive Deploy-Job ist weiterhin ausschließlich an Pushes auf `v2` gebunden.
 
-Zwei CI-Läufe auf dem Feature-Branch wurden am 18.11.2026 erfolgreich abgeschlossen:
+Am 18.11.2026 wurden mehrere CI-Läufe auf dem Feature-Branch erfolgreich abgeschlossen:
 
-- Run [44362793490](https://github.com/fantagawehnn/Kajo/actions/runs/44362793490): Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests erfolgreich.
-- Run [44362844729](https://github.com/fantagawehnn/Kajo/actions/runs/44362844729): dieselben Prüfschritte auf dem nachfolgenden Commit erfolgreich.
-- Der Cloudflare-Deploy-Job wurde in beiden Läufen erwartungsgemäß übersprungen, da es keine Pushes auf `v2` waren.
+- Run [44362793490](https://github.com/fantagawehnn/Kajo/actions/runs/44362793490) und Run [44362844729](https://github.com/fantagawehnn/Kajo/actions/runs/44362844729): Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests erfolgreich.
+- Run [44363230293](https://github.com/fantagawehnn/Kajo/actions/runs/44363230293): dieselben Prüfschritte nach der Aktualisierung der Integrationsdokumentation erfolgreich.
+- Run [44363590191](https://github.com/fantagawehnn/Kajo/actions/runs/44363590191): zusätzlich die neuen Coach-Worker-Sicherheitstests erfolgreich. Diese prüfen unter anderem HTTP-Methode, fremde Origin, fehlende Supabase-Konfiguration und ungültige/abgelaufene Sitzungen sowie, dass bei ungültiger Sitzung weder Rate Limiter noch KI aufgerufen werden.
+- Der Cloudflare-Deploy-Job wurde erwartungsgemäß übersprungen, da es keine Pushes auf `v2` waren.
 
-Die Tests sind damit in GitHub Actions erfolgreich gelaufen. Das ersetzt noch keinen Browser-/Runtime-Test gegen einen tatsächlich konfigurierten Worker und kein Deployment.
+Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Das ersetzt noch keinen Browser-/Runtime-Test gegen einen tatsächlich konfigurierten Worker und kein Deployment.
 
 ## Vor Livebetrieb zwingend offen
 
