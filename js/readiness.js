@@ -37,9 +37,8 @@ function readMetric(record, key) {
 }
 
 // HRV-Werte dürfen nur dann eine gemeinsame persönliche Baseline bilden,
-// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Fehlende Metadaten
-// bleiben als Legacy/Unbekannt gekennzeichnet und werden nicht mit einer
-// explizit dokumentierten Quelle vermischt.
+// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Das dedizierte
+// garminHrv-Feld kennzeichnet Garmin; unzugeordnete Legacy-Felder bleiben unbekannt.
 function measurementIdentity(record, key) {
     const source = record?.measurementSources?.garminHrv || record?.measurementSources?.hrv;
     if (!source || typeof source !== 'object') return record?.garminHrv != null ? 'garmin:unspecified:ms' : 'legacy:unspecified:ms';
