@@ -773,6 +773,7 @@ async function garminDownloadFit(token: string, activityId: string): Promise<str
 
 
 async function garminDownloadFitFile(token: string, activityId: string): Promise<{ bytes: Uint8Array; extension: "zip" | "fit"; contentType: string }> {
+  await waitForGarminRequestSlot();
   const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/zip, application/octet-stream, */*" },
   });
@@ -800,29 +801,44 @@ async function syncActivityFilesBatch(
   admin: ReturnType<typeof createClient>,
   userId: string,
   batchSize = 5,
+  renewLease: () => Promise<void>,
 ) {
-  const { data: activities, error: activitiesError } = await admin
-    .from("garmin_activities")
-    .select("garmin_activity_id, start_time")
-    .eq("user_id", userId)
-    .order("start_time", { ascending: false })
-    .limit(1000);
-  if (activitiesError) throw activitiesError;
+  // Walk every database page from oldest to newest. A fixed first-page limit
+  // would silently leave older activities without archived details or FIT files.
+  const pageSize = 500;
+  let offset = 0;
+  let totalActivities = 0;
+  const selected: Array<{ garmin_activity_id: string; start_time: string | null }> = [];
+  const detailById = new Map<string, Record<string, unknown>>();
 
-  const { data: detailRows, error: detailRowsError } = await admin
-    .from("garmin_activity_details")
-    .select("garmin_activity_id, detail_synced_at, workouts_synced_at, fit_synced_at")
-    .eq("user_id", userId);
-  if (detailRowsError) throw detailRowsError;
+  while (selected.length < batchSize) {
+    const { data: page, error: pageError, count } = await admin
+      .from("garmin_activities")
+      .select("garmin_activity_id, start_time", { count: "exact" })
+      .eq("user_id", userId)
+      .order("start_time", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (pageError) throw pageError;
+    if (typeof count === "number") totalActivities = count;
+    if (!page?.length) break;
 
-  const detailById = new Map(
-    (detailRows ?? []).map((row) => [String(row.garmin_activity_id), row]),
-  );
-  const pending = (activities ?? []).filter((activity) => {
-    const saved = detailById.get(String(activity.garmin_activity_id));
-    return !saved?.detail_synced_at || !saved?.workouts_synced_at || !saved?.fit_synced_at;
-  });
-  const selected = pending.slice(0, batchSize);
+    const pageIds = page.map((activity) => String(activity.garmin_activity_id));
+    const { data: pageDetails, error: pageDetailsError } = await admin
+      .from("garmin_activity_details")
+      .select("garmin_activity_id, detail_synced_at, workouts_synced_at, fit_synced_at")
+      .eq("user_id", userId)
+      .in("garmin_activity_id", pageIds);
+    if (pageDetailsError) throw pageDetailsError;
+    for (const row of pageDetails ?? []) detailById.set(String(row.garmin_activity_id), row);
+
+    const pending = page.filter((activity) => {
+      const saved = detailById.get(String(activity.garmin_activity_id));
+      return !saved?.detail_synced_at || !saved?.workouts_synced_at || !saved?.fit_synced_at;
+    });
+    selected.push(...pending.slice(0, batchSize - selected.length));
+    offset += page.length;
+    if (page.length < pageSize) break;
+  }
 
   if (!selected.length) {
     return {
@@ -864,7 +880,9 @@ async function syncActivityFilesBatch(
 
     if (!saved?.detail_synced_at) {
       try {
+        await renewLease();
         const detail = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}`);
+        await renewLease();
         if (detail == null) throw new Error("Keine Aktivitätsdetails von Garmin erhalten.");
         const { error } = await admin.from("garmin_activity_details").upsert({
           user_id: userId,
@@ -884,7 +902,9 @@ async function syncActivityFilesBatch(
 
     if (!saved?.workouts_synced_at) {
       try {
+        await renewLease();
         const workouts = await garminGet(token, `/activity-service/activity/${encodeURIComponent(activityId)}/workouts`);
+        await renewLease();
         const { error } = await admin.from("garmin_activity_details").upsert({
           user_id: userId,
           garmin_activity_id: activityId,
@@ -903,7 +923,9 @@ async function syncActivityFilesBatch(
 
     if (!saved?.fit_synced_at) {
       try {
+        await renewLease();
         const fitFile = await garminDownloadFitFile(token, activityId);
+        await renewLease();
         const objectPath = `${userId}/${activityId}.${fitFile.extension}`;
         const { error: uploadError } = await admin.storage.from("garmin-fit").upload(
           objectPath,
@@ -948,27 +970,19 @@ async function syncActivityFilesBatch(
   }
 
   const failed = results.filter((item) => item.details === "error" || item.workouts === "error" || item.fit === "error").length;
-  const { data: refreshedDetails, error: refreshedError } = await admin
-    .from("garmin_activity_details")
-    .select("garmin_activity_id, detail_synced_at, workouts_synced_at, fit_synced_at")
-    .eq("user_id", userId);
-  if (refreshedError) throw refreshedError;
-  const refreshedById = new Map(
-    (refreshedDetails ?? []).map((row) => [String(row.garmin_activity_id), row]),
-  );
-  const remaining = (activities ?? []).filter((activity) => {
-    const row = refreshedById.get(String(activity.garmin_activity_id));
-    return !row?.detail_synced_at || !row?.workouts_synced_at || !row?.fit_synced_at;
-  }).length;
 
   return {
-    status: failed ? "partial" : remaining ? "in_progress" : "complete",
-    totalActivities: activities?.length ?? 0,
-    pendingActivities: pending.length,
+    // A processed batch is not the end of the archive. The next invocation
+    // scans all pages again and reports complete only when no pending item remains.
+    status: failed ? "partial" : "in_progress",
+    totalActivities,
+    pendingActivities: selected.length,
     processed: selected.length,
     succeeded: selected.length - failed,
     failed,
-    remaining,
+    fetched: selected.length,
+    stored: selected.length - failed,
+    remaining: null,
     results,
   };
 }
@@ -1264,7 +1278,7 @@ async function syncGarminActivitiesForUserUnlocked(
       return {
         user_id: userId,
         garmin_activity_id: activityId,
-        activity,
+        activity: item,
         start_time: startTime,
         activity_type: activity.activityType == null ? null : String(activity.activityType),
         duration_seconds: Number.isFinite(duration) && duration > 0 ? duration : null,
