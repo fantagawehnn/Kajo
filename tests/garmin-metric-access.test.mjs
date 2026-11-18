@@ -40,6 +40,9 @@ test('VO2max is displayed only when explicitly marked as a Garmin archive estima
     assert.equal(getGarminCheckinMetric({
         vo2max: 55, vo2maxSource: 'garmin-estimate'
     }, 'vo2max'), 55);
+    assert.equal(getGarminCheckinMetric({
+        vo2max: 49, garminVo2max: 56, garminVo2maxSource: 'garmin-export-metrics-max-met'
+    }, 'vo2max'), 56);
 });
 
 test('missing, empty and non-numeric Garmin metrics remain unavailable', () => {
