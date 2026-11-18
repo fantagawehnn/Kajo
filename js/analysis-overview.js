@@ -5,6 +5,7 @@
 import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
 import { renderHeartRateZoneDistribution } from './charts.js';
+import { calculatePeriodSummary } from './period-summary.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -279,6 +280,45 @@ function renderActivityChart() {
   }).join('') || '<p class="kajo-analysis-chart-note">Für diese Darstellung liegen keine auswertbaren Werte vor.</p>';
   updateActivitySwitch();
 }
+
+function renderPeriodSummary() {
+  const root = document.getElementById('analysis-period-summary');
+  const note = document.getElementById('analysis-period-summary-note');
+  if (!root) return;
+  const range = currentRange();
+  const summary = calculatePeriodSummary({
+    activities: state.rawActivities, races: state.races, healthLogs: state.healthLogs,
+    from: range.from, to: range.to
+  });
+  if (!summary.validRange) {
+    root.innerHTML = '';
+    if (note) note.textContent = 'Bitte einen gültigen Zeitraum auswählen.';
+    return;
+  }
+  const duration = summary.durationMinutes === null ? '—' : fmt(summary.durationMinutes / 60) + ' h';
+  const durationDetail = summary.durationCount
+    ? 'Dauer für ' + summary.durationCount + ' / ' + summary.activityCount + ' Einheiten erfasst'
+    : 'Keine auswertbaren Dauern';
+  const cards = [
+    ['Einheiten', summary.activityCount, 'Dokumentierte Aktivitäten'],
+    ['Trainingstage', summary.trainingDays, 'Tage mit mindestens einer Aktivität'],
+    ['Erfasste Trainingszeit', duration, durationDetail],
+    ['Wettkämpfe', summary.raceCount, summary.resultCount + ' Starts mit Ergebnis'],
+    ['Podien / Siege', summary.podiumCount + ' / ' + summary.winCount, 'Nur dokumentierte Platzierungen'],
+    ['Krankheit / Verletzung', summary.sickDays + ' / ' + summary.injuredDays, 'Dokumentierte Tage']
+  ];
+  root.innerHTML = cards.map(([label, value, detail]) =>
+    '<div class="kajo-insight-metric"><span>' + escapeHtml(label) + '</span><strong>' +
+    escapeHtml(String(value)) + '</strong><small>' + escapeHtml(detail) + '</small></div>'
+  ).join('');
+  if (note) {
+    const incompleteDuration = summary.durationCount < summary.activityCount;
+    note.textContent = 'Zeitraum ' + dateLabel(range.from) + ' – ' + dateLabel(range.to) +
+      '. Trainingstage zählen nur Tage mit gespeicherten Aktivitäten; fehlende Einträge werden nicht als Ruhetage interpretiert.' +
+      (incompleteDuration ? ' Die Trainingszeit ist unvollständig, weil nicht für alle Einheiten eine Dauer vorliegt.' : '');
+  }
+}
+
 function renderIntensityDistribution() {
   const dates = rangeDates(currentRange());
   const activities = getActivitiesInRange(dates);
@@ -296,4 +336,5 @@ export function renderAnalysisOverview() {
   renderTrendChart();
   renderActivityChart();
   renderIntensityDistribution();
+  renderPeriodSummary();
 }
