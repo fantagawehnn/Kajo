@@ -110,6 +110,28 @@ test('insufficient data does not produce a false training clearance', () => {
     assert.match(recommendation.title, /nicht sicher beurteilbar/);
 });
 
+test('stale training-load status is not used as current-day context', () => {
+    const staleDate = new Date(day + 'T12:00:00');
+    staleDate.setDate(staleDate.getDate() - 3);
+    const staleKey = staleDate.toISOString().slice(0, 10);
+    const source = makeState({
+        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 4 } },
+        dailyTimeline: [{ date: staleKey, load: 200, ctl: 20, atl: 50, tsb: -30, statusLabel: 'Hohe Ermüdung' }]
+    });
+    const recommendation = buildTrainingRecommendation(day, [{ date: day, name: 'Technik', duration: 45, category: 'tech' }], source);
+    assert.doesNotMatch(recommendation.detail, /Belastungsmodell zeigt/);
+});
+
+test('planned target load is not equated with Garmin or KAJO load units', () => {
+    const source = makeState({
+        dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 4 } }
+    });
+    const recommendation = buildTrainingRecommendation(day, [{
+        date: day, name: 'Intervalle', duration: 60, category: 'interval', targetTss: 100
+    }], source);
+    assert.match(recommendation.detail, /nicht direkt vergleichbar/);
+});
+
 test('multiple planned sessions are explicitly considered in the daily recommendation', () => {
     const source = makeState({
         dailyCheckins: { [day]: { hrv: 60, sleepScore: 90, sleepQuality: 4 } }
