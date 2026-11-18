@@ -292,7 +292,7 @@ function calendarDayTime(value) {
     return match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
 }
 function calendarDayHasCheckin(checkin) {
-    return ['sleepQuality','soreness','fatigue','motivation','stress','garminHrv','garminRhr','garminSleepDuration','garminSleepScore','garminBodyBattery','note']
+    return ['sleepQuality','soreness','fatigue','motivation','stress','garminHrv','garminRhr','garminSleepDuration','garminSleepScore','garminRespiration','garminBodyBattery','garminStress','garminSpo2','garminSteps','garminFitnessAge','garminWeight','note']
         .some(key => checkin?.[key] !== null && checkin?.[key] !== undefined && checkin?.[key] !== '');
 }
 function calendarDayEvent(label, detail, time, kind) {
