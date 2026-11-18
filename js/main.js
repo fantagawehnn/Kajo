@@ -2767,7 +2767,9 @@ async function syncGarminTodayOnOpen(userId) {
 
         if (activeAppUserId !== userId || !appUserReady) return;
         const activitySync = response?.sync?.activitySync || null;
+        const activityFilesSync = response?.sync?.activityFilesSync || null;
         const partial = activitySync?.status !== 'ok'
+            || activityFilesSync?.status !== 'complete'
             || health?.status !== 'complete'
             || Number(health?.failed || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
@@ -2775,10 +2777,10 @@ async function syncGarminTodayOnOpen(userId) {
         if (partial) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
-            if (activitySync?.status !== 'ok' || health?.status !== 'complete'
+            if (activitySync?.status !== 'ok' || activityFilesSync?.status !== 'complete' || health?.status !== 'complete'
                 || jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
                 const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000
-                    : activitySync?.status === 'in_progress' || health?.status === 'in_progress' ? 5 * 60 * 1000 + 10000
+                    : activitySync?.status === 'in_progress' || activityFilesSync?.status === 'in_progress' || health?.status === 'in_progress' ? 5 * 60 * 1000 + 10000
                     : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
                     if (activeAppUserId === userId && appUserReady && !garminDailySyncCompleted.has(runKey)) {
