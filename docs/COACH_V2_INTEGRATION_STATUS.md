@@ -10,9 +10,9 @@ Stand: 2026-11-18
 - Die Coach-Integration liegt weiterhin auf `feature/coach-v2-integration`; der Abgleich mit `v2` erfolgte durch einen Merge-Commit ausschließlich auf dem Feature-Branch.
 - `v2` wurde durch diese Integrationsarbeiten nicht verändert.
 - PR [#81](https://github.com/fantagawehnn/Kajo/pull/81) ist geöffnet und weiterhin Draft.
-- Aktueller Branchvergleich am 18.11.2026: 45 Commits voraus, 0 Commits zurück; Merge-Basis `42002a94dfafd0762c5937253dde4d290a499e88`.
+- Aktueller Branchvergleich am 18.11.2026: 47 Commits voraus, 0 Commits zurück; Merge-Basis `54cb4b3dff21e0ad04158e5063279b70e8c4c048`.
 - GitHub meldet für PR #81 `mergeable: true`. Der PR ist jedoch noch nicht zusammengeführt.
-- Die neueren Garmin-Archiv- und Readiness-Änderungen aus `v2` bleiben erhalten. In `index.html` ist `main.js?v=149` gesetzt; `js/main.js` verwendet `garmin-export-archive.js?v=3` und lädt `coach.js?v=2`.
+- Die neueren Garmin-Archiv- und Readiness-Änderungen aus `v2` bleiben erhalten. Auch der aktuelle Garmin-Archiv-Fix (numerische Aktivitäts-IDs, Analyseversion 6 und aktualisierte Navigation-Smoke-Tests) wurde in den Feature-Branch übernommen. In `index.html` ist `main.js?v=150` gesetzt; `js/main.js` verwendet `garmin-export-archive.js?v=4` und lädt `coach.js?v=2`.
 
 ## Umgesetzte Coach-Integration
 
@@ -46,7 +46,7 @@ Am 18.11.2026 wurden mehrere CI-Läufe auf dem Feature-Branch erfolgreich abgesc
 - Run [44363998803](https://github.com/fantagawehnn/Kajo/actions/runs/44363998803): erweiterte Worker-Fehlerpfadtests erfolgreich. Abgedeckt sind nun zusätzlich fehlendes/ausgefallenes Rate Limiting, überschrittene Limits, fehlerhaftes JSON, zu großer Kontext, AI-Fehler, leere AI-Antwort und erfolgreicher Antwortpfad.
 - Run [44364080844](https://github.com/fantagawehnn/Kajo/actions/runs/44364080844): vollständige CI nach zusätzlicher Absicherung fehlerhafter Supabase-Antworten und fehlender AI-Binding-Konfiguration erfolgreich. Die Coach-Worker-Tests prüfen jetzt auch diese beiden Fälle.
 - Run [44364801873](https://github.com/fantagawehnn/Kajo/actions/runs/44364801873): vollständige CI nach Ergänzung der Tests für die harte Streaming-Requestgrößenbegrenzung sowie Pflichtfelder und Kontextform erfolgreich; zu diesem Zeitpunkt waren 17 Worker-Tests enthalten. Danach wurde die serverseitige Supabase-Sessionprüfung mit einem 8-Sekunden-Timeout abgesichert; ein Timeout wird kontrolliert mit HTTP 504 beantwortet. Der zusätzliche Timeout-Regressionstest und die vollständige CI waren in Run [44365416489](https://github.com/fantagawehnn/Kajo/actions/runs/44365416489) erfolgreich. `tests/coach-worker.test.mjs` enthält nun 18 Worker-Tests.
-- Aktueller Integrationsstand: PR-CI Run [44368060304](https://github.com/fantagawehnn/Kajo/actions/runs/44368060304) und Push-CI Run [44368049007](https://github.com/fantagawehnn/Kajo/actions/runs/44368049007) erfolgreich. Beide Läufe umfassen Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Coach-Worker-Sicherheitstests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, Readiness-Tests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests.
+- Aktueller Integrationsstand nach Übernahme des neuesten Garmin-Archiv-Fixes: PR-CI Run [44368857380](https://github.com/fantagawehnn/Kajo/actions/runs/44368857380) und Push-CI Run [44368844178](https://github.com/fantagawehnn/Kajo/actions/runs/44368844178) erfolgreich. Beide Läufe umfassen Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Coach-Worker-Sicherheitstests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, Readiness-Tests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests.
 - Für beide Läufe war der produktive Cloudflare-Deploy-Job erwartungsgemäß übersprungen, da kein Push auf `v2` erfolgte.
 - Cloudflare hat für Commit `c3736e2113f2acbe7bfb79d3b7041300bcedc391` einen Preview-Worker erfolgreich gebaut und bereitgestellt. Preview-URL: https://feature-coach-v2-integration-kajo.fantagawehn.workers.dev. Das ist eine Preview-Bereitstellung, kein Produktionsdeploy und kein Nachweis eines vollständigen Browser-/Coach-Funktionstests.
 
