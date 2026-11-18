@@ -44,18 +44,41 @@ function updateSportOptions(){
 function getPerformanceTimeline(){return selectedSport==='all'?(Array.isArray(state.dailyTimeline)?state.dailyTimeline:[]):computePerformanceTimeline(allActivities(),state.settings||{},state.profile||{},state.dailyCheckins||{});}
 function selectedTimeline(){const range=getRange(),map=new Map(getPerformanceTimeline().map(day=>[day.date,day]));return dateKeys(range).map(date=>map.get(date)||{date,ctl:null,atl:null,tsb:null,load:null,dataStatus:'unknown',activityCount:0});}
 function lastValidLoadDay(timeline){for(let i=timeline.length-1;i>=0;i--){const row=timeline[i];if(valid(row.ctl)||valid(row.atl)||valid(row.tsb))return row;}return null;}
+function valueLevel(value,timeline,key){
+ const values=timeline.map(row=>row?.[key]).filter(valid).map(Number);
+ if(!valid(value)||!values.length)return{level:'unavailable',label:'Kein Wert',color:'#64748b'};
+ const min=Math.min(...values),max=Math.max(...values);
+ if(max===min)return{level:'medium',label:'Im bisherigen Bereich',color:'#55B6A4'};
+ const position=(Number(value)-min)/(max-min);
+ if(position<1/3)return{level:'low',label:'Niedriger Wert im gewählten Zeitraum',color:'#6DA8F7'};
+ if(position<2/3)return{level:'medium',label:'Mittlerer Wert im gewählten Zeitraum',color:'#55B6A4'};
+ return{level:'high',label:'Hoher Wert im gewählten Zeitraum',color:'#A78BFA'};
+}
+function tsbLevel(value){
+ if(!valid(value))return{level:'unavailable',label:'Kein Wert',color:'#64748b'};
+ if(Number(value)<0)return{level:'negative',label:'Negativer TSB · höhere akute Belastung als CTL',color:'#D96A78'};
+ if(Number(value)>0)return{level:'positive',label:'Positiver TSB · niedrigere akute Belastung als CTL',color:'#55B6A4'};
+ return{level:'neutral',label:'TSB bei null · akute und langfristige Belastung gleich',color:'#E5C45B'};
+}
 function renderRings(timeline){
  const root=document.getElementById('training-load-rings');if(!root)return;const last=lastValidLoadDay(timeline);
  const items=[
-  {key:'ctl',label:'CTL',value:last?.ctl,detail:'Langfristig',color:colors.ctl},
-  {key:'atl',label:'ATL',value:last?.atl,detail:'Kurzfristig',color:colors.atl},
-  {key:'tsb',label:'TSB',value:last?.tsb,detail:'CTL minus ATL',color:valid(last?.tsb)?(Number(last.tsb)<0?'#D98A6F':Number(last.tsb)>0?'#55B6A4':colors.tsb):colors.tsb}
+  {key:'ctl',label:'CTL',value:last?.ctl,detail:'Langfristig',status:valueLevel(last?.ctl,timeline,'ctl')},
+  {key:'atl',label:'ATL',value:last?.atl,detail:'Kurzfristig',status:valueLevel(last?.atl,timeline,'atl')},
+  {key:'tsb',label:'TSB',value:last?.tsb,detail:'CTL minus ATL',status:tsbLevel(last?.tsb)}
  ];
- root.replaceChildren();items.forEach(item=>{const card=document.createElement('div');card.className='kajo-load-metric';const ring=document.createElement('span');ring.className='kajo-load-ring';ring.style.setProperty('--load-ring-color',item.color);ring.dataset.metric=item.key;const value=document.createElement('strong');value.textContent=fmt(item.value);ring.appendChild(value);const label=document.createElement('span');label.className='kajo-load-label';label.textContent=item.label;const detail=document.createElement('small');detail.textContent=item.detail;card.append(ring,label,detail);root.appendChild(card);});
+ root.replaceChildren();items.forEach(item=>{
+  const card=document.createElement('div');card.className='kajo-load-metric';
+  const ring=document.createElement('span');ring.className='kajo-load-ring';ring.style.setProperty('--load-ring-color',item.status.color);ring.dataset.metric=item.key;ring.dataset.valueLevel=item.status.level;ring.title=item.label+': '+item.status.label;
+  const value=document.createElement('strong');value.textContent=fmt(item.value);ring.appendChild(value);
+  const label=document.createElement('span');label.className='kajo-load-label';label.textContent=item.label;
+  const detail=document.createElement('small');detail.textContent=item.detail;
+  card.append(ring,label,detail);root.appendChild(card);
+ });
  setText('training-load-status-date',last?'Stand '+new Date(last.date+'T12:00:00').toLocaleDateString('de-DE'):'Keine gültigen Modellwerte');
  const mode=last?.loadMode==='srpe'?'sRPE-Load':last?.loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Belastungsmodell';
  setText('training-load-status-title',mode);
- setText('training-load-status-note',last?'CTL und ATL beruhen auf derselben Belastungsskala. TSB ist die Differenz aus CTL und ATL. Die Kreise zeigen Messwerte, keinen künstlichen Fortschritt oder Zielerreichungs-Prozentwert.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
+ setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum; TSB zeigt die Belastungsbilanz (negativ, neutral oder positiv). Die Kreise zeigen Messwerte, keinen künstlichen Fortschritt oder Zielerreichungs-Prozentwert.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
 }
 function renderVolumeSummary(activities,range){
  const hasDuration=item=>item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0;
