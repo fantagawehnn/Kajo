@@ -390,7 +390,7 @@ export async function importGarminExportArchive(importId) {
             100,
             context.errors.length ? 'info' : 'success'
         );
-        const { renderGarminExportArchiveHistory } = await import('./garmin-export-archive.js?v=3');
+        const { renderGarminExportArchiveHistory } = await import('./garmin-export-archive.js?v=4');
         await renderGarminExportArchiveHistory();
     } catch (error) {
         console.error('[KAJO Garmin-Komplettimport]', error);
