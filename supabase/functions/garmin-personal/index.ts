@@ -927,7 +927,6 @@ async function withGarminActivityLease<T extends Record<string, unknown>>(
   endDate: string,
   operation: (renewLease: () => Promise<void>) => Promise<T>,
 ): Promise<T | Record<string, unknown>> {
-  const syncType = "activity_list";
   const lockToken = crypto.randomUUID();
   const leaseMinutes = 15;
   const leaseExpiry = () => new Date(Date.now() + leaseMinutes * 60_000).toISOString();
@@ -945,7 +944,7 @@ async function withGarminActivityLease<T extends Record<string, unknown>>(
   }
 
   const { data: claimed, error: claimError } = await admin.from("garmin_activity_sync_leases")
-    .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), last_started_at: now, updated_at: now })
+    .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), updated_at: now })
     .eq("user_id", userId)
     .or(`lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.${now}`)
     .select("user_id").maybeSingle();
@@ -974,14 +973,6 @@ async function withGarminActivityLease<T extends Record<string, unknown>>(
   try {
     await renewLease();
     return await operation(renewLease);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
-    const { error: releaseError } = await admin.from("garmin_activity_sync_leases").update({
-      status: "error", lock_token: null, lock_expires_at: null,
-      last_error: message.slice(0, 500), updated_at: new Date().toISOString(),
-    }).eq("user_id", userId).eq("lock_token", lockToken);
-    if (releaseError) console.error("Garmin activity-list lease could not be released:", releaseError);
-    throw error;
   } finally {
     const { error: releaseError } = await admin.from("garmin_activity_sync_leases").update({
       lock_token: null, lock_expires_at: null, updated_at: new Date().toISOString(),
