@@ -161,6 +161,51 @@ async function loadExistingPaths(userId, importId) {
     return paths;
 }
 
+async function loadExistingGarminActivityIds(userId) {
+    const ids = new Set();
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase.from('garmin_activities')
+            .select('garmin_activity_id')
+            .eq('user_id', userId)
+            .order('garmin_activity_id', { ascending: true })
+            .range(from, from + pageSize - 1);
+        if (error) throw error;
+        for (const row of data || []) ids.add(String(row.garmin_activity_id));
+        if (!data || data.length < pageSize) break;
+    }
+    return ids;
+}
+
+async function importActivitiesIntoGarminIndex(records, userId) {
+    const existingIds = await loadExistingGarminActivityIds(userId);
+    const rows = [];
+    for (const raw of records) {
+        const mapped = mapGarminExportActivity(raw, inferSport, inferCategory);
+        if (!mapped) continue;
+        const id = mapped.sourceRefs.garminActivityId;
+        if (existingIds.has(id)) continue;
+        rows.push({
+            user_id: userId,
+            garmin_activity_id: id,
+            activity: raw,
+            start_time: mapped.startTime,
+            activity_type: mapped.garminSportLabel,
+            duration_seconds: mapped.duration === null ? null : Number((mapped.duration * 60).toFixed(2)),
+            distance_meters: mapped.distance === null ? null : Number((mapped.distance * 1000).toFixed(2))
+        });
+        existingIds.add(id);
+    }
+    if (rows.length) await insertInBatches('garmin_activities', rows, 100);
+    const verifiedIds = await loadExistingGarminActivityIds(userId);
+    const missing = records.filter(record => {
+        const id = String(record.activityId ?? record.id ?? '');
+        return /^\\d+$/.test(id) && !verifiedIds.has(id);
+    }).length;
+    if (missing) throw new Error(missing + ' Garmin-Aktivitäten fehlen nach dem Indeximport noch in der Cloud.');
+    return rows.length;
+}
+
 async function updateImportManifest(importId, userId, manifest, dataImport) {
     const nextManifest = { ...(manifest || {}), dataImport };
     const { error } = await supabase.from('garmin_export_imports')
@@ -399,7 +444,9 @@ export async function importGarminExportArchive(importId) {
             const id = String(record.activityId ?? record.id ?? '');
             if (/^\d+$/.test(id) && !uniqueActivities.has(id)) uniqueActivities.set(id, record);
         }
-        const activityImport = importActivitiesIntoApp([...uniqueActivities.values()]);
+        const uniqueActivityRecords = [...uniqueActivities.values()];
+        const activityImport = importActivitiesIntoApp(uniqueActivityRecords);
+        const activityIndexRowsAdded = await importActivitiesIntoGarminIndex(uniqueActivityRecords, userId);
         const vo2maxDailyValuesAdded = applyGarminVo2MaxToDailyCheckins([...uniquePerformance.values()]);
 
         const uniquePerformance = new Map();
@@ -461,6 +508,7 @@ export async function importGarminExportArchive(importId) {
             storedFileRows: context.existingPaths.size + context.insertedFiles,
             fileCounts,
             activities: activityImport,
+            activityIndexRowsAdded,
             vo2maxRecords: uniquePerformance.size,
             vo2maxDailyValuesAdded,
             warnings: context.errors.slice(0, 30),
@@ -470,7 +518,7 @@ export async function importGarminExportArchive(importId) {
         setImportStatus(
             'Import abgeschlossen: ' + dataImport.jsonFiles + ' JSON-Dateien verarbeitet · ' +
             dataImport.storedFileRows + ' Datei-Einträge gesichert · ' + activityImport.added +
-            ' neue Aktivitäten · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' + vo2maxDailyValuesAdded + ' Tageswerte ergänzt. ' +
+            ' neue Aktivitäten · ' + activityIndexRowsAdded + ' Garmin-IDs ergänzt · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' vo2maxDailyValuesAdded + ' Tageswerte ergänzt. ' +
             (context.errors.length ? context.errors.length + ' Dateien mit Hinweisen.' : 'Keine Importfehler.'),
             100,
             context.errors.length ? 'info' : 'success'
