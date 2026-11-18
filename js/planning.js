@@ -55,8 +55,9 @@ export function openPlannedWorkoutModal(id=null){
     setPlanField('plan-date',item?.date||toLocalDateString());
     setPlanField('plan-name',item?.name||'');
     setPlanField('plan-sport',item?.type||'Kayaking');
-    setPlanField('plan-duration',item?.duration??60);
-    setPlanField('plan-tss',item?.targetTss??70);
+    const isAssessment = String(item?.category || '').startsWith('diagnostic-');
+    setPlanField('plan-duration',isAssessment ? '' : item?.duration??60);
+    setPlanField('plan-tss',isAssessment ? '' : item?.targetTss??70);
     setPlanField('plan-category',item?.category||'ga');
     setPlanField('plan-desc',item?.desc||'');
     const title=document.getElementById('planned-workout-modal-title');
@@ -74,9 +75,12 @@ export function savePlannedWorkout(){
     const date=document.getElementById('plan-date').value||toLocalDateString();
     const name=document.getElementById('plan-name').value||'Geplante Einheit';
     const type=document.getElementById('plan-sport').value;
-    const duration=parseInt(document.getElementById('plan-duration').value,10)||60;
-    const targetTss=parseInt(document.getElementById('plan-tss').value,10)||60;
+    const durationRaw=document.getElementById('plan-duration').value;
+    const targetTssRaw=document.getElementById('plan-tss').value;
     const category=document.getElementById('plan-category').value;
+    const isAssessment=String(category).startsWith('diagnostic-');
+    const duration=isAssessment||durationRaw===''?null:(parseInt(durationRaw,10)||60);
+    const targetTss=isAssessment||targetTssRaw===''?null:(parseInt(targetTssRaw,10)||60);
     const desc=document.getElementById('plan-desc').value;
     if(editingPlannedWorkoutId!==null){
         const index=state.plannedActivities.findIndex(p=>String(p.id)===editingPlannedWorkoutId);
