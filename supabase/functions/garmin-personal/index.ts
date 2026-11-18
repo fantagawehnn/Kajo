@@ -841,17 +841,17 @@ async function syncGarminActivitiesForUser(
     const records = rows.map((item) => {
       const activity = safeActivityPreview(item);
       const activityId = activity.activityId == null ? "" : String(activity.activityId);
-      if (!/^\\d+$/.test(activityId)) {
+      if (!/^\d+$/.test(activityId)) {
         throw new Error("Garmin-Aktivität ohne gültige numerische Aktivitäts-ID. Der Zeitraum wird nicht als vollständig synchronisiert markiert.");
       }
       const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
       const parsedStart = rawStart ? new Date(String(rawStart)) : null;
       const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
       const localStart = typeof activity.startTimeLocal === "string" ? activity.startTimeLocal : "";
-      const activityDate = /^\\d{4}-\\d{2}-\\d{2}/.test(localStart)
+      const activityDate = /^\d{4}-\d{2}-\d{2}/.test(localStart)
         ? localStart.slice(0, 10)
         : startTime?.slice(0, 10) ?? null;
-      if (!activityDate || !/^\\d{4}-\\d{2}-\\d{2}$/.test(activityDate)) {
+      if (!activityDate || !/^\d{4}-\d{2}-\d{2}$/.test(activityDate)) {
         throw new Error("Garmin-Aktivität ohne gültiges Startdatum. Der Zeitraum wird nicht als vollständig synchronisiert markiert.");
       }
       // Garmin activity IDs are unique. Ignore duplicate rows from pagination
