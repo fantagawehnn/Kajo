@@ -452,12 +452,12 @@ export async function importGarminExportArchive(importId) {
         setImportStatus(
             'Import abgeschlossen: ' + dataImport.jsonFiles + ' JSON-Dateien verarbeitet · ' +
             dataImport.storedFileRows + ' Datei-Einträge gesichert · ' + activityImport.added +
-            ' neue Aktivitäten · ' + performanceRows.length + ' VO₂max-Datensätze. ' +
+            ' neue Aktivitäten · ' + uniquePerformance.size + ' VO₂max-Datensätze · ' + vo2maxDailyValuesAdded + ' Tageswerte ergänzt. ' +
             (context.errors.length ? context.errors.length + ' Dateien mit Hinweisen.' : 'Keine Importfehler.'),
             100,
             context.errors.length ? 'info' : 'success'
         );
-        const { renderGarminExportArchiveHistory } = await import('./garmin-export-archive.js?v=4');
+        const { renderGarminExportArchiveHistory } = await import('./garmin-export-archive.js?v=5');
         await renderGarminExportArchiveHistory();
     } catch (error) {
         console.error('[KAJO Garmin-Komplettimport]', error);
