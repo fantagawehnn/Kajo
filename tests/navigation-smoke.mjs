@@ -28,14 +28,14 @@ assert.equal((html.match(/id="nav-(?:today|calendar|training|analysis|more)"/g) 
 assert.equal((html.match(/id="mobile-nav-(?:today|calendar|training|analysis|more)"/g) || []).length, 5);
 assert.doesNotMatch(html, /id="nav-(?:dashboard|analyses|areas)"/);
 
-const garminHealthStart = html.indexOf('id="view-garmin-health"');
-const garminHealthEnd = html.indexOf('id="view-routes"', garminHealthStart);
+const dataManagementStart = html.indexOf('id="view-data"');
+const dataManagementEnd = html.indexOf('id="view-backup"', dataManagementStart);
 const nutritionStart = html.indexOf('id="view-nutrition"');
 const nutritionEnd = html.indexOf('id="view-upload"', nutritionStart);
 const garminArchivePosition = html.indexOf('id="garmin-archive-file"');
-assert.ok(garminHealthStart >= 0 && garminArchivePosition > garminHealthStart && garminArchivePosition < garminHealthEnd, 'Garmin archive upload is located inside the Garmin health area');
+assert.ok(dataManagementStart >= 0 && garminArchivePosition > dataManagementStart && garminArchivePosition < dataManagementEnd, 'Garmin archive upload is located inside data management with the Garmin data source');
 assert.ok(!(garminArchivePosition > nutritionStart && garminArchivePosition < nutritionEnd), 'Garmin archive is not located inside nutrition');
-assert.ok(main.includes("if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); void renderGarminExportArchiveHistory(); }"), 'Garmin archive history loads when the Garmin area is opened');
+assert.ok(main.includes("if (view === 'data') void renderGarminExportArchiveHistory();"), 'Garmin archive history loads when data management is opened');
 
 assert.ok(html.includes('id="kajo-mobile-notifications-button"'), 'mobile global top bar contains notification settings');
 assert.ok(html.includes('id="kajo-mobile-profile-button"'), 'mobile global top bar contains athlete profile');
