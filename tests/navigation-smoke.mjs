@@ -1,23 +1,23 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync('index.html', 'utf8');
-const activities = readFileSync('js/activities.js', 'utf8');
-const calculations = readFileSync('js/calculations.js', 'utf8');
-const css = readFileSync('css/styles.css', 'utf8');
-const main = readFileSync('js/main.js', 'utf8');
-const calendar = readFileSync('js/calendar.js', 'utf8');
-const state = readFileSync('js/state.js', 'utf8');
-const analysisUI = readFileSync('js/analysis-ui.js', 'utf8');
-const analysisInsights = readFileSync('js/analysis-insights.js', 'utf8');
-const charts = readFileSync('js/charts.js', 'utf8');
-const dashboard = readFileSync('js/dashboard.js', 'utf8');
-const importer = readFileSync('js/import.js', 'utf8');
-const dataSource = readFileSync('js/data-source.js', 'utf8');
-const health = readFileSync('js/health.js', 'utf8');
-const uiActions = readFileSync('js/ui-actions.js', 'utf8');
-const competitions = readFileSync('js/competitions.js', 'utf8');
-const garminFunction = readFileSync('supabase/functions/garmin-personal/index.ts', 'utf8');
+const html = readFileSync('index.html', 'utf8').replace(/\r\n/g, '\n');
+const activities = readFileSync('js/activities.js', 'utf8').replace(/\r\n/g, '\n');
+const calculations = readFileSync('js/calculations.js', 'utf8').replace(/\r\n/g, '\n');
+const css = readFileSync('css/styles.css', 'utf8').replace(/\r\n/g, '\n');
+const main = readFileSync('js/main.js', 'utf8').replace(/\r\n/g, '\n');
+const calendar = readFileSync('js/calendar.js', 'utf8').replace(/\r\n/g, '\n');
+const state = readFileSync('js/state.js', 'utf8').replace(/\r\n/g, '\n');
+const analysisUI = readFileSync('js/analysis-ui.js', 'utf8').replace(/\r\n/g, '\n');
+const analysisInsights = readFileSync('js/analysis-insights.js', 'utf8').replace(/\r\n/g, '\n');
+const charts = readFileSync('js/charts.js', 'utf8').replace(/\r\n/g, '\n');
+const dashboard = readFileSync('js/dashboard.js', 'utf8').replace(/\r\n/g, '\n');
+const importer = readFileSync('js/import.js', 'utf8').replace(/\r\n/g, '\n');
+const dataSource = readFileSync('js/data-source.js', 'utf8').replace(/\r\n/g, '\n');
+const health = readFileSync('js/health.js', 'utf8').replace(/\r\n/g, '\n');
+const uiActions = readFileSync('js/ui-actions.js', 'utf8').replace(/\r\n/g, '\n');
+const competitions = readFileSync('js/competitions.js', 'utf8').replace(/\r\n/g, '\n');
+const garminFunction = readFileSync('supabase/functions/garmin-personal/index.ts', 'utf8').replace(/\r\n/g, '\n');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -152,9 +152,9 @@ assert.ok(!dashboard.includes('latestFormDay'), 'home rendering does not referen
 
 
 
-const profile = readFileSync('js/profile.js', 'utf8');
-const theme = readFileSync('js/theme.js', 'utf8');
-const styles = readFileSync('css/styles.css', 'utf8');
+const profile = readFileSync('js/profile.js', 'utf8').replace(/\r\n/g, '\n');
+const theme = readFileSync('js/theme.js', 'utf8').replace(/\r\n/g, '\n');
+const styles = readFileSync('css/styles.css', 'utf8').replace(/\r\n/g, '\n');
 assert.ok(profile.includes("id: 'achievements'") && profile.includes("id: 'career'"), 'athlete profile includes achievements and career sections');
 assert.ok(profile.includes("key: 'personalRecords'") && profile.includes("key: 'competitionHistory'"), 'athlete profile stores competition history and personal records');
 assert.ok(profile.includes('kajo-profile-timeline'), 'career history uses a timeline presentation');
@@ -287,8 +287,8 @@ assert.ok(activities.includes('if (!activity.raceFormat) return false'), 'canoe 
 assert.ok(css.includes('html[data-theme="light"] #csv-details-modal .activity-detail-shell'), 'activity details provide explicit light-theme styling');
 
 
-const trainingLoadView = readFileSync('js/training-load-view.js', 'utf8');
-const trainingLoadCalculation = readFileSync('js/training-load.js', 'utf8');
+const trainingLoadView = readFileSync('js/training-load-view.js', 'utf8').replace(/\r\n/g, '\n');
+const trainingLoadCalculation = readFileSync('js/training-load.js', 'utf8').replace(/\r\n/g, '\n');
 assert.ok(html.includes('id="training-load-overview"'), 'Training Load has a dedicated overview');
 assert.ok(html.includes('data-training-load-model="kajo"') && html.includes('data-training-load-model="edwards"'), 'Training Load offers KAJO and Edwards HR-zone models');
 assert.ok(html.includes('id="training-load-zone-chart"') && html.includes('id="training-load-daily-chart"'), 'Training Load shows zone distribution and daily HR-zone load');
@@ -311,7 +311,7 @@ assert.ok(charts.includes('paceSecondsPerKm') && charts.includes('paceSecondsPer
 assert.ok(activities.includes("' min/100 m'"), 'swim pace uses a 100-metre unit rather than min/km');
 
 
-const performanceUi = readFileSync('js/analysis-ui.js', 'utf8');
+const performanceUi = readFileSync('js/analysis-ui.js', 'utf8').replace(/\r\n/g, '\n');
 assert.ok(html.includes('id="fitness-aerobic-metrics"') && html.includes('id="fitness-overview-view"'), 'Fitness opens with its own aerobic fitness view');
 assert.ok(html.includes('id="performance-detail-view"') && html.includes('onclick="openPerformanceDetail()"'), 'Performance is a separate circle with its own detail view');
 assert.ok(html.includes('id="performance-paddling-metrics"') && html.includes('id="performance-strength-metrics"'), 'Performance detail separates paddling and strength dimensions');
@@ -322,7 +322,7 @@ assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleic
 assert.ok(performanceUi.includes('state.strengthPBs'), 'strength progression uses stored exercise-specific personal best records');
 assert.ok(html.includes('<span>Fitness</span>') && html.includes('id="fitness-aerobic-metrics"'), 'analysis navigation identifies the fitness view separately from performance');
 
-const overviewModule = readFileSync('js/analysis-overview.js', 'utf8');
+const overviewModule = readFileSync('js/analysis-overview.js', 'utf8').replace(/\r\n/g, '\n');
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
 assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview begins with the four agreed metric circles');
 assert.ok(['load','recovery','performance','health'].every(id => html.includes('id="overview-' + id + '-ring"')), 'overview renders load, recovery, fitness and health circles');
