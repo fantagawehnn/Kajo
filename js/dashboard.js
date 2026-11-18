@@ -388,10 +388,29 @@ function buildReadinessBasedRecommendation(dateKey, planned) {
     const latestLoad = [...(Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [])]
         .filter(day => day?.date <= dateKey && validNumber(day?.load) && validNumber(day?.ctl))
         .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
-    const loadCaution = latestLoad && ['Hohe Ermüdung', 'Belastung'].includes(latestLoad.statusLabel);
+    const ctl = validNumber(latestLoad?.ctl) ? Number(latestLoad.ctl) : null;
+    const atl = validNumber(latestLoad?.atl) ? Number(latestLoad.atl) : null;
+    const tsb = validNumber(latestLoad?.tsb) ? Number(latestLoad.tsb) : null;
+    const acwr = ctl !== null && ctl > 0 && atl !== null ? atl / ctl : null;
+    const highLoad = Boolean(latestLoad && (
+        latestLoad.statusLabel === 'Hohe Ermüdung' ||
+        (tsb !== null && tsb < -20) ||
+        (acwr !== null && acwr >= 1.35)
+    ));
+    const loadCaution = Boolean(latestLoad && (
+        highLoad ||
+        latestLoad.statusLabel === 'Belastung' ||
+        (tsb !== null && tsb < -10) ||
+        (acwr !== null && acwr >= 1.15)
+    ));
     const loadNote = latestLoad
-        ? 'Belastungsmodell: letzter auswertbarer Stand vom ' + formatDateDDMMYY(latestLoad.date) + '.'
-        : 'Die aktuelle Load-Zeitreihe ist lückenhaft; die Empfehlung stützt sich deshalb vorrangig auf Readiness und Check-in.';
+        ? 'Letzter auswertbarer Training-Load-Stand vom ' + formatDateDDMMYY(latestLoad.date) +
+          ': CTL ' + (ctl === null ? '—' : ctl.toFixed(1)) +
+          ', ATL ' + (atl === null ? '—' : atl.toFixed(1)) +
+          ', TSB ' + (tsb === null ? '—' : (tsb > 0 ? '+' : '') + tsb.toFixed(1)) +
+          ', ATL/CTL ' + (acwr === null ? '—' : acwr.toFixed(2)) +
+          (latestLoad.isProvisional ? ' (vorläufiger Modellwert)' : '') + '.'
+        : 'Die aktuelle Load-Zeitreihe ist lückenhaft; Training Load kann daher nicht zuverlässig in die Empfehlung einfließen. Die Einordnung stützt sich vorrangig auf Readiness und Check-in.';
     const sessionNote = plannedSession
         ? 'Geplant: ' + String(plannedSession.name || 'Trainingseinheit') +
           (validNumber(plannedSession.duration) ? ' (' + Number(plannedSession.duration) + ' min)' : '') + '.'
@@ -431,9 +450,16 @@ function buildReadinessBasedRecommendation(dateKey, planned) {
         advice = 'Die verfügbaren Readiness-Daten fallen niedrig aus. Bevorzuge heute Erholung oder sehr lockere Bewegung und verschiebe intensive Belastungen, wenn sich die Tagesform nicht verbessert.';
     }
 
-    if (loadCaution) {
-        title = 'Belastung vorsichtig steuern';
-        advice += ' Zusätzlich weist der letzte auswertbare Belastungsstand auf erhöhte Ermüdung bzw. kurzfristige Belastung hin.';
+    if (highLoad) {
+        title = 'Training Load hoch – Belastung reduzieren';
+        advice = 'Der Training Load zeigt eine deutlich erhöhte kurzfristige Belastung im Verhältnis zur längerfristigen Belastungsbasis. Reduziere heute Umfang oder Intensität; plane keine zusätzliche intensive Belastung. Prüfe die geplante Einheit anhand deines Befindens und des Aufwärmens.';
+    } else if (loadCaution) {
+        if (readiness.score >= 80) title = 'Gute Readiness – Training Load beachten';
+        else if (readiness.score >= 65) title = 'Kontrolliert trainieren – Load berücksichtigen';
+        else title = 'Belastung weiter reduzieren';
+        advice += ' Zusätzlich zeigt der Training Load eine erhöhte kurzfristige Belastung. Vermeide zusätzliche Belastungsspitzen und steuere die geplante Einheit entsprechend.';
+    } else if (latestLoad && acwr !== null && acwr < 0.75) {
+        advice += ' Der aktuelle Training Load liegt deutlich unter der längerfristigen Belastungsbasis. Das ist kein automatischer Grund, heute Intensität nachzuholen; halte dich an den geplanten schrittweisen Aufbau.';
     }
     const qualityNote = readiness.dataQuality + ' · Readiness ' + readiness.score + '/100 (Orientierungswert, keine medizinische Diagnose).';
     return { title, detail: advice + ' ' + qualityNote + ' ' + loadNote + ' ' + sessionNote };
