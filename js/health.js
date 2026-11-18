@@ -31,6 +31,14 @@ export function loadCheckinInputs() {
         if (!input) return;
         const hasValue = current[key] !== null && current[key] !== undefined && current[key] !== '';
         input.value = hasValue ? current[key] : (input.type === 'range' ? input.defaultValue : '');
+        if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
+            // A slider's HTML default is only a visual starting point, not a user response.
+            input.dataset.checkinTouched = 'false';
+            if (!input.dataset.checkinTouchBound) {
+                input.addEventListener('input', () => { input.dataset.checkinTouched = 'true'; });
+                input.dataset.checkinTouchBound = 'true';
+            }
+        }
     });
     const healthLog = state.healthLogs[todayStr] || {};
     const sickInput = document.getElementById('input-sick');
@@ -206,11 +214,28 @@ export function closeDailyCheckinModal() {
 
 export function saveCheckin() {
     const todayStr = state.selectedDashboardDate || toLocalDateString();
-    const sleep = parseInt(document.getElementById('input-sleep-quality').value);
-    const soreness = parseInt(document.getElementById('input-soreness').value);
-    const fatigue = parseInt(document.getElementById('input-fatigue').value);
-    const motivation = parseInt(document.getElementById('input-motivation').value);
-    const stress = parseInt(document.getElementById('input-stress').value);
+    const existing = state.dailyCheckins[todayStr] || {};
+    const scaleUpdates = {};
+    const scaleFields = [
+        ['input-sleep-quality', 'sleepQuality'],
+        ['input-soreness', 'soreness'],
+        ['input-fatigue', 'fatigue'],
+        ['input-motivation', 'motivation'],
+        ['input-stress', 'stress']
+    ];
+    for (const [inputId, key] of scaleFields) {
+        const input = document.getElementById(inputId);
+        const wasRecorded = Object.prototype.hasOwnProperty.call(existing, key)
+            && existing[key] !== null && existing[key] !== undefined && existing[key] !== '';
+        const wasTouched = input?.dataset?.checkinTouched === 'true';
+        if (!wasRecorded && !wasTouched) continue;
+        const value = Number.parseInt(input?.value, 10);
+        if (!Number.isInteger(value) || value < 1 || value > 5) {
+            alert('Bitte prüfe deine Self-Monitoring-Angaben. Die Skalen müssen zwischen 1 und 5 liegen.');
+            return;
+        }
+        scaleUpdates[key] = value;
+    }
     const weightEnabled = document.getElementById('input-weight-enabled')?.checked === true;
     const weightRaw = document.getElementById('input-weight')?.value.trim() || '';
     const weightVal = weightEnabled && weightRaw !== '' ? Number(weightRaw) : NaN;
@@ -250,8 +275,7 @@ export function saveCheckin() {
     }
     const checkin = {
         ...existing,
-        sleepQuality: sleep,
-        soreness, fatigue, motivation, stress,
+        ...scaleUpdates,
         ...wearableUpdates,
         ...(Object.keys(measurementSources).length ? { measurementSources } : {}),
         weight: weightEnabled && Number.isFinite(weightVal) ? weightVal : existing.weight
