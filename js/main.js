@@ -809,6 +809,7 @@ async function loadGarminSyncHistory() {
         const statusResult = await callGarminFunction({ action: 'status' });
         const connection = statusResult.connection || {};
         const healthSync = statusResult.syncState || null;
+        const events = Array.isArray(statusResult.events) ? statusResult.events : [];
         const formatTimestamp = value => {
             if (!value) return 'Noch nicht dokumentiert';
             const date = new Date(value);
@@ -816,6 +817,58 @@ async function loadGarminSyncHistory() {
         };
         const escapeText = value => String(value ?? '').replace(/[&<>"']/g, char =>
             ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+        const sourceLabels = {
+            manual_range: 'Manueller Zeitraum', daily_sync: 'Tagesabgleich',
+            manual_activities: 'Manueller Aktivitätsabruf', background: 'Hintergrundabruf'
+        };
+        const typeLabels = {
+            activity_list: 'Aktivitätsliste', health_history: 'Gesundheitsverlauf',
+            health_day: 'Tagesgesundheitsdaten'
+        };
+        const statusLabels = {
+            running: 'Läuft', complete: 'Abgeschlossen', partial: 'Teilweise',
+            in_progress: 'In Bearbeitung', error: 'Fehler', skipped: 'Übersprungen'
+        };
+        const timezoneLabel = event => {
+            if (event.timezone_basis === 'utc') return 'UTC';
+            if (event.timezone_basis === 'client_local_date') return 'Lokales Datum' +
+                (Number.isInteger(event.timezone_offset_minutes) ? ' · UTC' +
+                    (event.timezone_offset_minutes <= 0 ? '+' : '-') +
+                    Math.abs(event.timezone_offset_minutes / 60) : '');
+            if (Number.isInteger(event.timezone_offset_minutes)) {
+                const utcOffset = -event.timezone_offset_minutes;
+                const sign = utcOffset >= 0 ? '+' : '−';
+                const hours = Math.floor(Math.abs(utcOffset) / 60);
+                const minutes = Math.abs(utcOffset) % 60;
+                return 'UTC' + sign + hours + (minutes ? ':' + String(minutes).padStart(2, '0') : '');
+            }
+            return 'Zeitzone nicht dokumentiert';
+        };
+        const eventRows = events.map(event => {
+            const period = event.start_date
+                ? event.start_date + (event.end_date && event.end_date !== event.start_date ? ' – ' + event.end_date : '')
+                : 'Zeitraum nicht dokumentiert';
+            const counts = [];
+            if (Number.isInteger(event.scanned_days)) counts.push(event.scanned_days + ' gescannt');
+            if (Number.isInteger(event.skipped_days)) counts.push(event.skipped_days + ' übersprungen');
+            if (Number.isInteger(event.processed_days)) counts.push(event.processed_days + ' verarbeitet');
+            if (Number.isInteger(event.remaining_days)) counts.push(event.remaining_days + ' offen');
+            if (Number.isInteger(event.fetched_count)) counts.push(event.fetched_count + ' abgerufen');
+            if (Number.isInteger(event.stored_count)) counts.push(event.stored_count + ' gespeichert');
+            return '<article class="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 space-y-1">' +
+                '<div class="flex flex-wrap items-center justify-between gap-2"><strong class="text-[11px] text-slate-200">' +
+                    escapeText(sourceLabels[event.source] || event.source) + ' · ' +
+                    escapeText(typeLabels[event.sync_type] || event.sync_type) +
+                '</strong><span class="text-[10px] ' +
+                    (event.status === 'error' || event.status === 'partial' ? 'text-amber-300' :
+                     event.status === 'complete' ? 'text-emerald-300' : 'text-slate-400') + '">' +
+                    escapeText(statusLabels[event.status] || event.status) + '</span></div>' +
+                '<p class="text-[10px] text-slate-400">' + escapeText(formatTimestamp(event.started_at)) +
+                    ' · ' + escapeText(period) + ' · ' + escapeText(timezoneLabel(event)) + '</p>' +
+                (counts.length ? '<p class="text-[10px] text-slate-300">' + escapeText(counts.join(' · ')) + '</p>' : '') +
+                (event.error_message ? '<p class="text-[10px] text-amber-300">' + escapeText(event.error_message) + '</p>' : '') +
+            '</article>';
+        }).join('');
         syncStatusMarkup = '<div class="mb-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3 space-y-1">' +
             '<p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Letzter dokumentierter Sync-Status</p>' +
             '<p class="text-[11px] text-slate-200">Aktivitätsliste: <strong>' + escapeText(formatTimestamp(connection.last_activity_sync_at)) + '</strong></p>' +
@@ -825,7 +878,9 @@ async function loadGarminSyncHistory() {
                 (healthSync.range_end_date ? ' / ' + escapeText(healthSync.range_end_date) : '') : '') + '</p>' +
             (connection.last_error ? '<p class="pt-1 text-[10px] text-amber-300">Letzter gespeicherter Garmin-Fehler: ' + escapeText(connection.last_error) + '</p>' : '') +
             (healthSync?.last_error ? '<p class="text-[10px] text-amber-300">Gesundheitsdaten-Fehler: ' + escapeText(healthSync.last_error) + '</p>' : '') +
-            '</div>';
+            '</div>' +
+            '<div class="mb-3 space-y-2"><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Letzte Synchronisierungsvorgänge</p>' +
+            (eventRows || '<p class="text-[10px] text-slate-500">Noch keine protokollierten Abrufvorgänge.</p>') + '</div>';
     } catch (_) {
         // Keep the saved-data inventory visible even when the live status endpoint is unavailable.
     }
@@ -2647,7 +2702,7 @@ async function syncGarminTodayOnOpen(userId) {
         let health = null;
         for (let attempt = 0; attempt < 4; attempt++) {
             try {
-                response = await callGarminFunction({ action: 'sync-today', date });
+                response = await callGarminFunction({ action: 'sync-today', date, timezoneOffsetMinutes: new Date().getTimezoneOffset() });
             } catch (syncError) {
                 const rateLimited = /HTTP 429|rate.?limit/i.test(syncError?.message || '');
                 if (!rateLimited || attempt === 3) throw syncError;
