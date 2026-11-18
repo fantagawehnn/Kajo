@@ -447,11 +447,11 @@ async function syncGarminHealthHistoryBatch(
       if (!renewed) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung ist abgelaufen; der Vorgang wurde sicher angehalten.");
 
       const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);
-      processed.push(dayResult);
       if (dayResult.status === "in_progress") {
         dayAlreadyRunning = true;
         break;
       }
+      processed.push(dayResult);
       if (dayResult.failed !== 0) {
         failed = true;
         rateLimited = dayResult.status === "rate_limited";
