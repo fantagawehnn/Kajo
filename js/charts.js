@@ -724,6 +724,8 @@ export function getActivityTelemetrySeries(act) {
         if (/speed|geschwindigkeit/.test(descriptor)) return 'speed';
         if (/power|leistung|watt/.test(descriptor)) return 'power';
         if (/pace|tempo/.test(descriptor)) return 'pace';
+        if (['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
+            && /directfractionalcadence|double cadence/.test(descriptor)) return 'doubleCadence';
         if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor)) return 'cadence';
         if (/body.?battery/.test(descriptor)) return 'bodyBattery';
         if (/grade|steigung/.test(descriptor)) return 'grade';
