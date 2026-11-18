@@ -1463,6 +1463,12 @@ async function syncGarminSelectedRange() {
             if (sync.activitySync) {
                 activitySummary = sync.activitySync;
                 await loadGarminActivitiesFromCloud();
+                if (sync.activitySync.status !== 'ok') {
+                    const activityStatus = String(sync.activitySync.status || 'unbekannt');
+                    throw new Error(activityStatus === 'in_progress'
+                        ? 'Eine andere Garmin-Aktivitätssynchronisierung läuft bereits. Dieser Zeitraum wurde noch nicht vollständig geprüft; bitte später erneut versuchen.'
+                        : 'Der Garmin-Aktivitätsabgleich wurde nicht vollständig abgeschlossen (Status: ' + activityStatus + '). Der Zeitraum wird nicht als vollständig markiert; bitte starte die Synchronisierung erneut.');
+                }
                 if (sync.activitySync.status === 'ok') {
                     const activitySync = sync.activitySync;
                     const reportedStart = String(activitySync.startDate || '');
@@ -1478,6 +1484,12 @@ async function syncGarminSelectedRange() {
                     recordGarminActivityCoverageRange(startDate, endDate);
                     initEngine();
                 }
+            }
+            if (health.status === 'in_progress') {
+                throw new Error('Eine andere Garmin-Gesundheitssynchronisierung verarbeitet diesen Zeitraum bereits. Der Fortschritt wurde nicht als abgeschlossen gewertet; bitte später erneut versuchen.');
+            }
+            if (!['complete', 'partial', 'rate_limited'].includes(String(health.status || ''))) {
+                throw new Error('Der Garmin-Gesundheitsdatenabruf lieferte keinen bestätigten Abschlussstatus. Der Zeitraum wird nicht als vollständig gewertet.');
             }
             remainingDays = Number(health.remainingDays ?? 0);
             const completedDays = Math.max(0, Math.min(totalDays, totalDays - remainingDays));
@@ -2754,14 +2766,20 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (activeAppUserId !== userId || !appUserReady) return;
-        const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
+        const activitySync = response?.sync?.activitySync || null;
+        const partial = activitySync?.status !== 'ok'
+            || health?.status !== 'complete'
+            || Number(health?.failed || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
             || telemetryCloud.failed;
         if (partial) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
-            if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
-                const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
+            if (activitySync?.status !== 'ok' || health?.status !== 'complete'
+                || jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
+                const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000
+                    : activitySync?.status === 'in_progress' || health?.status === 'in_progress' ? 5 * 60 * 1000 + 10000
+                    : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
                     if (activeAppUserId === userId && appUserReady && !garminDailySyncCompleted.has(runKey)) {
                         void syncGarminTodayOnOpen(userId);
