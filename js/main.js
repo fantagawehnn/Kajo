@@ -2773,13 +2773,15 @@ async function syncGarminTodayOnOpen(userId) {
             || health?.status !== 'complete'
             || Number(health?.failed || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
+            || activityFilesSync?.status === 'rate_limited'
+            || Number(activityFilesSync?.failed || 0) > 0
             || telemetryCloud.failed;
         if (partial) {
-            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
+            console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Garmin-Daten werden beim nächsten Abgleich erneut versucht.', { activityFilesSync, health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
             if (activitySync?.status !== 'ok' || activityFilesSync?.status !== 'complete' || health?.status !== 'complete'
                 || jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
-                const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000
+                const retryDelay = jsonTelemetry.rateLimited || activityFilesSync?.rateLimited ? 5 * 60 * 1000 + 10000
                     : activitySync?.status === 'in_progress' || activityFilesSync?.status === 'in_progress' || health?.status === 'in_progress' ? 5 * 60 * 1000 + 10000
                     : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
