@@ -17,7 +17,8 @@ function validCoverageRanges(settings) {
         .filter(range => /^\d{4}-\d{2}-\d{2}$/.test(range?.startDate || '')
             && /^\d{4}-\d{2}-\d{2}$/.test(range?.endDate || '')
             && range.startDate <= range.endDate
-            && range.status === 'complete');
+            && range.status === 'complete'
+            && range.source === 'garmin_activity_list');
 }
 
 function toLocalDateKey(date) {
