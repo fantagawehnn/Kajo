@@ -24,6 +24,7 @@ test('maps Garmin activity summary without trusting Garmin profile as actual spo
         activityName: 'Morgentraining',
         activityType: { typeKey: 'RUNNING' },
         startTimeLocal: '2025-04-01T08:30:00',
+        startTimeGmt: '2025-04-01T06:30:00',
         duration: 3600,
         distance: 10000,
         avgHr: 145,
