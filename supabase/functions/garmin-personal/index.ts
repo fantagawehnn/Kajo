@@ -1790,7 +1790,6 @@ Deno.serve(async (req) => {
         ? {
             status: "in_progress",
             deferred: true,
-            rateLimited: true,
             retryInSeconds: activityFilesSync.retryInSeconds,
             message: "Der Gesundheitsdatenabruf wartet auf das Ende der Garmin-Abrufpause.",
           }
