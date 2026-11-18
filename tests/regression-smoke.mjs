@@ -402,6 +402,7 @@ assert.ok(garminBackendSource.includes('async function syncGarminHealthDayUnlock
 assert.ok(garminBackendSource.includes('async function syncGarminHealthDay('), 'Daily refresh and historical backfill must share the same health-day lease wrapper');
 assert.ok(garminBackendSource.includes('.from("garmin_health_day_sync_leases")'), 'Health-day leases must be stored independently by user and date');
 assert.ok(garminBackendSource.includes('await renewLease();'), 'Health-day lease ownership must be renewed during endpoint processing');
+assert.ok(garminBackendSource.includes('payload = await garminGet(token, endpoint.path);\n      }\n      // A slow Garmin response may outlive the lease; re-check ownership before any write.\n      await renewLease();'), 'A health-day lease must be revalidated after Garmin responds and before the payload is written');
 assert.ok(garminBackendSource.includes('if (dayResult.status === "in_progress")'), 'Historical backfill must not advance its cursor when the same day is already being refreshed');
 assert.ok(garminBackendSource.includes('dayAlreadyRunning ? "in_progress"'), 'A busy health-day lease must be returned as in-progress rather than a failed day');
 assert.ok(garminHealthDayLeaseMigration.includes('primary key (user_id, record_date)'), 'Health-day lease rows must be unique per user and calendar date');
