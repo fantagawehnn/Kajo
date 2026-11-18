@@ -98,3 +98,9 @@ test('uses a time-aligned raw Garmin series when the standard series has no vali
     assert.ok(Math.abs(resolved.values[1] - 7.92) < 1e-9);
     assert.equal(resolved.unit, 'km/h');
 });
+
+test('keeps a standard HR series available for sample-index trends when its time axis is missing', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const standard = { key: 'hr', unit: 'bpm', values: [120, 130], time: null };
+    assert.equal(resolvePaddlingPerformanceSeries({ type: 'C1' }, [standard], 'hr'), standard);
+});
