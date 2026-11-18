@@ -219,10 +219,10 @@ export async function renderGarminExportArchiveHistory() {
             const inventory = preview?.fieldInventory ? Object.values(preview.fieldInventory) : [];
             const fieldRows = inventory.slice().sort((a, b) => Number(b.occurrences || 0) - Number(a.occurrences || 0)).slice(0, 30);
             const fieldList = fieldRows.length
-                ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(field.category) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
+                ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(garminCategoryLabel(field.category)) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
                 : '';
             const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
-            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 2 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
+            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 3 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
@@ -251,14 +251,39 @@ function classifyGarminPath(path) {
     return 'other';
 }
 
+function classifyGarminFieldCategory(filePath, fieldPath, fallback) {
+    // Garmin's UDSFile bundles several daily domains into one JSON file.
+    // Classify individual fields by their explicit semantic names rather than
+    // treating the entire file as an undifferentiated "other" category.
+    if (!/udsfile/i.test(String(filePath || ''))) return fallback;
+    const field = String(fieldPath || '').toLowerCase();
+    if (/bodybattery|alldaystress|stresslevel|restingheartrate|currentdayrestingheartrate|spo2|pulseox|hrv|sleep/.test(field)) return 'recovery';
+    if (/hydration|kilocalorie|calorie|bmr|sweatloss|nutrition/.test(field)) return 'body-nutrition';
+    if (/activeseconds|highlyactiveseconds|floorsascended|floorsdescended|dailystepgoal|stepcount/.test(field)) return 'daily-activity';
+    return fallback;
+}
+
+function garminCategoryLabel(category) {
+    return ({
+        activities: 'Aktivitäten',
+        performance: 'Leistung',
+        recovery: 'Regeneration',
+        'body-nutrition': 'Körper & Ernährung',
+        'training-plans': 'Trainingspläne',
+        'daily-activity': 'Tagesaktivität',
+        other: 'Sonstige'
+    })[category] || category;
+}
+
 function collectGarminFields(value, category, filePath, inventory, budget, path = '', depth = 0) {
     if (budget.count >= 25000 || depth > 9) return;
     budget.count++;
     const type = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
     if (path) {
-        const key = category + '|' + path;
+        const fieldCategory = classifyGarminFieldCategory(filePath, path, category);
+        const key = fieldCategory + '|' + path;
         if (inventory[key] || Object.keys(inventory).length < 500) {
-            const field = inventory[key] || (inventory[key] = { category, path, types: {}, occurrences: 0, files: [] });
+            const field = inventory[key] || (inventory[key] = { category: fieldCategory, path, types: {}, occurrences: 0, files: [] });
             field.types[type] = (field.types[type] || 0) + 1;
             field.occurrences++;
             if (field.files.length < 5 && !field.files.includes(filePath)) field.files.push(filePath);
@@ -384,7 +409,7 @@ export async function analyzeGarminExportArchive(importId) {
         const archiveBlob = new Blob(blobs, { type: 'application/zip' });
         const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
         const summary = {
-            analysisVersion: 2,
+            analysisVersion: 3,
             analyzedAt: new Date().toISOString(),
             jsonFiles: 0,
             nestedArchives: 0,
