@@ -41,8 +41,8 @@ function parseStart(record) {
     const candidates = [
         [record?.startTimeGmt, true],
         [record?.startTimeGMT, true],
+        [record?.beginTimestamp, true],
         [record?.startTime, false],
-        [record?.beginTimestamp, false],
         [localValue, false]
     ];
     let startTime = null;
@@ -126,6 +126,8 @@ export function mapGarminExportActivity(record, inferSport, inferCategory) {
         hr: averageHeartRate,
         maxHr: maxHeartRate,
         garminSportLabel: sourceSportLabel,
+        garminStartTimeLocal: record.startTimeLocal ?? null,
+        garminStartTimeGmt: record.startTimeGmt ?? record.startTimeGMT ?? null,
         garminTrainingLoad: firstFinite(record.trainingLoad, record.activityTrainingLoad, record.aerobicTrainingLoad),
         garminAerobicTrainingEffect: firstFinite(record.aerobicTrainingEffect, record.trainingEffect),
         garminAnaerobicTrainingEffect: firstFinite(record.anaerobicTrainingEffect),
