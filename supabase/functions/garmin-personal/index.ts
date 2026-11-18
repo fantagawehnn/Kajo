@@ -1654,12 +1654,15 @@ Deno.serve(async (req) => {
       const { data: events, error: eventsError } = await admin.from("garmin_sync_events")
         .select("id, source, sync_type, status, start_date, end_date, timezone_basis, timezone_offset_minutes, started_at, finished_at, scanned_days, skipped_days, fetched_count, stored_count, processed_days, remaining_days, error_message, metadata")
         .eq("user_id", userId).order("started_at", { ascending: false }).limit(20);
-      if (eventsError) throw eventsError;
+      // The migration may not yet be applied during a staged rollout. Keep the
+      // existing connection and health-sync status available in that case.
       return json(200, {
         ok: true,
         connection: data ?? { status: "disconnected" },
         syncState: syncState ?? null,
-        events: events ?? [],
+        events: eventsError ? [] : (events ?? []),
+        eventsAvailable: !eventsError,
+        ...(eventsError ? { eventsNotice: "Das Sync-Ereignisprotokoll ist derzeit nicht verfügbar." } : {}),
       });
     }
 
