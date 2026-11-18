@@ -6,3 +6,9 @@ wrangler.jsonc
 README.md
 tests/
 docs/
+supabase/
+diagnostics/
+package.json
+package-lock.json
+wrangler*.jsonc
+*.md
