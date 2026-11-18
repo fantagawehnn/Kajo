@@ -24,7 +24,7 @@ export function buildTsbZones(timeline = []) {
   const values = (Array.isArray(timeline) ? timeline : [])
     .map(row => row?.tsb).filter(valid).map(Number);
   const min = Math.min(-20, ...values);
-  const max = Math.max(5, ...values);
+  const max = Math.max(6, ...values);
   return {
     min,
     max: max > min ? max : min + 1,
@@ -32,7 +32,7 @@ export function buildTsbZones(timeline = []) {
       { min, max: -20, label: 'Hohe Ermüdung', color: 'rgba(217,106,120,.13)', textColor: 'rgba(255,165,174,.82)' },
       { min: -20, max: -5, label: 'Aufbau', color: 'rgba(85,182,164,.13)', textColor: 'rgba(142,224,205,.82)' },
       { min: -5, max: 5, label: 'Geringe Belastung', color: 'rgba(229,196,91,.13)', textColor: 'rgba(255,226,142,.84)' },
-      { min: 5, max: max > 5 ? max : 6, label: 'Geringe akute Belastung', color: 'rgba(109,168,247,.13)', textColor: 'rgba(166,202,255,.84)' }
+      { min: 5, max, label: 'Geringe akute Belastung', color: 'rgba(109,168,247,.13)', textColor: 'rgba(166,202,255,.84)' }
     ]
   };
 }
