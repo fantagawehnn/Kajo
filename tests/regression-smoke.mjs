@@ -407,6 +407,11 @@ assert.ok(garminBackendSource.includes('() => syncGarminHealthHistoryBatch(admin
 assert.ok(garminBackendSource.includes('type: "activity_types", path: "/activity-service/activity/activityTypes/simple"'), 'Garmin activity type catalog must be archived');
 assert.ok(garminBackendSource.includes('type: "heart_rate_zones", path: "/biometric-service/heartRateZones/v2"'), 'Garmin heart-rate zones must be archived');
 assert.ok(garminBackendSource.includes('type: "profile_settings", path: "/userprofile-service/userprofile/settings"'), 'Garmin profile settings must be archived');
+assert.ok(garminBackendSource.includes('if (results.some((item) => item.status === "rate_limited")) break;'), 'Reference endpoint requests must stop when an earlier Garmin endpoint is rate-limited');
+assert.ok(garminBackendSource.includes('message.match(/retryInSeconds["\\s:=]+(\\d+)/i)'), 'Garmin retry delays must be parsed from rate-limit responses');
+assert.ok(!garminBackendSource.includes('retryInSeconds["\\\\s:=]+(\\\\d+)'), 'Garmin retry parsing must not use an over-escaped digit pattern');
+assert.ok(!garminBackendSource.includes('totalActivities: activities?.length'), 'Empty activity archive batches must not reference an out-of-scope activity list');
+
 assert.ok(garminBackendSource.includes('record_key: "current"'), 'Reference endpoint payloads must be retained as raw current snapshots');
 assert.ok(garminBackendSource.includes('Date.now() - fetchedAt < 24 * 60 * 60 * 1000'), 'Reference snapshots must be refreshed at most once per 24 hours when successful');
 assert.ok(garminBackendSource.includes('activity: { ...activity, raw: item }'), 'The full raw Garmin activity-list object must be stored alongside normalized preview fields');
