@@ -26,6 +26,7 @@ test('accepts only complete, finite, nonnegative and strictly increasing elapsed
     assert.equal(isValidElapsedTimeAxis([0, null, 2], 3), false);
     assert.equal(isValidElapsedTimeAxis([0, '', 2], 3), false);
     assert.equal(isValidElapsedTimeAxis([0, 'not-a-time', 2], 3), false);
+    assert.equal(isValidElapsedTimeAxis([1700000000, 1700000001], 2), false);
     assert.equal(isValidElapsedTimeAxis([0], 1), false);
 });
 
