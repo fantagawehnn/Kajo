@@ -109,7 +109,17 @@ export function mapGarminExportActivity(record, inferSport, inferCategory) {
         hr: averageHeartRate,
         maxHr: maxHeartRate,
         garminSportLabel: sourceSportLabel,
-        garminData: record,
+        garminTrainingLoad: firstFinite(record.trainingLoad, record.activityTrainingLoad, record.aerobicTrainingLoad),
+        garminAerobicTrainingEffect: firstFinite(record.aerobicTrainingEffect, record.trainingEffect),
+        garminAnaerobicTrainingEffect: firstFinite(record.anaerobicTrainingEffect),
+        garminCalories: firstFinite(record.calories, record.activeCalories),
+        garminAverageSpeed: firstFinite(record.avgSpeed, record.averageSpeed),
+        garminMaxSpeed: firstFinite(record.maxSpeed, record.maximumSpeed),
+        garminElevationGain: firstFinite(record.elevationGain, record.totalElevationGain),
+        garminElevationLoss: firstFinite(record.elevationLoss, record.totalElevationLoss),
+        garminAveragePower: firstFinite(record.avgPower, record.averagePower),
+        garminMaxPower: firstFinite(record.maxPower, record.maximumPower),
+        garminNormalizedPower: firstFinite(record.normPower, record.normalizedPower),
         telemetry: null,
         garminExportImported: true
     };
