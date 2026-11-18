@@ -328,6 +328,8 @@ assert.ok(html.includes('id="performance-trend-chart"') && html.includes('data-p
 assert.ok(performanceUi.includes('getActivityTelemetrySeries(activity)'), 'Performance reads existing provenance-gated activity telemetry');
 assert.ok(performanceUi.includes('isPaddlingPerformanceActivity(activity)'), 'Paddling performance excludes non-paddling activities');
 assert.ok(performanceUi.includes('isValidElapsedTimeAxis(series.time, series.values.length)'), 'paddling summary metrics require aligned elapsed-time data');
+assert.ok(performanceUi.includes('resolvePaddlingPerformanceSeries'), 'paddling metrics resolve only explicitly supported Garmin series and units');
+assert.ok(charts.includes('directfractionalcadence|double cadence'), 'double cadence is not silently treated as stroke cadence in paddling');
 assert.ok(charts.includes('getValidatedElapsedTimeAxis(telem, values.length)'), 'activity telemetry retains only a validated elapsed-time axis');
 assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
