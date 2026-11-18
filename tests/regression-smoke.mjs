@@ -356,7 +356,7 @@ assert.ok(garminBackendSource.includes('function localDateForOffset(timezoneOffs
     'Garmin sync-range date validation must use the requested local timezone offset');
 assert.ok(garminBackendSource.includes('const today = localDateForOffset(body.timezoneOffsetMinutes);'),
     'Garmin sync-range must compare the requested end date with the local calendar date');
-assert.ok(garminBackendSource.includes('new Date().toISOString().slice(0, 10), true));'),
+assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, connection.user_id, startDate, endDate, true)'),
     'Garmin background sync must use server-side missing-day coverage rather than rescanning the entire 14-day window');
 assert.ok(mainSource.includes('const today = getLocalCalendarDate();'),
     'Garmin range validation in the app must use the local calendar date');
