@@ -34,7 +34,7 @@ test('TSB bands preserve the phase-aware winter orientation thresholds', () => {
 test('TSB chart keeps all orientation zones visible when values are missing or narrow', () => {
   const result = buildTsbZones([{ tsb: null }, { tsb: -8 }]);
   assert.equal(result.min, -20);
-  assert.equal(result.max, 5);
+  assert.equal(result.max, 6);
   assert.equal(result.zones.length, 4);
 });
 
