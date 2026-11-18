@@ -360,7 +360,7 @@ async function syncGarminHealthHistoryBatch(
 
 type GarminSyncEventInput = {
   source: "manual_range" | "daily_sync" | "manual_activities" | "background";
-  syncType: "activity_list" | "health_history" | "health_day";
+  syncType: "activity_list" | "health_history";
   startDate: string | null;
   endDate: string | null;
   timezoneBasis: "client_offset" | "client_local_date" | "utc";
@@ -398,9 +398,23 @@ async function runTrackedGarminSync<T extends Record<string, unknown>>(
       : resultStatus === "skipped" ? "skipped" : "complete";
     const numberOrNull = (value: unknown) =>
       typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : null;
+    const resultRows = Array.isArray(result.results)
+      ? result.results.filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+      : [];
+    const failureRows = resultRows.flatMap(item => {
+      const children = Array.isArray(item.results)
+        ? item.results.filter((child): child is Record<string, unknown> => child !== null && typeof child === "object")
+        : [];
+      if (children.length) return children.filter(child => child.status === "error" || child.status === "rate_limited");
+      return item.status === "error" || item.status === "rate_limited" ? [item] : [];
+    });
+    const failureSummary = failureRows.map(item =>
+      String(item.error ?? item.dataType ?? "Teilabruf fehlgeschlagen")
+    ).filter(Boolean).slice(0, 3).join(" · ").slice(0, 500);
     if (eventId) {
       const { error } = await admin.from("garmin_sync_events").update({
         status, finished_at: new Date().toISOString(),
+        error_message: failureSummary || null,
         scanned_days: numberOrNull(result.scannedDays), skipped_days: numberOrNull(result.skippedDays),
         fetched_count: numberOrNull(result.fetched), stored_count: numberOrNull(result.stored),
         processed_days: numberOrNull(result.processedDays), remaining_days: numberOrNull(result.remainingDays),
