@@ -345,6 +345,25 @@ test('excludes identical duplicate activity IDs from duration and load totals', 
   assert.equal(result.returnToTraining.windows[0].duplicateLoadRecordsExcluded, 1);
 });
 
+test('does not deduplicate equal activity IDs across different source systems', () => {
+  const garmin = { id: '42', date: '2026-11-18', startTime: '2026-11-18T09:00:00Z', source: 'garmin', duration: 60 };
+  const intervals = { id: '42', date: '2026-11-18', startTime: '2026-11-18T09:00:00Z', source: 'intervals', duration: 30 };
+  const [result] = summarizeHealthEpisodeTrainingImpact(
+    {},
+    [garmin, intervals],
+    [{ status: 'sick', startDate: '2026-11-15', endDate: '2026-11-16', documentedDays: 2 }],
+    14,
+    [{ activity: garmin, value: 40 }, { activity: intervals, value: 20 }],
+    'combined', 'AU', '2026-12-31'
+  );
+  assert.equal(result.returnToTraining.windows[0].activities, 2);
+  assert.equal(result.returnToTraining.windows[0].totalMinutes, 90);
+  assert.equal(result.returnToTraining.windows[0].trainingLoad, 60);
+  assert.equal(result.returnToTraining.windows[0].trainingLoadActivityCount, 2);
+  assert.equal(result.returnToTraining.windows[0].duplicateActivityRecordsExcluded, 0);
+  assert.equal(result.returnToTraining.windows[0].duplicateLoadRecordsExcluded, 0);
+});
+
 test('keeps same IDs with conflicting start times separate for manual review', () => {
   const [result] = summarizeHealthEpisodeTrainingImpact(
     {},
