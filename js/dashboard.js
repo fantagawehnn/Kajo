@@ -8,10 +8,96 @@ import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog } from './util
 import { getTrainingLoadData } from './training-load.js';
 import { calculateReadiness as calculateReadinessFromData } from './recovery-calculations.js';
 import { loadCheckinInputs } from './health.js';
-import { saveDataToLocalStorage } from './storage.js?v=2';
+import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=2';
 import { showChartPointReadout } from './chart-readout.js';
 
 
+
+const DASHBOARD_WIDGET_PREFERENCE_KEY = 'kajo_dashboard_widget_preferences_v1';
+const DASHBOARD_WIDGET_DEFAULTS = Object.freeze({
+  daily: true,
+  recommendation: true,
+  wearables: true,
+  race: true,
+  week: true
+});
+
+function readDashboardWidgetPreferences() {
+  try {
+    const stored = getUserLocalSetting(DASHBOARD_WIDGET_PREFERENCE_KEY);
+    const parsed = stored ? JSON.parse(stored) : {};
+    return Object.fromEntries(Object.keys(DASHBOARD_WIDGET_DEFAULTS).map(key => [
+      key,
+      typeof parsed?.[key] === 'boolean' ? parsed[key] : DASHBOARD_WIDGET_DEFAULTS[key]
+    ]));
+  } catch (error) {
+    console.warn('Dashboard-Einstellungen konnten nicht gelesen werden; Standardansicht wird verwendet.', error);
+    return { ...DASHBOARD_WIDGET_DEFAULTS };
+  }
+}
+
+export function applyDashboardWidgetPreferences() {
+  const preferences = readDashboardWidgetPreferences();
+  document.querySelectorAll('[data-dashboard-widget-toggle]').forEach(input => {
+    const key = input.dataset.dashboardWidgetToggle;
+    if (Object.prototype.hasOwnProperty.call(preferences, key)) {
+      input.checked = preferences[key];
+    }
+  });
+  document.querySelectorAll('[data-dashboard-widget]').forEach(widget => {
+    const key = widget.dataset.dashboardWidget;
+    if (Object.prototype.hasOwnProperty.call(preferences, key)) {
+      widget.classList.toggle('kajo-dashboard-widget-hidden', !preferences[key]);
+      widget.setAttribute('aria-hidden', String(!preferences[key]));
+    }
+  });
+  return preferences;
+}
+
+export function toggleDashboardSetup() {
+  const panel = document.getElementById('dashboard-customization');
+  const button = document.querySelector('.kajo-dashboard-customize-button');
+  if (!panel) return;
+  const isOpening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !isOpening);
+  if (button) button.setAttribute('aria-expanded', String(isOpening));
+}
+
+export function saveDashboardWidgetPreferences() {
+  const preferences = { ...DASHBOARD_WIDGET_DEFAULTS };
+  document.querySelectorAll('[data-dashboard-widget-toggle]').forEach(input => {
+    const key = input.dataset.dashboardWidgetToggle;
+    if (Object.prototype.hasOwnProperty.call(preferences, key)) {
+      preferences[key] = Boolean(input.checked);
+    }
+  });
+  try {
+    setUserLocalSetting(DASHBOARD_WIDGET_PREFERENCE_KEY, JSON.stringify(preferences));
+    applyDashboardWidgetPreferences();
+  } catch (error) {
+    console.error('Dashboard-Einstellungen konnten nicht gespeichert werden.', error);
+    const note = document.querySelector('.kajo-dashboard-customization > p');
+    if (note) note.textContent = 'Einstellungen konnten nicht gespeichert werden. Bitte melde dich erneut an und versuche es noch einmal.';
+  }
+  return preferences;
+}
+
+export function resetDashboardLayout() {
+  document.querySelectorAll('[data-dashboard-widget-toggle]').forEach(input => {
+    const key = input.dataset.dashboardWidgetToggle;
+    if (Object.prototype.hasOwnProperty.call(DASHBOARD_WIDGET_DEFAULTS, key)) {
+      input.checked = DASHBOARD_WIDGET_DEFAULTS[key];
+    }
+  });
+  try {
+    setUserLocalSetting(DASHBOARD_WIDGET_PREFERENCE_KEY, JSON.stringify(DASHBOARD_WIDGET_DEFAULTS));
+    applyDashboardWidgetPreferences();
+    const note = document.querySelector('.kajo-dashboard-customization > p');
+    if (note) note.textContent = 'Dein Status bleibt immer sichtbar. Deine Auswahl wird in deinem Profil gespeichert.';
+  } catch (error) {
+    console.error('Dashboard-Ansicht konnte nicht zurückgesetzt werden.', error);
+  }
+}
 
 function localTodayKey() {
   const n = new Date();
