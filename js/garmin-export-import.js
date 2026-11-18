@@ -62,11 +62,16 @@ function dateBounds(value, budget = { count: 0 }, output = []) {
 }
 
 function getExistingActivityId(activity) {
-    const raw = activity?.sourceRefs?.garminActivityId
-        ?? activity?.garminData?.activityId
-        ?? activity?.id;
-    const id = String(raw ?? '').replace(/^garmin-/, '');
-    return /^\d+$/.test(id) ? id : null;
+    const explicit = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
+    if (explicit !== null && explicit !== undefined) {
+        const id = String(explicit).replace(/^garmin-/, '');
+        return /^\d+$/.test(id) ? id : null;
+    }
+    if (activity?.source === 'garmin' || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'))) {
+        const id = String(activity?.id ?? '').replace(/^garmin-/, '');
+        return /^\d+$/.test(id) ? id : null;
+    }
+    return null;
 }
 
 function mergeArchiveActivity(existing, incoming) {
@@ -74,7 +79,12 @@ function mergeArchiveActivity(existing, incoming) {
     if (!existing.sourceRefs?.garminActivityId) {
         existing.sourceRefs = { ...(existing.sourceRefs || {}), garminActivityId: incoming.sourceRefs.garminActivityId };
     }
-    for (const key of ['startTime', 'date', 'duration', 'distance', 'hr', 'maxHr']) {
+    for (const key of [
+        'startTime', 'date', 'duration', 'distance', 'hr', 'maxHr',
+        'garminTrainingLoad', 'garminAerobicTrainingEffect', 'garminAnaerobicTrainingEffect',
+        'garminCalories', 'garminAverageSpeed', 'garminMaxSpeed', 'garminElevationGain',
+        'garminElevationLoss', 'garminAveragePower', 'garminMaxPower', 'garminNormalizedPower'
+    ]) {
         if ((existing[key] === null || existing[key] === undefined || existing[key] === '') && incoming[key] !== null) {
             existing[key] = incoming[key];
         }
@@ -191,6 +201,14 @@ async function processZip(zip, prefix, context, depth = 0) {
             context.insertedFiles += context.fileRows.length;
             context.fileRows = [];
         }
+        if (context.totalFiles % 10 === 0) {
+            const ratio = context.totalExpectedFiles > 0
+                ? Math.min(1, context.totalFiles / context.totalExpectedFiles) : 0;
+            setImportStatus(
+                'Garmin-Dateien werden übernommen … ' + context.totalFiles + ' Dateien geprüft',
+                12 + Math.round(ratio * 76)
+            );
+        }
     }
 }
 
@@ -207,9 +225,9 @@ function importActivitiesIntoApp(records) {
         if (!mapped) continue;
         const existing = byId.get(mapped.sourceRefs.garminActivityId);
         if (existing) {
-            const hadData = Boolean(existing.garminData);
+                const hadArchiveData = existing.garminExportImported === true;
             mergeArchiveActivity(existing, mapped);
-            if (!hadData) enriched++;
+            if (!hadArchiveData) enriched++;
             continue;
         }
         state.rawActivities.push(mapped);
@@ -272,6 +290,7 @@ export async function importGarminExportArchive(importId) {
         if (existingError) throw existingError;
         context.existingPaths = new Set((existingRows || []).map(row => String(row.source_path)));
 
+        context.totalExpectedFiles = Number(manifest.entryCount || 0);
         const parts = manifest.archiveStorage?.parts;
         if (!Array.isArray(parts) || !parts.length) throw new Error('Die gespeicherten Archiv-Teilstücke fehlen.');
         const blobs = [];
