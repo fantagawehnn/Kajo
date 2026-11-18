@@ -10,8 +10,15 @@
   "ai": {
     "binding": "AI"
   },
-  "ai": {
-    "binding": "AI"
-  },
-  "previews": {}
+  "previews": {},
+  "ratelimits": [
+    {
+      "name": "COACH_RATE_LIMITER",
+      "namespace_id": "987654321",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ]
 }
