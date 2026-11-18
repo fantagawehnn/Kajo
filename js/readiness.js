@@ -271,8 +271,15 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
 
     const categoryLabels = {
         ga: 'GA-Ausdauer', interval: 'Intervalle', reg: 'Regeneration',
-        strength: 'Kraft', tech: 'Technik', race: 'Wettkampf'
+        strength: 'Kraft', tech: 'Technik', race: 'Wettkampf',
+        'diagnostic-lactate': 'Laktattest', 'diagnostic-strength': 'Krafttest'
     };
+    const assessmentCategories = ['diagnostic-lactate', 'diagnostic-strength'];
+    const assessmentSessions = sessions.filter(item => assessmentCategories.includes(String(item.category || '').toLowerCase()));
+    const allPlanned = Array.isArray(sourceState?.plannedActivities) ? sourceState.plannedActivities : planned;
+    const nextDayAssessments = allPlanned.filter(item => assessmentCategories.includes(String(item?.category || '').toLowerCase())
+        && dateDistanceDays(dateKey, String(item?.date || '').slice(0, 10)) === 1);
+    const assessmentNames = items => items.map(item => categoryLabels[item.category] || item.name || 'Leistungsdiagnostik').join(' und ');
     const sessionText = sessions.length
         ? sessions.map(item => {
             const duration = isValid(item.duration) ? ' (' + Number(item.duration) + ' min)' : '';
@@ -294,6 +301,24 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
             title: healthStatus === 'sick' ? 'Gesundheit hat Vorrang' : 'Verletzungsstatus berücksichtigen',
             detail: 'Im Gesundheitsprotokoll ist eine Einschränkung dokumentiert. KAJO gibt deshalb keine Trainingsfreigabe. Belastung erst nach Symptomen, Verlauf und gegebenenfalls medizinischer Rücksprache festlegen. Geplant: ' + sessionText + '.',
             decision: 'health-review',
+            readiness
+        };
+    }
+
+    if (assessmentSessions.length) {
+        return {
+            title: 'Leistungsdiagnostik hat Vorrang',
+            detail: assessmentNames(assessmentSessions) + ' ist heute als eigenständige Belastung eingeplant. KAJO berücksichtigt den Test als Tageshauptbelastung: keine zusätzliche intensive oder kraftbetonte Einheit ergänzen. Falls weitere Einheiten geplant sind (' + sessionText + '), sollten sie entfallen oder auf lockere Regeneration reduziert werden. Die Testbelastung wird nicht als Garmin-Load oder KAJO-Load geschätzt.',
+            decision: 'assessment-day',
+            readiness
+        };
+    }
+
+    if (nextDayAssessments.length) {
+        return {
+            title: 'Belastung vor Leistungsdiagnostik reduzieren',
+            detail: 'Morgen steht ' + assessmentNames(nextDayAssessments) + ' an. Halte den heutigen Trainingsumfang niedrig und verzichte auf intensive Intervalle sowie schweres Krafttraining, damit die Diagnostik nicht durch zusätzliche Ermüdung beeinträchtigt wird. Wenn heute eine Einheit geplant ist (' + sessionText + '), reduziere sie auf lockere Technik oder Regeneration beziehungsweise lasse sie aus. Die Tagesform und mögliche gesundheitliche Einschränkungen haben weiterhin Vorrang.',
+            decision: 'assessment-preparation',
             readiness
         };
     }
