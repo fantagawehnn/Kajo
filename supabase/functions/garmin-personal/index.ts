@@ -933,29 +933,27 @@ async function withGarminActivityLease<T extends Record<string, unknown>>(
   const leaseExpiry = () => new Date(Date.now() + leaseMinutes * 60_000).toISOString();
   const now = new Date().toISOString();
 
-  const { data: existing, error: existingError } = await admin.from("garmin_sync_state")
-    .select("sync_type")
-    .eq("user_id", userId).eq("sync_type", syncType).maybeSingle();
+  const { data: existing, error: existingError } = await admin.from("garmin_activity_sync_leases")
+    .select("user_id")
+    .eq("user_id", userId).maybeSingle();
   if (existingError) throw existingError;
   if (!existing) {
-    const { error: createError } = await admin.from("garmin_sync_state").insert({
-      user_id: userId, sync_type: syncType, cursor_date: startDate,
-      range_start_date: startDate, range_end_date: endDate, status: "pending",
-      cursor_offset: 0, lock_token: null, lock_expires_at: null, updated_at: now,
+    const { error: createError } = await admin.from("garmin_activity_sync_leases").insert({
+      user_id: userId, lock_token: null, lock_expires_at: null, updated_at: now,
     });
     if (createError && createError.code !== "23505") throw createError;
   }
 
-  const { data: claimed, error: claimError } = await admin.from("garmin_sync_state")
+  const { data: claimed, error: claimError } = await admin.from("garmin_activity_sync_leases")
     .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), last_started_at: now, updated_at: now })
-    .eq("user_id", userId).eq("sync_type", syncType)
+    .eq("user_id", userId)
     .or(`lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.${now}`)
-    .select("sync_type").maybeSingle();
+    .select("user_id").maybeSingle();
   if (claimError) throw claimError;
   if (!claimed) {
-    const { data: active, error: activeError } = await admin.from("garmin_sync_state")
+    const { data: active, error: activeError } = await admin.from("garmin_activity_sync_leases")
       .select("lock_expires_at")
-      .eq("user_id", userId).eq("sync_type", syncType).maybeSingle();
+      .eq("user_id", userId).maybeSingle();
     if (activeError) throw activeError;
     return {
       status: "in_progress", locked: true, startDate, endDate,
@@ -965,9 +963,9 @@ async function withGarminActivityLease<T extends Record<string, unknown>>(
   }
 
   const renewLease = async () => {
-    const { data, error } = await admin.from("garmin_sync_state")
+    const { data, error } = await admin.from("garmin_activity_sync_leases")
       .update({ lock_expires_at: leaseExpiry(), updated_at: new Date().toISOString() })
-      .eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+      .eq("user_id", userId).eq("lock_token", lockToken)
       .select("lock_token").maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("Die Sperre für die Garmin-Aktivitätsliste ist abgelaufen; der Vorgang wurde sicher angehalten.");
@@ -978,16 +976,16 @@ async function withGarminActivityLease<T extends Record<string, unknown>>(
     return await operation(renewLease);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
-    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+    const { error: releaseError } = await admin.from("garmin_activity_sync_leases").update({
       status: "error", lock_token: null, lock_expires_at: null,
       last_error: message.slice(0, 500), updated_at: new Date().toISOString(),
-    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    }).eq("user_id", userId).eq("lock_token", lockToken);
     if (releaseError) console.error("Garmin activity-list lease could not be released:", releaseError);
     throw error;
   } finally {
-    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+    const { error: releaseError } = await admin.from("garmin_activity_sync_leases").update({
       lock_token: null, lock_expires_at: null, updated_at: new Date().toISOString(),
-    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    }).eq("user_id", userId).eq("lock_token", lockToken);
     if (releaseError) console.error("Garmin activity-list lease could not be released:", releaseError);
   }
 }
