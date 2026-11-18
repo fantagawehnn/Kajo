@@ -17,7 +17,7 @@ import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
-import { computePerformanceTimeline } from './calculations.js?v=1';
+import { computePerformanceTimeline } from './calculations.js?v=2';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr, getTrainingLoadData } from './training-load.js?v=6';
 import { renderAnalysisInsights } from './analysis-insights.js?v=6';
