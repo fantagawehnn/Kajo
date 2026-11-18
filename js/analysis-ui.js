@@ -213,7 +213,7 @@ function renderPerformanceDetail() {
   ];
   const paddleCircles = paddleDefs.map(([key,label,unit]) => {
     const entry = performanceActivityMetric(key,label,unit);
-    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel'].filter(Boolean).join(' · ') : unit;
+    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel · letzte Einheit'].filter(Boolean).join(' · ') : unit;
     return performanceCircle(key,label,entry ? fmt(entry.value, key==='hr'||key==='cadence'?0:1) : '—',
       displayUnit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
   });
