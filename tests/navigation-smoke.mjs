@@ -388,7 +388,7 @@ assert.ok(garminArchive.includes('existingWithoutDetails') && garminArchive.incl
 assert.ok(garminArchive.includes('delete summary.activityRecords'), 'Garmin archive comparison stores only aggregate counts, not raw activity identifiers');
 assert.ok(garminArchive.includes('fieldInventory: {}') && garminArchive.includes('collectGarminFields(parsed, category'), 'Garmin archive analysis stores a compact field inventory in the archive manifest');
 assert.ok(garminArchive.includes('Erkannte Datenfelder anzeigen') && garminArchive.includes('field.occurrences'), 'Garmin archive history exposes the recognized field inventory to the user');
-assert.ok(garminArchive.includes('keine Messwerte importiert oder als Rohwerte gespeichert'), 'Garmin field preview does not import or persist raw measurement values');
+assert.ok(garminArchive.includes('keine Aktivitäten oder Messwerte wurden importiert oder überschrieben'), 'Garmin archive comparison remains read-only and does not import or overwrite measurement data');
 
 
 assert.ok(garminArchive.includes('fitnessagedata|metricsmaxmet|vo2|max.?met|benchmark'), 'Garmin fitness-age and VO2max exports are classified as performance data');
