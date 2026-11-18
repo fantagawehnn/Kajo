@@ -7,5 +7,18 @@
     "directory": "./",
     "binding": "ASSETS"
   },
-  "previews": {}
+  "ai": {
+    "binding": "AI"
+  },
+  "previews": {},
+  "ratelimits": [
+    {
+      "name": "COACH_RATE_LIMITER",
+      "namespace_id": "987654321",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ]
 }
