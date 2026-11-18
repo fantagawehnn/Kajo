@@ -26,6 +26,12 @@ Stand: 2026-11-18
 - `v2/js/data-source.js` exportiert `isGarminActivity`, das vom Analysemodul verwendet wird.
 - Der Branchvergleich gegen `v2` zeigt derzeit neun geänderte bzw. hinzugefügte Dateien; die Änderungen sind auf Coach-Integration und Statusdokumentation begrenzt.
 
+## Nachprüfung der Kontextauswahl
+
+- Historische Aktivitäts- und Belastungszeitreihen werden bei der Auswahl nun explizit auf den heutigen Tag begrenzt. Damit stimmt die tatsächliche Auswahl mit `contextSelection.selectedTo` überein; künftig datierte Einträge können nicht mehr versehentlich in rückblickende Aktivitäts- und Load-Analysen gelangen.
+- Die geplante Trainingsauswahl bleibt davon getrennt und umfasst weiterhin das vorgesehene Planungsfenster von 14 Tagen zurück bis 42 Tage voraus.
+- Diese Korrektur wurde statisch am Quelltext geprüft; ein Browser-/Runtime-Test steht weiterhin aus.
+
 ## Vor Livebetrieb zwingend offen
 
 1. In Cloudflare müssen `SUPABASE_URL` und `SUPABASE_ANON_KEY` als Worker-Variablen gesetzt sein. Der Supabase-Service-Role-Key wird dafür nicht benötigt und darf nicht eingebunden werden.
