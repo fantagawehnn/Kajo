@@ -19,11 +19,6 @@ export function loadCheckinInputs() {
         ['input-fatigue', 'fatigue'],
         ['input-motivation', 'motivation'],
         ['input-stress', 'stress'],
-        ['input-hrv', 'hrv'],
-        ['input-rhr', 'rhr'],
-        ['input-sleep-duration', 'sleepDuration'],
-        ['input-sleep-score', 'sleepScore'],
-        ['input-respiration', 'respiration'],
         ['input-weight', 'weight']
     ];
     fields.forEach(([id, key]) => {
@@ -243,40 +238,13 @@ export function saveCheckin() {
         alert('Bitte gib ein gültiges Körpergewicht größer als 0 kg ein.');
         return;
     }
-    const manualFields = [
-        ['input-hrv', 'hrv', value => value > 0],
-        ['input-rhr', 'rhr', value => value > 0],
-        ['input-sleep-duration', 'sleepDuration', value => value > 0 && value <= 24],
-        ['input-sleep-score', 'sleepScore', value => value >= 0 && value <= 100],
-        ['input-respiration', 'respiration', value => value >= 4 && value <= 60]
-    ];
-    const wearableUpdates = {};
-    for (const [inputId, key, isValid] of manualFields) {
-        const input = document.getElementById(inputId);
-        const raw = input?.value?.trim() || '';
-        if (raw === '') continue;
-        const value = Number(raw);
-        if (!Number.isFinite(value) || !isValid(value)) {
-            alert('Bitte prüfe die manuellen Wearable-Werte: HRV und Ruhepuls müssen positiv sein, Schlafdauer zwischen 0 und 24 Stunden und Schlafscore zwischen 0 und 100 und Atemfrequenz zwischen 4 und 60 Atemzügen/min liegen.');
-            return;
-        }
-        wearableUpdates[key] = value;
-    }
-
     const isSick = document.getElementById('input-sick')?.checked === true;
     const hDiag = document.getElementById('input-health-diagnosis')?.value.trim() || '';
 
-    // Preserve synchronized wearable values and their original provenance.
-    
-    const measurementSources = { ...(existing.measurementSources || {}) };
-    if (Object.prototype.hasOwnProperty.call(wearableUpdates, 'hrv')) {
-        measurementSources.hrv = { source: 'manual', metric: 'unspecified', unit: 'ms' };
-    }
+    // Garmin-Gesundheitswerte werden ausschließlich synchronisiert und hier nicht editiert.
     const checkin = {
         ...existing,
         ...scaleUpdates,
-        ...wearableUpdates,
-        ...(Object.keys(measurementSources).length ? { measurementSources } : {}),
         weight: weightEnabled && Number.isFinite(weightVal) ? weightVal : existing.weight
     };
     const cycleSection = document.getElementById('cycle-checkin-section');
