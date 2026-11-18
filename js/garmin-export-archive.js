@@ -191,32 +191,45 @@ export async function uploadGarminExportArchive(event) {
 
 export async function renderGarminExportArchiveHistory() {
     const target = document.getElementById('garmin-archive-history');
-    if (!target || !supabase) return;
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user?.id) return;
-    const { data, error } = await supabase.from('garmin_export_imports')
-        .select('id, original_file_name, file_size_bytes, status, manifest, created_at')
-        .eq('user_id', auth.user.id).order('created_at', { ascending: false }).limit(10);
-    if (error) {
-        target.textContent = 'Archivübersicht konnte nicht geladen werden.';
+    if (!target) return;
+    target.textContent = 'Archivübersicht wird geladen …';
+    if (!supabase) {
+        target.textContent = 'Archivübersicht ist derzeit nicht verfügbar.';
         return;
     }
-    if (!data?.length) {
-        target.textContent = 'Noch kein vollständiger Garmin-Export gespeichert.';
-        return;
+    try {
+        const { data: auth, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        const userId = auth?.user?.id;
+        if (!userId) {
+            target.textContent = 'Bitte melde dich an, um deine gespeicherten Garmin-Archive zu sehen.';
+            return;
+        }
+        const { data, error } = await supabase.from('garmin_export_imports')
+            .select('id, original_file_name, file_size_bytes, status, manifest, created_at')
+            .eq('user_id', userId).order('created_at', { ascending: false }).limit(10);
+        if (error) throw error;
+        if (!data?.length) {
+            target.textContent = 'Noch kein vollständiger Garmin-Export gespeichert.';
+            return;
+        }
+        target.innerHTML = data.map(item => {
+            const size = (Number(item.file_size_bytes || 0) / (1024 * 1024)).toFixed(1);
+            const files = Number(item.manifest?.entryCount || 0);
+            const preview = item.manifest?.analysisPreview;
+            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien ausgewertet · ' + Number(preview.nestedArchives || 0) + ' Unterarchive geöffnet' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' : '';
+            const analyzeButton = item.status === 'indexed' && !preview ? '<button type="button" onclick="analyzeGarminExportArchive(\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Archiv analysieren</button>' : '';
+            const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
+                : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
+                : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
+            const date = new Date(item.created_at).toLocaleString('de-DE');
+            const fileName = String(item.original_file_name).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+            return '<div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3"><div class="flex items-center justify-between gap-3"><span class="truncate text-xs font-semibold text-slate-200">' + fileName + '</span><span class="shrink-0 text-[10px] text-slate-400">' + size + ' MB</span></div><p class="mt-1 text-[10px] text-slate-400">' + status + ' · ' + date + '</p>' + previewText + analyzeButton + '</div>';
+        }).join('');
+    } catch (error) {
+        console.error('[KAJO Garmin-Archivhistorie]', error);
+        target.textContent = 'Archivübersicht konnte nicht geladen werden: ' + String(error?.message || error);
     }
-    target.innerHTML = data.map(item => {
-        const size = (Number(item.file_size_bytes || 0) / (1024 * 1024)).toFixed(1);
-        const files = Number(item.manifest?.entryCount || 0);
-        const preview = item.manifest?.analysisPreview;
-        const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien ausgewertet · ' + Number(preview.nestedArchives || 0) + ' Unterarchive geöffnet' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' : '';
-        const analyzeButton = item.status === 'indexed' && !preview ? '<button type="button" onclick="analyzeGarminExportArchive(\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Archiv analysieren</button>' : '';
-        const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
-            : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
-            : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
-        const date = new Date(item.created_at).toLocaleString('de-DE');
-        return '<div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3"><div class="flex items-center justify-between gap-3"><span class="truncate text-xs font-semibold text-slate-200"></span><span class="shrink-0 text-[10px] text-slate-400">' + size + ' MB</span></div><p class="mt-1 text-[10px] text-slate-400">' + status + ' · ' + date + '</p>' + previewText + analyzeButton + '</div>';
-    }).map((html, index) => html.replace('<span class="truncate text-xs font-semibold text-slate-200"></span>', '<span class="truncate text-xs font-semibold text-slate-200">' + String(data[index].original_file_name).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])) + '</span>')).join('');
 }
 
 
