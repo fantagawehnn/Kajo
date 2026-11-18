@@ -170,3 +170,20 @@ export function selectGarminVo2MaxDailyRecords(records = []) {
     }
     return { selected, ambiguousDates };
 }
+
+export function collectGarminActivityNames(value, output = new Map(), depth = 0) {
+    if (!value || typeof value !== 'object' || depth > 14) return output;
+    if (Array.isArray(value)) {
+        for (const item of value) collectGarminActivityNames(item, output, depth + 1);
+        return output;
+    }
+    const rawId = value.activityId ?? value.id;
+    const activityName = typeof value.activityName === 'string' ? value.activityName.trim() : '';
+    if (/^\d+$/.test(String(rawId ?? '')) && activityName && !output.has(String(rawId))) {
+        output.set(String(rawId), activityName);
+    }
+    for (const child of Object.values(value)) {
+        if (child && typeof child === 'object') collectGarminActivityNames(child, output, depth + 1);
+    }
+    return output;
+}
