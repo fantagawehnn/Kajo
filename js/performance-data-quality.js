@@ -58,7 +58,7 @@ export function resolvePaddlingPerformanceSeries(activity, seriesList, metricKey
         cadence: { key: 'directStrokeCadence', sourceUnit: 'strokesPerMinute', unit: '/min', multiplier: 1, note: 'Garmin-Schlagfrequenz' }
     };
     const definition = rawDefinitions[metricKey];
-    if (!definition) return null;
+    if (!definition) return standard || null;
     const raw = seriesList.find(series => series?.key === definition.key && series.unit === definition.sourceUnit);
     if (!raw || !Array.isArray(raw.values)) return standard || null;
     const resolved = {
