@@ -41,6 +41,8 @@ jobs:
         run: node --experimental-default-type=module --test tests/garmin-performance-archive.test.mjs
       - name: Run Garmin full export import tests
         run: node --experimental-default-type=module --test tests/garmin-export-import.test.mjs
+      - name: Run Garmin health normalization tests
+        run: node --experimental-default-type=module --test tests/garmin-health-normalize.test.mjs
       - name: Run daily Garmin HR recovery tests
         run: node --experimental-default-type=module --test tests/daily-heart-rate.test.mjs
       - name: Run navigation smoke tests
