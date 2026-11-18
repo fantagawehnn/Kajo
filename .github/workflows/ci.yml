@@ -25,6 +25,8 @@ jobs:
         run: node tests/regression-smoke.mjs
       - name: Run Garmin load and coverage tests
         run: node --experimental-default-type=module --test tests/training-load.test.mjs
+      - name: Run training load chart zone tests
+        run: node --experimental-default-type=module --test tests/training-load-zones.test.mjs
       - name: Run daily Garmin HR recovery tests
         run: node --experimental-default-type=module --test tests/daily-heart-rate.test.mjs
       - name: Run navigation smoke tests
