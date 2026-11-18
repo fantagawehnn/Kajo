@@ -50,6 +50,57 @@ test('individual physiological baseline uses recent history and ignores future r
     assert.equal(result.score, 79); // Baseline physiology plus strong sleep score
 });
 
+test('HRV baseline does not mix explicit Garmin provenance with legacy or manual values', () => {
+    const source = makeState({
+        dailyCheckins: {
+            [day]: {
+                hrv: 75,
+                sleepScore: 90,
+                measurementSources: {
+                    hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+                }
+            }
+        }
+    });
+    const result = calculateReadiness(day, source);
+    assert.equal(result.objective.some(item => item.key === 'hrv'), false);
+    assert.deepEqual(
+        result.baselineRequirements.find(item => item.key === 'hrv'),
+        { key: 'hrv', label: 'HRV', observations: 0, required: 7 }
+    );
+});
+
+test('HRV baseline uses matching source, metric identity and unit', () => {
+    const garminHistory = Object.fromEntries(Object.entries(history).map(([date, record]) => [
+        date,
+        {
+            ...record,
+            measurementSources: {
+                hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+            }
+        }
+    ]));
+    const source = makeState({
+        dailyCheckins: {
+            ...garminHistory,
+            [day]: {
+                hrv: 75,
+                sleepScore: 90,
+                measurementSources: {
+                    hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+                }
+            }
+        }
+    });
+    const result = calculateReadiness(day, source);
+    const hrv = result.objective.find(item => item.key === 'hrv');
+    assert.ok(hrv);
+    assert.equal(hrv.observations, 14);
+    assert.deepEqual(hrv.measurementSource, {
+        source: 'garmin', metric: 'unspecified', unit: 'ms'
+    });
+});
+
 test('sleep duration and sleep score are not counted twice in the sleep domain', () => {
     const source = makeState({
         dailyCheckins: { [day]: { hrv: 60, sleepDuration: 4, sleepScore: 90, sleepQuality: 4 } }
