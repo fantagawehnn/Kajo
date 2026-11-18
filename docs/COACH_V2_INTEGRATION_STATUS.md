@@ -51,6 +51,13 @@ Stand: 2026-11-18
 - Die Workflow-Trigger wurden nicht verändert. Auf diesem Feature-Branch läuft die CI daher nicht automatisch bei jedem Push; bei einem späteren Pull Request gegen `v2` greift der bestehende Pull-Request-Trigger.
 - Die CI wurde durch diese Änderung noch nicht ausgeführt. Die Ergänzung erweitert nur die künftig ausgeführte Syntaxprüfung und ersetzt keine Coach-Funktionstests.
 
+## Coach-Kontexttests
+
+- Neu: `tests/coach-context.test.mjs` mit Regressionstests für die Erkennung einer vollständigen Saisonanalyse, den Ausschluss zukünftiger Aktivitäts-/Load-Daten aus Rückblicken, die getrennte Einbeziehung geplanter Einheiten sowie die lokale Aggregation von Garmin-HF-Daten.
+- Zusätzlich wird geprüft, dass rohe Garmin-HF-Zeitreihen nicht im an den Coach übergebenen Kontext landen und ohne auswertbare HF-Daten keine Zonenverteilung ausgegeben wird.
+- Die Tests sind in den bestehenden CI-Testablauf aufgenommen. Der Workflow-Trigger bleibt unverändert; auf dem Feature-Branch wird die Suite daher nicht automatisch bei jedem Push ausgeführt.
+- Die Testdatei wurde angelegt, aber noch nicht ausgeführt. Die Testabdeckung ist damit implementiert, nicht als bestanden verifiziert.
+
 ## Test- und Deploymentstatus
 
 - GitHub-Dateien und Branchvergleich geprüft.
