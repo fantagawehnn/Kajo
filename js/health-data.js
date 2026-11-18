@@ -6,6 +6,7 @@
 
 import { state } from './state.js';
 import { showChartPointReadout } from './chart-readout.js';
+import { getGarminCheckinMetric } from './garmin-metric-access.js';
 
 const METRICS = [
   { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#38bdf8', decimals:0 },
@@ -45,9 +46,11 @@ function metricValue(row, key) {
     garminStress: 'garminStress', steps: 'garminSteps',
     fitnessAge: 'garminFitnessAge', weight: 'garminWeight'
   };
-  const raw = key === 'hrv'
-    ? (row.garminHrv ?? (row.measurementSources?.hrv?.source === 'garmin' ? row.hrv : null))
-    : row[garminKeys[key] || key];
+  const raw = key === 'vo2max'
+    ? getGarminCheckinMetric(row, 'vo2max')
+    : key === 'hrv'
+      ? (row.garminHrv ?? (row.measurementSources?.hrv?.source === 'garmin' ? row.hrv : null))
+      : row[garminKeys[key] || key];
   return valid(raw) ? Number(raw) : null;
 }
 function median(values) {
@@ -117,7 +120,7 @@ function metricCards() {
       const baseline=latest ? personalBaseline(metric.key,latest.date) : null;
       const delta=baseline && baseline!==0 && latest ? (latest.value-baseline)/baseline*100 : null;
       const noData=!latest;
-      const sourceHint=metric.key==='vo2max' ? (latest && state.dailyCheckins?.[latest.date]?.vo2maxSource==='garmin-estimate' ? 'Garmin-Schätzung · ' : (latest ? 'Quelle nicht eindeutig · ' : '')) : (latest ? 'Garmin · ' : '');
+      const sourceHint=metric.key==='vo2max' ? (latest ? 'Garmin-Schätzung · ' : '') : (latest ? 'Garmin · ' : '');
       const status=noData?'Keine Werte vorhanden':sourceHint+(baseline===null?'Persönliche Baseline noch offen':signedPercent(delta)+' zum persönlichen Median');
       return `<button type="button" class="kajo-health-data-card ${noData?'is-empty':''}" onclick="openGarminHealthMetric('${metric.key}')" style="--health-metric-color:${metric.color}">
         <span class="kajo-health-data-icon"><i data-lucide="${metric.icon}"></i></span>
@@ -156,8 +159,8 @@ function renderDetail() {
   document.getElementById('kajo-health-detail-baseline').textContent=baseline===null?'Persönlicher Normalbereich noch nicht verfügbar':'Persönlicher 90-Tage-Median: '+format(baseline,metric)+' '+metric.unit;
   document.getElementById('kajo-health-detail-delta').textContent=delta===null?'Noch keine normierte Abweichung berechenbar':signedPercent(delta)+' gegenüber deinem persönlichen Median';
   document.getElementById('kajo-health-detail-count').textContent=values.filter(valid).length+' Messwerte im Zeitraum';
-  const isGarminEstimate=metric.key==='vo2max' && latest && state.dailyCheckins?.[latest.date]?.vo2maxSource==='garmin-estimate';
-  document.getElementById('kajo-health-detail-note').textContent=(isGarminEstimate?'Garmin-VO₂max-Schätzung; kein direkt gemessener Diagnostikwert. ':'')+'Die normierte Abweichung beschreibt den Abstand zum persönlichen Median. Sie ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
+  const isGarminEstimate=metric.key==='vo2max' && latest && getGarminCheckinMetric(state.dailyCheckins?.[latest.date], 'vo2max') !== null;
+  document.getElementById('kajo-health-detail-note').textContent=(isGarminEstimate?'Garmin-VO₂max-Schätzung; kein direkt gemessener Diagnostikwert. Das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart. ':'')+'Die normierte Abweichung beschreibt den Abstand zum persönlichen Median. Sie ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
   const labels=dates.map(day=>new Date(day+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}));
   const baselineSeries=dates.map(day=>personalBaseline(metric.key,day));
   const canvas=document.getElementById('kajo-health-detail-chart');
