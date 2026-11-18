@@ -11,13 +11,11 @@ permissions:
 
 jobs:
   regression-smoke:
-    # Pushes auf v2 und feat/garmin-data-quality-v2 laufen auf dem lokalen Windows-Runner.
-    # Weitere Entwicklungsbranches und Pull Requests nutzen GitHub-hosted Ubuntu-Runner.
+    # v2 und feat/garmin-data-quality-v2 nutzen den lokalen Windows-Runner.
+    # Coach-Feature-Branch und Pull Requests laufen auf GitHub-hosted Ubuntu-Runnern.
     runs-on: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'self-hosted' || 'ubuntu-24.04' }}
     defaults:
       run:
-        # Windows nutzt cmd.exe, damit die lokale PowerShell-Execution-Policy nicht blockiert.
-        # Pull Requests laufen auf Ubuntu und verwenden bash.
         shell: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/feat/garmin-data-quality-v2') && 'cmd' || 'bash' }}
     steps:
       - name: Checkout
@@ -27,7 +25,7 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check js/storage.js && node --check js/user-storage.js && node --check js/local-db.js && node --check js/garmin-cloud-telemetry.js && node --check js/daily-heart-rate.js && node --check js/daily-hr-activity.js && node --check js/main.js && node --check js/analysis-insights.js && node --check js/calculations.js && node --check js/training-load.js && node --check js/data-source.js && node --check js/coach.js && node --check js/coach-context.js && node --check js/coach-data-context.js && node --check js/coach-analysis.js && node --check worker.js && node --check js/profile.js && node --check js/settings.js && node --check js/theme.js && node --check js/calendar.js && node --check js/activity-groups.js && node --check js/dashboard.js && node --check js/charts.js && node --check js/analysis-ui.js && node --check js/training-load-view.js && node --check js/analysis-overview.js && node --check js/activities.js && node --check js/import.js && node --check js/garmin-export-archive.js
+        run: node --check js/storage.js && node --check js/user-storage.js && node --check js/local-db.js && node --check js/garmin-cloud-telemetry.js && node --check js/daily-heart-rate.js && node --check js/daily-hr-activity.js && node --check js/main.js && node --check js/analysis-insights.js && node --check js/calculations.js && node --check js/training-load.js && node --check js/data-source.js && node --check js/coach.js && node --check js/coach-context.js && node --check js/coach-data-context.js && node --check js/coach-analysis.js && node --check worker.js && node --check js/profile.js && node --check js/settings.js && node --check js/theme.js && node --check js/calendar.js && node --check js/activity-groups.js && node --check js/dashboard.js && node --check js/readiness.js && node --check js/charts.js && node --check js/analysis-ui.js && node --check js/training-load-view.js && node --check js/analysis-overview.js && node --check js/activities.js && node --check js/import.js && node --check js/garmin-export-archive.js
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
       - name: Run Coach context regression tests
@@ -38,6 +36,8 @@ jobs:
         run: node --experimental-default-type=module --test tests/training-load.test.mjs
       - name: Run training load chart zone tests
         run: node --experimental-default-type=module --test tests/training-load-zones.test.mjs
+      - name: Run readiness and training recommendation tests
+        run: node --experimental-default-type=module --test tests/readiness.test.mjs
       - name: Run daily Garmin HR recovery tests
         run: node --experimental-default-type=module --test tests/daily-heart-rate.test.mjs
       - name: Run navigation smoke tests
