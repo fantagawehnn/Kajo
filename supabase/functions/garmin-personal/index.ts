@@ -820,6 +820,7 @@ async function syncActivityFilesBatch(
       .select("garmin_activity_id", { count: "exact" })
       .eq("user_id", userId)
       .order("start_time", { ascending: true })
+      .order("garmin_activity_id", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (pageError) throw pageError;
     if (typeof count === "number") totalActivities = count;
@@ -977,18 +978,20 @@ async function syncActivityFilesBatch(
     if (errors.length) {
       await renewLease();
       result.errors = errors;
-      await admin.from("garmin_activity_details").upsert({
+      const { error: saveError } = await admin.from("garmin_activity_details").upsert({
         user_id: userId,
         garmin_activity_id: activityId,
         last_error: errors.join(" | ").slice(0, 1000),
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,garmin_activity_id" });
+      if (saveError) throw saveError;
     } else {
       await renewLease();
-      await admin.from("garmin_activity_details").update({
+      const { error: clearError } = await admin.from("garmin_activity_details").update({
         last_error: null,
         updated_at: new Date().toISOString(),
       }).eq("user_id", userId).eq("garmin_activity_id", activityId);
+      if (clearError) throw clearError;
       result.errors = [];
     }
     if (errors.length) {
