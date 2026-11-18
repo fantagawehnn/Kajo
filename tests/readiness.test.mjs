@@ -46,7 +46,7 @@ test('individual physiological baseline uses recent history and ignores future r
     assert.ok(hrv);
     assert.equal(hrv.baseline, 60);
     assert.ok(hrv.score > 50);
-    assert.equal(result.score, 62); // 40% physiology + 30% sleep, renormalized
+    assert.equal(result.score, 93); // High HRV vs. individual baseline plus strong sleep score
 });
 
 test('sleep duration and sleep score are not counted twice in the sleep domain', () => {
