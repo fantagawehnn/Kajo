@@ -74,6 +74,15 @@ create policy "Users can insert their own Garmin export performance records"
     with check ((select auth.uid()) = user_id);
 
 -- Large JSON files are stored as private objects under the importing user's folder.
+update storage.buckets
+   set allowed_mime_types = array[
+       'application/zip',
+       'application/x-zip-compressed',
+       'application/octet-stream',
+       'application/json'
+   ]
+ where id = 'garmin-exports';
+
 create policy "Users can replace their own extracted Garmin export files"
     on storage.objects for update to authenticated
     using (
