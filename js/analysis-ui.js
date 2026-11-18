@@ -184,9 +184,10 @@ const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-
   '<span class="kajo-recovery-metric-label">' + performanceEscape(label) + '</span><small>' + performanceEscape(unit || detail || 'Nicht erfasst') + '</small></button>';
 function renderFitness() {
   const vo2 = latestCheckin('vo2max');
-  const vo2Color = vo2 ? historyRingColor('vo2max', vo2.value, vo2.date) : 'var(--kajo-status-info)';
+  // No validated Garmin-specific VO2max status threshold is defined; keep the indicator neutral.
+  const vo2Color = 'var(--kajo-status-info)';
   const vo2Circle = performanceCircle('vo2max','VO₂max',vo2 ? fmt(vo2.value,1) : '—','ml/kg/min',
-    vo2 ? 'Garmin-Schätzwert' : 'Nicht erfasst',vo2Color);
+    vo2 ? 'Garmin-Schätzwert · nicht automatisch paddelspezifisch' : 'Nicht erfasst',vo2Color);
   renderMetrics('fitness-aerobic-metrics',[vo2Circle]);
   const overview = document.getElementById('fitness-overview-view');
   const detail = document.getElementById('performance-detail-view');
@@ -281,7 +282,7 @@ function renderPerformanceTrend(key) {
     labels = entries.map(([date])=>dateLabel(date));
     values = entries.map(([,row])=>getGarminCheckinMetric(row, 'vo2max'));
     heading = 'VO₂max · Garmin-Schätzwert'; unit = 'ml/kg/min';
-    explanation = 'Verlauf der importierten Garmin-Wellnesswerte. Garmin-Schätzwert, keine direkte Spiroergometrie oder Labordiagnostik.';
+    explanation = 'Verlauf der importierten Garmin-Schätzwerte. Das Garmin-Aktivitätsprofil belegt nicht die tatsächlich ausgeübte Sportart; der Wert ist daher nicht automatisch paddelspezifisch. keine direkte Spiroergometrie oder Labordiagnostik.';
     color = '#f97316';
   } else if (key.startsWith('strength:')) {
     const exercise = decodeURIComponent(key.slice(9));

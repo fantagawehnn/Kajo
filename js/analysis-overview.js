@@ -159,7 +159,7 @@ function renderTrendChart() {
   });
   const healthNote = 'Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
   setText('analysis-overview-trend-note',
-    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. ' + healthNote);
+    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {

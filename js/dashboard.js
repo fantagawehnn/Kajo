@@ -9,6 +9,7 @@ import { getTrainingLoadData } from './training-load.js';
 import { loadCheckinInputs } from './health.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
+import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js';
 export { calculateReadiness } from './readiness.js';
 
@@ -913,9 +914,11 @@ function historyValue(checkin, key) {
         sleepScore: 'garminSleepScore', sleepDuration: 'garminSleepDuration',
         respiration: 'garminRespiration'
     };
-    const raw = key === 'hrv'
-        ? (checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null))
-        : key === 'sleepQuality'
+    const raw = key === 'vo2max'
+        ? getGarminCheckinMetric(checkin, 'vo2max')
+        : key === 'hrv'
+            ? (checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null))
+            : key === 'sleepQuality'
             ? (checkin.sleepQuality ?? (Number(checkin.sleep) >= 1 && Number(checkin.sleep) < 5 ? checkin.sleep : null))
             : garminKeys[key] ? checkin[garminKeys[key]] : checkin[key];
     if (!validNumber(raw)) return null;
