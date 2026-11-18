@@ -29,6 +29,7 @@ Stand: 2026-11-18
 ## Nachprüfung der Kontextauswahl
 
 - Historische Aktivitäts- und Belastungszeitreihen werden bei der Auswahl nun explizit auf den heutigen Tag begrenzt. Damit stimmt die tatsächliche Auswahl mit `contextSelection.selectedTo` überein; künftig datierte Einträge können nicht mehr versehentlich in rückblickende Aktivitäts- und Load-Analysen gelangen.
+- Die Erkennung vollständiger Saisonanalysen berücksichtigt nun auch natürliche Formulierungen wie „letzte Saison“, „vergangene Saison“ und „bisherige Saison“, damit diese Fragen nicht versehentlich nur das rollierende 90-Tage-Fenster erhalten.
 - Die geplante Trainingsauswahl bleibt davon getrennt und umfasst weiterhin das vorgesehene Planungsfenster von 14 Tagen zurück bis 42 Tage voraus.
 - Diese Korrektur wurde statisch am Quelltext geprüft; ein Browser-/Runtime-Test steht weiterhin aus.
 
