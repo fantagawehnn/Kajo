@@ -81,7 +81,8 @@ function recoveryTrendValue(row, key) {
   else value = row[key];
   if (!validNumber(value)) return null;
   const n = Number(value);
-  if (key === 'sleepDuration' && (n <= 0 || n > 24)) return null;
+  // Imported sleep durations above 18 hours are treated as implausible outliers.
+  if (key === 'sleepDuration' && (n <= 0 || n > 18)) return null;
   if (key === 'sleepScore' || key === 'bodyBattery') return n >= 0 && n <= 100 ? n : null;
   if (key === 'sleepQuality' || key === 'fatigue') return n >= 1 && n <= 10 ? n : null;
   if ((key === 'hrv' || key === 'rhr') && n <= 0) return null;
