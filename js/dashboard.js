@@ -908,11 +908,16 @@ function historyDateKey(date) {
 }
 function historyValue(checkin, key) {
     if (!checkin) return null;
-    const raw = key === 'sleepDuration'
-        ? (checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null))
+    const garminKeys = {
+        rhr: 'garminRhr', bodyBattery: 'garminBodyBattery',
+        sleepScore: 'garminSleepScore', sleepDuration: 'garminSleepDuration',
+        respiration: 'garminRespiration'
+    };
+    const raw = key === 'hrv'
+        ? (checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null))
         : key === 'sleepQuality'
             ? (checkin.sleepQuality ?? (Number(checkin.sleep) >= 1 && Number(checkin.sleep) < 5 ? checkin.sleep : null))
-            : key === 'rhr' ? (checkin.garminRhr ?? checkin.rhr) : checkin[key];
+            : garminKeys[key] ? checkin[garminKeys[key]] : checkin[key];
     if (!validNumber(raw)) return null;
     const value = Number(raw);
     return ['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)
