@@ -14,7 +14,8 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
-import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=3';
+import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
+import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
@@ -52,7 +53,7 @@ function loadCoachModule() {
     return coachModulePromise;
 }
 function loadHealthDataModule() {
-    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=2');
+    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=3');
     return healthDataModulePromise;
 }
 function loadNutritionModule() {
@@ -3062,6 +3063,7 @@ Object.assign(window, {
     restoreDatabaseBackup,
     uploadGarminExportArchive,
     analyzeGarminExportArchive,
+    importGarminExportArchive,
     closeBackupPreview,
     confirmBackupRestore,
     addRace,
