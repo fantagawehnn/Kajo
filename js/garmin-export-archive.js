@@ -216,8 +216,13 @@ export async function renderGarminExportArchiveHistory() {
             const size = (Number(item.file_size_bytes || 0) / (1024 * 1024)).toFixed(1);
             const files = Number(item.manifest?.entryCount || 0);
             const preview = item.manifest?.analysisPreview;
-            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien ausgewertet · ' + Number(preview.nestedArchives || 0) + ' Unterarchive geöffnet' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' : '';
-            const analyzeButton = item.status === 'indexed' && !preview ? '<button type="button" onclick="analyzeGarminExportArchive(\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Archiv analysieren</button>' : '';
+            const inventory = preview?.fieldInventory ? Object.values(preview.fieldInventory) : [];
+            const fieldRows = inventory.slice().sort((a, b) => Number(b.occurrences || 0) - Number(a.occurrences || 0)).slice(0, 30);
+            const fieldList = fieldRows.length
+                ? '<ul class="mt-2 space-y-1">' + fieldRows.map(field => '<li class="break-all text-[10px] text-slate-300"><span class="text-cyan-300">' + escapeHtml(field.category) + '</span> · ' + escapeHtml(field.path) + ' <span class="text-slate-500">(' + escapeHtml(Object.keys(field.types || {}).join(', ')) + ' · ' + Number(field.occurrences || 0) + ' Treffer)</span></li>').join('') + '</ul>'
+                : '';
+            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
+            const analyzeButton = item.status === 'indexed' && !preview?.fieldInventory ? '<button type="button" onclick="analyzeGarminExportArchive(\\'' + String(item.id).replace(/[^a-f0-9-]/gi, '') + '\\')" class="mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white">Datenfelder erkennen</button>' : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
@@ -241,6 +246,35 @@ function classifyGarminPath(path) {
     if (/weight|hydration|nutrition|calorie/.test(value)) return 'body-nutrition';
     if (/training|vo2|max.?met|fitness|benchmark/.test(value)) return 'performance';
     return 'other';
+}
+
+function collectGarminFields(value, category, filePath, inventory, budget, path = '', depth = 0) {
+    if (budget.count >= 25000 || depth > 9) return;
+    budget.count++;
+    const type = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+    if (path) {
+        const key = category + '|' + path;
+        if (inventory[key] || Object.keys(inventory).length < 500) {
+            const field = inventory[key] || (inventory[key] = { category, path, types: {}, occurrences: 0, files: [] });
+            field.types[type] = (field.types[type] || 0) + 1;
+            field.occurrences++;
+            if (field.files.length < 5 && !field.files.includes(filePath)) field.files.push(filePath);
+        }
+    }
+    if (Array.isArray(value)) {
+        value.slice(0, 10).forEach(item => collectGarminFields(item, category, filePath, inventory, budget, path ? path + '[]' : '[]', depth + 1));
+        return;
+    }
+    if (value && typeof value === 'object') {
+        for (const [key, item] of Object.entries(value)) {
+            collectGarminFields(item, category, filePath, inventory, budget, path ? path + '.' + String(key).slice(0, 100) : String(key).slice(0, 100), depth + 1);
+            if (budget.count >= 25000) break;
+        }
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 }
 
 function collectDateValues(value, output, budget) {
@@ -288,6 +322,7 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                 const recordCount = Array.isArray(parsed) ? parsed.length
                     : parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 1;
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
+                collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 });
                 const dates = [];
                 collectDateValues(parsed, dates, { count: 0 });
                 for (const date of dates) summary.dates.push(date);
@@ -340,11 +375,12 @@ export async function analyzeGarminExportArchive(importId) {
             nestedArchives: 0,
             categories: {},
             topLevelRecords: {},
+            fieldInventory: {},
             otherFiles: {},
             dates: [],
             errors: []
         };
-        setAnalysisStatus('JSON-Dateien und Unterarchive werden geprüft …');
+        setAnalysisStatus('JSON-Dateien, Datenfelder und Unterarchive werden geprüft …');
         await inspectGarminZip(zip, '', summary);
         summary.dates.sort();
         summary.dateFrom = summary.dates[0] || null;
@@ -358,7 +394,7 @@ export async function analyzeGarminExportArchive(importId) {
             .eq('id', importId).eq('user_id', userId);
         if (saveError) throw saveError;
         if (fill) fill.style.width = '100%';
-        setAnalysisStatus('Analyse abgeschlossen. Es wurden nur Dateistrukturen und Zeiträume erfasst; noch keine Garmin-Messwerte in KAJO importiert.');
+        setAnalysisStatus('Feldanalyse abgeschlossen. Erkannte Datenfelder und Zeiträume wurden katalogisiert; es wurden keine Messwerte importiert oder als Rohwerte gespeichert.');
         if (status) status.className = 'text-xs text-emerald-300';
         await renderGarminExportArchiveHistory();
     } catch (error) {

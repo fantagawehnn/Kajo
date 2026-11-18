@@ -28,6 +28,15 @@ assert.equal((html.match(/id="nav-(?:today|calendar|training|analysis|more)"/g) 
 assert.equal((html.match(/id="mobile-nav-(?:today|calendar|training|analysis|more)"/g) || []).length, 5);
 assert.doesNotMatch(html, /id="nav-(?:dashboard|analyses|areas)"/);
 
+const dataManagementStart = html.indexOf('id="view-data"');
+const dataManagementEnd = html.indexOf('id="view-backup"', dataManagementStart);
+const nutritionStart = html.indexOf('id="view-nutrition"');
+const nutritionEnd = html.indexOf('id="view-upload"', nutritionStart);
+const garminArchivePosition = html.indexOf('id="garmin-archive-file"');
+assert.ok(dataManagementStart >= 0 && garminArchivePosition > dataManagementStart && garminArchivePosition < dataManagementEnd, 'Garmin archive upload is located inside data management with the Garmin data source');
+assert.ok(!(garminArchivePosition > nutritionStart && garminArchivePosition < nutritionEnd), 'Garmin archive is not located inside nutrition');
+assert.ok(main.includes("if (view === 'data') void renderGarminExportArchiveHistory();"), 'Garmin archive history loads when data management is opened');
+
 assert.ok(html.includes('id="kajo-mobile-notifications-button"'), 'mobile global top bar contains notification settings');
 assert.ok(html.includes('id="kajo-mobile-profile-button"'), 'mobile global top bar contains athlete profile');
 assert.ok(html.includes('class="kajo-mobile-logo"'), 'mobile global top bar contains KAJO logo');
@@ -371,3 +380,9 @@ assert.ok(charts.includes('export function focusActivityTelemetryPoint(index)'),
 assert.ok(activities.includes('canLinkRouteToChart'), 'GPS-to-chart interaction is enabled only for aligned time and metric arrays');
 assert.ok(importer.includes('avgPower: Number(lap.avg_power) || null'), 'FIT lap power is preserved only when supplied by the file');
 assert.ok(activities.includes("avgCadence !== null ? 'Ø ' + Math.round(avgCadence) + '/min' : null"), 'lap cadence is displayed only when available');
+
+const garminArchive = readFileSync('js/garmin-export-archive.js', 'utf8').replace(/\\r\\n/g, '\\n');
+assert.ok(garminArchive.includes('function collectGarminFields'), 'Garmin archive analysis inventories actual JSON field paths and value types');
+assert.ok(garminArchive.includes('fieldInventory: {}') && garminArchive.includes('collectGarminFields(parsed, category'), 'Garmin archive analysis stores a compact field inventory in the archive manifest');
+assert.ok(garminArchive.includes('Erkannte Datenfelder anzeigen') && garminArchive.includes('field.occurrences'), 'Garmin archive history exposes the recognized field inventory to the user');
+assert.ok(garminArchive.includes('keine Messwerte importiert oder als Rohwerte gespeichert'), 'Garmin field preview does not import or persist raw measurement values');
