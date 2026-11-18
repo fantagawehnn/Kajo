@@ -236,6 +236,10 @@ async function syncGarminHealthHistoryBatch(
   forceRefresh = false,
 ) {
   const syncType = "health_history";
+  const lockToken = crypto.randomUUID();
+  const leaseMinutes = 15;
+  const leaseExpiry = () => new Date(Date.now() + leaseMinutes * 60_000).toISOString();
+
   let { data: state, error: stateError } = await admin
     .from("garmin_sync_state")
     .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
@@ -245,7 +249,7 @@ async function syncGarminHealthHistoryBatch(
   if (stateError) throw stateError;
 
   if (!state) {
-    const { data: created, error: createError } = await admin
+    const { error: createError } = await admin
       .from("garmin_sync_state")
       .insert({
         user_id: userId,
@@ -255,107 +259,178 @@ async function syncGarminHealthHistoryBatch(
         range_end_date: endDate,
         status: "pending",
         cursor_offset: 0,
+        lock_token: null,
+        lock_expires_at: null,
         updated_at: new Date().toISOString(),
-      })
-      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
-      .single();
-    if (createError) throw createError;
-    state = created;
-  } else if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
-    const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
-      .update({
-        cursor_date: startDate,
-        range_start_date: startDate,
-        range_end_date: endDate,
-        cursor_offset: 0,
-        status: "pending",
-        last_error: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId)
-      .eq("sync_type", syncType)
-      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
-      .single();
-    if (resetError) throw resetError;
-    state = resetState;
+      });
+    if (createError && createError.code !== "23505") throw createError;
   }
 
-  let cursorDate = state.cursor_date ?? startDate;
-  if (state.status === "completed" && cursorDate > endDate) {
-    if (!rescanCompleted) {
-      return { status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
-        message: "Der ausgewählte Garmin-Zeitraum ist bereits vollständig importiert." };
-    }
-    // Manual range syncs may rescan completed dates: successful health records
-    // are skipped per endpoint, while missing/no-data records can be retried.
-    const { data: restarted, error: restartError } = await admin.from("garmin_sync_state")
-      .update({
-        cursor_date: startDate,
-        status: "pending",
-        cursor_offset: 0,
-        last_error: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId)
-      .eq("sync_type", syncType)
-      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
-      .single();
-    if (restartError) throw restartError;
-    state = restarted;
-    cursorDate = startDate;
-  }
-
-  const { error: runningError } = await admin.from("garmin_sync_state").update({
-    status: "running",
-    last_started_at: new Date().toISOString(),
-    last_error: null,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", userId).eq("sync_type", syncType);
-  if (runningError) throw runningError;
-
-  // Three days stay below Garmin's conservative request-rate budget while
-  // reducing the number of browser round-trips for long historical imports.
-  const batchLimit = 3;
-  const processed: Array<Record<string, unknown>> = [];
-  let failed = false;
-  let rateLimited = false;
-  let retryInSeconds = 0;
-  for (let index = 0; index < batchLimit && cursorDate <= endDate; index++) {
-    const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);
-    processed.push(dayResult);
-    if (dayResult.failed !== 0) {
-      failed = true;
-      rateLimited = dayResult.status === "rate_limited";
-      retryInSeconds = Number(dayResult.retryInSeconds || 0);
-      const { error } = await admin.from("garmin_sync_state").update({
-        status: "error",
-        last_error: `Abruffehler am ${cursorDate}; derselbe Tag wird beim nächsten Lauf erneut versucht.`,
-        updated_at: new Date().toISOString(),
-      }).eq("user_id", userId).eq("sync_type", syncType);
-      if (error) throw error;
-      break;
-    }
-    cursorDate = addUtcDays(cursorDate, 1);
-    const finished = cursorDate > endDate;
-    const { error } = await admin.from("garmin_sync_state").update({
-      cursor_date: cursorDate,
-      status: finished ? "completed" : "running",
-      last_success_at: new Date().toISOString(),
+  // Claim the per-user cursor atomically. A live lease blocks another request;
+  // an expired or absent lease can be reclaimed after a crashed invocation.
+  const { data: claimed, error: claimError } = await admin
+    .from("garmin_sync_state")
+    .update({
+      status: "running",
+      lock_token: lockToken,
+      lock_expires_at: leaseExpiry(),
+      last_started_at: new Date().toISOString(),
       last_error: null,
       updated_at: new Date().toISOString(),
-    }).eq("user_id", userId).eq("sync_type", syncType);
-    if (error) throw error;
-    if (finished) break;
+    })
+    .eq("user_id", userId)
+    .eq("sync_type", syncType)
+    .or(`status.neq.running,lock_expires_at.is.null,lock_expires_at.lt.${new Date().toISOString()}`)
+    .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
+    .maybeSingle();
+  if (claimError) throw claimError;
+  if (!claimed) {
+    const { data: busyState, error: busyError } = await admin.from("garmin_sync_state")
+      .select("cursor_date,range_start_date,range_end_date,lock_expires_at")
+      .eq("user_id", userId).eq("sync_type", syncType).maybeSingle();
+    if (busyError) throw busyError;
+    return {
+      status: "in_progress",
+      locked: true,
+      startDate,
+      endDate,
+      nextDate: busyState?.cursor_date ?? startDate,
+      processedDays: 0,
+      remainingDays: null,
+      message: "Eine andere Gesundheitsdaten-Synchronisierung verarbeitet diesen Fortschritt derzeit.",
+    };
   }
-  const remainingDays = cursorDate > endDate ? 0 :
-    Math.floor((new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${cursorDate}T00:00:00Z`).getTime()) / 86400000) + 1;
-  return {
-    status: rateLimited ? "rate_limited" : failed ? "partial" : remainingDays === 0 ? "complete" : "in_progress",
-    rateLimited,
-    retryInSeconds,
-    startDate, endDate, nextDate: cursorDate, processedDays: processed.length,
-    remainingDays, batchLimit, results: processed,
-  };
+
+  let cursorDate = claimed.cursor_date ?? startDate;
+  try {
+    // Re-read after acquiring the lease; the earlier read may have raced with
+    // a previous invocation that completed or changed the requested range.
+    const { data: current, error: currentError } = await admin.from("garmin_sync_state")
+      .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
+      .eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken).single();
+    if (currentError) throw currentError;
+    state = current;
+    cursorDate = state.cursor_date ?? startDate;
+
+    if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
+      const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
+        .update({
+          cursor_date: startDate,
+          range_start_date: startDate,
+          range_end_date: endDate,
+          cursor_offset: 0,
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+        .select("cursor_date,status,last_success_at,range_start_date,range_end_date").single();
+      if (resetError) throw resetError;
+      state = resetState;
+      cursorDate = startDate;
+    }
+
+    if (state.status === "completed" && cursorDate > endDate) {
+      if (!rescanCompleted) {
+        await admin.from("garmin_sync_state").update({
+          lock_token: null, lock_expires_at: null, updated_at: new Date().toISOString(),
+        }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+        return {
+          status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
+          message: "Der ausgewählte Garmin-Zeitraum ist bereits vollständig importiert.",
+        };
+      }
+      const { data: restarted, error: restartError } = await admin.from("garmin_sync_state")
+        .update({
+          cursor_date: startDate,
+          cursor_offset: 0,
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+        .select("cursor_date,status,last_success_at,range_start_date,range_end_date").single();
+      if (restartError) throw restartError;
+      state = restarted;
+      cursorDate = startDate;
+    }
+
+    const batchLimit = 3;
+    const processed: Array<Record<string, unknown>> = [];
+    let failed = false;
+    let rateLimited = false;
+    let retryInSeconds = 0;
+
+    for (let index = 0; index < batchLimit && cursorDate <= endDate; index++) {
+      // Renew before each day and verify that this invocation still owns the
+      // cursor. A worker whose lease was reclaimed cannot advance the cursor.
+      const { data: renewed, error: renewError } = await admin.from("garmin_sync_state")
+        .update({ lock_expires_at: leaseExpiry(), updated_at: new Date().toISOString() })
+        .eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+        .select("lock_token").maybeSingle();
+      if (renewError) throw renewError;
+      if (!renewed) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung ist abgelaufen; der Vorgang wurde sicher angehalten.");
+
+      const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);
+      processed.push(dayResult);
+      if (dayResult.failed !== 0) {
+        failed = true;
+        rateLimited = dayResult.status === "rate_limited";
+        retryInSeconds = Number(dayResult.retryInSeconds || 0);
+        const { error } = await admin.from("garmin_sync_state").update({
+          status: "error",
+          lock_token: null,
+          lock_expires_at: null,
+          last_error: `Abruffehler am ${cursorDate}; derselbe Tag wird beim nächsten Lauf erneut versucht.`,
+          updated_at: new Date().toISOString(),
+        }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+        if (error) throw error;
+        break;
+      }
+
+      cursorDate = addUtcDays(cursorDate, 1);
+      const finished = cursorDate > endDate;
+      const { data: advanced, error } = await admin.from("garmin_sync_state").update({
+        cursor_date: cursorDate,
+        status: finished ? "completed" : "running",
+        last_success_at: new Date().toISOString(),
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken)
+        .select("lock_token").maybeSingle();
+      if (error) throw error;
+      if (!advanced) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung ging vor dem Fortschrittsspeichern verloren.");
+      if (finished) break;
+    }
+
+    const remainingDays = cursorDate > endDate ? 0 :
+      Math.floor((new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${cursorDate}T00:00:00Z`).getTime()) / 86400000) + 1;
+    const finalStatus = failed ? "error" : remainingDays === 0 ? "completed" : "pending";
+    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+      status: finalStatus,
+      lock_token: null,
+      lock_expires_at: null,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    if (releaseError) throw releaseError;
+
+    return {
+      status: rateLimited ? "rate_limited" : failed ? "partial" : remainingDays === 0 ? "complete" : "in_progress",
+      rateLimited,
+      retryInSeconds,
+      startDate, endDate, nextDate: cursorDate, processedDays: processed.length,
+      remainingDays, batchLimit, results: processed,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
+    const { error: releaseError } = await admin.from("garmin_sync_state").update({
+      status: "error",
+      lock_token: null,
+      lock_expires_at: null,
+      last_error: message.slice(0, 500),
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("sync_type", syncType).eq("lock_token", lockToken);
+    if (releaseError) console.error("Garmin health sync lease could not be released:", releaseError);
+    throw error;
+  }
 }
 
 type GarminSyncEventInput = {
