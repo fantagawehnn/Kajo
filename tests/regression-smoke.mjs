@@ -366,6 +366,15 @@ assert.ok(mainSource.includes('scannedDays + skippedDays !== totalDays'),
 
 // Garmin sync audit history must record outcome, source and timezone without exposing it to clients.
 const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
+const garminLeaseMigration = await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8');
+assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
+assert.ok(garminBackendSource.includes('lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.'), 'Concurrent health-history requests must atomically claim only an unowned or expired lease');
+assert.ok(garminBackendSource.includes('.eq("lock_token", lockToken)'), 'Cursor mutations must be restricted to the invocation that owns the lease');
+assert.ok(garminBackendSource.includes('lock_expires_at: leaseExpiry()'), 'The health-history lease must be renewed during processing');
+assert.ok(garminBackendSource.includes('Eine andere Gesundheitsdaten-Synchronisierung verarbeitet diesen Fortschritt derzeit.'), 'A concurrent health-history request must exit without modifying the active cursor');
+assert.ok(garminBackendSource.includes('Die Sperre für die Garmin-Gesundheitssynchronisierung ist abgelaufen'), 'A worker that loses its lease must stop before advancing the cursor');
+assert.ok(garminLeaseMigration.includes('add column if not exists lock_token uuid'), 'The lease migration must add an owner token');
+assert.ok(garminLeaseMigration.includes('add column if not exists lock_expires_at timestamptz'), 'The lease migration must add an expiry timestamp');
 assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), 'Garmin sync calls must be wrapped in event logging');
 assert.ok(garminBackendSource.includes('.from("garmin_sync_events").insert({'), 'Garmin sync attempts must be recorded before the operation');
 assert.ok(garminBackendSource.includes('status: "error", finished_at:'), 'Failed Garmin sync attempts must be recorded as errors');
