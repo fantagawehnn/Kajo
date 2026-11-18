@@ -363,4 +363,19 @@ assert.ok(mainSource.includes('const today = getLocalCalendarDate();'),
 assert.ok(mainSource.includes('scannedDays + skippedDays !== totalDays'),
     'Garmin coverage must only be recorded when the backend accounts for every requested day');
 
+
+// Garmin sync audit history must record outcome, source and timezone without exposing it to clients.
+const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
+assert.ok(garminBackendSource.includes('async function runTrackedGarminSync'), 'Garmin sync calls must be wrapped in event logging');
+assert.ok(garminBackendSource.includes('.from("garmin_sync_events").insert({'), 'Garmin sync attempts must be recorded before the operation');
+assert.ok(garminBackendSource.includes('status: "error", finished_at:'), 'Failed Garmin sync attempts must be recorded as errors');
+assert.ok(garminBackendSource.includes('.order("started_at", { ascending: false }).limit(20)'), 'The status endpoint must return the latest sync events only');
+assert.ok(garminBackendSource.includes('timezoneBasis: "utc"'), 'Background sync events must explicitly use UTC');
+assert.ok(garminBackendSource.includes('timezoneBasis: "client_offset"'), 'Manual range sync events must preserve the client UTC offset');
+assert.ok(mainSource.includes("timezoneOffsetMinutes: new Date().getTimezoneOffset()"), 'Daily sync must pass the client timezone offset');
+assert.ok(mainSource.includes('Letzte Synchronisierungsvorgänge'), 'The Garmin dialog must render recent sync events');
+assert.ok(garminSyncMigration.includes('alter table public.garmin_sync_events enable row level security;'), 'The sync audit table must enable RLS');
+assert.ok(garminSyncMigration.includes('revoke all on table public.garmin_sync_events from anon, authenticated;'), 'The sync audit table must not be directly accessible to browser roles');
+assert.ok(garminSyncMigration.includes('grant all on table public.garmin_sync_events to service_role;'), 'Only the trusted service role should access the sync audit table');
+
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load and backup restore.');
