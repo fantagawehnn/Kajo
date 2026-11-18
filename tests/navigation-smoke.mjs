@@ -380,3 +380,9 @@ assert.ok(charts.includes('export function focusActivityTelemetryPoint(index)'),
 assert.ok(activities.includes('canLinkRouteToChart'), 'GPS-to-chart interaction is enabled only for aligned time and metric arrays');
 assert.ok(importer.includes('avgPower: Number(lap.avg_power) || null'), 'FIT lap power is preserved only when supplied by the file');
 assert.ok(activities.includes("avgCadence !== null ? 'Ø ' + Math.round(avgCadence) + '/min' : null"), 'lap cadence is displayed only when available');
+
+const garminArchive = readFileSync('js/garmin-export-archive.js', 'utf8').replace(/\\r\\n/g, '\\n');
+assert.ok(garminArchive.includes('function collectGarminFields'), 'Garmin archive analysis inventories actual JSON field paths and value types');
+assert.ok(garminArchive.includes('fieldInventory: {}') && garminArchive.includes('collectGarminFields(parsed, category'), 'Garmin archive analysis stores a compact field inventory in the archive manifest');
+assert.ok(garminArchive.includes('Erkannte Datenfelder anzeigen') && garminArchive.includes('field.occurrences'), 'Garmin archive history exposes the recognized field inventory to the user');
+assert.ok(garminArchive.includes('keine Messwerte importiert oder als Rohwerte gespeichert'), 'Garmin field preview does not import or persist raw measurement values');
