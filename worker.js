@@ -78,9 +78,13 @@ async function handleCoach(request, env) {
       headers: {
         "apikey": env.SUPABASE_ANON_KEY,
         "Authorization": `Bearer ${accessToken}`
-      }
+      },
+      signal: AbortSignal.timeout(8_000)
     });
-  } catch {
+  } catch (error) {
+    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+      return json({ error: "Die Prüfung deiner Anmeldung hat zu lange gedauert. Bitte versuche es erneut." }, 504);
+    }
     return json({ error: "Die Anmeldung konnte gerade nicht geprüft werden." }, 502);
   }
   if (!authResponse.ok) return json({ error: "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an." }, 401);
