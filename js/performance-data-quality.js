@@ -21,7 +21,8 @@ export function isValidElapsedTimeAxis(axis, expectedLength) {
         if (value === null || value === undefined || value === '') return NaN;
         return Number(value);
     });
-    return values.every(value => Number.isFinite(value) && value >= 0)
+    // Epoch timestamps are not elapsed seconds, even if they are increasing.
+    return values.every(value => Number.isFinite(value) && value >= 0 && value < 100_000_000)
         && values.slice(1).every((value, index) => value > values[index]);
 }
 
