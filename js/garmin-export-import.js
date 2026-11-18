@@ -329,24 +329,28 @@ function applyGarminVo2MaxToDailyCheckins(records) {
     let added = 0;
     let ambiguousDates = 0;
 
+    const hasGarminVo2Max = checkin =>
+        (checkin?.garminVo2max !== null && checkin?.garminVo2max !== undefined && checkin?.garminVo2max !== ''
+            && Number.isFinite(Number(checkin.garminVo2max)))
+        || (checkin?.vo2maxSource === 'garmin-estimate'
+            && checkin?.vo2max !== null && checkin?.vo2max !== undefined && checkin?.vo2max !== ''
+            && Number.isFinite(Number(checkin.vo2max)));
+
     for (const date of selection.ambiguousDates) {
-        const current = state.dailyCheckins[date];
-        if (!current || current.vo2max === null || current.vo2max === undefined || current.vo2max === '') {
-            ambiguousDates++;
-        }
+        if (!hasGarminVo2Max(state.dailyCheckins[date])) ambiguousDates++;
     }
     for (const record of selection.selected) {
         const current = state.dailyCheckins[record.date] && typeof state.dailyCheckins[record.date] === 'object'
             ? state.dailyCheckins[record.date] : {};
-        if (current.vo2max !== null && current.vo2max !== undefined && current.vo2max !== '') continue;
+        if (hasGarminVo2Max(current)) continue;
         const profiles = new Set((records || [])
             .filter(item => item.date === record.date && item.sport)
             .map(item => String(item.sport)));
         state.dailyCheckins[record.date] = {
             ...current,
-            vo2max: Number(record.value),
-            vo2maxSource: 'garmin-estimate',
-            vo2maxSourceProfile: profiles.size === 1 ? [...profiles][0] : null
+            garminVo2max: Number(record.value),
+            garminVo2maxSource: 'garmin-export-metrics-max-met',
+            garminVo2maxSourceProfile: profiles.size === 1 ? [...profiles][0] : null
         };
         added++;
     }
