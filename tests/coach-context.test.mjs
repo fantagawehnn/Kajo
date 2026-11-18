@@ -1,0 +1,95 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { buildCoachRequestContext } from '../js/coach-data-context.js';
+
+function localDate(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function offsetDate(days) {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return localDate(date);
+}
+
+test('natural-language request for last season selects complete available history', () => {
+    const oldDate = offsetDate(-240);
+    const context = buildCoachRequestContext({
+        rawActivities: [
+            { date: oldDate, name: 'Historische Einheit', type: 'C1', duration: 75 }
+        ]
+    }, 'Analysiere meine letzte Saison');
+
+    assert.equal(context.contextSelection.mode, 'full_history');
+    assert.equal(context.contextSelection.historyPolicy, 'complete_available_history');
+    assert.equal(context.training.activities.length, 1);
+    assert.equal(context.training.activities[0].date, oldDate);
+});
+
+test('retrospective activity and load windows exclude future records while planned sessions remain future-inclusive', () => {
+    const futureDate = offsetDate(3);
+    const context = buildCoachRequestContext({
+        rawActivities: [
+            { date: offsetDate(-1), name: 'Abgeschlossene Einheit', type: 'C1', duration: 60 },
+            { date: futureDate, name: 'Falsch datierte Aktivität', type: 'C1', duration: 60 }
+        ],
+        dailyTimeline: [
+            { date: offsetDate(-1), load: 40, dataStatus: 'complete' },
+            { date: futureDate, load: 90, dataStatus: 'complete' }
+        ],
+        plannedActivities: [
+            { date: futureDate, name: 'Geplante Einheit', type: 'C1', duration: 60 }
+        ]
+    }, 'Wie war mein Training in letzter Zeit?');
+
+    assert.equal(context.contextSelection.mode, 'recent_training');
+    assert.deepEqual(context.training.activities.map(item => item.name), ['Abgeschlossene Einheit']);
+    assert.deepEqual(context.training.calculatedLoadTimeline.map(item => item.date), [offsetDate(-1)]);
+    assert.deepEqual(context.training.plannedSessions.map(item => item.name), ['Geplante Einheit']);
+});
+
+test('Garmin heart-rate telemetry is summarized locally and not forwarded as raw series', () => {
+    const context = buildCoachRequestContext({
+        rawActivities: [{
+            date: offsetDate(-1),
+            name: 'Garmin C1 Einheit',
+            type: 'C1',
+            source: 'garmin',
+            duration: 1,
+            garminTelemetry: {
+                hr: [145, 150, 160, 170],
+                time: [0, 20, 40, 60]
+            }
+        }],
+        profile: { maxHr: 200, restingHr: 50 }
+    }, 'Analysiere meine letzte Saison');
+
+    const serialized = JSON.stringify(context);
+    assert.equal(context.training.activities.length, 1);
+    assert.equal('garminTelemetry' in context.training.activities[0], false);
+    assert.match(serialized, /heartRateZoneDistribution/);
+    assert.equal(
+        context.analysisSummary.heartRateZoneDistribution.analyzedActivities,
+        1
+    );
+    assert.equal(
+        context.analysisSummary.heartRateZoneDistribution.groups[0].activityCount,
+        1
+    );
+    assert.equal(serialized.includes('"hr":[145,150,160,170]'), false);
+});
+
+test('heart-rate zone summary remains explicitly empty when no usable Garmin telemetry exists', () => {
+    const context = buildCoachRequestContext({
+        rawActivities: [{
+            date: offsetDate(-1),
+            name: 'Einheit ohne HF-Daten',
+            type: 'C1',
+            source: 'garmin',
+            duration: 60
+        }]
+    }, 'Analysiere meine letzte Saison');
+
+    assert.equal(context.analysisSummary.heartRateZoneDistribution.analyzedActivities, 0);
+    assert.deepEqual(context.analysisSummary.heartRateZoneDistribution.groups, []);
+});
