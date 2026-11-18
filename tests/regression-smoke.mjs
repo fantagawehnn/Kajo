@@ -413,6 +413,15 @@ assert.ok(garminBackendSource.includes('.range(offset, offset + pageSize - 1)'),
 assert.ok(garminBackendSource.includes('.order("start_time", { ascending: true })'), 'FIT/detail archiving must begin with the oldest pending activities');
 assert.ok(garminBackendSource.includes('async function syncActivityFilesBatch('), 'A resumable Garmin detail/workout/FIT archive batch must exist');
 assert.ok(garminBackendSource.includes('action === "sync-activity-files-batch"'), 'The Garmin detail/workout/FIT archive must be callable as a dedicated sync action');
+assert.ok(garminBackendSource.includes('while (selected.length < batchSize)'), 'The activity archive must keep paging until a pending batch is found or the full history is exhausted');
+assert.ok(garminBackendSource.includes('status: failed ? "partial" : "in_progress"'), 'A successfully processed activity batch must remain resumable until a later scan confirms the archive is complete');
+assert.ok(garminBackendSource.includes('if (rateLimited) break;'), 'The activity archive must stop requesting Garmin data after a rate limit');
+assert.ok(garminBackendSource.includes('status: rateLimited ? "rate_limited" : failed ? "partial" : "in_progress"'), 'Activity archive results must distinguish rate limiting from ordinary partial failures');
+assert.ok(garminBackendSource.includes('if (/Sperre für die Garmin-Aktivitätsliste/.test(message)) throw error;'), 'A lost activity lease must abort archival instead of being swallowed as an endpoint error');
+assert.ok(garminBackendSource.includes('const healthSync = activityFilesSync.rateLimited'), 'The daily health import must pause when activity archival has triggered a Garmin rate limit');
+assert.ok(mainSource.includes("activityFilesSync?.status !== 'complete'"), 'The daily sync indicator must not report complete while raw activity files remain unarchived');
+assert.ok(mainSource.includes('activityFilesSync?.rateLimited'), 'The daily sync retry must account for rate-limited activity archive batches');
+
 assert.ok(garminBackendSource.includes('const activityFiles = await runTrackedGarminSync'), 'Background Garmin sync must archive activity details and original FIT files');
 assert.ok(garminBackendSource.includes('const activityFilesSync = await runTrackedGarminSync'), 'Daily Garmin sync must archive activity details and original FIT files');
 assert.ok(garminBackendSource.includes('await waitForGarminRequestSlot();\n  const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/'), 'FIT downloads must use the shared Garmin request throttle');
