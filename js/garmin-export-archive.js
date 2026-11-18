@@ -1,3 +1,4 @@
+import { extractGarminVo2MaxRecords, summarizeGarminVo2MaxRecords } from './garmin-performance-archive.js';
 import { supabase } from './supabase-client.js';
 import { SUPABASE_ANON_KEY } from './supabase-config.js';
 
@@ -226,8 +227,10 @@ export async function renderGarminExportArchiveHistory() {
             const comparisonText = comparison
                 ? '<p class="mt-2 text-[10px] text-cyan-200">Aktivitätsabgleich (nur Vorschau): ' + Number(comparison.archiveRecords || 0) + ' Archivdatensätze · ' + Number(comparison.uniqueArchiveIds || 0) + ' eindeutige IDs · ' + Number(comparison.alreadyExisting || 0) + ' bereits vorhanden · ' + Number(comparison.newActivities || 0) + ' neu · ' + Number(comparison.duplicateArchiveIds || 0) + ' doppelte Archiv-IDs · ' + Number(comparison.existingWithoutDetails || 0) + ' vorhandene Aktivitäten ohne Detaildatensatz</p>'
                 : '';
-            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + comparisonText + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
-            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 6 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
+            const performanceSummary = preview?.performanceSummary;
+            const performanceText = performanceSummary ? '<p class="mt-2 text-[10px] text-emerald-200">Garmin-VO₂max im Export: ' + Number(performanceSummary.count || 0) + ' Messpunkte' + (performanceSummary.dateFrom && performanceSummary.dateTo ? ' · ' + performanceSummary.dateFrom + ' bis ' + performanceSummary.dateTo : '') + ' · Sportzuordnung: ' + Object.entries(performanceSummary.sports || {}).map(([sport, count]) => escapeHtml(sport) + ' (' + Number(count) + ')').join(', ') + ' · Noch nicht in die Tageswerte übernommen</p>' : '';
+            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + comparisonText + performanceText + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
+            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 7 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
@@ -400,6 +403,7 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
                 collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);
                 if (category === 'activities') collectSummarizedActivities(parsed, summary.activityRecords);
+                if (category === 'performance') summary.performanceRecords.push(...extractGarminVo2MaxRecords(parsed, path));
                 const dates = [];
                 collectDateValues(parsed, dates, { count: 0 }, path);
                 for (const date of dates) summary.dates.push(date);
@@ -447,7 +451,7 @@ export async function analyzeGarminExportArchive(importId) {
         const archiveBlob = new Blob(blobs, { type: 'application/zip' });
         const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
         const summary = {
-            analysisVersion: 6,
+            analysisVersion: 7,
             analyzedAt: new Date().toISOString(),
             jsonFiles: 0,
             nestedArchives: 0,
@@ -456,6 +460,7 @@ export async function analyzeGarminExportArchive(importId) {
             fieldInventory: {},
             fieldInventoryBudget: { counts: {}, truncated: [] },
             activityRecords: [],
+            performanceRecords: [],
             otherFiles: {},
             dates: [],
             errors: []
@@ -497,6 +502,10 @@ export async function analyzeGarminExportArchive(importId) {
             comparisonAt: new Date().toISOString()
         };
         delete summary.activityRecords;
+        summary.performanceRecords = [...new Map(summary.performanceRecords.map(record => [
+            [record.date, record.sport || '', record.subSport || '', record.value].join('|'), record
+        ])).values()].sort((a, b) => a.date.localeCompare(b.date));
+        summary.performanceSummary = summarizeGarminVo2MaxRecords(summary.performanceRecords);
         summary.fieldInventoryLimits = {
             perCategory: MAX_FIELD_PATHS_PER_CATEGORY,
             counts: summary.fieldInventoryBudget.counts,
