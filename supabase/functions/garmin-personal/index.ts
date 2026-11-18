@@ -811,13 +811,13 @@ async function syncActivityFilesBatch(
   const pageSize = 500;
   let offset = 0;
   let totalActivities = 0;
-  const selected: Array<{ garmin_activity_id: string; start_time: string | null }> = [];
-  const detailById = new Map<string, Record<string, unknown>>();
+  const selected: Array<{ garmin_activity_id: string }> = [];
+  const detailById = new Map<string, { detail_synced_at?: string | null; workouts_synced_at?: string | null; fit_synced_at?: string | null }>();
 
   while (selected.length < batchSize) {
     const { data: page, error: pageError, count } = await admin
       .from("garmin_activities")
-      .select("garmin_activity_id, start_time", { count: "exact" })
+      .select("garmin_activity_id", { count: "exact" })
       .eq("user_id", userId)
       .order("start_time", { ascending: true })
       .range(offset, offset + pageSize - 1);
