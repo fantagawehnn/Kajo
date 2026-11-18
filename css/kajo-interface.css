@@ -403,3 +403,78 @@ body{
   #app-main .kajo-subnav::-webkit-scrollbar{display:none}
   #app-main .kajo-subnav-item{flex:0 0 auto}
 }
+
+/* v2 mobile structure: top account strip + independent five-item bottom navigation. */
+@media(max-width:767px){
+  #app-navigation:not(.hidden){
+    position:static !important;
+    inset:auto !important;
+    top:auto !important;
+    width:100%;
+    padding:0;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
+  #app-navigation>.max-w-7xl,
+  #app-navigation>div{
+    max-width:none;
+    padding-left:12px;
+    padding-right:12px;
+  }
+  #app-navigation>div>div{
+    display:flex !important;
+    align-items:center;
+    justify-content:flex-end;
+    height:auto !important;
+    min-height:0;
+    gap:8px !important;
+    padding:5px 0;
+  }
+  #app-navigation .kajo-desktop-brand,
+  #app-navigation .kajo-primary-nav,
+  #app-navigation .kajo-version-tag,
+  #app-navigation .kajo-desktop-header-actions{display:none !important}
+  #app-navigation .kajo-mobile-nav{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:90;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:3px;
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--kajo-ui-border);
+    background:rgba(8,15,25,.96);
+    box-shadow:0 -10px 30px rgba(0,0,0,.22);
+    -webkit-backdrop-filter:blur(18px);
+    backdrop-filter:blur(18px);
+  }
+  #app-navigation .kajo-mobile-nav-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-width:0;
+    min-height:43px;
+    padding:5px 2px;
+    border:1px solid transparent;
+    border-radius:10px;
+    color:var(--kajo-ui-muted);
+    font-size:9px;
+    font-weight:750;
+    line-height:1;
+  }
+  #app-navigation .kajo-mobile-nav-item i,
+  #app-navigation .kajo-mobile-nav-item svg{width:18px;height:18px}
+  #app-navigation .kajo-mobile-nav-item.is-active{
+    color:#e9fbff;
+    border-color:rgba(72,199,223,.2);
+    background:rgba(72,199,223,.12);
+  }
+  #app-main{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+}
