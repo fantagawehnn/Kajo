@@ -82,11 +82,12 @@ function isEmptyGarminPayload(payload: unknown): boolean {
   return false;
 }
 
-async function syncGarminHealthDay(
+async function syncGarminHealthDayUnlocked(
   admin: ReturnType<typeof createClient>,
   userId: string,
   date: string,
   forceRefresh = false,
+  renewLease: () => Promise<void>,
 ) {
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
@@ -120,6 +121,7 @@ async function syncGarminHealthDay(
 
   const results: Array<Record<string, unknown>> = [];
   for (const endpoint of endpoints) {
+    await renewLease();
     try {
       // Do not spend Garmin API calls on endpoints already imported successfully.
       // The no_data marker is deliberately retried so data that becomes available
@@ -213,6 +215,68 @@ async function syncGarminHealthDay(
     failed,
     results,
   };
+}
+
+async function syncGarminHealthDay(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  date: string,
+  forceRefresh = false,
+) {
+  const lockToken = crypto.randomUUID();
+  const leaseMinutes = 15;
+  const now = new Date().toISOString();
+  const leaseExpiry = () => new Date(Date.now() + leaseMinutes * 60_000).toISOString();
+
+  const { data: existing, error: existingError } = await admin.from("garmin_health_day_sync_leases")
+    .select("record_date")
+    .eq("user_id", userId)
+    .eq("record_date", date)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (!existing) {
+    const { error: createError } = await admin.from("garmin_health_day_sync_leases").insert({
+      user_id: userId, record_date: date, lock_token: null, lock_expires_at: null, updated_at: now,
+    });
+    if (createError && createError.code !== "23505") throw createError;
+  }
+
+  const { data: claimed, error: claimError } = await admin.from("garmin_health_day_sync_leases")
+    .update({ lock_token: lockToken, lock_expires_at: leaseExpiry(), updated_at: now })
+    .eq("user_id", userId)
+    .eq("record_date", date)
+    .or(`lock_token.is.null,lock_expires_at.is.null,lock_expires_at.lt.${now}`)
+    .select("record_date")
+    .maybeSingle();
+  if (claimError) throw claimError;
+  if (!claimed) {
+    return {
+      date, status: "in_progress", locked: true, failed: 0,
+      message: "Für diesen Garmin-Tag läuft bereits eine Synchronisierung.",
+    };
+  }
+
+  const renewLease = async () => {
+    const { data, error } = await admin.from("garmin_health_day_sync_leases")
+      .update({ lock_expires_at: leaseExpiry(), updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("record_date", date)
+      .eq("lock_token", lockToken)
+      .select("lock_token")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Die Sperre für den Garmin-Gesundheitstag ist abgelaufen; der Vorgang wurde sicher angehalten.");
+  };
+
+  try {
+    await renewLease();
+    return await syncGarminHealthDayUnlocked(admin, userId, date, forceRefresh, renewLease);
+  } finally {
+    const { error: releaseError } = await admin.from("garmin_health_day_sync_leases").update({
+      lock_token: null, lock_expires_at: null, updated_at: new Date().toISOString(),
+    }).eq("user_id", userId).eq("record_date", date).eq("lock_token", lockToken);
+    if (releaseError) console.error("Garmin health-day lease could not be released:", releaseError);
+  }
 }
 
 function localDateForOffset(timezoneOffsetMinutes: unknown): string {
@@ -365,6 +429,7 @@ async function syncGarminHealthHistoryBatch(
     const batchLimit = 3;
     const processed: Array<Record<string, unknown>> = [];
     let failed = false;
+    let dayAlreadyRunning = false;
     let rateLimited = false;
     let retryInSeconds = 0;
 
@@ -380,6 +445,10 @@ async function syncGarminHealthHistoryBatch(
 
       const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);
       processed.push(dayResult);
+      if (dayResult.status === "in_progress") {
+        dayAlreadyRunning = true;
+        break;
+      }
       if (dayResult.failed !== 0) {
         failed = true;
         rateLimited = dayResult.status === "rate_limited";
@@ -422,7 +491,7 @@ async function syncGarminHealthHistoryBatch(
     if (!released) throw new Error("Die Sperre für die Garmin-Gesundheitssynchronisierung konnte nicht freigegeben werden.");
 
     return {
-      status: rateLimited ? "rate_limited" : failed ? "partial" : remainingDays === 0 ? "complete" : "in_progress",
+      status: dayAlreadyRunning ? "in_progress" : rateLimited ? "rate_limited" : failed ? "partial" : remainingDays === 0 ? "complete" : "in_progress",
       rateLimited,
       retryInSeconds,
       startDate, endDate, nextDate: cursorDate, processedDays: processed.length,
