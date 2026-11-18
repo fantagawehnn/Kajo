@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
     classifyGarminExportFile,
     collectGarminSummaryActivities,
-    mapGarminExportActivity
+    mapGarminExportActivity,
+    collectGarminActivityNames
 } from '../js/garmin-export-import-core.js';
 
 test('classifies Garmin export files by source path', () => {
@@ -60,4 +61,15 @@ test('does not choose arbitrary VO2max values when a day has conflicting profile
         ['2025-01-02', 49],
         ['2025-01-03', 52]
     ]);
+});
+
+test('collects explicit activity names by Garmin activity ID', () => {
+    const names = collectGarminActivityNames({
+        activityDetails: [
+            { activityId: 123, activityName: 'K1 Training' },
+            { activityId: 456, activityName: 'C1 Classic' }
+        ]
+    });
+    assert.equal(names.get('123'), 'K1 Training');
+    assert.equal(names.get('456'), 'C1 Classic');
 });
