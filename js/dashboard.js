@@ -9,6 +9,8 @@ import { getTrainingLoadData } from './training-load.js';
 import { loadCheckinInputs } from './health.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
+import { calculateReadiness, buildTrainingRecommendation } from './readiness.js';
+export { calculateReadiness } from './readiness.js';
 
 function localTodayKey() {
   const n = new Date();
@@ -19,66 +21,6 @@ const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-st
 function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STATUS_COLORS.attention:STATUS_COLORS.critical;}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
-export function calculateReadiness(dateKey=localTodayKey()){
-  const current=state.dailyCheckins[dateKey]||{};
-  const dateMs=new Date(dateKey+'T12:00:00').getTime();
-  const history=Object.entries(state.dailyCheckins).filter(([date])=>{const ms=new Date(date+'T12:00:00').getTime();return date<dateKey&&Number.isFinite(ms)&&dateMs>ms&&dateMs-ms<=90*86400000;});
-  const objective=[];
-  const addBaseline=(key,label,scoreFn)=>{
-    const raw=key==='sleepDuration'?(current.sleepDuration??(Number(current.sleep)>5?current.sleep:null)):key==='rhr'?(current.garminRhr??current.rhr):current[key];
-    if(!validNumber(raw))return;
-    const vals=history.map(([,r])=>key==='sleepDuration'?(r.sleepDuration??(Number(r.sleep)>5?r.sleep:null)):key==='rhr'?(r.garminRhr??r.rhr):r[key]).filter(validNumber).map(Number);
-    if(vals.length<5)return;
-    const base=median(vals),value=Number(raw);
-    if(!(base>0)||!(value>0))return;
-    objective.push({key,label,value,baseline:Number(base.toFixed(1)),score:Math.round(clamp(scoreFn(value,base)))});
-  };
-  addBaseline('hrv','HRV',(v,b)=>((v/b)-0.70)/0.30*100);
-  addBaseline('rhr','RHF',(v,b)=>(1.20-(v/b))/0.20*100);
-  addBaseline('sleepDuration','Schlafdauer',(v,b)=>((v/b)-0.70)/0.30*100);
-  if(validNumber(current.sleepScore)&&Number(current.sleepScore)>=0&&Number(current.sleepScore)<=100){
-    objective.push({key:'sleepScore',label:'Schlafscore',value:Number(current.sleepScore),score:Math.round(clamp(Number(current.sleepScore)))});
-  }
-  // Acute-to-chronic workload ratio from the existing load timeline. This
-  // is a training-strain indicator, not a medical or injury-risk diagnosis.
-  const loadDay=(state.dailyTimeline||[]).find(day=>day.date===dateKey);
-  if(loadDay&&validNumber(loadDay.acwr)&&Number(loadDay.acwr)>0){
-    const ratio=Number(loadDay.acwr);
-    const loadScore=clamp(100-Math.max(0,ratio-1)*60-Math.max(0,0.8-ratio)*25);
-    objective.push({key:'trainingLoad',label:'Trainingsbelastung',value:ratio,unit:'ACWR',score:Math.round(loadScore)});
-  }
-  const subjective=[];
-  // Self-monitoring is recorded on a 1–5 scale. Higher values are favorable
-  // for sleep quality and motivation, but indicate more strain for fatigue,
-  // soreness and stress.
-  const addSubjective=(key,label,reverse)=>{if(!validNumber(current[key]))return;const v=Number(current[key]);if(v<1||v>5)return;subjective.push({key,label,value:v,score:Math.round(reverse?(5-v)/4*100:(v-1)/4*100)});};
-  addSubjective('sleepQuality','Schlafqualität',false);addSubjective('motivation','Motivation',false);addSubjective('fatigue','Müdigkeit',true);addSubjective('soreness','Muskelkater',true);addSubjective('stress','Stress',true);
-  const cycleImpact=Number(current.cycle?.trainingImpact);
-  if(current.cycle?.period===true&&Number.isFinite(cycleImpact)&&cycleImpact>=1&&cycleImpact<=5){
-    subjective.push({key:'cycleTrainingImpact',label:'Zyklusbedingte Trainingsbeeinträchtigung',value:cycleImpact,score:Math.round(clamp((5-cycleImpact)/4*100))});
-  }
-  const mean=a=>a.length?a.reduce((s,x)=>s+x.score,0)/a.length:null;
-  const objectiveScore=mean(objective),subjectiveScore=mean(subjective);
-  // Self-monitoring enriches the score when available, but is never required.
-  // Without subjective entries, all available objective metrics are used.
-  const score=objectiveScore===null&&subjectiveScore===null
-    ?null
-    :objectiveScore!==null&&subjectiveScore!==null
-      ?Math.round(objectiveScore*0.7+subjectiveScore*0.3)
-      :Math.round(objectiveScore??subjectiveScore);
-  const totalCount=objective.length+subjective.length;
-  const dataQuality=totalCount>=4?'Mehrere Messgrößen':totalCount>=2?'Begrenzte Datengrundlage':'Eingeschränkte Datengrundlage';
-  return {
-    score:Number.isFinite(score)?score:null,
-    enoughData:totalCount>=2,
-    dataQuality,
-    dataMode:subjective.length?'Objektive Daten und Self-Monitoring':'Automatisch aus verfügbaren Wearable- und Trainingsdaten',
-    objectiveScore:objectiveScore===null?null:Math.round(objectiveScore),
-    subjectiveScore:subjectiveScore===null?null:Math.round(subjectiveScore),
-    objectiveCount:objective.length,subjectiveCount:subjective.length,
-    objective,subjective,totalCount
-  };
-}
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
   const r=calculateReadiness(dateKey);
   const value=document.getElementById('kpi-readiness');
@@ -382,90 +324,7 @@ function formatHomeDate(date) {
 }
 
 function buildReadinessBasedRecommendation(dateKey, planned) {
-    const readiness = calculateReadiness(dateKey);
-    const health = state.healthLogs?.[dateKey] || {};
-    const healthStatus = String(health.status || '').toLowerCase();
-    const plannedSession = planned
-        .filter(item => String(item?.date || '').slice(0, 10) === dateKey)
-        .sort((a, b) => String(a.time || a.startTime || '').localeCompare(String(b.time || b.startTime || '')))[0] || null;
-    const latestLoad = [...(Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [])]
-        .filter(day => day?.date <= dateKey && validNumber(day?.load) && validNumber(day?.ctl))
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
-    const ctl = validNumber(latestLoad?.ctl) ? Number(latestLoad.ctl) : null;
-    const atl = validNumber(latestLoad?.atl) ? Number(latestLoad.atl) : null;
-    const tsb = validNumber(latestLoad?.tsb) ? Number(latestLoad.tsb) : null;
-    const acwr = ctl !== null && ctl > 0 && atl !== null ? atl / ctl : null;
-    const highLoad = Boolean(latestLoad && (
-        latestLoad.statusLabel === 'Hohe Ermüdung' ||
-        (tsb !== null && tsb < -20) ||
-        (acwr !== null && acwr >= 1.35)
-    ));
-    const loadCaution = Boolean(latestLoad && (
-        highLoad ||
-        latestLoad.statusLabel === 'Belastung' ||
-        (tsb !== null && tsb < -10) ||
-        (acwr !== null && acwr >= 1.15)
-    ));
-    const loadNote = latestLoad
-        ? 'Letzter auswertbarer Training-Load-Stand vom ' + formatDateDDMMYY(latestLoad.date) +
-          ': CTL ' + (ctl === null ? '—' : ctl.toFixed(1)) +
-          ', ATL ' + (atl === null ? '—' : atl.toFixed(1)) +
-          ', TSB ' + (tsb === null ? '—' : (tsb > 0 ? '+' : '') + tsb.toFixed(1)) +
-          ', ATL/CTL ' + (acwr === null ? '—' : acwr.toFixed(2)) +
-          (latestLoad.isProvisional ? ' (vorläufiger Modellwert)' : '') + '.'
-        : 'Die aktuelle Load-Zeitreihe ist lückenhaft; Training Load kann daher nicht zuverlässig in die Empfehlung einfließen. Die Einordnung stützt sich vorrangig auf Readiness und Check-in.';
-    const sessionNote = plannedSession
-        ? 'Geplant: ' + String(plannedSession.name || 'Trainingseinheit') +
-          (validNumber(plannedSession.duration) ? ' (' + Number(plannedSession.duration) + ' min)' : '') + '.'
-        : 'Für diesen Tag ist keine Trainingseinheit im Kalender geplant.';
-
-    if (healthStatus === 'sick' || healthStatus === 'injured') {
-        return {
-            title: healthStatus === 'sick' ? 'Gesundheit hat Vorrang' : 'Verletzungsstatus berücksichtigen',
-            detail: 'Im Gesundheitsprotokoll ist für diesen Tag eine Einschränkung hinterlegt. Keine intensive Einheit aus der App-Empfehlung ableiten; Belastung erst nach deinem tatsächlichen Befinden und gegebenenfalls medizinischer Rücksprache wählen. ' + sessionNote
-        };
-    }
-
-    if (readiness.score === null) {
-        return null;
-    }
-
-    if (!readiness.enoughData) {
-        return {
-            title: 'Tagesform nur eingeschränkt beurteilbar',
-            detail: 'Es liegen nur ' + readiness.totalCount + ' verwertbare Messgröße(n) vor. Vermeide es, daraus eine intensive Trainingsfreigabe abzuleiten. ' + loadNote + ' ' + sessionNote
-        };
-    }
-
-    let title;
-    let advice;
-    if (readiness.score >= 80) {
-        title = 'Gute Tagesform – geplante Einheit möglich';
-        advice = 'Die verfügbaren Readiness-Daten sprechen für eine gute Tagesform. Setze die geplante Einheit wie vorgesehen um, sofern sich das Aufwärmen und dein subjektives Befinden ebenfalls gut anfühlen.';
-    } else if (readiness.score >= 65) {
-        title = 'Solide Tagesform – kontrolliert trainieren';
-        advice = 'Die Tagesform wirkt insgesamt solide. Halte dich an den geplanten Trainingsreiz, steuere die Intensität aber bewusst und vermeide zusätzliche Belastungsspitzen.';
-    } else if (readiness.score >= 50) {
-        title = 'Belastung heute reduzieren';
-        advice = 'Die Readiness liegt im mittleren bis niedrigeren Bereich. Reduziere bei Bedarf Umfang oder Intensität und prüfe während des Aufwärmens, ob die geplante Einheit sinnvoll ist.';
-    } else {
-        title = 'Regeneration priorisieren';
-        advice = 'Die verfügbaren Readiness-Daten fallen niedrig aus. Bevorzuge heute Erholung oder sehr lockere Bewegung und verschiebe intensive Belastungen, wenn sich die Tagesform nicht verbessert.';
-    }
-
-    if (highLoad) {
-        title = 'Training Load hoch – Belastung reduzieren';
-        advice = 'Der Training Load zeigt eine deutlich erhöhte kurzfristige Belastung im Verhältnis zur längerfristigen Belastungsbasis. Reduziere heute Umfang oder Intensität; plane keine zusätzliche intensive Belastung. Prüfe die geplante Einheit anhand deines Befindens und des Aufwärmens.';
-    } else if (loadCaution) {
-        if (readiness.score >= 80) title = 'Gute Readiness – Training Load beachten';
-        else if (readiness.score >= 65) title = 'Kontrolliert trainieren – Load berücksichtigen';
-        else title = 'Belastung weiter reduzieren';
-        advice += ' Zusätzlich zeigt der Training Load eine erhöhte kurzfristige Belastung. Vermeide zusätzliche Belastungsspitzen und steuere die geplante Einheit entsprechend.';
-    } else if (latestLoad && acwr !== null && acwr < 0.75) {
-        advice += ' Der aktuelle Training Load liegt deutlich unter der längerfristigen Belastungsbasis. Das ist kein automatischer Grund, heute Intensität nachzuholen; halte dich an den geplanten schrittweisen Aufbau.';
-    }
-    const qualityNote = readiness.dataQuality + ' · Readiness ' + readiness.score + '/100 (Orientierungswert, keine medizinische Diagnose).';
-    return { title, detail: advice + ' ' + qualityNote + ' ' + loadNote + ' ' + sessionNote };
+    return buildTrainingRecommendation(dateKey, planned, state);
 }
 
 export function renderHomeDashboard(dateKey=localTodayKey()) {
