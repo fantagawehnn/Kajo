@@ -819,7 +819,8 @@ async function loadGarminSyncHistory() {
             ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
         const sourceLabels = {
             manual_range: 'Manueller Zeitraum', daily_sync: 'Tagesabgleich',
-            manual_activities: 'Manueller Aktivitätsabruf', background: 'Hintergrundabruf'
+            manual_activities: 'Manueller Aktivitätsabruf',
+            manual_health_history: 'Manueller Gesundheitsdaten-Backfill', background: 'Hintergrundabruf'
         };
         const typeLabels = {
             activity_list: 'Aktivitätsliste', health_history: 'Gesundheitsverlauf',
