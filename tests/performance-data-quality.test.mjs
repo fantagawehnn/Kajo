@@ -86,3 +86,13 @@ test('prefers normalized FIT series and rejects unknown units or non-paddling ac
         { key: 'directFractionalCadence', unit: 'stepsPerMinute', values: [70, 72], time: [0, 1] }
     ], 'cadence'), null);
 });
+
+test('uses a time-aligned raw Garmin series when the standard series has no valid time axis', async () => {
+    const { resolvePaddlingPerformanceSeries } = await import('../js/performance-data-quality.js');
+    const resolved = resolvePaddlingPerformanceSeries({ type: 'Kayaking' }, [
+        { key: 'speed', unit: 'km/h', values: [6, 7], time: null },
+        { key: 'directSpeed', unit: 'mps', values: [2, 2.2], time: [0, 1] }
+    ], 'speed');
+    assert.deepEqual(resolved.values, [7.2, 7.920000000000001]);
+    assert.equal(resolved.unit, 'km/h');
+});
