@@ -28,18 +28,20 @@ function standardDeviation(values, average) {
 
 function readMetric(record, key) {
     if (!record) return null;
-    if (key === 'rhr') return record.garminRhr ?? record.rhr ?? null;
-    if (key === 'sleepDuration') return record.sleepDuration ?? (Number(record.sleep) > 5 ? record.sleep : null);
-    return record[key] ?? null;
+    if (key === 'hrv') {
+        if (record.garminHrv !== null && record.garminHrv !== undefined) return record.garminHrv;
+        return record.measurementSources?.hrv?.source === 'garmin' ? record.hrv ?? null : null;
+    }
+    const garminKeys = { rhr: 'garminRhr', respiration: 'garminRespiration', sleepDuration: 'garminSleepDuration', sleepScore: 'garminSleepScore' };
+    return record[garminKeys[key] || key] ?? null;
 }
 
 // HRV-Werte dürfen nur dann eine gemeinsame persönliche Baseline bilden,
-// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Fehlende Metadaten
-// bleiben als Legacy/Unbekannt gekennzeichnet und werden nicht mit einer
-// explizit dokumentierten Quelle vermischt.
+// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Das dedizierte
+// garminHrv-Feld kennzeichnet Garmin; unzugeordnete Legacy-Felder bleiben unbekannt.
 function measurementIdentity(record, key) {
-    const source = record?.measurementSources?.[key];
-    if (!source || typeof source !== 'object') return 'legacy:unspecified:ms';
+    const source = record?.measurementSources?.garminHrv || record?.measurementSources?.hrv;
+    if (!source || typeof source !== 'object') return record?.garminHrv != null ? 'garmin:unspecified:ms' : 'legacy:unspecified:ms';
     return [
         String(source.source || 'unknown').toLowerCase(),
         String(source.metric || 'unspecified').toLowerCase(),
@@ -128,7 +130,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
             key, label, value: Number(value), score: baseline.score,
             baseline: baseline.baseline, deviation: baseline.deviation,
             observations: baseline.observations,
-            ...(key === 'hrv' ? { measurementSource: current.measurementSources?.hrv || null } : {})
+            ...(key === 'hrv' ? { measurementSource: current.measurementSources?.garminHrv || current.measurementSources?.hrv || null } : {})
         });
     };
 
@@ -158,8 +160,9 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     const sleepItems = [];
     // Sleep Score is a proprietary composite. If available, use it as the
     // sleep-domain indicator and do not count duration again in the same score.
-    if (isValid(current.sleepScore) && Number(current.sleepScore) >= 0 && Number(current.sleepScore) <= 100) {
-        sleepItems.push({ key: 'sleepScore', label: 'Schlafscore', value: Number(current.sleepScore), score: Math.round(Number(current.sleepScore)) });
+    const garminSleepScore = readMetric(current, 'sleepScore');
+    if (isValid(garminSleepScore) && Number(garminSleepScore) >= 0 && Number(garminSleepScore) <= 100) {
+        sleepItems.push({ key: 'sleepScore', label: 'Schlafscore', value: Number(garminSleepScore), score: Math.round(Number(garminSleepScore)) });
     } else {
         const duration = readMetric(current, 'sleepDuration');
         if (isValid(duration) && Number(duration) > 0 && Number(duration) <= 24) {

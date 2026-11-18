@@ -30,9 +30,9 @@ function dayCycleInfo(dateStr) {
 }
 function sleepMetricMarkup(checkin) {
  const parts=[];
- const duration=checkin?.sleepDuration??(Number(checkin?.sleep)>5?Number(checkin.sleep):null);
+ const duration=checkin?.garminSleepDuration;
  if(duration!=null){const h=Number(duration),color=h<7?'text-rose-400':h<=9?'text-emerald-400':'text-cyan-300';parts.push('<span class="'+color+'" title="Schlafdauer: '+escapeHtml(duration)+' Stunden">🌙 '+escapeHtml(duration)+' h</span>');}
- if(checkin?.sleepScore!=null){const score=Number(checkin.sleepScore),color=score<80?'text-rose-400':score<=90?'text-amber-300':'text-emerald-400';parts.push('<span class="'+color+'" title="Schlafscore: unter 80 rot, 80–90 gelb, über 90 grün">'+Math.round(score)+'</span>');}
+ if(checkin?.garminSleepScore!=null){const score=Number(checkin.garminSleepScore),color=score<80?'text-rose-400':score<=90?'text-amber-300':'text-emerald-400';parts.push('<span class="'+color+'" title="Schlafscore: unter 80 rot, 80–90 gelb, über 90 grün">'+Math.round(score)+'</span>');}
  return parts.join(' ');
 }
 function periodCalendarMarker(dateStr) {
@@ -292,7 +292,7 @@ function calendarDayTime(value) {
     return match ? String(match[1]).padStart(2, '0') + ':' + match[2] : '';
 }
 function calendarDayHasCheckin(checkin) {
-    return ['sleepQuality','soreness','fatigue','motivation','stress','hrv','rhr','sleepDuration','sleepScore','bodyBattery','bodyBatteryAtWake','bodyBatteryMorning','note']
+    return ['sleepQuality','soreness','fatigue','motivation','stress','garminHrv','garminRhr','garminSleepDuration','garminSleepScore','garminRespiration','garminBodyBattery','garminStress','garminSpo2','garminSteps','garminFitnessAge','garminWeight','note']
         .some(key => checkin?.[key] !== null && checkin?.[key] !== undefined && checkin?.[key] !== '');
 }
 function calendarDayEvent(label, detail, time, kind) {
@@ -324,13 +324,13 @@ function renderCalendarDayDetail(date, target) {
         if (value === null || value === undefined || value === '') return;
         recoveryMetrics.push(calendarDayRing(String(value), label, tone));
     };
-    const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
-    const bodyBattery = checkin.bodyBattery ?? checkin.bodyBatteryAtWake ?? checkin.bodyBatteryMorning;
-    const sleepHours = Number(sleepDuration), sleepScore = Number(checkin.sleepScore), batteryScore = Number(bodyBattery);
+    const sleepDuration = checkin.garminSleepDuration;
+    const bodyBattery = checkin.garminBodyBattery;
+    const sleepHours = Number(sleepDuration), sleepScore = Number(checkin.garminSleepScore), batteryScore = Number(bodyBattery);
     addRecovery('Schlaf', sleepDuration, Number.isFinite(sleepHours) ? (sleepHours >= 7 && sleepHours <= 9 ? 'good' : sleepHours < 7 ? 'critical' : 'attention') : 'info');
-    addRecovery('HRV', checkin.hrv);
-    addRecovery('Ruhepuls', checkin.rhr);
-    addRecovery('Schlafscore', checkin.sleepScore, Number.isFinite(sleepScore) ? (sleepScore >= 90 ? 'good' : sleepScore >= 80 ? 'attention' : 'critical') : 'info');
+    addRecovery('HRV', checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null));
+    addRecovery('Ruhepuls', checkin.garminRhr);
+    addRecovery('Schlafscore', checkin.garminSleepScore, Number.isFinite(sleepScore) ? (sleepScore >= 90 ? 'good' : sleepScore >= 80 ? 'attention' : 'critical') : 'info');
     addRecovery('Body Battery', bodyBattery, Number.isFinite(batteryScore) ? (batteryScore >= 70 ? 'good' : batteryScore >= 40 ? 'attention' : 'critical') : 'info');
     const subjective = [
         ['Schlafqualität', checkin.sleepQuality], ['Müdigkeit', checkin.fatigue],

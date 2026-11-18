@@ -74,7 +74,7 @@ function checkinValuesBetween(dateKey,key,days,includeCurrent=false){
       const ms=new Date(date+'T12:00:00').getTime();
       return Number.isFinite(ms)&&ms>=startMs&&(includeCurrent?date<=dateKey:date<dateKey);
     })
-    .map(([,record])=>key==='sleepDuration'?(record.sleepDuration??(Number(record.sleep)>5?record.sleep:null)):record[key]).filter(validNumber).map(Number);
+    .map(([,record])=>key==='hrv'?(record.garminHrv??(record.measurementSources?.hrv?.source==='garmin'?record.hrv:null)):key==='rhr'?record.garminRhr:key==='sleepDuration'?record.garminSleepDuration:key==='sleepScore'?record.garminSleepScore:key==='respiration'?record.garminRespiration:record[key]).filter(validNumber).map(Number);
 }
 function mean(values){return values.reduce((sum,value)=>sum+value,0)/values.length;}
 function standardDeviation(values,avg){
@@ -427,23 +427,35 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     // Home zeigt bei fehlenden Tageswerten den letzten tatsächlich erfassten
     // Check-in bis einschließlich des ausgewählten Tages. Die Daten bleiben
     // datumsgebunden; es werden keine Werte aus der Zukunft übernommen.
-    const homeMetricKeys = ['rhr','garminRhr','hrv','sleepScore','sleepDuration','sleep','respiration','sleepQuality','soreness','fatigue','motivation','stress','weight'];
-    const hasHomeMetrics = record => Boolean(record && typeof record === 'object' &&
-        homeMetricKeys.some(key => record[key] !== null && record[key] !== undefined && record[key] !== ''));
+    const garminMetricKeys = ['garminHrv','garminRhr','garminSleepScore','garminSleepDuration','garminRespiration','garminBodyBattery','garminStress','garminWeight','garminSpo2','garminSteps','garminFitnessAge'];
+    const subjectiveMetricKeys = ['sleepQuality','soreness','fatigue','motivation','stress','weight'];
+    const hasGarminMetrics = record => Boolean(record && typeof record === 'object' &&
+        (garminMetricKeys.some(key => record[key] !== null && record[key] !== undefined && record[key] !== '') ||
+         (record.measurementSources?.hrv?.source === 'garmin' && validNumber(record.hrv))));
+    const hasHomeMetrics = record => hasGarminMetrics(record) || Boolean(record &&
+        subjectiveMetricKeys.some(key => record[key] !== null && record[key] !== undefined && record[key] !== ''));
     const checkinEntries = Object.entries(state.dailyCheckins || {})
         .filter(([date, record]) => date <= selectedDate && hasHomeMetrics(record))
         .sort(([a], [b]) => b.localeCompare(a));
+    const garminEntries = Object.entries(state.dailyCheckins || {})
+        .filter(([date, record]) => date <= selectedDate && hasGarminMetrics(record))
+        .sort(([a], [b]) => b.localeCompare(a));
     const exactCheckin = state.dailyCheckins[selectedDate];
-    // Ein leerer Tagesdatensatz (z. B. durch einen automatisch angelegten Tag)
-    // darf nicht den letzten tatsächlich vorhandenen Gesundheitswert verdrängen.
+    const exactGarminCheckin = hasGarminMetrics(exactCheckin) ? exactCheckin : null;
     const latestCheckin = checkinEntries[0] || null;
+    const latestGarminCheckin = garminEntries[0] || null;
     const checkin = hasHomeMetrics(exactCheckin) ? exactCheckin : (latestCheckin?.[1] || {});
     const checkinDate = hasHomeMetrics(exactCheckin) ? selectedDate : (latestCheckin?.[0] || null);
+    const garminCheckin = exactGarminCheckin || latestGarminCheckin?.[1] || {};
+    const garminCheckinDate = exactGarminCheckin ? selectedDate : (latestGarminCheckin?.[0] || null);
     const dailyLabel = document.getElementById('home-daily-date-label');
-    if (dailyLabel && checkinDate && checkinDate !== selectedDate) {
-        dailyLabel.textContent = 'LETZTE MESSUNG · ' + formatDateDDMMYY(checkinDate);
+    if (dailyLabel) {
+        dailyLabel.textContent = garminCheckinDate && garminCheckinDate !== selectedDate
+            ? 'LETZTE GARMIN-MESSUNG · ' + formatDateDDMMYY(garminCheckinDate)
+            : checkinDate && checkinDate !== selectedDate
+                ? 'LETZTER CHECK-IN · ' + formatDateDDMMYY(checkinDate) : '';
     }
-    const sleepDuration = checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null);
+    const sleepDuration = garminCheckin.garminSleepDuration;
     const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     const setCircle = (id, value, stateName = 'neutral') => {
         const el = document.getElementById(id); if (!el) return;
@@ -452,7 +464,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     const format = (v, key) => validNumber(v) ? historyDisplay(Number(v), key) : '—';
     state.homeCheckinDate = checkinDate || selectedDate;
     const wearableState = (key, value) => {
-        const color = historyRingColor(key, validNumber(value) ? Number(value) : null, checkinDate || selectedDate);
+        const color = historyRingColor(key, validNumber(value) ? Number(value) : null, garminCheckinDate || selectedDate);
         const states = {[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor',[STATUS_COLORS.info]:'reference'};
         return states[color] || 'neutral';
     };
@@ -465,11 +477,12 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             valueEl.classList.add('kajo-wearable-value');
         }
     };
-    metric('home-wear-rhr','home-wear-rhr-ring',format(checkin.garminRhr ?? checkin.rhr,'rhr'),wearableState('rhr',checkin.garminRhr ?? checkin.rhr));
-    metric('home-wear-hrv','home-wear-hrv-ring',format(checkin.hrv,'hrv'),wearableState('hrv',checkin.hrv));
-    metric('home-wear-score','home-wear-score-ring',format(checkin.sleepScore,'sleepScore'),wearableState('sleepScore',checkin.sleepScore));
+    metric('home-wear-rhr','home-wear-rhr-ring',format(garminCheckin.garminRhr,'rhr'),wearableState('rhr',garminCheckin.garminRhr));
+    const garminHrv = garminCheckin.garminHrv ?? (garminCheckin.measurementSources?.hrv?.source === 'garmin' ? garminCheckin.hrv : null);
+    metric('home-wear-hrv','home-wear-hrv-ring',format(garminHrv,'hrv'),wearableState('hrv',garminHrv));
+    metric('home-wear-score','home-wear-score-ring',format(garminCheckin.garminSleepScore,'sleepScore'),wearableState('sleepScore',garminCheckin.garminSleepScore));
     metric('home-wear-duration','home-wear-duration-ring',validNumber(sleepDuration) ? historyDisplay(Number(sleepDuration),'sleepDuration').replace('.',',') + ' h' : '—',wearableState('sleepDuration',sleepDuration));
-    metric('home-wear-resp','home-wear-resp-ring',format(checkin.respiration,'respiration'),wearableState('respiration',checkin.respiration));
+    metric('home-wear-resp','home-wear-resp-ring',format(garminCheckin.garminRespiration,'respiration'),wearableState('respiration',garminCheckin.garminRespiration));
     const subjective = [
         ['sleepQuality','home-self-sleep','home-self-sleep-ring',false],
         ['soreness','home-self-soreness','home-self-soreness-ring',true],
@@ -484,11 +497,11 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const color = ({[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor'})[colorHex] || 'neutral';
         metric(valueId,ringId,valid ? historyDisplay(Number(raw), key) + ' / 10' : '—',color);
     });
-    const wearableCount = [checkin.garminRhr ?? checkin.rhr,checkin.hrv,checkin.sleepScore,sleepDuration,checkin.respiration].filter(validNumber).length;
+    const wearableCount = [garminCheckin.garminRhr,garminHrv,garminCheckin.garminSleepScore,sleepDuration,garminCheckin.garminRespiration].filter(validNumber).length;
     const selfCount = subjective.filter(([key]) => validNumber(historyValue(checkin, key))).length;
     set('home-recovery-source',wearableCount + ' von 5 Wearable-Werten · ' + selfCount + ' von 5 Self-Monitoring-Angaben erfasst');
-    state.homeReadinessDate = checkinDate || selectedDate;
-    renderReadinessDashboard(state.homeReadinessDate, false);
+    state.homeReadinessDate = selectedDate;
+    renderReadinessDashboard(selectedDate, false);
     const read = id => document.getElementById(id)?.textContent?.trim() || '—';
     const eligibleTimeline = (Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [])
         .filter(day => day?.date <= selectedDate)
@@ -792,17 +805,17 @@ export function inspectDay(dayObj) {
     if (stressInspect) stressInspect.textContent = `${checkin.stress ?? '—'} / 10`;
     document.getElementById('inspect-weight-val').textContent = checkin.weight ? `Gewicht: ${checkin.weight} kg` : 'Gewicht: nicht erfasst';
 
-    const sleepDuration=checkin.sleepDuration ?? (Number(checkin.sleep)>5?checkin.sleep:null);
-    const sleepScore=validNumber(checkin.sleepScore)?Math.round(Number(checkin.sleepScore)):null;
-    document.getElementById('wear-rhr').textContent=validNumber(checkin.rhr)?checkin.rhr:'—';
+    const sleepDuration=checkin.garminSleepDuration;
+    const sleepScore=validNumber(checkin.garminSleepScore)?Math.round(Number(checkin.garminSleepScore)):null;
+    document.getElementById('wear-rhr').textContent=validNumber(checkin.garminRhr)?checkin.garminRhr:'—';
     document.getElementById('wear-sleep').textContent=validNumber(sleepDuration)?sleepDuration+' h':'—';
-    const respirationEl=document.getElementById('wear-respiration'); if(respirationEl) respirationEl.textContent=validNumber(checkin.respiration)?Number(checkin.respiration).toFixed(1):'—';
+    const respirationEl=document.getElementById('wear-respiration'); if(respirationEl) respirationEl.textContent=validNumber(checkin.garminRespiration)?Number(checkin.garminRespiration).toFixed(1):'—';
     updateRespirationRange(dayObj.date);
-    document.getElementById('wear-hrv').textContent=validNumber(checkin.hrv)?checkin.hrv:'—';
+    document.getElementById('wear-hrv').textContent=validNumber(checkin.garminHrv??(checkin.measurementSources?.hrv?.source==='garmin'?checkin.hrv:null))?(checkin.garminHrv??checkin.hrv):'—';
     const sleepScoreEl=document.getElementById('wear-sleep-score');
     if(sleepScoreEl)sleepScoreEl.textContent=sleepScore===null?'—':sleepScore;
-    updateWearableRange('wear-rhr','wear-rhr-range',checkin.rhr,'rhr',dayObj.date,'lower');
-    updateWearableRange('wear-hrv','wear-hrv-range',checkin.hrv,'hrv',dayObj.date,'higher');
+    updateWearableRange('wear-rhr','wear-rhr-range',checkin.garminRhr,'rhr',dayObj.date,'lower');
+    updateWearableRange('wear-hrv','wear-hrv-range',checkin.garminHrv??(checkin.measurementSources?.hrv?.source==='garmin'?checkin.hrv:null),'hrv',dayObj.date,'higher');
     updateWearableRange('wear-sleep-score','wear-sleep-score-range',sleepScore,'sleepScore',dayObj.date,'higher');
     updateWearableRange('wear-sleep','wear-sleep-range',sleepDuration,'sleepDuration',dayObj.date,'higher');
     const applySleepColor=(id,color)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('text-white','text-purple-400','text-sky-400','text-rose-400','text-amber-400','text-amber-300','text-emerald-400','text-cyan-300');el.classList.add(color);};
@@ -895,11 +908,16 @@ function historyDateKey(date) {
 }
 function historyValue(checkin, key) {
     if (!checkin) return null;
-    const raw = key === 'sleepDuration'
-        ? (checkin.sleepDuration ?? (Number(checkin.sleep) > 5 ? checkin.sleep : null))
+    const garminKeys = {
+        rhr: 'garminRhr', bodyBattery: 'garminBodyBattery',
+        sleepScore: 'garminSleepScore', sleepDuration: 'garminSleepDuration',
+        respiration: 'garminRespiration'
+    };
+    const raw = key === 'hrv'
+        ? (checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null))
         : key === 'sleepQuality'
             ? (checkin.sleepQuality ?? (Number(checkin.sleep) >= 1 && Number(checkin.sleep) < 5 ? checkin.sleep : null))
-            : key === 'rhr' ? (checkin.garminRhr ?? checkin.rhr) : checkin[key];
+            : garminKeys[key] ? checkin[garminKeys[key]] : checkin[key];
     if (!validNumber(raw)) return null;
     const value = Number(raw);
     return ['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)

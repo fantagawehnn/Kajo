@@ -116,8 +116,8 @@ assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV f
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
 assert.ok(importer.includes("source: 'intervals', metric: 'rmssd', unit: 'ms'"), 'Intervals HRV carries explicit RMSSD provenance');
-assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
-assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
+assert.ok(!health.includes("['input-hrv', 'hrv'"), 'manual HRV is no longer editable in the daily check-in');
+assert.ok(health.includes('Garmin-Gesundheitswerte werden ausschließlich synchronisiert'), 'Garmin health metrics are explicitly read-only in the check-in');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
