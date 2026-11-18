@@ -111,7 +111,7 @@ export function saveManualActivity() {
         const avgHr = optionalNumber('manual-activity-avg-hr', 30, 250, true);
         const maxHr = optionalNumber('manual-activity-max-hr', 30, 250, true);
         if (avgHr !== null && maxHr !== null && maxHr < avgHr) throw new Error('Die maximale Herzfrequenz darf nicht unter der durchschnittlichen Herzfrequenz liegen.');
-        const rpe = optionalNumber('manual-activity-rpe', 1, 10, true);
+        const rpe = optionalNumber('manual-activity-rpe', 0, 10, true);
         const activity = {
             id: 'manual-' + Date.now() + '-' + Math.random().toString(36).slice(2,8),
             source: 'manual', manual: true, date, name: (val('manual-activity-name') || 'Trainingseinheit').slice(0,120),

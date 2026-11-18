@@ -198,8 +198,12 @@ export function calculateGarminZoneLoad(activity, settings, profile, dailyChecki
 
 function calculateSessionRpeLoad(activity) {
     const duration = Number(activity?.duration);
-    const rpe = Number(activity?.perceivedEffort);
-    if (!activity?.date || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(rpe) || rpe < 1 || rpe > 10) return null;
+    const rawRpe = activity?.perceivedEffort;
+    // 0 ist eine gültige Bewertung ("keine Anstrengung"); null/undefined/leer
+    // bleiben dagegen ausdrücklich "nicht bewertet".
+    if (rawRpe === null || rawRpe === undefined || rawRpe === '') return null;
+    const rpe = Number(rawRpe);
+    if (!activity?.date || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(rpe) || rpe < 0 || rpe > 10) return null;
     return Number((duration * rpe).toFixed(1));
 }
 export function getTrainingLoadData(records, settings, profile, dailyCheckins = {}) {

@@ -96,6 +96,26 @@ test('manual session-RPE load is calculated as duration in minutes times RPE', (
     assert.equal(day.loadMode, 'srpe');
 });
 
+test('explicit RPE zero is a valid rating and produces zero sRPE load', () => {
+    const records = [{ id: 'manual-rpe-zero', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 0 }];
+    const day = entryOn(completedDay, records, {
+        trainingLoadSource: 'srpe',
+        garminActivityCoverageRanges: [covered(completedDay)]
+    });
+    assert.equal(day.load, 0);
+    assert.equal(day.dataStatus, 'complete');
+    assert.equal(day.loadMode, 'srpe');
+});
+
+test('missing or null RPE is not interpreted as a valid zero rating', () => {
+    for (const perceivedEffort of [null, undefined, '']) {
+        const records = [{ id: 'manual-rpe-missing', source: 'manual', date: completedDay, duration: 60, perceivedEffort }];
+        const result = getTrainingLoadData(records, { trainingLoadSource: 'srpe' }, {});
+        assert.equal(result.records.length, 0);
+        assert.equal(result.coverage.loadedActivityCount, 0);
+    }
+});
+
 test('a day with multiple activities is incomplete if any activity lacks the selected load', () => {
     const records = [
         { id: 'g-3', source: 'garmin', date: completedDay, garminTrainingLoad: 30 },
