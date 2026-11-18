@@ -558,9 +558,17 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             const targetKey = key === 'rhr' ? 'garminRhr' : key;
             if (existing[targetKey] !== null && existing[targetKey] !== undefined && existing[targetKey] !== '') continue;
             updates[targetKey] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            if (key === 'hrv') {
+                // Garmin-HRV wird mit Quelle und Einheit gespeichert. Die konkrete
+                // HRV-Metrik ist im generischen Exportfeld nicht sicher identifizierbar.
+                updates.measurementSources = {
+                    ...(updates.measurementSources || existing.measurementSources || {}),
+                    hrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' }
+                };
+            }
             if (key === 'rhr') {
                 updates.measurementSources = {
-                    ...(existing.measurementSources || {}),
+                    ...(updates.measurementSources || existing.measurementSources || {}),
                     garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' }
                 };
             }
