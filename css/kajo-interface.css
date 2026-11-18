@@ -259,3 +259,147 @@
   #view-dashboard.kajo-dashboard-design .kajo-home-section-heading h2,
   #view-dashboard.kajo-dashboard-design .kajo-home-section-heading strong{font-size:.8rem}
 }
+
+/* Global KAJO shell: consistent navigation and page framing. */
+body{
+  background:
+    radial-gradient(ellipse at 50% -18%,rgba(53,119,158,.13),transparent 42%),
+    var(--kajo-ui-bg,#080f19) !important;
+  color:var(--kajo-ui-text,#edf4fb);
+}
+#app-navigation:not(.hidden){
+  position:sticky;
+  top:0;
+  z-index:50;
+  border:0 !important;
+  border-bottom:1px solid var(--kajo-ui-border,rgba(148,170,196,.16)) !important;
+  background:rgba(8,15,25,.88) !important;
+  box-shadow:0 8px 26px rgba(0,0,0,.16);
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+}
+#app-navigation>.max-w-7xl,
+#app-navigation>div{
+  max-width:1560px;
+}
+#app-navigation .kajo-desktop-brand img{
+  width:clamp(132px,13vw,190px);
+  max-height:46px;
+}
+#app-navigation .kajo-primary-nav{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:5px;
+  border:1px solid rgba(148,170,196,.1);
+  border-radius:14px;
+  background:rgba(4,12,22,.42);
+}
+#app-navigation .kajo-nav-item{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:40px;
+  padding:0 13px;
+  border:1px solid transparent;
+  border-radius:10px;
+  color:var(--kajo-ui-muted,#91a2b7);
+  font-size:12px;
+  font-weight:750;
+  letter-spacing:.01em;
+  transition:background .18s ease,color .18s ease,border-color .18s ease;
+}
+#app-navigation .kajo-nav-item i,
+#app-navigation .kajo-nav-item svg{
+  width:16px;
+  height:16px;
+  stroke-width:1.9;
+}
+#app-navigation .kajo-nav-item:hover{
+  color:var(--kajo-ui-text,#edf4fb);
+  background:rgba(148,170,196,.08);
+}
+#app-navigation .kajo-nav-item.is-active{
+  color:#e9fbff;
+  border-color:rgba(72,199,223,.2);
+  background:linear-gradient(135deg,rgba(72,199,223,.16),rgba(93,157,245,.1));
+  box-shadow:inset 0 0 0 1px rgba(72,199,223,.035);
+}
+#app-navigation .kajo-version-tag{
+  border:1px solid var(--kajo-ui-border,rgba(148,170,196,.16));
+  border-radius:7px;
+  background:rgba(148,170,196,.07);
+  color:var(--kajo-ui-muted,#91a2b7);
+}
+#app-navigation .kajo-home-icon-button{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border:1px solid var(--kajo-ui-border,rgba(148,170,196,.16));
+  border-radius:11px;
+  color:var(--kajo-ui-muted,#91a2b7);
+  background:rgba(148,170,196,.045);
+}
+#app-navigation .kajo-home-icon-button:hover{
+  color:var(--kajo-ui-text,#edf4fb);
+  border-color:rgba(72,199,223,.3);
+  background:rgba(72,199,223,.08);
+}
+#app-main{
+  max-width:1560px;
+  padding-top:clamp(18px,2.2vw,30px);
+  padding-bottom:calc(36px + env(safe-area-inset-bottom,0px));
+}
+#app-main .kajo-subnav{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  padding:6px;
+  border:1px solid var(--kajo-ui-border,rgba(148,170,196,.16));
+  border-radius:14px;
+  background:rgba(13,24,38,.78);
+}
+#app-main .kajo-subnav-item{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:36px;
+  padding:0 12px;
+  border:1px solid transparent;
+  border-radius:9px;
+  color:var(--kajo-ui-muted,#91a2b7);
+  font-size:11px;
+  font-weight:750;
+  transition:all .18s ease;
+}
+#app-main .kajo-subnav-item:hover{
+  color:var(--kajo-ui-text,#edf4fb);
+  background:rgba(148,170,196,.07);
+}
+#app-main .kajo-subnav-item.is-active{
+  color:#e9fbff;
+  border-color:rgba(72,199,223,.18);
+  background:rgba(72,199,223,.11);
+}
+#app-main :is(button,a,[role="button"]):focus-visible{
+  outline:2px solid var(--kajo-ui-cyan,#48c7df);
+  outline-offset:3px;
+}
+@media(max-width:900px){
+  #app-navigation .kajo-desktop-brand img{width:118px}
+  #app-navigation .kajo-primary-nav{gap:2px;padding:3px}
+  #app-navigation .kajo-nav-item{min-height:36px;padding:0 9px;gap:6px}
+}
+@media(max-width:640px){
+  #app-main{padding-left:12px;padding-right:12px;padding-top:14px}
+  #app-main .kajo-subnav{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  #app-main .kajo-subnav::-webkit-scrollbar{display:none}
+  #app-main .kajo-subnav-item{flex:0 0 auto}
+}
