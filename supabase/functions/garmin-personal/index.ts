@@ -1416,18 +1416,19 @@ Deno.serve(async (req) => {
       const onlyMissingDays = body.onlyMissingDays === true;
       const rawOffset = Number(body.timezoneOffsetMinutes);
       const timezoneOffsetMinutes = Number.isInteger(rawOffset) && Math.abs(rawOffset) <= 840 ? rawOffset : null;
+      const timezoneBasis = timezoneOffsetMinutes === null ? "utc" : "client_offset";
       const activitySync = body.includeActivities === false
         ? null
         : await runTrackedGarminSync(admin, userId, {
             source: "manual_range", syncType: "activity_list", startDate, endDate,
-            timezoneBasis: "client_offset", timezoneOffsetMinutes,
+            timezoneBasis, timezoneOffsetMinutes,
             metadata: { only_missing_days: onlyMissingDays },
           }, () => syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays));
       // Activity coverage and health-history cursor are independent. Do not restart
       // a completed health range just because activity sync is incremental.
       const healthSync = await runTrackedGarminSync(admin, userId, {
         source: "manual_range", syncType: "health_history", startDate, endDate,
-        timezoneBasis: "client_offset", timezoneOffsetMinutes,
+        timezoneBasis, timezoneOffsetMinutes,
       }, () => syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, false, false));
       return json(200, { ok: true, sync: { startDate, endDate, activitySync, healthSync } });
     }
