@@ -46,7 +46,7 @@ Am 18.11.2026 wurden mehrere CI-Läufe auf dem Feature-Branch erfolgreich abgesc
 - Run [44363998803](https://github.com/fantagawehnn/Kajo/actions/runs/44363998803): erweiterte Worker-Fehlerpfadtests erfolgreich. Abgedeckt sind nun zusätzlich fehlendes/ausgefallenes Rate Limiting, überschrittene Limits, fehlerhaftes JSON, zu großer Kontext, AI-Fehler, leere AI-Antwort und erfolgreicher Antwortpfad.
 - Run [44364080844](https://github.com/fantagawehnn/Kajo/actions/runs/44364080844): vollständige CI nach zusätzlicher Absicherung fehlerhafter Supabase-Antworten und fehlender AI-Binding-Konfiguration erfolgreich. Die Coach-Worker-Tests prüfen jetzt auch diese beiden Fälle.
 - Run [44364801873](https://github.com/fantagawehnn/Kajo/actions/runs/44364801873): vollständige CI nach Ergänzung der Tests für die harte Streaming-Requestgrößenbegrenzung sowie Pflichtfelder und Kontextform erfolgreich; zu diesem Zeitpunkt waren 17 Worker-Tests enthalten. Danach wurde die serverseitige Supabase-Sessionprüfung mit einem 8-Sekunden-Timeout abgesichert; ein Timeout wird kontrolliert mit HTTP 504 beantwortet. Der zusätzliche Timeout-Regressionstest und die vollständige CI waren in Run [44365416489](https://github.com/fantagawehnn/Kajo/actions/runs/44365416489) erfolgreich. `tests/coach-worker.test.mjs` enthält nun 18 Worker-Tests.
-- Aktueller Integrationsstand nach Übernahme des neuesten Garmin-Archiv-Fixes: PR-CI Run [44368857380](https://github.com/fantagawehnn/Kajo/actions/runs/44368857380) und Push-CI Run [44368844178](https://github.com/fantagawehnn/Kajo/actions/runs/44368844178) erfolgreich. Beide Läufe umfassen Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Coach-Worker-Sicherheitstests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, Readiness-Tests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests.
+- Aktueller Integrationsstand nach Übernahme des neuesten Garmin-Archiv-Fixes und Dokumentationsabgleich: PR-CI Run [44369164709](https://github.com/fantagawehnn/Kajo/actions/runs/44369164709) und Push-CI Run [44369151819](https://github.com/fantagawehnn/Kajo/actions/runs/44369151819) auf Commit `410700c5fdfcca8c570963b1a7b1d438b448b746` erfolgreich. Beide Läufe umfassen Syntaxprüfung, Regression-Smoke-Tests, Coach-Kontexttests, Coach-Worker-Sicherheitstests, Garmin-Load-/Coverage-Tests, Trainingslast-Zonentests, Readiness-Tests, tägliche Garmin-HF-Recovery-Tests und Navigation-Smoke-Tests.
 - Für beide Läufe war der produktive Cloudflare-Deploy-Job erwartungsgemäß übersprungen, da kein Push auf `v2` erfolgte.
 - Cloudflare hat für Commit `c3736e2113f2acbe7bfb79d3b7041300bcedc391` einen Preview-Worker erfolgreich gebaut und bereitgestellt. Preview-URL: https://feature-coach-v2-integration-kajo.fantagawehn.workers.dev. Das ist eine Preview-Bereitstellung, kein Produktionsdeploy und kein Nachweis eines vollständigen Browser-/Coach-Funktionstests.
 
@@ -56,7 +56,7 @@ Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Die Cloudf
 
 1. In Cloudflare müssen `SUPABASE_URL` und `SUPABASE_ANON_KEY` als Worker-Variablen gesetzt sein. Der Supabase-Service-Role-Key wird dafür nicht benötigt und darf nicht eingebunden werden.
 2. Workers AI muss für das Cloudflare-Konto verfügbar sein; Kosten- und Kontingentgrenzen sind zu prüfen.
-3. Die Namespace-ID `987654321` in der Rate-Limit-Konfiguration muss im Cloudflare-Konto auf Eindeutigkeit geprüft werden. Cloudflare Rate Limiting ist näherungsweise und standortbezogen, kein global strikt durchgesetztes Kontingent.
+3. Die Namespace-ID `987654321` ist nach Cloudflare-Dokumentation eine vom Betreiber frei festgelegte positive Ganzzahl, die innerhalb des Cloudflare-Kontos eindeutig sein muss. Sie ist daher nicht automatisch ein Platzhalter oder eine von Cloudflare zugewiesene Ressourcen-ID. Vor Produktivbetrieb muss geprüft werden, dass kein anderer Rate-Limit-Binding-Eintrag im Konto dieselbe ID verwendet; gleiche IDs teilen Zähler. Cloudflare Rate Limiting ist näherungsweise und standortbezogen, kein global strikt durchgesetztes Kontingent.
 4. Die Wrangler-Version muss die Rate-Limit-Binding-Konfiguration unterstützen (mindestens 4.36.0).
 5. Die Modell-ID `@cf/zai-org/glm-4.7-flash` muss im Zielkonto praktisch getestet werden.
 6. Browser-/Runtime-Test mit gültiger und abgelaufener Supabase-Sitzung.
@@ -70,7 +70,7 @@ Die automatisierten Tests laufen damit in GitHub Actions erfolgreich. Die Cloudf
 - Browser-/Runtime-Test: noch nicht durchgeführt.
 - Supabase-Auth-Timeout: im Code mit 8 Sekunden begrenzt; automatisierter Regressionstest und CI erfolgreich (Run 44365416489).
 - Cloudflare-Variablen: nicht gesetzt bzw. nicht verifiziert.
-- Cloudflare-Preview: Build und Deployment erfolgreich (Commit `c3736e2`); vollständiger Runtime-Test noch offen.
+- Cloudflare-Preview: Build und Deployment für Commit `c3736e2` erfolgreich. Für den aktuellen Feature-Head `410700c` ist keine neuere Preview-Bereitstellung bestätigt; vollständiger Runtime-Test noch offen.
 - Cloudflare-Produktionsdeployment: nicht ausgeführt.
 - Supabase-Änderungen oder Datenbankmigrationen: nicht ausgeführt.
 - PR #81 ist offen und Draft; kein Merge in `v2`. Der stabile Branch wurde nicht verändert.
