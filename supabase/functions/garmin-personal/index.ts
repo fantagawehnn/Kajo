@@ -225,9 +225,10 @@ async function syncGarminHealthDayUnlocked(
       const noDataFetchedAt = Number.isFinite(fetchedAt) ? fetchedAt : NaN;
       const noDataNeedsRetry = isNoData &&
         (!Number.isFinite(noDataFetchedAt) || Date.now() - noDataFetchedAt >= 30 * 24 * 60 * 60 * 1000);
-      if (existing?.payload && !isEmptyGarminPayload(existing.payload) &&
-          (!isNoData || !noDataNeedsRetry) &&
-          Number.isFinite(fetchedAt) && Date.now() - fetchedAt < 24 * 60 * 60 * 1000) {
+      const referenceDataFresh = isNoData
+        ? !noDataNeedsRetry
+        : Number.isFinite(fetchedAt) && Date.now() - fetchedAt < 24 * 60 * 60 * 1000;
+      if (existing?.payload && !isEmptyGarminPayload(existing.payload) && referenceDataFresh) {
         results.push({ dataType: endpoint.type, status: "already_saved" });
         continue;
       }
@@ -281,7 +282,7 @@ async function syncGarminHealthDayUnlocked(
     status: rateLimited ? "rate_limited" : failed ? "partial" : "complete",
     rateLimited,
     retryInSeconds,
-    totalEndpoints: endpoints.length,
+    totalEndpoints: endpoints.length + referenceEndpoints.length,
     saved: results.filter((item) => item.status === "saved" || item.status === "preserved_existing_data" || item.status === "already_saved").length,
     noData: results.filter((item) => item.status === "no_data").length,
     failed,
