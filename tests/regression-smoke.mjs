@@ -374,6 +374,7 @@ assert.ok(mainSource.includes("setGarminSyncIndicator('partial', 'Synchronisieru
 const garminSyncMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
 const garminLeaseMigration = await readFile(new URL('../supabase/migrations/20261118130000_garmin_health_sync_lease.sql', import.meta.url), 'utf8');
 const garminHealthDayLeaseMigration = await readFile(new URL('../supabase/migrations/20261118140000_garmin_health_day_sync_lease.sql', import.meta.url), 'utf8');
+const garminSyncEventsMigration = await readFile(new URL('../supabase/migrations/20261118120000_garmin_sync_events.sql', import.meta.url), 'utf8');
 assert.ok(garminBackendSource.includes('const lockToken = crypto.randomUUID();'), 'Each health-history invocation must have a unique lease owner token');
 assert.ok(garminBackendSource.includes('async function withGarminActivityLease'), 'Activity-list sync must use a separate per-user lease');
 assert.ok(garminBackendSource.includes('.from("garmin_activity_sync_leases")'), 'Activity-list lease must use its own table, isolated from the health-history cursor');
@@ -400,6 +401,24 @@ assert.ok(garminBackendSource.includes('!recognizedStatus ? "error"'), 'Unknown 
 assert.ok(garminBackendSource.includes('() => syncGarminHealthDay(admin, userId, date, forceHealthRefresh)'), 'Daily health refresh must use the per-day lease without resetting the historical backfill cursor');
 assert.ok(garminBackendSource.includes('async function syncGarminHealthDayUnlocked'), 'The health-day importer must run behind a shared per-day lease wrapper');
 assert.ok(garminBackendSource.includes('async function syncGarminHealthDay('), 'Daily refresh and historical backfill must share the same health-day lease wrapper');
+assert.ok(garminBackendSource.includes('type: "vo2_max", path: `/metrics-service/metrics/maxmet/daily/${date}/${date}`'), 'Daily Garmin imports must preserve VO2 Max history even when KAJO does not yet analyse it');
+assert.ok(garminBackendSource.includes('type: "effective_weight_goals", path: `/goal-service/goal/user/effective/weightgoal/${date}/${date}`'), 'Daily Garmin imports must preserve effective weight-goal data');
+assert.ok(garminBackendSource.includes('type: "activity_types", path: "/activity-service/activity/activityTypes/simple"'), 'Garmin activity type catalog must be archived');
+assert.ok(garminBackendSource.includes('type: "heart_rate_zones", path: "/biometric-service/heartRateZones/v2"'), 'Garmin heart-rate zones must be archived');
+assert.ok(garminBackendSource.includes('type: "profile_settings", path: "/userprofile-service/userprofile/settings"'), 'Garmin profile settings must be archived');
+assert.ok(garminBackendSource.includes('record_key: "current"'), 'Reference endpoint payloads must be retained as raw current snapshots');
+assert.ok(garminBackendSource.includes('Date.now() - fetchedAt < 24 * 60 * 60 * 1000'), 'Reference snapshots must be refreshed at most once per 24 hours when successful');
+assert.ok(garminBackendSource.includes('activity: item,'), 'The full raw Garmin activity-list object must be stored instead of a reduced preview');
+assert.ok(garminBackendSource.includes('.range(offset, offset + pageSize - 1)'), 'FIT/detail archiving must paginate through the complete activity history');
+assert.ok(garminBackendSource.includes('.order("start_time", { ascending: true })'), 'FIT/detail archiving must begin with the oldest pending activities');
+assert.ok(garminBackendSource.includes('async function syncActivityFilesBatch('), 'A resumable Garmin detail/workout/FIT archive batch must exist');
+assert.ok(garminBackendSource.includes('action === "sync-activity-files-batch"'), 'The Garmin detail/workout/FIT archive must be callable as a dedicated sync action');
+assert.ok(garminBackendSource.includes('const activityFiles = await runTrackedGarminSync'), 'Background Garmin sync must archive activity details and original FIT files');
+assert.ok(garminBackendSource.includes('const activityFilesSync = await runTrackedGarminSync'), 'Daily Garmin sync must archive activity details and original FIT files');
+assert.ok(garminBackendSource.includes('await waitForGarminRequestSlot();\n  const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/'), 'FIT downloads must use the shared Garmin request throttle');
+assert.ok(garminSyncEventsMigration.includes("'activity_files'"), 'The sync event schema must allow activity-file archive events');
+assert.ok(garminSyncEventsMigration.includes("sync_type in ('activity_list', 'activity_files', 'health_history')"), 'The sync event schema must distinguish activity list and activity file synchronization');
+
 assert.ok(garminBackendSource.includes('const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);'), 'Historical backfill must acquire the same per-day lease as the daily refresh');
 assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, userId, date, date, false)'), 'Daily activity sync must pass through the shared activity-list lease');
 assert.ok(garminBackendSource.includes('() => syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays)'), 'Manual range activity sync must pass through the shared activity-list lease');
