@@ -84,7 +84,12 @@ async function handleCoach(request, env) {
     return json({ error: "Die Anmeldung konnte gerade nicht geprüft werden." }, 502);
   }
   if (!authResponse.ok) return json({ error: "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an." }, 401);
-  const authUser = await authResponse.json();
+  let authUser;
+  try {
+    authUser = await authResponse.json();
+  } catch {
+    return json({ error: "Die Anmeldung konnte gerade nicht geprüft werden." }, 502);
+  }
   if (!authUser?.id) return json({ error: "Ungültige Sitzung." }, 401);
 
   if (!env.COACH_RATE_LIMITER || typeof env.COACH_RATE_LIMITER.limit !== "function") {
