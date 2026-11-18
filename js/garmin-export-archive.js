@@ -4,6 +4,9 @@ import { SUPABASE_ANON_KEY } from './supabase-config.js';
 const BUCKET = 'garmin-exports';
 const PROJECT_ID = 'zgvargkfzgekokuisarv';
 const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
+// Supabase Free projects have a global per-object limit of 50 MB.
+// Keep each stored part below that ceiling; the complete archive may be larger.
+const ARCHIVE_PART_BYTES = 40 * 1024 * 1024;
 
 function safeFileName(name) {
     return String(name || 'garmin-export.zip').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-120);
@@ -49,6 +52,32 @@ async function buildArchiveManifest(file) {
     };
 }
 
+function uploadArchivePart(blob, objectName, token, onProgress) {
+    return new Promise((resolve, reject) => {
+        const upload = new tus.Upload(blob, {
+            endpoint: 'https://' + PROJECT_ID + '.storage.supabase.co/storage/v1/upload/resumable',
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            headers: { authorization: 'Bearer ' + token, apikey: SUPABASE_ANON_KEY },
+            uploadDataDuringCreation: true,
+            removeFingerprintOnSuccess: true,
+            metadata: {
+                bucketName: BUCKET,
+                objectName,
+                contentType: 'application/octet-stream',
+                cacheControl: '3600'
+            },
+            chunkSize: 6 * 1024 * 1024,
+            onError: reject,
+            onProgress,
+            onSuccess: resolve
+        });
+        upload.findPreviousUploads().then(previous => {
+            if (previous.length) upload.resumeFromPreviousUpload(previous[0]);
+            upload.start();
+        }).catch(reject);
+    });
+}
+
 export async function uploadGarminExportArchive(event) {
     const file = event?.target?.files?.[0];
     if (!file) return;
@@ -63,7 +92,7 @@ export async function uploadGarminExportArchive(event) {
         return;
     }
     if (file.size > MAX_ARCHIVE_BYTES) {
-        setStatus('Die ZIP-Datei überschreitet das aktuell konfigurierte Limit von 512 MB.', null, 'error');
+        setStatus('Die ZIP-Datei überschreitet das aktuell unterstützte Limit von 512 MB.', null, 'error');
         return;
     }
     if (typeof tus === 'undefined' || typeof tus.Upload !== 'function') {
@@ -98,35 +127,23 @@ export async function uploadGarminExportArchive(event) {
         const token = sessionData?.session?.access_token;
         if (!token) throw new Error('Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.');
 
-        setStatus('Originalarchiv wird sicher und unterbrechungsfähig in deinem Konto gespeichert …', 0);
-        await new Promise((resolve, reject) => {
-            const upload = new tus.Upload(file, {
-                endpoint: 'https://' + PROJECT_ID + '.storage.supabase.co/storage/v1/upload/resumable',
-                retryDelays: [0, 3000, 5000, 10000, 20000],
-                headers: { authorization: 'Bearer ' + token, apikey: SUPABASE_ANON_KEY },
-                uploadDataDuringCreation: true,
-                removeFingerprintOnSuccess: true,
-                metadata: {
-                    bucketName: BUCKET,
-                    objectName: storagePath,
-                    contentType: file.type || 'application/zip',
-                    cacheControl: '3600'
-                },
-                chunkSize: 6 * 1024 * 1024,
-                onError: reject,
-                onProgress: (uploaded, total) => {
-                    const percent = total ? uploaded / total * 100 : 0;
-                    setStatus('Originalarchiv wird gespeichert … ' + percent.toFixed(1) + '%', percent);
-                },
-                onSuccess: resolve
+        const partCount = Math.ceil(file.size / ARCHIVE_PART_BYTES);
+        const parts = [];
+        setStatus('Originalarchiv wird in ' + partCount + ' sichere Teilstücke zerlegt und gespeichert …', 0);
+        for (let index = 0; index < partCount; index++) {
+            const start = index * ARCHIVE_PART_BYTES;
+            const end = Math.min(file.size, start + ARCHIVE_PART_BYTES);
+            const partNumber = String(index + 1).padStart(4, '0');
+            const objectName = storagePath + '.part-' + partNumber;
+            const blob = file.slice(start, end, 'application/octet-stream');
+            await uploadArchivePart(blob, objectName, token, (uploaded) => {
+                const overall = ((start + uploaded) / file.size) * 100;
+                setStatus('Originalarchiv wird gespeichert … Teil ' + (index + 1) + '/' + partCount + ' · ' + overall.toFixed(1) + '%', overall);
             });
-            upload.findPreviousUploads().then(previous => {
-                if (previous.length) upload.resumeFromPreviousUpload(previous[0]);
-                upload.start();
-            }).catch(reject);
-        });
+            parts.push({ path: objectName, bytes: blob.size, index });
+        }
 
-        setStatus('Originalarchiv ist gespeichert. Dateiverzeichnis wird erstellt …', 100);
+        setStatus('Alle Archivteile sind gespeichert. Dateiverzeichnis wird erstellt …', 100);
         let manifest;
         try {
             manifest = await buildArchiveManifest(file);
@@ -138,6 +155,12 @@ export async function uploadGarminExportArchive(event) {
                 indexingError: String(manifestError?.message || manifestError)
             };
         }
+        manifest.archiveStorage = {
+            strategy: 'ordered-parts',
+            partSizeBytes: ARCHIVE_PART_BYTES,
+            partCount: parts.length,
+            parts
+        };
         const status = manifest.files ? 'indexed' : 'uploaded';
         const { error: updateError } = await supabase.from('garmin_export_imports').update({
             status,
@@ -149,7 +172,7 @@ export async function uploadGarminExportArchive(event) {
         const countText = manifest.files
             ? manifest.entryCount + ' Dateien gefunden, darunter ' + manifest.nestedArchives + ' weitere ZIP-Archive.'
             : 'Das Originalarchiv ist gesichert; das Dateiverzeichnis konnte nicht automatisch erstellt werden.';
-        setStatus('Erfolgreich: ' + countText + ' Die Original-ZIP bleibt unverändert in deinem Benutzerkonto gespeichert.', null, 'success');
+        setStatus('Erfolgreich: ' + countText + ' Das Originalarchiv ist vollständig und in der richtigen Reihenfolge in deinem Benutzerkonto gespeichert.', null, 'success');
         await renderGarminExportArchiveHistory();
     } catch (error) {
         console.error('[KAJO Garmin-Archivimport]', error);
@@ -158,7 +181,11 @@ export async function uploadGarminExportArchive(event) {
                 await supabase.from('garmin_export_imports').update({ status: 'failed' }).eq('id', importId);
             } catch (_) {}
         }
-        setStatus('Import fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), null, 'error');
+        const rawMessage = String(error?.message || 'Unbekannter Fehler');
+        const message = /413|maximum size exceeded/i.test(rawMessage)
+            ? 'Supabase hat auch ein Archivteil abgelehnt. Bitte prüfe das globale Storage-Limit deines Projekts. Details: ' + rawMessage
+            : rawMessage;
+        setStatus('Import fehlgeschlagen: ' + message, null, 'error');
     }
 }
 
