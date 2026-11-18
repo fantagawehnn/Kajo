@@ -1306,7 +1306,7 @@ async function syncGarminSelectedRange() {
     const startDate = document.getElementById('garmin-preview-start-date')?.value;
     const endDate = document.getElementById('garmin-preview-end-date')?.value;
     if (!status || !button) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalCalendarDate();
     if (!startDate || !endDate || startDate > endDate || endDate > today) {
         status.textContent = 'Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
         return;
@@ -1376,6 +1376,17 @@ async function syncGarminSelectedRange() {
                 activitySummary = sync.activitySync;
                 await loadGarminActivitiesFromCloud();
                 if (sync.activitySync.status === 'ok') {
+                    const activitySync = sync.activitySync;
+                    const reportedStart = String(activitySync.startDate || '');
+                    const reportedEnd = String(activitySync.endDate || '');
+                    const scannedDays = Number(activitySync.scannedDays);
+                    const skippedDays = Number(activitySync.skippedDays);
+                    if (reportedStart !== startDate || reportedEnd !== endDate
+                        || !Number.isInteger(scannedDays) || scannedDays < 0
+                        || !Number.isInteger(skippedDays) || skippedDays < 0
+                        || scannedDays + skippedDays !== totalDays) {
+                        throw new Error('Garmin-Aktivitätsabgleich meldet keine vollständige Abdeckung des ausgewählten Zeitraums. Der Zeitraum wird nicht als vollständig markiert; bitte starte die Synchronisierung erneut.');
+                    }
                     recordGarminActivityCoverageRange(startDate, endDate);
                     initEngine();
                 }
