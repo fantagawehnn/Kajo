@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client.js';
+import { SUPABASE_ANON_KEY } from './supabase-config.js';
 
 const BUCKET = 'garmin-exports';
 const PROJECT_ID = 'zgvargkfzgekokuisarv';
@@ -102,7 +103,7 @@ export async function uploadGarminExportArchive(event) {
             const upload = new tus.Upload(file, {
                 endpoint: 'https://' + PROJECT_ID + '.storage.supabase.co/storage/v1/upload/resumable',
                 retryDelays: [0, 3000, 5000, 10000, 20000],
-                headers: { authorization: 'Bearer ' + token, apikey: (supabase.supabaseKey || '') },
+                headers: { authorization: 'Bearer ' + token, apikey: SUPABASE_ANON_KEY },
                 uploadDataDuringCreation: true,
                 removeFingerprintOnSuccess: true,
                 metadata: {
@@ -149,6 +150,7 @@ export async function uploadGarminExportArchive(event) {
             ? manifest.entryCount + ' Dateien gefunden, darunter ' + manifest.nestedArchives + ' weitere ZIP-Archive.'
             : 'Das Originalarchiv ist gesichert; das Dateiverzeichnis konnte nicht automatisch erstellt werden.';
         setStatus('Erfolgreich: ' + countText + ' Die Original-ZIP bleibt unverändert in deinem Benutzerkonto gespeichert.', null, 'success');
+        await renderGarminExportArchiveHistory();
     } catch (error) {
         console.error('[KAJO Garmin-Archivimport]', error);
         if (importId) {
