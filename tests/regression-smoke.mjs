@@ -468,6 +468,6 @@ assert.ok(mainSource.includes("timezoneOffsetMinutes: new Date().getTimezoneOffs
 assert.ok(mainSource.includes('Letzte Synchronisierungsvorgänge'), 'The Garmin dialog must render recent sync events');
 assert.ok(garminSyncMigration.includes('alter table public.garmin_sync_events enable row level security;'), 'The sync audit table must enable RLS');
 assert.ok(garminSyncMigration.includes('revoke all on table public.garmin_sync_events from anon, authenticated;'), 'The sync audit table must not be directly accessible to browser roles');
-assert.ok(garminSyncMigration.includes('grant all on table public.garmin_sync_events to service_role;'), 'Only the trusted service role should access the sync audit table');
+assert.ok(garminSyncMigration.includes('grant select, insert, update on table public.garmin_sync_events to service_role;') && !garminSyncMigration.includes('grant all on table public.garmin_sync_events'), 'The service role must receive only the privileges required by the sync audit function');
 
 console.log('Regression smoke tests passed: local dates, escaping, settings, CTL provisional flag, respiratory wellness, Intervals streams, RPE load and backup restore.');
