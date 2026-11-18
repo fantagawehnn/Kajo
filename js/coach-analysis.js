@@ -33,6 +33,15 @@ function weekStartKey(value) {
     return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
 }
 
+function isoWeekNumber(value) {
+    const date = new Date(`${value}T00:00:00Z`);
+    if (!Number.isFinite(date.getTime())) return null;
+    const weekday = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - weekday);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
 function summarizeWeeklyVolume(activities) {
     const weeks = new Map();
     activities.forEach(item => {
@@ -49,13 +58,22 @@ function summarizeWeeklyVolume(activities) {
             week.missingDurationCount++;
         }
     });
-    return [...weeks.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([weekStart, value]) => ({
-        weekStarting: weekStart,
-        sessions: value.sessions,
-        durationMinutes: value.missingDurationCount === 0 ? Number(value.knownMinutes.toFixed(1)) : null,
-        knownDurationMinutes: Number(value.knownMinutes.toFixed(1)),
-        sessionsMissingDuration: value.missingDurationCount
-    }));
+    return [...weeks.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([weekStart, value]) => {
+        const weekEndDate = new Date(`${weekStart}T12:00:00Z`);
+        weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 6);
+        const weekEnd = weekEndDate.toISOString().slice(0, 10);
+        const weekNumber = isoWeekNumber(weekStart);
+        return {
+            weekStarting: weekStart,
+            weekEnding: weekEnd,
+            isoWeekNumber: weekNumber,
+            isoWeekLabel: weekNumber === null ? null : `KW ${String(weekNumber).padStart(2, '0')}`,
+            sessions: value.sessions,
+            durationMinutes: value.missingDurationCount === 0 ? Number(value.knownMinutes.toFixed(1)) : null,
+            knownDurationMinutes: Number(value.knownMinutes.toFixed(1)),
+            sessionsMissingDuration: value.missingDurationCount
+        };
+    });
 }
 
 function summarizeActivities(activities) {
