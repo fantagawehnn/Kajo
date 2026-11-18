@@ -14,6 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
+import { uploadGarminExportArchive, renderGarminExportArchiveHistory } from './garmin-export-archive.js';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
@@ -3045,6 +3046,7 @@ Object.assign(window, {
     cancelAthleteProfileEdit,
     saveAthleteProfileSection,
     restoreDatabaseBackup,
+    uploadGarminExportArchive,
     closeBackupPreview,
     confirmBackupRestore,
     addRace,
