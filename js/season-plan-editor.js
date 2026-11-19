@@ -1,8 +1,11 @@
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
+import { requestSeasonPlanProposal } from './coach.js';
 
 let draftPhases = [];
+let pendingProposal = null;
+let proposalRequestPending = false;
 
 const byId = id => document.getElementById(id);
 const value = id => byId(id)?.value ?? '';
@@ -21,8 +24,73 @@ export function renderSeasonPlanEditor() {
     const status = byId('season-plan-status');
     if (status) status.textContent = !plan ? 'Noch nicht angelegt' : plan.status === 'active' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf';
     renderPhaseList();
+    renderSeasonPlanProposal();
     const message = byId('season-plan-message');
     if (message) message.textContent = plan?.athleteApprovedAt ? 'Zuletzt von dir freigegeben: ' + new Date(plan.athleteApprovedAt).toLocaleString('de-DE') : '';
+}
+
+function renderSeasonPlanProposal() {
+    const root = byId('season-plan-proposal');
+    if (!root) return;
+    if (!pendingProposal) {
+        root.classList.add('hidden');
+        return;
+    }
+    root.classList.remove('hidden');
+    const rationale = byId('season-plan-proposal-rationale');
+    if (rationale) rationale.textContent = pendingProposal.rationale || 'Der Coach hat einen Periodisierungsvorschlag erstellt.';
+    const questions = byId('season-plan-proposal-questions');
+    if (questions) questions.innerHTML = (pendingProposal.openQuestions || []).map(item => '<p>• ' + escape(item) + '</p>').join('');
+    const phases = byId('season-plan-proposal-phases');
+    if (phases) phases.innerHTML = (pendingProposal.phases || []).map(phase => `
+        <article class="rounded-lg border border-slate-800 p-3 space-y-1">
+            <div class="flex flex-wrap justify-between gap-2"><strong class="text-xs text-white">${escape(phase.name)}</strong><span class="text-[10px] text-slate-400">${escape(phase.startDate)} – ${escape(phase.endDate)}</span></div>
+            <p class="text-xs text-slate-300">${escape(phase.objective)}</p>
+            <p class="text-[10px] text-slate-500">${escape((phase.focus || []).join(' · '))}</p>
+        </article>`).join('');
+    const apply = byId('season-plan-proposal-apply');
+    if (apply) apply.classList.toggle('hidden', pendingProposal.status !== 'ready' || !pendingProposal.phases?.length);
+}
+
+export async function generateSeasonPlanProposal() {
+    const message = byId('season-plan-message');
+    if (proposalRequestPending) return false;
+    if (!saveSeasonPlanEditor(false)) return false;
+    proposalRequestPending = true;
+    if (message) message.textContent = 'Der Coach prüft Saisonrahmen, Athletenprofil und Wettkämpfe …';
+    const button = document.querySelector('[onclick="generateSeasonPlanProposal()"]');
+    if (button) { button.disabled = true; button.textContent = 'Vorschlag wird erstellt …'; }
+    try {
+        pendingProposal = await requestSeasonPlanProposal();
+        renderSeasonPlanProposal();
+        if (message) message.textContent = pendingProposal.status === 'ready'
+            ? 'Vorschlag erstellt. Prüfe die Phasen und offenen Fragen, bevor du sie übernimmst.'
+            : 'Noch kein belastbarer Vorschlag möglich. Bitte kläre die offenen Fragen.';
+        return true;
+    } catch (error) {
+        if (message) message.textContent = error?.message || 'Der Periodisierungsvorschlag konnte nicht erstellt werden.';
+        return false;
+    } finally {
+        proposalRequestPending = false;
+        if (button) { button.disabled = false; button.textContent = '✦ Periodisierung mit Coach vorschlagen'; }
+    }
+}
+
+export function applySeasonPlanProposal() {
+    if (!pendingProposal || pendingProposal.status !== 'ready' || !Array.isArray(pendingProposal.phases) || !pendingProposal.phases.length) return false;
+    draftPhases = pendingProposal.phases.map(phase => ({...phase}));
+    renderPhaseList();
+    pendingProposal = null;
+    renderSeasonPlanProposal();
+    const message = byId('season-plan-message');
+    if (message) message.textContent = 'Die vorgeschlagenen Phasen liegen jetzt als Entwurf vor. Prüfe sie und speichere anschließend – die Freigabe erfolgt separat.';
+    return true;
+}
+
+export function discardSeasonPlanProposal() {
+    pendingProposal = null;
+    renderSeasonPlanProposal();
+    return true;
 }
 
 function renderPhaseList() {
