@@ -12,7 +12,7 @@ import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, cal
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
 import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
-import { populateActivityRouteSelect } from './routes.js';
+import { populateActivityRouteSelect } from './routes.js?v=5';
 
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
 // Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
