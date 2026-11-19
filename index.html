@@ -675,7 +675,18 @@
     <section class="kajo-health-group"><div class="kajo-health-group-heading"><h2>Zyklusdokumentation</h2><span>Erfasste Periodentage</span></div><div id="health-cycle-metrics" class="kajo-health-metric-row" aria-live="polite"></div></section>
   </section>
   <section id="health-view-relationships" class="hidden space-y-4">
-    <section class="kajo-health-trend"><div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">TAGESVERGLEICH</p><h2>Beschwerden und Trainingseinfluss</h2></div></div><div class="kajo-health-chart-wrap"><canvas id="health-relationship-chart" aria-label="Zusammenhang zwischen Beschwerden und Trainingseinfluss"></canvas></div><p id="health-relationship-note" class="kajo-health-note"></p></section>
+    <section class="kajo-health-trend">
+      <div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">GESUNDHEIT × TRAINING</p><h2>Trainingsbelastung und Regeneration</h2></div></div>
+      <p class="kajo-health-note">Verglichen werden Tage mit dokumentierter Krankheit oder Verletzung und Tage ohne einen solchen Eintrag. „Kein Eintrag“ bedeutet nicht automatisch gesund. Angezeigt werden Median und Anzahl tatsächlich verfügbarer Tageswerte; fehlende Daten werden nicht ergänzt.</p>
+      <div id="health-load-comparison" class="overflow-x-auto"></div>
+      <div id="health-recovery-comparison" class="overflow-x-auto mt-4"></div>
+      <p id="health-comparison-note" class="kajo-health-note mt-3" aria-live="polite"></p>
+    </section>
+    <section class="kajo-health-trend">
+      <div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">ZYKLUS × TRAINING</p><h2>Beschwerden und Trainingseinfluss</h2></div></div>
+      <div class="kajo-health-chart-wrap"><canvas id="health-relationship-chart" aria-label="Zusammenhang zwischen Beschwerden und Trainingseinfluss"></canvas></div>
+      <p id="health-relationship-note" class="kajo-health-note"></p>
+    </section>
   </section>
   <section id="health-trend-panel" class="kajo-health-trend hidden" aria-live="polite">
     <div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">DETAILVERLAUF</p><h2 id="health-trend-title">Gesundheit</h2></div><nav class="kajo-health-range" aria-label="Zeitraum"><button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button><button type="button" data-health-range="28d" class="is-active" onclick="setHealthRange('28d')">28 T</button><button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button><button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button><button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button></nav></div>
