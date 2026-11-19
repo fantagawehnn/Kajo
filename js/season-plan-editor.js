@@ -307,6 +307,53 @@ function renderManualActivityLinks(plan, review) {
     );
 }
 
+export function setManualActivityLink(sessionId, activityId) {
+    if (!activeAdaptiveWeekStartDate || !sessionId) return false;
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    const plan = current?.weeklyPlans.find(item => item.weekStartDate === activeAdaptiveWeekStartDate);
+    if (!current || !plan || !['approved', 'completed'].includes(plan.status)) return false;
+    const session = plan.sessions.find(item => String(item.id) === String(sessionId));
+    const activity = (Array.isArray(state.rawActivities) ? state.rawActivities : [])
+        .find(item => item?.id != null && String(item.id) === String(activityId));
+    const message = byId('season-plan-message');
+    if (!session || (activityId && (!activity || activity.date?.slice(0, 10) !== session.date))) {
+        if (message) message.textContent = 'Eine Aktivität kann nur derselben geplanten Trainingseinheit am gleichen Tag zugeordnet werden.';
+        return false;
+    }
+    const links = (plan.manualActivityLinks || []).filter(link => String(link.sessionId) !== String(sessionId));
+    if (activityId) {
+        const alreadyLinked = links.some(link => String(link.activityId) === String(activityId));
+        if (alreadyLinked) {
+            if (message) message.textContent = 'Diese Aktivität ist bereits einer anderen Einheit zugeordnet.';
+            return false;
+        }
+        links.push({ sessionId: String(sessionId), activityId: String(activityId), updatedAt: new Date().toISOString() });
+    }
+    const previousSeasonPlan = state.seasonPlan;
+    const nextPlan = {
+        ...plan,
+        manualActivityLinks: links,
+        manualSessionStatuses: (plan.manualSessionStatuses || []).filter(entry => String(entry.sessionId) !== String(sessionId)),
+        updatedAt: new Date().toISOString()
+    };
+    state.seasonPlan = {
+        ...current,
+        weeklyPlans: current.weeklyPlans.map(item => item.id === plan.id ? nextPlan : item),
+        updatedAt: new Date().toISOString()
+    };
+    if (!saveDataToLocalStorage()) {
+        state.seasonPlan = previousSeasonPlan;
+        if (message) message.textContent = 'Die manuelle Aktivitätszuordnung konnte nicht gespeichert werden.';
+        return false;
+    }
+    pendingAdaptiveProposal = null;
+    reviewApprovedWeeklyPlan(activeAdaptiveWeekStartDate);
+    if (message) message.textContent = activityId
+        ? 'Aktivität wurde der geplanten Einheit manuell zugeordnet.'
+        : 'Manuelle Aktivitätszuordnung wurde aufgehoben.';
+    return true;
+}
+
 export function setManualSessionStatus(sessionId, status) {
     if (!activeAdaptiveWeekStartDate || !sessionId) return false;
     const current = normalizeSeasonPlan(state.seasonPlan);
