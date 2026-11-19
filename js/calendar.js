@@ -941,14 +941,30 @@ export function renderYearView() {
     const monthHeader = monthGroups.map(group => '<span class="calendar-year-month-label" style="grid-column:span ' + group.span + '">' + monthNames[group.month] + '</span>').join('');
     const weekHeader = weeks.map(week => '<span class="calendar-year-week-number">' + week.weekNo + '</span>').join('');
     const weekCells = weeks.map(week => {
-        const segments = Object.values(week.bySport).map(data => {
-            const sport = catalog[data.type] || catalog.Workout;
+        const trainingMode = calendarDisplayMode() === 'training';
+        const trainingGroups = {};
+        if (trainingMode) week.activities.forEach(item => {
+            const key = item.category || 'ga';
+            if (!trainingGroups[key]) trainingGroups[key] = { category: key, minutes: 0, count: 0 };
+            trainingGroups[key].count++;
+            if (Number.isFinite(Number(item.duration)) && Number(item.duration) > 0) trainingGroups[key].minutes += Number(item.duration);
+        });
+        const segmentData = trainingMode ? Object.values(trainingGroups) : Object.values(week.bySport);
+        const segments = segmentData.map(data => {
+            const sport = trainingMode ? null : (catalog[data.type] || catalog.Workout);
+            const category = trainingMode ? (getTypeColorMap()[data.category] || getTypeColorMap().ga) : null;
+            const color = trainingMode ? category.color : sport.color;
+            const label = trainingMode ? (category.label || data.category) : sport.label + (data.format ? ' · ' + data.format : '');
             const width = week.totalMinutes > 0 ? Math.max(3, data.minutes / week.totalMinutes * 100) : 0;
-            const label = sport.label + (data.format ? ' · ' + data.format : '');
-            const sourceClass = data.source === 'Manuell' ? 'is-source-manual' : data.source.includes('Intervals') ? 'is-source-intervals' : data.source.includes('Dateiimport') ? 'is-source-file' : data.source.includes('Garmin') ? 'is-source-garmin' : 'is-source-unknown';
-            return '<span class="calendar-year-sport-segment ' + sourceClass + '" style="width:' + width + '%;background:' + sport.color + '" title="' + escapeHtml(label) + ' · ' + escapeHtml(data.source) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
+            const sourceClass = trainingMode ? '' : data.source === 'Manuell' ? 'is-source-manual' : data.source.includes('Intervals') ? 'is-source-intervals' : data.source.includes('Dateiimport') ? 'is-source-file' : data.source.includes('Garmin') ? 'is-source-garmin' : 'is-source-unknown';
+            const detail = trainingMode ? data.count + ' Einheiten' : data.source;
+            return '<span class="calendar-year-sport-segment ' + sourceClass + '" style="width:' + width + '%;background:' + color + '" title="' + escapeHtml(label) + ' · ' + escapeHtml(detail) + ': ' + (data.minutes ? Math.round(data.minutes) + ' min dokumentiert' : 'Dauer nicht verfügbar') + '"></span>';
         }).join('');
-        const plannedSegments = Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
+        const plannedGroups = {};
+        if (trainingMode) week.plannedActivities.forEach(item => { const key = item.category || 'ga'; plannedGroups[key] = (plannedGroups[key] || 0) + 1; });
+        const plannedSegments = trainingMode
+            ? Object.entries(plannedGroups).map(([category, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (getTypeColorMap()[category]?.color || getTypeColorMap().ga.color) + '" title="' + escapeHtml(getTypeColorMap()[category]?.label || category) + ' · ' + count + ' geplant"></span>').join('')
+            : Object.entries(week.plannedBySport).map(([type, count]) => '<span class="calendar-year-planned-segment" style="border-color:' + (catalog[type]?.color || catalog.Workout.color) + '" title="' + escapeHtml(catalog[type]?.label || type) + ' · ' + count + ' geplant"></span>').join('');
         const hours = !week.activities.length || (!week.durationComplete && week.totalMinutes === 0) ? '—' : calendarYearFormatHours(week.totalMinutes, !week.durationComplete);
         const events = (week.races.length ? '<i data-lucide="trophy" class="calendar-year-event calendar-event-race" title="Wettkampf"></i>' : '') +
             (week.cycle.length ? '<i data-lucide="droplet" class="calendar-year-event calendar-event-cycle" title="Menstruation erfasst"></i>' : '') +
@@ -1030,8 +1046,14 @@ export function renderYearView() {
     ].sort((a, b) => a.date.localeCompare(b.date));
     const timelineMarkup = timelineEvents.slice(0, 18).map(item => '<div class="calendar-year-timeline-item is-' + item.type + '"><time>' + escapeHtml(formatDateDDMMYY(item.date)) + '</time><span>' + escapeHtml(item.title) + '</span><small>' + escapeHtml(item.detail) + '</small></div>').join('');
 
-    const legendTypes = [...new Set(weeks.flatMap(week => [...Object.values(week.bySport).map(item => item.type), ...Object.keys(week.plannedBySport)]))];
-    const sportLegend = legendTypes.map(type => '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + (catalog[type]?.color || catalog.Workout.color) + '"></span>' + escapeHtml(catalog[type]?.label || type) + '</span>').join('');
+    const trainingMode = calendarDisplayMode() === 'training';
+    const legendTypes = trainingMode
+        ? [...new Set(weeks.flatMap(week => [...week.activities, ...week.plannedActivities].map(item => item.category || 'ga')))]
+        : [...new Set(weeks.flatMap(week => [...Object.values(week.bySport).map(item => item.type), ...Object.keys(week.plannedBySport)]))];
+    const sportLegend = legendTypes.map(type => {
+        const config = trainingMode ? (getTypeColorMap()[type] || getTypeColorMap().ga) : (catalog[type] || catalog.Workout);
+        return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + config.color + '"></span>' + escapeHtml(config.label || type) + '</span>';
+    }).join('');
     const firstLoadMode = weeks.find(week => week.loadMode)?.loadMode;
     const firstLoadUnit = weeks.find(week => week.loadUnit)?.loadUnit || '';
     document.getElementById('calendar-period-title').textContent = String(year);
@@ -1040,7 +1062,7 @@ export function renderYearView() {
         '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Trainingsbelastung im Jahresverlauf</h3><p>Wochenwerte aus der zentralen Training-Load-Zeitreihe</p></div><span>' + escapeHtml(calendarYearLoadLabel(firstLoadMode, firstLoadUnit)) + '</span></div>' +
         '<div class="calendar-year-scroll"><div class="calendar-year-matrix" style="--calendar-year-columns:' + cols + '"><div class="calendar-year-months">' + monthHeader + '</div><div class="calendar-year-week-head">' + weekHeader + '</div><div class="calendar-year-weeks">' + weekCells + '</div></div></div>' +
         '<div class="calendar-year-load-legend"><span><i style="background:#DCEFE4"></i>Niedrig</span><span><i style="background:#A7D5B6"></i></span><span><i style="background:#F0D58C"></i>Mittel</span><span><i style="background:#E9A36F"></i></span><span><i style="background:#D87575"></i>Hoch</span><span><i class="is-unknown"></i>Nicht berechenbar</span><span><i class="is-partial"></i>Teilwoche</span></div>' +
-        '<div class="calendar-year-legend">' + (sportLegend || '<span class="text-xs text-slate-500">Noch keine Sportarten dokumentiert.</span>') + '<span class="text-[10px] text-slate-500">Sportfarben = absolvierte Sportarten · umrandete Marker = geplante Einheiten · Symbole = Wettkampf und Gesundheit</span></div></section>' +
+        '<div class="calendar-year-legend">' + (sportLegend || '<span class="text-xs text-slate-500">Noch keine Aktivitäten dokumentiert.</span>') + '<span class="text-[10px] text-slate-500">' + (trainingMode ? 'Trainingsfarben = Trainingsarten' : 'Sportfarben = absolvierte Sportarten') + ' · umrandete Marker = geplante Einheiten · Symbole = Wettkampf und Gesundheit</span></div></section>' +
         '<section class="calendar-year-section"><div class="calendar-year-section-heading"><div><h3>Trainingsphasen</h3><p>Automatische Hinweise aus Wettkampfterminen und dokumentierten Belastungsmustern</p></div><span class="calendar-year-phase-count">' + confirmedPhases.length + ' bestätigt</span></div>' +
         '<div class="calendar-year-phase-grid">' + (phaseMarkup || '<p class="calendar-year-empty">Noch keine Trainingsphasen bestätigt.</p>') + '</div>' +
         (suggestionMarkup ? '<h4 class="calendar-year-subheading">Vorschläge zur Prüfung</h4><div class="calendar-year-phase-grid">' + suggestionMarkup + '</div>' : '<p class="calendar-year-empty">Aktuell keine ausreichend belegten neuen Phasenvorschläge.</p>') +
