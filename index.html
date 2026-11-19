@@ -713,6 +713,11 @@
                     </div>
                 </div>
             </div>
+            <div class="flex flex-wrap items-center justify-end gap-2 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2" aria-label="Farbschema für Aktivitäten">
+                <span class="text-[11px] text-slate-400">Farben nach</span>
+                <button type="button" id="calendar-color-mode-sport" class="rounded-lg border border-cyan-500 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-200" aria-pressed="true" onclick="setCalendarDisplayMode('sport')">Sportart</button>
+                <button type="button" id="calendar-color-mode-training" class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300" aria-pressed="false" onclick="setCalendarDisplayMode('training')">Trainingsart</button>
+            </div>
 
             <div id="next-race-card" class="hidden"></div>
 
