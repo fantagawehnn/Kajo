@@ -376,21 +376,37 @@ if (typeof window !== 'undefined') {
 }
 let healthChart = null;
 let selectedHealthMetric = null;
-let healthRange = '28d';
 const healthRangeDays = { '7d':7, '28d':28, '3m':90, '6m':180, '1y':365 };
 const healthDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
 };
-const healthRangeStart = () => {
-  const d = new Date(todayKey()+'T12:00:00');
-  d.setDate(d.getDate()-(healthRangeDays[healthRange]||28)+1);
-  return healthDateKey(d);
+const healthRangeWindow = () => {
+  const today = todayKey();
+  if (state.activeTimeframe === 'custom') {
+    const from = document.getElementById('health-summary-from')?.value || document.getElementById('date-from')?.value;
+    const to = document.getElementById('health-summary-to')?.value || document.getElementById('date-to')?.value;
+    if (from && to && from <= to && to <= today) return { from, to };
+  }
+  const days = healthRangeDays[state.activeTimeframe] || 28;
+  const start = new Date(today + 'T12:00:00');
+  start.setDate(start.getDate() - days + 1);
+  return { from: healthDateKey(start), to: today };
 };
-const healthEntries = () => Object.entries(state.healthLogs||{})
-  .filter(([date,item])=>date>=healthRangeStart()&&date<=todayKey()&&(item?.status==='sick'||item?.status==='injured'));
-const cycleEntries = () => Object.entries(state.dailyCheckins||{})
-  .filter(([date,item])=>date>=healthRangeStart()&&date<=todayKey()&&item?.cycle?.period===true);
+const healthRangeDates = () => {
+  const range = healthRangeWindow(), dates = [];
+  const cursor = new Date(range.from + 'T12:00:00'), end = new Date(range.to + 'T12:00:00');
+  for (; cursor <= end && dates.length < 500; cursor.setDate(cursor.getDate() + 1)) dates.push(healthDateKey(cursor));
+  return dates;
+};
+const healthEntries = () => {
+  const range = healthRangeWindow();
+  return Object.entries(state.healthLogs||{}).filter(([date,item])=>date>=range.from&&date<=range.to&&(item?.status==='sick'||item?.status==='injured'));
+};
+const cycleEntries = () => {
+  const range = healthRangeWindow();
+  return Object.entries(state.dailyCheckins||{}).filter(([date,item])=>date>=range.from&&date<=range.to&&item?.cycle?.period===true);
+};
 const healthCircle = (key,label,value,detail,color) =>
   '<button type="button" class="kajo-recovery-metric kajo-health-metric" data-health-metric="'+key+
   '" aria-pressed="false" style="--health-metric-color:'+color+'" onclick="toggleHealthMetric(\''+key+'\')">'+
@@ -407,13 +423,15 @@ function renderHealth() {
     healthCircle('injured','Verletzung',injured,'Dokumentierte Tage',injured?'#ef4444':'var(--kajo-status-info)'),
     healthCircle('cycle','Zyklus',cycleDays,'Dokumentierte Zyklustage','var(--kajo-status-info)')
   ]);
-  selectedHealthMetric = null;
   document.querySelectorAll('[data-health-metric]').forEach(button=>{
-    button.classList.remove('is-selected');button.setAttribute('aria-pressed','false');
+    const active = button.dataset.healthMetric === selectedHealthMetric;
+    button.classList.toggle('is-selected', active);
+    button.setAttribute('aria-pressed', String(active));
   });
   const panel=document.getElementById('health-trend-panel');
-  if(panel)panel.classList.add('hidden');
-  if(healthChart){healthChart.destroy();healthChart=null;}
+  if(panel)panel.classList.toggle('hidden', !selectedHealthMetric);
+  if(selectedHealthMetric) renderHealthTrend(selectedHealthMetric);
+  else if(healthChart){healthChart.destroy();healthChart=null;}
 }
 function renderHealthTrend(key) {
   const panel=document.getElementById('health-trend-panel');
@@ -422,13 +440,7 @@ function renderHealthTrend(key) {
   const noteEl=document.getElementById('health-trend-note');
   if(!panel||!canvas||typeof Chart!=='function')return;
   if(healthChart){healthChart.destroy();healthChart=null;}
-  const dates=[];
-  const end=new Date(todayKey()+'T12:00:00');
-  const count=healthRangeDays[healthRange]||28;
-  for(let i=count-1;i>=0;i--){
-    const d=new Date(end);d.setDate(d.getDate()-i);
-    dates.push(healthDateKey(d));
-  }
+  const dates=healthRangeDates();
   const labels=dates.map(date=>new Date(date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}));
   let datasets=[],heading='',explanation='',type='bar',max=1;
   if(key==='sick'||key==='injured'){
@@ -479,14 +491,41 @@ export function toggleHealthMetric(key){
   if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 export function setHealthRange(range){
+  if(range==='custom'){
+    const from=document.getElementById('health-summary-from'),to=document.getElementById('health-summary-to');
+    const current=healthRangeWindow();
+    if(from&&!from.value)from.value=current.from;
+    if(to&&!to.value)to.value=current.to;
+    document.getElementById('health-summary-custom-range')?.classList.remove('hidden');
+    state.activeTimeframe='custom';state.metricHistoryRange='custom';
+    document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange==='custom'));
+    renderHealth();window.kajoRenderHealthAnalysis?.();return;
+  }
   if(!Object.prototype.hasOwnProperty.call(healthRangeDays,range))return;
-  healthRange=range;
-  document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange===range));
+  document.getElementById('health-summary-custom-range')?.classList.add('hidden');
+  if(typeof window.setTimeframe==='function')window.setTimeframe(range);
+  else {state.activeTimeframe=range;state.metricHistoryRange=range;}
+  renderHealth();
+  if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
+}
+export function applyHealthCustomRange(){
+  const from=document.getElementById('health-summary-from')?.value;
+  const to=document.getElementById('health-summary-to')?.value;
+  if(!from||!to||from>to||to>todayKey())return;
+  const loadFrom=document.getElementById('date-from'),loadTo=document.getElementById('date-to');
+  if(loadFrom)loadFrom.value=from;if(loadTo)loadTo.value=to;
+  state.activeTimeframe='custom';state.metricHistoryRange='custom';
+  document.getElementById('health-summary-custom-range')?.classList.add('hidden');
+  if(typeof window.applyCustomDateRange==='function')window.applyCustomDateRange();
+  else {renderHealth();window.kajoRenderHealthAnalysis?.();}
+  renderHealth();
   if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 if(typeof window!=='undefined'){
   window.toggleHealthMetric=toggleHealthMetric;
   window.setHealthRange=setHealthRange;
+  window.applyHealthCustomRange=applyHealthCustomRange;
+  window.kajoRenderHealthMetrics=renderHealth;
 }
 function setupSharedPeriod() {
   if (!state.metricHistoryRange) state.metricHistoryRange = state.activeTimeframe || '3m';
