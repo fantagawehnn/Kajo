@@ -212,7 +212,8 @@ export function openDayEditor(dateStr){
  ['day-sick-severity','day-cycle-pain'].forEach(id=>updateSelfMonitoringSlider(document.getElementById(id)));
  document.getElementById('day-sick-severity').dataset.touched=String(severityTouched);
  document.getElementById('day-cycle-pain').dataset.touched=String(cyclePainTouched);
- if(document.getElementById('day-cycle-pain').dataset.touched==='false')document.getElementById('day-cycle-pain-value').textContent='—';
+ if(!severityTouched)document.getElementById('day-sick-severity-value').textContent='—';
+ if(!cyclePainTouched)document.getElementById('day-cycle-pain-value').textContent='—';
  bindDayCheckinDraft();
  document.getElementById('day-detail-modal').classList.remove('hidden');
 }
