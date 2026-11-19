@@ -57,7 +57,24 @@ function renderLoadSourceNote(timeline) {
     note.textContent = (descriptions[mode] || 'Belastungsquelle derzeit nicht eindeutig zuordenbar. Belastungswerte verschiedener Berechnungsmethoden sind nicht direkt vergleichbar.') + coverageText;
 }
 
+function adaptiveLoadTimeframe(timeline) {
+    const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '3m', days: 90 }, { key: '6m', days: 180 }, { key: '1y', days: 365 }];
+    const today = new Date(); today.setHours(12,0,0,0);
+    for (const candidate of candidates) {
+        const start = new Date(today); start.setDate(start.getDate() - candidate.days + 1);
+        const from = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
+        const dates = (timeline || []).filter(row => row.date >= from);
+        const coverage = dates.filter(row => row.load !== null && row.load !== undefined && Number.isFinite(Number(row.load))).length / candidate.days;
+        if (coverage >= .7) return candidate.key;
+    }
+    return '1y';
+}
+
 export function renderMainLoadChart(timeline, timeframe) {
+    if (!state.activeTimeframeExplicit) {
+        state.activeTimeframe = adaptiveLoadTimeframe(timeline);
+        timeframe = state.activeTimeframe;
+    }
     const canvas = document.getElementById('intervalsLoadChart');
     if (!canvas) return;
     renderLoadSourceNote(timeline);
@@ -1040,7 +1057,9 @@ export function renderActivityTelemetryChart(act) {
 
 export function setTimeframe(tf) {
     state.activeTimeframe = tf;
+    state.activeTimeframeExplicit = true;
     state.metricHistoryRange = tf;
+    state.metricHistoryRangeExplicit = true;
     const periodLabel = document.getElementById('analysis-period-label');
     if (periodLabel) periodLabel.textContent = ({ '7d': '7T', '28d': '28T', '3m': '90T', '6m': '6M', '1y': '1J' })[tf] || 'Individueller Zeitraum';
     ['7d', '28d', '3m', '6m', '1y'].forEach(t => {
@@ -1068,7 +1087,9 @@ export function applyCustomDateRange() {
     }
     if (feedback) feedback.textContent = '';
     state.metricHistoryRange = 'custom';
+    state.metricHistoryRangeExplicit = true;
     state.activeTimeframe = 'custom';
+    state.activeTimeframeExplicit = true;
     const periodLabel = document.getElementById('analysis-period-label');
     if (periodLabel) periodLabel.textContent = 'Individueller Zeitraum';
     ['health', 'training'].forEach(kind => {
