@@ -7,7 +7,7 @@ import { getVisiblePlannedActivities } from './calendar-display-data.js';
 import { getActivityGroupMembers, getVisibleActivities } from './activity-groups.js?v=1';
 import { getTrainingLoadData } from './training-load.js?v=5';
 import { getGarminTelemetry } from './data-source.js';
-import { calculateReadiness } from './dashboard.js';
+import { calculateReadiness } from './dashboard.js?v=9';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=5';
 import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js';
 
