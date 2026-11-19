@@ -81,6 +81,9 @@ jobs:
       - name: Run Coach decision guidance tests
         run: node --experimental-default-type=module --test tests/coach-decision-guidance.test.mjs
 
+      - name: Run Coach decision Worker tests
+        run: node --experimental-default-type=module --test tests/coach-decision-worker.test.mjs
+
       - name: Run Coach Worker security tests
         run: node --experimental-default-type=module --test tests/coach-worker.test.mjs
 
