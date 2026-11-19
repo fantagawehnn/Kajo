@@ -6,6 +6,7 @@
  */
 import { buildAthleteContext } from './coach-context.js';
 import { buildCoachAnalysisSummary } from './coach-analysis.js';
+import { buildSeasonPlanningContext } from './season-planning.js';
 
 const ACTIVITY_FIELDS = [
     'date', 'name', 'type', 'category', 'duration', 'distance',
@@ -286,6 +287,7 @@ export function buildCoachRequestContext(appState, question) {
             limits: LIMITS
         },
         athlete: buildAthleteContext(state.profile),
+        seasonPlanning: buildSeasonPlanningContext(state.seasonPlan, races),
         dataCoverage: {
             activities: {
                 availableCount: activities.length,
