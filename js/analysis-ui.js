@@ -456,7 +456,54 @@ export function setHealthAnalysisView(view) {
   else if(view==='health'&&selectedHealthMetric==='cycle')selectedHealthMetric=null;
   renderHealth();
 }
+function healthMedian(values) {
+  const sorted=values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!sorted.length)return null;
+  const mid=Math.floor(sorted.length/2);
+  return sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;
+}
+function healthComparisonTable(title,rows,unitLabel) {
+  const body=rows.map(row=>'<tr><td>'+performanceEscape(row.label)+'</td><td class="text-right">'+(row.eventMedian==null?'—':performanceEscape(fmt(row.eventMedian,1)+' '+unitLabel))+'<small class="block text-slate-500">n = '+row.eventCount+'</small></td><td class="text-right">'+(row.otherMedian==null?'—':performanceEscape(fmt(row.otherMedian,1)+' '+unitLabel))+'<small class="block text-slate-500">n = '+row.otherCount+'</small></td></tr>').join('');
+  return '<h3 class="text-sm font-semibold text-slate-200 mb-2">'+title+'</h3><table class="w-full text-xs"><thead><tr><th class="text-left">Kennzahl</th><th class="text-right">Krankheit / Verletzung</th><th class="text-right">Kein Eintrag</th></tr></thead><tbody>'+body+'</tbody></table>';
+}
+function renderHealthComparisons(range) {
+  const loadRoot=document.getElementById('health-load-comparison');
+  const recoveryRoot=document.getElementById('health-recovery-comparison');
+  const note=document.getElementById('health-comparison-note');
+  const logs=state.healthLogs||{},checkins=state.dailyCheckins||{};
+  const timeline=(state.dailyTimeline||[]).filter(day=>day?.date>=range.from&&day?.date<=range.to
+    &&['complete','confirmed-rest'].includes(day.dataStatus)
+    &&day.load!==null&&day.load!==undefined&&Number.isFinite(Number(day.load)));
+  const modes=[...new Set(timeline.map(day=>String(day.loadMode||'')+'|'+String(day.loadUnit||'')))];
+  const loadRows=[];
+  if(modes.length===1&&timeline.length){
+    const values=timeline.map(day=>({value:Number(day.load),event:['sick','injured'].includes(String(logs[day.date]?.status||''))}));
+    const event=values.filter(x=>x.event).map(x=>x.value),other=values.filter(x=>!x.event).map(x=>x.value);
+    loadRows.push({label:'Tägliche Trainingsbelastung',eventMedian:healthMedian(event),eventCount:event.length,otherMedian:healthMedian(other),otherCount:other.length});
+    if(loadRoot)loadRoot.innerHTML=healthComparisonTable('Trainingsbelastung · '+(timeline[0].loadMode==='srpe'?'sRPE-Load':timeline[0].loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Garmin-Load'),loadRows,timeline[0].loadUnit||'');
+  }else if(loadRoot){
+    loadRoot.innerHTML='<p class="kajo-health-note">'+(modes.length>1?'Die Load-Modelle oder Einheiten wechseln im gewählten Zeitraum. Deshalb wird kein gemeinsamer Median berechnet.':'Es liegen keine vollständigen Tages-Load-Werte im gewählten Zeitraum vor.')+'</p>';
+  }
+  const definitions=[
+    ['HRV','hrv','ms'],['Ruheherzfrequenz','rhr','bpm'],['Schlafscore','sleepScore','Punkte'],['Atemfrequenz','respiration','/ min']
+  ];
+  const rows=definitions.map(([label,key,unit])=>{
+    const observations=Object.entries(checkins).filter(([date,record])=>date>=range.from&&date<=range.to)
+      .map(([date,record])=>({date,value:getGarminCheckinMetric(record,key),event:['sick','injured'].includes(String(logs[date]?.status||''))}))
+      .filter(item=>item.value!==null&&Number.isFinite(item.value));
+    const event=observations.filter(x=>x.event).map(x=>x.value),other=observations.filter(x=>!x.event).map(x=>x.value);
+    return {label,eventMedian:healthMedian(event),eventCount:event.length,otherMedian:healthMedian(other),otherCount:other.length,unit};
+  }).filter(row=>row.eventCount+row.otherCount>0);
+  if(recoveryRoot)recoveryRoot.innerHTML=rows.length
+    ?healthComparisonTable('Garmin-Regenerationswerte',rows,'')
+    :'<p class="kajo-health-note">Keine passenden Garmin-Regenerationswerte im gewählten Zeitraum dokumentiert.</p>';
+  if(note){
+    const eventDates=new Set(Object.entries(logs).filter(([date,item])=>date>=range.from&&date<=range.to&&['sick','injured'].includes(String(item?.status||''))).map(([date])=>date));
+    note.textContent=eventDates.size+' dokumentierte Krankheit-/Verletzungstage im Zeitraum. Unterschiede zwischen den Gruppen sind deskriptiv und erlauben keine Aussage über Ursache oder Wirkung.';
+  }
+}
 function renderHealthRelationships(range) {
+  renderHealthComparisons(range);
   const canvas=document.getElementById('health-relationship-chart'),note=document.getElementById('health-relationship-note');
   if(!canvas||typeof Chart!=='function')return;
   if(healthRelationshipChart){healthRelationshipChart.destroy();healthRelationshipChart=null;}
