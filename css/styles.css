@@ -9175,3 +9175,13 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-checkin-advanced>summary::-webkit-details-marker{display:none}
 .kajo-checkin-advanced>summary:after{content:'+';float:right;font-size:1rem}
 .kajo-checkin-advanced[open]>summary:after{content:'−'}
+
+
+/* Missing wellbeing days stay neutral; recorded cells use the five-level status palette. */
+.kajo-wellbeing-heatmap{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.42rem}
+.kajo-wellbeing-cell{aspect-ratio:1;border-radius:7px;border:1px solid rgb(255 255 255 / .08);background:#475569;min-width:0;transition:transform .12s ease,filter .12s ease}
+.kajo-wellbeing-cell:hover{transform:scale(1.06);filter:brightness(1.12)}
+.kajo-wellbeing-cell[data-value="1"]{background:#F43F5E}.kajo-wellbeing-cell[data-value="2"]{background:#F97316}.kajo-wellbeing-cell[data-value="3"]{background:#EAB308}.kajo-wellbeing-cell[data-value="4"]{background:#14B8A6}.kajo-wellbeing-cell[data-value="5"]{background:#22C55E}.kajo-wellbeing-cell[data-value="missing"]{background:#475569;border:1px dashed #94A3B8}
+.kajo-wellbeing-heatmap-legend{display:flex;flex-wrap:wrap;gap:.7rem 1rem;margin-top:.7rem;color:var(--kajo-muted,#9CA3AF);font-size:.65rem}
+.kajo-wellbeing-heatmap-legend span{display:inline-flex;align-items:center;gap:.3rem}.kajo-wellbeing-heatmap-legend i{display:inline-block;width:.55rem;height:.55rem;border-radius:3px;background:#94A3B8}
+.kajo-wellbeing-heatmap-legend i[data-value="1"]{background:#F43F5E}.kajo-wellbeing-heatmap-legend i[data-value="3"]{background:#EAB308}.kajo-wellbeing-heatmap-legend i[data-value="5"]{background:#22C55E}.kajo-wellbeing-heatmap-legend i[data-missing="true"]{background:#475569;border:1px dashed #94A3B8}
