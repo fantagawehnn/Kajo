@@ -1,6 +1,6 @@
 # KAJO Season Planning Model
 
-**Status:** Season foundation, editor, reviewed AI periodization proposal, validated weekly-plan model and reviewed Coach-generated weekly proposals with explicit athlete approval are implemented. Calendar integration and adaptive week-to-week updates remain open.
+**Status:** Season foundation, editor, reviewed AI periodization proposal, validated weekly-plan model and reviewed Coach-generated weekly proposals with explicit athlete approval are implemented. Adaptive week-to-week updates remain open; approved weekly plans can now be explicitly transferred to the training calendar.
 
 ## Purpose
 
@@ -67,3 +67,8 @@ Weekly proposals remain drafts. The athlete reviews the rationale and each sessi
 The Coach must not invent weekly availability, training hours, training days, facilities, intensity zones or load targets. For canoe wildwater racing, it distinguishes boat class, Classic/Sprint and water type; C1 sessions are limited to 75 minutes. Wildwater access is not inferred from flatwater access. The C2 replacement rule is communicated to the Coach, but automatic replacement of an existing calendar entry is not yet implemented.
 
 The current workflow is a reviewed weekly-plan draft/approval flow. It does not yet provide inline editing of individual sessions, automatic calendar transfer, or automatic adaptive rescheduling.
+
+
+## Transfer to the training calendar
+
+An approved weekly plan can be explicitly transferred to the existing planned-activities collection. The transfer maps recognized sports and canoe disciplines to the calendar's existing activity types, carries the session duration and structured workout content into the description, and leaves target training load unset rather than inventing a value. Each transferred entry stores the source weekly-plan and session IDs, making repeated transfers idempotent. Exact same-date, same-name and same-sport entries are skipped; unsupported or ambiguous sports are reported as skipped rather than guessed. Existing calendar entries are not overwritten. The transfer refreshes the calendar and planned-workout views.
