@@ -217,7 +217,7 @@ VERBINDLICHE REGELN:
   const proposalInstructions = payload?.task === "adaptive_week_adjustment" ? [
     "AUFGABE: Werte eine bereits freigegebene Trainingswoche anhand der tatsächlichen Aktivitäten, Check-ins, Gesundheitsereignisse und Belastungsdaten aus. Schlage ausschließlich begründete Anpassungen für noch zukünftige, nicht absolvierte Einheiten vor. Gib ausschließlich gültiges JSON zurück.",
     "JSON-SCHEMA: { status: ready|needs_input, rationale: string, openQuestions: string[], changes: [{ sessionId, action: keep|reduce|modify|move|replace, rationale, updatedSession: null|{ date, name, type, category, discipline, raceFormat, waterType, durationMinutes, intensity, objective, warmup, mainSet, cooldown, notes } }] }",
-    "Der übermittelte freigegebene Wochenplan und der Abgleich sind verbindlich. Bearbeite nur IDs aus futureSessions. Matched oder ambiguous Sessions dürfen nicht verändert werden. Vergangene Einheiten dürfen nie verändert oder nachgeholt werden.",
+    "Der übermittelte freigegebene Wochenplan und der Abgleich sind verbindlich. Bearbeite nur IDs aus futureSessions. Matched oder ambiguous Sessions dürfen nicht verändert werden. Fehlende Aktivitätszuordnung beweist keinen Trainingsausfall. Vergangene Einheiten dürfen nie verändert oder nachgeholt werden.",
     "Beziehe dokumentierte Aktivitäten, tatsächliche Belastung, Check-ins (HRV in ms, Ruhepuls in bpm), Schlaf, subjektive Ermüdung, Garmin-Werte mit ihren Grenzen sowie dokumentierte Gesundheitsereignisse ein. Wearables allein sind keine medizinische Freigabe.",
     "Bei Fieber/systemischen Symptomen oder ausgeprägtem Krankheitsgefühl kein Training empfehlen. Bei Brustschmerzen, ungewöhnlicher Atemnot, Herzrasen/Herzstolpern, Schwindel/Ohnmacht oder ungewöhnlich starker Erschöpfung keine Wiedereinstiegsbelastung empfehlen und medizinische Abklärung anraten.",
     "Unterscheide keep (keine Änderung), reduce (gleiche Einheit leichter/kürzer), modify (Inhalt/Intensität anpassen), move (auf einen anderen zukünftigen Tag derselben Woche verschieben) und replace (durch eine regenerative oder technisch passende Einheit ersetzen). Keine Einheit stillschweigend löschen.",
@@ -368,7 +368,7 @@ VERBINDLICHE REGELN:
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= currentDate || date < target.weekStartDate || date > target.weekEndDate) errors.push("Eine Anpassung liegt nicht an einem zukünftigen Tag innerhalb der Woche.");
       if (!updatedSession.name || !updatedSession.type) errors.push("Name und Trainingsart müssen erhalten bleiben.");
       if (duration !== null && (!Number.isFinite(duration) || duration <= 0)) errors.push("Eine vorgeschlagene Dauer ist ungültig.");
-      if (/^(c1|canadian)$/i.test(updatedSession.discipline) && duration !== null && duration > 75) errors.push("Eine C1-Einheit überschreitet 75 Minuten.");
+      if ((/^(c1|canadian)$/i.test(updatedSession.discipline) || /^(c1|canadian)$/i.test(updatedSession.type)) && duration !== null && duration > 75) errors.push("Eine C1-Einheit überschreitet 75 Minuten.");
       changes.push({ sessionId, action, rationale, updatedSession });
     }
     if (seen.size !== eligible.size) errors.push("Nicht jede zukünftige, änderbare Einheit erhielt eine Entscheidung.");
