@@ -384,8 +384,8 @@ const healthDateKey = date => {
 const healthRangeWindow = () => {
   const today = todayKey();
   if (state.activeTimeframe === 'custom') {
-    const from = document.getElementById('health-summary-from')?.value || document.getElementById('date-from')?.value;
-    const to = document.getElementById('health-summary-to')?.value || document.getElementById('date-to')?.value;
+    const from = document.getElementById('date-from')?.value || document.getElementById('health-summary-from')?.value;
+    const to = document.getElementById('date-to')?.value || document.getElementById('health-summary-to')?.value;
     if (from && to && from <= to && to <= today) return { from, to };
   }
   const days = healthRangeDays[state.activeTimeframe] || 28;
@@ -492,10 +492,13 @@ export function toggleHealthMetric(key){
 }
 export function setHealthRange(range){
   if(range==='custom'){
+    const wasCustom=state.activeTimeframe==='custom';
     const from=document.getElementById('health-summary-from'),to=document.getElementById('health-summary-to');
     const current=healthRangeWindow();
-    if(from&&!from.value)from.value=current.from;
-    if(to&&!to.value)to.value=current.to;
+    if(from&&(!wasCustom||!from.value))from.value=current.from;
+    if(to&&(!wasCustom||!to.value))to.value=current.to;
+    const feedback=document.getElementById('health-summary-custom-feedback');
+    if(feedback)feedback.textContent='';
     document.getElementById('health-summary-custom-range')?.classList.remove('hidden');
     state.activeTimeframe='custom';state.metricHistoryRange='custom';
     document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange==='custom'));
@@ -511,7 +514,12 @@ export function setHealthRange(range){
 export function applyHealthCustomRange(){
   const from=document.getElementById('health-summary-from')?.value;
   const to=document.getElementById('health-summary-to')?.value;
-  if(!from||!to||from>to||to>todayKey())return;
+  const feedback=document.getElementById('health-summary-custom-feedback');
+  if(!from||!to||from>to||to>todayKey()){
+    if(feedback)feedback.textContent='Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
+    return;
+  }
+  if(feedback)feedback.textContent='';
   const loadFrom=document.getElementById('date-from'),loadTo=document.getElementById('date-to');
   if(loadFrom)loadFrom.value=from;if(loadTo)loadTo.value=to;
   state.activeTimeframe='custom';state.metricHistoryRange='custom';
