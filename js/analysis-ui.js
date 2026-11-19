@@ -3,8 +3,8 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
-import { calculateReadiness, historyRingColor } from './dashboard.js';
-import { getActivityTelemetrySeries } from './charts.js';
+import { calculateReadiness, historyRingColor } from './dashboard.js?v=9';
+import { getActivityTelemetrySeries } from './charts.js?v=13';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
@@ -54,25 +54,25 @@ function renderLoad() {
   const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
   const last = [...timeline].filter(day => day?.date <= todayKey() && valid(day?.atl)).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
   if (!last) {
-    setHero('load', '—', '', 'Keine auswertbare Belastung', 'ATL ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
+    setHero('load', '—', '', 'Keine auswertbare Belastung', 'Ermüdung ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
     renderMetrics('load-analysis-metrics', [
       metric('CTL', '—'), metric('ATL', '—'), metric('Belastungssaldo', '—'), metric('ACWR', '—')
     ]);
     return;
   }
-  const mode = last.loadMode === 'garmin-native' ? 'Garmin Training Load'
+  const mode = last.loadMode === 'garmin-native' ? 'Garmin-Belastungswert'
     : last.loadMode === 'garmin-zone' ? 'Garmin-HF-Zonenindex'
-    : last.loadMode === 'srpe' ? 'sRPE-Load'
+    : last.loadMode === 'srpe' ? 'sRPE-Belastung'
     : last.loadMode || 'Belastungsmodell';
-  setHero('load', fmt(last.atl), last.loadUnit || 'Load-Punkte', 'Kurzfristige Belastung · ATL', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
+  setHero('load', fmt(last.atl), last.loadUnit || 'Load-Punkte', 'Ermüdung', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
   const balance = String(last.loadMode || '').startsWith('garmin')
     ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—')
     : fmt(last.tsb);
   renderMetrics('load-analysis-metrics', [
-    metric('CTL', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
-    metric('ATL', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
-    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance, '', "openTrainingMetric('form')"),
-    metric('ACWR', fmt(last.acwr), '', "openTrainingMetric('acwr')")
+    metric('Fitness', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
+    metric('Ermüdung', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
+    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'Form', balance, '', "openTrainingMetric('form')"),
+    metric('Belastungsverhältnis', fmt(last.acwr), '', "openTrainingMetric('acwr')")
   ]);
   const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
   const garminValues = activities.filter(activity => valid(activity.garminTrainingLoad)).length;
@@ -106,7 +106,7 @@ function renderRecovery() {
     .find(entry => entry.result?.enoughData && valid(entry.result.score));
   const score = readinessEntry ? readinessEntry.result.score : null;
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
-    'Readiness', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
+    'Bereitschaft', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
     score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
@@ -156,7 +156,7 @@ function renderRecovery() {
 let performanceChart = null;
 let selectedPerformanceMetric = null;
 let performanceRange = '28d';
-const performanceRangeDays = { '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 };
+const performanceRangeDays = { '7d': 7, '28d': 28, '30d': 30, '42d': 42, '3m': 90, '1y': 365 };
 const performanceDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') : '';
@@ -349,7 +349,7 @@ function renderPerformanceTrend(key) {
   performanceChart = new Chart(canvas.getContext('2d'), {
     type:'line',
     data:{labels,datasets:[{label:heading,data:values,borderColor:color,backgroundColor:color+'22',
-      borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:false,fill:false}]},
+      borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:true,fill:false}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>Number(item.parsed.y).toLocaleString('de-DE',{maximumFractionDigits:2})+' '+unit}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8}},
@@ -383,7 +383,7 @@ if (typeof window !== 'undefined') {
 }
 let healthChart = null;
 let selectedHealthMetric = null;
-const healthRangeDays = { '7d':7, '28d':28, '3m':90, '6m':180, '1y':365 };
+const healthRangeDays = { '7d':7, '28d':28, '30d':30, '42d':42, '3m':90, '1y':365 };
 const healthDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
@@ -642,7 +642,7 @@ function setupSharedPeriod() {
   const target = document.getElementById('analysis-shared-period');
   const buttons = document.getElementById('analysis-period-buttons');
   if (target && buttons && buttons.parentElement !== target) target.appendChild(buttons);
-  const labels = { '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '3m': 'Letzte 90 Tage', '6m': 'Letzte 180 Tage', '1y': 'Letztes Jahr' };
+  const labels = { '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '30d': 'Letzte 30 Tage', '42d': 'Letzte 42 Tage', '3m': 'Letzte 90 Tage', '1y': 'Letzte 365 Tage' };
   setText('analysis-period-label', labels[state.activeTimeframe] || 'Individueller Zeitraum');
 }
 export function renderAnalysisPageUI(subpage = 'load') {
