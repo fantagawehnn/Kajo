@@ -19,6 +19,7 @@ const fmtDuration=minutes=>{if(!valid(minutes))return '—';const n=Math.round(N
 const setText=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value==null?'':String(value);};
 const setVisible=(id,visible)=>document.getElementById(id)?.classList.toggle('hidden',!visible);
 function destroyChart(key){if(charts[key]){charts[key].destroy();delete charts[key];}}
+function carryForwardSeries(rows,key){let last=null;return rows.map(row=>{if(valid(row?.[key]))last=Number(row[key]);return last;});}
 function chartBase(id,key,config){const canvas=document.getElementById(id);if(!canvas||typeof Chart!=='function')return;destroyChart(key);charts[key]=new Chart(canvas.getContext('2d'),config);}
 function todayKey(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function getRange(){
@@ -98,8 +99,8 @@ function renderLoadTrend(timeline,activities){
  const labels=timeline.map(row=>new Date(row.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})),textColor='#94a3b8';
  const relativeZones=buildRelativeLoadZones(timeline);
  chartBase('training-load-ctl-atl-chart','ctlAtlChart',{type:'line',plugins:[createZoneBackgroundPlugin(relativeZones)],data:{labels,datasets:[
-  {label:'Fitness · langfristig',data:timeline.map(row=>valid(row.ctl)?Number(row.ctl):null),borderColor:colors.ctl,backgroundColor:colors.ctl,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: true},
-  {label:'Ermüdung · kurzfristig',data:timeline.map(row=>valid(row.atl)?Number(row.atl):null),borderColor:colors.atl,backgroundColor:colors.atl,borderWidth:2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false}
+  {label:'Fitness · langfristig',data:carryForwardSeries(timeline,'ctl'),borderColor:colors.ctl,backgroundColor:colors.ctl,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: true},
+  {label:'Ermüdung · kurzfristig',data:carryForwardSeries(timeline,'atl'),borderColor:colors.atl,backgroundColor:colors.atl,borderWidth:2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false}
  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:textColor,usePointStyle:true,boxWidth:8}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.y)}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor}}}}});
  const activityByDate=new Map();activities.forEach(item=>{const date=String(item.date).slice(0,10);if(!activityByDate.has(date))activityByDate.set(date,{minutes:0,sessions:0,knownDurationCount:0});const day=activityByDate.get(date);day.sessions++;if(item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0){day.minutes+=Number(item.duration);day.knownDurationCount++;}});
  const measure=volumeMeasure;
