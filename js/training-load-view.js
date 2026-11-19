@@ -12,7 +12,7 @@ import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } fro
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
 const charts=Object.create(null);
-const periodCounts={'7d':7,'28d':28,'3m':90,'6m':180,'1y':365};
+const periodCounts={'7d':7,'28d':28,'30d':30,'42d':42,'3m':90,'6m':180,'1y':365};
 const zoneNames=['Z1','Z2','Z3','Z4','Z5'];
 const zoneColors=['#6DA8F7','#55B6A4','#E5C45B','#E99A55','#D96A78'];
 const colors={ctl:'#6DA8F7',atl:'#D98AB5',tsb:'#A78BFA',volume:'#6D9DCB'};
@@ -36,7 +36,7 @@ function uniqueActivities(records){
 }
 function allActivities(){const records=uniqueActivities(state.rawActivities);return selectedSport==='all'?records:records.filter(item=>(item.type||'Other')===selectedSport);}
 function selectedActivities(){const range=getRange();return allActivities().filter(item=>{const d=String(item.date).slice(0,10);return d>=range.from&&d<=range.to;});}
-function rangeLabel(){return({'7d':'Letzte 7 Tage','28d':'Letzte 28 Tage','3m':'Letzte 90 Tage','6m':'Letzte 6 Monate','1y':'Letztes Jahr',custom:'Individueller Zeitraum'})[state.activeTimeframe]||'Letzte 90 Tage';}
+function rangeLabel(){return({'7d':'Letzte 7 Tage','28d':'Letzte 28 Tage','30d':'Letzte 30 Tage','42d':'Letzte 42 Tage','3m':'Letzte 90 Tage','6m':'Letzte 6 Monate','1y':'Letztes Jahr',custom:'Individueller Zeitraum'})[state.activeTimeframe]||'Letzte 90 Tage';}
 function updatePeriodControl(){setText('training-load-period-button',rangeLabel()+'⌄');const b=document.getElementById('training-load-period-button');if(b)b.setAttribute('aria-expanded',String(!document.getElementById('training-load-period-menu')?.classList.contains('hidden')));}
 function updateSportOptions(){
  const select=document.getElementById('training-load-sport-filter');if(!select)return;
