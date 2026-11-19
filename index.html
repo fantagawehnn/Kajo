@@ -154,10 +154,10 @@
             <button type="button" id="training-subnav-strength" class="kajo-subnav-item" onclick="switchTab('strength')" aria-label="Kraftleistungen"><i data-lucide="dumbbell" aria-hidden="true"></i><span>Kraft</span></button>
         </nav>
         <nav id="analysis-subnav" class="kajo-subnav hidden" aria-label="Analyse-Unterbereiche">
-            <button type="button" id="analysis-subnav-load" class="kajo-subnav-item" onclick="switchTab('analysis-load')"><span>Training Load</span></button>
-            <button type="button" id="analysis-subnav-recovery" class="kajo-subnav-item" onclick="switchTab('analysis-recovery')"><span>Recovery</span></button>
+            <button type="button" id="analysis-subnav-load" class="kajo-subnav-item" onclick="switchTab('analysis-load')"><span>Belastung</span></button>
+            <button type="button" id="analysis-subnav-recovery" class="kajo-subnav-item" onclick="switchTab('analysis-recovery')"><span>Bereitschaft</span></button>
             <button type="button" id="analysis-subnav-performance" class="kajo-subnav-item" onclick="switchTab('analysis-performance')"><span>Fitness</span></button>
-            <button type="button" id="analysis-subnav-health" class="kajo-subnav-item" onclick="switchTab('analysis-health')"><span>Health</span></button>
+            <button type="button" id="analysis-subnav-health" class="kajo-subnav-item" onclick="switchTab('analysis-health')"><span>Gesundheit</span></button>
         </nav>
         </div>
 
@@ -344,13 +344,13 @@
     <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
-        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
+        <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Bereitschaft</span></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
-        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load</span><small>ATL</small></div></div>
+        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Belastung</span><small>Ermüdung</small></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
-        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small>CTL · Fitnessmodell</small></div></div>
+        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Leistung</span><small>Fitnessmodell</small></div></div>
       </button>
     </div>
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
@@ -423,7 +423,7 @@
  <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
   <section class="kajo-analysis-circles" aria-label="Vier Performance-Dimensionen">
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-load')" aria-label="Load öffnen">
-    <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Load</strong>
+    <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Belastung</strong>
    </button>
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-recovery')" aria-label="Recovery öffnen">
     <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-domain="recovery"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span><strong>Recovery</strong>
@@ -441,10 +441,10 @@
    <div class="kajo-analysis-section-heading kajo-analysis-trend-heading"><h2>Verlauf</h2><div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div></div>
    <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery, Fitness und Health"></canvas></div>
    <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihen ein- oder ausblenden">
-    <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Load</button>
-    <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="true">Recovery</button>
+    <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Belastung</button>
+    <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="true">Bereitschaft</button>
     <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="true">Fitness</button>
-    <button type="button" data-overview-metric="health" aria-pressed="false" disabled title="Trainingsverfügbarkeit derzeit nicht berechenbar">Health*</button>
+    <button type="button" data-overview-metric="health" aria-pressed="false" disabled title="Trainingsverfügbarkeit derzeit nicht berechenbar">Gesundheit*</button>
    </nav>
    <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
   </section>
@@ -484,11 +484,11 @@
 <div id="load-analysis-sources" class="hidden" aria-hidden="true"></div>
 <section class="kajo-analysis-hero hidden" aria-hidden="true">
  <div class="kajo-analysis-hero-ring" id="load-hero-ring"><div><strong id="analysis-load-hero-value">—</strong><span id="analysis-load-hero-unit"></span></div></div>
- <div class="kajo-analysis-hero-copy"><h2 id="analysis-load-hero-status">Training Load</h2><p id="load-hero-note"></p></div>
+ <div class="kajo-analysis-hero-copy"><h2 id="analysis-load-hero-status">Belastung</h2><p id="load-hero-note"></p></div>
 </section>
  <section id="training-load-overview" class="kajo-training-load-view space-y-4" aria-label="Training Load Übersicht">
   <header class="kajo-training-load-heading">
-   <div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Training Load</h2><p id="training-load-model-date" class="kajo-training-load-muted">Belastungsmodell wird geladen …</p></div>
+   <div><p class="kajo-analysis-eyebrow">BELASTUNGSSTEUERUNG</p><h2>Belastung</h2><p id="training-load-model-date" class="kajo-training-load-muted">Belastungsmodell wird geladen …</p></div>
    <div class="kajo-load-filter-row">
     <div class="kajo-load-period-control">
      <button type="button" id="training-load-period-button" class="kajo-load-text-control" onclick="toggleTrainingLoadPeriodMenu()" aria-haspopup="true" aria-expanded="false">Letzte 90 Tage⌄</button>
@@ -513,9 +513,9 @@
   <section class="kajo-training-load-panel" aria-labelledby="training-load-status-title">
    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">AKTUELLER STATUS</p><h3 id="training-load-status-title">Belastungsmodell</h3></div><span id="training-load-status-date" class="kajo-training-load-muted"></span></div>
    <div id="training-load-rings" class="kajo-training-load-rings" aria-live="polite">
-    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">CTL</span><small>Langfristig</small></div>
-    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">ATL</span><small>Kurzfristig</small></div>
-    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">TSB</span><small>Belastungssaldo</small></div>
+    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label" >Fitness</span><small>Langfristig</small></div>
+    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label" >Ermüdung</span><small>Kurzfristig</small></div>
+    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label" >Form</span><small>Belastungssaldo</small></div>
    </div>
    <p id="training-load-status-note" class="kajo-training-load-method"></p>
   </section>
@@ -527,10 +527,10 @@
    <p id="training-load-volume-note" class="kajo-training-load-muted"></p>
   </section>
   <section class="kajo-training-load-panel" aria-labelledby="training-load-trend-title">
-   <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSVERLAUF</p><h3 id="training-load-trend-title">CTL, ATL und TSB im Zeitverlauf</h3><p class="kajo-training-load-muted">Gemeinsame Zeitachse, getrennte Skalen für die unterschiedlichen Kennzahlen.</p></div></div>
-   <div class="kajo-load-chart-block"><div class="kajo-load-chart-caption"><span>Langfristige und kurzfristige Belastung</span><span>CTL · ATL</span></div><div class="kajo-training-load-chart-wrap"><canvas id="training-load-ctl-atl-chart" aria-label="CTL und ATL im Zeitverlauf"></canvas></div></div>
+   <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">BELASTUNGSVERLAUF</p><h3 id="training-load-trend-title">Fitness, Ermüdung und Form im Zeitverlauf</h3><p class="kajo-training-load-muted">Gemeinsame Zeitachse, getrennte Skalen für die unterschiedlichen Kennzahlen.</p></div></div>
+   <div class="kajo-load-chart-block"><div class="kajo-load-chart-caption"><span>Langfristige und kurzfristige Belastung</span><span>Fitness · Ermüdung</span></div><div class="kajo-training-load-chart-wrap"><canvas id="training-load-ctl-atl-chart" aria-label="CTL und ATL im Zeitverlauf"></canvas></div></div>
    <div class="kajo-load-chart-block"><div class="kajo-load-chart-caption"><span>Trainingsumfang pro Tag</span><nav class="kajo-load-switch" aria-label="Trainingsumfang auswählen"><button type="button" data-load-volume="duration" onclick="setTrainingLoadVolumeMeasure('duration')" class="active" aria-pressed="true">Zeit</button><button type="button" data-load-volume="sessions" onclick="setTrainingLoadVolumeMeasure('sessions')" aria-pressed="false">Einheiten</button></nav></div><div class="kajo-training-load-chart-wrap kajo-load-volume-chart"><canvas id="training-load-volume-chart" aria-label="Tägliche Trainingszeit oder Anzahl der Einheiten"></canvas></div></div>
-   <div class="kajo-load-chart-block"><div class="kajo-load-chart-caption"><span>Training Stress Balance</span><span>TSB · Nulllinie</span></div><div class="kajo-training-load-chart-wrap kajo-load-tsb-chart"><canvas id="training-load-tsb-chart" aria-label="TSB im Zeitverlauf mit Nulllinie"></canvas></div></div>
+   <div class="kajo-load-chart-block"><div class="kajo-load-chart-caption"><span>Form</span><span>Form · Nulllinie</span></div><div class="kajo-training-load-chart-wrap kajo-load-tsb-chart"><canvas id="training-load-tsb-chart" aria-label="TSB im Zeitverlauf mit Nulllinie"></canvas></div></div>
    <p id="training-load-trend-note" class="kajo-training-load-method"></p>
   </section>
   <section class="kajo-training-load-panel" aria-labelledby="training-load-zones-title">
@@ -602,7 +602,7 @@
 
 <div class="hidden" aria-hidden="true">
   <div id="recovery-hero-ring"><strong id="analysis-recovery-hero-value">—</strong><span id="analysis-recovery-hero-unit"></span></div>
-  <span id="analysis-recovery-hero-status">Readiness</span><span id="recovery-hero-note"></span>
+  <span id="analysis-recovery-hero-status">Bereitschaft</span><span id="recovery-hero-note"></span>
 </div>
 <section id="recovery-objective-group" class="kajo-recovery-group" aria-labelledby="recovery-objective-heading">
   <div class="kajo-recovery-group-heading"><h2 id="recovery-objective-heading">Objektive Regenerationswerte</h2><span id="recovery-objective-count">—</span></div>
@@ -615,7 +615,7 @@
 <div id="view-health-data" class="space-y-4 hidden">
             <section class="kajo-recovery-group" aria-labelledby="recovery-trend-heading">
               <div class="kajo-recovery-group-heading">
-                <div><p class="kajo-analysis-eyebrow">VERLAUF</p><h2 id="recovery-trend-heading">Recovery im Zeitverlauf</h2></div>
+                <div><p class="kajo-analysis-eyebrow">VERLAUF</p><h2 id="recovery-trend-heading">Bereitschaft im Zeitverlauf</h2></div>
                 <div id="health-history-range-controls" class="flex flex-wrap justify-end gap-1" aria-label="Zeitraum">
                   <button type="button" data-history-kind="health" data-history-range="7d" onclick="setHistoryRange('7d')" class="more-subnav-button">7 T</button>
                   <button type="button" data-history-kind="health" data-history-range="28d" onclick="setHistoryRange('28d')" class="more-subnav-button">28 T</button>
@@ -652,7 +652,7 @@
             <div id="analysis-subpage-health" class="hidden space-y-4">
   <div class="hidden" aria-hidden="true">
     <div id="health-hero-ring"><strong id="analysis-health-hero-value">—</strong><span id="analysis-health-hero-unit"></span></div>
-    <span id="analysis-health-hero-status">Health</span><span id="health-hero-note"></span>
+    <span id="analysis-health-hero-status">Gesundheit</span><span id="health-hero-note"></span>
   </div>
   <section class="kajo-health-group" aria-labelledby="health-documentation-heading">
     <div class="kajo-health-group-heading"><h2 id="health-documentation-heading">Gesundheitsdokumentation</h2><span>Gespeicherte Einträge · Zeitraum wählbar</span></div>
@@ -946,7 +946,7 @@
     <i data-lucide="arrow-right" aria-hidden="true"></i>
     <div class="kajo-methods-intro-step"><span>02</span><strong>Datenverarbeitung</strong><small>Import · Zuordnung · Prüfung</small></div>
     <i data-lucide="arrow-right" aria-hidden="true"></i>
-    <div class="kajo-methods-intro-step"><span>03</span><strong>Kennzahlen</strong><small>Load · Recovery · Performance</small></div>
+    <div class="kajo-methods-intro-step"><span>03</span><strong>Kennzahlen</strong><small>Belastung · Bereitschaft · Leistung</small></div>
   </section>
 
   <section id="kajo-methods-calculations" class="kajo-methods-section">
