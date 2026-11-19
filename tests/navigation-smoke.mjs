@@ -102,6 +102,9 @@ assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'),
 assert.ok(['health','cycle','relationships'].every(view => html.includes('data-health-view="'+view+'"')), 'Health analysis has separate Health, Cycle and Relationships views');
 assert.ok(html.includes('id="health-load-comparison"') && html.includes('id="health-recovery-comparison"'), 'Health relationships compare load and recovery with documented health events');
 assert.ok(analysisUI.includes("['complete','confirmed-rest'].includes(day.dataStatus)"), 'health load comparison excludes incomplete daily load coverage');
+assert.ok(analysisUI.includes("const hasLoadProvenance=timeline.every(day=>String(day.loadMode||'').trim()&&String(day.loadUnit||'').trim())"), 'health load comparison requires explicit model and unit provenance');
+assert.ok(analysisUI.includes("timeline[0].loadMode==='garmin-native'?'Garmin Training Load'"), 'native Garmin load is labeled distinctly from the KAJO heart-rate-zone index');
+
 assert.ok(analysisUI.includes('getGarminCheckinMetric(record,key)'), 'health recovery comparison uses Garmin-provenanced daily metrics');
 assert.ok(analysisUI.includes('Kein Eintrag') && analysisUI.includes('keinen ursächlichen Effekt'), 'health comparisons distinguish missing health documentation and avoid causal claims');
 assert.ok(analysisUI.includes("min:1,max:5") && analysisUI.includes("Schmerzen / Beschwerden (1–5)"), 'cycle relationship chart uses the documented five-point scale');
