@@ -419,31 +419,114 @@ const healthCircle = (key,label,value,detail,color) =>
   '" aria-pressed="false" style="--health-metric-color:'+color+'" onclick="toggleHealthMetric(\''+key+'\')">'+
   '<span class="kajo-recovery-metric-circle"><strong>'+performanceEscape(value)+'</strong></span>'+
   '<span class="kajo-recovery-metric-label">'+performanceEscape(label)+'</span><small>'+performanceEscape(detail)+'</small></button>';
+let selectedHealthView = 'health';
+let healthRelationshipChart = null;
 function renderHealth() {
+  const range = healthRangeWindow();
   const events = healthEntries();
   const cycles = cycleEntries();
   const sick = events.filter(([,item])=>item.status==='sick').length;
   const injured = events.filter(([,item])=>item.status==='injured').length;
   const cycleDays = cycles.length;
   const healthDays = events.length;
-  const range = healthRangeWindow();
   setHero('health', String(healthDays), 'Tage', 'Dokumentierte Krankheits- und Verletzungstage',
-    'Krankheit: ' + sick + ' · Verletzung: ' + injured + ' · Zeitraum ' + dateLabel(range.from) + ' – ' + dateLabel(range.to) +
-    '. Nur dokumentierte Einträge werden gezählt; fehlende Angaben gelten nicht als gesund.', 'neutral');
-  renderMetrics('health-documentation-metrics',[
+    'Krankheit: '+sick+' · Verletzung: '+injured+' · Zeitraum '+dateLabel(range.from)+' – '+dateLabel(range.to)+'. Nur dokumentierte Einträge werden gezählt; fehlende Angaben gelten nicht als gesund.', 'neutral');
+  const healthRoot = document.getElementById('health-documentation-metrics');
+  if (healthRoot) healthRoot.innerHTML = [
     healthCircle('sick','Krankheit',sick,'Dokumentierte Tage',sick?'#eab308':'var(--kajo-status-info)'),
-    healthCircle('injured','Verletzung',injured,'Dokumentierte Tage',injured?'#ef4444':'var(--kajo-status-info)'),
-    healthCircle('cycle','Zyklus',cycleDays,'Dokumentierte Zyklustage','var(--kajo-status-info)')
-  ]);
-  document.querySelectorAll('[data-health-metric]').forEach(button=>{
-    const active = button.dataset.healthMetric === selectedHealthMetric;
-    button.classList.toggle('is-selected', active);
-    button.setAttribute('aria-pressed', String(active));
+    healthCircle('injured','Verletzung',injured,'Dokumentierte Tage',injured?'#ef4444':'var(--kajo-status-info)')
+  ].join('');
+  const cycleRoot = document.getElementById('health-cycle-metrics');
+  if (cycleRoot) cycleRoot.innerHTML = healthCircle('cycle','Periodentage',cycleDays,'Dokumentierte Tage','var(--kajo-status-info)');
+  document.getElementById('health-view-health')?.classList.toggle('hidden', selectedHealthView !== 'health');
+  document.getElementById('health-view-cycle')?.classList.toggle('hidden', selectedHealthView !== 'cycle');
+  document.getElementById('health-view-relationships')?.classList.toggle('hidden', selectedHealthView !== 'relationships');
+  document.querySelectorAll('[data-health-view]').forEach(button=>{
+    const active=button.dataset.healthView===selectedHealthView;
+    button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
   });
-  const panel=document.getElementById('health-trend-panel');
-  if(panel)panel.classList.toggle('hidden', !selectedHealthMetric);
-  if(selectedHealthMetric) renderHealthTrend(selectedHealthMetric);
+  document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange===state.activeTimeframe));
+  const trendPanel=document.getElementById('health-trend-panel');
+  const showTrend=(selectedHealthView==='cycle')||(selectedHealthView==='health'&&!!selectedHealthMetric);
+  if(trendPanel)trendPanel.classList.toggle('hidden',!showTrend);
+  if(showTrend)renderHealthTrend(selectedHealthView==='cycle'?'cycle':selectedHealthMetric);
   else if(healthChart){healthChart.destroy();healthChart=null;}
+  if(selectedHealthView==='relationships')renderHealthRelationships(range);
+}
+export function setHealthAnalysisView(view) {
+  if(!['health','cycle','relationships'].includes(view))return;
+  selectedHealthView=view;
+  if(view==='cycle')selectedHealthMetric='cycle';
+  else if(view==='health'&&selectedHealthMetric==='cycle')selectedHealthMetric=null;
+  renderHealth();
+}
+function healthMedian(values) {
+  const sorted=values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!sorted.length)return null;
+  const mid=Math.floor(sorted.length/2);
+  return sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;
+}
+function healthComparisonTable(title,rows,unitLabel) {
+  const body=rows.map(row=>'<tr><td>'+performanceEscape(row.label)+'</td><td class="text-right">'+(row.eventMedian==null?'—':performanceEscape(fmt(row.eventMedian,1)+' '+(row.unit||unitLabel)))+'<small class="block text-slate-500">n = '+row.eventCount+'</small></td><td class="text-right">'+(row.otherMedian==null?'—':performanceEscape(fmt(row.otherMedian,1)+' '+(row.unit||unitLabel)))+'<small class="block text-slate-500">n = '+row.otherCount+'</small></td></tr>').join('');
+  return '<h3 class="text-sm font-semibold text-slate-200 mb-2">'+title+'</h3><table class="w-full text-xs"><thead><tr><th class="text-left">Kennzahl</th><th class="text-right">Krankheit / Verletzung</th><th class="text-right">Kein Eintrag</th></tr></thead><tbody>'+body+'</tbody></table>';
+}
+function renderHealthComparisons(range) {
+  const loadRoot=document.getElementById('health-load-comparison');
+  const recoveryRoot=document.getElementById('health-recovery-comparison');
+  const note=document.getElementById('health-comparison-note');
+  const logs=state.healthLogs||{},checkins=state.dailyCheckins||{};
+  const timeline=(state.dailyTimeline||[]).filter(day=>day?.date>=range.from&&day?.date<=range.to
+    &&['complete','confirmed-rest'].includes(day.dataStatus)
+    &&day.load!==null&&day.load!==undefined&&Number.isFinite(Number(day.load)));
+  const hasLoadProvenance=timeline.every(day=>String(day.loadMode||'').trim()&&String(day.loadUnit||'').trim());
+  const modes=[...new Set(timeline.map(day=>String(day.loadMode||'')+'|'+String(day.loadUnit||'')))];
+  const loadRows=[];
+  if(modes.length===1&&timeline.length&&hasLoadProvenance){
+    const values=timeline.map(day=>({value:Number(day.load),event:['sick','injured'].includes(String(logs[day.date]?.status||''))}));
+    const event=values.filter(x=>x.event).map(x=>x.value),other=values.filter(x=>!x.event).map(x=>x.value);
+    loadRows.push({label:'Tägliche Trainingsbelastung',eventMedian:healthMedian(event),eventCount:event.length,otherMedian:healthMedian(other),otherCount:other.length});
+    if(loadRoot)loadRoot.innerHTML=healthComparisonTable('Trainingsbelastung · '+(timeline[0].loadMode==='srpe'?'sRPE-Load':timeline[0].loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':timeline[0].loadMode==='garmin-native'?'Garmin Training Load':String(timeline[0].loadMode)),loadRows,timeline[0].loadUnit);
+  }else if(loadRoot){
+    loadRoot.innerHTML='<p class="kajo-health-note">'+(modes.length>1?'Die Load-Modelle oder Einheiten wechseln im gewählten Zeitraum. Deshalb wird kein gemeinsamer Median berechnet.':timeline.length&&!hasLoadProvenance?'Für einige Tageswerte fehlen Modell- oder Einheitenangaben. Deshalb wird kein gemeinsamer Median berechnet.':'Es liegen keine vollständigen Tages-Load-Werte im gewählten Zeitraum vor.')+'</p>';
+  }
+  const definitions=[
+    ['HRV','hrv','ms'],['Ruheherzfrequenz','rhr','bpm'],['Schlafscore','sleepScore','Punkte'],['Atemfrequenz','respiration','/ min']
+  ];
+  const rows=definitions.map(([label,key,unit])=>{
+    const observations=Object.entries(checkins).filter(([date,record])=>date>=range.from&&date<=range.to)
+      .map(([date,record])=>({date,value:getGarminCheckinMetric(record,key),event:['sick','injured'].includes(String(logs[date]?.status||''))}))
+      .filter(item=>item.value!==null&&Number.isFinite(item.value));
+    const event=observations.filter(x=>x.event).map(x=>x.value),other=observations.filter(x=>!x.event).map(x=>x.value);
+    return {label,eventMedian:healthMedian(event),eventCount:event.length,otherMedian:healthMedian(other),otherCount:other.length,unit};
+  }).filter(row=>row.eventCount+row.otherCount>0);
+  if(recoveryRoot)recoveryRoot.innerHTML=rows.length
+    ?healthComparisonTable('Garmin-Regenerationswerte',rows,'')
+    :'<p class="kajo-health-note">Keine passenden Garmin-Regenerationswerte im gewählten Zeitraum dokumentiert.</p>';
+  if(note){
+    const eventDates=new Set(Object.entries(logs).filter(([date,item])=>date>=range.from&&date<=range.to&&['sick','injured'].includes(String(item?.status||''))).map(([date])=>date));
+    note.textContent=eventDates.size+' dokumentierte Krankheit-/Verletzungstage im Zeitraum. Unterschiede zwischen den Gruppen sind deskriptiv und erlauben keine Aussage über Ursache oder Wirkung.';
+  }
+}
+function renderHealthRelationships(range) {
+  renderHealthComparisons(range);
+  const canvas=document.getElementById('health-relationship-chart'),note=document.getElementById('health-relationship-note');
+  if(!canvas||typeof Chart!=='function')return;
+  if(healthRelationshipChart){healthRelationshipChart.destroy();healthRelationshipChart=null;}
+  const pairs=Object.entries(state.dailyCheckins||{})
+    .filter(([date,item])=>date>=range.from&&date<=range.to&&valid(item?.cycle?.pain)&&valid(item?.cycle?.trainingImpact))
+    .map(([date,item])=>({x:Number(item.cycle.pain),y:Number(item.cycle.trainingImpact),date}))
+    .filter(p=>p.x>=1&&p.x<=5&&p.y>=1&&p.y<=5);
+  if(note)note.textContent=pairs.length
+    ? pairs.length+' Tage mit gleichzeitig dokumentierten Angaben. Jeder Punkt steht für einen Tag. Die Darstellung beschreibt eine zeitliche Gemeinsamkeit, keinen ursächlichen Effekt. Fehlende Angaben werden nicht ergänzt.'
+    : 'Für den gewählten Zeitraum liegen noch keine Tage mit gleichzeitig dokumentierten Angaben zu Beschwerden und Trainingseinfluss vor.';
+  if(!pairs.length){canvas.classList.add('hidden');return;}
+  canvas.classList.remove('hidden');
+  healthRelationshipChart=new Chart(canvas.getContext('2d'),{type:'scatter',
+    data:{datasets:[{label:'Dokumentierte Tage',data:pairs,backgroundColor:'#e879a9',pointRadius:5,pointHoverRadius:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>{const p=item.raw;return 'Schmerzen: '+p.x+'/5 · Trainingseinfluss: '+p.y+'/5 · '+dateLabel(p.date);}}}},
+      scales:{x:{min:1,max:5,title:{display:true,text:'Schmerzen / Beschwerden (1–5)',color:'#94a3b8'},ticks:{color:'#94a3b8',stepSize:1},grid:{color:'rgba(148,163,184,.12)'}},
+        y:{min:1,max:5,title:{display:true,text:'Trainingseinfluss (1–5)',color:'#94a3b8'},ticks:{color:'#94a3b8',stepSize:1},grid:{color:'rgba(148,163,184,.12)'}}}}
+  });
 }
 function renderHealthTrend(key) {
   const panel=document.getElementById('health-trend-panel');
@@ -469,8 +552,8 @@ function renderHealthTrend(key) {
     const pain=dates.map(date=>valid(checkins[date]?.cycle?.pain)?Number(checkins[date].cycle.pain):null);
     const impact=dates.map(date=>valid(checkins[date]?.cycle?.trainingImpact)?Number(checkins[date].cycle.trainingImpact):null);
     heading='Zyklus · Beschwerden und Trainingseinfluss';
-    explanation='Die Linien zeigen dokumentierte Schmerzen und Trainingsbeeinträchtigung (0–10) an allen erfassten Zyklustagen – nicht nur während der Menstruation. Kleine rosafarbene Markierungen auf der Nulllinie kennzeichnen Periodentage, ohne sie als Beschwerdewert darzustellen. Fehlende Angaben bleiben Lücken. Keine medizinische Interpretation oder Ableitung von Eisprung und Zyklusphasen.';
-    type='line';max=10;
+    explanation='Die Linien zeigen dokumentierte Schmerzen und Trainingsbeeinträchtigung auf der erfassten fünfstufigen Skala (1–5) an allen erfassten Zyklustagen – nicht nur während der Menstruation. Kleine rosafarbene Markierungen auf der Nulllinie kennzeichnen Periodentage, ohne sie als Beschwerdewert darzustellen. Fehlende Angaben bleiben Lücken. Keine medizinische Interpretation oder Ableitung von Eisprung und Zyklusphasen.';
+    type='line';max=5;
     datasets=[
       {label:'Periodentag',data:period,borderColor:'#be789f',backgroundColor:'#be789f',pointBackgroundColor:'#be789f',pointBorderColor:'#be789f',pointRadius:period.map(v=>v===null?0:6),pointHoverRadius:7,pointStyle:'rectRot',showLine:false},
       {label:'Schmerzen',data:pain,borderColor:'#e879a9',backgroundColor:'#e879a922',pointRadius:3,tension:.15,spanGaps:false},
@@ -487,14 +570,16 @@ function renderHealthTrend(key) {
     type,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:8}},
-        tooltip:{callbacks:{label:item=>item.dataset.label==='Periode dokumentiert'?'Periode dokumentiert':item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 10':' dokumentiert'))}}},
+        tooltip:{callbacks:{label:item=>item.dataset.label==='Periodentag'?'Periodentag dokumentiert':item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 5':' dokumentiert'))}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:9}},
-        y:{beginAtZero:true,max,ticks:{color:'#94a3b8',stepSize:key==='cycle'?2:1},
+        y:{beginAtZero:true,max,ticks:{color:'#94a3b8',stepSize:1},
           grid:{color:'rgba(148,163,184,.12)'}}}}
   });
 }
 export function toggleHealthMetric(key){
   if(!['sick','injured','cycle'].includes(key))return;
+  if(key==='cycle'){setHealthAnalysisView('cycle');return;}
+  selectedHealthView='health';
   selectedHealthMetric=selectedHealthMetric===key?null:key;
   document.querySelectorAll('[data-health-metric]').forEach(button=>{
     const active=button.dataset.healthMetric===selectedHealthMetric;
@@ -503,6 +588,10 @@ export function toggleHealthMetric(key){
   const panel=document.getElementById('health-trend-panel');
   if(panel)panel.classList.toggle('hidden',!selectedHealthMetric);
   if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
+  document.getElementById('health-view-health')?.classList.remove('hidden');
+  document.getElementById('health-view-cycle')?.classList.add('hidden');
+  document.getElementById('health-view-relationships')?.classList.add('hidden');
+  document.querySelectorAll('[data-health-view]').forEach(button=>{const active=button.dataset.healthView==='health';button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));});
 }
 export function setHealthRange(range){
   if(range==='custom'){
@@ -523,7 +612,6 @@ export function setHealthRange(range){
   if(typeof window.setTimeframe==='function')window.setTimeframe(range);
   else {state.activeTimeframe=range;state.metricHistoryRange=range;}
   renderHealth();
-  if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 export function applyHealthCustomRange(){
   const from=document.getElementById('health-summary-from')?.value;
@@ -541,10 +629,10 @@ export function applyHealthCustomRange(){
   if(typeof window.applyCustomDateRange==='function')window.applyCustomDateRange();
   else {renderHealth();window.kajoRenderHealthAnalysis?.();}
   renderHealth();
-  if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 if(typeof window!=='undefined'){
   window.toggleHealthMetric=toggleHealthMetric;
+  window.setHealthAnalysisView=setHealthAnalysisView;
   window.setHealthRange=setHealthRange;
   window.applyHealthCustomRange=applyHealthCustomRange;
   window.kajoRenderHealthMetrics=renderHealth;

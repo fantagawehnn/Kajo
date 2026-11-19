@@ -99,6 +99,16 @@ assert.ok(html.includes('id="health-hero-ring"') && html.includes('id="analysis-
 assert.ok(html.includes('id="analysis-performance-hero-value"') && analysisUI.includes("setHero('performance'"), 'Fitness exposes the available VO2max value to the analysis overview');
 assert.ok(analysisUI.includes("setHero('health', String(healthDays), 'Tage'"), 'Health overview uses documented sick and injured days in the selected period');
 assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'), 'each recovery circle uses the existing metric-specific status classification');
+assert.ok(['health','cycle','relationships'].every(view => html.includes('data-health-view="'+view+'"')), 'Health analysis has separate Health, Cycle and Relationships views');
+assert.ok(html.includes('id="health-load-comparison"') && html.includes('id="health-recovery-comparison"'), 'Health relationships compare load and recovery with documented health events');
+assert.ok(analysisUI.includes("['complete','confirmed-rest'].includes(day.dataStatus)"), 'health load comparison excludes incomplete daily load coverage');
+assert.ok(analysisUI.includes("const hasLoadProvenance=timeline.every(day=>String(day.loadMode||'').trim()&&String(day.loadUnit||'').trim())"), 'health load comparison requires explicit model and unit provenance');
+assert.ok(analysisUI.includes("timeline[0].loadMode==='garmin-native'?'Garmin Training Load'"), 'native Garmin load is labeled distinctly from the KAJO heart-rate-zone index');
+
+assert.ok(analysisUI.includes('getGarminCheckinMetric(record,key)'), 'health recovery comparison uses Garmin-provenanced daily metrics');
+assert.ok(analysisUI.includes('Kein Eintrag') && analysisUI.includes('keinen ursächlichen Effekt'), 'health comparisons distinguish missing health documentation and avoid causal claims');
+assert.ok(analysisUI.includes("min:1,max:5") && analysisUI.includes("Schmerzen / Beschwerden (1–5)"), 'cycle relationship chart uses the documented five-point scale');
+assert.ok(analysisUI.includes("type='line';max=5;") && analysisUI.includes('fünfstufigen Skala (1–5)') && analysisUI.includes("key==='cycle'?' / 5'"), 'cycle trend chart uses the documented five-point scale consistently');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
 assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
