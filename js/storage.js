@@ -497,7 +497,8 @@ export async function inspectDatabaseBackup(file) {
         races: parsed.races?.length ?? 0,
         strength: parsed.strength?.length ?? 0,
         strengthPBs: parsed.strengthPBs?.length ?? 0,
-        supplements: parsed.supplements?.length ?? 0
+        supplements: parsed.supplements?.length ?? 0,
+        seasonPlan: parsed.seasonPlan && typeof parsed.seasonPlan === 'object' ? 1 : 0
     };
     const dateRange = values => {
         const dates = values
@@ -518,6 +519,7 @@ export async function inspectDatabaseBackup(file) {
         counts,
         hasProfile: Boolean(parsed.profile && Object.keys(parsed.profile).length),
         hasSettings: Boolean(parsed.settings && Object.keys(parsed.settings).length),
+        hasSeasonPlan: Boolean(parsed.seasonPlan && typeof parsed.seasonPlan === 'object'),
         missingSections: requiredKeys.filter(key => !Object.prototype.hasOwnProperty.call(parsed, key)),
         activityDateRange,
         checkinDateRange,
