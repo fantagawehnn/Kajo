@@ -9,7 +9,7 @@ import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 
 const METRICS = [
-  { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#38bdf8', decimals:0 },
+  { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#0F766E', decimals:0 },
   { key:'rhr', label:'Ruheherzfrequenz', short:'Ruhepuls', unit:'bpm', group:'Herz-Kreislauf', icon:'heart-pulse', color:'#fb7185', decimals:0 },
   { key:'sleepScore', label:'Schlafscore', short:'Sleep Score', unit:'/ 100', group:'Schlaf', icon:'moon-star', color:'#a78bfa', decimals:0 },
   { key:'sleepDuration', label:'Schlafdauer', short:'Schlafdauer', unit:'h', group:'Schlaf', icon:'bed-double', color:'#818cf8', decimals:1 },
@@ -20,11 +20,12 @@ const METRICS = [
   { key:'garminStress', label:'Stresslevel (Garmin)', short:'Stress', unit:'Punkte', group:'Belastung', icon:'brain', color:'#f59e0b', decimals:0 },
   { key:'steps', label:'Schritte', short:'Schritte', unit:'', group:'Aktivität', icon:'footprints', color:'#84cc16', decimals:0 },
   { key:'fitnessAge', label:'Fitnessalter', short:'Fitnessalter', unit:'Jahre', group:'Leistungsfähigkeit', icon:'calendar-clock', color:'#c084fc', decimals:1 },
-  { key:'weight', label:'Körpergewicht', short:'Gewicht', unit:'kg', group:'Körperwerte', icon:'scale', color:'#94a3b8', decimals:1 }
+  { key:'weight', label:'Körpergewicht', short:'Gewicht', unit:'kg', group:'Körperwerte', icon:'scale', color:'#EC4899', decimals:1 }
 ];
 
 let selectedMetric = null;
 let selectedRange = '28d';
+let selectedRangeExplicit = false;
 let healthChart = null;
 
 function valid(value) {
@@ -78,7 +79,17 @@ function rangeWindow() {
     const to = document.getElementById('kajo-health-to')?.value;
     if (from && to && from <= to) return { from, to };
   }
-  const days = ({'7d':7,'28d':28,'3m':90,'6m':180,'1y':365})[selectedRange] || 28;
+  const candidates=[['7d',7],['28d',28],['30d',30],['42d',42],['3m',90],['1y',365]];
+  if(!selectedRangeExplicit){
+    for(const [key,days] of candidates){
+      const start=new Date(end+'T12:00:00');start.setDate(start.getDate()-days+1);
+      const from=dateKey(start),dates=dateRange(from,end);
+      const count=dates.filter(day=>valid(metricValue(state.dailyCheckins?.[day],selectedMetric))).length;
+      if(count/days>=.7){selectedRange=key;break;}
+      if(key==='1y')selectedRange='1y';
+    }
+  }
+  const days = candidates.find(([key])=>key===selectedRange)?.[1] || 28;
   const start = new Date(end + 'T12:00:00');
   start.setDate(start.getDate()-days+1);
   return { from:dateKey(start), to:end };
@@ -140,6 +151,23 @@ function renderRangeControls() {
   });
   document.getElementById('kajo-health-custom-range')?.classList.toggle('hidden',selectedRange!=='custom');
 }
+function aggregateWeekly(dates,values){
+  const buckets=new Map();
+  dates.forEach((day,index)=>{
+    if(!valid(values[index]))return;
+    const monday=new Date(day+'T12:00:00');monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+    const key=dateKey(monday);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(Number(values[index]));
+  });
+  const rows=[...buckets.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  return {labels:rows.map(([key])=>'KW '+String(Math.ceil((new Date(key+'T12:00:00')-new Date(new Date(key+'T12:00:00').getFullYear(),0,1))/604800000)+1).padStart(2,'0')),
+    values:rows.map(([,items])=>items.reduce((sum,value)=>sum+value,0)/items.length)};
+}
+function rollingAverage(values,days=7){
+  return values.map((_,index)=>{
+    const items=values.slice(Math.max(0,index-days+1),index+1).filter(valid).map(Number);
+    return items.length?items.reduce((sum,value)=>sum+value,0)/items.length:null;
+  });
+}
 function renderDetail() {
   const metric=METRICS.find(item=>item.key===selectedMetric);
   if (!metric) return;
@@ -148,6 +176,8 @@ function renderDetail() {
   const window=rangeWindow();
   const dates=dateRange(window.from,window.to);
   const values=dates.map(day=>metricValue(state.dailyCheckins?.[day],metric.key));
+  const count=values.filter(valid).length,coverage=dates.length?count/dates.length:0;
+  const weekly=metric.key!=='weight'&&coverage<.7;
   let latest=null;
   for(let i=dates.length-1;i>=0;i--) if(valid(values[i])) { latest={date:dates[i],value:values[i]};break; }
   const baseline=latest?personalBaseline(metric.key,latest.date):null;
@@ -158,18 +188,30 @@ function renderDetail() {
   document.getElementById('kajo-health-detail-date').textContent=latest?'Letzter Messwert · '+new Date(latest.date+'T12:00:00').toLocaleDateString('de-DE'):'Im gewählten Zeitraum keine Messung';
   document.getElementById('kajo-health-detail-baseline').textContent=baseline===null?'Persönlicher Normalbereich noch nicht verfügbar':'Persönlicher 90-Tage-Median: '+format(baseline,metric)+' '+metric.unit;
   document.getElementById('kajo-health-detail-delta').textContent=delta===null?'Noch keine normierte Abweichung berechenbar':signedPercent(delta)+' gegenüber deinem persönlichen Median';
-  document.getElementById('kajo-health-detail-count').textContent=values.filter(valid).length+' Messwerte im Zeitraum';
+  document.getElementById('kajo-health-detail-count').textContent=count+' Messwerte im Zeitraum';
   const isGarminEstimate=metric.key==='vo2max' && latest && getGarminCheckinMetric(state.dailyCheckins?.[latest.date], 'vo2max') !== null;
-  document.getElementById('kajo-health-detail-note').textContent=(isGarminEstimate?'Garmin-VO₂max-Schätzung; kein direkt gemessener Diagnostikwert. Das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart. ':'')+'Die normierte Abweichung beschreibt den Abstand zum persönlichen Median. Sie ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
-  const labels=dates.map(day=>new Date(day+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}));
+  const note=document.getElementById('kajo-health-detail-note');
+  if(note)note.textContent=(isGarminEstimate?'Garmin-VO₂max-Schätzung; kein direkt gemessener Diagnostikwert. Das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart. ':'')+
+    (weekly?'Wochenmittel aus den tatsächlich erfassten Messungen. ':'')+
+    (metric.key==='weight'?'Linie: gleitender 7-Tage-Mittelwert · Punkte: Einzelmessungen. ':'')+
+    'Die normierte Abweichung beschreibt den Abstand zum persönlichen Median. Sie ist keine medizinische Bewertung und keine allgemeine Leistungsnorm.';
+  const weeklyData=weekly?aggregateWeekly(dates,values):null;
+  const labels=weekly?weeklyData.labels:dates.map(day=>new Date(day+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}));
   const baselineSeries=dates.map(day=>personalBaseline(metric.key,day));
   const canvas=document.getElementById('kajo-health-detail-chart');
   if (healthChart) { healthChart.destroy(); healthChart=null; }
-  if (canvas && typeof Chart==='function') {
-    const datasets=[{label:metric.label,data:values,borderColor:metric.color,backgroundColor:metric.color+'20',fill:true,tension:.25,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:false}];
-    if (baselineSeries.some(valid)) datasets.push({label:'Persönlicher Median (90 Tage)',data:baselineSeries,borderColor:'#94a3b8',backgroundColor:'transparent',borderDash:[5,5],fill:false,tension:0,borderWidth:1.5,pointRadius:0,spanGaps:false});
-    healthChart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onHover:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},onClick:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:7,boxHeight:7}},tooltip:{enabled:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#94a3b8',maxTicksLimit:5}}}}});
+  if(canvas)canvas.parentElement?.classList.toggle('hidden',count<3|| (weekly&&weeklyData.values.length<3));
+  if (canvas && typeof Chart==='function' && count>=3 && (!weekly||weeklyData.values.length>=3)) {
+    const smoothed=metric.key==='weight';
+    const chartValues=weekly?weeklyData.values:smoothed?rollingAverage(values,7):values;
+    const datasets=[weekly
+      ? {label:metric.label+' · Wochenmittel',data:chartValues,backgroundColor:metric.color+'70',borderColor:metric.color,borderWidth:1,borderRadius:5,maxBarThickness:34}
+      : {label:smoothed?metric.label+' · 7-Tage-Mittel':metric.label,data:chartValues,borderColor:metric.color,backgroundColor:metric.color+'20',fill:true,tension:.25,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:true}];
+    if(smoothed)datasets.push({label:'Einzelmessungen',data:values,showLine:false,borderColor:metric.color,backgroundColor:metric.color,pointRadius:values.map(value=>valid(value)?2.5:0),pointHoverRadius:4,pointHitRadius:7});
+    if(!weekly&&baselineSeries.some(valid))datasets.push({label:'Persönlicher Median (90 Tage)',data:baselineSeries,borderColor:'#94a3b8',backgroundColor:'transparent',borderDash:[5,5],fill:false,tension:0,borderWidth:1.5,pointRadius:0,spanGaps:true});
+    healthChart=new Chart(canvas.getContext('2d'),{type:weekly?'bar':'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onHover:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},onClick:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:7,boxHeight:7}},tooltip:{enabled:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#94a3b8',maxTicksLimit:5}}}}});
   }
+  if(count<3&&note)note.textContent='Das Diagramm erscheint ab mindestens drei Messwerten. '+note.textContent;
   renderRangeControls();
 }
 export function renderGarminHealthData() {
@@ -184,6 +226,7 @@ export function openGarminHealthMetric(key) {
   if (!METRICS.some(item=>item.key===key)) return;
   selectedMetric=key;
   selectedRange='28d';
+  selectedRangeExplicit=false;
   renderGarminHealthData();
 }
 export function closeGarminHealthMetric() {
@@ -192,8 +235,9 @@ export function closeGarminHealthMetric() {
   renderGarminHealthData();
 }
 export function setGarminHealthRange(range) {
-  if (!['7d','28d','3m','6m','1y','custom'].includes(range)) return;
+  if (!['7d','28d','30d','42d','3m','1y','custom'].includes(range)) return;
   selectedRange=range;
+  selectedRangeExplicit=true;
   if (range==='custom') {
     const window=rangeWindow();
     const from=document.getElementById('kajo-health-from');
@@ -212,5 +256,6 @@ export function applyGarminHealthCustomRange() {
     return;
   }
   selectedRange='custom';
+  selectedRangeExplicit=true;
   renderDetail();
 }
