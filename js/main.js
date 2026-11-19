@@ -159,8 +159,8 @@ function getHealthAnalysisRange() {
     const today = new Date();
     const todayKey = [today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
     if (state.activeTimeframe === 'custom') {
-        const from = document.getElementById('health-summary-from')?.value || document.getElementById('date-from')?.value;
-        const to = document.getElementById('health-summary-to')?.value || document.getElementById('date-to')?.value;
+        const from = document.getElementById('date-from')?.value || document.getElementById('health-summary-from')?.value;
+        const to = document.getElementById('date-to')?.value || document.getElementById('health-summary-to')?.value;
         if (from && to && from <= to && to <= todayKey) return { from, to };
     }
     const days = ({'7d':7,'28d':28,'3m':90,'6m':180,'1y':365})[state.activeTimeframe] || 90;
