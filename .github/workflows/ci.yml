@@ -49,6 +49,7 @@ jobs:
           node --check js/coach-data-context.js
           node --check js/coach-analysis.js
           node --check js/coach-decision-guidance.js
+          node --check js/season-planning.js
           node --check worker.js
           node --check js/profile.js
           node --check js/settings.js
@@ -74,6 +75,9 @@ jobs:
 
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
+
+      - name: Run season planning tests
+        run: node --experimental-default-type=module --test tests/season-planning.test.mjs
 
       - name: Run Coach context regression tests
         run: node --experimental-default-type=module --test tests/coach-context.test.mjs
