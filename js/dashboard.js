@@ -34,6 +34,33 @@ const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-st
 function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STATUS_COLORS.attention:STATUS_COLORS.critical;}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
+function renderDashboardSourceDetails(){
+ const panel=document.getElementById('home-recommendation-sources');if(!panel)return;
+ const today=localTodayKey(),checkin=state.dailyCheckins?.[today]||{};
+ const readiness=calculateReadiness(today);
+ const latestTimeline=(state.dailyTimeline||[]).filter(item=>item.date<=today).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+ const planned=(state.plannedActivities||[]).filter(item=>item?.date===today);
+ const confidence=readiness.dataQuality?.includes('Gute Datenbasis')?'hoch':readiness.dataQuality?.includes('Eingeschränkte')?'eingeschränkt':'niedrig';
+ const lines=[
+  'Bereitschaft: KAJO-Berechnung · '+(readiness.dataQuality||'Datenbasis nicht verfügbar')+' · Sicherheit: '+confidence,
+  'Befinden: '+(checkin.wellbeing!=null?'manueller Check-in vorhanden':'heute nicht erfasst'),
+  'Gewicht: '+(checkin.weight!=null?'manueller Check-in vorhanden':'heute nicht erfasst'),
+  'HRV: '+(checkin.garminHrv!=null?'Garmin-Import':checkin.hrv!=null?'manuelle Angabe':'heute nicht erfasst'),
+  'Fitness und Ermüdung: '+(latestTimeline?'KAJO-Berechnung · '+(latestTimeline.loadMode||'Belastungsmodell unbekannt')+' · '+(latestTimeline.dataStatus||'Datenstatus unbekannt'):'keine berechenbare Belastungszeitreihe'),
+  'Plan: '+(planned.length?planned.length+' geplante Einheit(en) für heute':'keine geplante Einheit für heute')
+ ];
+ panel.textContent=lines.join(' · ');
+}
+export function toggleDashboardSourceDetails(){
+ const panel=document.getElementById('home-recommendation-sources');
+ const button=document.getElementById('home-recommendation-sources-toggle');
+ if(!panel||!button)return;
+ const open=panel.classList.contains('hidden');
+ if(open)renderDashboardSourceDetails();
+ panel.classList.toggle('hidden',!open);
+ button.setAttribute('aria-expanded',String(open));
+ button.textContent=open?'ⓘ Datenbasis & Sicherheit ausblenden':'ⓘ Datenbasis & Sicherheit';
+}
 function renderWellbeingHeatmap(){
  const container=document.getElementById('home-wellbeing-heatmap');if(!container)return;
  const today=localTodayKey(),end=new Date(today+'T12:00:00'),start=new Date(end);
@@ -52,6 +79,7 @@ function renderWellbeingHeatmap(){
 }
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
   renderWellbeingHeatmap();
+  renderDashboardSourceDetails();
   const r=calculateReadiness(dateKey);
   const value=document.getElementById('kpi-readiness');
   const status=document.getElementById('kpi-readiness-status');
