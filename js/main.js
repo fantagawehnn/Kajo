@@ -3273,7 +3273,7 @@ async function restoreDatabaseBackup(event) {
             ['checkins', 'Tägliche Check-ins'], ['health', 'Gesundheitseinträge'],
             ['races', 'Wettkämpfe'], ['strength', 'Krafttraining'],
             ['strengthPBs', 'Kraft-Bestleistungen'], ['supplements', 'Ernährung & Supplements'],
-            ['profile', 'Athletenprofil'], ['settings', 'App-Einstellungen']
+            ['profile', 'Athletenprofil'], ['settings', 'App-Einstellungen'], ['seasonPlan', 'Saisonplan']
         ];
         const count = key => key === 'profile' ? (preview.hasProfile ? 'Vorhanden' : 'Nicht enthalten')
             : key === 'settings' ? (preview.hasSettings ? 'Vorhanden' : 'Nicht enthalten')
@@ -3332,7 +3332,7 @@ async function confirmBackupRestore() {
         activities: 'Trainingsaktivitäten', planned: 'geplante Einheiten', checkins: 'Check-ins',
         health: 'Gesundheitseinträge', races: 'Wettkämpfe', strength: 'Krafttraining',
         strengthPBs: 'Kraft-Bestleistungen', supplements: 'Ernährung & Supplements',
-        profile: 'Athletenprofil', settings: 'App-Einstellungen'
+        profile: 'Athletenprofil', settings: 'App-Einstellungen', seasonPlan: 'Saisonplan'
     };
     const selectedNames = categories.map(key => labels[key] || key).join(', ');
     const confirmed = confirm(
