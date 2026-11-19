@@ -237,16 +237,22 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
     );
     const garminActivities = list.filter(isGarminEligible);
     const zoneValues = garminActivities
-        .map(activity => ({ activity, load: calculateGarminZoneLoad(activity, settings, profile, dailyCheckins) }))
-        .filter(item => item.load)
-        .map(item => ({
-            activity: item.activity,
-            value: item.load.value,
-            dataQuality: item.load.dataQuality || 'standard',
-            dataQualityLabel: item.load.dataQualityLabel || 'Reguläre HF-Zeitreihe',
-            durationSource: item.load.durationSource,
-            samplingIntervalSeconds: item.load.samplingIntervalSeconds
-        }));
+        .map(activity => {
+            const load = calculateGarminZoneLoad(activity, settings, profile, dailyCheckins);
+            if (load) return { activity, value: load.value, source: 'heart-rate',
+                dataQuality: load.dataQuality || 'standard',
+                dataQualityLabel: load.dataQualityLabel || 'Reguläre HF-Zeitreihe',
+                durationSource: load.durationSource,
+                samplingIntervalSeconds: load.samplingIntervalSeconds };
+            const estimate = activity?.manualTrainingLoadEstimate;
+            const estimatedValue = Number(estimate?.value);
+            if (estimate?.source === 'manual-estimate' && Number.isFinite(estimatedValue) && estimatedValue >= 0) {
+                return { activity, value: estimatedValue, source: 'manual-estimate',
+                    dataQuality: 'estimated', dataQualityLabel: 'Manuell geschätzter KAJO-Load' };
+            }
+            return null;
+        })
+        .filter(Boolean);
     // Garmin Native Load bleibt als eigenständige Vergleichsquelle verfügbar,
     // wird aber niemals in den KAJO-CTL-/ATL-/TSB-Verlauf übernommen.
     const nativeValues = garminActivities
@@ -263,7 +269,8 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
             eligibleActivityCount: garminActivities.length,
             loadedActivityCount: zoneValues.length,
             excludedActivityCount: Math.max(0, garminActivities.length - zoneValues.length),
-            availableZoneActivities: zoneValues.length,
+            availableZoneActivities: zoneValues.filter(item => item.source === 'heart-rate').length,
+            estimatedActivityCount: zoneValues.filter(item => item.source === 'manual-estimate').length,
             availableNativeActivities: nativeValues.length
         }
     };

@@ -26,6 +26,31 @@ function entryOn(date, records, settings) {
 const today = dateKey(new Date());
 const completedDay = offsetDate(today, -1);
 
+
+test('manual estimated KAJO load fills a missing-HR activity without treating it as zero', () => {
+    const activity = {
+        id: 'g-estimated-load', source: 'garmin', date: completedDay, duration: 60,
+        manualTrainingLoadEstimate: {
+            value: 42.5, source: 'manual-estimate', unit: 'KAJO-HF-Punkte'
+        }
+    };
+    const result = getTrainingLoadData([activity], {}, {});
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.unit, 'KAJO-HF-Punkte');
+    assert.equal(result.records.length, 1);
+    assert.equal(result.records[0].value, 42.5);
+    assert.equal(result.records[0].source, 'manual-estimate');
+    assert.equal(result.records[0].dataQuality, 'estimated');
+    const timeline = computePerformanceTimeline([activity], {
+        garminActivityCoverageRanges: [covered(completedDay)]
+    }, {});
+    const day = timeline.find(item => item.date === completedDay);
+    assert.equal(day.load, 42.5);
+    assert.equal(day.estimatedLoadCount, 1);
+    assert.equal(day.isProvisional, true);
+    assert.match(day.statusLabel, /manuelle Load-Schätzung/);
+});
+
 test('generic telemetry is never used as a Garmin fallback', () => {
     const activity = {
         source: 'garmin',
