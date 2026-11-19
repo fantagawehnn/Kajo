@@ -143,6 +143,17 @@ test('sleep duration and sleep score are not counted twice in the sleep domain',
     assert.equal(result.domains.sleep, 90);
 });
 
+test('subjective values alone cannot satisfy the readiness data requirement', () => {
+    const source = makeState({
+        dailyCheckins: { [day]: { garminHrv: 60, sleepQuality: 5, motivation: 5, wellbeing: 5 } }
+    });
+    const result = calculateReadiness(day, source);
+    assert.equal(result.score, null);
+    assert.equal(result.domainCount, 1);
+    assert.equal(result.subjectiveCount, 3);
+    assert.equal(result.enoughData, false);
+});
+
 test('missing subjective check-in values remain missing, not negative', () => {
     const source = makeState({
         dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90 } }
