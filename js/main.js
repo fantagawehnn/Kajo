@@ -222,12 +222,13 @@ function switchTab(requestedTab) {
         dashboard: { parent: 'today', view: 'dashboard' },
         today: { parent: 'today', view: 'dashboard' },
         'dashboard-details': { parent: 'today', view: 'dashboard-details' },
-        calendar: { parent: 'calendar', view: 'calendar' },
+        plan: { parent: 'plan', view: 'calendar', sub: 'calendar' },
+        calendar: { parent: 'plan', view: 'calendar', sub: 'calendar' },
+        'training-planning': { parent: 'plan', view: 'races', sub: 'planning' },
+        'training-competitions': { parent: 'plan', view: 'races', sub: 'competitions' },
+        races: { parent: 'plan', view: 'races', sub: 'competitions' },
         training: { parent: 'training', view: 'calendar', sub: 'activities' },
         'training-activities': { parent: 'training', view: 'calendar', sub: 'activities' },
-        'training-planning': { parent: 'training', view: 'races', sub: 'planning' },
-        'training-competitions': { parent: 'training', view: 'races', sub: 'competitions' },
-        races: { parent: 'training', view: 'races', sub: 'competitions' },
         strength: { parent: 'training', view: 'strength', sub: 'strength' },
         analyses: { parent: 'analysis', view: 'analyses', sub: 'overview' },
         'analysis-overview': { parent: 'analysis', view: 'analyses', sub: 'overview' },
@@ -237,22 +238,23 @@ function switchTab(requestedTab) {
         'analysis-performance': { parent: 'analysis', view: 'analyses', sub: 'performance' },
         'training-analysis': { parent: 'analysis', view: 'analyses', sub: 'performance' },
         'analysis-health': { parent: 'analysis', view: 'analyses', sub: 'health' },
-        more: { parent: 'more', view: 'more' },
-        profile: { parent: 'more', view: 'profile' },
-        data: { parent: 'more', view: 'data' },
-        'garmin-health': { parent: 'more', view: 'garmin-health' },
-        backup: { parent: 'more', view: 'backup' },
-        upload: { parent: 'more', view: 'upload' },
-        methods: { parent: 'more', view: 'methods' },
-        routes: { parent: 'more', view: 'routes' },
-        nutrition: { parent: 'more', view: 'nutrition' },
-        ai: { parent: 'more', view: 'ai' }
+        ich: { parent: 'ich', view: 'more' },
+        more: { parent: 'ich', view: 'more' },
+        profile: { parent: 'ich', view: 'profile' },
+        data: { parent: 'ich', view: 'data' },
+        'garmin-health': { parent: 'ich', view: 'garmin-health' },
+        backup: { parent: 'ich', view: 'backup' },
+        upload: { parent: 'ich', view: 'upload' },
+        methods: { parent: 'ich', view: 'methods' },
+        routes: { parent: 'ich', view: 'routes' },
+        nutrition: { parent: 'ich', view: 'nutrition' },
+        ai: { parent: 'ich', view: 'ai' }
     };
-    const destination = route[requestedTab] || { parent: 'more', view: 'more' };
+    const destination = route[requestedTab] || { parent: 'ich', view: 'more' };
     const { parent, view, sub } = destination;
     document.body.classList.toggle('kajo-home-active', view === 'dashboard');
-    document.body.classList.toggle('kajo-training-planning-view', parent === 'training' && sub === 'planning');
-    document.body.classList.toggle('kajo-training-competitions-view', parent === 'training' && sub === 'competitions');
+    document.body.classList.toggle('kajo-training-planning-view', parent === 'plan' && sub === 'planning');
+    document.body.classList.toggle('kajo-training-competitions-view', parent === 'plan' && sub === 'competitions');
     window.kajoCurrentTab = requestedTab;
     if (requestedTab !== 'health-data' && requestedTab !== 'training-analysis') state.metricHistoryDate = null;
 
@@ -262,15 +264,16 @@ function switchTab(requestedTab) {
         if (el) el.classList.toggle('hidden', id !== view);
     });
 
+    document.getElementById('plan-subnav')?.classList.toggle('hidden', parent !== 'plan');
     document.getElementById('training-subnav')?.classList.toggle('hidden', parent !== 'training');
     document.getElementById('analysis-subnav')?.classList.toggle('hidden', parent !== 'analysis' || sub === 'overview');
     ['overview', 'load', 'recovery', 'performance', 'health'].forEach(id => {
         const page = document.getElementById('analysis-subpage-' + id);
         if (page) page.classList.toggle('hidden', view !== 'analyses' || sub !== id);
     });
-    document.getElementById('area-back-link')?.classList.toggle('hidden', parent !== 'more' || view === 'more');
+    document.getElementById('area-back-link')?.classList.toggle('hidden', parent !== 'ich' || view === 'more');
 
-    ['today', 'calendar', 'training', 'analysis', 'more'].forEach(id => {
+    ['today', 'plan', 'training', 'analysis', 'ich'].forEach(id => {
         const active = parent === id;
         ['nav-' + id, 'mobile-nav-' + id].forEach(buttonId => {
             const button = document.getElementById(buttonId);
@@ -280,7 +283,11 @@ function switchTab(requestedTab) {
             else button.removeAttribute('aria-current');
         });
     });
-    ['activities', 'planning', 'competitions', 'strength'].forEach(id => {
+    ['calendar', 'planning', 'competitions'].forEach(id => {
+        const button = document.getElementById('plan-subnav-' + id);
+        if (button) button.classList.toggle('is-active', sub === id);
+    });
+    ['activities', 'strength'].forEach(id => {
         const button = document.getElementById('training-subnav-' + id);
         if (button) button.classList.toggle('is-active', sub === id);
     });
@@ -304,7 +311,7 @@ function switchTab(requestedTab) {
             if (wasActivityMode && state.activeCalendarFormat === 'activities') {
                 setCalendarFormat(window.kajoCalendarFormatBeforeActivities || 'month');
                 window.kajoCalendarFormatBeforeActivities = null;
-            } else if (parent === 'calendar' && state.activeCalendarFormat !== 'month') {
+            } else if (parent === 'plan' && sub === 'calendar' && state.activeCalendarFormat !== 'month') {
                 setCalendarFormat('month');
             }
         }
@@ -335,7 +342,7 @@ function switchTab(requestedTab) {
     if (view === 'routes') renderRoutesView();
     if (view === 'profile') renderAthleteProfile();
     if (view === 'analyses' && sub === 'health') renderHealthAnalysis();
-    if (parent === 'calendar' || (parent === 'training' && sub === 'activities')) renderCalendar();
+    if ((parent === 'plan' && sub === 'calendar') || (parent === 'training' && sub === 'activities')) renderCalendar();
 }
 function switchMoreTab(tab) {
     switchTab(tab);
