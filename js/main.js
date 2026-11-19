@@ -10,6 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
+import { renderSeasonPlanEditor, addSeasonPlanPhase, saveSeasonPlanEditor } from './season-plan-editor.js';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -323,7 +324,7 @@ function switchTab(requestedTab) {
     if (overviewContent) overviewContent.classList.toggle('hidden', view !== 'analyses' || sub !== 'overview');
     if (view === 'analyses' && sub === 'overview') renderAnalysisOverview();
     if (view === 'analyses' && sub === 'load') renderTrainingLoadView();
-    if (view === 'races') { renderPlannedWorkouts(); renderRaces(); }
+    if (view === 'races') { renderPlannedWorkouts(); renderRaces(); if (sub === 'planning') renderSeasonPlanEditor(); }
     if (view === 'strength') renderStrengthView();
     if (view === 'nutrition') renderNutritionView();
     if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); }
@@ -3209,6 +3210,8 @@ Object.assign(window, {
     openHealthLogModal,
     openIntervalsSyncModal,
     openPlannedWorkoutModal,
+    addSeasonPlanPhase,
+    saveSeasonPlanEditor,
     openStrengthModal,
     performIntervalsLiveSync,
     saveCheckin,
