@@ -228,7 +228,7 @@ VERBINDLICHE REGELN:
     "Gesundheit hat Vorrang. Bei Krankheit/Verletzung oder relevanten Warnsignalen keine normale Trainingswoche planen; status needs_input und offene medizinische Klärung benennen.",
     "Wochenplan soll realistisch und ausgewogen sein, Belastung und Regeneration berücksichtigen und keine zwei harten Einheiten ohne ausreichende Begründung bündeln. Kein pauschales 6-Tage-/10-14-Stunden-Schema.",
     "Wenn Angaben für eine individuelle Woche fehlen, erfinde nichts: status needs_input, sessions leer und fehlende Informationen in openQuestions."
-  ].join("\\n") : payload?.task === "season_plan_proposal" ? [
+  ].join("\n") : payload?.task === "season_plan_proposal" ? [
     "AUFGABE: Erstelle einen überprüfbaren, sportartspezifischen Vorschlag für die Periodisierung der gesamten Saison. Gib ausschließlich ein gültiges JSON-Objekt zurück, ohne Markdown oder zusätzliche Erklärung.",
     "JSON-SCHEMA: { status: ready|needs_input, rationale: string, openQuestions: string[], phases: [{ name, type, startDate: YYYY-MM-DD, endDate: YYYY-MM-DD, objective, focus: string[], disciplineFocus: string[], notes }] }",
     "Nutze ausschließlich Saisonstart/-ende, Saisonziel, bestätigtes Athletenprofil und tatsächlich übermittelte Wettkämpfe.",
@@ -337,7 +337,7 @@ VERBINDLICHE REGELN:
     const validation = validateWeeklyPlan(weeklyPlan, { ...payload.context.seasonPlanning, ...season, phases });
     const duplicates = (payload?.context?.weeklyPlanning?.existingPlannedSessions || []);
     const duplicateDates = sessions.some(session => duplicates.some(existing => existing.date === session.date && existing.name?.toLowerCase() === session.name.toLowerCase()));
-    const badC1Duration = sessions.some(session => /^(c1|canadian)$/i.test(session.discipline) && session.durationMinutes != null && session.durationMinutes > 75);
+    const badC1Duration = sessions.some(session => (/^(c1|canadian)$/i.test(session.discipline) || /^(c1|canadian)$/i.test(session.type)) && session.durationMinutes != null && session.durationMinutes > 75);
     if (!validation.valid || duplicateDates || badC1Duration) {
       return json({ error: "Der Wochenvorschlag hat die KAJO-Prüfung nicht bestanden und wurde nicht übernommen. " + [...validation.errors, ...(duplicateDates ? ["Eine Einheit würde eine bestehende Planung duplizieren."] : []), ...(badC1Duration ? ["Eine C1-Einheit überschreitet 75 Minuten."] : [])].join(" ") }, 502);
     }
