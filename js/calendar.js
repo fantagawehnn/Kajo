@@ -153,8 +153,8 @@ function bindCheckinDraftControls(dateStr){
  modal.querySelectorAll('[data-weight-step]').forEach(button=>{
   if(button.dataset.stepBound==='true')return;
   button.addEventListener('click',()=>{
-   const input=document.getElementById('day-weight');if(!input)return;
-   const current=Number(input.value||0);
+   const input=document.getElementById('day-weight');if(!input||input.value==='')return;
+   const current=Number(input.value);
    const next=(Math.round((current+Number(button.dataset.weightStep))*10)/10);
    if(Number.isFinite(next)&&next>=20&&next<=300)input.value=next.toFixed(1);
    persistCheckinDraft(document.getElementById('day-edit-date')?.value||dateStr);
