@@ -102,6 +102,65 @@ export async function requestWeeklyPlanProposal(weekStartDate) {
     return payload.proposal;
 }
 
+export async function requestAdaptiveWeekAdjustment(weekStartDate, review) {
+    if (!supabase) throw new Error('Die sichere Verbindung zum KI-Coach ist nicht verfügbar.');
+    const seasonPlan = state.seasonPlan;
+    const weeklyPlan = seasonPlan?.weeklyPlans?.find(item => item.weekStartDate === weekStartDate);
+    if (!seasonPlan || seasonPlan.status !== 'active' || !seasonPlan.athleteApprovedAt
+        || !weeklyPlan || weeklyPlan.status !== 'approved' || !weeklyPlan.athleteApprovedAt) {
+        throw new Error('Für Anpassungen werden ein freigegebener Saison- und Wochenplan benötigt.');
+    }
+    if (!review || review.weekStartDate !== weeklyPlan.weekStartDate) {
+        throw new Error('Bitte erstelle zuerst den aktuellen Wochenabgleich.');
+    }
+    const now = new Date();
+    const currentDate = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    const end = weeklyPlan.weekEndDate;
+    if (currentDate > end) throw new Error('Diese Trainingswoche ist bereits abgeschlossen. Vergangene Wochen werden nicht nachträglich verändert.');
+    const question = 'Prüfe den freigegebenen Wochenplan anhand der tatsächlichen Aktivitäten, Regenerations- und Gesundheitsdaten. Schlage nur notwendige Anpassungen für die noch zukünftigen Trainingseinheiten vor.';
+    const context = buildCoachRequestContext(state, question);
+    context.weeklyPlanning = {
+        targetWeek: {
+            weekStartDate: weeklyPlan.weekStartDate,
+            weekEndDate: weeklyPlan.weekEndDate,
+            phaseId: weeklyPlan.phaseId
+        },
+        currentDate,
+        approvedWeeklyPlan: weeklyPlan,
+        matchedSessionIds: (review.matched || []).map(item => item.planned?.id).filter(Boolean),
+        ambiguousSessionIds: (review.ambiguous || []).map(item => item.session?.id).filter(Boolean),
+        futureSessions: (review.upcoming || []).filter(item => item.date > currentDate),
+        review: {
+            coverage: review.coverage,
+            unmatchedPlanned: (review.unmatchedPlanned || []).map(item => ({
+                sessionId: item.session?.id || null, date: item.session?.date || null,
+                name: item.session?.name || null, reason: item.reason
+            })),
+            unplannedActivities: (review.unplannedActivities || []).map(item => ({
+                date: item.activity?.date || null, name: item.activity?.name || null,
+                type: item.activity?.type || null, duration: item.activity?.duration || null,
+                reason: item.reason
+            })),
+            limitations: review.limitations
+        }
+    };
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
+    const response = await fetch('/api/coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({ task: 'adaptive_week_adjustment', question, context, history: [] })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'Der Coach konnte keine Wochenanpassung erstellen.');
+    if (!payload.proposal || !['ready', 'needs_input'].includes(payload.proposal.status)) {
+        throw new Error('Der Coach hat keinen gültigen Anpassungsvorschlag zurückgegeben.');
+    }
+    return payload.proposal;
+}
+
 export async function sendAICoachMessage() {
     const input = document.getElementById('chat-input');
     const question = input?.value?.trim();
