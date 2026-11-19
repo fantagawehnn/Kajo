@@ -4,7 +4,7 @@
 
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate } from './utils.js';
+import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate, showUndoToast } from './utils.js';
 import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
 
 const RACE_PRIORITY_META = {
@@ -253,14 +253,19 @@ export function addRaceResult(encodedId) {
 export function deleteRaceResult(encodedId, index) {
     const race = state.races.find(item => String(item.id) === decodeURIComponent(encodedId));
     if (!race || !Array.isArray(race.results) || !Number.isInteger(index)) return;
+    const previous=race.results.slice();
+    if(!confirm('Wettkampfergebnis wirklich löschen?'))return;
     race.results.splice(index, 1);
-    saveDataToLocalStorage();
-    refreshAll();
+    saveDataToLocalStorage();refreshAll();
+    showUndoToast('Wettkampfergebnis gelöscht.',()=>{race.results=previous;saveDataToLocalStorage();refreshAll();});
 }
 
 export function deleteRace(id) {
     const decodedId = decodeURIComponent(id);
+    const previous=JSON.parse(JSON.stringify(state.races||[]));
+    if(!previous.some(r=>String(r.id)===decodedId))return;
+    if(!confirm('Wettkampf wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.'))return;
     state.races = state.races.filter(r => String(r.id) !== decodedId);
-    saveDataToLocalStorage();
-    refreshAll();
+    saveDataToLocalStorage();refreshAll();
+    showUndoToast('Wettkampf gelöscht.',()=>{state.races=previous;saveDataToLocalStorage();refreshAll();});
 }
