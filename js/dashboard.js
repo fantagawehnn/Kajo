@@ -991,7 +991,22 @@ function historyRecommendation(key, value, dateKey) {
         return ['Persönlicher Normalbereich noch nicht verfügbar', 'Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht verbindlich festgelegt. Der Messwert wird deshalb ohne pauschale oder vorläufige Normalbereichs-Einstufung dargestellt.'];
     }
     if (key === 'wellbeing') return ['Befinden', 'Deine tägliche Selbsteinschätzung im Verlauf. Einzelne Angaben sind subjektiv und keine medizinische Bewertung.'];
-    if (key === 'weight') return ['Gewichtsverlauf', 'Betrachte Gewicht über mehrere Messungen und im individuellen Kontext. Einzelne Tagesveränderungen sind für sich genommen keine Trainings- oder Gesundheitsbewertung.'];
+    if (key === 'weight') {
+        const entries = Object.entries(state.dailyCheckins || {}).filter(([date, row]) => date <= dateKey && validNumber(row?.weight))
+            .sort((a, b) => a[0].localeCompare(b[0]));
+        const weekStart = new Date(dateKey + 'T12:00:00');
+        weekStart.setDate(weekStart.getDate() - 6);
+        const weekStartKey = historyDateKey(weekStart);
+        const week = entries.filter(([date]) => date >= weekStartKey);
+        const weeklyMean = week.length ? mean(week.map(([, row]) => Number(row.weight))) : null;
+        const first = entries[0], last = entries[entries.length - 1];
+        const trend = first && last && first[0] !== last[0]
+            ? ((Number(last[1].weight) - Number(first[1].weight) > 0 ? '+' : '') + (Number(last[1].weight) - Number(first[1].weight)).toFixed(1) + ' kg seit ' + formatDateDDMMYY(first[0]))
+            : 'Gesamttrend noch nicht bestimmbar';
+        const weeklyText = weeklyMean === null ? '7-Tage-Mittel noch nicht verfügbar'
+            : '7-Tage-Mittel: ' + weeklyMean.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg (' + week.length + ' Messungen)';
+        return ['Gewichtsverlauf', weeklyText + ' · Gesamttrend: ' + trend + '. Tagesschwankungen sind normal; keine rote Bewertung.'];
+    }
     if (key === 'sleepScore') return value < 80
         ? ['Sleep Score unter 80', 'Prüfe Schlafqualität, Schlafdauer und mögliche Störfaktoren. Der Score ist ein Wearable-Schätzwert.']
         : value <= 90
