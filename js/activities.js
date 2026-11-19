@@ -6,7 +6,7 @@
 import { state, refreshAll } from './state.js';
 import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmergeActivityGroup } from './activity-groups.js?v=1';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml } from './utils.js';
+import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml, showUndoToast } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
 import { calculateStrengthActivitySummary } from './calculations.js';
@@ -1527,28 +1527,6 @@ export function toggleActivityEdit() {
     if (!panel.classList.contains('hidden')) document.getElementById('modal-edit-name')?.focus();
 }
 
-let activityUndoTimer = null;
-function showActivityUndo(message, undo){
-    let toast=document.getElementById('kajo-undo-toast');
-    if(!toast){
-        toast=document.createElement('div');
-        toast.id='kajo-undo-toast';
-        toast.className='fixed bottom-5 left-1/2 -translate-x-1/2 z-[2147483601] flex items-center gap-4 rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-xs text-white shadow-2xl';
-        toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
-        document.body.appendChild(toast);
-    }
-    if(activityUndoTimer)clearTimeout(activityUndoTimer);
-    toast.replaceChildren();
-    const label=document.createElement('span');label.textContent=message;
-    const button=document.createElement('button');button.type='button';button.textContent='Rückgängig';
-    button.className='font-bold text-cyan-300 underline underline-offset-2';
-    button.addEventListener('click',()=>{
-        if(activityUndoTimer)clearTimeout(activityUndoTimer);
-        undo();toast.remove();
-    },{once:true});
-    toast.append(label,button);toast.classList.remove('hidden');
-    activityUndoTimer=setTimeout(()=>{toast.remove();activityUndoTimer=null;},10000);
-}
 export function deleteSelectedActivity() {
     if (!state.selectedActivityForModal) return;
     const id = state.selectedActivityForModal.id;
@@ -1558,7 +1536,7 @@ export function deleteSelectedActivity() {
     state.rawActivities = state.rawActivities.filter(a => a.id !== id);
     state.selectedActivityForModal = null;
     saveDataToLocalStorage(); closeCSVDetailsModal(); refreshAll();
-    showActivityUndo('Aktivität gelöscht.',()=>{
+    showUndoToast('Aktivität gelöscht.',()=>{
         state.rawActivities=previousActivities;
         saveDataToLocalStorage();
         refreshAll();
