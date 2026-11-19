@@ -374,7 +374,7 @@ assert.ok(!html.includes('<h1 class="text-2xl sm:text-3xl font-black tracking-ti
 assert.ok(!html.includes('id="analysis-overview-detail-content"'), 'overview keeps detailed analysis in the four dedicated subpages');
 assert.ok(overviewModule.includes('setAnalysisOverviewMetric') && overviewModule.includes('selectedMetrics = new Set'), 'overview exposes multi-series toggles with all currently supported series selected initially');
 assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.includes('baseline: Number(baseline)'), 'overview normalizes supported series to a relative index');
-assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
+assert.ok(overviewModule.includes('carryForwardForDisplay') && overviewModule.includes('spanGaps: true') && overviewModule.includes('borderDash'), 'overview marks display-only carry-forward across missing-data gaps with a muted dashed segment');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
 assert.ok(overviewModule.includes('Health availability is deliberately not inferred'), 'Health does not fabricate a continuous availability score');
