@@ -1056,7 +1056,17 @@ export function historyRingColor(key, value, dateKey) {
         if (prior.length < 14) return STATUS_COLORS.info;
         const avg = mean(prior), sd = standardDeviation(prior, avg), delta = value - avg;
         const threshold = Math.max(sd * 0.5, key === 'rhr' ? 1 : key === 'hrv' ? 5 : 0.5);
-        const adverse = key === 'hrv' ? delta < 0 : delta > 0;
+        if (key === 'rhr' || key === 'hrv') {
+            // Niedrigere RHF bzw. höhere HRV gelten relativ zur persönlichen Historie
+            // als günstige Richtung – auch wenn die Abweichung groß ist.
+            const favourable = key === 'rhr' ? delta < 0 : delta > 0;
+            if (favourable) return STATUS_COLORS.good;
+            if (delta === 0) return STATUS_COLORS.good;
+            const severity = Math.abs(delta) / threshold;
+            return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
+        }
+        // Atemfrequenz bleibt zweiseitig relativ zur persönlichen Historie bewertet.
+        const adverse = delta > 0;
         if (!adverse) return Math.abs(delta) <= threshold ? STATUS_COLORS.good : STATUS_COLORS.attention;
         const severity = Math.abs(delta) / threshold;
         return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
