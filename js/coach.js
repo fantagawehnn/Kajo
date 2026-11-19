@@ -5,7 +5,6 @@ import { state } from './state.js';
 import { supabase } from './supabase-client.js';
 import { buildAthleteContext } from './coach-context.js';
 import { buildCoachRequestContext } from './coach-data-context.js';
-import { buildCoachDecisionGuidance } from './coach-decision-guidance.js';
 
 const conversation = [];
 let requestPending = false;
@@ -59,9 +58,6 @@ export async function sendAICoachMessage() {
         if (!accessToken) throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
 
         const context = buildCoachRequestContext(state, question);
-        // Verbindliche Regeln werden bei jeder Anfrage explizit mitgesendet,
-        // statt sich allein auf die allgemeine Systemanweisung zu verlassen.
-        context.coachDecisionGuidance = buildCoachDecisionGuidance();
         const history = conversation.slice(-8);
         const response = await fetch('/api/coach', {
             method: 'POST',
