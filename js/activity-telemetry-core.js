@@ -1,22 +1,24 @@
 export const PADDLE_ACTIVITY_TYPES = Object.freeze(['Kayaking', 'C1', 'C2', 'PaddleErgo']);
 
 const DEFAULT_METRICS = Object.freeze({
-    Kayaking: ['hr', 'speed', 'strokeRate', 'cadence'],
-    C1: ['hr', 'speed', 'strokeRate', 'cadence'],
-    C2: ['hr', 'speed', 'strokeRate', 'cadence'],
-    PaddleErgo: ['hr', 'speed', 'strokeRate', 'cadence'],
+    Kayaking: ['hr', 'speed', 'strokeRate'],
+    C1: ['hr', 'speed', 'strokeRate'],
+    C2: ['hr', 'speed', 'strokeRate'],
+    PaddleErgo: ['hr', 'speed', 'strokeRate'],
     Run: ['hr', 'pace', 'speed', 'cadence', 'altitude'],
     Ride: ['hr', 'speed', 'power', 'cadence', 'altitude'],
-    Swim: ['hr', 'swimPace', 'strokeRate', 'cadence', 'swolf'],
+    Swim: ['hr', 'swimPace', 'strokeRate', 'swolf'],
     WeightTraining: ['hr']
 });
 
 export function getDefaultActivityTelemetryMetrics(sportType, availableKeys = []) {
     const available = new Set(Array.isArray(availableKeys) ? availableKeys : []);
     const preferred = DEFAULT_METRICS[sportType] || ['hr', 'speed'];
-    const selected = preferred.filter(key => available.has(key)
-        || (key === 'strokeRate' && available.has('cadence'))
-        || (key === 'cadence' && available.has('strokeRate')));
+    const selected = preferred.map(key => {
+        if (key === 'strokeRate' && !available.has('strokeRate') && available.has('cadence')) return 'cadence';
+        if (key === 'cadence' && !available.has('cadence') && available.has('strokeRate')) return 'strokeRate';
+        return key;
+    }).filter(key => available.has(key));
     if (selected.length) return [...new Set(selected)];
     if (available.has('hr')) return ['hr'];
     return availableKeys.length ? [availableKeys[0]] : [];
