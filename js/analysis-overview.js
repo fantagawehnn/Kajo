@@ -8,6 +8,8 @@ import { renderHeartRateZoneDistribution } from './charts.js';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { prepareAdaptiveSeriesGroup, carryForwardForDisplay } from './chart-series.js?v=1';
+import { showChartSummaryReadout } from './chart-readout.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -24,6 +26,7 @@ const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', h
 let trendChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
+let metricAvailability = new Set(['load', 'recovery', 'performance']);
 let activityMeasure = 'duration';
 
 function sourceHero(domain) {
@@ -93,56 +96,112 @@ function updateMetricSwitch() {
   document.querySelectorAll('[data-overview-metric]').forEach(button => {
     const key = button.dataset.overviewMetric;
     const active = selectedMetrics.has(key);
+    const available = key !== 'health' && metricAvailability.has(key);
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
-    button.classList.toggle('is-unavailable', key === 'health');
-    button.disabled = key === 'health';
+    button.classList.toggle('is-unavailable', !available);
+    button.disabled = !available;
   });
 }
 function renderTrendChart() {
   const canvas = document.getElementById('analysis-overview-trend-chart');
   if (!canvas || typeof Chart !== 'function') return;
-  if (trendChart) trendChart.destroy();
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
   const dates = rangeDates(currentRange());
-  const labels = dates.map(dateLabel);
-  const series = buildSeries(dates);
-  const datasets = series.map(item => {
-    const indexed = toRelativeIndex(item.raw);
+  const source = buildSeries(dates).filter(item => item.key !== 'health');
+  const adaptive = prepareAdaptiveSeriesGroup(dates, source.map(item => ({
+    key: item.key, label: item.label, unit: item.unit, color: item.color, values: item.raw
+  })));
+  metricAvailability = new Set(adaptive.series.filter(item => item.available).map(item => item.key));
+  for (const key of [...selectedMetrics]) if (!metricAvailability.has(key)) selectedMetrics.delete(key);
+  if (!selectedMetrics.size && metricAvailability.size) selectedMetrics.add([...metricAvailability][0]);
+  const datasets = adaptive.series.filter(item => item.available).map(item => {
+    const display = item.mode === 'daily' && item.chartType === 'line'
+      ? carryForwardForDisplay(item.values) : { values: item.values, carried: item.values.map(() => false) };
+    const indexed = toRelativeIndex(display.values);
+    const rawBaseline = item.values.find(valid);
     return {
+      type: item.chartType,
       label: item.label,
       data: indexed.values,
-      rawValues: item.raw,
-      baseline: indexed.baseline,
+      rawValues: item.values,
+      sampleCounts: item.counts,
+      carried: display.carried,
+      baseline: valid(rawBaseline) ? Number(rawBaseline) : indexed.baseline,
       unit: item.unit,
+      coverage: item.coverage,
+      mode: item.mode,
       borderColor: item.color,
-      backgroundColor: item.color,
-      borderWidth: 2.2,
+      backgroundColor: item.chartType === 'bar' ? item.color + '99' : item.color,
+      borderWidth: item.chartType === 'bar' ? 0 : 2.2,
+      borderRadius: item.chartType === 'bar' ? 5 : 0,
+      barThickness: item.chartType === 'bar' ? 12 : undefined,
       tension: .22,
       pointRadius: 0,
-      pointHoverRadius: 0,
-      pointHitRadius: 0,
-      spanGaps: false,
-      fill: false,
+      pointHoverRadius: 3,
+      pointHitRadius: 8,
+      spanGaps: true,
+      segment: item.chartType === 'line' ? {
+        borderDash: context => {
+          const a = Math.min(context.p0DataIndex ?? 0, context.p1DataIndex ?? 0);
+          const b = Math.max(context.p0DataIndex ?? 0, context.p1DataIndex ?? 0);
+          return display.carried.slice(a, b + 1).some(Boolean) ? [4, 3] : undefined;
+        },
+        borderColor: context => {
+          const a = Math.min(context.p0DataIndex ?? 0, context.p1DataIndex ?? 0);
+          const b = Math.max(context.p0DataIndex ?? 0, context.p1DataIndex ?? 0);
+          return display.carried.slice(a, b + 1).some(Boolean) ? 'rgba(148,163,184,.72)' : undefined;
+        }
+      } : undefined,
       hidden: !selectedMetrics.has(item.key)
     };
   });
-  const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
+  const hasValues = datasets.some(dataset => !dataset.hidden);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
+  canvas.hidden = !hasValues;
+  if (!hasValues) {
+    setText('analysis-overview-trend-note',
+      'Für mindestens eine Kennzahl liegen weniger als drei auswertbare Messwerte im gewählten Zeitraum vor. Das Diagramm bleibt ausgeblendet, statt eine leere oder irreführende Darstellung zu zeigen.');
+    updateMetricSwitch();
+    return;
+  }
+  const labels = adaptive.labels.map(label => adaptive.mode === 'weekly'
+    ? 'KW ab ' + dateLabel(label) : dateLabel(label));
   trendChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
     data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: (event, elements, chart) => {
+        const active = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (!active.length) return;
+        const point = active[0], dataset = chart.data.datasets[point.datasetIndex];
+        const raw = dataset.rawValues?.[point.index];
+        if (!valid(raw)) return;
+        const count = dataset.sampleCounts?.[point.index] || 1;
+        const details = [
+          adaptive.mode === 'weekly' ? 'Darstellung: Wochenmittelwert' : 'Darstellung: Tagesmessung',
+          'Messwerte in diesem Abschnitt: ' + count,
+          'Abdeckung im Zeitraum: ' + Math.round(dataset.coverage * 100) + ' %',
+          dataset.carried?.[point.index] ? 'An diesem Tag wurde der letzte bekannte Wert nur zur Darstellung fortgeführt.' : ''
+        ].filter(Boolean);
+        showChartSummaryReadout(canvas, {
+          title: dataset.label,
+          time: labels[point.index] || '',
+          items: [{ label: 'Messwert', value: raw, unit: dataset.unit }],
+          details
+        });
+      },
       plugins: {
         legend: { display: false },
-        title: { display: !hasValues, text: 'Keine auswertbaren Messwerte im gewählten Zeitraum', color: textColor, font: { size: 11, weight: 'normal' } },
+        title: { display: false },
         tooltip: { callbacks: {
-          title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '',
+          title: items => items.length ? labels[items[0].dataIndex] : '',
           label: context => {
             const dataset = context.dataset;
             const raw = dataset.rawValues?.[context.dataIndex];
-            const index = context.parsed.y;
+            const index = context.parsed.y ?? context.parsed.x;
             if (!valid(raw) || !valid(index)) return dataset.label + ': keine Messung';
             const change = Number(index) - 100;
             const sign = change > 0 ? '+' : '';
@@ -158,12 +217,16 @@ function renderTrendChart() {
     }
   });
   const healthNote = 'Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
+  const aggregationNote = adaptive.mode === 'daily'
+    ? 'Mindestens 70 % Datenabdeckung je dargestellter Reihe: Tagesverlauf.'
+    : 'Mindestens eine Reihe liegt unter 70 % Tagesabdeckung: Darstellung in Wochenmitteln; seltene Reihen erscheinen als Wochenbalken.';
   setText('analysis-overview-trend-note',
-    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
+    aggregationNote + ' Fehlende Tageswerte werden in Linien nur als dezente gestrichelte Fortführung des letzten Messwerts visualisiert; die Originalwerte bleiben unverändert. ' +
+    'Load basiert auf dem vorhandenen Tagesload, Recovery auf Garmin-HRV und Fitness auf Garmin-VO₂max-Schätzungen. Die Reihen werden relativ zum ersten gültigen Messwert normiert und sind dimensionsübergreifend nicht vergleichbar. ' + healthNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
-  if (!['load', 'recovery', 'performance', 'health'].includes(metric)) return;
+  if (!['load', 'recovery', 'performance'].includes(metric) || !metricAvailability.has(metric)) return;
   if (selectedMetrics.has(metric)) {
     if (selectedMetrics.size === 1) return;
     selectedMetrics.delete(metric);
