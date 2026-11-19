@@ -4,7 +4,7 @@
 
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, escapeHtml, toLocalDateString } from './utils.js';
+import { formatDateDDMMYY, escapeHtml, toLocalDateString, showUndoToast } from './utils.js?v=2';
 
 export function renderStrengthView() {
     const grid = document.getElementById('strength-history-grid');
@@ -69,7 +69,10 @@ export function saveStrengthWorkout() {
 
 export function deleteStrengthLog(id) {
     const decodedId = decodeURIComponent(id);
+    const previous=JSON.parse(JSON.stringify(state.strengthPBs||[]));
+    if(!previous.some(item=>String(item.id)===decodedId))return;
+    if(!confirm('Krafttrainings-Eintrag wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.'))return;
     state.strengthPBs = (state.strengthPBs || []).filter(s => String(s.id) !== decodedId);
-    saveDataToLocalStorage();
-    renderStrengthView();
+    saveDataToLocalStorage();renderStrengthView();
+    showUndoToast('Krafttrainings-Eintrag gelöscht.',()=>{state.strengthPBs=previous;saveDataToLocalStorage();renderStrengthView();});
 }
