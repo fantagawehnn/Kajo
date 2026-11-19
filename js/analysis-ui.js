@@ -422,7 +422,7 @@ const healthCircle = (key,label,value,detail,color) =>
 let selectedHealthView = 'health';
 let healthRelationshipChart = null;
 function cycleTrackingEnabled() {
-  return state.profile?.gender === 'female' && state.profile?.cycleTrackingEnabled === true;
+  return state.profile?.gender === 'female';
 }
 function renderHealth() {
   const cycleEnabled = cycleTrackingEnabled();
