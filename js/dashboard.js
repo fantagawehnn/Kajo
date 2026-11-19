@@ -73,7 +73,7 @@ function renderWellbeingHeatmap(){
   const value=state.dailyCheckins?.[key]?.wellbeing;
   const valid=validNumber(value)&&Number(value)>=1&&Number(value)<=5;
   const label=date.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'});
-  days.push('<button type="button" class="kajo-wellbeing-cell" data-value="'+(valid?Math.round(Number(value)):'missing')+'" title="'+label+' · '+(valid?'Befinden '+value+'/5':'nicht erfasst')+'" aria-label="'+label+' · '+(valid?'Befinden '+value+' von 5':'nicht erfasst')+'" onclick="openDayEditor(\\''+key+'\\')"></button>');
+  days.push(`<button type="button" class="kajo-wellbeing-cell" data-value="${valid?Math.round(Number(value)):'missing'}" title="${label} · ${valid?'Befinden '+value+'/5':'nicht erfasst'}" aria-label="${label} · ${valid?'Befinden '+value+' von 5':'nicht erfasst'}" onclick="openDayEditor('${key}')"></button>`);
  }
  container.innerHTML=days.join('');
 }
