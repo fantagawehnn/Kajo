@@ -12,7 +12,7 @@
 import { state, setRefreshHandler } from './state.js';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar, reviewApprovedWeeklyPlan, setManualActivityLink, setManualSessionStatus, generateAdaptiveWeekProposal, discardAdaptiveWeekProposal, applyAdaptiveWeekProposal } from './season-plan-editor.js?v=7';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
-import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
+import { initializeKajoTheme, setKajoTheme } from './theme.js?v=3';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
@@ -26,21 +26,21 @@ import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './dat
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=6';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { groupHealthEpisodes } from './period-summary.js?v=2';
-import { renderAnalysisPageUI } from './analysis-ui.js?v=11';
-import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
-import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=11';
-import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=8';
+import { renderAnalysisPageUI } from './analysis-ui.js?v=12';
+import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=3';
+import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=12';
+import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=9';
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=47';
-import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=12';
+import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=13';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, updateActivityStrengthSet, updateActivityStrengthExerciseName, toggleActivityStrengthSection } from './activities.js?v=23';
-import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=80';
+import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=81';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=3';
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=3';
 import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActivity, attachDailyHrSeriesToActivity, invalidateDailyHrActivityPreview } from './daily-hr-activity.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
-import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
+import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive, applyCustomizationPreferences, renderCustomizationSettings, setDashboardWidgetVisibility, moveDashboardWidget, moveNavigationItem, resetCustomizationPreferences } from './settings.js?v=14';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
@@ -53,11 +53,11 @@ let healthDataModulePromise = null;
 let nutritionModulePromise = null;
 
 function loadCoachModule() {
-    if (!coachModulePromise) coachModulePromise = import('./coach.js?v=2');
+    if (!coachModulePromise) coachModulePromise = import('./coach.js?v=3');
     return coachModulePromise;
 }
 function loadHealthDataModule() {
-    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=3');
+    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=4');
     return healthDataModulePromise;
 }
 function loadNutritionModule() {
@@ -1986,6 +1986,7 @@ function initEngine() {
     runInitStep('Trainingsplanung', () => renderPlannedWorkouts());
     runInitStep('Krafttraining', () => renderStrengthView());
     runInitStep('Home-Tagesübersicht', () => renderSelectedDashboardDay());
+    runInitStep('Persönliche Darstellung', () => applyCustomizationPreferences());
 }
 
 // Alle Module lösen nach Datenänderungen refreshAll() aus → initEngine()
@@ -3060,6 +3061,12 @@ Object.assign(window, {
     attachDailyHrSeriesToActivity,
     invalidateDailyHrActivityPreview,
     saveTelemetrySettings,
+    applyCustomizationPreferences,
+    renderCustomizationSettings,
+    setDashboardWidgetVisibility,
+    moveDashboardWidget,
+    moveNavigationItem,
+    resetCustomizationPreferences,
     focusActivityLap,
     setActivityTelemetryMetric,
     switchTab,

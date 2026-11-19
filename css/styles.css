@@ -9130,3 +9130,92 @@ body.kajo-modal-open { overflow: hidden !important; }
     width: 11px !important; height: 11px !important;
   }
 }
+
+
+/* KAJO glossary: metric identity colors are independent from status and sport colors. */
+:root {
+  --kajo-metric-readiness: #14B8A6;
+  --kajo-metric-fitness: #6DA8F7;
+  --kajo-metric-fatigue: #F59E0B;
+  --kajo-metric-form: #39A96B;
+  --kajo-metric-load: #FDBA74;
+  --kajo-metric-ratio: #E5C45B;
+  --kajo-metric-subjective: #A78BFA;
+  --kajo-metric-weight: #EC7AAE;
+  --kajo-metric-hrv: #0F766E;
+  --kajo-metric-rhr: #FB7185;
+  --kajo-metric-sleep: #7DD3FC;
+}
+
+
+/* User customization: accent color affects controls, never metric identity colors. */
+:root {
+  --kajo-accent: #22D3EE;
+  --kajo-accent-rgb: 34, 211, 238;
+  --kajo-accent-contrast: #07111D;
+}
+#app-navigation .kajo-nav-item.is-active,
+#mobile-navigation .kajo-mobile-nav-item.is-active {
+  color: var(--kajo-accent) !important;
+}
+#app-navigation .kajo-nav-item.is-active {
+  border-color: rgba(var(--kajo-accent-rgb), .55) !important;
+}
+.kajo-settings-primary,
+.kajo-reminder-form button[type="submit"] {
+  background: var(--kajo-accent) !important;
+  color: var(--kajo-accent-contrast) !important;
+}
+.kajo-customization-list {
+  display: grid;
+  gap: 7px;
+}
+.kajo-customization-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, .35);
+  color: #e2e8f0;
+  font-size: 12px;
+}
+.kajo-customization-row label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.kajo-customization-row input[type="checkbox"] {
+  accent-color: var(--kajo-accent);
+  width: 15px;
+  height: 15px;
+}
+.kajo-customization-row > div {
+  display: flex;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.kajo-customization-row button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(148, 163, 184, .25);
+  border-radius: 7px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, .75);
+}
+.kajo-customization-row button:disabled {
+  opacity: .25;
+  cursor: not-allowed;
+}
+.kajo-theme-settings input[type="color"] {
+  width: 52px;
+  height: 34px;
+  border: 1px solid rgba(148, 163, 184, .35);
+  border-radius: 8px;
+  background: transparent;
+  padding: 2px;
+}

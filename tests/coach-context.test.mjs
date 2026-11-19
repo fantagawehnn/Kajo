@@ -210,3 +210,26 @@ test('Coach recovery summary separates HRV ms from resting heart rate bpm withou
     assert.match(summary.recoveryCheckInSummary.metricRules.hrvMs, /ms/);
     assert.match(summary.recoveryCheckInSummary.metricRules.rhrBpm, /bpm/);
 });
+
+
+test('Coach context explicitly marks body weight and cycle data as privacy exclusions', () => {
+    const date = offsetDate(-1);
+    const context = buildCoachRequestContext({
+        dailyCheckins: {
+            [date]: {
+                hrv: 64,
+                weight: 67.4,
+                bodyWeight: 67.4,
+                cycle: { period: true, pain: 3 }
+            }
+        }
+    }, 'Analysiere meine Regeneration');
+
+    assert.deepEqual(context.privacy.excludedFromCoachContext, ['bodyWeight', 'cycleData']);
+    assert.deepEqual(context.dataCoverage.checkIns.excludedFields, ['weight', 'bodyWeight', 'cycle']);
+    assert.equal(context.recovery.dailyCheckIns.length, 1);
+    assert.equal(context.recovery.dailyCheckIns[0].hrv, 64);
+    assert.equal('weight' in context.recovery.dailyCheckIns[0], false);
+    assert.equal('bodyWeight' in context.recovery.dailyCheckIns[0], false);
+    assert.equal('cycle' in context.recovery.dailyCheckIns[0], false);
+});

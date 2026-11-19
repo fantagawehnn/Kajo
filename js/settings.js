@@ -247,7 +247,108 @@ function renderRows() {
   catBox.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => btn.closest('[data-category-row]').remove()));
 }
 
-export function initializeSettings() { renderRows(); }
+const DASHBOARD_WIDGETS = [
+  { key: 'status', label: 'Status & Bereitschaft' },
+  { key: 'today', label: 'Training heute' },
+  { key: 'recommendation', label: 'Trainingsempfehlung' },
+  { key: 'health', label: 'Gesundheit & Self-Monitoring' },
+  { key: 'race', label: 'Nächster Wettkampf' },
+  { key: 'week', label: 'Trainingswoche' }
+];
+const NAVIGATION_ITEMS = [
+  { key: 'today', label: 'Heute' },
+  { key: 'calendar', label: 'Plan' },
+  { key: 'training', label: 'Training' },
+  { key: 'analysis', label: 'Analyse' },
+  { key: 'more', label: 'Ich' }
+];
+const DEFAULT_DASHBOARD_ORDER = DASHBOARD_WIDGETS.map(item => item.key);
+const DEFAULT_NAVIGATION_ORDER = NAVIGATION_ITEMS.map(item => item.key);
+function getCustomizationPreferences() {
+  const stored = state.settings?.uiPreferences || {};
+  const validOrder = (value, fallback) => {
+    const keys = Array.isArray(value) ? value.filter(key => fallback.includes(key)) : [];
+    return [...keys, ...fallback.filter(key => !keys.includes(key))];
+  };
+  return {
+    dashboardOrder: validOrder(stored.dashboardOrder, DEFAULT_DASHBOARD_ORDER),
+    dashboardVisibility: Object.fromEntries(DASHBOARD_WIDGETS.map(item => [item.key, stored.dashboardVisibility?.[item.key] !== false])),
+    navigationOrder: validOrder(stored.navigationOrder, DEFAULT_NAVIGATION_ORDER)
+  };
+}
+function persistCustomizationPreferences(next) {
+  state.settings = { ...(state.settings || {}), uiPreferences: next };
+  saveDataToLocalStorage();
+  applyCustomizationPreferences();
+  renderCustomizationSettings();
+}
+export function applyCustomizationPreferences() {
+  const preferences = getCustomizationPreferences();
+  const dashboard = document.getElementById('view-dashboard');
+  if (dashboard) {
+    for (const key of preferences.dashboardOrder) {
+      const element = dashboard.querySelector('[data-dashboard-widget="' + key + '"]');
+      if (!element) continue;
+      element.style.display = preferences.dashboardVisibility[key] ? '' : 'none';
+      element.setAttribute('aria-hidden', String(!preferences.dashboardVisibility[key]));
+      dashboard.appendChild(element);
+    }
+  }
+  for (const navId of ['app-navigation', 'mobile-navigation']) {
+    const root = document.getElementById(navId);
+    const nav = navId === 'app-navigation' ? root?.querySelector('.kajo-primary-nav') : root;
+    if (!nav) continue;
+    for (const key of preferences.navigationOrder) {
+      const item = nav.querySelector('[data-nav-key="' + key + '"]');
+      if (item) nav.appendChild(item);
+    }
+  }
+}
+export function renderCustomizationSettings() {
+  const preferences = getCustomizationPreferences();
+  const dashboardBox = document.getElementById('kajo-dashboard-widget-settings');
+  const navigationBox = document.getElementById('kajo-navigation-order-settings');
+  if (dashboardBox) dashboardBox.innerHTML = preferences.dashboardOrder.map((key, index) => {
+    const item = DASHBOARD_WIDGETS.find(entry => entry.key === key);
+    return '<div class="kajo-customization-row"><label><input type="checkbox" '+(preferences.dashboardVisibility[key]?'checked':'')+' onchange="setDashboardWidgetVisibility(\''+key+'\',this.checked)"><span>'+item.label+'</span></label><div><button type="button" onclick="moveDashboardWidget(\''+key+'\',-1)" '+(index===0?'disabled':'')+' aria-label="'+item.label+' nach oben">↑</button><button type="button" onclick="moveDashboardWidget(\''+key+'\',1)" '+(index===preferences.dashboardOrder.length-1?'disabled':'')+' aria-label="'+item.label+' nach unten">↓</button></div></div>';
+  }).join('');
+  if (navigationBox) navigationBox.innerHTML = preferences.navigationOrder.map((key, index) => {
+    const item = NAVIGATION_ITEMS.find(entry => entry.key === key);
+    return '<div class="kajo-customization-row"><strong>'+item.label+'</strong><div><button type="button" onclick="moveNavigationItem(\''+key+'\',-1)" '+(index===0?'disabled':'')+' aria-label="'+item.label+' nach oben">↑</button><button type="button" onclick="moveNavigationItem(\''+key+'\',1)" '+(index===preferences.navigationOrder.length-1?'disabled':'')+' aria-label="'+item.label+' nach unten">↓</button></div></div>';
+  }).join('');
+}
+export function setDashboardWidgetVisibility(key, visible) {
+  if (!DEFAULT_DASHBOARD_ORDER.includes(key)) return;
+  const preferences = getCustomizationPreferences();
+  preferences.dashboardVisibility[key] = visible === true;
+  persistCustomizationPreferences(preferences);
+}
+export function moveDashboardWidget(key, direction) {
+  const preferences = getCustomizationPreferences();
+  const index = preferences.dashboardOrder.indexOf(key), nextIndex = index + Math.sign(Number(direction) || 0);
+  if (index < 0 || nextIndex < 0 || nextIndex >= preferences.dashboardOrder.length) return;
+  [preferences.dashboardOrder[index], preferences.dashboardOrder[nextIndex]] = [preferences.dashboardOrder[nextIndex], preferences.dashboardOrder[index]];
+  persistCustomizationPreferences(preferences);
+}
+export function moveNavigationItem(key, direction) {
+  const preferences = getCustomizationPreferences();
+  const index = preferences.navigationOrder.indexOf(key), nextIndex = index + Math.sign(Number(direction) || 0);
+  if (index < 0 || nextIndex < 0 || nextIndex >= preferences.navigationOrder.length) return;
+  [preferences.navigationOrder[index], preferences.navigationOrder[nextIndex]] = [preferences.navigationOrder[nextIndex], preferences.navigationOrder[index]];
+  persistCustomizationPreferences(preferences);
+}
+export function resetCustomizationPreferences() {
+  persistCustomizationPreferences({
+    dashboardOrder: DEFAULT_DASHBOARD_ORDER.slice(),
+    dashboardVisibility: Object.fromEntries(DEFAULT_DASHBOARD_ORDER.map(key => [key, true])),
+    navigationOrder: DEFAULT_NAVIGATION_ORDER.slice()
+  });
+}
+export function initializeSettings() {
+  renderRows();
+  applyCustomizationPreferences();
+  renderCustomizationSettings();
+}
 let editingCalendarSeasonId = null;
 
 function getCalendarSeasonCollection() {
@@ -300,7 +401,7 @@ export function deleteCalendarSeason(id){
   if(editingCalendarSeasonId===targetId)editingCalendarSeasonId=null;if(state.activeCalendarFormat==='season'&&!nextActive)state.activeCalendarFormat='month';renderCalendarSeasonSettings();refreshAll();
 }
 export function openSettingsModal() {
-  renderRows();renderCalendarSeasonSettings();
+  renderRows();renderCalendarSeasonSettings();renderCustomizationSettings();
   document.getElementById('settings-modal')?.classList.remove('hidden');
 }
 export function closeSettingsModal() { document.getElementById('settings-modal')?.classList.add('hidden'); }

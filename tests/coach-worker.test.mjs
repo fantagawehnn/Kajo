@@ -216,3 +216,35 @@ test('Coach endpoint rejects a missing question and an invalid context shape', a
     const invalidContext = await worker.fetch(validCoachRequest({ question: 'Test', context: [] }), env);
     assert.equal(invalidContext.status, 400);
 });
+
+
+test('Coach system rules enforce glossary, privacy exclusions and incomplete-data limits', async (t) => {
+    let messages = [];
+    const env = authorizedEnv(t, {
+        AI: {
+            run: async (_model, options) => {
+                messages = options.messages;
+                return { response: 'Coach-Antwort' };
+            }
+        }
+    });
+    const response = await worker.fetch(validCoachRequest({
+        question: 'Kannst du mein Gewicht und meinen Zyklus analysieren?',
+        context: {
+            privacy: {
+                excludedFromCoachContext: ['bodyWeight', 'cycleData'],
+                reason: 'privacy_minimization'
+            },
+            dataCoverage: {
+                checkIns: { availableCount: 12, includedCount: 0, excludedFields: ['weight', 'bodyWeight', 'cycle'] }
+            }
+        }
+    }), env);
+
+    assert.equal(response.status, 200);
+    const systemPrompt = messages.filter(item => item.role === 'system').map(item => item.content).join('\n');
+    assert.match(systemPrompt, /Bereitschaft, Fitness, Ermüdung, Form/);
+    assert.match(systemPrompt, /privacy\.excludedFromCoachContext/);
+    assert.match(systemPrompt, /mindestens drei tatsächlich vorhandene/);
+    assert.match(systemPrompt, /Körpergewicht und Zyklusdaten werden nicht an den KI-Coach übermittelt/);
+});

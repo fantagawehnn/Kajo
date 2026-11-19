@@ -12,17 +12,22 @@ import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } fro
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
 const charts=Object.create(null);
-const periodCounts={'7d':7,'28d':28,'3m':90,'6m':180,'1y':365};
+const periodCounts={'7d':7,'28d':28,'30d':30,'42d':42,'3m':90,'6m':180,'1y':365};
 const zoneNames=['Z1','Z2','Z3','Z4','Z5'];
 const zoneColors=['#6DA8F7','#55B6A4','#E5C45B','#E99A55','#D96A78'];
-const colors={ctl:'#6DA8F7',atl:'#D98AB5',tsb:'#A78BFA',volume:'#6D9DCB'};
+const colors={ctl:'#6DA8F7',atl:'#F59E0B',tsb:'#39A96B',volume:'#6D9DCB'};
 const valid=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
 const fmt=value=>valid(value)?Number(value).toLocaleString('de-DE',{maximumFractionDigits:1}):'—';
 const fmtDuration=minutes=>{if(!valid(minutes))return '—';const n=Math.round(Number(minutes));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')+' h';};
 const setText=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value==null?'':String(value);};
 const setVisible=(id,visible)=>document.getElementById(id)?.classList.toggle('hidden',!visible);
 function destroyChart(key){if(charts[key]){charts[key].destroy();delete charts[key];}}
-function chartBase(id,key,config){const canvas=document.getElementById(id);if(!canvas||typeof Chart!=='function')return;destroyChart(key);charts[key]=new Chart(canvas.getContext('2d'),config);}
+function chartBase(id,key,config){
+ const canvas=document.getElementById(id);if(!canvas||typeof Chart!=='function')return;
+ const observed=(config.type==='line'?(config.data?.datasets||[]).flatMap(dataset=>dataset.data||[]):[]).filter(valid).length;
+ if(config.type==='line'&&observed<3){destroyChart(key);canvas.parentElement?.classList.add('hidden');return;}
+ canvas.parentElement?.classList.remove('hidden');destroyChart(key);charts[key]=new Chart(canvas.getContext('2d'),config);
+}
 function todayKey(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function getRange(){
  if(state.activeTimeframe==='custom'){const from=document.getElementById('date-from')?.value,to=document.getElementById('date-to')?.value;if(from&&to&&from<=to)return{from,to};}
@@ -36,7 +41,7 @@ function uniqueActivities(records){
 }
 function allActivities(){const records=uniqueActivities(state.rawActivities);return selectedSport==='all'?records:records.filter(item=>(item.type||'Other')===selectedSport);}
 function selectedActivities(){const range=getRange();return allActivities().filter(item=>{const d=String(item.date).slice(0,10);return d>=range.from&&d<=range.to;});}
-function rangeLabel(){return({'7d':'Letzte 7 Tage','28d':'Letzte 28 Tage','3m':'Letzte 90 Tage','6m':'Letzte 6 Monate','1y':'Letztes Jahr',custom:'Individueller Zeitraum'})[state.activeTimeframe]||'Letzte 90 Tage';}
+function rangeLabel(){return({'7d':'Letzte 7 Tage','28d':'Letzte 28 Tage','30d':'Letzte 30 Tage','42d':'Letzte 42 Tage','3m':'Letzte 90 Tage','6m':'Letzte 6 Monate','1y':'Letztes Jahr',custom:'Individueller Zeitraum'})[state.activeTimeframe]||'Letzte 90 Tage';}
 function updatePeriodControl(){setText('training-load-period-button',rangeLabel()+'⌄');const b=document.getElementById('training-load-period-button');if(b)b.setAttribute('aria-expanded',String(!document.getElementById('training-load-period-menu')?.classList.contains('hidden')));}
 function updateSportOptions(){
  const select=document.getElementById('training-load-sport-filter');if(!select)return;
@@ -71,7 +76,7 @@ function renderRings(timeline){
  const items=[
   {key:'ctl',label:'CTL',value:last?.ctl,detail:'Langfristig',status:valueLevel(last?.ctl,timeline,'ctl')},
   {key:'atl',label:'ATL',value:last?.atl,detail:'Kurzfristig',status:valueLevel(last?.atl,timeline,'atl')},
-  {key:'tsb',label:'TSB',value:last?.tsb,detail:'CTL minus ATL',status:tsbLevel(last?.tsb)}
+  {key:'tsb',label:'Form (TSB)',value:last?.tsb,detail:'CTL minus ATL',status:tsbLevel(last?.tsb)}
  ];
  root.replaceChildren();items.forEach(item=>{
   const card=document.createElement('div');card.className='kajo-load-metric';
@@ -102,17 +107,17 @@ function renderLoadTrend(timeline,activities){
  const labels=timeline.map(row=>new Date(row.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})),textColor='#94a3b8';
  const relativeZones=buildRelativeLoadZones(timeline);
  chartBase('training-load-ctl-atl-chart','ctlAtlChart',{type:'line',plugins:[createZoneBackgroundPlugin(relativeZones)],data:{labels,datasets:[
-  {label:'CTL · langfristig',data:timeline.map(row=>valid(row.ctl)?Number(row.ctl):null),borderColor:colors.ctl,backgroundColor:colors.ctl,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
-  {label:'ATL · kurzfristig',data:timeline.map(row=>valid(row.atl)?Number(row.atl):null),borderColor:colors.atl,backgroundColor:colors.atl,borderWidth:2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false}
+  {label:'Fitness (CTL) · langfristig',data:timeline.map(row=>valid(row.ctl)?Number(row.ctl):null),borderColor:colors.ctl,backgroundColor:colors.ctl,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: true},
+  {label:'Ermüdung (ATL) · kurzfristig',data:timeline.map(row=>valid(row.atl)?Number(row.atl):null),borderColor:colors.atl,backgroundColor:colors.atl,borderWidth:2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: true}
  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:textColor,usePointStyle:true,boxWidth:8}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.y)}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor}}}}});
  const activityByDate=new Map();activities.forEach(item=>{const date=String(item.date).slice(0,10);if(!activityByDate.has(date))activityByDate.set(date,{minutes:0,sessions:0,knownDurationCount:0});const day=activityByDate.get(date);day.sessions++;if(item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0){day.minutes+=Number(item.duration);day.knownDurationCount++;}});
  const measure=volumeMeasure;
  chartBase('training-load-volume-chart','volumeChart',{type:'bar',data:{labels,datasets:[{label:measure==='duration'?'Trainingszeit':'Einheiten',data:timeline.map(row=>{const day=activityByDate.get(row.date);if(!day)return row.dataStatus==='confirmed-rest'?0:null;if(measure==='sessions')return day.sessions;return day.knownDurationCount?Number((day.minutes/60).toFixed(2)):null;}),backgroundColor:colors.volume,borderRadius:3,maxBarThickness:18}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>measure==='duration'?fmt(item.parsed.y)+' h':fmt(item.parsed.y)+' Einheiten'}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:measure==='duration'?'Stunden pro Tag':'Einheiten pro Tag',color:textColor}}}}});
  const tsbZoneConfig=buildTsbZones(timeline);
  chartBase('training-load-tsb-chart','tsbChart',{type:'line',plugins:[createZoneBackgroundPlugin(tsbZoneConfig.zones)],data:{labels,datasets:[
-  {label:'TSB',data:timeline.map(row=>valid(row.tsb)?Number(row.tsb):null),borderColor:colors.tsb,backgroundColor:colors.tsb,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
+  {label:'TSB',data:timeline.map(row=>valid(row.tsb)?Number(row.tsb):null),borderColor:colors.tsb,backgroundColor:colors.tsb,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: true},
   {label:'Nulllinie',data:timeline.map(row=>valid(row.tsb)?0:null),borderColor:'rgba(148,163,184,.6)',borderWidth:1,borderDash:[5,4],pointRadius:0,pointHitRadius:0,tension:0}
- ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'TSB: '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{min:tsbZoneConfig.min,max:tsbZoneConfig.max,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'TSB · CTL minus ATL',color:textColor}}}}});
+ ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'Form: '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{min:tsbZoneConfig.min,max:tsbZoneConfig.max,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'Form · Fitness minus Ermüdung',color:textColor}}}}});
  const has=timeline.some(row=>valid(row.ctl)||valid(row.atl)||valid(row.tsb));setText('training-load-trend-note',has?'Die farbigen Hintergrundzonen ordnen CTL/ATL relativ zum gewählten Zeitraum und TSB anhand der Grundlagen-/Aufbau-Orientierungsbereiche ein. Tage ohne bestätigte Datenabdeckung bleiben Lücken und werden nicht als trainingsfrei interpretiert.':'Für den gewählten Zeitraum liegt kein durchgängiger, berechenbarer CTL-/ATL-/TSB-Verlauf vor.');
 }
 function modelKeys(){return selectedModel==='compare'?['kajo','edwards']:[selectedModel];}
@@ -236,12 +241,12 @@ export function setTrainingLoadPeriod(period){
   const current=getRange(),from=document.getElementById('date-from'),to=document.getElementById('date-to');
   if(from&&(!wasCustom||!from.value))from.value=current.from;
   if(to&&(!wasCustom||!to.value))to.value=current.to;
-  state.activeTimeframe='custom';state.metricHistoryRange='custom';
+  state.activeTimeframe='custom';state.activeTimeframeExplicit=true;state.metricHistoryRange='custom';state.metricHistoryRangeExplicit=true;
   document.getElementById('custom-date-box')?.classList.remove('hidden');
   renderTrainingLoadView();
   return;
  }
- if(!['7d','28d','3m','6m','1y'].includes(period))return;
+ if(!['7d','28d','30d','42d','3m','6m','1y'].includes(period))return;
  if(typeof window.setTimeframe==='function')window.setTimeframe(period);
  else {state.activeTimeframe=period;renderTrainingLoadView();}
 }
