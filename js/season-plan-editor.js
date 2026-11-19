@@ -243,11 +243,13 @@ export function reviewApprovedWeeklyPlan(weekStartDate) {
     const title = byId('adaptive-week-review-title');
     if (title) title.textContent = 'Wochenabgleich · ' + review.weekStartDate + ' bis ' + review.weekEndDate;
     const summary = byId('adaptive-week-review-summary');
-    if (summary) summary.textContent = review.coverage.matchedCount + ' eindeutig zugeordnet · ' + review.coverage.ambiguousCount + ' unklar · ' + review.coverage.unconfirmedPastPlanCount + ' vergangene Einheiten ohne Zuordnung · ' + review.coverage.unplannedActivityCount + ' zusätzliche/ungeklärte Aktivitäten · ' + review.coverage.upcomingCount + ' kommende Einheiten';
+    if (summary) summary.textContent = review.coverage.matchedCount + ' eindeutig zugeordnet · ' + review.coverage.ambiguousCount + ' unklar · ' + review.coverage.completedWithoutActivityCount + ' absolviert (nicht importiert) · ' + review.coverage.missedCount + ' ausgefallen · ' + review.coverage.unconfirmedPastPlanCount + ' ungeklärte vergangene Einheiten · ' + review.coverage.unplannedActivityCount + ' zusätzliche/ungeklärte Aktivitäten · ' + review.coverage.upcomingCount + ' kommende Einheiten';
     const details = byId('adaptive-week-review-details');
     if (details) {
         const rows = [
             ...review.matched.map(item => '<p>✓ ' + escape(item.planned.date) + ' · ' + escape(item.planned.name) + ' – ' + (item.matchType === 'manual' ? 'manuell' : 'automatisch') + ' zugeordnet</p>'),
+            ...review.completedWithoutActivity.map(item => '<p>✓ ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – von dir als absolviert (nicht importiert) markiert</p>'),
+            ...review.missed.map(item => '<p>× ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – von dir als ausgefallen markiert</p>'),
             ...review.ambiguous.map(item => '<p>! ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – Zuordnung unklar</p>'),
             ...review.unmatchedPlanned.map(item => '<p>· ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – ' + escape(item.reason) + '</p>'),
             ...review.unplannedActivities.map(item => '<p>+ ' + escape(item.activity.date) + ' · ' + escape(item.activity.name || item.activity.type || 'Aktivität') + ' – ' + escape(item.reason) + '</p>'),
@@ -270,64 +272,72 @@ function renderManualActivityLinks(plan, review) {
     const root = byId('adaptive-week-manual-links');
     if (!root) return;
     const linked = new Map((plan.manualActivityLinks || []).map(link => [String(link.sessionId), String(link.activityId)]));
+    const statuses = new Map((plan.manualSessionStatuses || []).map(entry => [String(entry.sessionId), entry.status]));
     const actual = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity =>
         typeof activity?.date === 'string' && activity.date.slice(0, 10) >= plan.weekStartDate
         && activity.date.slice(0, 10) <= plan.weekEndDate && activity.id != null
     );
     const openSessions = [...review.ambiguous.map(item => item.session), ...review.unmatchedPlanned.map(item => item.session)];
-    const manualSessions = review.matched.filter(item => item.matchType === 'manual').map(item => item.planned);
-    const visible = [...new Map([...manualSessions, ...openSessions].map(session => [session.id, session])).values()];
+    const statusSessions = review.manualStatuses.map(item => item.session);
+    const visible = [...new Map([...statusSessions, ...openSessions].map(session => [session.id, session])).values()];
     if (!visible.length) {
-        root.innerHTML = '<p class="text-[10px] text-slate-500">Keine offenen Zuordnungen.</p>';
+        root.innerHTML = '<p class="text-[10px] text-slate-500">Keine offenen Zuordnungen oder Statusangaben.</p>';
         return;
     }
     root.innerHTML = visible.map(session => {
-        const currentId = linked.get(String(session.id)) || '';
+        const sessionId = String(session.id);
+        const currentId = linked.get(sessionId) || '';
+        const currentStatus = statuses.get(sessionId) || '';
         const options = actual.filter(activity => activity.date.slice(0, 10) === session.date).map(activity => {
             const id = String(activity.id);
-            const usedByOther = [...linked.entries()].some(([otherSession, otherActivity]) => otherActivity === id && otherSession !== String(session.id));
+            const usedByOther = [...linked.entries()].some(([otherSession, otherActivity]) => otherActivity === id && otherSession !== sessionId);
             const label = [activity.name || activity.type || 'Aktivität', activity.date.slice(11,16), activity.type].filter(Boolean).join(' · ');
             return '<option value="' + escape(id) + '"' + (currentId === id ? ' selected' : '') + (usedByOther ? ' disabled' : '') + '>' + escape(label) + (usedByOther ? ' (bereits zugeordnet)' : '') + '</option>';
         }).join('');
-        return '<label class="block rounded-lg border border-slate-800 p-2 space-y-1"><span class="block text-[11px] text-slate-300">' + escape(session.date) + ' · ' + escape(session.name) + '</span><select data-manual-session-id="' + escape(session.id) + '" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"><option value="">Keine manuelle Zuordnung</option>' + options + '</select></label>';
+        const disabled = currentStatus ? ' disabled' : '';
+        return '<article class="rounded-lg border border-slate-800 p-2 space-y-2"><span class="block text-[11px] text-slate-300">' + escape(session.date) + ' · ' + escape(session.name) + '</span>' +
+            '<label class="block text-[10px] text-slate-500">Status <select data-manual-status-session-id="' + escape(sessionId) + '" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"><option value="">Noch offen / nicht sicher</option><option value="completed_unrecorded"' + (currentStatus === 'completed_unrecorded' ? ' selected' : '') + '>Absolviert, aber nicht importiert</option><option value="missed"' + (currentStatus === 'missed' ? ' selected' : '') + '>Ausgefallen</option></select></label>' +
+            '<label class="block text-[10px] text-slate-500">Importierte Aktivität zuordnen <select data-manual-session-id="' + escape(sessionId) + '" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"' + disabled + '><option value="">Keine manuelle Zuordnung</option>' + options + '</select></label></article>';
     }).join('');
     root.querySelectorAll('select[data-manual-session-id]').forEach(select =>
         select.addEventListener('change', () => setManualActivityLink(select.dataset.manualSessionId, select.value))
     );
+    root.querySelectorAll('select[data-manual-status-session-id]').forEach(select =>
+        select.addEventListener('change', () => setManualSessionStatus(select.dataset.manualStatusSessionId, select.value))
+    );
 }
 
-export function setManualActivityLink(sessionId, activityId) {
+export function setManualSessionStatus(sessionId, status) {
     if (!activeAdaptiveWeekStartDate || !sessionId) return false;
     const current = normalizeSeasonPlan(state.seasonPlan);
     const plan = current?.weeklyPlans.find(item => item.weekStartDate === activeAdaptiveWeekStartDate);
     if (!current || !plan || !['approved', 'completed'].includes(plan.status)) return false;
     const session = plan.sessions.find(item => item.id === sessionId);
-    if (!session) return false;
-    const previousSeasonPlan = state.seasonPlan;
-    const links = (plan.manualActivityLinks || []).filter(link => link.sessionId !== sessionId);
-    if (activityId) {
-        const duplicate = links.some(link => link.activityId === String(activityId));
-        const activity = (Array.isArray(state.rawActivities) ? state.rawActivities : []).find(item => String(item?.id ?? '') === String(activityId));
-        if (duplicate || !activity || String(activity.date || '').slice(0, 10) !== session.date) {
-            const message = byId('season-plan-message');
-            if (message) message.textContent = duplicate ? 'Diese Aktivität ist bereits einer anderen Einheit zugeordnet.' : 'Die Aktivität muss vorhanden sein und am selben Tag liegen.';
-            reviewApprovedWeeklyPlan(activeAdaptiveWeekStartDate);
-            return false;
-        }
-        links.push({ sessionId, activityId: String(activityId) });
+    const now = new Date();
+    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    if (!session || session.date > today || !['', 'completed_unrecorded', 'missed'].includes(status)) {
+        const message = byId('season-plan-message');
+        if (message) message.textContent = 'Statusangaben sind nur für vergangene oder heutige Einheiten möglich.';
+        return false;
     }
-    const nextPlan = { ...plan, manualActivityLinks: links, updatedAt: new Date().toISOString() };
+    const previousSeasonPlan = state.seasonPlan;
+    const statuses = (plan.manualSessionStatuses || []).filter(entry => entry.sessionId !== sessionId);
+    if (status) statuses.push({ sessionId, status, updatedAt: new Date().toISOString() });
+    const links = (plan.manualActivityLinks || []).filter(link => link.sessionId !== sessionId);
+    const nextPlan = { ...plan, manualSessionStatuses: statuses, manualActivityLinks: links, updatedAt: new Date().toISOString() };
     state.seasonPlan = { ...current, weeklyPlans: current.weeklyPlans.map(item => item.id === plan.id ? nextPlan : item), updatedAt: new Date().toISOString() };
     if (!saveDataToLocalStorage()) {
         state.seasonPlan = previousSeasonPlan;
         const message = byId('season-plan-message');
-        if (message) message.textContent = 'Die Zuordnung konnte nicht gespeichert werden.';
+        if (message) message.textContent = 'Die Statusangabe konnte nicht gespeichert werden.';
         return false;
     }
     pendingAdaptiveProposal = null;
     reviewApprovedWeeklyPlan(activeAdaptiveWeekStartDate);
     const message = byId('season-plan-message');
-    if (message) message.textContent = activityId ? 'Aktivität manuell zugeordnet.' : 'Manuelle Zuordnung aufgehoben.';
+    if (message) message.textContent = status === 'completed_unrecorded'
+        ? 'Einheit als absolviert (nicht importiert) markiert.'
+        : status === 'missed' ? 'Einheit als ausgefallen markiert.' : 'Manuelle Statusangabe aufgehoben.';
     return true;
 }
 
