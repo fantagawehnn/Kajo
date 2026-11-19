@@ -139,34 +139,49 @@ function renderCoverage(analysis,activities=[]){
  setText('training-load-coverage','Garmin-Aktivitäten: '+c.garminActivityCount+' · KAJO berechenbar: '+c.activitiesWithKajoZones+' · Edwards berechenbar: '+c.activitiesWithEdwards+(estimatedCount?' · manuell geschätzt: '+estimatedCount:'')+(c.activitiesWithoutUsableAdaptiveRhr?' · KAJO ohne adaptive Ruhe-HF: '+c.activitiesWithoutUsableAdaptiveRhr:'')+(c.activitiesWithoutUsableEdwardsMaxHr?' · Edwards ohne gültige HFmax: '+c.activitiesWithoutUsableEdwardsMaxHr:''));
  const maxHr=Number(state.profile?.maxHr);setText('training-load-edwards-maxhr-note',Number.isFinite(maxHr)&&maxHr>=100&&maxHr<=240?'HFmax '+maxHr+' bpm aus deinem Athletenprofil.':'Für Edwards ist eine gültige HFmax im Athletenprofil erforderlich.');
 }
-function renderEstimatedLoadQueue(activities){
+function renderEstimatedLoadQueue(){
  const node=document.getElementById('training-load-estimated-load-list');if(!node)return;node.replaceChildren();
- const missing=activities.filter(activity=>isGarminActivity(activity)
-  && !calculateGarminZoneLoad(activity,state.settings||{},state.profile||{},state.dailyCheckins||{}));
- setText('training-load-estimated-load-count',missing.length+' Aktivitäten ohne berechenbaren HF-Zonenload');
- if(!missing.length){const empty=document.createElement('p');empty.className='text-xs text-slate-500';empty.textContent='Im ausgewählten Zeitraum gibt es keine Garmin-Aktivitäten mit fehlendem HF-Zonenload.';node.appendChild(empty);return;}
- missing.sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(activity=>{
-  const row=document.createElement('div');row.className='flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 py-3';
-  const info=document.createElement('div');info.className='min-w-0 flex-1';
-  const title=document.createElement('strong');title.className='block text-xs text-slate-200';title.textContent=String(activity.date).slice(0,10)+' · '+(activity.name||activity.type||'Training');
+ // Die Aufgabenliste ist bewusst unabhängig von Zeitraum, Sportfilter und den letzten
+ // zwölf berechneten Einheiten: Sie soll alle offenen Garmin-Aktivitäten aufführen.
+ const missing=uniqueActivities(state.rawActivities).filter(activity=>
+  isGarminActivity(activity)
+  && !calculateGarminZoneLoad(activity,state.settings||{},state.profile||{},state.dailyCheckins||{})
+  && !(activity.manualTrainingLoadEstimate?.source==='manual-estimate'
+    && Number.isFinite(Number(activity.manualTrainingLoadEstimate.value))
+    && Number(activity.manualTrainingLoadEstimate.value)>0)
+ );
+ missing.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ setText('training-load-estimated-load-count',missing.length+' offene Aktivitäten');
+ if(!missing.length){const empty=document.createElement('p');empty.className='text-xs text-slate-500';empty.textContent='Keine offenen Aktivitäten ohne berechenbaren HF-Zonenload.';node.appendChild(empty);return;}
+ missing.forEach(activity=>{
+  const item=document.createElement('div');item.className='border-b border-slate-800 py-2';
+  const open=document.createElement('button');open.type='button';open.className='flex w-full items-center justify-between gap-3 py-2 text-left';open.setAttribute('aria-expanded','false');
+  const info=document.createElement('span');info.className='min-w-0 flex-1';
+  const title=document.createElement('strong');title.className='block text-xs text-slate-200';title.textContent=String(activity.date||'').slice(0,10)+' · '+(activity.name||activity.type||'Training');
   const reason=document.createElement('span');reason.className='block text-[11px] text-slate-500';
   const hasHr=Boolean(getGarminHeartRateSeries(activity));
-  reason.textContent=hasHr?'HF-Daten vorhanden, aber kein berechenbarer Zonenload (z. B. fehlende Zonenbasis oder Datenlücken).':'Keine auswertbare Herzfrequenz-Zeitreihe – möglicher Sensor-/Brustgurt-Aussetzer.';
+  reason.textContent=hasHr?'HF-Daten vorhanden, aber kein berechenbarer HF-Zonenload.':'Keine auswertbare Herzfrequenz-Zeitreihe vorhanden.';
   info.append(title,reason);
-  const controls=document.createElement('div');controls.className='flex items-center gap-2';
-  const input=document.createElement('input');input.type='number';input.min='0.1';input.max='10000';input.step='0.1';input.inputMode='decimal';input.className='w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-white';input.setAttribute('aria-label','Geschätzter KAJO-Load in Punkten');
-  const existing=activity.manualTrainingLoadEstimate;
-  input.value=existing?.source==='manual-estimate'&&Number.isFinite(Number(existing.value))?String(existing.value):'';
-  input.placeholder='Punkte';
-  const save=document.createElement('button');save.type='button';save.className='rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white';save.textContent=input.value?'Aktualisieren':'Speichern';
+  const affordance=document.createElement('span');affordance.className='text-xs text-sky-300';affordance.textContent='Load eintragen  ›';
+  open.append(info,affordance);
+  const editor=document.createElement('div');editor.className='hidden rounded-lg bg-slate-900/70 p-3';
+  const label=document.createElement('label');label.className='mb-2 block text-xs text-slate-300';label.textContent='Geschätzter KAJO-Load in Punkten';
+  const controls=document.createElement('div');controls.className='flex flex-wrap items-center gap-2';
+  const input=document.createElement('input');input.type='number';input.min='0.1';input.max='10000';input.step='0.1';input.inputMode='decimal';input.className='w-28 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white';input.placeholder='z. B. 65';input.setAttribute('aria-label','Geschätzter KAJO-Load in Punkten');
+  const save=document.createElement('button');save.type='button';save.className='rounded-lg bg-sky-700 px-4 py-2 text-xs font-semibold text-white';save.textContent='Speichern';
+  const cancel=document.createElement('button');cancel.type='button';cancel.className='rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300';cancel.textContent='Abbrechen';
+  const feedback=document.createElement('p');feedback.className='mt-2 text-xs text-rose-300';feedback.setAttribute('aria-live','polite');
+  label.appendChild(input);controls.append(save,cancel);editor.append(label,controls,feedback);
+  open.addEventListener('click',()=>{const expanded=editor.classList.toggle('hidden')===false;open.setAttribute('aria-expanded',String(expanded));affordance.textContent=expanded?'Schließen  ⌃':'Load eintragen  ›';if(expanded)input.focus();});
+  cancel.addEventListener('click',()=>{editor.classList.add('hidden');open.setAttribute('aria-expanded','false');affordance.textContent='Load eintragen  ›';});
   save.addEventListener('click',()=>{
    const raw=input.value.trim(),value=Number(raw);
-   if(!raw||!Number.isFinite(value)||value<=0||value>10000){input.focus();return;}
+   if(!raw||!Number.isFinite(value)||value<=0||value>10000){feedback.textContent='Bitte einen Wert zwischen 0,1 und 10.000 Punkten eingeben.';input.focus();return;}
    activity.manualTrainingLoadEstimate={value:Number(value.toFixed(1)),source:'manual-estimate',unit:'KAJO-HF-Punkte',estimatedAt:new Date().toISOString()};
-   saveDataToLocalStorage();
+   if(saveDataToLocalStorage()===false){delete activity.manualTrainingLoadEstimate;feedback.textContent='Der Wert konnte nicht gespeichert werden. Bitte prüfe deinen Datenspeicher.';return;}
    refreshAll();
   });
-  controls.append(input,save);row.append(info,controls);node.appendChild(row);
+  item.append(open,editor);node.appendChild(item);
  });
 }
 function renderActivityList(analysis){
@@ -205,7 +220,7 @@ export function renderTrainingLoadView(){
  updateSportOptions();updatePeriodControl();const range=getRange(),activities=selectedActivities(),timeline=selectedTimeline();
  renderRings(timeline);renderVolumeSummary(activities,range);renderLoadTrend(timeline,activities);
  const analysis=getHeartRateZoneAnalysis(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
- renderCoverage(analysis,activities);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue(activities);
+ renderCoverage(analysis,activities);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue();
  const hasZones=modelKeys().some(key=>analysis[key].daily.length>0);setVisible('training-load-no-data',!hasZones);setVisible('training-load-zone-analysis',hasZones);
  const note=document.getElementById('training-load-zone-method-note');
  if(note)note.textContent=selectedModel==='compare'?'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO nutzt adaptive HF-Reserve-Zonen; Edwards feste Prozentbereiche der HFmax. Werte nicht als identische Zonen vergleichen.':selectedModel==='edwards'?'Edwards verwendet feste Prozentbereiche der HFmax. Zeit unter 50 % HFmax wird nicht einer Zone zugeordnet.':'KAJO verwendet adaptive HF-Reserve-Zonen mit einer Ruhe-HF-Basis aus dem konfigurierten Rückblick; ein Profil-Fallback ist als eingeschränkte Datenbasis zu verstehen.';
