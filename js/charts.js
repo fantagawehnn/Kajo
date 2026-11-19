@@ -19,6 +19,15 @@ import { getValidatedElapsedTimeAxis } from './performance-data-quality.js';
    touchmove aktualisiert onHover kontinuierlich beim Verschieben des Fingers. */
 if (typeof Chart !== 'undefined' && Chart.defaults) {
     Chart.defaults.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'];
+    // Connect observed values across missing days without inventing data points.
+    // The bridged segment is visibly lighter and dashed to preserve uncertainty.
+    if (Chart.defaults.datasets?.line) {
+        Chart.defaults.datasets.line.spanGaps = true;
+        Chart.defaults.datasets.line.segment = {
+            borderColor: context => context.p0.skip || context.p1.skip ? 'rgba(148,163,184,.58)' : context.dataset.borderColor,
+            borderDash: context => context.p0.skip || context.p1.skip ? [5, 4] : undefined
+        };
+    }
 }
 
 
@@ -972,7 +981,7 @@ export function renderActivityTelemetryChart(act) {
         pointRadius: 0,
         pointHoverRadius: 4,
         tension: .18,
-        spanGaps: false,
+        spanGaps: true,
         fill: false
     }));
     const updateReadout = (chart, elements) => {
