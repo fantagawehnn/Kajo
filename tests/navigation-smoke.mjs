@@ -80,7 +80,7 @@ assert.ok(html.includes('id="health-event-list"'), 'Health event list exists');
 assert.ok(main.includes("renderHomeTrainingWeek()"), 'weekly training grid is rendered');
 assert.ok(main.includes("view !== 'analyses' || sub !== id"), 'analysis subpages are switched independently');
 assert.ok(main.includes("parent === 'plan' && sub === 'calendar'"), 'calendar view is part of Plan');
-assert.ok(main.includes("parent === 'ich'"), 'personal pages are routed under Ich');
+assert.ok(main.includes("profile: { parent: 'ich'") && main.includes("ai: { parent: 'ich'"), 'profile and AI coach routes belong to Ich');
 assert.ok(html.includes('id="plan-subnav-planning"') && html.includes('id="plan-subnav-competitions"'), 'Plan contains training planning and competitions');
 assert.ok(css.includes('#app-navigation #nav-plan') && css.includes('#app-navigation #nav-ich'), 'new primary navigation IDs are included in responsive desktop styles');
 assert.ok(html.includes('<h1>Ich</h1>') && html.includes("onclick=\"openCoach()\""), 'Ich exposes profile and AI coach');
