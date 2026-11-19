@@ -144,7 +144,7 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
                 loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
                 dataStatus: dayStatus, ctl: ctlDisplay, atl: atlDisplay,
                 tsb: Number(form.toFixed(1)), formPct: formPct === null ? null : Number(formPct.toFixed(1)),
-                acwr: null, statusLabel: 'Vorläufig · Tagesabdeckung unbestätigt', isProvisional: true
+                acwr: null, statusLabel: segmentHasEstimatedLoad ? 'Vorläufig · enthält manuelle Load-Schätzung' : 'Vorläufig · Tagesabdeckung unbestätigt', estimatedLoadCount: estimatedLoadCountByDate[dateStr] || 0, isProvisional: true
             });
             continue;
         }
