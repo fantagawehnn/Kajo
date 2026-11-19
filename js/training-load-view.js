@@ -108,7 +108,7 @@ function renderLoadTrend(timeline,activities){
   const display=item.mode==='daily'?carryForwardForDisplay(item.values):{values:item.values,carried:item.values.map(()=>false)};
   return {
    type:item.chartType,label:item.label,data:display.values,rawValues:item.values,sampleCounts:item.counts,carried:display.carried,
-   borderColor:item.color,backgroundColor:item.chartType==='bar'?item.color+'99':item.color,
+   borderColor:item.color,backgroundColor:item.chartType==='bar'?item.color+'99':item.color,displayValues:display.values,
    borderWidth:item.chartType==='bar'?0:2.2,borderRadius:4,barThickness:item.chartType==='bar'?12:undefined,
    tension:.22,pointRadius:0,pointHitRadius:8,spanGaps:true,
    segment:item.chartType==='line'?{
@@ -130,16 +130,17 @@ function renderLoadTrend(timeline,activities){
     day?.dataStatus==='confirmed-rest'?'Synchronisierter Ruhetag (Load = 0)':day?.dataStatus==='unknown'?'Datenabdeckung nicht bestätigt':'',
     day?.statusLabel||''
    ].filter(Boolean);
-   showChartSummaryReadout(document.getElementById('training-load-ctl-atl-chart'),chart,point.index,{
-    title:dataset.label,unit:'Punkte',datasetIndex:point.datasetIndex
-   });
    const canvas=document.getElementById('training-load-ctl-atl-chart');
-   if(canvas&&details.length){const node=canvas.parentElement?.nextElementSibling;if(node?.classList.contains('kajo-chart-point-readout')){const detail=document.createElement('span');detail.className='kajo-chart-point-detail';detail.textContent=details.join(' · ');node.appendChild(detail);}}
+   const value=valid(raw)?raw:dataset.displayValues?.[point.index];
+   if(!valid(raw)&&dataset.carried?.[point.index])details.push('Letzter bekannter Wert nur zur Darstellung fortgeführt');
+   showChartSummaryReadout(canvas,{title:dataset.label,time:labels[point.index]||'',items:[{label:'Wert',value,unit:'Punkte'}],details});
   },
   plugins:{legend:{display:true,labels:{color:textColor,usePointStyle:true,boxWidth:8}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.y)}}},
   scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor}}}
  };
- chartBase('training-load-ctl-atl-chart','ctlAtlChart',{type:'line',plugins:adaptive.mode==='daily'?[createZoneBackgroundPlugin(buildRelativeLoadZones(timeline))]:[],data:{labels,datasets},options:lineOptions});
+ const ctlCanvas=document.getElementById('training-load-ctl-atl-chart');
+ if(ctlCanvas)ctlCanvas.hidden=!datasets.length;
+ if(datasets.length)chartBase('training-load-ctl-atl-chart','ctlAtlChart',{type:'line',plugins:adaptive.mode==='daily'?[createZoneBackgroundPlugin(buildRelativeLoadZones(timeline))]:[],data:{labels,datasets},options:lineOptions});else destroyChart('ctlAtlChart');
  const activityByDate=new Map();activities.forEach(item=>{const date=String(item.date).slice(0,10);if(!activityByDate.has(date))activityByDate.set(date,{minutes:0,sessions:0,knownDurationCount:0});const day=activityByDate.get(date);day.sessions++;if(item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0){day.minutes+=Number(item.duration);day.knownDurationCount++;}});
  const measure=volumeMeasure;
  chartBase('training-load-volume-chart','volumeChart',{type:'bar',data:{labels:timeline.map(row=>new Date(row.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})),datasets:[{label:measure==='duration'?'Trainingszeit':'Einheiten',data:timeline.map(row=>{const day=activityByDate.get(row.date);if(!day)return row.dataStatus==='confirmed-rest'?0:null;if(measure==='sessions')return day.sessions;return day.knownDurationCount?Number((day.minutes/60).toFixed(2)):null;}),backgroundColor:colors.volume,borderRadius:3,maxBarThickness:18}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>measure==='duration'?fmt(item.parsed.y)+' h':fmt(item.parsed.y)+' Einheiten'}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:measure==='duration'?'Stunden pro Tag':'Einheiten pro Tag',color:textColor}}}}});
@@ -152,7 +153,9 @@ function renderLoadTrend(timeline,activities){
    segment:{borderDash:context=>{const a=Math.min(context.p0DataIndex??0,context.p1DataIndex??0),b=Math.max(context.p0DataIndex??0,context.p1DataIndex??0);return tsbDisplay.carried.slice(a,b+1).some(Boolean)?[4,3]:undefined;},borderColor:context=>{const a=Math.min(context.p0DataIndex??0,context.p1DataIndex??0),b=Math.max(context.p0DataIndex??0,context.p1DataIndex??0);return tsbDisplay.carried.slice(a,b+1).some(Boolean)?'rgba(148,163,184,.72)':undefined;}}},
   {type:'line',label:'Nulllinie',data:tsbLabels.map(()=>0),borderColor:'rgba(148,163,184,.6)',borderWidth:1,borderDash:[5,4],pointRadius:0,pointHitRadius:0,tension:0}
  ]:[];
- chartBase('training-load-tsb-chart','tsbChart',{type:tsbSeries?.chartType||'line',data:{labels:tsbLabels,datasets:tsbDatasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'Form (TSB): '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'TSB · CTL minus ATL',color:textColor}}}}});
+ const tsbCanvas=document.getElementById('training-load-tsb-chart');
+ if(tsbCanvas)tsbCanvas.hidden=!tsbSeries?.available;
+ if(tsbSeries?.available)chartBase('training-load-tsb-chart','tsbChart',{type:tsbSeries.chartType,data:{labels:tsbLabels,datasets:tsbDatasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'Form (TSB): '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'TSB · CTL minus ATL',color:textColor}}}}});else destroyChart('tsbChart');
  const has=datasets.length>0||tsbDatasets.length>0;
  setText('training-load-trend-note',has
   ?(adaptive.mode==='daily'?'Tageswerte: mindestens 70 % Abdeckung je Reihe.':'Geringere Tagesabdeckung: Wochenmittelwerte; seltene Messreihen als Wochenbalken.')+' Fehlende Tage werden in Linien ausschließlich als dezente gestrichelte Fortschreibung des letzten bekannten Werts gezeigt. Die Berechnungswerte und Datenbasis bleiben unverändert. Bestätigte Ruhetage werden weiterhin mit Load = 0 abgebildet; unbekannte Tage nicht.'
