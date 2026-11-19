@@ -105,3 +105,34 @@ test('removing a manual link returns activity to automatic matching', () => {
     assert.equal(review.matched.length, 1);
     assert.equal(review.matched[0].matchType, 'automatic');
 });
+
+test('manual completed-without-import and missed statuses are distinct and remove sessions from unresolved list', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        manualSessionStatuses: [
+            { sessionId: 'p1', status: 'completed_unrecorded' },
+            { sessionId: 'p2', status: 'missed' },
+            { sessionId: 'p4', status: 'missed' }
+        ]
+    }, [], '2026-11-19');
+    assert.equal(review.completedWithoutActivity.length, 1);
+    assert.equal(review.completedWithoutActivity[0].session.id, 'p1');
+    assert.equal(review.missed.length, 1);
+    assert.equal(review.missed[0].session.id, 'p2');
+    assert.equal(review.unmatchedPlanned.length, 0);
+    assert.equal(review.upcoming.length, 1);
+    assert.equal(review.upcoming[0].id, 'p4');
+});
+
+test('manual statuses do not override matched activities and invalid status values are ignored', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        manualSessionStatuses: [
+            { sessionId: 'p1', status: 'missed' },
+            { sessionId: 'p2', status: 'unknown' }
+        ]
+    }, [{ id: 'a1', date: '2026-11-16', type: 'Kayaking' }], '2026-11-19');
+    assert.equal(review.matched.length, 1);
+    assert.equal(review.completedWithoutActivity.length, 0);
+    assert.equal(review.missed.length, 1);
+});
