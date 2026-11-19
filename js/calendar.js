@@ -3,6 +3,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
+import { getVisiblePlannedActivities } from './calendar-display-data.js';
 import { getActivityGroupMembers, getVisibleActivities } from './activity-groups.js?v=1';
 import { getTrainingLoadData } from './training-load.js?v=5';
 import { getGarminTelemetry } from './data-source.js';
@@ -72,7 +73,7 @@ function dayActivitySummary(dateStr){
  if(ready.score!==null){const tone=ready.score>=80?'text-green-300 bg-green-950/40':ready.score>=60?'text-yellow-300 bg-yellow-950/40':ready.score>=40?'text-orange-300 bg-orange-950/40':ready.score>=20?'text-red-300 bg-red-950/40':'text-purple-300 bg-purple-950/40';out.push('<div class="rounded-lg p-2 '+tone+'"><b>Readiness:</b> '+ready.score+'/100 · objektiv '+(ready.objectiveScore??'—')+' · subjektiv '+(ready.subjectiveScore??'—')+'</div>');}
  if(metrics)out.push('<div class="bg-sky-950/40 rounded-lg p-2 text-sky-300"><b>Belastungskennzahlen:</b> CTL '+metrics.ctl+' · ATL '+metrics.atl+' · TSB '+metrics.tsb+' · ACWR '+(metrics.acwr??'—')+'</div>');
  state.rawActivities.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Aktivität:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · '+(a.distance==null?'—':formatKm(a.distance))+' km · '+(a.hr??'—')+' bpm · '+(a.tss??'—')+' Load'+(a.perceivedEffort!=null?' · Empfinden '+a.perceivedEffort+'/10':'')+' · sRPE '+(a.sRpeLoad??'—')+'</div>'));
- state.plannedActivities.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Geplant:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · Ziel '+(a.targetTss??'—')+' Load</div>'));
+ getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Geplant:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · Ziel '+(a.targetTss??'—')+' Load</div>'));
  state.races.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Wettkampf:</b> '+escapeHtml(a.name)+' · Rang '+escapeHtml(a.prio||'—')+'</div>'));
  state.strengthLogs.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Kraft:</b> '+escapeHtml(a.exercise)+' · '+a.sets+' × '+a.reps+' · '+a.weight+' kg · RPE '+a.rpe+'</div>'));
  return out.length?out.join(''):'<span class="text-slate-500">Keine Aktivitäten oder Einheiten erfasst.</span>';
@@ -196,7 +197,7 @@ function calendarEventIcons(date) {
 }
 function calendarDateData(date) {
     const activities = getVisibleActivities((state.rawActivities || []).filter(item => item.date === date));
-    const planned = (state.plannedActivities || []).filter(item => item.date === date);
+    const planned = getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).filter(item => item.date === date);
     const races = (state.races || []).filter(item => item.date === date);
     const durationRecords = activities.filter(item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) > 0);
     const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
@@ -579,7 +580,7 @@ function renderCalendarLegend() {
 
     const prefix = state.currentCalendarDate.getFullYear() + '-' + String(state.currentCalendarDate.getMonth() + 1).padStart(2, '0') + '-';
     const activities = (state.rawActivities || []).filter(item => String(item.date || '').startsWith(prefix));
-    const planned = (state.plannedActivities || []).filter(item => String(item.date || '').startsWith(prefix));
+    const planned = getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).filter(item => String(item.date || '').startsWith(prefix));
     const dates = [];
     for (let day = 1; day <= new Date(state.currentCalendarDate.getFullYear(), state.currentCalendarDate.getMonth() + 1, 0).getDate(); day++) {
         dates.push(prefix + String(day).padStart(2, '0'));
@@ -686,7 +687,7 @@ function renderSeasonView(){
     const root=document.getElementById('cal-format-season'),season=calendarSeason();if(!root||!season)return;
     const from=season.start,to=season.end,events=new Map();
     const add=(date,type,item)=>{if(!date||date<from||date>to||!type)return;const list=events.get(date)||[];list.push({type,item});events.set(date,list);};
-    (state.rawActivities||[]).forEach(x=>add(x.date,'activity',x));(state.plannedActivities||[]).forEach(x=>add(x.date,'planned',x));(state.races||[]).forEach(x=>add(x.date,'race',x));
+    (state.rawActivities||[]).forEach(x=>add(x.date,'activity',x));getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).forEach(x=>add(x.date,'planned',x));(state.races||[]).forEach(x=>add(x.date,'race',x));
     Object.entries(state.healthLogs||{}).forEach(([date,x])=>add(date,x.status==='sick'?'sick':x.status==='injured'?'injured':null,x));
     Object.entries(state.dailyCheckins||{}).forEach(([date,x])=>{if(x.cycle?.period===true)add(date,'period',x);});
     if(state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true){const cursor=new Date(from+'T12:00:00'),last=new Date(to+'T12:00:00');for(;cursor<=last;cursor.setDate(cursor.getDate()+1)){const date=toLocalDateString(cursor);if(periodCalendarMarker(date).includes('geschätzt'))add(date,'period-predicted',{});}}
@@ -695,7 +696,7 @@ function renderSeasonView(){
     const grouped=new Map();[...events.keys()].sort().forEach(date=>{const key=date.slice(0,7),list=grouped.get(key)||[];list.push({date,items:events.get(date)});grouped.set(key,list);});
     const months=[...grouped.entries()].map(([key,days])=>{const [y,m]=key.split('-').map(Number);const title=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(new Date(y,m-1,1,12));return '<section class="calendar-season-month"><h3>'+title+'</h3>'+days.map(({date,items})=>'<div class="calendar-season-event"><time>'+fmt(date)+'</time><span>'+items.map(x=>'<i data-lucide="'+icons[x.type]+'" class="calendar-season-event-icon is-'+x.type+'"></i>'+labels[x.type]+(x.item?.name?' · '+escapeHtml(x.item.name):'')).join(' · ')+'</span></div>').join('')+'</section>';}).join('');
     const count=arr=>arr.filter(x=>x.date>=from&&x.date<=to).length;
-    root.innerHTML='<div class="calendar-season-heading"><div><p>DEFINIERTER ZEITRAUM</p><h2>'+escapeHtml(season.name||'Saison')+'</h2><span>'+fmt(from)+' – '+fmt(to)+'</span></div><div class="calendar-season-stats"><span><strong>'+count(state.rawActivities||[])+'</strong>Training</span><span><strong>'+count(state.plannedActivities||[])+'</strong>Geplant</span><span><strong>'+count(state.races||[])+'</strong>Wettkämpfe</span></div></div>'+(months||'<p class="calendar-season-empty">In diesem Saisonzeitraum sind noch keine Ereignisse erfasst.</p>');
+    root.innerHTML='<div class="calendar-season-heading"><div><p>DEFINIERTER ZEITRAUM</p><h2>'+escapeHtml(season.name||'Saison')+'</h2><span>'+fmt(from)+' – '+fmt(to)+'</span></div><div class="calendar-season-stats"><span><strong>'+count(state.rawActivities||[])+'</strong>Training</span><span><strong>'+count(getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()))+'</strong>Geplant</span><span><strong>'+count(state.races||[])+'</strong>Wettkämpfe</span></div></div>'+(months||'<p class="calendar-season-empty">In diesem Saisonzeitraum sind noch keine Ereignisse erfasst.</p>');
     globalThis.lucide?.createIcons?.();
 }
 let calendarGestureInstalled=false,calendarPinchStart=0,calendarWheelLocked=false;
@@ -892,7 +893,7 @@ export function renderYearView() {
         const start = toLocalDateString(startDate), end = toLocalDateString(endDate);
         const dates = calendarYearDateRange(year, start, end);
         const activities = (state.rawActivities || []).filter(item => item?.date >= yearStart && item?.date <= yearEnd && item.date >= start && item.date <= end);
-        const plannedActivities = (state.plannedActivities || []).filter(item => item?.date >= yearStart && item?.date <= yearEnd && item.date >= start && item.date <= end);
+        const plannedActivities = getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).filter(item => item?.date >= yearStart && item?.date <= yearEnd && item.date >= start && item.date <= end);
         const plannedBySport = {};
         plannedActivities.forEach(item => { const key = item.type || 'Workout'; plannedBySport[key] = (plannedBySport[key] || 0) + 1; });
         const bySport = {};
@@ -1214,17 +1215,23 @@ export function renderWeekView() {
     const loadTotal = loadComplete ? loadDays.reduce((sum, data) => sum + data.loadValue, 0) : null;
     const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
     const durationTotal = durationRecords.length ? durationRecords.reduce((sum, item) => sum + Number(item.duration), 0) : null;
-    const sportDurations = new Map();
+    const weekColorGroups = new Map();
     durationRecords.forEach(item => {
+        const trainingMode = calendarDisplayMode() === 'training';
         const sport = calendarSport(item.type);
-        const key = String(item.type || 'Workout');
-        const current = sportDurations.get(key) || { label: sport.label, color: sport.color || '#64748b', minutes: 0 };
+        const category = getTypeColorMap()[item.category || 'ga'] || getTypeColorMap().ga;
+        const key = trainingMode ? String(item.category || 'ga') : String(item.type || 'Workout');
+        const current = weekColorGroups.get(key) || {
+            label: trainingMode ? (category.label || key) : sport.label,
+            color: trainingMode ? category.color : (sport.color || '#64748b'),
+            minutes: 0
+        };
         current.minutes += Number(item.duration);
-        sportDurations.set(key, current);
+        weekColorGroups.set(key, current);
     });
-    const sportSegments = durationTotal ? [...sportDurations.values()].map(sport => {
-        const width = sport.minutes / durationTotal * 100;
-        return '<span class="calendar-week-load-segment" style="width:' + width.toFixed(2) + '%;--sport-color:' + sport.color + '" title="' + escapeHtml(sport.label + ': ' + calendarFormatMinutes(sport.minutes)) + '" aria-label="' + escapeHtml(sport.label + ': ' + calendarFormatMinutes(sport.minutes)) + '"></span>';
+    const sportSegments = durationTotal ? [...weekColorGroups.values()].map(group => {
+        const width = group.minutes / durationTotal * 100;
+        return '<span class="calendar-week-load-segment" style="width:' + width.toFixed(2) + '%;--sport-color:' + group.color + '" title="' + escapeHtml(group.label + ': ' + calendarFormatMinutes(group.minutes)) + '" aria-label="' + escapeHtml(group.label + ': ' + calendarFormatMinutes(group.minutes)) + '"></span>';
     }).join('') : '';
     const summary = document.getElementById('calendar-week-summary');
     if (summary) summary.innerHTML = '<div class="calendar-week-load"><div class="calendar-week-load-value"><small>Wochen-Load</small><strong>' + (loadTotal === null ? '—' : Math.round(loadTotal)) + '</strong></div><div class="calendar-week-load-track" role="img" aria-label="Sportarten-Anteile nach erfasster Trainingszeit">' + sportSegments + '</div></div><div class="calendar-week-duration"><small>Trainingszeit</small><strong>' + (durationTotal === null ? '—' : (durationComplete ? '' : '∼') + calendarFormatMinutes(durationTotal)) + '</strong></div>';
