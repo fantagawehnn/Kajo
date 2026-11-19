@@ -551,8 +551,8 @@ function renderHealthTrend(key) {
     const pain=dates.map(date=>valid(checkins[date]?.cycle?.pain)?Number(checkins[date].cycle.pain):null);
     const impact=dates.map(date=>valid(checkins[date]?.cycle?.trainingImpact)?Number(checkins[date].cycle.trainingImpact):null);
     heading='Zyklus · Beschwerden und Trainingseinfluss';
-    explanation='Die Linien zeigen dokumentierte Schmerzen und Trainingsbeeinträchtigung (0–10) an allen erfassten Zyklustagen – nicht nur während der Menstruation. Kleine rosafarbene Markierungen auf der Nulllinie kennzeichnen Periodentage, ohne sie als Beschwerdewert darzustellen. Fehlende Angaben bleiben Lücken. Keine medizinische Interpretation oder Ableitung von Eisprung und Zyklusphasen.';
-    type='line';max=10;
+    explanation='Die Linien zeigen dokumentierte Schmerzen und Trainingsbeeinträchtigung auf der erfassten fünfstufigen Skala (1–5) an allen erfassten Zyklustagen – nicht nur während der Menstruation. Kleine rosafarbene Markierungen auf der Nulllinie kennzeichnen Periodentage, ohne sie als Beschwerdewert darzustellen. Fehlende Angaben bleiben Lücken. Keine medizinische Interpretation oder Ableitung von Eisprung und Zyklusphasen.';
+    type='line';max=5;
     datasets=[
       {label:'Periodentag',data:period,borderColor:'#be789f',backgroundColor:'#be789f',pointBackgroundColor:'#be789f',pointBorderColor:'#be789f',pointRadius:period.map(v=>v===null?0:6),pointHoverRadius:7,pointStyle:'rectRot',showLine:false},
       {label:'Schmerzen',data:pain,borderColor:'#e879a9',backgroundColor:'#e879a922',pointRadius:3,tension:.15,spanGaps:false},
@@ -571,7 +571,7 @@ function renderHealthTrend(key) {
       plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:8}},
         tooltip:{callbacks:{label:item=>item.dataset.label==='Periodentag'?'Periodentag dokumentiert':item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 10':' dokumentiert'))}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:9}},
-        y:{beginAtZero:true,max,ticks:{color:'#94a3b8',stepSize:key==='cycle'?2:1},
+        y:{beginAtZero:true,max,ticks:{color:'#94a3b8',stepSize:1},
           grid:{color:'rgba(148,163,184,.12)'}}}}
   });
 }
