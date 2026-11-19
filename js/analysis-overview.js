@@ -20,7 +20,7 @@ const todayKey = () => {
 };
 const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
 const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
+const COLORS = { load: '#FDBA74', recovery: '#14B8A6', performance: '#1E88E5', health: '#A78BFA' };
 let trendChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
@@ -75,10 +75,10 @@ function buildSeries(dates) {
   // No continuous availability series exists in the current data model.
   const health = dates.map(() => null);
   return [
-    { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
-    { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
+    { key: 'load', label: 'Belastung · Tageswert', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Punkte', raw: load, color: COLORS.load },
+    { key: 'recovery', label: 'Bereitschaft · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
     { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance },
-    { key: 'health', label: 'Health · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
+    { key: 'health', label: 'Gesundheit · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
   ];
 }
 function toRelativeIndex(raw) {
@@ -157,7 +157,7 @@ function renderTrendChart() {
       }
     }
   });
-  const healthNote = 'Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
+  const healthNote = 'Gesundheit: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
   setText('analysis-overview-trend-note',
     'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
   updateMetricSwitch();
