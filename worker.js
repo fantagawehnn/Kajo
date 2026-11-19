@@ -364,6 +364,7 @@ VERBINDLICHE REGELN:
       if (/^(c1|canadian)$/i.test(updatedSession.discipline) && duration !== null && duration > 75) errors.push("Eine C1-Einheit überschreitet 75 Minuten.");
       changes.push({ sessionId, action, rationale, updatedSession });
     }
+    if (seen.size !== eligible.size) errors.push("Nicht jede zukünftige, änderbare Einheit erhielt eine Entscheidung.");
     if (!changes.length || errors.length) return json({ error: "Der Anpassungsvorschlag hat die KAJO-Prüfung nicht bestanden. " + errors.join(" ") }, 502);
     return json({ proposal: { status: "ready", rationale: typeof proposal.rationale === "string" ? proposal.rationale.slice(0, 1800) : "", openQuestions, changes } });
   }
