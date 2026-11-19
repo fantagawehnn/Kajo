@@ -26,7 +26,19 @@ export function buildAdaptiveWeekReview(plan, activities = [], today = new Date(
         if (id && !actualById.has(id)) actualById.set(id, { activity, index });
     });
     const usedActual = new Set(), usedSessions = new Set(), seenActivityIds = new Set(), seenSessionIds = new Set();
-    const matched = [], manualLinks = [];
+    const matched = [], manualLinks = [], completedWithoutActivity = [], missed = [], manualStatuses = [];
+    for (const entry of Array.isArray(plan.manualSessionStatuses) ? plan.manualSessionStatuses : []) {
+        const sessionId = String(entry?.sessionId ?? '');
+        const status = entry?.status;
+        const session = sessionById.get(sessionId);
+        if (!session || !['completed_unrecorded', 'missed'].includes(status) || dateKey(session.date) > today || seenSessionIds.has(sessionId)) continue;
+        seenSessionIds.add(sessionId);
+        usedSessions.add(sessionId);
+        const record = { session, status };
+        manualStatuses.push(record);
+        if (status === 'completed_unrecorded') completedWithoutActivity.push(record);
+        else missed.push(record);
+    }
     for (const link of Array.isArray(plan.manualActivityLinks) ? plan.manualActivityLinks : []) {
         const sessionId = String(link?.sessionId ?? ''), activityId = String(link?.activityId ?? '');
         const session = sessionById.get(sessionId), found = actualById.get(activityId);
@@ -79,9 +91,10 @@ export function buildAdaptiveWeekReview(plan, activities = [], today = new Date(
     const upcoming = sessions.filter(session => dateKey(session.date) > today);
     return {
         weekStartDate: plan.weekStartDate, weekEndDate: plan.weekEndDate, status: plan.status,
-        matched, manualLinks, ambiguous, unmatchedPlanned, unplannedActivities, upcoming,
+        matched, manualLinks, manualStatuses, completedWithoutActivity, missed, ambiguous, unmatchedPlanned, unplannedActivities, upcoming,
         coverage: {
             actualActivityCount: actual.length, matchedCount: matched.length, manualMatchedCount: manualLinks.length,
+            completedWithoutActivityCount: completedWithoutActivity.length, missedCount: missed.length,
             ambiguousCount: ambiguous.length, unconfirmedPastPlanCount: unmatchedPlanned.length,
             unplannedActivityCount: unplannedActivities.length, upcomingCount: upcoming.length
         },
