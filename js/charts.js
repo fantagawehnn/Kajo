@@ -14,6 +14,7 @@ import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZon
 import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
 import { getValidatedElapsedTimeAxis } from './performance-data-quality.js';
+import { carryForwardForDisplay } from './chart-series.js?v=1';
 
 /* Chart.js: Touchbewegungen innerhalb eines Diagramms wie Hover behandeln.
    touchmove aktualisiert onHover kontinuierlich beim Verschieben des Fingers. */
@@ -67,23 +68,27 @@ export function renderMainLoadChart(timeline, timeframe) {
     const isGarmin=last.loadMode === 'garmin-native' || last.loadMode === 'garmin-zone';
     const isSrpe=last.loadMode === 'srpe';
     const labels=filtered.map(t=>formatDateDDMMYY(t.date));
-    const ctl=filtered.map(t=>t.ctl);
-    const atl=filtered.map(t=>t.atl);
-    const form=filtered.map(t=>isGarmin ? t.formPct : isSrpe ? t.tsb : null);
+    const ctlRaw=filtered.map(t=>t.ctl);
+    const atlRaw=filtered.map(t=>t.atl);
+    const formRaw=filtered.map(t=>isGarmin ? t.formPct : isSrpe ? t.tsb : null);
+    const ctlDisplay=carryForwardForDisplay(ctlRaw);
+    const atlDisplay=carryForwardForDisplay(atlRaw);
+    const formDisplay=carryForwardForDisplay(formRaw);
     const health=filtered.map(t=>state.healthLogs[t.date] ? t.ctl : null);
     const ctx=canvas.getContext('2d');
     if(state.mainChartInstance) state.mainChartInstance.destroy();
     state.mainChartInstance=new Chart(ctx,{
         type:'line',
         data:{labels,datasets:[
-            {label:'Langfristige Belastung (CTL)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:'Kurzfristige Belastung (ATL)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
+            {label:'Langfristige Belastung (CTL)',data:ctlDisplay.values,rawValues:ctlRaw,carried:ctlDisplay.carried,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,spanGaps:true,segment:{borderDash:ctx=>{const a=Math.min(ctx.p0DataIndex??0,ctx.p1DataIndex??0),b=Math.max(ctx.p0DataIndex??0,ctx.p1DataIndex??0);return ctlDisplay.carried.slice(a,b+1).some(Boolean)?[4,3]:undefined;},borderColor:ctx=>{const a=Math.min(ctx.p0DataIndex??0,ctx.p1DataIndex??0),b=Math.max(ctx.p0DataIndex??0,ctx.p1DataIndex??0);return ctlDisplay.carried.slice(a,b+1).some(Boolean)?'rgba(148,163,184,.72)':undefined;}},yAxisID:'y'},
+            {label:'Kurzfristige Belastung (ATL)',data:atlDisplay.values,rawValues:atlRaw,carried:atlDisplay.carried,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,spanGaps:true,segment:{borderDash:ctx=>{const a=Math.min(ctx.p0DataIndex??0,ctx.p1DataIndex??0),b=Math.max(ctx.p0DataIndex??0,ctx.p1DataIndex??0);return atlDisplay.carried.slice(a,b+1).some(Boolean)?[4,3]:undefined;},borderColor:ctx=>{const a=Math.min(ctx.p0DataIndex??0,ctx.p1DataIndex??0),b=Math.max(ctx.p0DataIndex??0,ctx.p1DataIndex??0);return atlDisplay.carried.slice(a,b+1).some(Boolean)?'rgba(148,163,184,.72)':undefined;}},yAxisID:'y'},
+            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:formDisplay.values,rawValues:formRaw,carried:formDisplay.carried,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,spanGaps:true,segment:{borderDash:ctx=>{const a=Math.min(ctx.p0DataIndex??0,ctx.p1DataIndex??0),b=Math.max(ctx.p0DataIndex??0,ctx.p1DataIndex??0);return formDisplay.carried.slice(a,b+1).some(Boolean)?[4,3]:undefined;},borderColor:ctx=>{const a=Math.min(ctx.p0DataIndex??0,ctx.p1DataIndex??0),b=Math.max(ctx.p0DataIndex??0,ctx.p1DataIndex??0);return formDisplay.carried.slice(a,b+1).some(Boolean)?'rgba(148,163,184,.72)':undefined;}},yAxisID:'y1'},
             {label:'Krankheit / Verletzung',data:health,showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#facc15',yAxisID:'y'}
         ]},
         options:{
             responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-onHover:(event,els,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true);if(!active.length)return;const index=active[0].index;const day=filtered[index];const items=chart.data.datasets.slice(0,3).map(dataset=>({label:dataset.label.replace('Langfristige Belastung (CTL)','CTL').replace('Kurzfristige Belastung (ATL)','ATL').replace('Relativer Saldo (Garmin Load)','Saldo').replace('Relativer Saldo (EA-HF-Zonenindex)','Saldo').replace('Belastungsbilanz (sRPE)','Saldo'),value:dataset.data[index],unit:dataset.yAxisID==='y1'?(isGarmin?'%':'Punkte'):'',color:dataset.borderColor}));const acts=state.rawActivities.filter(a=>typeof a.date==='string'&&a.date.slice(0,10)===day.date);const details=acts.slice(0,4).map(act=>(act.name||act.type||'Aktivität')+' · '+(act.duration!=null?act.duration+' min':'Dauer —')+(act.hr!=null?' · Ø HF '+act.hr:'')+(act.perceivedEffort!=null?' · RPE '+act.perceivedEffort+'/10':''));if(acts.length>4)details.push('+'+(acts.length-4)+' weitere Einheiten');const healthLog=state.healthLogs[day.date];if(healthLog)details.push((healthLog.status==='sick'?'Krankheit':healthLog.status==='injured'?'Verletzung':'Gesundheit')+(healthLog.diagnosis?' · '+healthLog.diagnosis:''));showChartSummaryReadout(canvas,{title:'Belastungsverlauf',time:formatDateDDMMYY(day.date),items,details});},
+onHover:(event,els,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true);if(!active.length)return;const index=active[0].index;const day=filtered[index];const items=chart.data.datasets.slice(0,3).map(dataset=>({label:dataset.label.replace('Langfristige Belastung (CTL)','CTL').replace('Kurzfristige Belastung (ATL)','ATL').replace('Relativer Saldo (Garmin Load)','Saldo').replace('Relativer Saldo (KAJO-HF-Zonenindex)','Saldo').replace('Belastungsbilanz (sRPE)','Saldo'),value:dataset.rawValues?.[index] ?? dataset.data[index],unit:dataset.yAxisID==='y1'?(isGarmin?'%':'Punkte'):'',color:dataset.borderColor}));const acts=state.rawActivities.filter(a=>typeof a.date==='string'&&a.date.slice(0,10)===day.date);const details=acts.slice(0,4).map(act=>(act.name||act.type||'Aktivität')+' · '+(act.duration!=null?act.duration+' min':'Dauer —')+(act.hr!=null?' · Ø HF '+act.hr:'')+(act.perceivedEffort!=null?' · RPE '+act.perceivedEffort+'/10':''));
+            if(chart.data.datasets.slice(0,3).some(dataset=>dataset.carried?.[index]))details.push('Gestrichelte Abschnitte zeigen den letzten bekannten Modellwert nur als visuelle Fortführung; fehlende Quellwerte bleiben unverändert.');if(acts.length>4)details.push('+'+(acts.length-4)+' weitere Einheiten');const healthLog=state.healthLogs[day.date];if(healthLog)details.push((healthLog.status==='sick'?'Krankheit':healthLog.status==='injured'?'Verletzung':'Gesundheit')+(healthLog.diagnosis?' · '+healthLog.diagnosis:''));showChartSummaryReadout(canvas,{title:'Belastungsverlauf',time:formatDateDDMMYY(day.date),items,details});},
             onClick:(event,els,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true);if(active.length)inspectDay(filtered[active[0].index]);},
             plugins:{
                 legend:{display:true,labels:{color:'#cbd5e1',usePointStyle:true,boxWidth:18,padding:12,font:{size:11},filter:item=>item.datasetIndex<3}},
