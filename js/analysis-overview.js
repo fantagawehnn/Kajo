@@ -125,6 +125,7 @@ function renderTrendChart() {
       label: item.label,
       data: indexed.values,
       rawValues: item.values,
+      displayValues: display.values,
       sampleCounts: item.counts,
       carried: display.carried,
       baseline: valid(rawBaseline) ? Number(rawBaseline) : indexed.baseline,
@@ -178,18 +179,19 @@ function renderTrendChart() {
         if (!active.length) return;
         const point = active[0], dataset = chart.data.datasets[point.datasetIndex];
         const raw = dataset.rawValues?.[point.index];
-        if (!valid(raw)) return;
+        const shown = valid(raw) ? raw : dataset.displayValues?.[point.index];
+        if (!valid(shown)) return;
         const count = dataset.sampleCounts?.[point.index] || 1;
         const details = [
           adaptive.mode === 'weekly' ? 'Darstellung: Wochenmittelwert' : 'Darstellung: Tagesmessung',
           'Messwerte in diesem Abschnitt: ' + count,
           'Abdeckung im Zeitraum: ' + Math.round(dataset.coverage * 100) + ' %',
-          dataset.carried?.[point.index] ? 'An diesem Tag wurde der letzte bekannte Wert nur zur Darstellung fortgeführt.' : ''
+          dataset.carried?.[point.index] ? 'Der letzte bekannte Wert wird hier nur zur Darstellung fortgeführt; es liegt keine Messung für diesen Tag vor.' : ''
         ].filter(Boolean);
         showChartSummaryReadout(canvas, {
           title: dataset.label,
           time: labels[point.index] || '',
-          items: [{ label: 'Messwert', value: raw, unit: dataset.unit }],
+          items: [{ label: valid(raw) ? 'Messwert' : 'Fortgeführter Wert', value: shown, unit: dataset.unit }],
           details
         });
       },
