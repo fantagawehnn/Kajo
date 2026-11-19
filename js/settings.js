@@ -1,6 +1,6 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml } from './utils.js';
+import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml, showUndoToast } from './utils.js';
 import { getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=4';
 
 
@@ -323,9 +323,10 @@ export function saveCalendarSeason(){
 }
 export function deleteCalendarSeason(id){
   const {seasons,activeId}=getCalendarSeasonCollection(),targetId=id||activeId,target=seasons.find(item=>item.id===targetId);if(!target)return;
-  if(!confirm('Möchtest du die Saison "'+(target.name||'Saison')+'" wirklich löschen?'))return;
+  if(!confirm('Möchtest du die Saison "'+(target.name||'Saison')+'" wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.'))return;
   const remaining=seasons.filter(item=>item.id!==targetId),nextActive=targetId===activeId?(remaining.at(-1)?.id||null):activeId;persistCalendarSeasonCollection(remaining,nextActive);
   if(editingCalendarSeasonId===targetId)editingCalendarSeasonId=null;if(state.activeCalendarFormat==='season'&&!nextActive)state.activeCalendarFormat='month';renderCalendarSeasonSettings();refreshAll();
+  showUndoToast('Saison gelöscht.',()=>{persistCalendarSeasonCollection(seasons,activeId);renderCalendarSeasonSettings();refreshAll();});
 }
 export function openSettingsModal() {
   renderRows();renderCalendarSeasonSettings();renderCoachSettings();
