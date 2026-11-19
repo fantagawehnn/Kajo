@@ -5,7 +5,7 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml, parseLocalDate, showUndoToast } from './utils.js';
-import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js';
+import { populateRaceRouteSelect, getRouteName, countTrainingOnRouteBefore, countTrainingOnSectionBefore, getWaterConditionSummaryBefore } from './routes.js?v=5';
 
 const RACE_PRIORITY_META = {
     A: { title: 'International WM/EM', color: 'bg-rose-500 text-slate-950 font-black' },
