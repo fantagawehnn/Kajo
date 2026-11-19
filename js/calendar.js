@@ -131,7 +131,9 @@ function bindDayCheckinDraft() {
  if(!modal||modal.dataset.draftBound==='true')return;
  const persist=event=>{
   const target=event.target;
-  if(target?.id?.startsWith('day-'))saveDayCheckinDraft();
+  if(!target?.id?.startsWith('day-'))return;
+  if(['day-health-status','day-checkin-note','day-weight'].includes(target.id))target.dataset.touched='true';
+  saveDayCheckinDraft();
  };
  modal.addEventListener('input',persist);
  modal.addEventListener('change',persist);
@@ -546,13 +548,14 @@ export function openCalendarRaceCreate() {
 }
 
 
-export function toggleCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.toggle('hidden');}
+export function toggleCalendarAddMenu(){document.getElementById('calendar-add-period-action')?.classList.toggle('hidden',!isCycleTrackingEnabled());document.getElementById('calendar-add-menu')?.classList.toggle('hidden');}
 export function closeCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.add('hidden');}
 export function toggleCalendarFormatMenu(){const menu=document.getElementById('calendar-format-menu'),button=document.getElementById('calendar-format-button');const opening=menu?.classList.contains('hidden');menu?.classList.toggle('hidden');button?.setAttribute('aria-expanded',String(Boolean(opening)));}
 export function closeCalendarFormatMenu(){document.getElementById('calendar-format-menu')?.classList.add('hidden');document.getElementById('calendar-format-button')?.setAttribute('aria-expanded','false');}
 function calendarSeason(){const settings=state.settings||{},seasons=Array.isArray(settings.calendarSeasons)?settings.calendarSeasons:[],selected=seasons.find(item=>item.id===settings.activeCalendarSeasonId)||seasons.at(-1)||settings.calendarSeason;return selected&&/^\d{4}-\d{2}-\d{2}$/.test(selected.start||'')&&/^\d{4}-\d{2}-\d{2}$/.test(selected.end||'')&&selected.start<=selected.end?selected:null;}
 export function openCalendarHealthCreate(){window.openHealthLogForDate?.(state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate));}
 export function openCalendarPeriodCreate(){
+ if(!isCycleTrackingEnabled())return;
  const date=state.selectedCalendarDay||toLocalDateString();
  const start=document.getElementById('period-range-start'),end=document.getElementById('period-range-end');
  if(start)start.value=date;
@@ -570,6 +573,7 @@ function eachPeriodDate(start,end,callback){
  while(current<=last){callback(toLocalDateString(current));current.setDate(current.getDate()+1);}
 }
 export function saveCalendarPeriod(){
+ if(!isCycleTrackingEnabled())return;
  const start=document.getElementById('period-range-start')?.value||'';
  const end=document.getElementById('period-range-end')?.value||'';
  if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)){alert('Bitte wähle einen gültigen Start- und Endtag.');return;}
@@ -582,6 +586,7 @@ export function saveCalendarPeriod(){
  saveDataToLocalStorage();closeCalendarPeriodCreate();refreshAll();
 }
 export function removeCalendarPeriodRange(){
+ if(!isCycleTrackingEnabled())return;
  const start=document.getElementById('period-range-start')?.value||'';
  const end=document.getElementById('period-range-end')?.value||'';
  if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||start>end){alert('Bitte wähle einen gültigen Zeitraum.');return;}
@@ -751,6 +756,7 @@ export function applyCalendarPeriodDate(value) {
 }
 
 export function renderCalendar() {
+    document.getElementById('calendar-add-period-action')?.classList.toggle('hidden',!isCycleTrackingEnabled());
     renderCalendarDisplayModeControl();
     const formats = ['day', 'week', 'month', 'year', 'activities', 'season'];
     if(state.activeCalendarFormat==='season'&&!calendarSeason())state.activeCalendarFormat='month';
