@@ -200,8 +200,10 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     addSubjective('mood', 'Stimmung', true);
     addSubjective('wellbeing', 'Befinden', true);
 
+    const cycleEnabled = sourceState?.profile?.gender === 'female'
+        && sourceState?.profile?.cycleTrackingEnabled === true;
     const cycleImpact = Number(current.cycle?.trainingImpact);
-    if (current.cycle?.trainingImpact !== null && current.cycle?.trainingImpact !== undefined
+    if (cycleEnabled && current.cycle?.trainingImpact !== null && current.cycle?.trainingImpact !== undefined
         && Number.isFinite(cycleImpact) && cycleImpact > 0 && cycleImpact <= 5) {
         subjective.push({
             key: 'cycleTrainingImpact',
