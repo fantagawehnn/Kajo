@@ -85,8 +85,7 @@ const sections = [
     id: 'health', title: 'Gesundheit und Besonderheiten', subtitle: 'Freiwillige, trainingsrelevante Hinweise', icon: 'heart-pulse',
     fields: [
       { key: 'trainingNotes', label: 'Individuelle Hinweise für die Trainingssteuerung', type: 'textarea', max: 1000, wide: true, placeholder: 'Nur Angaben, die bei der Trainingsplanung berücksichtigt werden sollen …' },
-      { key: 'knownLimitations', label: 'Bekannte trainingsrelevante Einschränkungen', type: 'textarea', max: 1000, wide: true, placeholder: 'Freiwillige Angabe …' },
-      { key: 'cycleTrackingEnabled', label: 'Zyklus-Tracking im täglichen Check-in aktivieren', type: 'checkbox', femaleOnly: true }
+      { key: 'knownLimitations', label: 'Bekannte trainingsrelevante Einschränkungen', type: 'textarea', max: 1000, wide: true, placeholder: 'Freiwillige Angabe …' }
     ]
   }
 ];
