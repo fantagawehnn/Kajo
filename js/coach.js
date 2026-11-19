@@ -37,6 +37,31 @@ function setPending(pending) {
     }
 }
 
+export async function requestSeasonPlanProposal() {
+    if (!supabase) throw new Error('Die sichere Verbindung zum KI-Coach ist nicht verfügbar.');
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
+
+    const question = 'Erstelle einen Saison-Periodisierungsvorschlag anhand der gespeicherten Saisonplanung, des Athletenprofils und der dokumentierten Wettkämpfe.';
+    const context = buildCoachRequestContext(state, question);
+    const response = await fetch('/api/coach', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ task: 'season_plan_proposal', question, context, history: [] })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'Der Coach konnte keinen Saisonvorschlag erstellen.');
+    if (!payload.proposal || !['ready', 'needs_input'].includes(payload.proposal.status)) {
+        throw new Error('Der Coach hat keinen gültigen Saisonvorschlag zurückgegeben.');
+    }
+    return payload.proposal;
+}
+
 export async function sendAICoachMessage() {
     const input = document.getElementById('chat-input');
     const question = input?.value?.trim();
