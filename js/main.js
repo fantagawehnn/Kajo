@@ -863,13 +863,17 @@ async function loadGarminSyncHistory() {
 }
 
 function applyGarminFitDetail(activity, detail) {
-    if (!activity || !detail?.telemetry) return;
-    activity.telemetry = mergeTelemetryData(activity.telemetry, detail.telemetry).value;
-    // Garmin-eigene FIT-Daten werden bei einem Parser-Upgrade vollständig neu geschrieben,
-    // damit ältere, unvollständige Zeitreihen nicht mit abweichenden Array-Längen blockieren.
-    activity.garminTelemetry = Number(activity.garminFitParserVersion || 0) < 3
-        ? detail.telemetry
-        : mergeTelemetryData(activity.garminTelemetry, detail.telemetry).value;
+    if (!activity || !detail || typeof detail !== 'object') return;
+    // Lap-, Set- und Workout-Daten müssen auch dann gespeichert werden, wenn
+    // eine FIT-Datei keine verwertbare Messreihe (telemetry) enthält.
+    if (detail.telemetry && typeof detail.telemetry === 'object') {
+        activity.telemetry = mergeTelemetryData(activity.telemetry, detail.telemetry).value;
+        // Garmin-eigene FIT-Daten werden bei einem Parser-Upgrade vollständig neu geschrieben,
+        // damit ältere, unvollständige Zeitreihen nicht mit abweichenden Array-Längen blockieren.
+        activity.garminTelemetry = Number(activity.garminFitParserVersion || 0) < 3
+            ? detail.telemetry
+            : mergeTelemetryData(activity.garminTelemetry, detail.telemetry).value;
+    }
     activity.garminFitData = {
         recordCount: detail.recordCount || 0,
         recordFields: detail.recordFields || {},

@@ -1335,7 +1335,10 @@ function renderOptionalActivityViews(act) {
         const manualCount = laps.filter(lap => lap.kind === 'manual').length;
         const automaticCount = laps.filter(lap => lap.kind === 'automatic').length;
         const unclassifiedCount = laps.length - manualCount - automaticCount;
-        const lapSourceLabel = activity.source === 'fit' || (Array.isArray(activity.sources) && activity.sources.includes('fit')) ? 'FIT-Datei-Runden' : 'Gespeicherte Runden';
+        const lapSourceLabel = Array.isArray(act.garminFitData?.laps) && act.garminFitData.laps.length
+            ? 'Garmin-FIT-Runden'
+            : act.source === 'fit' || (Array.isArray(act.sources) && act.sources.includes('fit'))
+                ? 'FIT-Datei-Runden' : 'Gespeicherte Runden';
         const summary = `<div class="text-[10px] text-slate-400 mb-2"><strong>${lapSourceLabel}</strong> · ${manualCount} manueller Trigger · ${automaticCount} automatischer Trigger · ${unclassifiedCount} nicht zugeordnet</div><p class="text-[10px] text-slate-500 mb-2">Automatische Runden (z. B. jede 1 km) werden separat angezeigt und nicht für den Vergleich manueller Abschnitte verwendet. Ein manueller FIT-Trigger bedeutet nicht automatisch, dass es sich um ein geplantes Trainingsintervall handelt.</p>`;
         const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
         const comparableLaps = laps.map((lap, i) => {
