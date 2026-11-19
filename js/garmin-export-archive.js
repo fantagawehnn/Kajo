@@ -1,3 +1,4 @@
+import { extractGarminVo2MaxRecords, summarizeGarminVo2MaxRecords } from './garmin-performance-archive.js';
 import { supabase } from './supabase-client.js';
 import { SUPABASE_ANON_KEY } from './supabase-config.js';
 
@@ -8,6 +9,57 @@ const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 // Keep each stored part below that ceiling; the complete archive may be larger.
 const ARCHIVE_PART_BYTES = 40 * 1024 * 1024;
 const MAX_FIELD_PATHS_PER_CATEGORY = 500;
+
+const ACTIVITY_FIELD_GROUPS = {
+    id: { label: 'Garmin-Aktivitäts-ID', keys: ['activityId', 'id'] },
+    startTime: { label: 'Startzeit', keys: ['startTimeGmt', 'startTimeGMT', 'startTimeLocal', 'beginTimestamp'] },
+    duration: { label: 'Dauer', keys: ['duration', 'elapsedDuration', 'movingDuration'] },
+    distance: { label: 'Distanz', keys: ['distance'] },
+    averageHeartRate: { label: 'Durchschnittliche Herzfrequenz', keys: ['avgHr', 'averageHR'] },
+    maxHeartRate: { label: 'Maximale Herzfrequenz', keys: ['maxHr', 'maxHR'] },
+    calories: { label: 'Kalorien', keys: ['calories'] },
+    aerobicTrainingEffect: { label: 'Aerober Training Effect', keys: ['aerobicTrainingEffect'] },
+    anaerobicTrainingEffect: { label: 'Anaerober Training Effect', keys: ['anaerobicTrainingEffect'] },
+    averageSpeed: { label: 'Durchschnittsgeschwindigkeit', keys: ['avgSpeed'] },
+    maxSpeed: { label: 'Maximalgeschwindigkeit', keys: ['maxSpeed'] },
+    elevationGain: { label: 'Höhengewinn', keys: ['elevationGain'] },
+    elevationLoss: { label: 'Höhenverlust', keys: ['elevationLoss'] },
+    splits: { label: 'Runden / Splits', keys: ['splits'] },
+    splitSummaries: { label: 'Runden-Zusammenfassungen', keys: ['splitSummaries'] },
+    sportType: { label: 'Sportart-Kennung', keys: ['activityType'] },
+    activityName: { label: 'Aktivitätsname (nur Feldprüfung)', keys: ['activityName'] },
+    averagePower: { label: 'Durchschnittsleistung', keys: ['avgPower'] },
+    maxPower: { label: 'Maximalleistung', keys: ['maxPower'] },
+    normalizedPower: { label: 'Normalisierte Leistung', keys: ['normPower'] },
+    vo2max: { label: 'VO₂max-Feld', keys: ['VO2MaxValue'] }
+};
+
+function createActivityFieldAudit() {
+    return {
+        records: 0,
+        fields: Object.fromEntries(Object.entries(ACTIVITY_FIELD_GROUPS).map(([key, group]) => [
+            key, { label: group.label, present: 0, sourceKeys: {}, types: {} }
+        ]))
+    };
+}
+
+function recordActivityFieldAudit(activity, audit) {
+    if (!audit || !activity || typeof activity !== 'object') return;
+    audit.records++;
+    for (const [groupKey, group] of Object.entries(ACTIVITY_FIELD_GROUPS)) {
+        const result = audit.fields[groupKey];
+        let found = false;
+        for (const sourceKey of group.keys) {
+            if (!Object.prototype.hasOwnProperty.call(activity, sourceKey) || activity[sourceKey] == null) continue;
+            found = true;
+            result.sourceKeys[sourceKey] = (result.sourceKeys[sourceKey] || 0) + 1;
+            const value = activity[sourceKey];
+            const type = Array.isArray(value) ? 'array' : typeof value;
+            result.types[type] = (result.types[type] || 0) + 1;
+        }
+        if (found) result.present++;
+    }
+}
 
 function safeFileName(name) {
     return String(name || 'garmin-export.zip').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-120);
@@ -226,14 +278,38 @@ export async function renderGarminExportArchiveHistory() {
             const comparisonText = comparison
                 ? '<p class="mt-2 text-[10px] text-cyan-200">Aktivitätsabgleich (nur Vorschau): ' + Number(comparison.archiveRecords || 0) + ' Archivdatensätze · ' + Number(comparison.uniqueArchiveIds || 0) + ' eindeutige IDs · ' + Number(comparison.alreadyExisting || 0) + ' bereits vorhanden · ' + Number(comparison.newActivities || 0) + ' neu · ' + Number(comparison.duplicateArchiveIds || 0) + ' doppelte Archiv-IDs · ' + Number(comparison.existingWithoutDetails || 0) + ' vorhandene Aktivitäten ohne Detaildatensatz</p>'
                 : '';
-            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + comparisonText + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
-            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 6 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
+            const activityAudit = preview?.activityFieldAudit;
+            const activityAuditRows = activityAudit?.fields ? Object.values(activityAudit.fields).filter(field => Number(field.present || 0) > 0).sort((a, b) => Number(b.present || 0) - Number(a.present || 0)) : [];
+            const activityAuditList = activityAuditRows.length
+                ? '<ul class="mt-2 space-y-1">' + activityAuditRows.map(field => {
+                    const sourceKeys = Object.entries(field.sourceKeys || {}).sort((a, b) => b[1] - a[1]).map(([key, count]) => escapeHtml(key) + ' (' + Number(count) + ')').join(', ');
+                    const types = Object.keys(field.types || {}).join(', ');
+                    return '<li class="break-words text-[10px] text-slate-300">' + escapeHtml(field.label) + ': <span class="text-cyan-200">' + Number(field.present || 0) + '/' + Number(activityAudit.records || 0) + '</span> · ' + sourceKeys + ' · Typ: ' + escapeHtml(types) + '</li>';
+                }).join('') + '</ul>'
+                : '';
+            const activityAuditText = activityAuditRows.length
+                ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Aktivitätsfelder prüfen (' + activityAuditRows.length + ' Feldgruppen)</summary><p class="mt-1 text-[10px] text-slate-400">Nur Feldnamen, Vorkommen und Datentypen – keine Messwerte oder GPS-Daten.</p>' + activityAuditList + '</details>'
+                : '';
+            const performanceSummary = preview?.performanceSummary;
+            const performanceText = performanceSummary ? '<p class="mt-2 text-[10px] text-emerald-200">Garmin-VO₂max im Export: ' + Number(performanceSummary.count || 0) + ' Messpunkte' + (performanceSummary.dateFrom && performanceSummary.dateTo ? ' · ' + performanceSummary.dateFrom + ' bis ' + performanceSummary.dateTo : '') + ' · Garmin-Aktivitätskennung (keine bestätigte tatsächliche Sportart): ' + Object.entries(performanceSummary.sports || {}).map(([sport, count]) => escapeHtml(sport) + ' (' + Number(count) + ')').join(', ') + ' · Beim Import werden fehlende Tageswerte als Garmin-Schätzung ergänzt</p><p class="mt-1 text-[10px] text-amber-200">Hinweis zur Einordnung: Garmin-Kennungen wie RUNNING beschreiben das verwendete Aktivitätsprofil. Sie belegen nicht, welche Sportart tatsächlich ausgeübt wurde. Ein Laufprofil kann beispielsweise auch zur Aufzeichnung eines Paddeltrainings verwendet werden. Die VO₂max-Werte werden deshalb nicht automatisch als lauf- oder paddelspezifische Leistungswerte interpretiert.</p>' : '';
+            const dataImport = item.manifest?.dataImport;
+            const importComplete = dataImport?.status === 'complete';
+            const importHasWarnings = dataImport?.status === 'complete_with_warnings';
+            const fileCategoryText = Object.entries(dataImport?.fileCounts || {}).map(([category, count]) => escapeHtml(garminCategoryLabel(category)) + ': ' + Number(count)).join(' · ');
+            const dataImportText = dataImport
+                ? '<p class="mt-2 text-[10px] ' + (importComplete ? 'text-emerald-200' : 'text-amber-200') + '">Datenimport: ' + Number(dataImport.storedFileRows || 0) + ' Quelldateien gesichert · ' + Number(dataImport.jsonFiles || 0) + ' JSON-Dateien verarbeitet · ' + Number(dataImport.activities?.added || 0) + ' neue Aktivitäten · ' + Number(dataImport.activityIndexRowsAdded || 0) + ' Garmin-IDs im Sync-Index · ' + Number(dataImport.vo2maxRecords || 0) + ' VO₂max-Datensätze · ' + Number(dataImport.vo2maxDailyValuesAdded || 0) + ' Tageswerte ergänzt · ' + Number(dataImport.vo2maxAmbiguousDates || 0) + ' mehrdeutige Tage ausgelassen' + (Number(dataImport.warningCount || 0) ? ' · ' + Number(dataImport.warningCount) + ' Hinweise' : '') + '</p><p class="mt-1 text-[10px] text-slate-400">Dateikategorien: ' + fileCategoryText + '</p><p class="mt-1 text-[10px] text-slate-400">FIT-, GPX- und sonstige Binärdateien bleiben bytegenau im privaten Originalarchiv; alle auslesbaren JSON-Quelldateien werden separat gesichert.</p>'
+                : '';
+            const previewText = preview ? '<p class="mt-2 text-[10px] text-cyan-200">Analyse: ' + Number(preview.jsonFiles || 0) + ' JSON-Dateien · ' + Number(preview.nestedArchives || 0) + ' Unterarchive · ' + inventory.length + ' Feldpfade erkannt' + (preview.dateFrom && preview.dateTo ? ' · Messdaten: ' + preview.dateFrom + ' bis ' + preview.dateTo : '') + '</p>' + comparisonText + activityAuditText + performanceText + dataImportText + (fieldRows.length ? '<details class="mt-2"><summary class="cursor-pointer text-[10px] font-semibold text-cyan-200">Erkannte Datenfelder anzeigen (' + inventory.length + ')</summary>' + fieldList + '</details>' : '') : '';
+            const analyzeButton = item.status === 'indexed' && preview?.analysisVersion !== 8 ? "<button type=\"button\" onclick=\"analyzeGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 rounded-lg bg-cyan-700/70 px-3 py-1.5 text-[10px] font-semibold text-white\">Feldanalyse aktualisieren</button>" : '';
+            const importButton = item.status === 'indexed' && preview?.analysisVersion === 8 && !importComplete
+                ? "<button type=\"button\" onclick=\"importGarminExportArchive('" + String(item.id).replace(/[^a-f0-9-]/gi, '') + "')\" class=\"mt-2 ml-2 rounded-lg bg-emerald-700/80 px-3 py-1.5 text-[10px] font-semibold text-white\">" + (importHasWarnings ? 'Import mit Hinweisen erneut prüfen' : dataImport?.status ? 'Import fortsetzen' : 'Alle Daten in KAJO importieren') + "</button>"
+                : '';
             const status = item.status === 'indexed' ? 'Archiv gesichert · ' + files + ' Dateien katalogisiert'
                 : item.status === 'uploaded' ? 'Archiv gesichert · Verzeichnis ausstehend'
                 : item.status === 'failed' ? 'Upload fehlgeschlagen' : 'Upload läuft';
             const date = new Date(item.created_at).toLocaleString('de-DE');
-            const safeName = String(item.original_file_name || 'Garmin-Export').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
-            return '<div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3"><div class="flex items-center justify-between gap-3"><span class="truncate text-xs font-semibold text-slate-200">' + safeName + '</span><span class="shrink-0 text-[10px] text-slate-400">' + size + ' MB</span></div><p class="mt-1 text-[10px] text-slate-400">' + status + ' · ' + date + '</p>' + previewText + analyzeButton + '</div>';
+            const safeName = String(item.original_file_name || 'Garmin-Export').replace(/[&<>\"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+            return '<div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3"><div class="flex items-center justify-between gap-3"><span class="truncate text-xs font-semibold text-slate-200">' + safeName + '</span><span class="shrink-0 text-[10px] text-slate-400">' + size + ' MB</span></div><p class="mt-1 text-[10px] text-slate-400">' + status + ' · ' + date + '</p>' + previewText + analyzeButton + importButton + '</div>';
         }).join('');
     } catch (error) {
         console.error('Garmin-Archivübersicht konnte nicht geladen werden:', error);
@@ -311,16 +387,17 @@ function collectGarminFields(value, category, filePath, inventory, budget, path 
     }
 }
 
-function collectSummarizedActivities(value, output, depth = 0) {
+function collectSummarizedActivities(value, output, audit = null, depth = 0) {
     if (!value || typeof value !== 'object' || depth > 12) return;
     if (Array.isArray(value)) {
-        for (const item of value) collectSummarizedActivities(item, output, depth + 1);
+        for (const item of value) collectSummarizedActivities(item, output, audit, depth + 1);
         return;
     }
     for (const [key, item] of Object.entries(value)) {
         if (key.toLowerCase() === 'summarizedactivitiesexport' && Array.isArray(item)) {
             for (const activity of item) {
                 if (!activity || typeof activity !== 'object' || Array.isArray(activity)) continue;
+                recordActivityFieldAudit(activity, audit);
                 const id = activity.activityId ?? activity.id;
                 if (id === null || id === undefined || !/^[0-9]+$/.test(String(id))) continue;
                 output.push({
@@ -333,7 +410,7 @@ function collectSummarizedActivities(value, output, depth = 0) {
                 });
             }
         } else if (item && typeof item === 'object') {
-            collectSummarizedActivities(item, output, depth + 1);
+            collectSummarizedActivities(item, output, audit, depth + 1);
         }
     }
 }
@@ -399,7 +476,8 @@ async function inspectGarminZip(zip, prefix, summary, depth = 0) {
                     : parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 1;
                 summary.topLevelRecords[category] = (summary.topLevelRecords[category] || 0) + recordCount;
                 collectGarminFields(parsed, category, path, summary.fieldInventory, { count: 0 }, '', 0, summary.fieldInventoryBudget);
-                if (category === 'activities') collectSummarizedActivities(parsed, summary.activityRecords);
+                if (category === 'activities') collectSummarizedActivities(parsed, summary.activityRecords, summary.activityFieldAudit);
+                if (category === 'performance') summary.performanceRecords.push(...extractGarminVo2MaxRecords(parsed, path));
                 const dates = [];
                 collectDateValues(parsed, dates, { count: 0 }, path);
                 for (const date of dates) summary.dates.push(date);
@@ -447,7 +525,7 @@ export async function analyzeGarminExportArchive(importId) {
         const archiveBlob = new Blob(blobs, { type: 'application/zip' });
         const zip = await JSZip.loadAsync(archiveBlob, { checkCRC32: false });
         const summary = {
-            analysisVersion: 6,
+            analysisVersion: 8,
             analyzedAt: new Date().toISOString(),
             jsonFiles: 0,
             nestedArchives: 0,
@@ -456,6 +534,8 @@ export async function analyzeGarminExportArchive(importId) {
             fieldInventory: {},
             fieldInventoryBudget: { counts: {}, truncated: [] },
             activityRecords: [],
+            activityFieldAudit: createActivityFieldAudit(),
+            performanceRecords: [],
             otherFiles: {},
             dates: [],
             errors: []
@@ -497,6 +577,10 @@ export async function analyzeGarminExportArchive(importId) {
             comparisonAt: new Date().toISOString()
         };
         delete summary.activityRecords;
+        summary.performanceRecords = [...new Map(summary.performanceRecords.map(record => [
+            [record.date, record.sport || '', record.subSport || '', record.value].join('|'), record
+        ])).values()].sort((a, b) => a.date.localeCompare(b.date));
+        summary.performanceSummary = summarizeGarminVo2MaxRecords(summary.performanceRecords);
         summary.fieldInventoryLimits = {
             perCategory: MAX_FIELD_PATHS_PER_CATEGORY,
             counts: summary.fieldInventoryBudget.counts,

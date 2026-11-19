@@ -92,7 +92,7 @@ assert.ok(html.includes('id="health-trend-chart"') && html.includes('data-health
 assert.ok(analysisUI.includes('Tage ohne Balken sind nicht dokumentiert'), 'missing health entries are not interpreted as healthy days');
 assert.ok(analysisUI.includes('item?.cycle?.period===true'), 'cycle trends use only explicitly documented cycle entries');
 assert.ok(analysisUI.includes('keine medizinische Interpretation') || analysisUI.includes('keine medizinische Interpretation.'), 'Health trend avoids medical interpretation');
-assert.ok(analysisUI.includes("['HRV', 'hrv', 'ms', 1]") && analysisUI.includes('const entry = latestCheckin(key)'), 'recovery exposes the latest raw HRV measurement as a separate metric');
+assert.ok(analysisUI.includes("['HRV', 'hrv', 'Garmin · ms', 1]") && analysisUI.includes('getGarminCheckinMetric(row, key)'), 'recovery exposes only Garmin-sourced HRV as an objective metric');
 assert.ok(analysisUI.includes('const readiness = calculateReadiness(todayKey())') && analysisUI.includes('const score = readiness.enoughData ? readiness.score : null'), 'aggregate recovery value reuses the existing calculation for the analysis overview');
 assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes('id="recovery-hero-note" class="kajo-analysis-hero-note"'), 'Recovery detail does not display a readiness summary');
 assert.ok(!html.includes('id="health-hero-ring"') && !html.includes('id="health-availability-status"'), 'Health does not display an unsupported availability score');
@@ -116,8 +116,8 @@ assert.ok(importer.includes("['hrv', 'HRV (RMSSD)']"), 'Intervals wellness HRV f
 assert.ok(importer.includes("['hrvSDNN', 'HRV (SDNN)']"), 'Intervals SDNN field is separately identified');
 assert.ok(importer.includes("incoming.hrv = hrv"), 'Intervals HRV is stored in the shared check-in HRV key');
 assert.ok(importer.includes("source: 'intervals', metric: 'rmssd', unit: 'ms'"), 'Intervals HRV carries explicit RMSSD provenance');
-assert.ok(health.includes("['input-hrv', 'hrv'"), 'manual HRV uses the same check-in key');
-assert.ok(health.includes("source: 'manual', metric: 'unspecified', unit: 'ms'"), 'manual HRV is marked as manual with unspecified measurement method');
+assert.ok(!health.includes("['input-hrv', 'hrv'"), 'manual HRV is no longer editable in the daily check-in');
+assert.ok(health.includes('Garmin-Gesundheitswerte werden ausschließlich synchronisiert'), 'Garmin health metrics are explicitly read-only in the check-in');
 assert.ok(analysisUI.includes('nur eindeutig als Intervals-RMSSD gekennzeichnete Werte eignen sich'), 'only identified Intervals RMSSD values are eligible for ln(RMSSD)');
 assert.ok(!analysisUI.includes(String.fromCharCode(92) + 'n  const fromKey'), 'health analysis renderer contains no escaped source newlines');
 
@@ -326,8 +326,15 @@ assert.ok(html.includes('id="performance-detail-view"') && html.includes('onclic
 assert.ok(html.includes('id="performance-paddling-metrics"') && html.includes('id="performance-strength-metrics"'), 'Performance detail separates paddling and strength dimensions');
 assert.ok(html.includes('id="performance-trend-chart"') && html.includes('data-performance-range="28d"'), 'Performance has a dedicated selectable trend chart and time ranges');
 assert.ok(performanceUi.includes('getActivityTelemetrySeries(activity)'), 'Performance reads existing provenance-gated activity telemetry');
+assert.ok(performanceUi.includes('isPaddlingPerformanceActivity(activity)'), 'Paddling performance excludes non-paddling activities');
+assert.ok(performanceUi.includes('isValidElapsedTimeAxis(series.time, series.values.length)'), 'paddling summary metrics require aligned elapsed-time data');
+assert.ok(performanceUi.includes('resolvePaddlingPerformanceSeries'), 'paddling metrics resolve only explicitly supported Garmin series and units');
+assert.ok(charts.includes('directfractionalcadence|double cadence'), 'double cadence is not silently treated as stroke cadence in paddling');
+assert.ok(charts.includes('vertical.?speed|vertikale geschwindigkeit') && charts.includes('accumulated.?power|summierte leistung'), 'vertical speed and accumulated power are not mistaken for instantaneous performance metrics');
+assert.ok(charts.includes('getValidatedElapsedTimeAxis(telem, values.length)'), 'activity telemetry retains only a validated elapsed-time axis');
 assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
+assert.ok(performanceUi.includes('Zeitachse: Zeit seit Start') && performanceUi.includes('Keine verlässliche Zeitachse'), 'performance trend distinguishes elapsed-time axes from sample-index-only series');
 assert.ok(performanceUi.includes('state.strengthPBs'), 'strength progression uses stored exercise-specific personal best records');
 assert.ok(html.includes('<span>Fitness</span>') && html.includes('id="fitness-aerobic-metrics"'), 'analysis navigation identifies the fitness view separately from performance');
 
@@ -398,9 +405,12 @@ assert.ok(garminArchive.includes('trainingplan|_workout.json|workout'), 'Garmin 
 assert.ok(garminArchive.includes('customer_data|di-connect-user|trainingplan|_workout.json'), 'profile and workout-plan dates are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('birth|created|updated|modified|deleted|expiry|expiration|upload|export'), 'metadata timestamps are excluded from the historical measurement period');
 assert.ok(garminArchive.includes('timestamp <= Date.now() + 24 * 60 * 60 * 1000'), 'future plan dates do not extend the historical measurement period');
-assert.ok(garminArchive.includes('analysisVersion: 6') && garminArchive.includes('preview?.analysisVersion !== 6'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
+assert.ok(garminArchive.includes('analysisVersion: 8') && garminArchive.includes('preview?.analysisVersion !== 8'), 'existing Garmin archives can be re-analysed with the activity and VO2max field audit');
+assert.ok(garminArchive.includes('function createActivityFieldAudit') && garminArchive.includes('function recordActivityFieldAudit'), 'Garmin archive preview audits activity field presence and types without retaining values');
+assert.ok(garminArchive.includes('activityFieldAudit') && garminArchive.includes('Aktivitätsfelder prüfen'), 'Garmin archive history displays the read-only activity field audit');
+assert.ok(garminArchive.includes('keine Messwerte oder GPS-Daten'), 'activity field audit explicitly excludes raw measurements and GPS data');
 assert.ok(garminArchive.includes('MAX_FIELD_PATHS_PER_CATEGORY = 500') && garminArchive.includes('inventoryBudget.counts[fieldCategory]'), 'Garmin archive field inventory has a separate limit for every data category');
-assert.ok(garminArchive.includes('analysisVersion: 6') && garminArchive.includes('preview?.analysisVersion !== 6'), 'existing Garmin archives can be re-analysed with category-balanced field inventory');
+assert.ok(garminArchive.includes('MAX_FIELD_PATHS_PER_CATEGORY = 500') && garminArchive.includes('inventoryBudget.counts[fieldCategory]'), 'Garmin archive field inventory has a separate limit for every data category');
 assert.ok(garminArchive.includes('truncatedCategories: summary.fieldInventoryBudget.truncated'), 'Garmin archive analysis reports categories whose field inventory reached its limit');
 assert.ok(garminArchive.includes('function classifyGarminFieldCategory') && garminArchive.includes('bodybattery|alldaystress|stresslevel|restingheartrate'), 'bundled Garmin daily wellness fields are classified into recovery');
 assert.ok(garminArchive.includes('hydration|kilocalorie|calorie|bmr|sweatloss|nutrition'), 'bundled Garmin nutrition and hydration fields are classified separately');

@@ -73,9 +73,9 @@ const timeline = computePerformanceTimeline([{
     garminTrainingLoad: 80
 }], loadSettings, state.profile);
 const loadedDay = timeline.find(day => day.date === completedKey);
-assert.equal(loadedDay.load, 80);
-assert.equal(loadedDay.dataStatus, 'complete');
-assert.equal(loadedDay.isProvisional, true);
+assert.equal(loadedDay.load, null);
+assert.equal(loadedDay.dataStatus, 'incomplete-activity-load');
+assert.equal(loadedDay.ctl, null);
 assert.equal(computePerformanceTimeline([{ date: todayKey, tss: 80 }], state.settings, state.profile).length, 0);
 
 // Competition priorities cover all five levels and migrate old generic C entries safely.

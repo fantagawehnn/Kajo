@@ -28,9 +28,25 @@ function standardDeviation(values, average) {
 
 function readMetric(record, key) {
     if (!record) return null;
-    if (key === 'rhr') return record.garminRhr ?? record.rhr ?? null;
-    if (key === 'sleepDuration') return record.sleepDuration ?? (Number(record.sleep) > 5 ? record.sleep : null);
-    return record[key] ?? null;
+    if (key === 'hrv') {
+        if (record.garminHrv !== null && record.garminHrv !== undefined) return record.garminHrv;
+        return record.measurementSources?.hrv?.source === 'garmin' ? record.hrv ?? null : null;
+    }
+    const garminKeys = { rhr: 'garminRhr', respiration: 'garminRespiration', sleepDuration: 'garminSleepDuration', sleepScore: 'garminSleepScore' };
+    return record[garminKeys[key] || key] ?? null;
+}
+
+// HRV-Werte dürfen nur dann eine gemeinsame persönliche Baseline bilden,
+// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Das dedizierte
+// garminHrv-Feld kennzeichnet Garmin; unzugeordnete Legacy-Felder bleiben unbekannt.
+function measurementIdentity(record, key) {
+    const source = record?.measurementSources?.garminHrv || record?.measurementSources?.hrv;
+    if (!source || typeof source !== 'object') return record?.garminHrv != null ? 'garmin:unspecified:ms' : 'legacy:unspecified:ms';
+    return [
+        String(source.source || 'unknown').toLowerCase(),
+        String(source.metric || 'unspecified').toLowerCase(),
+        String(source.unit || 'ms').toLowerCase()
+    ].join(':');
 }
 
 /**
@@ -97,9 +113,12 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     const addPhysiological = (key, label, direction, floor) => {
         const value = readMetric(current, key);
         if (!isValid(value)) return;
+        const compatibleHistory = key === 'hrv'
+            ? history.filter(record => measurementIdentity(record, key) === measurementIdentity(current, key))
+            : history;
         const baseline = individualTrendScore(
             value,
-            history.map(record => readMetric(record, key)),
+            compatibleHistory.map(record => readMetric(record, key)),
             direction,
             floor
         );
@@ -110,7 +129,8 @@ export function calculateReadiness(dateKey, sourceState = appState) {
         physiological.push({
             key, label, value: Number(value), score: baseline.score,
             baseline: baseline.baseline, deviation: baseline.deviation,
-            observations: baseline.observations
+            observations: baseline.observations,
+            ...(key === 'hrv' ? { measurementSource: current.measurementSources?.garminHrv || current.measurementSources?.hrv || null } : {})
         });
     };
 
@@ -140,8 +160,9 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     const sleepItems = [];
     // Sleep Score is a proprietary composite. If available, use it as the
     // sleep-domain indicator and do not count duration again in the same score.
-    if (isValid(current.sleepScore) && Number(current.sleepScore) >= 0 && Number(current.sleepScore) <= 100) {
-        sleepItems.push({ key: 'sleepScore', label: 'Schlafscore', value: Number(current.sleepScore), score: Math.round(Number(current.sleepScore)) });
+    const garminSleepScore = readMetric(current, 'sleepScore');
+    if (isValid(garminSleepScore) && Number(garminSleepScore) >= 0 && Number(garminSleepScore) <= 100) {
+        sleepItems.push({ key: 'sleepScore', label: 'Schlafscore', value: Number(garminSleepScore), score: Math.round(Number(garminSleepScore)) });
     } else {
         const duration = readMetric(current, 'sleepDuration');
         if (isValid(duration) && Number(duration) > 0 && Number(duration) <= 24) {
@@ -250,8 +271,15 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
 
     const categoryLabels = {
         ga: 'GA-Ausdauer', interval: 'Intervalle', reg: 'Regeneration',
-        strength: 'Kraft', tech: 'Technik', race: 'Wettkampf'
+        strength: 'Kraft', tech: 'Technik', race: 'Wettkampf',
+        'diagnostic-lactate': 'Laktattest', 'diagnostic-strength': 'Krafttest'
     };
+    const assessmentCategories = ['diagnostic-lactate', 'diagnostic-strength'];
+    const assessmentSessions = sessions.filter(item => assessmentCategories.includes(String(item.category || '').toLowerCase()));
+    const allPlanned = Array.isArray(sourceState?.plannedActivities) ? sourceState.plannedActivities : planned;
+    const nextDayAssessments = allPlanned.filter(item => assessmentCategories.includes(String(item?.category || '').toLowerCase())
+        && dateDistanceDays(dateKey, String(item?.date || '').slice(0, 10)) === 1);
+    const assessmentNames = items => items.map(item => categoryLabels[item.category] || item.name || 'Leistungsdiagnostik').join(' und ');
     const sessionText = sessions.length
         ? sessions.map(item => {
             const duration = isValid(item.duration) ? ' (' + Number(item.duration) + ' min)' : '';
@@ -273,6 +301,24 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
             title: healthStatus === 'sick' ? 'Gesundheit hat Vorrang' : 'Verletzungsstatus berücksichtigen',
             detail: 'Im Gesundheitsprotokoll ist eine Einschränkung dokumentiert. KAJO gibt deshalb keine Trainingsfreigabe. Belastung erst nach Symptomen, Verlauf und gegebenenfalls medizinischer Rücksprache festlegen. Geplant: ' + sessionText + '.',
             decision: 'health-review',
+            readiness
+        };
+    }
+
+    if (assessmentSessions.length) {
+        return {
+            title: 'Leistungsdiagnostik hat Vorrang',
+            detail: assessmentNames(assessmentSessions) + ' ist heute als eigenständige Belastung eingeplant. KAJO berücksichtigt den Test als Tageshauptbelastung: keine zusätzliche intensive oder kraftbetonte Einheit ergänzen. Falls weitere Einheiten geplant sind (' + sessionText + '), sollten sie entfallen oder auf lockere Regeneration reduziert werden. Die Testbelastung wird nicht als Garmin-Load oder KAJO-Load geschätzt.',
+            decision: 'assessment-day',
+            readiness
+        };
+    }
+
+    if (nextDayAssessments.length) {
+        return {
+            title: 'Belastung vor Leistungsdiagnostik reduzieren',
+            detail: 'Morgen steht ' + assessmentNames(nextDayAssessments) + ' an. Halte den heutigen Trainingsumfang niedrig und verzichte auf intensive Intervalle sowie schweres Krafttraining, damit die Diagnostik nicht durch zusätzliche Ermüdung beeinträchtigt wird. Wenn heute eine Einheit geplant ist (' + sessionText + '), reduziere sie auf lockere Technik oder Regeneration beziehungsweise lasse sie aus. Die Tagesform und mögliche gesundheitliche Einschränkungen haben weiterhin Vorrang.',
+            decision: 'assessment-preparation',
             readiness
         };
     }

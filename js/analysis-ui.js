@@ -5,6 +5,8 @@
 import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
+import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -41,8 +43,8 @@ const renderMetrics = (id, items) => {
 function latestCheckin(key) {
   const entries = Object.entries(state.dailyCheckins || {}).sort(([a], [b]) => b.localeCompare(a));
   for (const [date, row] of entries) {
-    let value = row?.[key];
-    if (key === 'sleepDuration') value = row?.sleepDuration ?? (Number(row?.sleep) > 5 ? row.sleep : null);
+    const objectiveKeys = ['hrv', 'rhr', 'sleepDuration', 'sleepScore', 'respiration', 'vo2max'];
+    const value = objectiveKeys.includes(key) ? getGarminCheckinMetric(row, key) : row?.[key];
     if (['sleepQuality', 'fatigue', 'soreness', 'motivation', 'stress'].includes(key) && (!valid(value) || Number(value) < 1 || Number(value) > 5)) continue;
     if (valid(value)) return { value: Number(value), date };
   }
@@ -103,11 +105,11 @@ function renderRecovery() {
     'Readiness', '', score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
-    ['HRV', 'hrv', 'ms', 1],
-    ['Ruhepuls', 'rhr', 'bpm', 0],
-    ['Schlafdauer', 'sleepDuration', 'h', 1],
-    ['Sleep Score', 'sleepScore', '/100', 0],
-    ['Atemfrequenz', 'respiration', '/min', 1]
+    ['HRV', 'hrv', 'Garmin · ms', 1],
+    ['Ruhepuls', 'rhr', 'Garmin · bpm', 0],
+    ['Schlafdauer', 'sleepDuration', 'Garmin · h', 1],
+    ['Sleep Score', 'sleepScore', 'Garmin · /100', 0],
+    ['Atemfrequenz', 'respiration', 'Garmin · /min', 1]
   ];
   renderMetrics('recovery-analysis-metrics', objectiveEntries.map(([label, key, unit, digits]) => {
     const entry = latestCheckin(key);
@@ -160,16 +162,18 @@ const performanceRangeStart = () => {
 };
 const performanceActivities = () => (Array.isArray(state.rawActivities) ? state.rawActivities : [])
   .filter(activity => {
+    if (!isPaddlingPerformanceActivity(activity)) return false;
     const date = String(activity?.date || activity?.startTime || '').slice(0,10);
     return date && date >= performanceRangeStart() && date <= todayKey();
   }).sort((a,b) => String(a.date || a.startTime).localeCompare(String(b.date || b.startTime)));
 const performanceActivityMetric = (key, label, unit) => {
   const matches = performanceActivities().map(activity => {
-    const series = getActivityTelemetrySeries(activity).find(item => item.key === key);
-    if (!series) return null;
+    const series = resolvePaddlingPerformanceSeries(activity, getActivityTelemetrySeries(activity), key);
+    if (!series || !isValidElapsedTimeAxis(series.time, series.values.length)) return null;
     const values = series.values.filter(valid).map(Number);
     if (!values.length) return null;
-    return { activity, series, value: values.reduce((sum,v)=>sum+v,0)/values.length, count: values.length, label, unit };
+    return { activity, series, value: values.reduce((sum,v)=>sum+v,0)/values.length,
+      count: values.length, label, unit: series.unit || unit, sourceDetail: series.sourceDetail || '' };
   }).filter(Boolean);
   return matches.length ? matches[matches.length-1] : null;
 };
@@ -183,9 +187,10 @@ const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-
   '<span class="kajo-recovery-metric-label">' + performanceEscape(label) + '</span><small>' + performanceEscape(unit || detail || 'Nicht erfasst') + '</small></button>';
 function renderFitness() {
   const vo2 = latestCheckin('vo2max');
-  const vo2Color = vo2 ? historyRingColor('vo2max', vo2.value, vo2.date) : 'var(--kajo-status-info)';
+  // No validated Garmin-specific VO2max status threshold is defined; keep the indicator neutral.
+  const vo2Color = 'var(--kajo-status-info)';
   const vo2Circle = performanceCircle('vo2max','VO₂max',vo2 ? fmt(vo2.value,1) : '—','ml/kg/min',
-    vo2 ? 'Garmin-Schätzwert' : 'Nicht erfasst',vo2Color);
+    vo2 ? 'Garmin-Schätzwert · nicht automatisch paddelspezifisch' : 'Nicht erfasst',vo2Color);
   renderMetrics('fitness-aerobic-metrics',[vo2Circle]);
   const overview = document.getElementById('fitness-overview-view');
   const detail = document.getElementById('performance-detail-view');
@@ -208,8 +213,9 @@ function renderPerformanceDetail() {
   ];
   const paddleCircles = paddleDefs.map(([key,label,unit]) => {
     const entry = performanceActivityMetric(key,label,unit);
+    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel · letzte Einheit'].filter(Boolean).join(' · ') : unit;
     return performanceCircle(key,label,entry ? fmt(entry.value, key==='hr'||key==='cadence'?0:1) : '—',
-      unit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
+      displayUnit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
   });
   renderMetrics('performance-paddling-metrics',paddleCircles);
 
@@ -275,12 +281,12 @@ function renderPerformanceTrend(key) {
   let labels = [], values = [], heading = '', unit = '', explanation = '', color = '#38bdf8';
   if (key === 'vo2max') {
     const entries = Object.entries(state.dailyCheckins || {}).filter(([date,row]) =>
-      date >= performanceRangeStart() && date <= todayKey() && valid(row?.vo2max))
+      date >= performanceRangeStart() && date <= todayKey() && getGarminCheckinMetric(row, 'vo2max') !== null)
       .sort(([a],[b])=>a.localeCompare(b));
     labels = entries.map(([date])=>dateLabel(date));
-    values = entries.map(([,row])=>Number(row.vo2max));
+    values = entries.map(([,row])=>getGarminCheckinMetric(row, 'vo2max'));
     heading = 'VO₂max · Garmin-Schätzwert'; unit = 'ml/kg/min';
-    explanation = 'Verlauf der importierten Garmin-Wellnesswerte. Garmin-Schätzwert, keine direkte Spiroergometrie oder Labordiagnostik.';
+    explanation = 'Verlauf der importierten Garmin-Schätzwerte. Das Garmin-Aktivitätsprofil belegt nicht die tatsächlich ausgeübte Sportart; der Wert ist daher nicht automatisch paddelspezifisch. keine direkte Spiroergometrie oder Labordiagnostik.';
     color = '#f97316';
   } else if (key.startsWith('strength:')) {
     const exercise = decodeURIComponent(key.slice(9));
@@ -294,16 +300,31 @@ function renderPerformanceTrend(key) {
   } else {
     const metricMeta = {speed:['Geschwindigkeit','km/h'],hr:['Herzfrequenz','bpm'],power:['Leistung','W'],cadence:['Kadenz','/min']};
     const activity = performanceActivities().slice().reverse().map(item => ({
-      activity:item, series:getActivityTelemetrySeries(item).find(series=>series.key===key)
+      activity:item, series:resolvePaddlingPerformanceSeries(item, getActivityTelemetrySeries(item), key)
     })).find(item=>item.series);
     if (activity) {
       values = activity.series.values.map(value=>valid(value)?Number(value):null);
-      labels = values.map((_,i)=>'Messpunkt '+(i+1));
+      const time = activity.series.time;
+      const hasElapsedTime = isValidElapsedTimeAxis(time, values.length);
+      const formatElapsed = seconds => {
+        const total = Math.max(0,Math.round(Number(seconds)));
+        const hours = Math.floor(total/3600);
+        const minutes = Math.floor((total%3600)/60);
+        const remainder = total%60;
+        return hours
+          ? hours+':'+String(minutes).padStart(2,'0')+':'+String(remainder).padStart(2,'0')
+          : minutes+':'+String(remainder).padStart(2,'0');
+      };
+      labels = values.map((_,i)=>hasElapsedTime ? formatElapsed(time[i]) : 'Messpunkt '+(i+1));
       heading = metricMeta[key][0] + ' · einzelne Trainingseinheit'; unit = metricMeta[key][1];
       const date = String(activity.activity.date || activity.activity.startTime || '').slice(0,10);
       const sport = activity.activity.sport || activity.activity.type || 'Training';
+      unit = activity.series.unit || metricMeta[key][1];
+      const sourceNote = activity.series.conversionNote || activity.series.sourceDetail;
       explanation = (date ? dateLabel(date)+' · ' : '') + sport +
-        '. Verlauf innerhalb einer Einheit; kein Vergleich zwischen unterschiedlichen Strecken, Gewässern oder Bedingungen.';
+        (sourceNote ? '. ' + sourceNote + '.' : '') +
+        (hasElapsedTime ? ' Zeitachse: Zeit seit Start.' : ' Keine verlässliche Zeitachse; angezeigt wird nur die Messpunktfolge.') +
+        ' Verlauf innerhalb einer Einheit; kein Vergleich zwischen unterschiedlichen Strecken, Gewässern oder Bedingungen.';
       color = '#38bdf8';
     } else {
       heading = metricMeta[key]?.[0] || 'Leistungswert';

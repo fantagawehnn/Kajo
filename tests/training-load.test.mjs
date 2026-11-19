@@ -71,12 +71,17 @@ test('non-Garmin activity prevents a false confirmed-rest day', () => {
     assert.equal(day.loadMode, 'garmin-unavailable');
 });
 
-test('Garmin native training load is used when available', () => {
+test('Garmin native training load remains separate and is not used for CTL', () => {
     const records = [{ id: 'g-2', source: 'garmin', date: completedDay, garminTrainingLoad: 35 }];
+    const result = getTrainingLoadData(records, {}, {});
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
+    assert.equal(result.comparisonRecords.length, 1);
+    assert.equal(result.comparisonRecords[0].value, 35);
     const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
-    assert.equal(day.load, 35);
-    assert.equal(day.dataStatus, 'complete');
-    assert.equal(day.loadMode, 'garmin-native');
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
+    assert.equal(day.loadMode, 'garmin-unavailable');
 });
 
 test('manual session-RPE load is calculated as duration in minutes times RPE', () => {
@@ -91,6 +96,26 @@ test('manual session-RPE load is calculated as duration in minutes times RPE', (
     assert.equal(day.loadMode, 'srpe');
 });
 
+test('explicit RPE zero is a valid rating and produces zero sRPE load', () => {
+    const records = [{ id: 'manual-rpe-zero', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 0 }];
+    const day = entryOn(completedDay, records, {
+        trainingLoadSource: 'srpe',
+        garminActivityCoverageRanges: [covered(completedDay)]
+    });
+    assert.equal(day.load, 0);
+    assert.equal(day.dataStatus, 'complete');
+    assert.equal(day.loadMode, 'srpe');
+});
+
+test('missing or null RPE is not interpreted as a valid zero rating', () => {
+    for (const perceivedEffort of [null, undefined, '']) {
+        const records = [{ id: 'manual-rpe-missing', source: 'manual', date: completedDay, duration: 60, perceivedEffort }];
+        const result = getTrainingLoadData(records, { trainingLoadSource: 'srpe' }, {});
+        assert.equal(result.records.length, 0);
+        assert.equal(result.coverage.loadedActivityCount, 0);
+    }
+});
+
 test('a day with multiple activities is incomplete if any activity lacks the selected load', () => {
     const records = [
         { id: 'g-3', source: 'garmin', date: completedDay, garminTrainingLoad: 30 },
@@ -99,21 +124,21 @@ test('a day with multiple activities is incomplete if any activity lacks the sel
     const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
     assert.equal(day.load, null);
     assert.equal(day.activityCount, 2);
-    assert.equal(day.loadActivityCount, 1);
+    assert.equal(day.loadActivityCount, 0);
     assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
-test('Garmin activity load advances CTL and ATL provisionally without confirmed activity-list coverage', () => {
+test('Garmin native load does not advance CTL or ATL without a KAJO zone load', () => {
     const records = [{ id: 'g-no-coverage', source: 'garmin', date: completedDay, garminTrainingLoad: 25 }];
-    const timeline = computePerformanceTimeline(records, {}, {});
+    const timeline = computePerformanceTimeline(records, {
+        garminActivityCoverageRanges: [covered(completedDay)]
+    }, {});
     const day = timeline.find(item => item.date === completedDay);
-    assert.equal(day.load, 25);
-    assert.equal(day.dataStatus, 'activity-load-only');
-    assert.equal(day.ctl, Number((25 * (1 - Math.exp(-1 / 42))).toFixed(1)));
-    assert.equal(day.atl, Number((25 * (1 - Math.exp(-1 / 7))).toFixed(1)));
-    assert.equal(day.tsb, Number((day.ctl - day.atl).toFixed(1)));
-    assert.equal(day.isProvisional, true);
-    assert.match(day.statusLabel, /vorläufig/i);
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
+    assert.equal(day.ctl, null);
+    assert.equal(day.atl, null);
+    assert.equal(day.tsb, null);
 });
 
 test('a day outside confirmed activity-list coverage remains unknown', () => {
@@ -132,28 +157,42 @@ test('current-day activity remains unknown until the day is fully covered', () =
         garminActivityCoverageRanges: [covered(completedDay)]
     });
     assert.equal(day.load, null);
-    assert.equal(day.dataStatus, 'unknown');
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
 });
 
 test('an unknown day breaks the CTL model instead of carrying load across the gap', () => {
     const threeDaysAgo = offsetDate(today, -3);
     const gapDate = offsetDate(today, -2);
     const records = [
-        { id: 'g-5', source: 'garmin', date: threeDaysAgo, garminTrainingLoad: 50 },
-        { id: 'g-6', source: 'garmin', date: completedDay, garminTrainingLoad: 40 }
+        { id: 'manual-5', source: 'manual', date: threeDaysAgo, duration: 60, perceivedEffort: 5 },
+        { id: 'manual-6', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 4 }
     ];
     const timeline = computePerformanceTimeline(records, {
+        trainingLoadSource: 'srpe',
         garminActivityCoverageRanges: [covered(threeDaysAgo), covered(completedDay)]
     }, {});
     const gap = timeline.find(day => day.date === gapDate);
     const current = timeline.find(day => day.date === completedDay);
     assert.equal(gap.load, null);
     assert.equal(gap.dataStatus, 'unknown');
-    assert.equal(current.load, 40);
-    assert.equal(current.ctl, Number((40 * (1 - Math.exp(-1 / 42))).toFixed(1)));
+    assert.equal(current.load, 240);
+    assert.equal(current.ctl, Number((240 * (1 - Math.exp(-1 / 42))).toFixed(1)));
 });
 
-test('automatic model uses HR-zone load when native Garmin load is absent', () => {
+test('legacy automatic setting maps to the stable KAJO model and retains native load separately', () => {
+    const activity = {
+        id: 'g-auto-zone', source: 'garmin', date: completedDay, duration: 60,
+        garminTrainingLoad: 35,
+        garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
+    };
+    const result = getTrainingLoadData([activity], { trainingLoadSource: 'auto' }, { maxHr: 190, restingHr: 50 });
+    assert.equal(result.mode, 'garmin-zone');
+    assert.equal(result.records.length, 1);
+    assert.equal(result.comparisonRecords.length, 1);
+    assert.equal(result.comparisonRecords[0].value, 35);
+});
+
+test('KAJO primary model calculates HR-zone load when usable HR data exists', () => {
     const records = [{
         id: 'g-hr-1', source: 'garmin', date: completedDay, duration: 60,
         garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] }
@@ -164,14 +203,15 @@ test('automatic model uses HR-zone load when native Garmin load is absent', () =
     assert.ok(result.records[0].value > 0);
 });
 
-test('automatic model falls back to sRPE when no Garmin load can be calculated', () => {
+test('KAJO primary model does not fall back to sRPE when HR data is unavailable', () => {
     const records = [{
         id: 'g-rpe-1', source: 'garmin', date: completedDay,
         duration: 60, perceivedEffort: 7
     }];
     const result = getTrainingLoadData(records, {}, {});
-    assert.equal(result.mode, 'srpe');
-    assert.equal(result.records[0].value, 420);
+    assert.equal(result.mode, 'garmin-unavailable');
+    assert.equal(result.records.length, 0);
+    assert.equal(result.comparisonRecords.length, 0);
 });
 
 test('activity-day load remains visible without confirmed Garmin coverage', () => {
@@ -187,7 +227,7 @@ test('activity-day load remains visible without confirmed Garmin coverage', () =
     assert.equal(day.atl, null);
 });
 
-test('automatic fallback never mixes HR-zone and sRPE values', () => {
+test('KAJO primary model never mixes HR-zone and sRPE values', () => {
     const records = [
         { id: 'g-hr-2', source: 'garmin', date: completedDay, duration: 60,
           garminTelemetry: { hr: [145, 155, 165, 175], time: [0, 20, 40, 60] } },
@@ -442,14 +482,14 @@ test('Edwards TRIMP excludes telemetry gaps longer than 30 seconds', () => {
 
 test('adaptive resting HR uses the median of the trailing window and excludes future readings', () => {
     const checkins = {
-        '2026-01-01': { rhr: 48 },
-        '2026-01-02': { rhr: 52 },
-        '2026-01-03': { rhr: 49 },
-        '2026-01-04': { rhr: 90 },
-        '2026-01-05': { rhr: 50 },
-        '2026-01-06': { rhr: 46 },
-        '2026-01-07': { rhr: 44 },
-        '2026-01-08': { rhr: 35 }
+        '2026-01-01': { garminRhr: 48 },
+        '2026-01-02': { garminRhr: 52 },
+        '2026-01-03': { garminRhr: 49 },
+        '2026-01-04': { garminRhr: 90 },
+        '2026-01-05': { garminRhr: 50 },
+        '2026-01-06': { garminRhr: 46 },
+        '2026-01-07': { garminRhr: 44 },
+        '2026-01-08': { garminRhr: 35 }
     };
     const result = getAdaptiveRestingHr(checkins, '2026-01-07', 7, {});
     assert.equal(result.value, 49);
@@ -466,8 +506,8 @@ test('Karvonen zones use HR reserve rather than fixed percentages of maximum HR'
 
 test('adaptive resting HR requires at least three readings unless profile fallback exists', () => {
     const checkins = {
-        '2026-01-01': { rhr: 50 },
-        '2026-01-02': { rhr: 51 }
+        '2026-01-01': { garminRhr: 50 },
+        '2026-01-02': { garminRhr: 51 }
     };
     assert.equal(getAdaptiveRestingHr(checkins, '2026-01-02', 7, {}).value, null);
     const fallback = getAdaptiveRestingHr(checkins, '2026-01-02', 7, { restingHr: 49 });
@@ -478,12 +518,12 @@ test('adaptive resting HR requires at least three readings unless profile fallba
 
 test('each historical activity uses its own trailing adaptive resting-HR window', () => {
     const checkins = {
-        '2026-01-01': { rhr: 50 },
-        '2026-01-02': { rhr: 50 },
-        '2026-01-03': { rhr: 50 },
-        '2026-01-04': { rhr: 60 },
-        '2026-01-05': { rhr: 60 },
-        '2026-01-06': { rhr: 60 }
+        '2026-01-01': { garminRhr: 50 },
+        '2026-01-02': { garminRhr: 50 },
+        '2026-01-03': { garminRhr: 50 },
+        '2026-01-04': { garminRhr: 60 },
+        '2026-01-05': { garminRhr: 60 },
+        '2026-01-06': { garminRhr: 60 }
     };
     const first = getAdaptiveRestingHr(checkins, '2026-01-03', 3, { maxHr: 200 });
     const later = getAdaptiveRestingHr(checkins, '2026-01-06', 3, { maxHr: 200 });
@@ -501,7 +541,7 @@ test('Garmin HR-zone load adapts Karvonen boundaries to each activity date RHR w
         garminTelemetry: { hr: [145, 150, 160, 170], time: [0, 20, 40, 60] }
     };
     const makeCheckins = value => Object.fromEntries(
-        Array.from({ length: 7 }, (_, index) => [offsetDate('2026-01-07', index - 6), { rhr: value }])
+        Array.from({ length: 7 }, (_, index) => [offsetDate('2026-01-07', index - 6), { garminRhr: value }])
     );
     const profile = { maxHr: 200 };
     const settings = { heartRateZoneSettings: { restingHrWindowDays: 7 } };

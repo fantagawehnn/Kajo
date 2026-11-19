@@ -764,9 +764,9 @@ export function openCSVDetailsModal(id) {
     document.getElementById('modal-edit-distance').value = act.distance == null ? '' : formatKm(act.distance);
     const durationInput = document.getElementById('modal-edit-duration');
     if (durationInput) durationInput.value = act.duration ?? '';
-    const rpeValue = act.perceivedEffort ?? 5;
+    const rpeValue = act.perceivedEffort;
     const rpeSlider = document.getElementById('activity-rpe-slider');
-    if (rpeSlider) rpeSlider.value = rpeValue;
+    if (rpeSlider) rpeSlider.value = rpeValue == null || rpeValue === '' ? 5 : rpeValue;
     updateActivityRPEDisplay(act);
     const noteEditor = document.getElementById('activity-note-editor');
     const notePreview = document.getElementById('activity-note-preview');
@@ -1164,9 +1164,31 @@ function renderActivityRouteMap(activity) {
 }
 
 
+function getActivityLapRecords(activity) {
+    const storedLaps = Array.isArray(activity?.laps) ? activity.laps
+        : Array.isArray(activity?.intervals) ? activity.intervals : [];
+    if (storedLaps.length) return storedLaps;
+    const fitLaps = Array.isArray(activity?.garminFitData?.laps) ? activity.garminFitData.laps : [];
+    return fitLaps.map((lap, index) => ({
+        name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
+        kind: 'automatic',
+        duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
+        durationUnit: 'seconds',
+        distance: Number.isFinite(Number(lap.distanceKm)) ? Number(lap.distanceKm) * 1000 : null,
+        avgHr: lap.averageHeartRate ?? null,
+        maxHr: lap.maxHeartRate ?? null,
+        avgSpeed: lap.averageSpeedKmh ?? null,
+        maxSpeed: lap.maxSpeedKmh ?? null,
+        startTime: lap.startTime ?? null,
+        startTimeSeconds: lap.startTimeSeconds ?? null,
+        endTimeSeconds: lap.endTimeSeconds ?? null
+    }));
+}
+
 export function focusActivityLap(index) {
     const activity = state.selectedActivityForModal;
-    const lap = Array.isArray(activity?.laps) ? activity.laps[index] : null;
+    const lap = getActivityLapRecords(activity)[index] || null;
     if (!lap || !Number.isFinite(Number(lap.startTimeSeconds)) || !Number.isFinite(Number(lap.endTimeSeconds))) return;
     state.activitySelectedLap = { startTimeSeconds: Number(lap.startTimeSeconds), endTimeSeconds: Number(lap.endTimeSeconds) };
     const chartActivity = activity.garminTelemetry ? { ...activity, telemetry: activity.garminTelemetry } : activity;
@@ -1308,21 +1330,7 @@ function renderOptionalActivityViews(act) {
     // Runden getrennt ausweisen: automatische Runden dürfen keinen Intervallvergleich beeinflussen.
     // FIT-Runden liegen nach dem Garmin-Import unter garminFitData.laps und
     // werden hier in das bestehende Anzeigeformat überführt.
-    const storedLaps = Array.isArray(act.laps) ? act.laps : Array.isArray(act.intervals) ? act.intervals : [];
-    const fitLaps = Array.isArray(act.garminFitData?.laps) ? act.garminFitData.laps : [];
-    const laps = storedLaps.length ? storedLaps : fitLaps.map((lap, index) => ({
-        name: 'Garmin-Runde ' + (lap.lapNumber || index + 1),
-        kind: 'automatic',
-        duration: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
-        durationSeconds: lap.totalTimerTimeSeconds ?? lap.totalElapsedTimeSeconds ?? null,
-        durationUnit: 'seconds',
-        distance: Number.isFinite(Number(lap.distanceKm)) ? Number(lap.distanceKm) * 1000 : null,
-        avgHr: lap.averageHeartRate ?? null,
-        maxHr: lap.maxHeartRate ?? null,
-        avgSpeed: lap.averageSpeedKmh ?? null,
-        maxSpeed: lap.maxSpeedKmh ?? null,
-        startTime: lap.startTime ?? null
-    }));
+    const laps = getActivityLapRecords(act);
     if (laps.length) {
         const manualCount = laps.filter(lap => lap.kind === 'manual').length;
         const automaticCount = laps.filter(lap => lap.kind === 'automatic').length;
@@ -1395,7 +1403,7 @@ function renderOptionalActivityViews(act) {
                     return '<div class="border-b border-slate-800 py-2 text-[10px]"><span class="text-slate-200 font-medium">Schritt ' + (index + 1) + '</span><div class="text-slate-400 mt-1">' + detail + '</div></div>';
                 }).join('') + '</div>'
             : '';
-        setPanel('activity-intervals-panel', 'Runden & manuelle Abschnitte', summary + rows + comparisonNote + workoutStepHtml);
+        setPanel('activity-intervals-panel', 'Runden & Trainingsintervalle', summary + rows + comparisonNote + workoutStepHtml);
     } else {
         const fitSteps = act.garminFitData?.messageGroups?.structured?.workoutSteps;
         const workoutSteps = Array.isArray(fitSteps) ? fitSteps : [];
@@ -1545,16 +1553,19 @@ function updateActivityRPEDisplay(act) {
     const valueEl = document.getElementById('activity-rpe-value');
     const descEl = document.getElementById('activity-rpe-description');
     const slider = document.getElementById('activity-rpe-slider');
-    const rpe = Number(act?.perceivedEffort);
-    const labels = {1:'Sehr leicht',2:'Leicht',3:'Leicht',4:'Etwas anstrengend',5:'Moderat',6:'Moderat',7:'Hart',8:'Sehr hart',9:'Sehr hart',10:'Maximal'};
-    if (slider) slider.value = Number.isFinite(rpe) && rpe >= 1 && rpe <= 10 ? rpe : 5;
-    if (valueEl) valueEl.textContent = Number.isFinite(rpe) && rpe >= 1 && rpe <= 10 ? rpe + '/10' : '—/10';
-    if (descEl) descEl.textContent = Number.isFinite(rpe) && rpe >= 1 && rpe <= 10 ? labels[rpe] : 'Noch nicht bewertet';
+    const rawRpe = act?.perceivedEffort;
+    const hasRpe = rawRpe !== null && rawRpe !== undefined && rawRpe !== '';
+    const rpe = hasRpe ? Number(rawRpe) : NaN;
+    const labels = {0:'Keine Anstrengung',1:'Sehr leicht',2:'Leicht',3:'Leicht',4:'Etwas anstrengend',5:'Moderat',6:'Moderat',7:'Hart',8:'Sehr hart',9:'Sehr hart',10:'Maximal'};
+    const valid = hasRpe && Number.isInteger(rpe) && rpe >= 0 && rpe <= 10;
+    if (slider) slider.value = valid ? rpe : 5;
+    if (valueEl) valueEl.textContent = valid ? rpe + '/10' : '—/10';
+    if (descEl) descEl.textContent = valid ? labels[rpe] : 'Noch nicht bewertet';
 }
 export function updateActivityRPE(value) {
     const act = state.selectedActivityForModal;
     const rpe = Number(value);
-    if (!act || !Number.isInteger(rpe) || rpe < 1 || rpe > 10) return;
+    if (!act || !Number.isInteger(rpe) || rpe < 0 || rpe > 10) return;
     act.perceivedEffort = rpe;
     act.sRpeLoad = Number.isFinite(Number(act.duration)) && Number(act.duration) > 0 ? Number((Number(act.duration) * rpe).toFixed(0)) : null;
     saveDataToLocalStorage();
@@ -1607,7 +1618,9 @@ export function saveManualSportCorrection() {
     if (distanceRaw === '') delete act.distance;
     else act.distance = distance;
     act.duration = duration;
-    if (Number.isInteger(Number(act.perceivedEffort)) && Number(act.perceivedEffort) >= 1 && Number(act.perceivedEffort) <= 10 && duration > 0) act.sRpeLoad = Number((duration * Number(act.perceivedEffort)).toFixed(0));
+    const rawRpe = act.perceivedEffort;
+    const rpe = rawRpe === null || rawRpe === undefined || rawRpe === '' ? NaN : Number(rawRpe);
+    if (Number.isInteger(rpe) && rpe >= 0 && rpe <= 10 && duration > 0) act.sRpeLoad = Number((duration * rpe).toFixed(0));
     else delete act.sRpeLoad;
     saveDataToLocalStorage();
     refreshAll();
@@ -1781,8 +1794,9 @@ function renderTrainingBenefitProfile(act) {
     const zoneTime = calculateActivityZoneTime(act, zoneConfig);
     const zoneSeconds = zoneTime?.seconds || [0, 0, 0, 0, 0];
     const totalSeconds = zoneTime?.totalSeconds || 0;
-    const rpe = Number(act.perceivedEffort);
-    const hasRpe = Number.isFinite(rpe) && rpe >= 1 && rpe <= 10;
+    const rawRpe = act.perceivedEffort;
+    const rpe = rawRpe === null || rawRpe === undefined || rawRpe === '' ? NaN : Number(rawRpe);
+    const hasRpe = Number.isInteger(rpe) && rpe >= 0 && rpe <= 10;
     const rows = totalSeconds > 0 ? [
         ['Niedrige Intensität', zoneSeconds[0] + zoneSeconds[1]], ['Mittlere Intensität', zoneSeconds[1] + zoneSeconds[2]],
         ['Hohe Intensität', zoneSeconds[2] + zoneSeconds[3]], ['Sehr hohe Intensität', zoneSeconds[3] + zoneSeconds[4]]

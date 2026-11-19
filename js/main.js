@@ -14,12 +14,14 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
-import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=4';
+import { normalizeGarminWeight, countGarminMetricUpdates } from './garmin-health-normalize.js';
+import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
+import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
-import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=5';
+import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=6';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { renderAnalysisPageUI } from './analysis-ui.js?v=6';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
@@ -27,15 +29,15 @@ import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=7';
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=45';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=11';
-import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=20';
+import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=22';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=79';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=3';
-import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=2';
+import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=3';
 import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActivity, attachDailyHrSeriesToActivity, invalidateDailyHrActivityPreview } from './daily-hr-activity.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
-import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=11';
+import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason } from './settings.js?v=12';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
@@ -52,7 +54,7 @@ function loadCoachModule() {
     return coachModulePromise;
 }
 function loadHealthDataModule() {
-    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=2');
+    if (!healthDataModulePromise) healthDataModulePromise = import('./health-data.js?v=3');
     return healthDataModulePromise;
 }
 function loadNutritionModule() {
@@ -515,67 +517,67 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         const sleepPayload = records.sleep_detail ?? records.sleep_summaries;
         const summaryPayload = records.daily_summary;
 
+        const weightMeasurement = normalizeGarminWeight(records.weight);
         const candidates = {
-            hrv: findGarminNumber(hrvPayload, ['lastNightAvg', 'lastNightAverage', 'averageHrv', 'avgHrv', 'hrv']),
-            rhr: findGarminNumber(heartPayload, ['restingHeartRate', 'restingHr', 'restingHR']),
-            sleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
-            sleepScore: findGarminSleepScore(sleepPayload),
-            respiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
+            garminHrv: findGarminNumber(hrvPayload, ['lastNightAvg', 'lastNightAverage', 'averageHrv', 'avgHrv', 'hrv']),
+            garminRhr: findGarminNumber(heartPayload, ['restingHeartRate', 'restingHr', 'restingHR']),
+            garminSleepDuration: findGarminNumber(sleepPayload, ['sleepTimeSeconds', 'totalSleepSeconds', 'sleepDurationSeconds']),
+            garminSleepScore: findGarminSleepScore(sleepPayload),
+            garminRespiration: findGarminNumber(sleepPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue', 'respirationRate']),
             garminStress: findGarminNumber(records.stress, ['overallStressLevel', 'averageStressLevel', 'avgStressLevel', 'averageStress', 'avgStress', 'stressLevel']),
-            weight: findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
-            bodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery', ['latestValue']),
-            spo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
-            steps: findGarminNumber(records.steps, ['totalSteps']),
-            fitnessAge: findGarminNumber(records.fitness_age, ['fitnessAge'])
+            garminWeight: weightMeasurement?.value ?? findGarminNumber(records.weight, ['weightInKilograms', 'weightKg']),
+            garminBodyBattery: findGarminNumberInNamedSection(summaryPayload, 'bodyBattery', ['latestValue']),
+            garminSpo2: findGarminNumber(records.spo2, ['averageSpO2', 'avgSleepSpO2', 'latestSpO2']),
+            garminSteps: findGarminNumber(records.steps, ['totalSteps']),
+            garminFitnessAge: findGarminNumber(records.fitness_age, ['fitnessAge'])
         };
-
-        // Fallbacks aus der Tageszusammenfassung, wenn ein spezialisierter Datensatz fehlt.
-        if (candidates.rhr === null) candidates.rhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
-        if (candidates.respiration === null) candidates.respiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
+        if (candidates.garminRhr === null) candidates.garminRhr = findGarminNumber(summaryPayload, ['restingHeartRate', 'restingHr', 'restingHR']);
+        if (candidates.garminRespiration === null) candidates.garminRespiration = findGarminNumber(summaryPayload, ['averageRespiration', 'avgRespiration', 'avgRespirationValue', 'averageRespirationValue']);
         if (candidates.garminStress === null) candidates.garminStress = findGarminNumber(summaryPayload, ['avgLevel']);
-        if (candidates.bodyBattery === null) candidates.bodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
-        if (candidates.spo2 === null) candidates.spo2 = findGarminNumber(summaryPayload, ['avgValue']);
-        if (candidates.steps === null) candidates.steps = findGarminNumber(summaryPayload, ['value']);
-
-        if (candidates.sleepDuration !== null) candidates.sleepDuration /= 3600;
-
+        if (candidates.garminBodyBattery === null) candidates.garminBodyBattery = findGarminNumber(records.body_battery, ['latestValue', 'bodyBatteryLevelValue']);
+        if (candidates.garminSpo2 === null) candidates.garminSpo2 = findGarminNumber(summaryPayload, ['avgValue']);
+        if (candidates.garminSteps === null) candidates.garminSteps = findGarminNumber(summaryPayload, ['value']);
+        if (candidates.garminSleepDuration !== null) candidates.garminSleepDuration /= 3600;
+        const sourceMetadata = {
+            garminHrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' },
+            garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' },
+            garminSleepDuration: { source: 'garmin', metric: 'sleep_duration', unit: 'h' },
+            garminSleepScore: { source: 'garmin', metric: 'sleep_score', unit: 'points' },
+            garminRespiration: { source: 'garmin', metric: 'respiration_rate', unit: 'breaths/min' },
+            garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' },
+            garminWeight: {
+                source: 'garmin', metric: 'body_weight', unit: 'kg',
+                ...(weightMeasurement?.sourceType ? { sourceType: weightMeasurement.sourceType } : {})
+            },
+            garminBodyBattery: { source: 'garmin', metric: 'body_battery', unit: 'points' },
+            garminSpo2: { source: 'garmin', metric: 'oxygen_saturation', unit: '%' },
+            garminSteps: { source: 'garmin', metric: 'steps', unit: 'steps' },
+            garminFitnessAge: { source: 'garmin', metric: 'fitness_age', unit: 'years' }
+        };
         for (const [key, value] of Object.entries(candidates)) {
             if (value === null || !Number.isFinite(value)) continue;
-            if (key === 'hrv' && value <= 0) continue;
-            if (key === 'rhr' && (value <= 0 || value > 250)) continue;
-            if (key === 'sleepDuration' && (value <= 0 || value > 24)) continue;
-            if (key === 'sleepScore' && (value < 0 || value > 100)) continue;
-            if (key === 'respiration' && (value < 4 || value > 60)) continue;
+            if (key === 'garminHrv' && value <= 0) continue;
+            if (key === 'garminRhr' && (value <= 0 || value > 250)) continue;
+            if (key === 'garminSleepDuration' && (value <= 0 || value > 24)) continue;
+            if (key === 'garminSleepScore' && (value < 0 || value > 100)) continue;
+            if (key === 'garminRespiration' && (value < 4 || value > 60)) continue;
             if (key === 'garminStress' && (value < 0 || value > 100)) continue;
-            if (key === 'weight' && (value <= 0 || value > 400)) continue;
-            if (key === 'bodyBattery' && (value < 0 || value > 100)) continue;
-            if (key === 'spo2' && (value < 50 || value > 100)) continue;
-            if (key === 'steps' && (value < 0 || value > 200000)) continue;
-            if (key === 'fitnessAge' && (value <= 0 || value > 120)) continue;
-
-            // Garmin-Ruhe-HF separat speichern: manuelle/andere rhr-Werte bleiben unangetastet,
-            // während die adaptive Zonenberechnung gezielt den Garmin-Tageswert bevorzugt.
-            const targetKey = key === 'rhr' ? 'garminRhr' : key;
-            if (existing[targetKey] !== null && existing[targetKey] !== undefined && existing[targetKey] !== '') continue;
-            updates[targetKey] = key === 'sleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
-            if (key === 'rhr') {
-                updates.measurementSources = {
-                    ...(existing.measurementSources || {}),
-                    garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' }
-                };
-            }
-            if (key === 'garminStress') {
-                updates.measurementSources = {
-                    ...(updates.measurementSources || existing.measurementSources || {}),
-                    garminStress: { source: 'garmin', metric: 'daily_average_stress', unit: 'points' }
-                };
-            }
+            if (key === 'garminWeight' && (value <= 0 || value > 400)) continue;
+            if (key === 'garminBodyBattery' && (value < 0 || value > 100)) continue;
+            if (key === 'garminSpo2' && (value < 50 || value > 100)) continue;
+            if (key === 'garminSteps' && (value < 0 || value > 200000)) continue;
+            if (key === 'garminFitnessAge' && (value <= 0 || value > 120)) continue;
+            // Garmin-eigene Felder werden aktualisiert; manuelle Check-ins bleiben getrennt.
+            updates[key] = key === 'garminSleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            updates.measurementSources = {
+                ...(updates.measurementSources || existing.measurementSources || {}),
+                [key]: sourceMetadata[key]
+            };
         }
-
-        const keys = Object.keys(updates);
-        if (!keys.length) continue;
+        const metricCount = countGarminMetricUpdates(updates);
+        if (!metricCount) continue;
         if (!dryRun) state.dailyCheckins[date] = { ...existing, ...updates };
-        importedValues += keys.length;
+        importedValues += metricCount;
         changedDays++;
     }
 
@@ -610,8 +612,8 @@ async function previewGarminHealthRange() {
         const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate, { dryRun: true });
         status.textContent = result.records === 0
             ? 'Vorschau: Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
-            : 'Vorschau: ' + result.values + ' fehlende Werte an ' + result.days +
-                ' Tagen könnten ergänzt werden. Geprüft: ' + result.records + ' Rohdatensätze an ' +
+            : 'Vorschau: ' + result.values + ' Garmin-Werte an ' + result.days +
+                ' Tagen könnten aktualisiert/ergänzt werden. Geprüft: ' + result.records + ' Rohdatensätze an ' +
                 result.dates + ' Tagen. Es wurde noch nichts verändert.';
     } catch (error) {
         status.textContent = 'Vorschau fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
@@ -643,9 +645,9 @@ async function restoreGarminHealthRange() {
         const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
         status.textContent = result.records === 0
             ? 'Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
-            : 'Wiederherstellung abgeschlossen: ' + result.values + ' Werte an ' + result.days +
-                ' Tagen ergänzt. Geprüft: ' + result.records + ' Rohdatensätze an ' + result.dates +
-                ' Tagen. Bestehende Check-in-Werte wurden nicht überschrieben.';
+            : 'Wiederherstellung abgeschlossen: ' + result.values + ' Garmin-Werte an ' + result.days +
+                ' Tagen aktualisiert/ergänzt. Geprüft: ' + result.records + ' Rohdatensätze an ' + result.dates +
+                ' Tagen. Manuelle Check-in-Angaben bleiben getrennt.';
     } catch (error) {
         console.error('Garmin-Gesundheitsdaten konnten nicht wiederhergestellt werden:', error);
         status.textContent = 'Wiederherstellung fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
@@ -3045,6 +3047,7 @@ Object.assign(window, {
     closeSettingsModal: hideSettingsModal,
     addCustomSport,
     addCustomCategory,
+    selectSettingsColor,
     saveSettings,
     previewHeartRateZones,
     closeProfileModal,
@@ -3054,6 +3057,7 @@ Object.assign(window, {
     restoreDatabaseBackup,
     uploadGarminExportArchive,
     analyzeGarminExportArchive,
+    importGarminExportArchive,
     closeBackupPreview,
     confirmBackupRestore,
     addRace,

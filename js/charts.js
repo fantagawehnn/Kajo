@@ -13,6 +13,7 @@ import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard
 import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=5';
 import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
+import { getValidatedElapsedTimeAxis } from './performance-data-quality.js';
 
 /* Chart.js: Touchbewegungen innerhalb eines Diagramms wie Hover behandeln.
    touchmove aktualisiert onHover kontinuierlich beim Verschieben des Fingers. */
@@ -720,9 +721,13 @@ export function getActivityTelemetrySeries(act) {
         if (/respirat|breathing|atemfrequenz/.test(descriptor)) return 'respiration';
         if (/temperature|temperatur/.test(descriptor)) return 'temperature';
         if (/altitude|elevation|height|höhe/.test(descriptor)) return 'altitude';
+        if (/vertical.?speed|vertikale geschwindigkeit/.test(descriptor)) return 'verticalSpeed';
         if (/speed|geschwindigkeit/.test(descriptor)) return 'speed';
+        if (/accumulated.?power|summierte leistung/.test(descriptor)) return 'accumulatedPower';
         if (/power|leistung|watt/.test(descriptor)) return 'power';
         if (/pace|tempo/.test(descriptor)) return 'pace';
+        if (['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
+            && /directfractionalcadence|double cadence/.test(descriptor)) return 'doubleCadence';
         if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor)) return 'cadence';
         if (/body.?battery/.test(descriptor)) return 'bodyBattery';
         if (/grade|steigung/.test(descriptor)) return 'grade';
@@ -748,11 +753,13 @@ export function getActivityTelemetrySeries(act) {
         const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
             && (key === 'speed' || key === 'power')
             ? meta.label + ' (Gerätemesswert)' : meta.label;
-        result.push({ key, label: displayLabel, unit: meta.unit, color: metricColor, values: values.map(value =>
-            value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
-                || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
-                ? null : Number(value)
-        ) });
+        result.push({ key, label: displayLabel, unit: meta.unit, color: metricColor,
+            time: getValidatedElapsedTimeAxis(telem, values.length),
+            values: values.map(value =>
+                value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
+                    || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
+                    ? null : Number(value)
+            ) });
     }
 
     // Zusätzliche Garmin-JSON-Messreihen bleiben verfügbar, sofern sie zur Sportart passen.
@@ -779,10 +786,7 @@ export function getActivityTelemetrySeries(act) {
             key,
             label: displayLabel,
             unit: typeof metric.unit === 'string' ? metric.unit : '',
-            time: Array.isArray(metric.time) && metric.time.length === metric.values.length
-                ? metric.time
-                : Array.isArray(telem.metricSeriesTime) && telem.metricSeriesTime.length === metric.values.length
-                    ? telem.metricSeriesTime : null,
+            time: getValidatedElapsedTimeAxis(telem, metric.values.length),
             color: getActivityTelemetryColor(key, displayLabel),
             values: metric.values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))

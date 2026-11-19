@@ -151,18 +151,34 @@ const sportColorPalette = [
   { label: 'Cross-Training – Indigo', color: '#3949AB' },
   { label: 'Outdoor / Adventure – Erdbraun', color: '#5D4037' }
 ];
+function settingsColorDots(currentColor, inputAttribute) {
+  const current = String(currentColor || '#64748b').toUpperCase();
+  const palette = sportColorPalette.map(item => item.color);
+  if (!palette.includes(current)) palette.unshift(current);
+  const dots = palette.map(color => {
+    const label = sportColorPalette.find(item => item.color === color)?.label || 'Eigene Farbe';
+    return `<button type="button" data-color-option="${color}" onclick="selectSettingsColor(this)" title="${escapeHtml(label)}" aria-label="Farbe ${escapeHtml(label)}" aria-pressed="${color === current}" class="h-4 w-4 rounded-full border border-white/20 transition-transform hover:scale-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${color === current ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950' : ''}" style="background-color:${color}"></button>`;
+  }).join('');
+  return `<div class="flex flex-wrap items-center gap-2 min-w-0" role="group" aria-label="Farbe auswählen">${dots}<input ${inputAttribute} type="hidden" value="${escapeHtml(current)}"></div>`;
+}
+
+export function selectSettingsColor(button) {
+  const row = button?.closest('[data-sport-row], [data-category-row]');
+  const input = row?.querySelector('[data-color-hex], [data-color]');
+  if (!row || !input) return;
+  input.value = button.dataset.colorOption || '';
+  row.querySelectorAll('[data-color-option]').forEach(option => {
+    const selected = option === button;
+    option.classList.toggle('ring-2', selected);
+    option.classList.toggle('ring-white', selected);
+    option.classList.toggle('ring-offset-2', selected);
+    option.classList.toggle('ring-offset-slate-950', selected);
+    option.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  });
+}
+
 function sportColorEditor(color) {
-  const current = String(color || '#64748b').toUpperCase();
-  const preset = sportColorPalette.some(item => item.color === current);
-  const options = sportColorPalette.map(item =>
-    `<option value="${item.color}" ${item.color === current ? 'selected' : ''}>${item.label}</option>`
-  ).join('');
-  return `<div class="grid grid-cols-1 gap-1 min-w-0">
-    <select data-color-preset onchange="if(this.value !== 'custom') this.parentElement.querySelector('[data-color-hex]').value=this.value" class="w-full min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
-      <option value="custom" ${preset ? '' : 'selected'}>Eigener Hex-Code</option>${options}
-    </select>
-    <input data-color-hex type="text" value="${escapeHtml(current)}" maxlength="7" placeholder="#RRGGBB" aria-label="Eigener Hex-Farbcode" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono">
-  </div>`;
+  return settingsColorDots(color, 'data-color-hex aria-label="Sportartfarbe"');
 }
 const slug = value => String(value||'sport').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'custom';
 
@@ -176,9 +192,9 @@ function renderRows() {
   if (!sportBox || !catBox || !zoneBox) return;
   renderTelemetrySettings();
   const loadSource = document.getElementById('training-load-source');
-  if (loadSource) loadSource.value = state.settings?.trainingLoadSource || 'auto';
+  if (loadSource) loadSource.value = state.settings?.trainingLoadSource === 'srpe' ? 'srpe' : 'kajo-zone';
   sportBox.innerHTML = Object.entries(sports).map(([key,v]) => `<div class="grid grid-cols-[auto_minmax(0,1fr)_minmax(145px,1fr)_auto] gap-2 items-center rounded-lg border border-slate-800 bg-slate-950/60 p-2" data-sport-row data-key="${key}"><input data-enabled type="checkbox" ${selectedSports.has(key) ? 'checked' : ''} aria-label="Sportart ${escapeHtml(v.label)} im Kalender verwenden" class="h-4 w-4 accent-sky-500"><input data-label value="${escapeHtml(v.label)}" class="min-w-0 w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">${sportColorEditor(v.color)}${key.startsWith('custom-') ? '<button type="button" data-remove class="text-xs text-rose-400" title="Entfernen">×</button>' : '<span class="text-[10px] text-slate-600">Standard</span>'}</div>`).join('');
-  catBox.innerHTML = Object.entries(categories).map(([key,v]) => `<div class="grid grid-cols-[1fr_76px_auto] gap-2 items-center" data-category-row data-key="${key}"><input data-label value="${escapeHtml(v.label)}" class="min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"><input data-color type="color" value="${v.color||'#64748b'}" class="w-full h-9 bg-slate-950 border border-slate-700 rounded-lg">${key.startsWith('custom-') ? '<button type="button" data-remove class="text-xs text-rose-400" title="Entfernen">×</button>' : '<span class="text-[10px] text-slate-600">Standard</span>'}</div>`).join('');
+  catBox.innerHTML = Object.entries(categories).map(([key,v]) => `<div class="grid grid-cols-[minmax(0,1fr)_minmax(110px,auto)_auto] gap-2 items-center" data-category-row data-key="${key}"><input data-label value="${escapeHtml(v.label)}" class="min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">${settingsColorDots(v.color, 'data-color aria-label="Trainingskategorienfarbe"')}${key.startsWith('custom-') ? '<button type="button" data-remove class="text-xs text-rose-400" title="Entfernen">×</button>' : '<span class="text-[10px] text-slate-600">Standard</span>'}</div>`).join('');
   const activeSports = Object.fromEntries(Object.entries(sports).filter(([key]) => selectedSports.has(key)));
   for (const id of ['modal-edit-sport-select','plan-sport']) { const select=document.getElementById(id); if(select){ const current=select.value; select.innerHTML=Object.entries(activeSports).map(([key,v])=>`<option value="${escapeHtml(key)}">${escapeHtml(v.label)}</option>`).join(''); if(current&&sports[current])select.value=current; } }
   for (const id of ['modal-edit-type-select','plan-category']) { const select=document.getElementById(id); if(select){ const current=select.value; select.innerHTML=Object.entries(categories).map(([key,v])=>`<option value="${escapeHtml(key)}">${escapeHtml(v.label)}</option>`).join(''); if(current&&categories[current])select.value=current; } }
@@ -267,7 +283,8 @@ export function addCustomCategory() {
   const key = 'custom-' + slug(label);
   const box = document.getElementById('settings-categories-list');
   if (box.querySelector(`[data-key="${key}"]`)) { alert('Diese Kategorie existiert bereits.'); return; }
-  box.insertAdjacentHTML('beforeend', `<div class="grid grid-cols-[1fr_76px_auto] gap-2 items-center" data-category-row data-key="${key}"><input data-label value="${escapeHtml(label.trim())}" class="min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"><input data-color type="color" value="${sportColorPalette[box.children.length % sportColorPalette.length]}" class="w-full h-9 bg-slate-950 border border-slate-700 rounded-lg"><button type="button" data-remove class="text-xs text-rose-400">×</button></div>`);
+  const color = sportColorPalette[box.children.length % sportColorPalette.length].color;
+  box.insertAdjacentHTML('beforeend', `<div class="grid grid-cols-[minmax(0,1fr)_minmax(110px,auto)_auto] gap-2 items-center" data-category-row data-key="${key}"><input data-label value="${escapeHtml(label.trim())}" class="min-w-0 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">${settingsColorDots(color, 'data-color aria-label="Trainingskategorienfarbe"')}<button type="button" data-remove class="text-xs text-rose-400">×</button></div>`);
   box.lastElementChild.querySelector('[data-remove]').addEventListener('click',e=>e.currentTarget.closest('[data-category-row]').remove());
 }
 export function saveTelemetrySettings() {
@@ -299,9 +316,9 @@ export function saveTelemetrySettings() {
 
 export function saveSettings() {
   const sports = {}, categories = {};
-  const trainingLoadSource = document.getElementById('training-load-source')?.value || 'auto';
+  const trainingLoadSource = document.getElementById('training-load-source')?.value || 'kajo-zone';
   const telemetryMetrics = { ...(state.settings?.telemetryMetrics || {}) };
-  if (!['auto', 'kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
+  if (!['kajo-zone', 'srpe'].includes(trainingLoadSource)) { alert('Bitte wähle eine gültige Trainingsbelastungsquelle.'); return; }
   // Legacy-Zonengrenzen bleiben für ältere Datensätze erhalten; die aktive
   // Berechnung verwendet ausschließlich das adaptive Herzfrequenzreserve-Modell.
   const zones = { ...(state.settings?.heartRateZones || {}) };
