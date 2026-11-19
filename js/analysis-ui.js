@@ -52,8 +52,9 @@ function latestCheckin(key) {
 }
 function renderLoad() {
   const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
-  const last = timeline[timeline.length - 1];
-  if (!last || !valid(last.atl)) {
+  const last = [...timeline].filter(day => day?.date <= todayKey() && valid(day?.atl))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+  if (!last) {
     setHero('load', '—', '', 'Keine auswertbare Belastung', 'ATL ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
     renderMetrics('load-analysis-metrics', [
       metric('CTL', '—'), metric('ATL', '—'), metric('Belastungssaldo', '—'), metric('ACWR', '—')
@@ -99,10 +100,15 @@ function recoveryCircleMetric(label, key, value, unit = '', date = '', interacti
 function renderRecovery() {
   // Keep the existing aggregate value available to the analysis overview only.
   // Its visual summary is intentionally not rendered on the Recovery detail page.
-  const readiness = calculateReadiness(todayKey());
-  const score = readiness.enoughData ? readiness.score : null;
+  const range = healthRangeWindow();
+  const readinessEntry = Object.keys(state.dailyCheckins || {}).filter(date => date >= range.from && date <= range.to && date <= todayKey())
+    .sort((a, b) => b.localeCompare(a))
+    .map(date => ({ date, result: calculateReadiness(date) }))
+    .find(entry => entry.result?.enoughData && valid(entry.result.score));
+  const score = readinessEntry ? readinessEntry.result.score : null;
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
-    'Readiness', '', score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
+    'Readiness', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
+    score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
     ['HRV', 'hrv', 'Garmin · ms', 1],
@@ -187,6 +193,8 @@ const performanceCircle = (key,label,value,unit,detail,color='var(--kajo-status-
   '<span class="kajo-recovery-metric-label">' + performanceEscape(label) + '</span><small>' + performanceEscape(unit || detail || 'Nicht erfasst') + '</small></button>';
 function renderFitness() {
   const vo2 = latestCheckin('vo2max');
+  setHero('performance', vo2 ? fmt(vo2.value, 1) : '—', vo2 ? 'ml/kg/min' : '',
+    'Garmin-VO₂max', vo2 ? 'Letzter verfügbarer Garmin-Schätzwert · ' + dateLabel(vo2.date) + ' · nicht automatisch paddelspezifisch' : 'Kein gültiger Garmin-VO₂max-Wert dokumentiert.');
   // No validated Garmin-specific VO2max status threshold is defined; keep the indicator neutral.
   const vo2Color = 'var(--kajo-status-info)';
   const vo2Circle = performanceCircle('vo2max','VO₂max',vo2 ? fmt(vo2.value,1) : '—','ml/kg/min',
@@ -418,6 +426,11 @@ function renderHealth() {
   const sick = events.filter(([,item])=>item.status==='sick').length;
   const injured = events.filter(([,item])=>item.status==='injured').length;
   const cycleDays = cycles.length;
+  const healthDays = events.length;
+  const range = healthRangeWindow();
+  setHero('health', String(healthDays), 'Tage', 'Dokumentierte Krankheits- und Verletzungstage',
+    'Krankheit: ' + sick + ' · Verletzung: ' + injured + ' · Zeitraum ' + dateLabel(range.from) + ' – ' + dateLabel(range.to) +
+    '. Nur dokumentierte Einträge werden gezählt; fehlende Angaben gelten nicht als gesund.', 'neutral');
   renderMetrics('health-documentation-metrics',[
     healthCircle('sick','Krankheit',sick,'Dokumentierte Tage',sick?'#eab308':'var(--kajo-status-info)'),
     healthCircle('injured','Verletzung',injured,'Dokumentierte Tage',injured?'#ef4444':'var(--kajo-status-info)'),
