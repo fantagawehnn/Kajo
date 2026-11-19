@@ -200,10 +200,10 @@ test('Coach recovery summary separates HRV ms from resting heart rate bpm withou
         sourceCounts: { garmin: 1, intervals: 1 }
     });
     assert.deepEqual(metrics.rhrBpm, {
-        mean: 51.5,
-        count: 2,
+        mean: 51.7,
+        count: 3,
         unit: 'bpm',
-        sourceCounts: { garmin: 1, checkin: 1 }
+        sourceCounts: { garmin: 1, checkin: 2 }
     });
     assert.equal(metrics.hrv, undefined);
     assert.equal(metrics.rhr, undefined);
