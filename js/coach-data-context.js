@@ -380,6 +380,8 @@ export function buildCoachRequestContext(appState, question) {
         }),
         calculationSettings: {
             trainingLoadSource: state.settings?.trainingLoadSource ?? null,
+            readinessSubjectiveWeight: Number(state.settings?.readinessSubjectiveWeight ?? 30),
+            coachCycleDataEnabled: state.settings?.coachCycleDataEnabled === true,
             heartRateZones: state.settings?.heartRateZones ?? {}
         }
     };
