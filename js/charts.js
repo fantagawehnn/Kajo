@@ -746,6 +746,7 @@ export function getActivityTelemetrySeries(act) {
     };
     for (const [key, sources] of Object.entries(aliases)) {
         const meta = activitySeriesMeta[key];
+        if (key === 'strokeRate' && !PADDLE_ACTIVITY_TYPES.includes(act?.type) && act?.type !== 'Swim') continue;
         if (!isTelemetrySeriesAllowed(act, key, meta.label)) continue;
         const rawValues = sources.find(value => Array.isArray(value) && value.filter(item =>
             item !== null && item !== undefined && item !== '' && Number.isFinite(Number(item))
@@ -884,7 +885,10 @@ export function renderActivityTelemetryChart(act) {
     panel.classList.remove('hidden');
     const savedSelection = state.settings?.telemetryMetrics?.[act?.type || 'Other'];
     let selectedKeys = Array.isArray(savedSelection)
-        ? savedSelection.filter(key => series.some(item => item.key === key))
+        ? series.filter(item => savedSelection.includes(item.key)
+            || (PADDLE_ACTIVITY_TYPES.includes(act?.type) && item.key === 'strokeRate' && savedSelection.includes('cadence'))
+            || (PADDLE_ACTIVITY_TYPES.includes(act?.type) && item.key === 'cadence' && savedSelection.includes('strokeRate')))
+            .map(item => item.key)
         : getDefaultActivityTelemetryMetrics(act?.type, series.map(item => item.key));
     state.activityTelemetryMetrics = selectedKeys;
     state.activityTelemetryMetric = selectedKeys[0];
