@@ -288,6 +288,7 @@ export async function saveDayEditor(){
  if(saveStatus)saveStatus.textContent='Check-in erfolgreich gespeichert.';
  if(modal)modal.dataset.saving='false';
  closeDayEditor();refreshAll();
+ if(!document.getElementById('view-health-data')?.classList.contains('hidden'))window.kajoRenderWeightView?.();
 }
 
 let selectedActivitySports = new Set();
