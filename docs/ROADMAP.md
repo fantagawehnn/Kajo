@@ -33,7 +33,7 @@
 
 ## Phase 4 – Erweiterte Module
 - [ ] Saisonanalyse
-- [x] Saisonplan-Datenmodell, Editor, KI-Periodisierungsvorschlag und validiertes Wochenplan-Datenmodell; KI-Wochenvorschläge und Kalenderübernahme bleiben offen
+- [x] Saisonplan-Datenmodell, Editor, KI-Periodisierungsvorschlag, validiertes Wochenplan-Datenmodell, KI-Wochenvorschlag und explizite Freigabe; Kalenderübernahme und laufende Wochenanpassung bleiben offen
 - [ ] Wettkämpfe
 - [ ] Krafttraining
 - [x] Profil und Einstellungen unter Mehr gruppiert
