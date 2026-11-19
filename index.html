@@ -677,6 +677,13 @@
   <section id="health-view-relationships" class="hidden space-y-4">
     <section class="kajo-health-trend">
       <div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">GESUNDHEIT × TRAINING</p><h2>Trainingsbelastung und Regeneration</h2></div></div>
+      <nav class="kajo-health-range" aria-label="Zeitraum für Zusammenhänge">
+        <button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button>
+        <button type="button" data-health-range="28d" onclick="setHealthRange('28d')">28 T</button>
+        <button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button>
+        <button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button>
+        <button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button>
+      </nav>
       <p class="kajo-health-note">Verglichen werden Tage mit dokumentierter Krankheit oder Verletzung und Tage ohne einen solchen Eintrag. „Kein Eintrag“ bedeutet nicht automatisch gesund. Angezeigt werden Median und Anzahl tatsächlich verfügbarer Tageswerte; fehlende Daten werden nicht ergänzt.</p>
       <div id="health-load-comparison" class="overflow-x-auto"></div>
       <div id="health-recovery-comparison" class="overflow-x-auto mt-4"></div>
