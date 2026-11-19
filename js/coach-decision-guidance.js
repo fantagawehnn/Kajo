@@ -42,6 +42,12 @@ export function buildCoachDecisionGuidance() {
             'Geplante Einheiten und bestätigte Wettkampftermine',
             'Datenqualität und Grenzen der verfügbaren Evidenz'
         ],
+        seasonPlanning: [
+            'Nutze seasonPlanning als langfristigen Orientierungsrahmen, nicht als starre Tagesanweisung.',
+            'Im Hybridmodus bleibt die Saisonstruktur bestehen, während Tagesentscheidungen anhand tatsächlicher Belastung, Regeneration, Gesundheit und Rückmeldungen angepasst werden können.',
+            'Schlage größere Änderungen an Saisonzielen, Trainingsphasen oder Wettkampfprioritäten nur vor; ändere oder bestätige sie niemals selbst.',
+            'Wenn kein gültiger Saisonplan vorliegt oder Phasen unvollständig sind, benenne die Datenlücke und frage gezielt nach, statt Periodisierung oder Trainingsumfang zu erfinden.'
+        ],
         dailyTrainingDecision: [
             'Ein negativer TSB-Wert, ein hoher ATL-Wert oder ein niedriger FormPct-Wert ist für sich allein kein automatischer Grund für einen vollständigen Ruhetag und kein medizinischer Befund.',
             'CTL, ATL und TSB sind modellabhängige Beschreibungen der Belastungsentwicklung. Interpretiere sie nur bei konsistenter Load-Methode und ausreichender Datenabdeckung; nutze keine universellen Schwellenwerte.',
