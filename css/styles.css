@@ -9130,3 +9130,33 @@ body.kajo-modal-open { overflow: hidden !important; }
     width: 11px !important; height: 11px !important;
   }
 }
+
+
+/* KAJO glossary: stable metric colors, independent from sport and status colors. */
+:root {
+  --kajo-metric-readiness: #14B8A6;
+  --kajo-metric-fitness: #1E88E5;
+  --kajo-metric-fatigue: #F97316;
+  --kajo-metric-form: #22C55E;
+  --kajo-metric-load: #FDBA74;
+  --kajo-metric-ratio: #EAB308;
+  --kajo-metric-wellbeing: #A78BFA;
+  --kajo-metric-weight: #EC4899;
+  --kajo-metric-hrv: #0F766E;
+  --kajo-metric-rhr: #F43F5E;
+  --kajo-metric-sleep: #7DD3FC;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --kajo-metric-readiness: #0F9488;
+  --kajo-metric-fitness: #1D4ED8;
+  --kajo-metric-fatigue: #C2410C;
+  --kajo-metric-form: #15803D;
+  --kajo-metric-load: #C2410C;
+  --kajo-metric-ratio: #A16207;
+  --kajo-metric-wellbeing: #7E22CE;
+  --kajo-metric-weight: #BE185D;
+  --kajo-metric-hrv: #0F766E;
+  --kajo-metric-rhr: #BE123C;
+  --kajo-metric-sleep: #0369A1;
+}
