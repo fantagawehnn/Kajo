@@ -33,7 +33,7 @@
 
 ## Phase 4 – Erweiterte Module
 - [ ] Saisonanalyse
-- [x] Saisonplan-Datenmodell, Editor, KI-Periodisierungsvorschlag, validiertes Wochenplan-Datenmodell, KI-Wochenvorschlag und explizite Freigabe; Kalenderübernahme und konservativer Ist-Soll-Wochenabgleich umgesetzt; KI-gestützte Änderungsvorschläge mit expliziter Freigabe, manuelle Aktivitätszuordnung und Wochenabgleich umgesetzt
+- [x] Saisonplan-Datenmodell, Editor, KI-Periodisierungsvorschlag, validiertes Wochenplan-Datenmodell, KI-Wochenvorschlag und explizite Freigabe; Kalenderübernahme und konservativer Ist-Soll-Wochenabgleich umgesetzt; KI-gestützte Änderungsvorschläge mit expliziter Freigabe, manuelle Aktivitätszuordnung, explizite Statusangaben (absolviert ohne Import/ausgefallen) und Wochenabgleich umgesetzt
 - [ ] Wettkämpfe
 - [ ] Krafttraining
 - [x] Profil und Einstellungen unter Mehr gruppiert
