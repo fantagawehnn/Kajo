@@ -248,20 +248,56 @@ function renderRows() {
 }
 
 export function initializeSettings() { renderRows(); }
-export function renderCalendarSeasonSettings(){
-  const s=state.settings?.calendarSeason||{},name=document.getElementById('calendar-season-name'),start=document.getElementById('calendar-season-start'),end=document.getElementById('calendar-season-end'),status=document.getElementById('calendar-season-status');
-  if(name)name.value=s.name||'';if(start)start.value=s.start||'';if(end)end.value=s.end||'';
-  if(status)status.textContent=s.start&&s.end?'Aktiv: '+(s.name||'Saison')+' · '+s.start+' bis '+s.end:'Noch keine Saison definiert. Die Saisonansicht bleibt ausgeblendet.';
+let editingCalendarSeasonId = null;
+
+function getCalendarSeasonCollection() {
+  const current = state.settings || {};
+  let seasons = Array.isArray(current.calendarSeasons) ? current.calendarSeasons.filter(item => item && typeof item === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(item.start || '') && /^\d{4}-\d{2}-\d{2}$/.test(item.end || '') && item.start <= item.end) : [];
+  if (!seasons.length && current.calendarSeason?.start && current.calendarSeason?.end) { const legacy=current.calendarSeason; seasons=[{id:'season-legacy',name:legacy.name||'Saison',start:legacy.start,end:legacy.end}]; }
+  let activeId=current.activeCalendarSeasonId; if(!seasons.some(item=>item.id===activeId))activeId=seasons.at(-1)?.id||null;
+  return {seasons,activeId};
 }
+function persistCalendarSeasonCollection(seasons,activeId) {
+  const active=seasons.find(item=>item.id===activeId)||null;
+  state.settings={...(state.settings||{}),calendarSeasons:seasons,activeCalendarSeasonId:activeId,...(active?{calendarSeason:{name:active.name,start:active.start,end:active.end}}:{})};
+  if(!active)delete state.settings.calendarSeason; saveDataToLocalStorage();
+}
+function calendarSeasonStats(season) {
+  const within=item=>item?.date>=season.start&&item?.date<=season.end;
+  const health=Object.entries(state.healthLogs||{}).filter(([date,item])=>date>=season.start&&date<=season.end&&(item?.status==='sick'||item?.status==='injured'));
+  return {training:(state.rawActivities||[]).filter(within).length,planned:(state.plannedActivities||[]).filter(within).length,races:(state.races||[]).filter(within).length,sick:health.filter(([,item])=>item.status==='sick').length,injured:health.filter(([,item])=>item.status==='injured').length};
+}
+export function renderCalendarSeasonSettings() {
+  const {seasons,activeId}=getCalendarSeasonCollection();
+  const name=document.getElementById('calendar-season-name'),start=document.getElementById('calendar-season-start'),end=document.getElementById('calendar-season-end'),status=document.getElementById('calendar-season-status'),list=document.getElementById('calendar-season-list'),saveButton=document.getElementById('calendar-season-save-button');
+  const editing=seasons.find(item=>item.id===editingCalendarSeasonId);
+  if(name&&!editingCalendarSeasonId)name.value=''; if(start&&!editingCalendarSeasonId)start.value=''; if(end&&!editingCalendarSeasonId)end.value='';
+  if(editing){if(name)name.value=editing.name||'';if(start)start.value=editing.start;if(end)end.value=editing.end;}
+  if(saveButton)saveButton.textContent=editing?'Änderungen speichern':'Saison hinzufügen';
+  if(status)status.textContent=seasons.length?seasons.length+(seasons.length===1?' Saison gespeichert.':' Saisons gespeichert.')+' · '+(seasons.find(item=>item.id===activeId)?.name||'Keine aktive Saison')+' ist im Kalender ausgewählt.':'Noch keine Saison angelegt. Lege deine erste Saison an.';
+  if(list)list.innerHTML=seasons.length?seasons.slice().sort((a,b)=>b.start.localeCompare(a.start)).map(season=>{
+    const stats=calendarSeasonStats(season),active=season.id===activeId,id=escapeHtml(season.id);
+    return '<article class="rounded-xl border '+(active?'border-sky-500/60 bg-sky-950/20':'border-slate-800 bg-slate-950/50')+' p-3 space-y-2">'+
+      '<div class="flex flex-wrap items-start justify-between gap-2"><div><div class="flex flex-wrap items-center gap-2"><strong class="text-sm text-slate-100">'+escapeHtml(season.name||'Saison')+'</strong>'+(active?'<span class="text-[10px] rounded-full bg-sky-500/15 text-sky-300 px-2 py-1">Aktiv im Kalender</span>':'')+'</div><p class="text-xs text-slate-400">'+season.start+' – '+season.end+'</p></div><div class="flex flex-wrap gap-1">'+
+      (active?'':'<button type="button" class="kajo-settings-secondary" data-season-id="'+id+'" onclick="setCalendarSeasonActive(this.dataset.seasonId)">Anzeigen</button>')+
+      '<button type="button" class="kajo-settings-secondary" data-season-id="'+id+'" onclick="editCalendarSeason(this.dataset.seasonId)">Bearbeiten</button><button type="button" class="kajo-settings-secondary" data-season-id="'+id+'" onclick="deleteCalendarSeason(this.dataset.seasonId)">Löschen</button></div></div>'+
+      '<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs text-slate-400"><span><strong class="block text-slate-200">'+stats.training+'</strong>Training</span><span><strong class="block text-slate-200">'+stats.planned+'</strong>Geplant</span><span><strong class="block text-slate-200">'+stats.races+'</strong>Wettkämpfe</span><span><strong class="block text-slate-200">'+stats.sick+'</strong>Krankheitstage</span><span><strong class="block text-slate-200">'+stats.injured+'</strong>Verletzungstage</span></div></article>';
+  }).join(''):'<p class="text-xs text-slate-500">Deine gespeicherten Saisons werden hier gesammelt angezeigt.</p>';
+}
+export function newCalendarSeason(){editingCalendarSeasonId=null;const name=document.getElementById('calendar-season-name'),start=document.getElementById('calendar-season-start'),end=document.getElementById('calendar-season-end');if(name)name.value='';if(start)start.value='';if(end)end.value='';renderCalendarSeasonSettings();}
+export function editCalendarSeason(id){const {seasons}=getCalendarSeasonCollection();if(!seasons.some(item=>item.id===id))return;editingCalendarSeasonId=id;renderCalendarSeasonSettings();}
+export function setCalendarSeasonActive(id){const {seasons}=getCalendarSeasonCollection();if(!seasons.some(item=>item.id===id))return;persistCalendarSeasonCollection(seasons,id);editingCalendarSeasonId=null;renderCalendarSeasonSettings();refreshAll();}
 export function saveCalendarSeason(){
   const name=document.getElementById('calendar-season-name')?.value.trim()||'Saison',start=document.getElementById('calendar-season-start')?.value||'',end=document.getElementById('calendar-season-end')?.value||'';
   if(!start||!end){alert('Bitte lege Saisonstart und Saisonende fest.');return;}if(start>end){alert('Das Saisonende muss am oder nach dem Saisonstart liegen.');return;}
-  state.settings={...state.settings,calendarSeason:{name,start,end}};saveDataToLocalStorage();renderCalendarSeasonSettings();refreshAll();alert('Saisonzeitraum gespeichert. Die Saisonansicht ist jetzt im Kalender verfügbar.');
+  const {seasons}=getCalendarSeasonCollection(),id=editingCalendarSeasonId||('season-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)),next={id,name,start,end};
+  const updated=editingCalendarSeasonId?seasons.map(item=>item.id===id?next:item):[...seasons,next];persistCalendarSeasonCollection(updated,id);editingCalendarSeasonId=null;renderCalendarSeasonSettings();refreshAll();
 }
-export function deleteCalendarSeason(){
-  if(!state.settings?.calendarSeason)return;if(!confirm('Möchtest du den definierten Saisonzeitraum wirklich löschen?'))return;
-  const settings={...state.settings};delete settings.calendarSeason;state.settings=settings;if(state.activeCalendarFormat==='season')state.activeCalendarFormat='month';
-  saveDataToLocalStorage();renderCalendarSeasonSettings();refreshAll();
+export function deleteCalendarSeason(id){
+  const {seasons,activeId}=getCalendarSeasonCollection(),targetId=id||activeId,target=seasons.find(item=>item.id===targetId);if(!target)return;
+  if(!confirm('Möchtest du die Saison "'+(target.name||'Saison')+'" wirklich löschen?'))return;
+  const remaining=seasons.filter(item=>item.id!==targetId),nextActive=targetId===activeId?(remaining.at(-1)?.id||null):activeId;persistCalendarSeasonCollection(remaining,nextActive);
+  if(editingCalendarSeasonId===targetId)editingCalendarSeasonId=null;if(state.activeCalendarFormat==='season'&&!nextActive)state.activeCalendarFormat='month';renderCalendarSeasonSettings();refreshAll();
 }
 export function openSettingsModal() {
   renderRows();renderCalendarSeasonSettings();
