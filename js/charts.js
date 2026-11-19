@@ -9,7 +9,7 @@
 
 import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
-import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
+import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js?v=9';
 import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=5';
 import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
@@ -19,8 +19,25 @@ import { getValidatedElapsedTimeAxis } from './performance-data-quality.js';
    touchmove aktualisiert onHover kontinuierlich beim Verschieben des Fingers. */
 if (typeof Chart !== 'undefined' && Chart.defaults) {
     Chart.defaults.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'];
+    // Connect observed values across missing days without inventing data points.
+    // The bridged segment is visibly lighter and dashed to preserve uncertainty.
+    if (Chart.defaults.datasets?.line) {
+        Chart.defaults.datasets.line.spanGaps = true;
+        Chart.defaults.datasets.line.segment = {
+            borderColor: context => context.p0.skip || context.p1.skip ? 'rgba(148,163,184,.58)' : context.dataset.borderColor,
+            borderDash: context => context.p0.skip || context.p1.skip ? [5, 4] : undefined
+        };
+    }
 }
 
+
+function carryForwardChartValues(rows, key) {
+    let lastKnown = null;
+    return rows.map(row => {
+        if (row && row[key] !== null && row[key] !== undefined && row[key] !== '' && Number.isFinite(Number(row[key]))) lastKnown = Number(row[key]);
+        return lastKnown;
+    });
+}
 
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
@@ -40,7 +57,24 @@ function renderLoadSourceNote(timeline) {
     note.textContent = (descriptions[mode] || 'Belastungsquelle derzeit nicht eindeutig zuordenbar. Belastungswerte verschiedener Berechnungsmethoden sind nicht direkt vergleichbar.') + coverageText;
 }
 
+function adaptiveLoadTimeframe(timeline) {
+    const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '30d', days: 30 }, { key: '42d', days: 42 }, { key: '3m', days: 90 }, { key: '1y', days: 365 }];
+    const today = new Date(); today.setHours(12,0,0,0);
+    for (const candidate of candidates) {
+        const start = new Date(today); start.setDate(start.getDate() - candidate.days + 1);
+        const from = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
+        const dates = (timeline || []).filter(row => row.date >= from);
+        const coverage = dates.filter(row => row.load !== null && row.load !== undefined && Number.isFinite(Number(row.load))).length / candidate.days;
+        if (coverage >= .7) return candidate.key;
+    }
+    return '1y';
+}
+
 export function renderMainLoadChart(timeline, timeframe) {
+    if (!state.activeTimeframeExplicit) {
+        state.activeTimeframe = adaptiveLoadTimeframe(timeline);
+        timeframe = state.activeTimeframe;
+    }
     const canvas = document.getElementById('intervalsLoadChart');
     if (!canvas) return;
     renderLoadSourceNote(timeline);
@@ -55,20 +89,31 @@ export function renderMainLoadChart(timeline, timeframe) {
     let filtered = timeline;
     if (timeframe === '7d') filtered = timeline.slice(-7);
     else if (timeframe === '28d') filtered = timeline.slice(-28);
-    else if (timeframe === '3m') filtered = timeline.slice(-90);
+    else if (timeframe === '30d') filtered = timeline.slice(-30);
+    else if (timeframe === '42d') filtered = timeline.slice(-42);
+    else if (timeframe === '3m' || timeframe === '90d') filtered = timeline.slice(-90);
     else if (timeframe === '6m') filtered = timeline.slice(-180);
-    else if (timeframe === '1y') filtered = timeline.slice(-365);
+    else if (timeframe === '1y' || timeframe === '365d') filtered = timeline.slice(-365);
     else if (timeframe === 'custom') {
         const from=document.getElementById('date-from')?.value, to=document.getElementById('date-to')?.value;
         filtered=timeline.filter(t=>t.date>=from&&t.date<=to);
     }
+    const observedLoadDays = filtered.filter(row => row.load !== null && row.load !== undefined && Number.isFinite(Number(row.load))).length;
+    if (observedLoadDays < 3) {
+        if (state.mainChartInstance) { state.mainChartInstance.destroy(); state.mainChartInstance = null; }
+        canvas.parentElement?.classList.add('hidden');
+        const note = document.getElementById('load-source-note');
+        if (note) note.textContent = 'Der Belastungsverlauf erscheint ab mindestens drei auswertbaren Tageswerten.';
+        return;
+    }
+    canvas.parentElement?.classList.remove('hidden');
     if (!filtered.length) return;
     const last=timeline[timeline.length-1];
     const isGarmin=last.loadMode === 'garmin-native' || last.loadMode === 'garmin-zone';
     const isSrpe=last.loadMode === 'srpe';
     const labels=filtered.map(t=>formatDateDDMMYY(t.date));
-    const ctl=filtered.map(t=>t.ctl);
-    const atl=filtered.map(t=>t.atl);
+    const ctl=carryForwardChartValues(filtered,'ctl');
+    const atl=carryForwardChartValues(filtered,'atl');
     const form=filtered.map(t=>isGarmin ? t.formPct : isSrpe ? t.tsb : null);
     const health=filtered.map(t=>state.healthLogs[t.date] ? t.ctl : null);
     const ctx=canvas.getContext('2d');
@@ -76,9 +121,9 @@ export function renderMainLoadChart(timeline, timeframe) {
     state.mainChartInstance=new Chart(ctx,{
         type:'line',
         data:{labels,datasets:[
-            {label:'Langfristige Belastung (CTL)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:'Kurzfristige Belastung (ATL)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
+            {label:'Fitness (langfristige Belastung)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
+            {label:'Ermüdung (kurzfristige Belastung)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
+            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Belastungsquelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
             {label:'Krankheit / Verletzung',data:health,showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#facc15',yAxisID:'y'}
         ]},
         options:{
@@ -972,7 +1017,7 @@ export function renderActivityTelemetryChart(act) {
         pointRadius: 0,
         pointHoverRadius: 4,
         tension: .18,
-        spanGaps: false,
+        spanGaps: true,
         fill: false
     }));
     const updateReadout = (chart, elements) => {
@@ -1023,7 +1068,9 @@ export function renderActivityTelemetryChart(act) {
 
 export function setTimeframe(tf) {
     state.activeTimeframe = tf;
+    state.activeTimeframeExplicit = true;
     state.metricHistoryRange = tf;
+    state.metricHistoryRangeExplicit = true;
     const periodLabel = document.getElementById('analysis-period-label');
     if (periodLabel) periodLabel.textContent = ({ '7d': '7T', '28d': '28T', '3m': '90T', '6m': '6M', '1y': '1J' })[tf] || 'Individueller Zeitraum';
     ['7d', '28d', '3m', '6m', '1y'].forEach(t => {
@@ -1051,7 +1098,9 @@ export function applyCustomDateRange() {
     }
     if (feedback) feedback.textContent = '';
     state.metricHistoryRange = 'custom';
+    state.metricHistoryRangeExplicit = true;
     state.activeTimeframe = 'custom';
+    state.activeTimeframeExplicit = true;
     const periodLabel = document.getElementById('analysis-period-label');
     if (periodLabel) periodLabel.textContent = 'Individueller Zeitraum';
     ['health', 'training'].forEach(kind => {
