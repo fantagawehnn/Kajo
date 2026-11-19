@@ -93,9 +93,11 @@ assert.ok(analysisUI.includes('Tage ohne Balken sind nicht dokumentiert'), 'miss
 assert.ok(analysisUI.includes('item?.cycle?.period===true'), 'cycle trends use only explicitly documented cycle entries');
 assert.match(analysisUI, /keine medizinische Interpretation/i, 'Health trend avoids medical interpretation');
 assert.ok(analysisUI.includes("['HRV', 'hrv', 'Garmin · ms', 1]") && analysisUI.includes('getGarminCheckinMetric(row, key)'), 'recovery exposes only Garmin-sourced HRV as an objective metric');
-assert.ok(analysisUI.includes('const readiness = calculateReadiness(todayKey())') && analysisUI.includes('const score = readiness.enoughData ? readiness.score : null'), 'aggregate recovery value reuses the existing calculation for the analysis overview');
+assert.ok(analysisUI.includes('const readinessEntry = Object.keys(state.dailyCheckins || {})') && analysisUI.includes('entry.result?.enoughData'), 'aggregate recovery value uses the latest available readiness in the selected period');
 assert.ok(!html.includes('id="analysis-regeneration-section"') && !html.includes('id="recovery-hero-note" class="kajo-analysis-hero-note"'), 'Recovery detail does not display a readiness summary');
-assert.ok(!html.includes('id="health-hero-ring"') && !html.includes('id="health-availability-status"'), 'Health does not display an unsupported availability score');
+assert.ok(html.includes('id="health-hero-ring"') && html.includes('id="analysis-health-hero-value"') && !html.includes('id="health-availability-status"'), 'Health overview exposes documented-day count without an unsupported availability score');
+assert.ok(html.includes('id="analysis-performance-hero-value"') && analysisUI.includes("setHero('performance'"), 'Fitness exposes the available VO2max value to the analysis overview');
+assert.ok(analysisUI.includes("setHero('health', String(healthDays), 'Tage'"), 'Health overview uses documented sick and injured days in the selected period');
 assert.ok(analysisUI.includes('historyRingColor(key, entry.value, entry.date)'), 'each recovery circle uses the existing metric-specific status classification');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
 assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
