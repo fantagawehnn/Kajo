@@ -19,7 +19,7 @@ const ACTIVITY_FIELDS = [
 const CHECKIN_FIELDS = [
     'hrv', 'garminHrv', 'rhr', 'garminRhr', 'measurementSources',
     'sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'vo2max',
-    'fatigue', 'soreness', 'motivation', 'stress', 'respiration'
+    'fatigue', 'soreness', 'motivation', 'stress', 'respiration', 'wellbeing', 'mood', 'weight'
 ];
 const TIMELINE_FIELDS = [
     'date', 'load', 'tss', 'activityCount', 'loadActivityCount',
@@ -225,10 +225,13 @@ export function buildCoachRequestContext(appState, question) {
 
     const selectedActivities = selectWindow(activities, item => item?.date, scope.from, scope.to || today, LIMITS.activities);
     const selectedTimeline = selectWindow(timeline, item => item?.date, scope.from, scope.to || today, LIMITS.timeline);
+    const checkinFields = state.settings?.coachCycleDataEnabled === true
+        ? [...CHECKIN_FIELDS, 'cycle']
+        : CHECKIN_FIELDS;
     const checkInRecords = Object.entries(checkins).map(([date, value]) => ({
         date,
-        ...pick(value, CHECKIN_FIELDS)
-    })).filter(item => CHECKIN_FIELDS.some(key => item[key] !== undefined && item[key] !== null && item[key] !== ''));
+        ...pick(value, checkinFields)
+    })).filter(item => checkinFields.some(key => item[key] !== undefined && item[key] !== null && item[key] !== ''));
 
     // Recovery-Mittelwerte folgen dem Fragefenster. Für die adaptive HF-Zonen-
     // berechnung werden zusätzlich die Ruhepulswerte im Aktivitätszeitraum
