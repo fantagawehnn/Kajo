@@ -1700,6 +1700,11 @@
             <span class="kajo-settings-category-copy"><strong>KI-Coach</strong><small>Bereitschaftsgewichtung und Datenfreigabe</small></span>
             <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
           </button>
+          <button type="button" class="kajo-settings-category" data-tone="cyan" onclick="kajoSettingsOpenPage('customization')">
+            <span class="kajo-settings-category-icon"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></span>
+            <span class="kajo-settings-category-copy"><strong>Personalisierung</strong><small>Dashboard, Navigation und Farben</small></span>
+            <i data-lucide="chevron-right" class="kajo-settings-category-chevron" aria-hidden="true"></i>
+          </button>
           <button type="button" class="kajo-settings-category" data-tone="amber" onclick="kajoSettingsOpenPage('notifications')">
             <span class="kajo-settings-category-icon"><i data-lucide="bell" aria-hidden="true"></i></span>
             <span class="kajo-settings-category-copy"><strong>Benachrichtigungen</strong><small>Push-Mitteilungen und persönliche Erinnerungen</small></span>
@@ -1786,6 +1791,22 @@
               <pre id="kajo-storage-diagnostics-output" class="hidden max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-700 bg-slate-950 p-3 text-[11px] text-slate-300" aria-live="polite"></pre>
             </section>
             <p class="kajo-settings-footnote">Deine App-Daten sind deinem angemeldeten Konto zugeordnet. Die reguläre KAJO-Cloud-Synchronisierung deiner Trainings- und Kontodaten ist unabhängig von der lokalen Verarbeitung deiner Coach-Nachrichten.</p>
+          </section>
+          <section id="settings-customization-group" class="kajo-settings-group" data-settings-page="customization">
+            <div class="kajo-settings-group-heading"><span class="kajo-settings-group-icon"><i data-lucide="sliders-horizontal"></i></span><div><p class="kajo-settings-eyebrow">DEIN KAJO</p><h3>Personalisierung</h3><p>Ordne die Hauptnavigation und bestimme, welche Bereiche auf deinem Dashboard erscheinen. Die fünf Hauptbereiche bleiben immer erreichbar.</p></div></div>
+            <section class="kajo-settings-card space-y-2" aria-labelledby="kajo-dashboard-customization-title">
+              <div class="kajo-settings-section-head"><div><h3 id="kajo-dashboard-customization-title">Dashboard</h3><p>Blende einzelne Informationsbereiche ein oder aus. Deine Trainings- und Gesundheitsdaten werden dadurch nicht gelöscht.</p></div><span class="kajo-settings-section-icon"><i data-lucide="layout-dashboard"></i></span></div>
+              <div id="kajo-dashboard-customization-list"></div>
+            </section>
+            <section class="kajo-settings-card space-y-2" aria-labelledby="kajo-nav-customization-title">
+              <div class="kajo-settings-section-head"><div><h3 id="kajo-nav-customization-title">Navigation</h3><p>Lege die Reihenfolge der fünf Hauptbereiche fest. Die Änderung gilt für Desktop und Mobilgeräte.</p></div><span class="kajo-settings-section-icon"><i data-lucide="list-ordered"></i></span></div>
+              <div id="kajo-nav-customization-list"></div>
+            </section>
+            <section class="kajo-settings-card space-y-3" aria-labelledby="kajo-color-customization-title">
+              <div class="kajo-settings-section-head"><div><h3 id="kajo-color-customization-title">Farben</h3><p>App-Farbschema und Sportartenfarben bleiben getrennt: Statusfarben kennzeichnen den Zustand, Sportartenfarben ausschließlich die Sportart.</p></div><span class="kajo-settings-section-icon"><i data-lucide="palette"></i></span></div>
+              <div class="flex flex-wrap gap-2"><button type="button" onclick="kajoSettingsOpenPage('app')" class="kajo-settings-secondary">App-Farbschema öffnen</button><button type="button" onclick="kajoSettingsOpenPage('training')" class="kajo-settings-secondary">Sportartenfarben öffnen</button></div>
+            </section>
+            <div class="flex flex-wrap items-center justify-between gap-3"><p id="kajo-customization-status" class="text-xs text-slate-400" role="status" aria-live="polite">Anpassungen werden auf deinem KAJO-Konto gespeichert.</p><button type="button" onclick="resetCustomization()" class="kajo-settings-secondary">Personalisierung zurücksetzen</button></div>
           </section>
         </div>
         <div class="kajo-settings-footer hidden" id="kajo-settings-footer"><button type="button" onclick="closeSettingsModal()" class="kajo-settings-secondary">Schließen</button><button type="button" onclick="saveSettings()" class="kajo-settings-primary">Einstellungen speichern</button></div>
