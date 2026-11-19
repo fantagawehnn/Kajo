@@ -94,17 +94,17 @@
 
                 <nav class="kajo-primary-nav" aria-label="Hauptnavigation">
                     <button type="button" id="nav-today" class="kajo-nav-item is-active" onclick="switchTab('today')" aria-current="page"><i data-lucide="house"></i><span>Heute</span></button>
-                    <button type="button" id="nav-calendar" class="kajo-nav-item" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i><span>Kalender</span></button>
+                    <button type="button" id="nav-plan" class="kajo-nav-item" onclick="switchTab('plan')"><i data-lucide="calendar-days"></i><span>Plan</span></button>
                     <button type="button" id="nav-training" class="kajo-nav-item" onclick="switchTab('training')"><i data-lucide="dumbbell"></i><span>Training</span></button>
                     <button type="button" id="nav-analysis" class="kajo-nav-item" onclick="switchTab('analysis-overview')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
-                    <button type="button" id="nav-more" class="kajo-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
+                    <button type="button" id="nav-ich" class="kajo-nav-item" onclick="switchTab('ich')"><i data-lucide="user-round"></i><span>Ich</span></button>
                 </nav>
         <nav class="kajo-mobile-nav" aria-label="Hauptnavigation mobil">
             <button type="button" id="mobile-nav-today" class="kajo-mobile-nav-item is-active" onclick="switchTab('today')" aria-current="page"><i data-lucide="house"></i><span>Heute</span></button>
-            <button type="button" id="mobile-nav-calendar" class="kajo-mobile-nav-item" onclick="switchTab('calendar')"><i data-lucide="calendar-days"></i><span>Kalender</span></button>
+            <button type="button" id="mobile-nav-plan" class="kajo-mobile-nav-item" onclick="switchTab('plan')"><i data-lucide="calendar-days"></i><span>Plan</span></button>
             <button type="button" id="mobile-nav-training" class="kajo-mobile-nav-item" onclick="switchTab('training')"><i data-lucide="dumbbell"></i><span>Training</span></button>
             <button type="button" id="mobile-nav-analysis" class="kajo-mobile-nav-item" onclick="switchTab('analysis-overview')"><i data-lucide="chart-no-axes-combined"></i><span>Analyse</span></button>
-            <button type="button" id="mobile-nav-more" class="kajo-mobile-nav-item" onclick="switchTab('more')"><i data-lucide="grid-2x2"></i><span>Mehr</span></button>
+            <button type="button" id="mobile-nav-ich" class="kajo-mobile-nav-item" onclick="switchTab('ich')"><i data-lucide="user-round"></i><span>Ich</span></button>
         </nav>
                 <span class="kajo-version-tag" aria-label="App-Version">v2.0</span>
                 <div class="kajo-desktop-header-actions">
@@ -147,16 +147,19 @@
         <div id="area-back-link" class="hidden">
             <button type="button" onclick="switchTab('more')" class="kajo-back-link"><i data-lucide="arrow-left"></i><span>Alle Bereiche</span></button>
         </div>
+        <nav id="plan-subnav" class="kajo-subnav hidden" aria-label="Plan-Unterbereiche">
+            <button type="button" id="plan-subnav-calendar" class="kajo-subnav-item is-active" onclick="switchTab('plan')" aria-label="Kalender"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Kalender</span></button>
+            <button type="button" id="plan-subnav-planning" class="kajo-subnav-item" onclick="switchTab('training-planning')" aria-label="Trainingsplanung"><i data-lucide="calendar-check" aria-hidden="true"></i><span>Trainingsplanung</span></button>
+            <button type="button" id="plan-subnav-competitions" class="kajo-subnav-item" onclick="switchTab('training-competitions')" aria-label="Wettkämpfe"><i data-lucide="trophy" aria-hidden="true"></i><span>Wettkämpfe</span></button>
+        </nav>
         <nav id="training-subnav" class="kajo-subnav kajo-training-subnav hidden" aria-label="Training-Unterbereiche">
             <button type="button" id="training-subnav-activities" class="kajo-subnav-item is-active" onclick="switchTab('training-activities')" aria-label="Aktivitäten"><i data-lucide="activity" aria-hidden="true"></i><span>Aktivitäten</span></button>
-            <button type="button" id="training-subnav-planning" class="kajo-subnav-item" onclick="switchTab('training-planning')" aria-label="Trainingsplanung"><i data-lucide="calendar-check" aria-hidden="true"></i><span>Planung</span></button>
-            <button type="button" id="training-subnav-competitions" class="kajo-subnav-item" onclick="switchTab('training-competitions')" aria-label="Wettkämpfe"><i data-lucide="trophy" aria-hidden="true"></i><span>Wettkämpfe</span></button>
             <button type="button" id="training-subnav-strength" class="kajo-subnav-item" onclick="switchTab('strength')" aria-label="Kraftleistungen"><i data-lucide="dumbbell" aria-hidden="true"></i><span>Kraft</span></button>
         </nav>
         <nav id="analysis-subnav" class="kajo-subnav hidden" aria-label="Analyse-Unterbereiche">
             <button type="button" id="analysis-subnav-load" class="kajo-subnav-item" onclick="switchTab('analysis-load')"><span>Training Load</span></button>
             <button type="button" id="analysis-subnav-recovery" class="kajo-subnav-item" onclick="switchTab('analysis-recovery')"><span>Recovery</span></button>
-            <button type="button" id="analysis-subnav-performance" class="kajo-subnav-item" onclick="switchTab('analysis-performance')"><span>Fitness</span></button>
+            <button type="button" id="analysis-subnav-performance" class="kajo-subnav-item" onclick="switchTab('analysis-performance')"><span>Performance</span></button>
             <button type="button" id="analysis-subnav-health" class="kajo-subnav-item" onclick="switchTab('analysis-health')"><span>Health</span></button>
         </nav>
         </div>
@@ -191,10 +194,16 @@
         <!-- Bereichsauswahl: weitere Funktionen öffnen sich als eigenständige Ansichten. -->
          <section id="view-more" class="hidden kajo-more-view">
             <header class="kajo-more-header">
-                <div><p class="kajo-more-eyebrow">DEIN PERSÖNLICHER BEREICH</p><h1>Mehr</h1><p>Weitere Funktionen und deine Datenverwaltung.</p></div>
+                <div><p class="kajo-more-eyebrow">DEIN PERSÖNLICHER BEREICH</p><h1>Ich</h1><p>Dein Profil, dein KI-Coach und deine persönlichen Einstellungen.</p></div>
             </header>
 
             <div class="kajo-more-groups">
+                <section class="kajo-more-group" data-tone="violet">
+                    <div class="kajo-area-list">
+                        <button type="button" class="kajo-area-card" onclick="switchTab('profile')"><span class="kajo-area-icon"><i data-lucide="user-round"></i></span><span class="kajo-area-copy"><strong>Mein Profil</strong><small>Persönliche Angaben und sportliches Profil</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                        <button type="button" class="kajo-area-card" onclick="openCoach()"><span class="kajo-area-icon"><i data-lucide="bot"></i></span><span class="kajo-area-copy"><strong>KI-Coach</strong><small>Trainingsfragen und individuelle Unterstützung</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
+                    </div>
+                </section>
                 <section class="kajo-more-group" data-tone="blue">
                     <div class="kajo-area-list">
                         <button type="button" class="kajo-area-card kajo-area-health" onclick="switchTab('garmin-health')"><span class="kajo-area-icon"><i data-lucide="heart-pulse"></i></span><span class="kajo-area-copy"><strong>Gesundheitsdaten</strong><small>Garmin-Messwerte, persönliche Baselines und zeitliche Verläufe</small></span><i class="kajo-area-chevron" data-lucide="chevron-right"></i></button>
