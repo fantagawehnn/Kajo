@@ -6,7 +6,7 @@
 import { state, refreshAll } from './state.js';
 import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmergeActivityGroup } from './activity-groups.js?v=1';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml, showUndoToast } from './utils.js';
+import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml, showUndoToast } from './utils.js?v=2';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
 import { calculateStrengthActivitySummary } from './calculations.js';
