@@ -4,6 +4,7 @@ import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
 import { requestSeasonPlanProposal, requestWeeklyPlanProposal } from './coach.js?v=2';
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
+import { buildWeeklyPlanCalendarEntries } from './weekly-plan-calendar.js';
 
 let draftPhases = [];
 let pendingProposal = null;
@@ -193,28 +194,6 @@ export function approveWeeklyPlan(weekStartDate) {
 }
 
 
-function calendarTypeForSession(session) {
-    const discipline = String(session.discipline || '').toLowerCase();
-    const type = String(session.type || '').toLowerCase();
-    if (discipline === 'k1' || type === 'kayaking' || type === 'k1') return 'Kayaking';
-    if (discipline === 'c1' || type === 'c1') return 'C1';
-    if (discipline === 'c2' || type === 'c2') return 'C2';
-    if (type.includes('run') || type.includes('lauf')) return 'Run';
-    if (type.includes('ride') || type.includes('rad') || type.includes('cycl')) return 'Ride';
-    if (type.includes('swim') || type.includes('schwimm')) return 'Swim';
-    if (type.includes('weight') || type.includes('kraft') || type.includes('gym') || type.includes('strength')) return 'WeightTraining';
-    return null;
-}
-
-function calendarCategoryForSession(session) {
-    const raw = String(session.category || '').toLowerCase();
-    if (raw.includes('interval') || raw.includes('intervall') || raw.includes('lz') || raw.includes('hz')) return 'interval';
-    if (raw.includes('strength') || raw.includes('kraft')) return 'strength';
-    if (raw.includes('reg') || raw.includes('recovery') || raw.includes('regen')) return 'reg';
-    if (raw.includes('tech') || raw.includes('technik')) return 'tech';
-    return 'ga';
-}
-
 export function transferWeeklyPlanToCalendar(weekStartDate) {
     const current = normalizeSeasonPlan(state.seasonPlan);
     const plan = current?.weeklyPlans.find(item => item.weekStartDate === weekStartDate);
@@ -224,46 +203,7 @@ export function transferWeeklyPlanToCalendar(weekStartDate) {
         return false;
     }
     const existing = Array.isArray(state.plannedActivities) ? state.plannedActivities : [];
-    const additions = [];
-    const skipped = [];
-    for (const session of plan.sessions) {
-        const linkId = 'season-' + plan.id + '-' + session.id;
-        const alreadyLinked = existing.some(item => item.sourceWeeklyPlanId === plan.id && item.sourceWeeklySessionId === session.id);
-        const duplicate = existing.some(item => item.date === session.date
-            && String(item.name || '').trim().toLocaleLowerCase('de') === String(session.name || '').trim().toLocaleLowerCase('de')
-            && item.type === calendarTypeForSession(session));
-        if (alreadyLinked || duplicate) {
-            skipped.push(session.name);
-            continue;
-        }
-        const type = calendarTypeForSession(session);
-        if (!type) {
-            skipped.push(session.name + ' (unbekannte Trainingsart)');
-            continue;
-        }
-        const description = [
-            session.objective ? 'Ziel: ' + session.objective : '',
-            session.intensity ? 'Intensität: ' + session.intensity : '',
-            session.warmup ? 'Aufwärmen: ' + session.warmup : '',
-            session.mainSet ? 'Hauptteil: ' + session.mainSet : '',
-            session.cooldown ? 'Abwärmen: ' + session.cooldown : '',
-            session.raceFormat ? 'Rennformat: ' + session.raceFormat : '',
-            session.waterType ? 'Gewässer: ' + session.waterType : '',
-            session.notes || ''
-        ].filter(Boolean).join('\n');
-        additions.push({
-            id: linkId,
-            date: session.date,
-            name: session.name,
-            type,
-            duration: session.durationMinutes,
-            targetTss: null,
-            category: calendarCategoryForSession(session),
-            desc: description,
-            sourceWeeklyPlanId: plan.id,
-            sourceWeeklySessionId: session.id
-        });
-    }
+    const { additions, skipped } = buildWeeklyPlanCalendarEntries(plan, existing);
     if (additions.length) {
         state.plannedActivities = [...existing, ...additions];
         if (!saveDataToLocalStorage()) {
