@@ -152,6 +152,10 @@ assert.ok(html.includes('id="training-subnav-strength"'), 'strength is reachable
 assert.ok(main.includes("strength: { parent: 'training', view: 'strength', sub: 'strength' }"), 'strength route belongs to the training area');
 assert.ok(!html.includes('onclick="switchTab(\'strength\')"><span class="kajo-area-icon"'), 'strength is no longer listed under More');
 assert.ok(main.includes("['calendar', 'planning', 'competitions'].forEach") && main.includes("['activities', 'strength'].forEach"), 'Plan and Training subnavigation highlight their own active sections');
+assert.ok(html.includes('id="kajo-weight-view"') && html.includes("onclick=\\"switchTab('health-data')\\"") && main.includes("requestedTab !== 'health-data'"), 'weight trend is reachable from the recovery area');
+assert.ok(html.includes('id="day-wellbeing"') && html.includes('id="day-weight"') && calendar.includes("getUserLocalSetting('checkinDraftV1')"), 'quick check-in and per-user local draft are available');
+assert.ok(analysisUI.includes("state.profile?.gender === 'female'") && analysisUI.includes("state.profile?.cycleTrackingEnabled === true"), 'cycle analysis is gated by female profile and explicit tracking setting');
+
 console.log('KAJO navigation and analysis UI smoke tests passed.');
 
 
