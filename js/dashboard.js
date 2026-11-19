@@ -991,7 +991,7 @@ function historyValue(checkin, key) {
 function historyWindow(range, endKey = historyTodayKey()) {
     const end = endKey;
     const endDate = new Date(end + 'T12:00:00');
-    const days = ({ '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 })[range] || 90;
+    const days = ({ '7d': 7, '28d': 28, '30d': 30, '42d': 42, '3m': 90, '90d': 90, '6m': 180, '1y': 365, '365d': 365 })[range] || 90;
     const start = new Date(endDate);
     start.setDate(start.getDate() - days + 1);
     return { from: historyDateKey(start), to: end };
@@ -1069,7 +1069,7 @@ function metricHistoryValue(kind,key,date){
  return day.loadMode?.startsWith('garmin')?day.formPct:day.tsb;
 }
 function chooseAdaptiveHistoryRange(kind,key){
- const candidates=['7d','28d','3m','6m','1y'];
+ const candidates=['7d','28d','30d','42d','3m','1y'];
  for(const candidate of candidates){
   const window=historyWindow(candidate),dates=historyRangeDates(window.from,window.to);
   if(!dates.length)continue;
