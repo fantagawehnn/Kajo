@@ -66,9 +66,9 @@ function tsbLevel(value){
 function renderRings(timeline){
  const root=document.getElementById('training-load-rings');if(!root)return;const last=lastValidLoadDay(timeline);
  const items=[
-  {key:'ctl',label:'CTL',value:last?.ctl,detail:'Langfristig',status:valueLevel(last?.ctl,timeline,'ctl')},
-  {key:'atl',label:'ATL',value:last?.atl,detail:'Kurzfristig',status:valueLevel(last?.atl,timeline,'atl')},
-  {key:'tsb',label:'TSB',value:last?.tsb,detail:'CTL minus ATL',status:tsbLevel(last?.tsb)}
+  {key:'ctl',label:'Fitness',value:last?.ctl,detail:'Langfristig',status:valueLevel(last?.ctl,timeline,'ctl')},
+  {key:'atl',label:'Ermüdung',value:last?.atl,detail:'Kurzfristig',status:valueLevel(last?.atl,timeline,'atl')},
+  {key:'tsb',label:'Form',value:last?.tsb,detail:'Fitness minus Ermüdung',status:tsbLevel(last?.tsb)}
  ];
  root.replaceChildren();items.forEach(item=>{
   const card=document.createElement('div');card.className='kajo-load-metric';
@@ -81,7 +81,7 @@ function renderRings(timeline){
  setText('training-load-status-date',last?'Stand '+new Date(last.date+'T12:00:00').toLocaleDateString('de-DE'):'Keine gültigen Modellwerte');
  const mode=last?.loadMode==='srpe'?'sRPE-Load':last?.loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Belastungsmodell';
  setText('training-load-status-title',mode);
- setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum. TSB wird aktuell an der Grundlagen-/Aufbauphase der Winter-Off-Season ausgerichtet: Grün −20 bis −5, Gelb −5 bis +5, Blau über +5 (geringe akute Belastung), Rot unter −20 (hohe akute Belastung). Orientierungsbereiche, keine starre Vorgabe; TSB allein bewertet weder Regeneration noch Trainingsbereitschaft.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
+ setText('training-load-status-note',last?'Fitness- und Ermüdungsfarben zeigen die relative Höhe im gewählten Zeitraum. TSB wird aktuell an der Grundlagen-/Aufbauphase der Winter-Off-Season ausgerichtet: Grün −20 bis −5, Gelb −5 bis +5, Blau über +5 (geringe akute Belastung), Rot unter −20 (hohe akute Belastung). Orientierungsbereiche, keine starre Vorgabe; TSB allein bewertet weder Regeneration noch Trainingsbereitschaft.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
 }
 function renderVolumeSummary(activities,range){
  const hasDuration=item=>item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0;
@@ -98,17 +98,17 @@ function renderLoadTrend(timeline,activities){
  const labels=timeline.map(row=>new Date(row.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})),textColor='#94a3b8';
  const relativeZones=buildRelativeLoadZones(timeline);
  chartBase('training-load-ctl-atl-chart','ctlAtlChart',{type:'line',plugins:[createZoneBackgroundPlugin(relativeZones)],data:{labels,datasets:[
-  {label:'CTL · langfristig',data:timeline.map(row=>valid(row.ctl)?Number(row.ctl):null),borderColor:colors.ctl,backgroundColor:colors.ctl,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
-  {label:'ATL · kurzfristig',data:timeline.map(row=>valid(row.atl)?Number(row.atl):null),borderColor:colors.atl,backgroundColor:colors.atl,borderWidth:2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false}
+  {label:'Fitness · langfristig',data:timeline.map(row=>valid(row.ctl)?Number(row.ctl):null),borderColor:colors.ctl,backgroundColor:colors.ctl,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
+  {label:'Ermüdung · kurzfristig',data:timeline.map(row=>valid(row.atl)?Number(row.atl):null),borderColor:colors.atl,backgroundColor:colors.atl,borderWidth:2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false}
  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:textColor,usePointStyle:true,boxWidth:8}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.y)}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor}}}}});
  const activityByDate=new Map();activities.forEach(item=>{const date=String(item.date).slice(0,10);if(!activityByDate.has(date))activityByDate.set(date,{minutes:0,sessions:0,knownDurationCount:0});const day=activityByDate.get(date);day.sessions++;if(item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0){day.minutes+=Number(item.duration);day.knownDurationCount++;}});
  const measure=volumeMeasure;
  chartBase('training-load-volume-chart','volumeChart',{type:'bar',data:{labels,datasets:[{label:measure==='duration'?'Trainingszeit':'Einheiten',data:timeline.map(row=>{const day=activityByDate.get(row.date);if(!day)return row.dataStatus==='confirmed-rest'?0:null;if(measure==='sessions')return day.sessions;return day.knownDurationCount?Number((day.minutes/60).toFixed(2)):null;}),backgroundColor:colors.volume,borderRadius:3,maxBarThickness:18}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>measure==='duration'?fmt(item.parsed.y)+' h':fmt(item.parsed.y)+' Einheiten'}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{beginAtZero:true,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:measure==='duration'?'Stunden pro Tag':'Einheiten pro Tag',color:textColor}}}}});
  const tsbZoneConfig=buildTsbZones(timeline);
  chartBase('training-load-tsb-chart','tsbChart',{type:'line',plugins:[createZoneBackgroundPlugin(tsbZoneConfig.zones)],data:{labels,datasets:[
-  {label:'TSB',data:timeline.map(row=>valid(row.tsb)?Number(row.tsb):null),borderColor:colors.tsb,backgroundColor:colors.tsb,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
+  {label:'Form',data:timeline.map(row=>valid(row.tsb)?Number(row.tsb):null),borderColor:colors.tsb,backgroundColor:colors.tsb,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
   {label:'Nulllinie',data:timeline.map(row=>valid(row.tsb)?0:null),borderColor:'rgba(148,163,184,.6)',borderWidth:1,borderDash:[5,4],pointRadius:0,pointHitRadius:0,tension:0}
- ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'TSB: '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{min:tsbZoneConfig.min,max:tsbZoneConfig.max,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'TSB · CTL minus ATL',color:textColor}}}}});
+ ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'Form: '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{min:tsbZoneConfig.min,max:tsbZoneConfig.max,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'TSB · CTL minus ATL',color:textColor}}}}});
  const has=timeline.some(row=>valid(row.ctl)||valid(row.atl)||valid(row.tsb));setText('training-load-trend-note',has?'Die farbigen Hintergrundzonen ordnen CTL/ATL relativ zum gewählten Zeitraum und TSB anhand der Grundlagen-/Aufbau-Orientierungsbereiche ein. Tage ohne bestätigte Datenabdeckung bleiben Lücken und werden nicht als trainingsfrei interpretiert.':'Für den gewählten Zeitraum liegt kein durchgängiger, berechenbarer CTL-/ATL-/TSB-Verlauf vor.');
 }
 function modelKeys(){return selectedModel==='compare'?['kajo','edwards']:[selectedModel];}
