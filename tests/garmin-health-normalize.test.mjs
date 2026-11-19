@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeGarminWeight, countGarminMetricUpdates } from '../js/garmin-health-normalize.js';
+import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from '../js/garmin-health-normalize.js';
 
 test('converts Garmin totalAverage weight from grams to kilograms and retains MANUAL source', () => {
     const result = normalizeGarminWeight({
@@ -44,4 +44,11 @@ test('counts metric fields without counting measurement source metadata', () => 
         }
     }), 2);
     assert.equal(countGarminMetricUpdates({ measurementSources: {} }), 0);
+});
+
+test('classifies Garmin preview values as added, updated, or unchanged', () => {
+    assert.equal(classifyGarminMetricUpdate(undefined, 61.4), 'added');
+    assert.equal(classifyGarminMetricUpdate(null, 61.4), 'added');
+    assert.equal(classifyGarminMetricUpdate(61.3, 61.4), 'updated');
+    assert.equal(classifyGarminMetricUpdate(61.4, 61.4), 'unchanged');
 });

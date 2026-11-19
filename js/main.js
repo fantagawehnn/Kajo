@@ -14,7 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
-import { normalizeGarminWeight, countGarminMetricUpdates } from './garmin-health-normalize.js';
+import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
@@ -508,7 +508,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
 
     let importedValues = 0;
     let changedDays = 0;
-    let recordsWithPayload = 0;
+    const metricSummary = {};
     for (const [date, records] of byDate) {
         const existing = state.dailyCheckins[date] || {};
         const updates = {};
@@ -568,7 +568,11 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             if (key === 'garminSteps' && (value < 0 || value > 200000)) continue;
             if (key === 'garminFitnessAge' && (value <= 0 || value > 120)) continue;
             // Garmin-eigene Felder werden aktualisiert; manuelle Check-ins bleiben getrennt.
-            updates[key] = key === 'garminSleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            const normalizedValue = key === 'garminSleepDuration' ? Math.round(value * 100) / 100 : Math.round(value * 10) / 10;
+            const classification = classifyGarminMetricUpdate(existing[key], normalizedValue);
+            if (!metricSummary[key]) metricSummary[key] = { added: 0, updated: 0, unchanged: 0 };
+            metricSummary[key][classification]++;
+            updates[key] = normalizedValue;
             updates.measurementSources = {
                 ...(updates.measurementSources || existing.measurementSources || {}),
                 [key]: sourceMetadata[key]
@@ -587,7 +591,22 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         }
         initEngine();
     }
-    return { days: changedDays, values: importedValues, records: rows.length, dates: byDate.size };
+    return { days: changedDays, values: importedValues, records: rows.length, dates: byDate.size, metrics: metricSummary };
+}
+
+function formatGarminHealthPreview(result) {
+    const labels = {
+        garminHrv: 'HRV', garminRhr: 'Ruheherzfrequenz', garminSleepDuration: 'Schlafdauer',
+        garminSleepScore: 'Schlafscore', garminRespiration: 'Atemfrequenz', garminStress: 'Stress',
+        garminWeight: 'Gewicht', garminBodyBattery: 'Body Battery', garminSpo2: 'SpO₂',
+        garminSteps: 'Schritte', garminFitnessAge: 'Fitnessalter'
+    };
+    const lines = Object.entries(result.metrics || {}).map(([key, counts]) =>
+        (labels[key] || key) + ': neu ' + counts.added + ' · aktualisiert ' + counts.updated + ' · unverändert ' + counts.unchanged
+    );
+    return 'Vorschau: ' + result.values + ' Garmin-Werte an ' + result.days + ' Tagen.\n' +
+        'Geprüft: ' + result.records + ' Rohdatensätze an ' + result.dates + ' Tagen.\n\n' +
+        'Aufschlüsselung:\n' + lines.join('\n') + '\n\nEs wurde noch nichts verändert.';
 }
 
 async function previewGarminHealthRange() {
@@ -612,9 +631,7 @@ async function previewGarminHealthRange() {
         const result = await loadGarminHealthRecordsIntoCheckins(startDate, endDate, { dryRun: true });
         status.textContent = result.records === 0
             ? 'Vorschau: Für den gewählten Zeitraum wurden keine gespeicherten Garmin-Rohdatensätze gefunden.'
-            : 'Vorschau: ' + result.values + ' Garmin-Werte an ' + result.days +
-                ' Tagen könnten aktualisiert/ergänzt werden. Geprüft: ' + result.records + ' Rohdatensätze an ' +
-                result.dates + ' Tagen. Es wurde noch nichts verändert.';
+            : formatGarminHealthPreview(result);
     } catch (error) {
         status.textContent = 'Vorschau fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler');
     } finally {
