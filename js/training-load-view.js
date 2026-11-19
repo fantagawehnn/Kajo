@@ -2,7 +2,7 @@
  * Reuses the central CTL/ATL/TSB timeline and the existing HR-zone calculations.
  * No separate load formulas are introduced in this presentation layer.
  */
-import { state } from './state.js';
+import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { calculateGarminZoneLoad } from './training-load.js?v=7';
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
@@ -162,7 +162,7 @@ function renderEstimatedLoadQueue(activities){
    if(!raw||!Number.isFinite(value)||value<0||value>10000){input.focus();return;}
    activity.manualTrainingLoadEstimate={value:Number(value.toFixed(1)),source:'manual-estimate',unit:'KAJO-HF-Punkte',estimatedAt:new Date().toISOString()};
    saveDataToLocalStorage();
-   renderTrainingLoadView();
+   refreshAll();
   });
   controls.append(input,save);row.append(info,controls);node.appendChild(row);
  });
