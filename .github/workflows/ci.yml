@@ -63,6 +63,7 @@ jobs:
           node --check js/dashboard.js
           node --check js/readiness.js
           node --check js/charts.js
+          node --check js/chart-series.js
           node --check js/garmin-metric-access.js
           node --check js/performance-data-quality.js
           node --check js/health-data.js
@@ -70,6 +71,7 @@ jobs:
           node --check js/weight-view.js
           node --check js/training-load-view.js
           node --check js/analysis-overview.js
+          node --check js/training-load-view.js
           node --check js/period-summary.js
           node --check js/garmin-performance-archive.js
           node --check js/activities.js
@@ -116,6 +118,9 @@ jobs:
 
       - name: Run weight trend tests
         run: node --experimental-default-type=module --test tests/weight-view.test.mjs
+
+      - name: Run adaptive chart data tests
+        run: node --experimental-default-type=module --test tests/chart-series.test.mjs
 
       - name: Run period summary tests
         run: node --experimental-default-type=module --test tests/period-summary.test.mjs
