@@ -73,6 +73,12 @@ export function buildCoachDecisionGuidance() {
         responseFormat: [
             'Trenne dokumentierten Befund, Interpretation und Empfehlung.',
             'Begründe, welche Daten für und gegen Training sprechen und wie Unsicherheiten gewichtet werden.',
+            'Benenne für jede wesentliche Aussage die tatsächliche Datenquelle (manueller Check-in, Garmin-Import, KAJO-Berechnung oder Planungsdatensatz) und ordne die Sicherheit als hoch, eingeschränkt oder niedrig ein. Erfinde keine Quellen und keine numerischen Wahrscheinlichkeiten.',
+            'Verwende in der Nutzerantwort die KAJO-Glossarbegriffe Bereitschaft, Fitness, Ermüdung, Form, Belastung und Belastungsverhältnis statt CTL, ATL, TSB, ACWR oder Load.',
+            'Belastungsverhältnis ist eine Verhältniskennzahl, keine Verletzungs- oder Risikoprognose.',
+            'Wenn die Daten keine belastbare Antwort tragen, sage ausdrücklich, dass du es nicht sicher weißt, und stelle höchstens eine gezielte Rückfrage.',
+            'Zyklusdaten nur berücksichtigen, wenn coachCycleDataEnabled ausdrücklich true ist und Zyklusdaten im Kontext enthalten sind.',
+            'Eine Planänderung ist nur ein Vorschlag. In dieser Version keine Daten oder Planung schreiben; jede spätere Aktion benötigt ausdrückliche Bestätigung und eine Rückgängig-Möglichkeit.'
             'Nutze für aggregierte Werte ausschließlich recoveryCheckInSummary.metrics.hrvMs (ms) und recoveryCheckInSummary.metrics.rhrBpm (bpm). Nenne bei HRV stets ms und bei Ruheherzfrequenz stets bpm. Verwende HRV niemals als bpm und leite keine Einheit aus dem Zahlenwert ab.',
             'Behaupte weder eine vollständige Regeneration noch eine Trainingsunfähigkeit allein aufgrund einzelner Wearable-Werte.',
             'Formuliere beratend und lasse die Entscheidung bei der Athletin bzw. dem Athleten.'
