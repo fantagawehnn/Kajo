@@ -36,9 +36,10 @@ test('does not retry permanent query errors', async () => {
 
 test('retries transient failures only up to the configured limit', async () => {
     let attempts = 0;
+    const failure = { code: '57014', message: 'statement timeout' };
     await assert.rejects(loadGarminActivityPages(async () => {
         attempts++;
-        return { data: null, error: { code: '57014', message: 'statement timeout' } };
-    }, { maxRetries: 2, retryDelayMs: 0 }), /statement timeout/);
+        return { data: null, error: failure };
+    }, { maxRetries: 2, retryDelayMs: 0 }), error => error === failure);
     assert.equal(attempts, 3);
 });
