@@ -428,6 +428,9 @@ function renderHealth() {
   const sick = events.filter(([,item])=>item.status==='sick').length;
   const injured = events.filter(([,item])=>item.status==='injured').length;
   const cycleDays = cycles.length;
+  const healthDays = events.length;
+  setHero('health', String(healthDays), 'Tage', 'Dokumentierte Krankheits- und Verletzungstage',
+    'Krankheit: '+sick+' · Verletzung: '+injured+' · Zeitraum '+dateLabel(range.from)+' – '+dateLabel(range.to)+'. Nur dokumentierte Einträge werden gezählt; fehlende Angaben gelten nicht als gesund.', 'neutral');
   const healthRoot = document.getElementById('health-documentation-metrics');
   if (healthRoot) healthRoot.innerHTML = [
     healthCircle('sick','Krankheit',sick,'Dokumentierte Tage',sick?'#eab308':'var(--kajo-status-info)'),
