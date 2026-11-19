@@ -127,7 +127,7 @@ Die dokumentierte Methode gewichtet die Minuten in fünf Herzfrequenzzonen mit d
 
 ### 4.3 Gesamteinordnung
 
-Der Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen neuen Gesamtscore erfinden. Ein kombinierter Readiness-Score darf nur verwendet werden, wenn dessen Berechnung, Datenanforderungen, Validierung und Grenzen ausdrücklich freigegeben wurden.
+Der Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen eigenen Gesamtscore erfinden. Wenn KAJO einen Bereitschaftswert tatsächlich berechnet und im Kontext bereitstellt, darf er ihn nur als konfigurierbare Hypothese mit Datenqualität und Grenzen einordnen. Die Standardgewichtung beträgt 70 % objektive und 30 % subjektive Daten; sie ist in den Einstellungen veränderbar und keine medizinisch validierte Messung.
 
 ## 5. Regeln für Performance
 
@@ -403,3 +403,32 @@ Vor Implementierung müssen verbindlich entschieden werden:
 4. Welche Trainingsmethoden und Intensitätszonen sind für das individuelle Profil freigegeben?
 5. Welche wissenschaftlichen Quellen werden als Evidenzregister verwendet?
 6. Wie soll die Nutzerin Empfehlungen bewerten oder ablehnen können, ohne dass diese automatisch umgesetzt werden?
+
+
+## 15. Produktregeln für KAJO
+
+### 15.1 Drei getrennte Ebenen
+
+1. **Regel:** deterministische Berechnung und feste Datenvalidierung in KAJO.
+2. **KI-Text:** Erklärung und Einordnung vorhandener Daten. Die KI darf Berechnungen nicht neu erfinden.
+3. **KI-Aktion:** Vorschlag zur Änderung von Plan oder Kalender. Eine Änderung ist nur nach ausdrücklicher Bestätigung zulässig und muss rückgängig gemacht werden können. Solange keine Schreibschnittstelle implementiert ist, darf der Coach keine Aktion als ausgeführt darstellen.
+
+### 15.2 Quelle und Sicherheit
+
+Jede wesentliche Tatsachenbehauptung und Empfehlung benennt ihre tatsächliche Datenbasis (manueller Check-in, Garmin-Import, KAJO-Berechnung oder Planungsdatensatz) und stuft die Sicherheit als hoch, eingeschränkt oder niedrig ein. Die Einstufung richtet sich nach Zeitraum, Messwertanzahl, Datenvollständigkeit und Vergleichbarkeit; Prozentwahrscheinlichkeiten werden nicht erfunden. Wenn die Daten keine belastbare Antwort tragen, ist „Das lässt sich mit den vorliegenden Daten nicht sicher beurteilen“ ausdrücklich zulässig.
+
+Im Dashboard bleiben Quellen, Messwertanzahl und Einschränkungen standardmäßig verborgen und werden erst nach einer bewussten Info-/Datenbasis-Aktion angezeigt. Im geöffneten Coach-Dialog dürfen sie kompakt genannt werden.
+
+### 15.3 Glossar und Bereitschaft
+
+Die Nutzeroberfläche und Coach-Antworten verwenden die Begriffe Bereitschaft, Fitness, Ermüdung, Form, Belastung, Belastungsverhältnis, Befinden, Gewicht, HRV, Ruhepuls und Schlaf. Technische Kürzel wie CTL, ATL, TSB und ACWR sowie der Begriff „Load“ werden nicht als sichtbare Kennzahlbezeichnungen verwendet. Das Belastungsverhältnis ist keine Verletzungsprognose.
+
+Die Gewichtung der Bereitschaft ist eine konfigurierbare Hypothese. Standard sind 70 % objektive und 30 % subjektive Daten. Diese Gewichtung ist keine medizinisch validierte Messung und darf in den Einstellungen verändert werden.
+
+### 15.4 Zyklusdaten
+
+Zyklusdaten bleiben standardmäßig aus dem KI-Kontext ausgeschlossen. Sie dürfen nur einbezogen werden, wenn die Nutzerin die Freigabe in den Einstellungen ausdrücklich aktiviert hat und die Daten tatsächlich vorliegen. Es werden keine Zyklusphase und keine daraus abgeleitete Trainingsentscheidung unterstellt.
+
+### 15.5 Wiederholt auffällige Werte
+
+Bei wiederholt auffälligem Befinden, anhaltend schlechter Bereitschaft oder dokumentierter Krankheit kann der Coach neutral empfehlen, bei anhaltenden oder zunehmenden Beschwerden ärztlichen Rat einzuholen. Er stellt keine Diagnose und gibt keine automatische Trainingsfreigabe.
