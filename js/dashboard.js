@@ -905,7 +905,8 @@ const historyMetricDefinitions = {
     fatigue: { label: 'Müdigkeit', short: 'Müdigkeit', unit: '/ 5', group: 'self', icon: 'battery-low', color: '#f59e0b' },
     motivation: { label: 'Motivation', short: 'Motivation', unit: '/ 5', group: 'self', icon: 'zap', color: '#34d399' },
     stress: { label: 'Stress', short: 'Stress', unit: '/ 5', group: 'self', icon: 'brain', color: '#38bdf8' },
-    weight: { label: 'Gewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#EC4899' }
+    weight: { label: 'Gewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#EC4899' },
+    wellbeing: { label: 'Befinden', short: 'Befinden', unit: '/ 5', group: 'self', icon: 'heart', color: '#A78BFA' }
 };
 const trainingMetricDefinitions = {
     fitness: { label: 'Fitness', short: 'Fitness', unit: 'Punkte', color: '#1E88E5', icon: 'trending-up' },
@@ -938,7 +939,7 @@ function historyValue(checkin, key) {
             : garminKeys[key] ? checkin[garminKeys[key]] : checkin[key];
     if (!validNumber(raw)) return null;
     const value = Number(raw);
-    return ['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)
+    return ['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress', 'wellbeing', 'mood'].includes(key)
         ? (value >= 1 && value <= 5 ? value : null)
         : value;
 }
@@ -975,6 +976,7 @@ function historyRecommendation(key, value, dateKey) {
     if (key === 'rhr' || key === 'hrv' || key === 'respiration' || key === 'sleepDuration' || key === 'sleepScore') {
         return ['Persönlicher Normalbereich noch nicht verfügbar', 'Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht verbindlich festgelegt. Der Messwert wird deshalb ohne pauschale oder vorläufige Normalbereichs-Einstufung dargestellt.'];
     }
+    if (key === 'wellbeing') return ['Befinden', 'Deine tägliche Selbsteinschätzung im Verlauf. Einzelne Angaben sind subjektiv und keine medizinische Bewertung.'];
     if (key === 'weight') return ['Gewichtsverlauf', 'Betrachte Gewicht über mehrere Messungen und im individuellen Kontext. Einzelne Tagesveränderungen sind für sich genommen keine Trainings- oder Gesundheitsbewertung.'];
     if (key === 'sleepScore') return value < 80
         ? ['Sleep Score unter 80', 'Prüfe Schlafqualität, Schlafdauer und mögliche Störfaktoren. Der Score ist ein Wearable-Schätzwert.']
