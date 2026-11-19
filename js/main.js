@@ -175,10 +175,14 @@ function renderHealthAnalysis() {
             row.className = 'flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2';
             const label = document.createElement('span');
             label.className = 'text-sm text-slate-200';
-            label.textContent = value.status === 'sick' ? 'Krankheit' : 'Verletzung';
+            // Bei Erkrankungen die konkret dokumentierte Diagnose links anzeigen.
+            // Fehlt eine Angabe, bleibt die allgemeine Bezeichnung als Fallback erhalten.
+            label.textContent = value.status === 'sick'
+                ? (value.diagnosis || 'Krankheit')
+                : 'Verletzung';
             const detail = document.createElement('span');
             detail.className = 'text-xs text-slate-400 text-right';
-            detail.textContent = [date, value.diagnosis].filter(Boolean).join(' · ');
+            detail.textContent = date;
             row.append(label, detail);
             list.appendChild(row);
         });
