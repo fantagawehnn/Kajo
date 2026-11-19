@@ -64,6 +64,34 @@ function renderSchedules() {
   try { globalThis.lucide?.createIcons?.(); } catch {}
 }
 
+const DAILY_CHECKIN_REMINDER_TITLE = 'Täglicher Check-in';
+const DAILY_CHECKIN_REMINDER_BODY = 'Wie fühlst du dich heute? Nimm dir kurz Zeit für Befinden und Gewicht.';
+function renderDailyCheckinReminderSettings(){
+  const item=loadedSchedules.find(entry=>entry.title===DAILY_CHECKIN_REMINDER_TITLE&&entry.body===DAILY_CHECKIN_REMINDER_BODY);
+  const enabled=$('kajo-daily-checkin-reminder-enabled');
+  const time=$('kajo-daily-checkin-reminder-time');
+  if(enabled)enabled.checked=item?.enabled===true;
+  if(time)time.value=String(item?.time_local||'08:00').slice(0,5);
+}
+export async function saveDailyCheckinReminder(){
+  try{
+    const user=await currentUser();
+    const enabled=$('kajo-daily-checkin-reminder-enabled')?.checked===true;
+    const time=$('kajo-daily-checkin-reminder-time')?.value||'08:00';
+    if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time))throw new Error('Bitte wähle eine gültige Uhrzeit.');
+    const existing=loadedSchedules.find(entry=>entry.title===DAILY_CHECKIN_REMINDER_TITLE&&entry.body===DAILY_CHECKIN_REMINDER_BODY);
+    const record={user_id:user.id,title:DAILY_CHECKIN_REMINDER_TITLE,body:DAILY_CHECKIN_REMINDER_BODY,time_local:time+':00',weekdays:[0,1,2,3,4,5,6],timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Berlin',enabled};
+    if(existing){
+      const {error}=await supabase.from('kajo_notification_schedules').update(record).eq('id',existing.id).eq('user_id',user.id);
+      if(error)throw error;
+    }else if(enabled){
+      const {error}=await supabase.from('kajo_notification_schedules').insert(record);
+      if(error)throw error;
+    }
+    await renderKajoPushSettings();
+    setStatus(enabled?'Deine tägliche Check-in-Erinnerung ist gespeichert.':'Die tägliche Check-in-Erinnerung ist ausgeschaltet.');
+  }catch(error){setStatus(error.message||'Die Check-in-Erinnerung konnte nicht gespeichert werden.','is-error');}
+}
 export async function renderKajoPushSettings() {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Lokale Gerätezeit";
   if ($("kajo-notification-timezone")) $("kajo-notification-timezone").textContent = timezone;
@@ -88,6 +116,7 @@ export async function renderKajoPushSettings() {
     if (error) throw error;
     loadedSchedules = Array.isArray(data) ? data : [];
     renderSchedules();
+    renderDailyCheckinReminderSettings();
   } catch (error) {
     setStatus(error.message || "Push-Einstellungen konnten nicht geladen werden.", "is-error");
     if ($("kajo-reminders-list")) $("kajo-reminders-list").innerHTML = '<p class="text-xs text-rose-300">Erinnerungen konnten nicht geladen werden.</p>';
