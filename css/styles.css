@@ -65,10 +65,10 @@
         gap: .1rem !important;
         height: 3.65rem;
     }
-    #app-navigation #nav-dashboard,
-    #app-navigation #nav-calendar,
-    #app-navigation #nav-analyses,
-    #app-navigation #nav-areas {
+    #app-navigation #nav-today,
+    #app-navigation #nav-plan,
+    #app-navigation #nav-analysis,
+    #app-navigation #nav-ich {
         display: flex;
         width: 100%;
         min-width: 0;
@@ -84,18 +84,18 @@
         line-height: 1;
         white-space: nowrap;
     }
-    #app-navigation #nav-dashboard span,
-    #app-navigation #nav-calendar span,
-    #app-navigation #nav-analyses span,
-    #app-navigation #nav-areas span { display: inline; }
-    #app-navigation #nav-dashboard i,
-    #app-navigation #nav-calendar i,
-    #app-navigation #nav-analyses i,
-    #app-navigation #nav-areas i,
-    #app-navigation #nav-dashboard svg,
-    #app-navigation #nav-calendar svg,
-    #app-navigation #nav-analyses svg,
-    #app-navigation #nav-areas svg {
+    #app-navigation #nav-today span,
+    #app-navigation #nav-plan span,
+    #app-navigation #nav-analysis span,
+    #app-navigation #nav-ich span { display: inline; }
+    #app-navigation #nav-today i,
+    #app-navigation #nav-plan i,
+    #app-navigation #nav-analysis i,
+    #app-navigation #nav-ich i,
+    #app-navigation #nav-today svg,
+    #app-navigation #nav-plan svg,
+    #app-navigation #nav-analysis svg,
+    #app-navigation #nav-ich svg {
         display: block;
         width: 1.15rem;
         height: 1.15rem;
@@ -416,10 +416,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         display: none !important;
     }
     #app-navigation > div > div > div:nth-child(2) { display: contents !important; }
-    #app-navigation #nav-dashboard,
-    #app-navigation #nav-calendar,
-    #app-navigation #nav-analyses,
-    #app-navigation #nav-areas {
+    #app-navigation #nav-today,
+    #app-navigation #nav-plan,
+    #app-navigation #nav-analysis,
+    #app-navigation #nav-ich {
         display: flex !important;
         width: 100% !important;
         min-width: 0 !important;
@@ -439,26 +439,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         line-height: 1;
         white-space: nowrap;
     }
-    #app-navigation #nav-dashboard span,
-    #app-navigation #nav-calendar span,
-    #app-navigation #nav-analyses span,
-    #app-navigation #nav-areas span { display: inline !important; }
-    #app-navigation #nav-dashboard i,
-    #app-navigation #nav-calendar i,
-    #app-navigation #nav-analyses i,
-    #app-navigation #nav-areas i,
-    #app-navigation #nav-dashboard svg,
-    #app-navigation #nav-calendar svg,
-    #app-navigation #nav-analyses svg,
-    #app-navigation #nav-areas svg {
+    #app-navigation #nav-today span,
+    #app-navigation #nav-plan span,
+    #app-navigation #nav-analysis span,
+    #app-navigation #nav-ich span { display: inline !important; }
+    #app-navigation #nav-today i,
+    #app-navigation #nav-plan i,
+    #app-navigation #nav-analysis i,
+    #app-navigation #nav-ich i,
+    #app-navigation #nav-today svg,
+    #app-navigation #nav-plan svg,
+    #app-navigation #nav-analysis svg,
+    #app-navigation #nav-ich svg {
         display: block;
         width: 1.15rem;
         height: 1.15rem;
     }
-    #app-navigation #nav-dashboard[class*="bg-sky-500/10"],
-    #app-navigation #nav-calendar[class*="bg-sky-500/10"],
-    #app-navigation #nav-analyses[class*="bg-sky-500/10"],
-    #app-navigation #nav-areas[class*="bg-sky-500/10"] {
+    #app-navigation #nav-today[class*="bg-sky-500/10"],
+    #app-navigation #nav-plan[class*="bg-sky-500/10"],
+    #app-navigation #nav-analysis[class*="bg-sky-500/10"],
+    #app-navigation #nav-ich[class*="bg-sky-500/10"] {
         color: #FF7777 !important;
         background: var(--kajo-red-soft) !important;
         border-color: rgb(211 47 47 / .32) !important;
@@ -768,10 +768,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     }
 }
 @media (min-width: 641px) {
-    #app-navigation #nav-dashboard,
-    #app-navigation #nav-calendar,
-    #app-navigation #nav-analyses,
-    #app-navigation #nav-areas,
+    #app-navigation #nav-today,
+    #app-navigation #nav-plan,
+    #app-navigation #nav-analysis,
+    #app-navigation #nav-ich,
      {
         min-height: 42px;
         padding-inline: .9rem;
@@ -2517,14 +2517,14 @@ html, body { max-width:100%; overflow-x:clip; }
   #app-navigation > div { padding-inline:.55rem; }
   #app-navigation > div > div { gap:.25rem !important; }
   #app-navigation > div > div > div:first-child img { width:6.5rem !important; max-width:6.5rem !important; }
-  #app-navigation #nav-dashboard, #app-navigation #nav-calendar,
-  #app-navigation #nav-analyses, #app-navigation #nav-areas,
+  #app-navigation #nav-today, #app-navigation #nav-plan,
+  #app-navigation #nav-analysis, #app-navigation #nav-ich,
    {
     min-width:2.65rem; width:2.65rem; height:2.65rem; padding:0;
     justify-content:center; gap:0;
   }
-  #app-navigation #nav-dashboard span, #app-navigation #nav-calendar span,
-  #app-navigation #nav-analyses span, #app-navigation #nav-areas span,
+  #app-navigation #nav-today span, #app-navigation #nav-plan span,
+  #app-navigation #nav-analysis span, #app-navigation #nav-ich span,
    span { display:none; }
   #app-navigation #garmin-sync-indicator { padding-inline:.45rem; }
   #app-navigation #garmin-sync-indicator-text { display:none; }
