@@ -9,7 +9,7 @@ import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 
 const METRICS = [
-  { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#38bdf8', decimals:0 },
+  { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#0F766E', decimals:0 },
   { key:'rhr', label:'Ruheherzfrequenz', short:'Ruhepuls', unit:'bpm', group:'Herz-Kreislauf', icon:'heart-pulse', color:'#fb7185', decimals:0 },
   { key:'sleepScore', label:'Schlafscore', short:'Sleep Score', unit:'/ 100', group:'Schlaf', icon:'moon-star', color:'#a78bfa', decimals:0 },
   { key:'sleepDuration', label:'Schlafdauer', short:'Schlafdauer', unit:'h', group:'Schlaf', icon:'bed-double', color:'#818cf8', decimals:1 },
@@ -20,7 +20,7 @@ const METRICS = [
   { key:'garminStress', label:'Stresslevel (Garmin)', short:'Stress', unit:'Punkte', group:'Belastung', icon:'brain', color:'#f59e0b', decimals:0 },
   { key:'steps', label:'Schritte', short:'Schritte', unit:'', group:'Aktivität', icon:'footprints', color:'#84cc16', decimals:0 },
   { key:'fitnessAge', label:'Fitnessalter', short:'Fitnessalter', unit:'Jahre', group:'Leistungsfähigkeit', icon:'calendar-clock', color:'#c084fc', decimals:1 },
-  { key:'weight', label:'Körpergewicht', short:'Gewicht', unit:'kg', group:'Körperwerte', icon:'scale', color:'#94a3b8', decimals:1 }
+  { key:'weight', label:'Körpergewicht', short:'Gewicht', unit:'kg', group:'Körperwerte', icon:'scale', color:'#EC4899', decimals:1 }
 ];
 
 let selectedMetric = null;
@@ -166,7 +166,7 @@ function renderDetail() {
   const canvas=document.getElementById('kajo-health-detail-chart');
   if (healthChart) { healthChart.destroy(); healthChart=null; }
   if (canvas && typeof Chart==='function') {
-    const datasets=[{label:metric.label,data:values,borderColor:metric.color,backgroundColor:metric.color+'20',fill:true,tension:.25,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:false}];
+    const datasets=[{label:metric.label,data:values,borderColor:metric.color,backgroundColor:metric.color+'20',fill:true,tension:.25,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,spanGaps:true}];
     if (baselineSeries.some(valid)) datasets.push({label:'Persönlicher Median (90 Tage)',data:baselineSeries,borderColor:'#94a3b8',backgroundColor:'transparent',borderDash:[5,5],fill:false,tension:0,borderWidth:1.5,pointRadius:0,spanGaps:false});
     healthChart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onHover:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},onClick:(event,elements,chart)=>{const active=chart.getElementsAtEventForMode(event,'index',{intersect:false},true).filter(item=>item.datasetIndex===0);if(active.length)showChartPointReadout(canvas,chart,active[0].index,{title:metric.label,unit:metric.unit,formatValue:value=>format(value,metric)});},plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:7,boxHeight:7}},tooltip:{enabled:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#94a3b8',maxTicksLimit:5}}}}});
   }
