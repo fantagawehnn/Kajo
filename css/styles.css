@@ -6255,13 +6255,13 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
 #view-calendar .calendar-year-section-heading > span { color:var(--color-text-muted,#8b98a7); font-size:9px; text-align:right; }
 #view-calendar .calendar-year-week-cell { background:var(--calendar-load-color,var(--color-surface,#111820)); }
 #view-calendar .calendar-year-week-cell.is-partial { border:1px dashed var(--color-text-muted,#7d8a98); }
-#view-calendar .calendar-year-week-cell.is-unknown { background:repeating-linear-gradient(135deg,var(--color-surface-subtle,#1c2835),var(--color-surface-subtle,#1c2835) 4px,var(--color-surface,#111820) 4px,var(--color-surface,#111820) 8px); }
+#view-calendar .calendar-year-week-cell.is-unknown { background:#4b5563; border:1px dashed #9ca3af; }
 #view-calendar .calendar-year-week-load { display:block; height:8px; border-radius:3px; background:rgba(20,35,30,.10); }
 #view-calendar .calendar-year-week-cell small { color:#26352f; font-weight:700; }
 #view-calendar .calendar-year-load-legend { display:flex; flex-wrap:wrap; align-items:center; gap:7px 12px; margin-top:10px; color:var(--color-text-muted,#8b98a7); font-size:9px; }
 #view-calendar .calendar-year-load-legend span { display:inline-flex; align-items:center; gap:4px; }
 #view-calendar .calendar-year-load-legend i { width:11px; height:11px; display:inline-block; border-radius:3px; background:#A7D5B6; }
-#view-calendar .calendar-year-load-legend i.is-unknown { background:repeating-linear-gradient(135deg,#536171,#536171 2px,#273443 2px,#273443 4px); }
+#view-calendar .calendar-year-load-legend i.is-unknown { background:#4b5563; border:1px dashed #9ca3af; }
 #view-calendar .calendar-year-load-legend i.is-partial { background:transparent; border:1px dashed var(--color-text-muted,#8b98a7); }
 #view-calendar .calendar-year-analysis-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:11px; }
 #view-calendar .calendar-year-month-chart { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:5px; align-items:end; min-height:145px; }
