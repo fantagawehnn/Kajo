@@ -312,6 +312,13 @@ VERBINDLICHE REGELN:
     if (proposal?.status !== "ready" || !Array.isArray(proposal.changes)) {
       return json({ proposal: { status: "needs_input", rationale: typeof proposal?.rationale === "string" ? proposal.rationale.slice(0, 1800) : "Für eine belastbare Anpassung fehlen Angaben.", openQuestions, changes: [] } });
     }
+    const weekStart = new Date(target.weekStartDate + "T12:00:00Z");
+    const weekEnd = new Date(target.weekEndDate + "T12:00:00Z");
+    if (!Number.isFinite(weekStart.getTime()) || !Number.isFinite(weekEnd.getTime())
+      || weekStart.getUTCDay() !== 1 || Math.round((weekEnd - weekStart) / 86400000) !== 6
+      || currentDate < target.weekStartDate || currentDate > target.weekEndDate) {
+      return json({ error: "Die adaptive Auswertung ist nur innerhalb der freigegebenen Montag-bis-Sonntag-Woche möglich." }, 400);
+    }
     const matched = new Set(Array.isArray(planning.matchedSessionIds) ? planning.matchedSessionIds : []);
     const ambiguous = new Set(Array.isArray(planning.ambiguousSessionIds) ? planning.ambiguousSessionIds : []);
     const eligible = new Map((Array.isArray(plan.sessions) ? plan.sessions : [])
