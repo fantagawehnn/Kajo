@@ -444,7 +444,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     // Check-in bis einschließlich des ausgewählten Tages. Die Daten bleiben
     // datumsgebunden; es werden keine Werte aus der Zukunft übernommen.
     const garminMetricKeys = ['garminHrv','garminRhr','garminSleepScore','garminSleepDuration','garminRespiration','garminBodyBattery','garminStress','garminWeight','garminSpo2','garminSteps','garminFitnessAge'];
-    const subjectiveMetricKeys = ['sleepQuality','soreness','fatigue','motivation','stress','weight'];
+    const subjectiveMetricKeys = ['sleepQuality','soreness','fatigue','motivation','stress','weight','wellbeing','mood'];
     const hasGarminMetrics = record => Boolean(record && typeof record === 'object' &&
         (garminMetricKeys.some(key => record[key] !== null && record[key] !== undefined && record[key] !== '') ||
          (record.measurementSources?.hrv?.source === 'garmin' && validNumber(record.hrv))));
@@ -995,10 +995,15 @@ function historyRecommendation(key, value, dateKey) {
 function metricHistoryValue(kind,key,date){
  if(kind==='health')return historyValue(state.dailyCheckins[date],key);
  if(key==='readiness'){const result=calculateReadiness(date);return result.score===null?null:result.score;}
- const day=(state.dailyTimeline||[]).find(item=>item.date===date);
+ const timeline=state.dailyTimeline||[];
+ const day=timeline.find(item=>item.date===date);
  if(!day)return null;
- if(key==='fitness')return day.ctl;
- if(key==='atl')return day.atl;
+ if(key==='fitness'||key==='atl'){
+  const field=key==='fitness'?'ctl':'atl';
+  if(validNumber(day[field]))return day[field];
+  const prior=timeline.filter(item=>item.date<date&&validNumber(item[field])).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+  return prior?prior[field]:null;
+ }
  if(key==='acwr')return day.acwr;
  if(key==='tsb')return day.tsb;
  return day.loadMode?.startsWith('garmin')?day.formPct:day.tsb;
@@ -1142,7 +1147,7 @@ export function historyRingColor(key, value, dateKey) {
     if (key === 'sleepDuration') return value >= 7 && value <= 9 ? STATUS_COLORS.good : value >= 6 && value <= 10 ? STATUS_COLORS.attention : value >= 5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
     if (key === 'sleepScore') return value >= 90 ? STATUS_COLORS.good : value >= 70 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
     const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key) && (value < 1 || value > 5)) return STATUS_COLORS.info;
+    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress', 'wellbeing', 'mood'].includes(key) && (value < 1 || value > 5)) return STATUS_COLORS.info;
     const goodness = reverse ? (5 - value) / 4 * 100 : (value - 1) / 4 * 100;
     return fiveLevelColor(goodness);
 }
