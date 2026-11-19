@@ -13,7 +13,7 @@ import { state, setRefreshHandler } from './state.js';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor } from './season-plan-editor.js';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
-import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
+import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, saveDailyCheckinReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
@@ -3141,6 +3141,7 @@ Object.assign(window, {
     enableKajoPush,
     sendKajoPushTest,
     saveKajoReminder,
+    saveDailyCheckinReminder,
     deleteKajoReminder,
     editKajoReminder,
     resetKajoReminderForm,
