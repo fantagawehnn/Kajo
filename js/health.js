@@ -280,11 +280,11 @@ export function saveCheckin() {
             checkin.cycle = {
                 ...existing.cycle,
                 period,
-                ...(bleeding ? { bleeding } : {}),
+                bleeding,
                 ...(painTouched || existing.cycle?.pain != null ? { pain: Number(painInput?.value || 0) } : {}),
                 ...(impactTouched || existing.cycle?.trainingImpact != null ? { trainingImpact: Number(impactInput?.value || 0) } : {}),
-                ...(notes.trim() ? { notes } : {}),
-                ...(symptoms.length ? { symptoms } : {})
+                notes,
+                symptoms
             };
         } else {
             delete checkin.cycle;
