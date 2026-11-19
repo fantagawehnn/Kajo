@@ -84,6 +84,8 @@ assert.ok(main.includes("parent === 'ich'"), 'personal pages are routed under Ic
 assert.ok(html.includes('id="plan-subnav-planning"') && html.includes('id="plan-subnav-competitions"'), 'Plan contains training planning and competitions');
 assert.ok(css.includes('#app-navigation #nav-plan') && css.includes('#app-navigation #nav-ich'), 'new primary navigation IDs are included in responsive desktop styles');
 assert.ok(html.includes('<h1>Ich</h1>') && html.includes("onclick=\"openCoach()\""), 'Ich exposes profile and AI coach');
+assert.ok(html.includes('<span>Ermüdung</span><small>ATL</small>') && html.includes('<span>Fitness</span><small>CTL · Fitnessmodell</small>'), 'dashboard uses consistent ATL and CTL terminology');
+assert.ok(html.includes('<small>Form</small>') && analysisUI.includes("metric('Form (TSB)', '—')"), 'TSB is labeled as Form');
 assert.ok(calendar.includes("const formats = ['day', 'week', 'month', 'year', 'activities', 'season']"), 'calendar supports day/week/month/year/activities/season');
 assert.match(state, /activeCalendarFormat:\s*'week'/, 'week is the default calendar mode');
 
