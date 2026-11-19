@@ -293,7 +293,6 @@ export function getUserDataSnapshot(options = {}) {
     return {
         activities, disabledIntervals: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
-        seasonPlan: state.seasonPlan || null,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
         settings: state.settings || { sports: {}, categories: {}, heartRateZones: {} }
@@ -325,7 +324,7 @@ export function applyCloudDataSnapshot(snapshot) {
             throw new Error('Der Cloud-Datenstand enthält für "' + key + '" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
         }
     }
-    for (const key of ['checkins', 'health', 'profile', 'settings', 'seasonPlan']) {
+    for (const key of ['checkins', 'health', 'profile', 'settings']) {
         if (!snapshot[key] || typeof snapshot[key] !== 'object' || Array.isArray(snapshot[key])) {
             throw new Error('Der Cloud-Datenstand enthält für "' + key + '" kein gültiges Objekt. Der lokale Cache wurde nicht verändert.');
         }
@@ -449,7 +448,6 @@ export function exportDatabaseBackup() {
         supplements: state.supplements || [],
         profile: state.profile || {},
         settings: state.settings || { sports: {}, categories: {}, heartRateZones: {} },
-        seasonPlan: state.seasonPlan || null,
         version: '2.3',
         exportedAt: new Date().toISOString()
     };
@@ -539,7 +537,7 @@ export async function importDatabaseBackup(file, options = {}) {
     for (const key of arrays) {
         if (parsed[key] != null && !Array.isArray(parsed[key])) throw new Error(`Ungültiges Backup: "${key}" muss eine Liste sein.`);
     }
-    for (const key of ['checkins', 'health', 'profile', 'settings']) {
+    for (const key of ['checkins', 'health', 'profile', 'settings', 'seasonPlan']) {
         if (parsed[key] != null && (typeof parsed[key] !== 'object' || Array.isArray(parsed[key]))) throw new Error(`Ungültiges Backup: "${key}" muss ein Objekt sein.`);
     }
     const selected = Array.isArray(options.categories) ? options.categories : supported;
@@ -550,11 +548,13 @@ export async function importDatabaseBackup(file, options = {}) {
     const stateMap = {
         activities: 'rawActivities', planned: 'plannedActivities', checkins: 'dailyCheckins',
         health: 'healthLogs', races: 'races', strength: 'strengthLogs',
-        strengthPBs: 'strengthPBs', supplements: 'supplements', profile: 'profile', settings: 'settings'
+        strengthPBs: 'strengthPBs', supplements: 'supplements', profile: 'profile', settings: 'settings', seasonPlan: 'seasonPlan'
     };
     for (const key of validSelected) {
         const value = parsed[key];
-        if (key === 'profile' || key === 'settings') {
+        if (key === 'seasonPlan') {
+            state.seasonPlan = value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+        } else if (key === 'profile' || key === 'settings') {
             if (value && typeof value === 'object' && !Array.isArray(value)) state[stateMap[key]] = value;
         } else {
             state[stateMap[key]] = value ?? (['checkins', 'health'].includes(key) ? {} : []);
