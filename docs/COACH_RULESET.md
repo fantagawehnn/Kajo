@@ -383,7 +383,7 @@ Diese Aufzählung beschreibt Datenbereiche, die zu prüfen sind. Sie behauptet n
 
 ## 14. Technische Umsetzungsgrenzen
 
-- `js/coach.js` ist aktuell nur ein einfacher lokaler Chat-Platzhalter. Er ist nicht als fertige KI-Architektur zu behandeln.
+- `js/coach.js` stellt den authentifizierten Client-Zugriff auf den `/api/coach`-Endpunkt bereit. Die serverseitigen Coach-Regeln und Entscheidungsleitlinien liegen im Cloudflare Worker; sie müssen weiterhin getrennt von UI und Sprachmodell gepflegt werden.
 - Die fachliche Entscheidungslogik muss von UI und Sprachmodell getrennt werden.
 - Berechnete KAJO-Daten werden über definierte Schnittstellen bereitgestellt; der Coach soll sie interpretieren, nicht neu berechnen.
 - Datenzugriffe müssen der angemeldeten Supabase-User-ID folgen.
