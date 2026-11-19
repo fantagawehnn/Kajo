@@ -9,7 +9,7 @@
 
 import { state } from './state.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
-import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
+import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js?v=9';
 import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=5';
 import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
