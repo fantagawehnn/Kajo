@@ -36,7 +36,7 @@ test('health and safety rules retain priority over performance', () => {
 
 test('Coach guidance requires source-aware HRV in ms and resting heart rate in bpm', () => {
     const guidance = buildCoachDecisionGuidance();
-    assert.match(guidance.metricSemantics.hrv.rule, /measurementSources\.hrv\.unit = ms/);
+    assert.match(guidance.metricSemantics.hrv.rule, /measurementSources\.hrv die Einheit ms/);
     assert.match(guidance.metricSemantics.hrv.rule, /garminHrv hat Vorrang/);
     assert.match(guidance.responseFormat.join(' '), /hrvMs/);
     assert.match(guidance.responseFormat.join(' '), /rhrBpm/);
