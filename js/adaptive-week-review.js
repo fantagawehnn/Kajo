@@ -39,7 +39,7 @@ export function buildAdaptiveWeekReview(plan, activities = [], today = new Date(
     });
     actual.forEach(activity => {
         const date = dateKey(activity.date);
-        const sport = sportKey(activity.type || activity.discipline);
+        const sport = sportKey(activity.discipline) || sportKey(activity.type);
         if (!date || !sport) return;
         const key = keyFor(date, sport);
         actualByKey.set(key, [...(actualByKey.get(key) || []), activity]);
