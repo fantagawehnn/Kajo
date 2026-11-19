@@ -4,7 +4,7 @@
 import { state } from './state.js';
 import { supabase } from './supabase-client.js';
 import { buildAthleteContext } from './coach-context.js';
-import { buildCoachRequestContext } from './coach-data-context.js';
+import { buildCoachRequestContext } from './coach-data-context.js?v=2';
 
 const conversation = [];
 let requestPending = false;
