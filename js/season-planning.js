@@ -36,6 +36,91 @@ export function normalizeSeasonPhase(phase = {}) {
     };
 }
 
+export function normalizeWeeklySession(session = {}) {
+    return {
+        id: cleanText(session.id, 100),
+        date: validDate(session.date) ? session.date : null,
+        name: cleanText(session.name, 160),
+        type: cleanText(session.type, 60),
+        category: cleanText(session.category, 60),
+        discipline: cleanText(session.discipline, 40),
+        raceFormat: cleanText(session.raceFormat, 40),
+        waterType: cleanText(session.waterType, 40),
+        durationMinutes: session.durationMinutes == null || session.durationMinutes === '' ? null : Number(session.durationMinutes),
+        targetLoad: session.targetLoad == null || session.targetLoad === '' ? null : Number(session.targetLoad),
+        intensity: cleanText(session.intensity, 120),
+        objective: cleanText(session.objective, 500),
+        warmup: cleanText(session.warmup, 1000),
+        mainSet: cleanText(session.mainSet, 2000),
+        cooldown: cleanText(session.cooldown, 1000),
+        notes: cleanText(session.notes, 1000)
+    };
+}
+
+export function normalizeWeeklyPlan(weeklyPlan = {}) {
+    return {
+        id: cleanText(weeklyPlan.id, 100),
+        weekStartDate: validDate(weeklyPlan.weekStartDate) ? weeklyPlan.weekStartDate : null,
+        weekEndDate: validDate(weeklyPlan.weekEndDate) ? weeklyPlan.weekEndDate : null,
+        phaseId: cleanText(weeklyPlan.phaseId, 80),
+        status: ['draft', 'approved', 'completed', 'archived'].includes(weeklyPlan.status) ? weeklyPlan.status : 'draft',
+        objective: cleanText(weeklyPlan.objective, 1000),
+        focus: Array.isArray(weeklyPlan.focus) ? weeklyPlan.focus.map(item => cleanText(item, 120)).filter(Boolean).slice(0, 20) : [],
+        rationale: cleanText(weeklyPlan.rationale, 2000),
+        openQuestions: Array.isArray(weeklyPlan.openQuestions) ? weeklyPlan.openQuestions.map(item => cleanText(item, 300)).filter(Boolean).slice(0, 10) : [],
+        sessions: Array.isArray(weeklyPlan.sessions) ? weeklyPlan.sessions.map(normalizeWeeklySession).slice(0, 30) : [],
+        athleteApprovedAt: typeof weeklyPlan.athleteApprovedAt === 'string' && Number.isFinite(Date.parse(weeklyPlan.athleteApprovedAt)) ? weeklyPlan.athleteApprovedAt : null,
+        createdAt: typeof weeklyPlan.createdAt === 'string' ? weeklyPlan.createdAt : null,
+        updatedAt: typeof weeklyPlan.updatedAt === 'string' ? weeklyPlan.updatedAt : null
+    };
+}
+
+export function validateWeeklyPlan(input, seasonInput) {
+    const weekly = normalizeWeeklyPlan(input);
+    const season = normalizeSeasonPlan(seasonInput);
+    const errors = [];
+    if (!season) return { valid: false, errors: ['Ein Saisonplan fehlt.'], weeklyPlan: weekly };
+    if (season.status !== 'active' || !season.athleteApprovedAt) errors.push('Wochenpläne können erst auf Basis eines freigegebenen Saisonplans erstellt werden.');
+    if (!weekly.id) errors.push('Dem Wochenplan fehlt eine eindeutige ID.');
+    if (!weekly.weekStartDate || !weekly.weekEndDate) errors.push('Der Wochenzeitraum ist ungültig.');
+    if (weekly.weekStartDate && weekly.weekEndDate) {
+        const start = new Date(weekly.weekStartDate + 'T12:00:00Z');
+        const end = new Date(weekly.weekEndDate + 'T12:00:00Z');
+        const days = Math.round((end - start) / 86400000);
+        if (days !== 6) errors.push('Ein Wochenplan muss genau sieben Kalendertage umfassen.');
+        if (start.getUTCDay() !== 1) errors.push('Der Wochenstart muss ein Montag sein.');
+        if (season.startDate && weekly.weekStartDate < season.startDate) errors.push('Die Woche beginnt vor der Saison.');
+        if (season.endDate && weekly.weekEndDate > season.endDate) errors.push('Die Woche endet nach der Saison.');
+    }
+    const phase = season.phases.find(item => item.id === weekly.phaseId);
+    if (!phase) errors.push('Die zugeordnete Saisonphase wurde nicht gefunden.');
+    else if (weekly.weekStartDate && weekly.weekEndDate
+        && (weekly.weekStartDate < phase.startDate || weekly.weekEndDate > phase.endDate)) {
+        errors.push('Der Wochenplan muss vollständig innerhalb seiner Saisonphase liegen.');
+    }
+    if (!weekly.objective) errors.push('Ein Wochenziel fehlt.');
+    if (!weekly.sessions.length) errors.push('Der Wochenplan enthält keine Trainingseinheiten.');
+    const sessionIds = new Set();
+    weekly.sessions.forEach((session, index) => {
+        const label = session.name || 'Einheit ' + (index + 1);
+        if (!session.id) errors.push(label + ': eindeutige ID fehlt.');
+        if (session.id && sessionIds.has(session.id)) errors.push(label + ': ID ist doppelt vergeben.');
+        sessionIds.add(session.id);
+        if (!session.date || !weekly.weekStartDate || !weekly.weekEndDate
+            || session.date < weekly.weekStartDate || session.date > weekly.weekEndDate) {
+            errors.push(label + ': Datum liegt außerhalb der geplanten Woche.');
+        }
+        if (!session.name || !session.type) errors.push(label + ': Name und Trainingsart sind erforderlich.');
+        if (session.durationMinutes != null && (!Number.isFinite(session.durationMinutes) || session.durationMinutes <= 0)) {
+            errors.push(label + ': Dauer muss eine positive Minutenzahl sein.');
+        }
+        if (session.targetLoad != null && (!Number.isFinite(session.targetLoad) || session.targetLoad < 0)) {
+            errors.push(label + ': Zielbelastung muss eine nicht-negative Zahl sein.');
+        }
+    });
+    return { valid: errors.length === 0, errors, weeklyPlan: weekly };
+}
+
 export function normalizeSeasonPlan(plan) {
     if (!plan || typeof plan !== 'object' || Array.isArray(plan)) return null;
     return {
@@ -50,6 +135,7 @@ export function normalizeSeasonPlan(plan) {
         primaryGoal: cleanText(plan.primaryGoal, 1000),
         secondaryGoals: Array.isArray(plan.secondaryGoals) ? plan.secondaryGoals.map(item => cleanText(item, 300)).filter(Boolean).slice(0, 20) : [],
         phases: Array.isArray(plan.phases) ? plan.phases.map(normalizeSeasonPhase).slice(0, 30) : [],
+        weeklyPlans: Array.isArray(plan.weeklyPlans) ? plan.weeklyPlans.map(normalizeWeeklyPlan).slice(0, 60) : [],
         athleteApprovedAt: typeof plan.athleteApprovedAt === 'string' && Number.isFinite(Date.parse(plan.athleteApprovedAt)) ? plan.athleteApprovedAt : null,
         createdAt: typeof plan.createdAt === 'string' ? plan.createdAt : null,
         updatedAt: typeof plan.updatedAt === 'string' ? plan.updatedAt : null
