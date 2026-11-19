@@ -105,6 +105,7 @@ assert.ok(analysisUI.includes("['complete','confirmed-rest'].includes(day.dataSt
 assert.ok(analysisUI.includes('getGarminCheckinMetric(record,key)'), 'health recovery comparison uses Garmin-provenanced daily metrics');
 assert.ok(analysisUI.includes('Kein Eintrag') && analysisUI.includes('keinen ursächlichen Effekt'), 'health comparisons distinguish missing health documentation and avoid causal claims');
 assert.ok(analysisUI.includes("min:1,max:5") && analysisUI.includes("Schmerzen / Beschwerden (1–5)"), 'cycle relationship chart uses the documented five-point scale');
+assert.ok(analysisUI.includes("type='line';max=5;") && analysisUI.includes('fünfstufigen Skala (1–5)') && analysisUI.includes("key==='cycle'?' / 5'"), 'cycle trend chart uses the documented five-point scale consistently');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
 assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
