@@ -1036,13 +1036,20 @@ export function setTimeframe(tf) {
     renderMetricHistory('training');
     window.kajoRenderTrainingLoadView?.();
     window.kajoRenderAnalysisOverview?.();
+    window.kajoRenderHealthAnalysis?.();
+    window.kajoRenderHealthMetrics?.();
 }
 
 export function toggleCustomDatePicker() { document.getElementById('custom-date-box')?.classList.toggle('hidden'); }
 export function applyCustomDateRange() {
     const from = document.getElementById('date-from')?.value;
     const to = document.getElementById('date-to')?.value;
-    if (!from || !to || from > to) return;
+    const feedback = document.getElementById('custom-date-feedback');
+    if (!from || !to || from > to) {
+        if (feedback) feedback.textContent = 'Bitte wähle einen gültigen Zeitraum: Startdatum vor oder gleich Enddatum.';
+        return;
+    }
+    if (feedback) feedback.textContent = '';
     state.metricHistoryRange = 'custom';
     state.activeTimeframe = 'custom';
     const periodLabel = document.getElementById('analysis-period-label');
@@ -1058,4 +1065,6 @@ export function applyCustomDateRange() {
     renderMetricHistory('training');
     window.kajoRenderTrainingLoadView?.();
     window.kajoRenderAnalysisOverview?.();
+    window.kajoRenderHealthAnalysis?.();
+    window.kajoRenderHealthMetrics?.();
 }
