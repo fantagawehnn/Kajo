@@ -14,6 +14,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
+import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
@@ -399,12 +400,18 @@ async function callGarminFunction(body) {
 }
 
 async function loadGarminActivitiesFromCloud() {
-    const { data, error } = await supabase.from('garmin_activities')
+    const userId = activeAppUserId;
+    if (!userId) throw new Error('Für den Garmin-Aktivitätsabgleich ist kein aktiver Benutzer angemeldet.');
+
+    const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
         .select('garmin_activity_id, activity')
-        .order('start_time', { ascending: true });
-    if (error) throw error;
+        .eq('user_id', userId)
+        .order('start_time', { ascending: true })
+        .order('garmin_activity_id', { ascending: true })
+        .range(offset, offset + limit - 1));
+
     let added = 0, merged = 0, ambiguous = 0;
-    for (const row of data || []) {
+    for (const row of data) {
         const candidate = garminCandidateFromPreview(row.activity);
         if (!candidate) continue;
         const matches = findGarminDuplicates(candidate);
