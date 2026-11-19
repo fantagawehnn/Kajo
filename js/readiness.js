@@ -214,20 +214,24 @@ export function calculateReadiness(dateKey, sourceState = appState) {
         sleep: meanScore(sleepItems),
         subjective: meanScore(subjective)
     };
-    // Balanced domain weights: physiology 40%, sleep 30%, subjective 30%.
-    // Missing domains are excluded and the remaining weights are renormalized.
-    const weights = { physiology: 0.4, sleep: 0.3, subjective: 0.3 };
-    const availableDomains = Object.entries(domains).filter(([, score]) => score !== null);
-    const totalWeight = availableDomains.reduce((sum, [key]) => sum + weights[key], 0);
-    const score = availableDomains.length >= 2
-        ? Math.round(availableDomains.reduce((sum, [key, value]) => sum + value * weights[key], 0) / totalWeight)
+    // Subjective self-monitoring is returned as context, but does not contribute
+    // to the readiness composite. Only physiological and sleep domains are scored.
+    // Missing objective domains are excluded and the remaining weights are renormalized.
+    const objectiveDomains = Object.entries({
+        physiology: domains.physiology,
+        sleep: domains.sleep
+    }).filter(([, value]) => value !== null);
+    const objectiveWeights = { physiology: 0.4, sleep: 0.3 };
+    const totalObjectiveWeight = objectiveDomains.reduce((sum, [key]) => sum + objectiveWeights[key], 0);
+    const score = objectiveDomains.length >= 2
+        ? Math.round(objectiveDomains.reduce((sum, [key, value]) => sum + value * objectiveWeights[key], 0) / totalObjectiveWeight)
         : null;
 
     const objective = [...physiological, ...sleepItems];
     const objectiveScore = meanScore(objective);
     const subjectiveDomainScore = meanScore(subjective);
     const totalCount = physiological.length + sleepItems.length + subjective.length;
-    const domainCount = availableDomains.length;
+    const domainCount = objectiveDomains.length;
     const dataQuality = domainCount >= 3
         ? 'Gute Datenbasis · 3 Bereiche'
         : domainCount === 2
@@ -244,7 +248,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
         enoughData: domainCount >= 2,
         dataQuality,
         dataMode: subjective.length
-            ? 'Wearable-Daten und subjektives Self-Monitoring'
+            ? 'Wearable-Daten mit subjektivem Kontext'
             : 'Automatische Messdaten',
         objectiveScore: objectiveScore === null ? null : Math.round(objectiveScore),
         subjectiveScore: subjectiveDomainScore === null ? null : Math.round(subjectiveDomainScore),
