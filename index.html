@@ -831,7 +831,7 @@
                         <div id="adaptive-week-review-details" class="space-y-1 text-xs text-slate-300"></div>
                         <section class="border-t border-slate-800 pt-2 space-y-2">
                             <h5 class="text-xs font-semibold text-white">Aktivitäten manuell zuordnen</h5>
-                            <p class="text-[10px] text-slate-500">Bei unklaren oder fehlenden Zuordnungen kannst du eine Aktivität desselben Tages auswählen. Jede Aktivität kann nur einmal verknüpft werden.</p>
+                            <p class="text-[10px] text-slate-500">Ordne Aktivitäten desselben Tages zu oder kennzeichne eine Einheit ausdrücklich als absolviert (nicht importiert) bzw. ausgefallen. Jede Angabe lässt sich wieder ändern.</p>
                             <div id="adaptive-week-manual-links" class="space-y-2"></div>
                         </section>
                         <p id="adaptive-week-review-limitations" class="text-[10px] text-slate-500"></p>
@@ -1832,7 +1832,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=161"></script>
+    <script type="module" src="js/main.js?v=162"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
@@ -1849,7 +1849,7 @@
             }
           });
 
-          navigator.serviceWorker.register("./service-worker.js?v=16", { scope: "./" })
+          navigator.serviceWorker.register("./service-worker.js?v=17", { scope: "./" })
             .then(registration => registration.update())
             .catch(error => console.error("KAJO Service Worker konnte nicht registriert werden:", error));
         });
