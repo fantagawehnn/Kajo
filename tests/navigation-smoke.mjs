@@ -19,13 +19,13 @@ const uiActions = readFileSync('js/ui-actions.js', 'utf8').replace(/\r\n/g, '\n'
 const competitions = readFileSync('js/competitions.js', 'utf8').replace(/\r\n/g, '\n');
 const garminFunction = readFileSync('supabase/functions/garmin-personal/index.ts', 'utf8').replace(/\r\n/g, '\n');
 
-const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
+const primary = ['today', 'plan', 'training', 'analysis', 'ich'];
 for (const id of primary) {
   assert.equal((html.match(new RegExp('id="nav-' + id + '"', 'g')) || []).length, 1, 'one desktop tab: ' + id);
   assert.equal((html.match(new RegExp('id="mobile-nav-' + id + '"', 'g')) || []).length, 1, 'one mobile tab: ' + id);
 }
-assert.equal((html.match(/id="nav-(?:today|calendar|training|analysis|more)"/g) || []).length, 5);
-assert.equal((html.match(/id="mobile-nav-(?:today|calendar|training|analysis|more)"/g) || []).length, 5);
+assert.equal((html.match(/id="nav-(?:today|plan|training|analysis|ich)"/g) || []).length, 5);
+assert.equal((html.match(/id="mobile-nav-(?:today|plan|training|analysis|ich)"/g) || []).length, 5);
 assert.doesNotMatch(html, /id="nav-(?:dashboard|analyses|areas)"/);
 
 const dataManagementStart = html.indexOf('id="view-data"');
@@ -71,7 +71,7 @@ assert.ok(analysisUI.includes('Persönlicher Normalbereich noch nicht verfügbar
 
 assert.doesNotMatch(html, /id="btn-fmt-activities"/);
 
-for (const id of ['training-subnav', 'analysis-subnav']) assert.ok(html.includes('id="' + id + '"'));
+for (const id of ['plan-subnav', 'training-subnav', 'analysis-subnav']) assert.ok(html.includes('id="' + id + '"'));
 for (const id of ['load', 'recovery', 'performance', 'health']) {
   assert.ok(html.includes('id="analysis-subpage-' + id + '"'), 'analysis subpage: ' + id);
 }
@@ -79,6 +79,10 @@ assert.ok(html.includes('id="home-week-days"'), 'Today weekly training grid exis
 assert.ok(html.includes('id="health-event-list"'), 'Health event list exists');
 assert.ok(main.includes("renderHomeTrainingWeek()"), 'weekly training grid is rendered');
 assert.ok(main.includes("view !== 'analyses' || sub !== id"), 'analysis subpages are switched independently');
+assert.ok(main.includes("parent === 'plan' && sub === 'calendar'"), 'calendar view is part of Plan');
+assert.ok(main.includes("parent === 'ich'"), 'personal pages are routed under Ich');
+assert.ok(html.includes('id="plan-subnav-planning"') && html.includes('id="plan-subnav-competitions"'), 'Plan contains training planning and competitions');
+assert.ok(html.includes('<h1>Ich</h1>') && html.includes("onclick=\"openCoach()\""), 'Ich exposes profile and AI coach');
 assert.ok(calendar.includes("const formats = ['day', 'week', 'month', 'year', 'activities', 'season']"), 'calendar supports day/week/month/year/activities/season');
 assert.match(state, /activeCalendarFormat:\s*'week'/, 'week is the default calendar mode');
 
