@@ -164,8 +164,9 @@ test('missing subjective check-in values remain missing, not negative', () => {
     assert.equal(result.domainCount, 2);
 });
 
-test('cycle context is omitted for profiles other than female', () => {
+test('cycle context is omitted for non-female profiles', () => {
     const source = makeState({
+        profile: { gender: 'male' },
         dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, cycle: { trainingImpact: 5 } } }
     });
     const result = calculateReadiness(day, source);
