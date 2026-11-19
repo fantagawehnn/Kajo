@@ -13,6 +13,7 @@ import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escap
 
 
 function dayCycleInfo(dateStr) {
+ if(!isCycleTrackingEnabled())return {day:null,phase:'Nicht aktiviert',label:'Zyklus-Tracking nicht aktiviert',recommendation:''};
  const starts=Object.entries(state.dailyCheckins).filter(([,v])=>v.cycle?.period===true).map(([date])=>date).sort();
  const startDates=starts.filter(date=>{const p=new Date(date+'T12:00:00');p.setDate(p.getDate()-1);return !state.dailyCheckins[toLocalDateString(p)]?.cycle?.period;});
  const lastStart=startDates.filter(d=>d<=dateStr).at(-1);
@@ -37,6 +38,7 @@ function sleepMetricMarkup(checkin) {
  return parts.join(' ');
 }
 function periodCalendarMarker(dateStr) {
+ if(!isCycleTrackingEnabled())return '';
  const checkin=state.dailyCheckins[dateStr]||{};
  const today=toLocalDateString();
  if(checkin.cycle?.period===true){
@@ -44,7 +46,7 @@ function periodCalendarMarker(dateStr) {
   while(true){const prev=new Date(start);prev.setDate(prev.getDate()-1);const key=toLocalDateString(prev);if(state.dailyCheckins[key]?.cycle?.period!==true)break;start=prev;day++;}
   return '<i data-lucide="droplet" title="Periode · Periodentag '+day+' (erfasst)" class="inline-block w-3 h-3 text-rose-400 ml-1 align-middle"></i>';
  }
- if(dateStr<=today||state.profile?.gender!=='female'||state.profile?.cycleTrackingEnabled!==true)return '';
+ if(dateStr<=today)return '';
  const periodDates=Object.entries(state.dailyCheckins).filter(([,v])=>v.cycle?.period===true).map(([date])=>date).sort();
  const starts=periodDates.filter(date=>{const prev=new Date(date+'T12:00:00');prev.setDate(prev.getDate()-1);return state.dailyCheckins[toLocalDateString(prev)]?.cycle?.period!==true;});
  const intervals=[];
@@ -92,70 +94,173 @@ export function updateSelfMonitoringSlider(input){
  const output=document.getElementById(input.id+'-value');
  if(output)output.textContent=value+' / '+max;
 }
+function isCycleTrackingEnabled() {
+ return state.profile?.gender === 'female' && state.profile?.cycleTrackingEnabled === true;
+}
+function loadDayCheckinDraft(dateStr) {
+ try {
+  const raw=getUserLocalSetting('checkinDraftV1');
+  const draft=raw?JSON.parse(raw):null;
+  return draft?.version===1&&draft.date===dateStr?draft:null;
+ } catch (_) { return null; }
+}
+function saveDayCheckinDraft() {
+ const date=document.getElementById('day-edit-date')?.value;
+ if(!date)return;
+ const value=id=>document.getElementById(id)?.value??'';
+ const touched=id=>document.getElementById(id)?.dataset?.touched==='true';
+ const subjective=['sleepQuality','soreness','fatigue','motivation','stress','mood'];
+ const draft={
+  version:1,date,
+  wellbeing:value('day-wellbeing'),
+  weight:value('day-weight'),weightTouched:touched('day-weight'),
+  subjective:Object.fromEntries(subjective.map(key=>[key,value('day-'+key)])),
+  subjectiveTouched:Object.fromEntries(subjective.map(key=>[key,touched('day-'+key)])),
+  healthStatus:value('day-health-status'),healthStatusTouched:touched('day-health-status'),
+  healthDiagnosis:value('day-health-diagnosis'),severity:value('day-sick-severity'),severityTouched:touched('day-sick-severity'),
+  note:value('day-checkin-note'),noteTouched:touched('day-checkin-note'),
+  period:document.getElementById('day-period')?.checked===true,
+  cyclePain:value('day-cycle-pain'),cyclePainTouched:touched('day-cycle-pain')
+ };
+ try { setUserLocalSetting('checkinDraftV1',JSON.stringify(draft)); } catch(error) {
+  console.warn('Check-in-Entwurf konnte nicht lokal zwischengespeichert werden:',error);
+ }
+}
+function bindDayCheckinDraft() {
+ const modal=document.getElementById('day-detail-modal');
+ if(!modal||modal.dataset.draftBound==='true')return;
+ const persist=event=>{
+  const target=event.target;
+  if(target?.id?.startsWith('day-'))saveDayCheckinDraft();
+ };
+ modal.addEventListener('input',persist);
+ modal.addEventListener('change',persist);
+ modal.dataset.draftBound='true';
+}
+export function selectDayWellbeing(value) {
+ const score=dayNumber(value,1,5);
+ if(score===null)return;
+ const input=document.getElementById('day-wellbeing');
+ if(input)input.value=String(score);
+ document.querySelectorAll('[data-day-wellbeing]').forEach(button=>{
+  const active=Number(button.dataset.dayWellbeing)===score;
+  button.classList.toggle('is-selected',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ saveDayCheckinDraft();
+}
 export function openDayEditor(dateStr){
  const modal=document.getElementById('day-detail-modal');
  if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
  if(modal){modal.style.zIndex='2147483005';document.body.classList.add('kajo-modal-open');}
  const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{},cy=r.cycle||{};
+ const draft=loadDayCheckinDraft(dateStr);
+ const previousDate=new Date(dateStr+'T12:00:00');
+ previousDate.setDate(previousDate.getDate()-1);
+ const previous=state.dailyCheckins[toLocalDateString(previousDate)]||{};
+ const draftValue=(key,fallback)=>draft?.[key]!==undefined?draft[key]:fallback;
  document.getElementById('day-edit-date').value=dateStr;
- document.getElementById('day-detail-title').textContent='Self-Monitoring · '+formatDateDDMMYY(dateStr);
- const subj=[['Schlafqualität','sleepQuality',false],['Muskelkater','soreness',true],['Müdigkeit','fatigue',true],['Motivation','motivation',false],['Stress','stress',true]];
- document.getElementById('day-subjective-fields').innerHTML=subj.map(([label,key,inverted])=>selfMonitoringSliderMarkup(label,key,r[key],inverted)).join('');
- subj.forEach(([,key])=>{const el=document.getElementById('day-'+key);if(el)updateSelfMonitoringSlider(el);if(el&&r[key]==null){el.dataset.touched='false';const out=document.getElementById(el.id+'-value');if(out)out.textContent='—';}});
- document.getElementById('day-weight').value=r.weight??'';
- const sick=h.status==='sick';
- document.getElementById('day-sick').checked=sick;
- document.getElementById('day-health-diagnosis').value=sick?(h.diagnosis||''):'';
- const severity=Number.isFinite(Number(h.severity))?Math.min(5,Math.max(1,Number(h.severity))):3;
+ document.getElementById('day-detail-title').textContent='Check-in · '+formatDateDDMMYY(dateStr);
+ const wellbeing=draftValue('wellbeing',r.wellbeing??'');
+ document.getElementById('day-wellbeing').value=wellbeing;
+ document.querySelectorAll('[data-day-wellbeing]').forEach(button=>{
+  const active=Number(button.dataset.dayWellbeing)===Number(wellbeing)&&wellbeing!=='';
+  button.classList.toggle('is-selected',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ const subj=[['Schlafqualität','sleepQuality',false],['Muskelkater','soreness',true],['Müdigkeit','fatigue',true],['Motivation','motivation',false],['Stress','stress',true],['Stimmung','mood',false]];
+ document.getElementById('day-subjective-fields').innerHTML=subj.map(([label,key,inverted])=>selfMonitoringSliderMarkup(label,key,draft?.subjective?.[key]??r[key]??previous[key],inverted)).join('');
+ subj.forEach(([,key])=>{
+  const el=document.getElementById('day-'+key);
+  if(!el)return;
+  updateSelfMonitoringSlider(el);
+  const currentRecorded=r[key]!==null&&r[key]!==undefined&&r[key]!=='';
+  const draftTouched=draft?.subjectiveTouched?.[key]===true;
+  el.dataset.touched=String(currentRecorded||draftTouched);
+  if(!currentRecorded&&!draftTouched){const out=document.getElementById(el.id+'-value');if(out)out.textContent='—';}
+ });
+ const weight=document.getElementById('day-weight');
+ weight.value=draftValue('weight',r.weight??previous.weight??'');
+ weight.dataset.touched=String(r.weight!=null||draft?.weightTouched===true);
+ if(!weight.dataset.weightTouchBound){
+  weight.addEventListener('input',()=>{weight.dataset.touched='true';});
+  weight.dataset.weightTouchBound='true';
+ }
+ const status=document.getElementById('day-health-status');
+ status.value=draftValue('healthStatus',['sick','injured'].includes(h.status)?h.status:'');
+ status.dataset.touched=String(draft?.healthStatusTouched===true||['sick','injured'].includes(h.status));
+ document.getElementById('day-health-diagnosis').value=draftValue('healthDiagnosis',h.diagnosis||'');
+ const severity=Number.isFinite(Number(draftValue('severity',h.severity)))?Math.min(5,Math.max(1,Number(draftValue('severity',h.severity)))):3;
  document.getElementById('day-sick-severity').value=severity;
- document.getElementById('day-sick-severity').dataset.touched=h.severity!=null?'true':'false';
+ document.getElementById('day-sick-severity').dataset.touched=String(draft?.severityTouched===true||h.severity!=null);
  document.getElementById('day-sick-severity-value').textContent=(h.severity??severity)+' / 5';
+ document.getElementById('day-checkin-note').value=draftValue('note',r.note||'');
+ document.getElementById('day-checkin-note').dataset.touched=String(draft?.noteTouched===true);
  toggleDaySickFields();
- const cycleEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
- document.getElementById('day-period').checked=cy.period===true;
- document.getElementById('day-cycle-pain').value=Math.min(5,Math.max(1,Number(cy.pain??1)));
- document.getElementById('day-cycle-pain').dataset.touched=cy.pain!=null?'true':'false';
+ const cycleEnabled=isCycleTrackingEnabled();
+ document.getElementById('day-period').checked=cycleEnabled&&draft?.period!==undefined?draft.period:cycleEnabled&&cy.period===true;
+ document.getElementById('day-cycle-pain').value=draftValue('cyclePain',cy.pain??1);
+ document.getElementById('day-cycle-pain').dataset.touched=String(draft?.cyclePainTouched===true||cy.pain!=null);
  document.getElementById('day-cycle-pain-value').textContent=(cy.pain==null?'1':String(cy.pain))+' / 5';
  document.getElementById('day-cycle-section')?.classList.toggle('hidden',!cycleEnabled);
  document.getElementById('day-period').closest('.space-y-2')?.classList.toggle('hidden',!cycleEnabled);
  toggleDayCycleFields();
  ['day-sick-severity','day-cycle-pain'].forEach(id=>updateSelfMonitoringSlider(document.getElementById(id)));
  if(document.getElementById('day-cycle-pain').dataset.touched==='false')document.getElementById('day-cycle-pain-value').textContent='—';
+ bindDayCheckinDraft();
  document.getElementById('day-detail-modal').classList.remove('hidden');
 }
-export function toggleDaySickFields(){document.getElementById('day-sick-fields')?.classList.toggle('hidden',!document.getElementById('day-sick')?.checked);}
+export function toggleDaySickFields(){
+ const status=document.getElementById('day-health-status')?.value||'';
+ document.getElementById('day-sick-fields')?.classList.toggle('hidden',!['sick','injured'].includes(status));
+}
 export function toggleDayCycleFields(){document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!document.getElementById('day-period')?.checked);}
 export function closeDayEditor(){const modal=document.getElementById('day-detail-modal');if(modal?.dataset.saving==='true')return;modal?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
 export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export async function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
  const r={...(state.dailyCheckins[date]||{})};
- const subj=['sleepQuality','soreness','fatigue','motivation','stress'];
- for(const key of subj){const el=document.getElementById('day-'+key);if(el?.dataset.touched==='true')r[key]=dayNumber(el.value,1,5);}
- const weightRaw=document.getElementById('day-weight').value;
- if(weightRaw==='')delete r.weight;else{const weight=dayNumber(weightRaw,20,300);if(weight===null){alert('Bitte prüfe dein Körpergewicht.');return;}r.weight=weight;}
- const periodEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
+ const subj=['sleepQuality','soreness','fatigue','motivation','stress','mood'];
+ for(const key of subj){const el=document.getElementById('day-'+key);if(el?.dataset.touched==='true'){const value=dayNumber(el.value,1,5);if(value===null){alert('Bitte prüfe deine Self-Monitoring-Angaben.');return;}r[key]=value;}}
+ const wellbeing=dayNumber(document.getElementById('day-wellbeing')?.value,1,5);
+ if(wellbeing!==null)r.wellbeing=wellbeing;
+ const weightInput=document.getElementById('day-weight');
+ if(weightInput?.dataset.touched==='true'){
+  const weightRaw=weightInput.value.trim();
+  if(weightRaw==='')delete r.weight;
+  else{const weight=dayNumber(weightRaw,20,300);if(weight===null){alert('Bitte prüfe dein Körpergewicht.');return;}r.weight=weight;}
+ }
+ const noteInput=document.getElementById('day-checkin-note');
+ if(noteInput?.dataset.touched==='true'){
+  const note=String(noteInput.value||'').trim().slice(0,1200);
+  if(note)r.note=note;else delete r.note;
+ }
+ const periodEnabled=isCycleTrackingEnabled();
  if(periodEnabled&&document.getElementById('day-period').checked){
   const pain=dayNumber(document.getElementById('day-cycle-pain').value,1,5);
-  r.cycle={...(r.cycle||{}),period:true,pain:pain??1};
- }else if(periodEnabled&&r.cycle){delete r.cycle.period;delete r.cycle.pain;if(!Object.keys(r.cycle).length)delete r.cycle;}
+  r.cycle={...(r.cycle||{}),period:true,...(pain!==null?{pain}:{})};
+ }else if(periodEnabled&&r.cycle){
+  delete r.cycle.period;delete r.cycle.pain;if(!Object.keys(r.cycle).length)delete r.cycle;
+ }
  state.dailyCheckins[date]=r;
- const sick=document.getElementById('day-sick').checked;
  const previousHealth=state.healthLogs[date]||{};
- if(sick){
-  const health={...previousHealth,status:'sick',diagnosis:document.getElementById('day-health-diagnosis').value.trim()||'Erkrankung'};
-  const severity=document.getElementById('day-sick-severity');
-  if(severity?.dataset.touched==='true')health.severity=dayNumber(severity.value,1,5);
-  state.healthLogs[date]=health;
- }else if(previousHealth.status==='sick'){delete state.healthLogs[date];}
-
+ const healthStatus=document.getElementById('day-health-status')?.value||'';
+ const healthStatusTouched=document.getElementById('day-health-status')?.dataset.touched==='true';
+ if(healthStatusTouched){
+  if(['sick','injured'].includes(healthStatus)){
+   const health={...previousHealth,status:healthStatus,diagnosis:document.getElementById('day-health-diagnosis').value.trim()||(healthStatus==='sick'?'Erkrankung':'Verletzung')};
+   const severity=document.getElementById('day-sick-severity');
+   if(severity?.dataset.touched==='true'){const value=dayNumber(severity.value,1,5);if(value!==null)health.severity=value;}
+   state.healthLogs[date]=health;
+  }else if(['sick','injured'].includes(previousHealth.status)){delete state.healthLogs[date];}
+ }
  const saveButton=document.querySelector('#day-detail-modal button[onclick="saveDayEditor()"]');
  const saveStatus=document.getElementById('day-save-status');
  const originalLabel=saveButton?.textContent||'Check-in speichern';
  const modal=document.getElementById('day-detail-modal');
  if(modal)modal.dataset.saving='true';
  if(saveButton){saveButton.disabled=true;saveButton.textContent='Speichert …';}
- if(saveStatus)saveStatus.textContent='Check-in wird lokal und in der Cloud gesichert …';
+ if(saveStatus)saveStatus.textContent='Check-in wird lokal und in deinem Konto gesichert …';
  const localSaved=saveDataToLocalStorage();
  if(!localSaved){
   if(modal)modal.dataset.saving='false';
@@ -168,11 +273,12 @@ export async function saveDayEditor(){
  });
  if(!cloudSaved){
   if(modal)modal.dataset.saving='false';
-  if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Bitte versuche es erneut und aktualisiere die App noch nicht.';
+  if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Bitte versuche es erneut.';
   if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
   return;
  }
- if(saveStatus)saveStatus.textContent='Check-in erfolgreich in der Cloud gespeichert.';
+ try{setUserLocalSetting('checkinDraftV1','');}catch(_){}
+ if(saveStatus)saveStatus.textContent='Check-in erfolgreich gespeichert.';
  if(modal)modal.dataset.saving='false';
  closeDayEditor();refreshAll();
 }
@@ -185,7 +291,7 @@ function calendarSport(type) {
 }
 function calendarEventIcons(date) {
     const health = state.healthLogs?.[date];
-    const cycle = state.dailyCheckins?.[date]?.cycle?.period === true;
+    const cycle = isCycleTrackingEnabled() && state.dailyCheckins?.[date]?.cycle?.period === true;
     const races = (state.races || []).filter(item => item.date === date);
     let html = '';
     if (races.length) html += '<i data-lucide="trophy" class="calendar-event-icon calendar-event-race" title="Wettkampf" aria-label="Wettkampf"></i>';
@@ -361,7 +467,7 @@ function renderCalendarDayDetail(date, target) {
         ...(health?.status === 'sick' || health?.status === 'injured'
             ? [calendarDayEvent(health.status === 'sick' ? 'Krankheit dokumentiert' : 'Verletzung dokumentiert', health.diagnosis || '', '', 'health')]
             : []),
-        ...(checkin.cycle?.period === true
+        ...(isCycleTrackingEnabled() && checkin.cycle?.period === true
             ? [calendarDayEvent('Menstruation dokumentiert', 'Als Gesundheitseintrag erfasst', '', 'health')]
             : []),
         ...data.races.map(item => calendarDayEvent(item.name || 'Wettkampf', item.result || item.prio || '', calendarDayTime(item.startTimeLocal || item.start_time_local || item.startTime || item.time), 'race')),
@@ -598,7 +704,7 @@ function renderCalendarLegend() {
     if (activities.length) items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-completed">●</span>Abgeschlossen</span>');
     if (planned.length) items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-planned">○</span>Geplant</span>');
     if ((state.races || []).some(item => dates.includes(item.date))) items.push('<span class="calendar-legend-item"><i data-lucide="trophy" class="calendar-event-icon calendar-event-race"></i>Wettkampf</span>');
-    if (dates.some(date => state.dailyCheckins?.[date]?.cycle?.period === true)) items.push('<span class="calendar-legend-item"><i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle"></i>Menstruation</span>');
+    if (isCycleTrackingEnabled() && dates.some(date => state.dailyCheckins?.[date]?.cycle?.period === true)) items.push('<span class="calendar-legend-item"><i data-lucide="droplet" class="calendar-event-icon calendar-event-cycle"></i>Menstruation</span>');
     if (dates.some(date => state.healthLogs?.[date]?.status === 'sick')) items.push('<span class="calendar-legend-item"><i data-lucide="thermometer" class="calendar-event-icon calendar-event-sick"></i>Krankheit</span>');
     if (dates.some(date => state.healthLogs?.[date]?.status === 'injured')) items.push('<span class="calendar-legend-item"><i data-lucide="bandage" class="calendar-event-icon calendar-event-injured"></i>Verletzung</span>');
     el.innerHTML = items.join('');
@@ -689,7 +795,7 @@ function renderSeasonView(){
     const add=(date,type,item)=>{if(!date||date<from||date>to||!type)return;const list=events.get(date)||[];list.push({type,item});events.set(date,list);};
     (state.rawActivities||[]).forEach(x=>add(x.date,'activity',x));getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).forEach(x=>add(x.date,'planned',x));(state.races||[]).forEach(x=>add(x.date,'race',x));
     Object.entries(state.healthLogs||{}).forEach(([date,x])=>add(date,x.status==='sick'?'sick':x.status==='injured'?'injured':null,x));
-    Object.entries(state.dailyCheckins||{}).forEach(([date,x])=>{if(x.cycle?.period===true)add(date,'period',x);});
+    if(isCycleTrackingEnabled())Object.entries(state.dailyCheckins||{}).forEach(([date,x])=>{if(x.cycle?.period===true)add(date,'period',x);});
     if(state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true){const cursor=new Date(from+'T12:00:00'),last=new Date(to+'T12:00:00');for(;cursor<=last;cursor.setDate(cursor.getDate()+1)){const date=toLocalDateString(cursor);if(periodCalendarMarker(date).includes('geschätzt'))add(date,'period-predicted',{});}}
     const fmt=d=>new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(d+'T12:00:00'));
     const icons={activity:'activity',planned:'calendar-clock',race:'trophy',sick:'thermometer',injured:'bandage',period:'droplet','period-predicted':'droplet'},labels={activity:'Training',planned:'Geplant',race:'Wettkampf',sick:'Krankheit',injured:'Verletzung',period:'Periode','period-predicted':'Periode (Prognose)'};
@@ -910,7 +1016,7 @@ export function renderYearView() {
         const durationComplete = activities.length > 0 && durationRecords.length === activities.length;
         const races = (state.races || []).filter(item => item?.date >= yearStart && item.date <= yearEnd && item.date >= start && item.date <= end);
         const health = Object.entries(state.healthLogs || {}).filter(([date]) => date >= yearStart && date <= yearEnd && date >= start && date <= end);
-        const cycle = Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= start && date <= end && item?.cycle?.period === true);
+        const cycle = isCycleTrackingEnabled() ? Object.entries(state.dailyCheckins || {}).filter(([date, item]) => date >= yearStart && date <= yearEnd && date >= start && date <= end && item?.cycle?.period === true) : [];
         const elapsedDates = dates.filter(date => date <= today);
         const dayLoads = elapsedDates.map(date => timelineByDate.get(date));
         const knownLoads = dayLoads.filter(item => item && ['complete', 'confirmed-rest'].includes(item.dataStatus) && Number.isFinite(Number(item.load)));
@@ -1092,7 +1198,7 @@ function renderCalendarMonthSummary(date, target) {
             '<span class="calendar-month-summary-status">' + (planned ? 'Geplant' : 'Abgeschlossen') + '</span></div>';
     }).join('') + (items.length > 3 ? '<p class="calendar-month-summary-more">+' + (items.length - 3) + ' weitere Einheiten</p>' : '');
     const health = state.healthLogs?.[date];
-    const hasPeriod = state.dailyCheckins?.[date]?.cycle?.period === true;
+    const hasPeriod = isCycleTrackingEnabled() && state.dailyCheckins?.[date]?.cycle?.period === true;
     const eventLabels = [
         ...data.races.map(item => 'Wettkampf: ' + (item.name || 'Wettkampf')),
         ...(health?.status ? [health.status === 'sick' ? 'Krankheit dokumentiert' : 'Verletzung dokumentiert'] : []),
@@ -1241,7 +1347,7 @@ export function renderWeekView() {
     const dayData = weekDates.map((date, index) => {
         const data = calendarDateData(date);
         const health = state.healthLogs?.[date];
-        const cycle = state.dailyCheckins?.[date]?.cycle?.period === true;
+        const cycle = isCycleTrackingEnabled() && state.dailyCheckins?.[date]?.cycle?.period === true;
         const markers = [
             ...data.activities.map(item => ({ color: calendarActivityColor(item), title: calendarActivityColorLabel(item), kind: 'training' })),
             ...data.planned.map(item => ({ color: calendarActivityColor(item), title: calendarActivityColorLabel(item) + ' · geplant', kind: 'planned' })),
