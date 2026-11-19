@@ -39,6 +39,8 @@ Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones w
 - Die Aktivitätsliste verwendet weiterhin die bestehende Kalender-/Aktivitätsdarstellung. Im Trainingsbereich wird nur der Listenmodus angezeigt; der zuvor ausgewählte Kalenderzeitraum-Modus wird beim Verlassen wiederhergestellt.
 - Die vier Analyse-Unterseiten verwenden eine gemeinsame Zeitraumsteuerung. Detailverläufe für Recovery und Performance bleiben in ihrem jeweiligen Analysebereich.
 - Die Wochenübersicht auf Heute greift auf vorhandene absolvierte und geplante Einheiten zurück. Trainingseinheiten und Tagesfelder sind anklickbar.
+- Die Personalisierung erlaubt das Ein- und Ausblenden der Dashboard-Bereiche sowie das Umsortieren der fünf Hauptbereiche. Die Navigation bleibt vollständig; keine Hauptfunktion wird dadurch entfernt.
+- App-Farbschema und Sportartenfarben werden getrennt verwaltet. Die Glossarfarben gelten für Kennzahlen und Status; Sportartenfarben kennzeichnen ausschließlich die Sportart.
 - Der Kalender verwendet die vorhandenen Tages- und Wochenrenderer. Die Jahresansicht zeigt zwölf kompakte Monatsraster; ein Tag kann in die Tagesansicht geöffnet werden.
 
 ## Daten- und Darstellungsregeln
@@ -83,7 +85,7 @@ Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe
 - Vor Implementierung einer adaptiven Baseline ist die statistische Methode verbindlich festzulegen (robuste Lage-/Streuungsmaße, Mindestdatenbasis, Ausreißerbehandlung, Aktualisierungsfenster, Schutz vor kurzfristiger Baseline-Verschiebung und Änderungsprotokoll).
 - Für Performance fehlen derzeit eine sportartspezifische, methodisch vergleichbare Hauptkennzahl und ein entsprechend gefilterter Leistungsverlauf. VO₂max bleibt wegen der nicht getrennten Messart ein eingeschränkt interpretierbarer Importwert.
 - Eine getrennte, fachlich verifizierte Anzeige von Garmin Training Load, Edwards TRIMP und sRPE erfordert zunächst die eindeutige Zuordnung der vorhandenen Datenfelder.
-- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist damit noch nicht umgesetzt.
+- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist unter „Ich → Einstellungen → App & Darstellung“ vorhanden.
 
 
 ## Glossar und Farbzuordnung (Preview)
