@@ -211,7 +211,7 @@ test('planned target load is not equated with Garmin or KAJO load units', () => 
     const recommendation = buildTrainingRecommendation(day, [{
         date: day, name: 'Intervalle', duration: 60, category: 'interval', targetTss: 100
     }], source);
-    assert.match(recommendation.detail, /nicht direkt vergleichbar/);
+    assert.doesNotMatch(recommendation.detail, /100|Garmin-Load|KAJO-Load/);
 });
 
 test('multiple planned sessions are explicitly considered in the daily recommendation', () => {
@@ -223,7 +223,7 @@ test('multiple planned sessions are explicitly considered in the daily recommend
         { date: day, name: 'Abends Kraft', duration: 45, time: '18:00' }
     ];
     const recommendation = buildTrainingRecommendation(day, planned, source);
-    assert.match(recommendation.detail, /mehrere Einheiten/);
+    assert.match(recommendation.detail, /zweite Einheit/);
     assert.match(recommendation.detail, /Morgens K1/);
     assert.match(recommendation.detail, /Abends Kraft/);
 });
@@ -240,8 +240,8 @@ test('a planned lactate or strength test becomes the main daily load, not an inv
     const recommendation = buildTrainingRecommendation(day, source.plannedActivities, source);
     assert.equal(recommendation.decision, 'assessment-day');
     assert.match(recommendation.title, /Leistungsdiagnostik/);
-    assert.match(recommendation.detail, /keine zusätzliche intensive/);
-    assert.match(recommendation.detail, /nicht als Garmin-Load/);
+    assert.match(recommendation.detail, /Keine zusätzliche intensive/);
+    assert.doesNotMatch(recommendation.detail, /Garmin-Load|geschätzte Belastung/);
 });
 
 test('the day before a planned diagnostic test receives a reduced-load recommendation', () => {
