@@ -247,7 +247,7 @@ export function reviewApprovedWeeklyPlan(weekStartDate) {
     const details = byId('adaptive-week-review-details');
     if (details) {
         const rows = [
-            ...review.matched.map(item => '<p>✓ ' + escape(item.planned.date) + ' · ' + escape(item.planned.name) + ' – Aktivität eindeutig zugeordnet</p>'),
+            ...review.matched.map(item => '<p>✓ ' + escape(item.planned.date) + ' · ' + escape(item.planned.name) + ' – ' + (item.matchType === 'manual' ? 'manuell' : 'automatisch') + ' zugeordnet</p>'),
             ...review.ambiguous.map(item => '<p>! ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – Zuordnung unklar</p>'),
             ...review.unmatchedPlanned.map(item => '<p>· ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – ' + escape(item.reason) + '</p>'),
             ...review.unplannedActivities.map(item => '<p>+ ' + escape(item.activity.date) + ' · ' + escape(item.activity.name || item.activity.type || 'Aktivität') + ' – ' + escape(item.reason) + '</p>'),
@@ -255,6 +255,7 @@ export function reviewApprovedWeeklyPlan(weekStartDate) {
         ];
         details.innerHTML = rows.join('') || '<p>Für diese Woche liegen keine auswertbaren Einheiten vor.</p>';
     }
+    renderManualActivityLinks(plan, review);
     const note = byId('adaptive-week-review-limitations');
     if (note) note.textContent = review.limitations;
     const proposeButton = byId('adaptive-week-propose-button');
@@ -262,6 +263,71 @@ export function reviewApprovedWeeklyPlan(weekStartDate) {
     renderAdaptiveWeekProposal();
     if (message) message.textContent = 'Wochenabgleich erstellt. Nicht zugeordnete Einheiten werden nicht automatisch als ausgefallen bewertet.';
     root.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    return true;
+}
+
+function renderManualActivityLinks(plan, review) {
+    const root = byId('adaptive-week-manual-links');
+    if (!root) return;
+    const linked = new Map((plan.manualActivityLinks || []).map(link => [String(link.sessionId), String(link.activityId)]));
+    const actual = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity =>
+        typeof activity?.date === 'string' && activity.date.slice(0, 10) >= plan.weekStartDate
+        && activity.date.slice(0, 10) <= plan.weekEndDate && activity.id != null
+    );
+    const openSessions = [...review.ambiguous.map(item => item.session), ...review.unmatchedPlanned.map(item => item.session)];
+    const manualSessions = review.matched.filter(item => item.matchType === 'manual').map(item => item.planned);
+    const visible = [...new Map([...manualSessions, ...openSessions].map(session => [session.id, session])).values()];
+    if (!visible.length) {
+        root.innerHTML = '<p class="text-[10px] text-slate-500">Keine offenen Zuordnungen.</p>';
+        return;
+    }
+    root.innerHTML = visible.map(session => {
+        const currentId = linked.get(String(session.id)) || '';
+        const options = actual.filter(activity => activity.date.slice(0, 10) === session.date).map(activity => {
+            const id = String(activity.id);
+            const usedByOther = [...linked.entries()].some(([otherSession, otherActivity]) => otherActivity === id && otherSession !== String(session.id));
+            const label = [activity.name || activity.type || 'Aktivität', activity.date.slice(11,16), activity.type].filter(Boolean).join(' · ');
+            return '<option value="' + escape(id) + '"' + (currentId === id ? ' selected' : '') + (usedByOther ? ' disabled' : '') + '>' + escape(label) + (usedByOther ? ' (bereits zugeordnet)' : '') + '</option>';
+        }).join('');
+        return '<label class="block rounded-lg border border-slate-800 p-2 space-y-1"><span class="block text-[11px] text-slate-300">' + escape(session.date) + ' · ' + escape(session.name) + '</span><select data-manual-session-id="' + escape(session.id) + '" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"><option value="">Keine manuelle Zuordnung</option>' + options + '</select></label>';
+    }).join('');
+    root.querySelectorAll('select[data-manual-session-id]').forEach(select =>
+        select.addEventListener('change', () => setManualActivityLink(select.dataset.manualSessionId, select.value))
+    );
+}
+
+export function setManualActivityLink(sessionId, activityId) {
+    if (!activeAdaptiveWeekStartDate || !sessionId) return false;
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    const plan = current?.weeklyPlans.find(item => item.weekStartDate === activeAdaptiveWeekStartDate);
+    if (!current || !plan || !['approved', 'completed'].includes(plan.status)) return false;
+    const session = plan.sessions.find(item => item.id === sessionId);
+    if (!session) return false;
+    const previousSeasonPlan = state.seasonPlan;
+    const links = (plan.manualActivityLinks || []).filter(link => link.sessionId !== sessionId);
+    if (activityId) {
+        const duplicate = links.some(link => link.activityId === String(activityId));
+        const activity = (Array.isArray(state.rawActivities) ? state.rawActivities : []).find(item => String(item?.id ?? '') === String(activityId));
+        if (duplicate || !activity || String(activity.date || '').slice(0, 10) !== session.date) {
+            const message = byId('season-plan-message');
+            if (message) message.textContent = duplicate ? 'Diese Aktivität ist bereits einer anderen Einheit zugeordnet.' : 'Die Aktivität muss vorhanden sein und am selben Tag liegen.';
+            reviewApprovedWeeklyPlan(activeAdaptiveWeekStartDate);
+            return false;
+        }
+        links.push({ sessionId, activityId: String(activityId) });
+    }
+    const nextPlan = { ...plan, manualActivityLinks: links, updatedAt: new Date().toISOString() };
+    state.seasonPlan = { ...current, weeklyPlans: current.weeklyPlans.map(item => item.id === plan.id ? nextPlan : item), updatedAt: new Date().toISOString() };
+    if (!saveDataToLocalStorage()) {
+        state.seasonPlan = previousSeasonPlan;
+        const message = byId('season-plan-message');
+        if (message) message.textContent = 'Die Zuordnung konnte nicht gespeichert werden.';
+        return false;
+    }
+    pendingAdaptiveProposal = null;
+    reviewApprovedWeeklyPlan(activeAdaptiveWeekStartDate);
+    const message = byId('season-plan-message');
+    if (message) message.textContent = activityId ? 'Aktivität manuell zugeordnet.' : 'Manuelle Zuordnung aufgehoben.';
     return true;
 }
 
