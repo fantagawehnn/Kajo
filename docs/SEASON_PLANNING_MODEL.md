@@ -1,6 +1,6 @@
 # KAJO Season Planning Model
 
-**Status:** Season foundation, editor and reviewed AI periodization proposal are implemented. The validated weekly-plan data model is now in place; Coach-generated weekly proposals and calendar integration remain open.
+**Status:** Season foundation, editor, reviewed AI periodization proposal, validated weekly-plan model and reviewed Coach-generated weekly proposals with explicit athlete approval are implemented. Calendar integration and adaptive week-to-week updates remain open.
 
 ## Purpose
 
@@ -48,7 +48,7 @@ The season editor can request a structured proposal from the authenticated Coach
 
 The Worker validates phase dates, rejects overlaps and requires continuous coverage of the full season. Generated weekly hours, training days and session counts are not accepted; these remain unset until explicitly planned. A proposal is shown for review and is not persisted as the active phase structure until the athlete explicitly adopts it into the draft. The athlete must then save or approve the plan separately.
 
-The proposal does not generate weekly microcycles or individual sessions. It is not a substitute for confirming competition priorities, training availability or medical constraints.
+The season proposal does not generate weekly microcycles or individual sessions. It is not a substitute for confirming competition priorities, training availability or medical constraints.
 
 
 ## Weekly plan record (foundation)
@@ -56,3 +56,14 @@ The proposal does not generate weekly microcycles or individual sessions. It is 
 A weekly plan is attached to the existing user-scoped `seasonPlan.weeklyPlans` array, so no parallel storage table or migration is required. Each record has a Monday-to-Sunday date range, a reference to one approved season phase, a status (`draft`, `approved`, `completed` or `archived`), a weekly objective, focus areas, rationale, open questions, and structured sessions.
 
 Each session can store date, training type, category, discipline, race format, water type, duration in minutes, optional target load, intensity description, objective, warm-up, main set, cool-down and notes. Missing numeric targets remain null. Validation requires an approved season plan, a valid seven-day week fully inside the referenced phase, and session dates inside that week. This model does not itself create calendar entries or approve a proposal.
+
+
+## Weekly proposal workflow
+
+The season editor lets the athlete select a Monday and request a seven-day plan. The request includes the approved season phase, athlete profile, dated competitions, relevant training history, planned sessions, load timeline and recovery/health context selected for the question. The Worker requires the entire week to fall inside one approved phase and validates the returned session dates and required fields.
+
+Weekly proposals remain drafts. The athlete reviews the rationale and each session, saves the proposal as a draft, and separately approves the stored week. Existing approved or completed plans for the same week cannot be overwritten by a new proposal. No proposed session is automatically inserted into the calendar or treated as completed training.
+
+The Coach must not invent weekly availability, training hours, training days, facilities, intensity zones or load targets. For canoe wildwater racing, it distinguishes boat class, Classic/Sprint and water type; C1 sessions are limited to 75 minutes. Wildwater access is not inferred from flatwater access. The C2 replacement rule is communicated to the Coach, but automatic replacement of an existing calendar entry is not yet implemented.
+
+The current workflow is a reviewed weekly-plan draft/approval flow. It does not yet provide inline editing of individual sessions, automatic calendar transfer, or automatic adaptive rescheduling.
