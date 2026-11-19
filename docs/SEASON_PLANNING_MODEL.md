@@ -77,3 +77,8 @@ An approved weekly plan can be explicitly transferred to the existing planned-ac
 ## Manual activity matching in the weekly review
 
 The weekly review supports explicit manual links between a planned session and one imported activity. Links are stored in the corresponding user-scoped weekly-plan record as stable session/activity IDs. A link is accepted only when both records exist, the activity falls on the planned session's calendar date, and the activity is not already linked to another session. Manual links take precedence over automatic matching and remove the activity from the unplanned-activity list. Clearing the selection removes the link. This metadata does not alter the approved workout itself; the review and Coach adjustment proposal use the updated matching result.
+
+
+## Manuelle Statusangaben zu Wochenplaneinheiten
+
+Für vergangene oder heutige Einheiten kann die Athletin im Wochenabgleich ausdrücklich „Absolviert, aber nicht importiert“ oder „Ausgefallen“ auswählen. Diese Angaben werden als Statusmetadaten im jeweiligen Wochenplan gespeichert; sie ändern weder den ursprünglichen Trainingsinhalt noch importierte Garmin-Aktivitäten. Eine Statusangabe ersetzt eine bestehende manuelle Aktivitätsverknüpfung für dieselbe Einheit. Sie kann jederzeit aufgehoben oder geändert werden. Zukünftige Einheiten können nicht vorab als absolviert oder ausgefallen markiert werden. Ungeklärte Einheiten bleiben weiterhin ungeklärt und werden nicht automatisch als ausgefallen eingestuft.
