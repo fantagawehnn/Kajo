@@ -57,6 +57,8 @@ jobs:
           node --check js/settings.js
           node --check js/theme.js
           node --check js/calendar.js
+          node --check js/health.js
+          node --check service-worker.js
           node --check js/activity-groups.js
           node --check js/dashboard.js
           node --check js/readiness.js
