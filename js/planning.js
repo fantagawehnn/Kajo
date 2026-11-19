@@ -3,8 +3,8 @@
  * ============================================================ */
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
-import { renderCalendar } from './calendar.js';
+import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap, showUndoToast } from './utils.js?v=2';
+import { renderCalendar } from './calendar.js?v=48';
 
 let editingPlannedWorkoutId = null;
 
@@ -44,8 +44,14 @@ export function renderPlannedWorkouts() {
 }
 export function deletePlannedWorkout(id){
     const decodedId=decodeURIComponent(id);
+    const previous=JSON.parse(JSON.stringify(state.plannedActivities||[]));
+    const target=previous.find(item=>String(item.id)===decodedId);if(!target)return;
+    if(!confirm('Geplante Einheit wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.'))return;
     state.plannedActivities=state.plannedActivities.filter(p=>String(p.id)!==decodedId);
     saveDataToLocalStorage();renderPlannedWorkouts();renderCalendar();
+    showUndoToast('Geplante Einheit gelöscht.',()=>{
+      state.plannedActivities=previous;saveDataToLocalStorage();renderPlannedWorkouts();renderCalendar();
+    });
 }
 function setPlanField(id,value){const field=document.getElementById(id);if(field)field.value=value??'';}
 export function openPlannedWorkoutModal(id=null){

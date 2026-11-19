@@ -1,6 +1,6 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml } from './utils.js';
+import { sportsCatalog, typeColorMap, getSportsCatalog, escapeHtml, showUndoToast } from './utils.js';
 import { getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=4';
 
 
@@ -247,7 +247,35 @@ function renderRows() {
   catBox.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => btn.closest('[data-category-row]').remove()));
 }
 
-export function initializeSettings() { renderRows(); }
+function renderCoachSettings(){
+  const weight=Math.min(100,Math.max(0,Number(state.settings?.readinessSubjectiveWeight??30)));
+  const slider=document.getElementById('settings-readiness-subjective-weight');
+  const cycle=document.getElementById('settings-coach-cycle-consent');
+  if(slider)slider.value=String(Number.isFinite(weight)?weight:30);
+  if(cycle)cycle.checked=state.settings?.coachCycleDataEnabled===true;
+  updateReadinessWeightLabel();
+}
+export function updateReadinessWeightLabel(){
+  const slider=document.getElementById('settings-readiness-subjective-weight');
+  const output=document.getElementById('settings-readiness-subjective-weight-value');
+  if(output)output.textContent=(slider?.value??30)+' %';
+}
+export function saveCoachSettings(){
+  const slider=document.getElementById('settings-readiness-subjective-weight');
+  const status=document.getElementById('settings-coach-save-status');
+  const weight=Number(slider?.value??30);
+  if(!Number.isInteger(weight)||weight<0||weight>100){
+    if(status)status.textContent='Bitte wähle eine Gewichtung zwischen 0 und 100 Prozent.';
+    return;
+  }
+  state.settings={...(state.settings||{}),readinessSubjectiveWeight:weight,coachCycleDataEnabled:document.getElementById('settings-coach-cycle-consent')?.checked===true};
+  const saved=saveDataToLocalStorage();
+  if(status)status.textContent=saved
+    ? 'KI-Einstellungen gespeichert. Die Bereitschaft wird mit der neuen Gewichtung aktualisiert.'
+    : 'Die Einstellungen konnten nicht lokal gespeichert werden. Bitte prüfe deinen angemeldeten Speicher.';
+  if(saved)refreshAll();
+}
+export function initializeSettings() { renderRows(); renderCoachSettings(); }
 let editingCalendarSeasonId = null;
 
 function getCalendarSeasonCollection() {
@@ -295,12 +323,13 @@ export function saveCalendarSeason(){
 }
 export function deleteCalendarSeason(id){
   const {seasons,activeId}=getCalendarSeasonCollection(),targetId=id||activeId,target=seasons.find(item=>item.id===targetId);if(!target)return;
-  if(!confirm('Möchtest du die Saison "'+(target.name||'Saison')+'" wirklich löschen?'))return;
+  if(!confirm('Möchtest du die Saison "'+(target.name||'Saison')+'" wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.'))return;
   const remaining=seasons.filter(item=>item.id!==targetId),nextActive=targetId===activeId?(remaining.at(-1)?.id||null):activeId;persistCalendarSeasonCollection(remaining,nextActive);
   if(editingCalendarSeasonId===targetId)editingCalendarSeasonId=null;if(state.activeCalendarFormat==='season'&&!nextActive)state.activeCalendarFormat='month';renderCalendarSeasonSettings();refreshAll();
+  showUndoToast('Saison gelöscht.',()=>{persistCalendarSeasonCollection(seasons,activeId);renderCalendarSeasonSettings();refreshAll();});
 }
 export function openSettingsModal() {
-  renderRows();renderCalendarSeasonSettings();
+  renderRows();renderCalendarSeasonSettings();renderCoachSettings();
   document.getElementById('settings-modal')?.classList.remove('hidden');
 }
 export function closeSettingsModal() { document.getElementById('settings-modal')?.classList.add('hidden'); }

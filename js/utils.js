@@ -5,14 +5,14 @@ import { state } from './state.js';
  * ============================================================ */
 
 export const sportsCatalog = {
-    'Kayaking': { label: 'K1', color: '#E53935' },
-    'C1': { label: 'C1', color: '#E53935' },
-    'C2': { label: 'C2', color: '#E53935' },
-    'PaddleErgo': { label: 'Paddelergometer', color: '#00ACC1' },
-    'Run': { label: 'Laufen', color: '#FB8C00' },
-    'Ride': { label: 'Radfahren', color: '#43A047' },
-    'Swim': { label: 'Schwimmen', color: '#1E88E5' },
-    'WeightTraining': { label: 'Krafttraining', color: '#8E24AA' },
+    'Kayaking': { label: 'K1', color: '#1E88E5' },
+    'C1': { label: 'C1', color: '#1E88E5' },
+    'C2': { label: 'C2', color: '#1E88E5' },
+    'PaddleErgo': { label: 'Paddelergometer', color: '#1E88E5' },
+    'Run': { label: 'Laufen', color: '#14B8A6' },
+    'Ride': { label: 'Radfahren', color: '#F97316' },
+    'Swim': { label: 'Schwimmen', color: '#EC4899' },
+    'WeightTraining': { label: 'Krafttraining', color: '#8B5CF6' },
     'Workout': { label: 'Allg. Fitness', color: '#3949AB' }
 };
 
@@ -80,3 +80,34 @@ export function getEnabledSportsCatalog() {
 }
 export function getTypeColorMap() { return { ...typeColorMap, ...(state.settings?.categories || {}) }; }
 export function formatKm(value) { const n = Number(value); return Number.isFinite(n) ? n.toFixed(2) : '—'; }
+
+
+let kajoUndoToastTimer = null;
+export function showUndoToast(message, undo, duration = 10000) {
+    if (typeof document === 'undefined' || typeof undo !== 'function') return;
+    let toast = document.getElementById('kajo-undo-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'kajo-undo-toast';
+        toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-[2147483601] flex items-center gap-4 rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-xs text-white shadow-2xl';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+    if (kajoUndoToastTimer) clearTimeout(kajoUndoToastTimer);
+    toast.replaceChildren();
+    const label = document.createElement('span');
+    label.textContent = message;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Rückgängig';
+    button.className = 'font-bold text-cyan-300 underline underline-offset-2';
+    button.addEventListener('click', async () => {
+        if (kajoUndoToastTimer) clearTimeout(kajoUndoToastTimer);
+        try { await undo(); toast.remove(); }
+        catch (error) { label.textContent = 'Rückgängig fehlgeschlagen: ' + (error?.message || 'Bitte erneut versuchen.'); }
+    }, { once: true });
+    toast.append(label, button);
+    toast.classList.remove('hidden');
+    kajoUndoToastTimer = setTimeout(() => { toast.remove(); kajoUndoToastTimer = null; }, duration);
+}

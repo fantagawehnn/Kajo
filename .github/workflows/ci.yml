@@ -8,6 +8,7 @@ on:
       - feat/garmin-data-quality-v2
       - feature/coach-v2-integration
       - garmin-full-export-import
+      - preview/kajo-redesign-current-v2
   pull_request:
     branches:
       - v2
@@ -40,6 +41,7 @@ jobs:
           node --check js/daily-heart-rate.js
           node --check js/daily-hr-activity.js
           node --check js/main.js
+          node --check js/customization.js
           node --check js/analysis-insights.js
           node --check js/calculations.js
           node --check js/training-load.js

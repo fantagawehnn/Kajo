@@ -1,6 +1,6 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, showUndoToast } from './utils.js';
 
 const riverSuggestions = ['Sieg','Moldau – Prag','Inn – Rosenheim','Rhein – Bonn','Agger'];
 function isCanoeOnWaterActivity(activity) {
@@ -251,9 +251,11 @@ export function deleteTrainingWater(id) {
   if (!water) return;
   const used = getTrainingRoutesRaw().some(route => String(route.waterId) === String(id));
   if (used || (water.sections || []).length) { alert('Dieser Fluss enthält noch Abschnitte oder zugeordnete Strecken. Lösche zuerst die Strecken und Abschnitte.'); return; }
-  if (!confirm('Fluss wirklich löschen?')) return;
+  if (!confirm('Fluss wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.')) return;
+  const previous=JSON.parse(JSON.stringify(state.settings.trainingWaters||[]));
   state.settings.trainingWaters = getTrainingWaters().filter(item => String(item.id) !== String(id));
   saveDataToLocalStorage(); renderRoutesView();
+  showUndoToast('Fluss gelöscht.',()=>{state.settings.trainingWaters=previous;saveDataToLocalStorage();renderRoutesView();});
 }
 export function renameTrainingSection(id) {
   const found = getSectionById(id);
@@ -269,9 +271,11 @@ export function deleteTrainingSection(id) {
   if (!found) return;
   const used = getTrainingRoutesRaw().some(route => String(route.sectionId) === String(id));
   if (used) { alert('Dieser Abschnitt wird noch von Strecken verwendet. Ordne diese Strecken zuerst einem anderen Abschnitt zu oder lösche sie.'); return; }
-  if (!confirm('Flussabschnitt wirklich löschen?')) return;
+  if (!confirm('Flussabschnitt wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.')) return;
+  const previous=JSON.parse(JSON.stringify(state.settings.trainingWaters||[]));
   found.water.sections = found.water.sections.filter(item => String(item.id) !== String(id));
   saveDataToLocalStorage(); renderRoutesView();
+  showUndoToast('Flussabschnitt gelöscht.',()=>{state.settings.trainingWaters=previous;saveDataToLocalStorage();renderRoutesView();});
 }
 let trainingRouteFilter = 'all';
 
@@ -407,10 +411,14 @@ export function deleteTrainingRoute(id) {
   const route = getRouteById(id); if (!route) return;
   const used = (state.rawActivities || []).some(activity => getActivityRouteAssignments(activity).some(item => item.routeId === String(id)))
     || (state.races || []).some(race => String(race.routeId || '') === String(id));
-  if (used && !confirm('Diese Strecke ist bereits Aktivitäten oder Wettkämpfen zugeordnet. Wirklich löschen? Die Zuordnungen werden dabei entfernt.')) return;
-  if (!used && !confirm('Strecke wirklich löschen?')) return;
+  if (used && !confirm('Diese Strecke ist bereits Aktivitäten oder Wettkämpfen zugeordnet. Wirklich löschen? Die Zuordnungen werden dabei entfernt. Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.')) return;
+  if (!used && !confirm('Strecke wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.')) return;
+  const previousRoutes=JSON.parse(JSON.stringify(state.settings.trainingRoutes||[]));
+  const previousActivities=JSON.parse(JSON.stringify(state.rawActivities||[]));
+  const previousRaces=JSON.parse(JSON.stringify(state.races||[]));
   state.settings.trainingRoutes = getTrainingRoutesRaw().filter(item => String(item.id) !== String(id));
   (state.rawActivities || []).forEach(activity => { if (Array.isArray(activity.routeAssignments)) activity.routeAssignments = activity.routeAssignments.filter(item => String(item.routeId) !== String(id)); if (String(activity.routeId || '') === String(id)) { delete activity.routeId; delete activity.routeAssignmentSource; } });
   (state.races || []).forEach(race => { if (String(race.routeId || '') === String(id)) delete race.routeId; });
   saveDataToLocalStorage(); renderRoutesView(); refreshAll();
+  showUndoToast('Strecke gelöscht.',()=>{state.settings.trainingRoutes=previousRoutes;state.rawActivities=previousActivities;state.races=previousRaces;saveDataToLocalStorage();renderRoutesView();refreshAll();});
 }

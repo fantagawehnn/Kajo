@@ -4,7 +4,7 @@
  */
 import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
-import { renderHeartRateZoneDistribution } from './charts.js';
+import { renderHeartRateZoneDistribution } from './charts.js?v=13';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
@@ -20,7 +20,7 @@ const todayKey = () => {
 };
 const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
 const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
+const COLORS = { load: '#FDBA74', recovery: '#14B8A6', performance: '#1E88E5', health: '#A78BFA' };
 let trendChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
@@ -44,7 +44,7 @@ function currentRange() {
     const toInput = document.getElementById('date-to')?.value;
     if (fromInput && toInput && fromInput <= toInput) return { from: fromInput, to: toInput };
   }
-  const days = ({ '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 })[state.activeTimeframe] || 90;
+  const days = ({ '7d': 7, '28d': 28, '30d': 30, '42d': 42, '3m': 90, '6m': 180, '1y': 365 })[state.activeTimeframe] || 90;
   const fromDate = new Date(to + 'T12:00:00');
   fromDate.setDate(fromDate.getDate() - days + 1);
   const from = fromDate.getFullYear() + '-' + String(fromDate.getMonth() + 1).padStart(2, '0') + '-' + String(fromDate.getDate()).padStart(2, '0');
@@ -73,7 +73,7 @@ function buildSeries(dates) {
   const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
   const performance = dates.map(date => getGarminCheckinMetric(checkins[date], 'vo2max'));
   return [
-    { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
+    { key: 'load', label: 'Belastung · Tagesbelastung', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
     { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
   ];

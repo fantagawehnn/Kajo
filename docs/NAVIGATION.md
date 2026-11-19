@@ -8,10 +8,10 @@ Branch: `v2`
 Die Anwendung verwendet genau fünf Hauptbereiche:
 
 1. Heute
-2. Kalender
+2. Plan
 3. Training
 4. Analyse
-5. Mehr
+5. Ich
 
 Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones wird dieselbe Navigation als kompakte, fixierte Fünf-Tab-Leiste am unteren Bildschirmrand dargestellt. Unterbereiche werden ausschließlich innerhalb ihres Hauptbereichs angezeigt.
 
@@ -20,17 +20,17 @@ Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones w
 | Hauptbereich | Unterbereich / Ansicht | Bestehende Implementierung |
 |---|---|---|
 | Heute | Tagesstatus, Training heute, Wearables, nächster Wettkampf, Trainingswoche | bestehendes Dashboard plus interaktive Wochenübersicht |
-| Kalender | Tag, Woche, Monat, Jahr | bestehende Kalenderlogik; Woche als Standard |
+| Plan | Kalender: Tag, Woche, Monat, Jahr, Saison | bestehende Kalenderlogik; Woche als Standard |
 | Training | Aktivitäten | bestehende chronologische Aktivitätsliste und Aktivitätsdetailmodal |
 | Training | Trainingsplanung | bestehende Planung und Wettkampfverwaltung |
 | Analyse | Training Load | bestehende Belastungsübersicht und Belastungsverlauf |
 | Analyse | Recovery | Readiness und Gesundheitsmetriken/Verlaufsdiagramme |
 | Analyse | Performance | Fitnessindikator, Wettkampfkontext und Leistungsmetriken |
 | Analyse | Health | dokumentierte Krankheits- und Verletzungsereignisse sowie Verfügbarkeitsstatus |
-| Mehr | Persönliches Profil | bestehende Profilansicht |
-| Mehr | Sport & Training | Kraftleistungen, Strecken und sportbezogene Einstellungen |
-| Mehr | Datenverwaltung | Garmin, Datenquellen, Import und Datenqualität |
-| Mehr | App | Darstellung, Benachrichtigungen, KI und allgemeine Einstellungen |
+| Ich | Persönliches Profil | bestehende Profilansicht |
+| Ich | Sport & Training | Kraftleistungen, Strecken und sportbezogene Einstellungen |
+| Ich | Datenverwaltung | Garmin, Datenquellen, Import und Datenqualität |
+| Ich | App | Darstellung, Benachrichtigungen, KI und allgemeine Einstellungen |
 
 ## Technische Umsetzung
 
@@ -39,6 +39,8 @@ Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones w
 - Die Aktivitätsliste verwendet weiterhin die bestehende Kalender-/Aktivitätsdarstellung. Im Trainingsbereich wird nur der Listenmodus angezeigt; der zuvor ausgewählte Kalenderzeitraum-Modus wird beim Verlassen wiederhergestellt.
 - Die vier Analyse-Unterseiten verwenden eine gemeinsame Zeitraumsteuerung. Detailverläufe für Recovery und Performance bleiben in ihrem jeweiligen Analysebereich.
 - Die Wochenübersicht auf Heute greift auf vorhandene absolvierte und geplante Einheiten zurück. Trainingseinheiten und Tagesfelder sind anklickbar.
+- Die Personalisierung erlaubt das Ein- und Ausblenden der Dashboard-Bereiche sowie das Umsortieren der fünf Hauptbereiche. Die Navigation bleibt vollständig; keine Hauptfunktion wird dadurch entfernt.
+- App-Farbschema und Sportartenfarben werden getrennt verwaltet. Die Glossarfarben gelten für Kennzahlen und Status; Sportartenfarben kennzeichnen ausschließlich die Sportart.
 - Der Kalender verwendet die vorhandenen Tages- und Wochenrenderer. Die Jahresansicht zeigt zwölf kompakte Monatsraster; ein Tag kann in die Tagesansicht geöffnet werden.
 
 ## Daten- und Darstellungsregeln
@@ -83,4 +85,23 @@ Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe
 - Vor Implementierung einer adaptiven Baseline ist die statistische Methode verbindlich festzulegen (robuste Lage-/Streuungsmaße, Mindestdatenbasis, Ausreißerbehandlung, Aktualisierungsfenster, Schutz vor kurzfristiger Baseline-Verschiebung und Änderungsprotokoll).
 - Für Performance fehlen derzeit eine sportartspezifische, methodisch vergleichbare Hauptkennzahl und ein entsprechend gefilterter Leistungsverlauf. VO₂max bleibt wegen der nicht getrennten Messart ein eingeschränkt interpretierbarer Importwert.
 - Eine getrennte, fachlich verifizierte Anzeige von Garmin Training Load, Edwards TRIMP und sRPE erfordert zunächst die eindeutige Zuordnung der vorhandenen Datenfelder.
-- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist damit noch nicht umgesetzt.
+- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist unter „Ich → Einstellungen → App & Darstellung“ vorhanden.
+
+
+## Glossar und Farbzuordnung (Preview)
+
+| Begriff | Bedeutung | Farbe |
+|---|---|---|
+| Bereitschaft | Gesamtwert für heute (einstellbare Hypothese) | Türkis |
+| Fitness | langfristige Belastung (bisher CTL) | Blau |
+| Ermüdung | kurzfristige Belastung (bisher ATL) | Orange |
+| Form | Fitness minus Ermüdung (bisher TSB) | Grün |
+| Belastung | Wert einer einzelnen Einheit | Hellorange |
+| Belastungsverhältnis | Ermüdung geteilt durch Fitness; keine Risikoaussage | Gelb |
+| Befinden | tägliche Selbsteinschätzung | Violett |
+| Gewicht | Körpergewicht | Pink |
+| HRV | Herzfrequenzvariabilität | Dunkeltürkis |
+| Ruhepuls | morgendlicher Puls | Rot-Rosa |
+| Schlaf | Dauer und Qualität | Hellblau |
+
+Die internen technischen Feldnamen (z. B. `ctl`, `atl`, `tsb`, `acwr`) bleiben aus Kompatibilitätsgründen unverändert. In der Oberfläche werden die Glossarbegriffe verwendet. Sportartenfarben sind getrennt von Kennzahl- und Statusfarben.
