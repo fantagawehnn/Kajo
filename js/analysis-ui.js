@@ -3,8 +3,8 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
-import { calculateReadiness, historyRingColor } from './dashboard.js';
-import { getActivityTelemetrySeries } from './charts.js';
+import { calculateReadiness, historyRingColor } from './dashboard.js?v=9';
+import { getActivityTelemetrySeries } from './charts.js?v=13';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
