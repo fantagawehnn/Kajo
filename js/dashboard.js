@@ -36,14 +36,17 @@ function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)ret
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 function renderWellbeingHeatmap(){
  const container=document.getElementById('home-wellbeing-heatmap');if(!container)return;
- const today=localTodayKey(),end=new Date(today+'T12:00:00'),days=[];
- for(let offset=27;offset>=0;offset--){
-  const date=new Date(end);date.setDate(date.getDate()-offset);
+ const today=localTodayKey(),end=new Date(today+'T12:00:00'),start=new Date(end);
+ start.setDate(start.getDate()-27);
+ start.setDate(start.getDate()-((start.getDay()+6)%7));
+ const endOfGrid=new Date(end);endOfGrid.setDate(endOfGrid.getDate()+(6-((endOfGrid.getDay()+6)%7)));
+ const days=[];
+ for(let date=new Date(start);date<=endOfGrid;date.setDate(date.getDate()+1)){
   const key=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
   const value=state.dailyCheckins?.[key]?.wellbeing;
   const valid=validNumber(value)&&Number(value)>=1&&Number(value)<=5;
   const label=date.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'});
-  days.push('<button type="button" class="kajo-wellbeing-cell" data-value="'+(valid?Math.round(Number(value)):'missing')+'" title="'+label+' · '+(valid?'Befinden '+value+'/5':'nicht erfasst')+'" aria-label="'+label+' · '+(valid?'Befinden '+value+' von 5':'nicht erfasst')+'" onclick="openDayEditor(\''+key+'\')"></button>');
+  days.push('<button type="button" class="kajo-wellbeing-cell" data-value="'+(valid?Math.round(Number(value)):'missing')+'" title="'+label+' · '+(valid?'Befinden '+value+'/5':'nicht erfasst')+'" aria-label="'+label+' · '+(valid?'Befinden '+value+' von 5':'nicht erfasst')+'" onclick="openDayEditor(\\''+key+'\\')"></button>');
  }
  container.innerHTML=days.join('');
 }
