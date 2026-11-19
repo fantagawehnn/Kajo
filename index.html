@@ -650,53 +650,38 @@
             
 
             <div id="analysis-subpage-health" class="hidden space-y-4">
-  <div class="hidden" aria-hidden="true">
-    <div id="health-hero-ring"><strong id="analysis-health-hero-value">—</strong><span id="analysis-health-hero-unit"></span></div>
-    <span id="analysis-health-hero-status">Health</span><span id="health-hero-note"></span>
-  </div>
-  <section class="kajo-health-group" aria-labelledby="health-documentation-heading">
-    <div class="kajo-health-group-heading"><h2 id="health-documentation-heading">Gesundheitsdokumentation</h2><span>Gespeicherte Einträge · Zeitraum wählbar</span></div>
-    <div id="health-documentation-metrics" class="kajo-health-metric-row" aria-live="polite"></div>
+  <nav class="flex flex-wrap gap-2" aria-label="Gesundheitsanalyse">
+    <button type="button" class="more-subnav-button is-active" data-health-view="health" aria-pressed="true" onclick="setHealthAnalysisView('health')">Gesundheit</button>
+    <button type="button" class="more-subnav-button" data-health-view="cycle" aria-pressed="false" onclick="setHealthAnalysisView('cycle')">Zyklus</button>
+    <button type="button" class="more-subnav-button" data-health-view="relationships" aria-pressed="false" onclick="setHealthAnalysisView('relationships')">Zusammenhänge</button>
+  </nav>
+  <section id="health-view-health" class="space-y-4">
+    <section class="kajo-health-group" aria-labelledby="health-documentation-heading">
+      <div class="kajo-health-group-heading"><h2 id="health-documentation-heading">Gesundheitsdokumentation</h2><span>Gespeicherte Einträge · Zeitraum wählbar</span></div>
+      <div id="health-documentation-metrics" class="kajo-health-metric-row" aria-live="polite"></div>
+    </section>
+    <section id="analysis-health-events-panel" class="kajo-panel">
+      <div class="kajo-panel-heading flex-wrap gap-3">
+        <div><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div>
+        <nav class="kajo-health-range" aria-label="Zeitraum für Gesundheitszusammenfassung">
+          <button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button><button type="button" data-health-range="28d" onclick="setHealthRange('28d')">28 T</button><button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button><button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button><button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button><button type="button" data-health-range="custom" onclick="setHealthRange('custom')">Individuell</button>
+        </nav>
+      </div>
+      <div id="health-summary-custom-range" class="hidden kajo-load-custom-range"><label>Von <input type="date" id="health-summary-from"></label><label>Bis <input type="date" id="health-summary-to"></label><button type="button" onclick="applyHealthCustomRange()">Anwenden</button><p id="health-summary-custom-feedback" class="w-full text-xs text-slate-400" aria-live="polite"></p></div>
+      <div id="health-event-summary" class="kajo-insight-grid mb-3"></div><div id="health-event-list" class="space-y-2"></div>
+    </section>
+  </section>
+  <section id="health-view-cycle" class="hidden space-y-4">
+    <section class="kajo-health-group"><div class="kajo-health-group-heading"><h2>Zyklusdokumentation</h2><span>Erfasste Periodentage</span></div><div id="health-cycle-metrics" class="kajo-health-metric-row" aria-live="polite"></div></section>
+  </section>
+  <section id="health-view-relationships" class="hidden space-y-4">
+    <section class="kajo-health-trend"><div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">TAGESVERGLEICH</p><h2>Beschwerden und Trainingseinfluss</h2></div></div><div class="kajo-health-chart-wrap"><canvas id="health-relationship-chart" aria-label="Zusammenhang zwischen Beschwerden und Trainingseinfluss"></canvas></div><p id="health-relationship-note" class="kajo-health-note"></p></section>
   </section>
   <section id="health-trend-panel" class="kajo-health-trend hidden" aria-live="polite">
-    <div class="kajo-health-trend-heading">
-      <div><p class="kajo-analysis-eyebrow">DETAILVERLAUF</p><h2 id="health-trend-title">Gesundheit</h2></div>
-      <nav class="kajo-health-range" aria-label="Zeitraum">
-        <button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button>
-        <button type="button" data-health-range="28d" class="is-active" onclick="setHealthRange('28d')">28 T</button>
-        <button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button>
-        <button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button>
-        <button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button>
-      </nav>
-    </div>
-    <div class="kajo-health-chart-wrap"><canvas id="health-trend-chart" aria-label="Ausgewählter Gesundheitsverlauf"></canvas></div>
-    <p id="health-trend-note" class="kajo-health-note"></p>
-  </section>
-  <section id="analysis-health-events-panel" class="kajo-panel">
-    <div class="kajo-panel-heading flex-wrap gap-3">
-      <div><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div>
-      <nav class="kajo-health-range" aria-label="Zeitraum für Gesundheitszusammenfassung">
-        <button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button>
-        <button type="button" data-health-range="28d" onclick="setHealthRange('28d')">28 T</button>
-        <button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button>
-        <button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button>
-        <button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button>
-        <button type="button" data-health-range="custom" onclick="setHealthRange('custom')">Individuell</button>
-      </nav>
-    </div>
-    <div id="health-summary-custom-range" class="hidden kajo-load-custom-range">
-      <label>Von <input type="date" id="health-summary-from"></label>
-      <label>Bis <input type="date" id="health-summary-to"></label>
-      <button type="button" onclick="applyHealthCustomRange()">Anwenden</button>
-      <p id="health-summary-custom-feedback" class="w-full text-xs text-slate-400" aria-live="polite"></p>
-    </div>
-    <div id="health-event-summary" class="kajo-insight-grid mb-3"></div>
-    <div id="health-event-list" class="space-y-2"></div>
+    <div class="kajo-health-trend-heading"><div><p class="kajo-analysis-eyebrow">DETAILVERLAUF</p><h2 id="health-trend-title">Gesundheit</h2></div><nav class="kajo-health-range" aria-label="Zeitraum"><button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button><button type="button" data-health-range="28d" class="is-active" onclick="setHealthRange('28d')">28 T</button><button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button><button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button><button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button></nav></div>
+    <div class="kajo-health-chart-wrap"><canvas id="health-trend-chart" aria-label="Ausgewählter Gesundheits- und Zyklusverlauf"></canvas></div><p id="health-trend-note" class="kajo-health-note"></p>
   </section>
 </div>
-
-        </div>
-
 
         <!-- ========================================== -->
         <!-- TAB 2: KALENDER & PLANUNG -->
