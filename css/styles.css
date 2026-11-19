@@ -9185,3 +9185,5 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-wellbeing-heatmap-legend{display:flex;flex-wrap:wrap;gap:.7rem 1rem;margin-top:.7rem;color:var(--kajo-muted,#9CA3AF);font-size:.65rem}
 .kajo-wellbeing-heatmap-legend span{display:inline-flex;align-items:center;gap:.3rem}.kajo-wellbeing-heatmap-legend i{display:inline-block;width:.55rem;height:.55rem;border-radius:3px;background:#94A3B8}
 .kajo-wellbeing-heatmap-legend i[data-value="1"]{background:#F43F5E}.kajo-wellbeing-heatmap-legend i[data-value="3"]{background:#EAB308}.kajo-wellbeing-heatmap-legend i[data-value="5"]{background:#22C55E}.kajo-wellbeing-heatmap-legend i[data-missing="true"]{background:#475569;border:1px dashed #94A3B8}
+
+.kajo-chart-data-basis{margin-left:.4rem;color:var(--kajo-muted,#9CA3AF);font-size:.65rem;text-decoration:underline;text-underline-offset:2px}
