@@ -121,7 +121,7 @@ function renderTrendChart() {
       pointRadius: 0,
       pointHoverRadius: 0,
       pointHitRadius: 0,
-      spanGaps: false,
+      spanGaps: true,
       fill: false,
       hidden: !selectedMetrics.has(item.key)
     };
