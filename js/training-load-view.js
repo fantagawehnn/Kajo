@@ -176,10 +176,47 @@ function renderEstimatedLoadQueue(){
   cancel.addEventListener('click',()=>{editor.classList.add('hidden');open.setAttribute('aria-expanded','false');affordance.textContent='Load eintragen  ›';});
   save.addEventListener('click',()=>{
    const raw=input.value.trim(),value=Number(raw);
-   if(!raw||!Number.isFinite(value)||value<=0||value>10000){feedback.textContent='Bitte einen Wert zwischen 0,1 und 10.000 Punkten eingeben.';input.focus();return;}
-   activity.manualTrainingLoadEstimate={value:Number(value.toFixed(1)),source:'manual-estimate',unit:'KAJO-HF-Punkte',estimatedAt:new Date().toISOString()};
-   if(saveDataToLocalStorage()===false){delete activity.manualTrainingLoadEstimate;feedback.textContent='Der Wert konnte nicht gespeichert werden. Bitte prüfe deinen Datenspeicher.';return;}
-   refreshAll();
+   if(!raw||!Number.isFinite(value)||value<=0||value>10000){
+    feedback.textContent='Bitte einen Wert zwischen 0,1 und 10.000 Punkten eingeben.';
+    input.focus();
+    return;
+   }
+   const previousEstimate=activity.manualTrainingLoadEstimate;
+   save.disabled=true;
+   save.textContent='Speichere …';
+   feedback.classList.remove('text-rose-300');
+   feedback.classList.add('text-slate-400');
+   feedback.textContent='Der geschätzte Load wird gespeichert …';
+   try{
+    activity.manualTrainingLoadEstimate={
+     value:Number(value.toFixed(1)),
+     source:'manual-estimate',
+     unit:'KAJO-HF-Punkte',
+     estimatedAt:new Date().toISOString()
+    };
+    if(saveDataToLocalStorage()!==true){
+     if(previousEstimate===undefined)delete activity.manualTrainingLoadEstimate;
+     else activity.manualTrainingLoadEstimate=previousEstimate;
+     feedback.classList.remove('text-slate-400');
+     feedback.classList.add('text-rose-300');
+     feedback.textContent='Speichern nicht möglich: Es ist kein aktiver Benutzerspeicher verfügbar. Bitte melde dich erneut an.';
+     save.disabled=false;
+     save.textContent='Speichern';
+     return;
+    }
+    // Den zentralen Zustand und anschließend gezielt diese Ansicht aktualisieren.
+    // refreshAll allein garantiert nicht, dass die dynamische Aufgabenliste neu gerendert wird.
+    refreshAll();
+    renderTrainingLoadView();
+   }catch(error){
+    if(previousEstimate===undefined)delete activity.manualTrainingLoadEstimate;
+    else activity.manualTrainingLoadEstimate=previousEstimate;
+    feedback.classList.remove('text-slate-400');
+    feedback.classList.add('text-rose-300');
+    feedback.textContent='Speichern fehlgeschlagen: '+(error?.message||'Unbekannter Speicherfehler');
+    save.disabled=false;
+    save.textContent='Speichern';
+   }
   });
   item.append(open,editor);node.appendChild(item);
  });
