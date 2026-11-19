@@ -893,27 +893,27 @@ export function inspectDay(dayObj) {
 // Verlauf einzelner Gesundheits- und Trainingskennzahlen
 // ------------------------------------------------------------
 const historyMetricDefinitions = {
-    rhr: { label: 'Ruheherzfrequenz', short: 'RHF', unit: 'bpm', group: 'wearable', icon: 'heart-pulse', color: '#fb7185' },
+    rhr: { label: 'Ruhepuls', short: 'RHF', unit: 'bpm', group: 'wearable', icon: 'heart-pulse', color: '#F43F5E' },
     bodyBattery: { label: 'Body Battery', short: 'Body Battery', unit: '', group: 'wearable', icon: 'battery-full', color: '#34d399' },
     vo2max: { label: 'VO₂max', short: 'VO₂max', unit: 'ml/kg/min', group: 'wearable', icon: 'activity', color: '#f97316' },
-    hrv: { label: 'Herzfrequenzvariabilität', short: 'HRV', unit: 'ms', group: 'wearable', icon: 'activity', color: '#38bdf8' },
-    sleepScore: { label: 'Sleep Score', short: 'Sleep Score', unit: '/ 100', group: 'wearable', icon: 'moon-star', color: '#a78bfa' },
-    sleepDuration: { label: 'Schlafdauer', short: 'Schlafdauer', unit: 'h', group: 'wearable', icon: 'bed-double', color: '#818cf8' },
+    hrv: { label: 'Herzfrequenzvariabilität', short: 'HRV', unit: 'ms', group: 'wearable', icon: 'activity', color: '#0F766E' },
+    sleepScore: { label: 'Schlafscore', short: 'Schlafscore', unit: '/ 100', group: 'wearable', icon: 'moon-star', color: '#7DD3FC' },
+    sleepDuration: { label: 'Schlafdauer', short: 'Schlafdauer', unit: 'h', group: 'wearable', icon: 'bed-double', color: '#7DD3FC' },
     respiration: { label: 'Atemfrequenz', short: 'Atemfrequenz', unit: '/min', group: 'wearable', icon: 'wind', color: '#2dd4bf' },
     sleepQuality: { label: 'Schlafqualität', short: 'Schlafqualität', unit: '/ 5', group: 'self', icon: 'bed', color: '#c084fc' },
     soreness: { label: 'Muskelkater', short: 'Muskelkater', unit: '/ 5', group: 'self', icon: 'biceps-flexed', color: '#fb7185' },
     fatigue: { label: 'Müdigkeit', short: 'Müdigkeit', unit: '/ 5', group: 'self', icon: 'battery-low', color: '#f59e0b' },
     motivation: { label: 'Motivation', short: 'Motivation', unit: '/ 5', group: 'self', icon: 'zap', color: '#34d399' },
     stress: { label: 'Stress', short: 'Stress', unit: '/ 5', group: 'self', icon: 'brain', color: '#38bdf8' },
-    weight: { label: 'Körpergewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#94a3b8' }
+    weight: { label: 'Gewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#EC4899' }
 };
 const trainingMetricDefinitions = {
-    fitness: { label: 'Fitness', short: 'Fitness (CTL)', unit: 'Load-Punkte', color: '#D32F2F', icon: 'trending-up' },
-    atl: { label: 'Akute Belastung (ATL)', short: 'ATL', unit: 'Load-Punkte', color: '#f97316', icon: 'activity' },
-    acwr: { label: 'Akut-chronisches Belastungsverhältnis (ACWR)', short: 'ACWR', unit: 'Verhältnis', color: '#f59e0b', icon: 'scale' },
-    tsb: { label: 'Trainingssaldo (TSB)', short: 'TSB', unit: 'Load-Punkte', color: '#38bdf8', icon: 'activity' },
+    fitness: { label: 'Fitness', short: 'Fitness', unit: 'Punkte', color: '#1E88E5', icon: 'trending-up' },
+    atl: { label: 'Ermüdung', short: 'Ermüdung', unit: 'Punkte', color: '#F97316', icon: 'activity' },
+    acwr: { label: 'Belastungsverhältnis', short: 'Belastungsverhältnis', unit: 'Verhältnis', color: '#EAB308', icon: 'scale' },
+    tsb: { label: 'Form', short: 'Form', unit: 'Punkte', color: '#22C55E', icon: 'activity' },
     form: { label: 'Trainingssaldo', short: 'Trainingssaldo', unit: 'Modellwert', color: '#f59e0b', icon: 'activity' },
-    readiness: { label: 'Readiness', short: 'Readiness', unit: '/ 100', color: '#34d399', icon: 'battery-full' }
+    readiness: { label: 'Bereitschaft', short: 'Bereitschaft', unit: '/ 100', color: '#14B8A6', icon: 'battery-full' }
 };
 let healthHistoryChart = null;
 let trainingHistoryChart = null;
