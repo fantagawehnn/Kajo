@@ -145,9 +145,10 @@ export function setTrainingLoadPeriod(period){
  document.getElementById('training-load-period-menu')?.classList.add('hidden');
  document.getElementById('training-load-period-button')?.setAttribute('aria-expanded','false');
  if(period==='custom'){
+  const wasCustom=state.activeTimeframe==='custom';
   const current=getRange(),from=document.getElementById('date-from'),to=document.getElementById('date-to');
-  if(from&&!from.value)from.value=current.from;
-  if(to&&!to.value)to.value=current.to;
+  if(from&&(!wasCustom||!from.value))from.value=current.from;
+  if(to&&(!wasCustom||!to.value))to.value=current.to;
   state.activeTimeframe='custom';state.metricHistoryRange='custom';
   document.getElementById('custom-date-box')?.classList.remove('hidden');
   renderTrainingLoadView();
