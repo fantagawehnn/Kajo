@@ -13,6 +13,7 @@ import { state, setRefreshHandler } from './state.js';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor } from './season-plan-editor.js';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
+import { initializeCustomization, toggleDashboardSection, movePrimaryNav, resetCustomization } from './customization.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, saveDailyCheckinReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=2';
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
@@ -2918,6 +2919,7 @@ async function handleAuthSession(session) {
 
             try {
                 initializeSettings();
+                initializeCustomization();
                 initEngine();
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
@@ -3142,6 +3144,9 @@ Object.assign(window, {
     sendKajoPushTest,
     saveKajoReminder,
     saveDailyCheckinReminder,
+    toggleDashboardSection,
+    movePrimaryNav,
+    resetCustomization,
     deleteKajoReminder,
     editKajoReminder,
     resetKajoReminderForm,
