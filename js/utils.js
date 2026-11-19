@@ -5,14 +5,14 @@ import { state } from './state.js';
  * ============================================================ */
 
 export const sportsCatalog = {
-    'Kayaking': { label: 'K1', color: '#E53935' },
-    'C1': { label: 'C1', color: '#E53935' },
-    'C2': { label: 'C2', color: '#E53935' },
-    'PaddleErgo': { label: 'Paddelergometer', color: '#00ACC1' },
-    'Run': { label: 'Laufen', color: '#FB8C00' },
-    'Ride': { label: 'Radfahren', color: '#43A047' },
-    'Swim': { label: 'Schwimmen', color: '#1E88E5' },
-    'WeightTraining': { label: 'Krafttraining', color: '#8E24AA' },
+    'Kayaking': { label: 'K1', color: '#1E88E5' },
+    'C1': { label: 'C1', color: '#1E88E5' },
+    'C2': { label: 'C2', color: '#1E88E5' },
+    'PaddleErgo': { label: 'Paddelergometer', color: '#1E88E5' },
+    'Run': { label: 'Laufen', color: '#14B8A6' },
+    'Ride': { label: 'Radfahren', color: '#F97316' },
+    'Swim': { label: 'Schwimmen', color: '#EC4899' },
+    'WeightTraining': { label: 'Krafttraining', color: '#8B5CF6' },
     'Workout': { label: 'Allg. Fitness', color: '#3949AB' }
 };
 
