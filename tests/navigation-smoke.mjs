@@ -361,7 +361,7 @@ const overviewModule = readFileSync('js/analysis-overview.js', 'utf8').replace(/
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
 assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview begins with the four agreed metric circles');
 assert.ok(['load','recovery','performance','health'].every(id => html.includes('id="overview-' + id + '-ring"')), 'overview renders load, recovery, fitness and health circles');
-assert.ok(['Load','Recovery','Fitness','Health'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed performance dimensions');
+assert.ok(['Ermüdung','Recovery','Fitness','Health'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the agreed German performance labels');
 assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has a combined four-dimension trend chart');
 assert.ok(html.includes('data-overview-metric="health"'), 'Health remains selectable but is explicitly marked as unavailable');
 assert.ok(html.includes('id="analysis-overview-activity-chart"') && html.includes('data-overview-activity-measure="sessions"'), 'sport distribution supports duration and session count');
