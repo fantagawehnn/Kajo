@@ -5,6 +5,7 @@ import { requestSeasonPlanProposal, requestWeeklyPlanProposal } from './coach.js
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
 import { buildWeeklyPlanCalendarEntries } from './weekly-plan-calendar.js';
+import { buildAdaptiveWeekReview } from './adaptive-week-review.js';
 
 let draftPhases = [];
 let pendingProposal = null;
@@ -106,7 +107,7 @@ function renderWeeklyPlanPanel() {
     const plans = normalizeSeasonPlan(state.seasonPlan)?.weeklyPlans || [];
     const list = byId('weekly-plan-saved-list');
     if (list) list.innerHTML = plans.slice().sort((a,b) => a.weekStartDate.localeCompare(b.weekStartDate)).map(plan =>
-        '<article class="rounded-lg border border-slate-800 p-2"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(plan.weekStartDate) + ' – ' + escape(plan.weekEndDate) + '</strong><span class="text-[10px] text-slate-400">' + (plan.status === 'approved' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf') + '</span></div><p class="text-xs text-slate-300 mt-1">' + escape(plan.objective) + '</p><p class="text-[10px] text-slate-500">' + plan.sessions.length + ' Einheiten</p>' + (plan.status === 'draft' ? '<button type="button" onclick="approveWeeklyPlan(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 px-2 py-1 rounded bg-cyan-900 text-cyan-200 text-[10px]">Wochenplan freigeben</button>' : '') + (plan.status === 'approved' ? '<button type="button" onclick="transferWeeklyPlanToCalendar(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 ml-2 px-2 py-1 rounded bg-cyan-700 text-white text-[10px]">In Kalender übernehmen</button>' : '') + '</article>'
+        '<article class="rounded-lg border border-slate-800 p-2"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(plan.weekStartDate) + ' – ' + escape(plan.weekEndDate) + '</strong><span class="text-[10px] text-slate-400">' + (plan.status === 'approved' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf') + '</span></div><p class="text-xs text-slate-300 mt-1">' + escape(plan.objective) + '</p><p class="text-[10px] text-slate-500">' + plan.sessions.length + ' Einheiten</p>' + (plan.status === 'draft' ? '<button type="button" onclick="approveWeeklyPlan(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 px-2 py-1 rounded bg-cyan-900 text-cyan-200 text-[10px]">Wochenplan freigeben</button>' : '') + (plan.status === 'approved' ? '<button type="button" onclick="reviewApprovedWeeklyPlan(\\'' + escape(plan.weekStartDate) + '\\')" class="mt-2 ml-2 px-2 py-1 rounded bg-slate-700 text-slate-200 text-[10px]">Woche auswerten</button><button type="button" onclick="transferWeeklyPlanToCalendar(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 ml-2 px-2 py-1 rounded bg-cyan-700 text-white text-[10px]">In Kalender übernehmen</button>' : '') + '</article>'
     ).join('') || '<p class="text-xs text-slate-500">Noch keine Wochenpläne gespeichert.</p>';
     const proposal = byId('weekly-plan-proposal-content');
     if (!proposal) return;
@@ -216,6 +217,39 @@ export function transferWeeklyPlanToCalendar(weekStartDate) {
     }
     if (message) message.textContent = additions.length + ' Einheit(en) in den Kalender übernommen; ' + skipped.length + ' übersprungen (bereits vorhanden oder Trainingsart nicht eindeutig).';
     renderWeeklyPlanPanel();
+    return true;
+}
+
+export function reviewApprovedWeeklyPlan(weekStartDate) {
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    const plan = current?.weeklyPlans.find(item => item.weekStartDate === weekStartDate);
+    const root = byId('adaptive-week-review');
+    const message = byId('season-plan-message');
+    if (!plan || !['approved', 'completed'].includes(plan.status) || !root) {
+        if (message) message.textContent = 'Nur gespeicherte, freigegebene Wochenpläne können ausgewertet werden.';
+        return false;
+    }
+    const review = buildAdaptiveWeekReview(plan, state.rawActivities, new Date().toLocaleDateString('en-CA'));
+    root.classList.remove('hidden');
+    const title = byId('adaptive-week-review-title');
+    if (title) title.textContent = 'Wochenabgleich · ' + review.weekStartDate + ' bis ' + review.weekEndDate;
+    const summary = byId('adaptive-week-review-summary');
+    if (summary) summary.textContent = review.coverage.matchedCount + ' eindeutig zugeordnet · ' + review.coverage.ambiguousCount + ' unklar · ' + review.coverage.unconfirmedPastPlanCount + ' vergangene Einheiten ohne Zuordnung · ' + review.coverage.unplannedActivityCount + ' zusätzliche/ungeklärte Aktivitäten · ' + review.coverage.upcomingCount + ' kommende Einheiten';
+    const details = byId('adaptive-week-review-details');
+    if (details) {
+        const rows = [
+            ...review.matched.map(item => '<p>✓ ' + escape(item.planned.date) + ' · ' + escape(item.planned.name) + ' – Aktivität eindeutig zugeordnet</p>'),
+            ...review.ambiguous.map(item => '<p>! ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – Zuordnung unklar</p>'),
+            ...review.unmatchedPlanned.map(item => '<p>· ' + escape(item.session.date) + ' · ' + escape(item.session.name) + ' – ' + escape(item.reason) + '</p>'),
+            ...review.unplannedActivities.map(item => '<p>+ ' + escape(item.activity.date) + ' · ' + escape(item.activity.name || item.activity.type || 'Aktivität') + ' – ' + escape(item.reason) + '</p>'),
+            ...review.upcoming.map(item => '<p>→ ' + escape(item.date) + ' · ' + escape(item.name) + ' – noch geplant</p>')
+        ];
+        details.innerHTML = rows.join('') || '<p>Für diese Woche liegen keine auswertbaren Einheiten vor.</p>';
+    }
+    const note = byId('adaptive-week-review-limitations');
+    if (note) note.textContent = review.limitations;
+    if (message) message.textContent = 'Wochenabgleich erstellt. Nicht zugeordnete Einheiten werden nicht automatisch als ausgefallen bewertet.';
+    root.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
     return true;
 }
 
