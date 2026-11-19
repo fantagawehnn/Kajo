@@ -453,12 +453,16 @@ function renderHealthTrend(key) {
     datasets=[{label,data:values,backgroundColor:status==='sick'?'#eab308':'#ef4444',borderRadius:4,maxBarThickness:18}];
   }else if(key==='cycle'){
     const checkins=state.dailyCheckins||{};
+    // Periodenverwaltung und Self-Check-in speichern im selben Tagesdatensatz,
+    // aber die Periodenmarkierung ist unabhängig von Schmerz-/Impact-Werten.
+    const period=dates.map(date=>checkins[date]?.cycle?.period===true?10:null);
     const pain=dates.map(date=>checkins[date]?.cycle?.period===true&&valid(checkins[date].cycle.pain)?Number(checkins[date].cycle.pain):null);
     const impact=dates.map(date=>checkins[date]?.cycle?.period===true&&valid(checkins[date].cycle.trainingImpact)?Number(checkins[date].cycle.trainingImpact):null);
     heading='Zyklus · dokumentierte Angaben';
-    explanation='Schmerzen und Trainingsbeeinträchtigung stammen aus den manuellen Zyklusangaben (Skala 0–10). Fehlende Einträge werden als Lücken dargestellt; es erfolgt keine medizinische Interpretation.';
+    explanation='Rosafarbene Balken markieren dokumentierte Periodentage aus der Zyklusverwaltung. Die Linien zeigen zusätzlich Schmerzen und Trainingsbeeinträchtigung aus dem Self-Check-in (Skala 0–10). Beide Dokumentationswege werden unabhängig voneinander berücksichtigt; fehlende Angaben bleiben Lücken. Es erfolgt keine medizinische Interpretation.';
     type='line';max=10;
     datasets=[
+      {type:'bar',label:'Periode dokumentiert',data:period,backgroundColor:'#be789f55',borderColor:'#be789f',borderWidth:1,borderRadius:3,maxBarThickness:16},
       {label:'Schmerzen',data:pain,borderColor:'#e879a9',backgroundColor:'#e879a922',pointRadius:3,tension:.15,spanGaps:false},
       {label:'Trainingsbeeinträchtigung',data:impact,borderColor:'#f59e0b',backgroundColor:'#f59e0b22',pointRadius:3,tension:.15,spanGaps:false}
     ];
@@ -473,7 +477,7 @@ function renderHealthTrend(key) {
     type,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:8}},
-        tooltip:{callbacks:{label:item=>item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 10':' dokumentiert'))}}},
+        tooltip:{callbacks:{label:item=>item.dataset.label==='Periode dokumentiert'?'Periode dokumentiert':item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 10':' dokumentiert'))}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:9}},
         y:{beginAtZero:true,max,ticks:{color:'#94a3b8',stepSize:key==='cycle'?2:1},
           grid:{color:'rgba(148,163,184,.12)'}}}}
