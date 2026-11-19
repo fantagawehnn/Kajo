@@ -197,6 +197,8 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     addSubjective('fatigue', 'Müdigkeit', false);
     addSubjective('soreness', 'Muskelkater', false);
     addSubjective('stress', 'Stress', false);
+    addSubjective('mood', 'Stimmung', true);
+    addSubjective('wellbeing', 'Befinden', true);
 
     const cycleImpact = Number(current.cycle?.trainingImpact);
     if (current.cycle?.trainingImpact !== null && current.cycle?.trainingImpact !== undefined
