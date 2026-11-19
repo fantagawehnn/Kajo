@@ -1,17 +1,17 @@
-# KAJO V2 – Navigation und Seitenstruktur
+# KAJO – Navigation und Seitenstruktur
 
 Stand: 13.11.2026  
-Branch: `v2`
+Branch: `redesign-v3`
 
 ## Verbindliche Hauptnavigation
 
 Die Anwendung verwendet genau fünf Hauptbereiche:
 
 1. Heute
-2. Kalender
+2. Plan
 3. Training
 4. Analyse
-5. Mehr
+5. Ich
 
 Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones wird dieselbe Navigation als kompakte, fixierte Fünf-Tab-Leiste am unteren Bildschirmrand dargestellt. Unterbereiche werden ausschließlich innerhalb ihres Hauptbereichs angezeigt.
 
@@ -20,26 +20,26 @@ Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones w
 | Hauptbereich | Unterbereich / Ansicht | Bestehende Implementierung |
 |---|---|---|
 | Heute | Tagesstatus, Training heute, Wearables, nächster Wettkampf, Trainingswoche | bestehendes Dashboard plus interaktive Wochenübersicht |
-| Kalender | Tag, Woche, Monat, Jahr | bestehende Kalenderlogik; Woche als Standard |
-| Training | Aktivitäten | bestehende chronologische Aktivitätsliste und Aktivitätsdetailmodal |
-| Training | Trainingsplanung | bestehende Planung und Wettkampfverwaltung |
+| Plan | Kalender (Tag, Woche, Monat, Jahr) | bestehende Kalenderlogik; Woche als Standard |
+| Plan | Trainingsplanung und Wettkämpfe | bestehende Planung und Wettkampfverwaltung |
+| Training | Aktivitäten und Kraftleistungen | bestehende chronologische Aktivitätsliste, Aktivitätsdetailmodal und Kraftansicht |
 | Analyse | Training Load | bestehende Belastungsübersicht und Belastungsverlauf |
 | Analyse | Recovery | Readiness und Gesundheitsmetriken/Verlaufsdiagramme |
 | Analyse | Performance | Fitnessindikator, Wettkampfkontext und Leistungsmetriken |
 | Analyse | Health | dokumentierte Krankheits- und Verletzungsereignisse sowie Verfügbarkeitsstatus |
-| Mehr | Persönliches Profil | bestehende Profilansicht |
-| Mehr | Sport & Training | Kraftleistungen, Strecken und sportbezogene Einstellungen |
-| Mehr | Datenverwaltung | Garmin, Datenquellen, Import und Datenqualität |
-| Mehr | App | Darstellung, Benachrichtigungen, KI und allgemeine Einstellungen |
+| Ich | Persönliches Profil | bestehende Profilansicht |
+| Ich | Sportbezogene Daten und Einstellungen | Strecken, Ernährung, Berechnungen, Sportarten und App-Konfiguration |
+| Ich | Datenverwaltung | Garmin, Datenquellen, Import und Datenqualität |
+| Ich | KI-Coach und App | KI-Coach, Darstellung, Benachrichtigungen und allgemeine Einstellungen |
 
 ## Technische Umsetzung
 
-- Die Navigation wird zentral über `switchTab()` geroutet.
+- Die Navigation wird zentral über `switchTab()` geroutet. Bestehende Routen wie `calendar`, `training-planning` und `training-competitions` bleiben als kompatible Ziele erhalten.
 - Bestehende Inline-Aktionen werden auf die neuen Haupt- und Unterbereiche abgebildet, damit vorhandene Funktionen weiter funktionieren.
 - Die Aktivitätsliste verwendet weiterhin die bestehende Kalender-/Aktivitätsdarstellung. Im Trainingsbereich wird nur der Listenmodus angezeigt; der zuvor ausgewählte Kalenderzeitraum-Modus wird beim Verlassen wiederhergestellt.
 - Die vier Analyse-Unterseiten verwenden eine gemeinsame Zeitraumsteuerung. Detailverläufe für Recovery und Performance bleiben in ihrem jeweiligen Analysebereich.
 - Die Wochenübersicht auf Heute greift auf vorhandene absolvierte und geplante Einheiten zurück. Trainingseinheiten und Tagesfelder sind anklickbar.
-- Der Kalender verwendet die vorhandenen Tages- und Wochenrenderer. Die Jahresansicht zeigt zwölf kompakte Monatsraster; ein Tag kann in die Tagesansicht geöffnet werden.
+- Der Plan-Bereich bündelt Kalender, Trainingsplanung und Wettkämpfe. Der Kalender verwendet die vorhandenen Tages- und Wochenrenderer. Die Jahresansicht zeigt zwölf kompakte Monatsraster; ein Tag kann in die Tagesansicht geöffnet werden.
 
 ## Daten- und Darstellungsregeln
 
@@ -53,7 +53,7 @@ Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones w
 ## Qualitätssicherung und offene Abnahme
 
 Automatisiert geprüft werden:
-- genau fünf Desktop- und fünf Mobile-Hauptnavigationseinträge,
+- genau fünf Desktop- und fünf Mobile-Hauptnavigationseinträge (Heute, Plan, Training, Analyse, Ich),
 - Existenz der zwei Trainings- und vier Analyse-Unterbereiche,
 - Kalender-Modi Tag, Woche, Monat und Jahr sowie Wochenstandard,
 - JavaScript-Syntax der zentralen Module,
