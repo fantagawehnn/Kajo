@@ -12,16 +12,16 @@ export function buildCoachDecisionGuidance() {
         metricSemantics: {
             hrv: {
                 unit: 'ms',
-                meaning: 'Herzfrequenzvariabilität; in KAJO im Feld hrv gespeichert.',
-                rule: 'HRV niemals mit bpm oder Ruheherzfrequenz gleichsetzen. HRV-Werte nicht als bpm ausgeben.'
+                meaning: 'Herzfrequenzvariabilität; Garmin-Werte werden in garminHrv gespeichert. Der Coach-Kontext weist den aggregierten Wert als hrvMs aus.',
+                rule: 'HRV ausschließlich in ms ausgeben. garminHrv hat Vorrang; generisches hrv nur verwenden, wenn measurementSources.hrv die Einheit ms und eine Quelle ausdrücklich dokumentiert. HRV niemals mit bpm oder Ruheherzfrequenz gleichsetzen.'
             },
             rhr: {
                 unit: 'bpm',
-                meaning: 'Ruheherzfrequenz; in KAJO im Feld rhr gespeichert.'
+                meaning: 'Ruheherzfrequenz; im Coach-Kontext als rhrBpm in bpm ausgewiesen. Wenn garminRhr und rhr am selben Tag vorliegen, hat garminRhr Vorrang.'
             },
             garminRhr: {
                 unit: 'bpm',
-                meaning: 'Von Garmin gelieferte Ruheherzfrequenz; in KAJO im Feld garminRhr gespeichert.'
+                meaning: 'Von Garmin gelieferte Ruheherzfrequenz; in KAJO im Feld garminRhr gespeichert und im Coach-Kontext als rhrBpm in bpm ausgewiesen.'
             },
             bodyBattery: {
                 unit: 'Garmin-Punkte',
@@ -67,7 +67,7 @@ export function buildCoachDecisionGuidance() {
         responseFormat: [
             'Trenne dokumentierten Befund, Interpretation und Empfehlung.',
             'Begründe, welche Daten für und gegen Training sprechen und wie Unsicherheiten gewichtet werden.',
-            'Nenne bei HRV und Ruheherzfrequenz stets die korrekte Einheit: HRV in ms, Ruheherzfrequenz in bpm.',
+            'Nutze für aggregierte Werte ausschließlich recoveryCheckInSummary.metrics.hrvMs (ms) und recoveryCheckInSummary.metrics.rhrBpm (bpm). Nenne bei HRV stets ms und bei Ruheherzfrequenz stets bpm. Verwende HRV niemals als bpm und leite keine Einheit aus dem Zahlenwert ab.',
             'Behaupte weder eine vollständige Regeneration noch eine Trainingsunfähigkeit allein aufgrund einzelner Wearable-Werte.',
             'Formuliere beratend und lasse die Entscheidung bei der Athletin bzw. dem Athleten.'
         ]
