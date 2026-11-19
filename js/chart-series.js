@@ -61,7 +61,7 @@ export function prepareAdaptiveSeriesGroup(dates, series, options = {}) {
       pointCount,
       mode,
       chartType: mode === 'weekly' && item.coverage < threshold ? 'bar' : 'line',
-      available: item.count >= minimum && pointCount >= minimum
+      available: item.count >= minimum && pointCount >= 1
     };
   });
   const labels = mode === 'daily' ? safeDates.slice() : [...new Set(prepared.flatMap(item => item.labels))].sort();
