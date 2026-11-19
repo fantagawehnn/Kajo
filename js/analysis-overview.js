@@ -65,9 +65,11 @@ function cssColor(token, fallback) {
 function buildSeries(dates) {
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  let lastKnownLoad = null;
   const load = dates.map(date => {
     const day = timeline.get(date);
-    return day && valid(day.load) ? Number(day.load) : null;
+    if (day && valid(day.load)) lastKnownLoad = Number(day.load);
+    return lastKnownLoad;
   });
   const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
   const performance = dates.map(date => getGarminCheckinMetric(checkins[date], 'vo2max'));
