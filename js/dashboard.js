@@ -34,7 +34,21 @@ const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-st
 function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STATUS_COLORS.attention:STATUS_COLORS.critical;}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
+function renderWellbeingHeatmap(){
+ const container=document.getElementById('home-wellbeing-heatmap');if(!container)return;
+ const today=localTodayKey(),end=new Date(today+'T12:00:00'),days=[];
+ for(let offset=27;offset>=0;offset--){
+  const date=new Date(end);date.setDate(date.getDate()-offset);
+  const key=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  const value=state.dailyCheckins?.[key]?.wellbeing;
+  const valid=validNumber(value)&&Number(value)>=1&&Number(value)<=5;
+  const label=date.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'});
+  days.push('<button type="button" class="kajo-wellbeing-cell" data-value="'+(valid?Math.round(Number(value)):'missing')+'" title="'+label+' · '+(valid?'Befinden '+value+'/5':'nicht erfasst')+'" aria-label="'+label+' · '+(valid?'Befinden '+value+' von 5':'nicht erfasst')+'" onclick="openDayEditor(\''+key+'\')"></button>');
+ }
+ container.innerHTML=days.join('');
+}
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
+  renderWellbeingHeatmap();
   const r=calculateReadiness(dateKey);
   const value=document.getElementById('kpi-readiness');
   const status=document.getElementById('kpi-readiness-status');
@@ -1234,6 +1248,7 @@ function renderHistoryChart(kind, labels, values, definition, key, baselineValue
         ? 'Wochenmittel aus den tatsächlich erfassten Messungen.'
         : smoothed ? 'Linie: gleitender 7-Tage-Mittelwert · Punkte: einzelne Messungen.'
         : 'Fehlende Messungen werden ohne Ersatzwerte dezent verbunden.';
+    if (chartNote && kind === 'training') chartNote.textContent += ' Bei unbestätigter Synchronisierung werden Fitness und Ermüdung fortgeführt, nicht als Null gewertet.';
     if (kind === 'health') healthHistoryChart = instance;
     else trainingHistoryChart = instance;
 }
