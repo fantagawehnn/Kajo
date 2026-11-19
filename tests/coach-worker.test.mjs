@@ -246,5 +246,5 @@ test('Coach system rules enforce glossary, privacy exclusions and incomplete-dat
     assert.match(systemPrompt, /Bereitschaft, Fitness, Ermüdung, Form/);
     assert.match(systemPrompt, /privacy\.excludedFromCoachContext/);
     assert.match(systemPrompt, /mindestens drei tatsächlich vorhandene/);
-    assert.match(systemPrompt, /Körpergewicht und Zyklusdaten werden nicht an den KI-Coach übermittelt/);
+    assert.match(systemPrompt, /Gewicht und Zyklusdaten werden nicht an den KI-Coach übermittelt/);
 });
