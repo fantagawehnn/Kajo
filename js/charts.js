@@ -89,9 +89,11 @@ export function renderMainLoadChart(timeline, timeframe) {
     let filtered = timeline;
     if (timeframe === '7d') filtered = timeline.slice(-7);
     else if (timeframe === '28d') filtered = timeline.slice(-28);
-    else if (timeframe === '3m') filtered = timeline.slice(-90);
+    else if (timeframe === '30d') filtered = timeline.slice(-30);
+    else if (timeframe === '42d') filtered = timeline.slice(-42);
+    else if (timeframe === '3m' || timeframe === '90d') filtered = timeline.slice(-90);
     else if (timeframe === '6m') filtered = timeline.slice(-180);
-    else if (timeframe === '1y') filtered = timeline.slice(-365);
+    else if (timeframe === '1y' || timeframe === '365d') filtered = timeline.slice(-365);
     else if (timeframe === 'custom') {
         const from=document.getElementById('date-from')?.value, to=document.getElementById('date-to')?.value;
         filtered=timeline.filter(t=>t.date>=from&&t.date<=to);
