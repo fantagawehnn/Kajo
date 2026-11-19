@@ -203,9 +203,11 @@ function renderHealthAnalysis() {
             const row=document.createElement('div');
             row.className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-3';
             const label=document.createElement('strong');label.className='text-sm text-slate-200';
-            label.textContent=episode.status==='sick'?'Krankheit':'Verletzung';
+            // Bei Erkrankungen die konkret dokumentierte Diagnose links anzeigen.
+            // Fehlt eine Angabe, bleibt die allgemeine Bezeichnung als Fallback erhalten.
+            label.textContent=episode.status==='sick'?(episode.diagnosis||'Krankheit'):'Verletzung';
             const detail=document.createElement('span');detail.className='text-xs text-slate-400 text-right';
-            detail.textContent=[rangeLabel(episode),episode.days+(episode.days===1?' dokumentierter Tag':' dokumentierte Tage'),episode.diagnosis].join(' · ');
+            detail.textContent=[rangeLabel(episode),episode.days+(episode.days===1?' dokumentierter Tag':' dokumentierte Tage')].join(' · ');
             row.append(label,detail);list.appendChild(row);
         });
     }
