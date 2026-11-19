@@ -58,7 +58,7 @@ function renderLoadSourceNote(timeline) {
 }
 
 function adaptiveLoadTimeframe(timeline) {
-    const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '3m', days: 90 }, { key: '6m', days: 180 }, { key: '1y', days: 365 }];
+    const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '30d', days: 30 }, { key: '42d', days: 42 }, { key: '3m', days: 90 }, { key: '1y', days: 365 }];
     const today = new Date(); today.setHours(12,0,0,0);
     for (const candidate of candidates) {
         const start = new Date(today); start.setDate(start.getDate() - candidate.days + 1);
