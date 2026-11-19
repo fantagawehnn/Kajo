@@ -192,6 +192,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
         if (score === null) return;
         subjective.push({ key, label, value: Number(current[key]), score });
     };
+    addSubjective('wellbeing', 'Befinden', true);
     addSubjective('sleepQuality', 'Schlafqualität', true);
     addSubjective('motivation', 'Motivation', true);
     addSubjective('fatigue', 'Müdigkeit', false);
