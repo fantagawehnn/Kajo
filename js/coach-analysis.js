@@ -350,14 +350,64 @@ function summarizeVo2max(checkIns) {
     };
 }
 
+function summarizeSourceAwareMetric(records, selectValue, unit) {
+    const selected = records.map(selectValue).filter(Boolean);
+    const values = selected.map(item => item.value);
+    const sourceCounts = selected.reduce((counts, item) => {
+        counts[item.source] = (counts[item.source] || 0) + 1;
+        return counts;
+    }, {});
+    return {
+        mean: values.length
+            ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
+            : null,
+        count: values.length,
+        unit,
+        sourceCounts
+    };
+}
+
 function summarizeCheckIns(checkIns) {
-    const fields = ['hrv', 'rhr', 'garminRhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
+    const hrvMs = summarizeSourceAwareMetric(checkIns, item => {
+        // Garmin's dedicated field is authoritative when both representations exist.
+        if (validNumber(item?.garminHrv) && Number(item.garminHrv) > 0) {
+            return { value: Number(item.garminHrv), source: 'garmin' };
+        }
+        // A generic HRV value is used only when its provenance explicitly confirms ms.
+        const provenance = item?.measurementSources?.hrv;
+        if (validNumber(item?.hrv) && Number(item.hrv) > 0
+            && provenance?.unit === 'ms'
+            && typeof provenance?.source === 'string' && provenance.source.trim()) {
+            return { value: Number(item.hrv), source: provenance.source };
+        }
+        return null;
+    }, 'ms');
+
+    const rhrBpm = summarizeSourceAwareMetric(checkIns, item => {
+        // Do not count both Garmin and the duplicated generic representation for one day.
+        if (validNumber(item?.garminRhr) && Number(item.garminRhr) > 0) {
+            return { value: Number(item.garminRhr), source: 'garmin' };
+        }
+        if (validNumber(item?.rhr) && Number(item.rhr) > 0) {
+            return { value: Number(item.rhr), source: 'checkin' };
+        }
+        return null;
+    }, 'bpm');
+
+    const fields = ['sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
     const result = {};
     fields.forEach(key => { result[key] = mean(checkIns, key); });
+    result.hrvMs = hrvMs;
+    result.rhrBpm = rhrBpm;
+
     return {
         entryCount: checkIns.length,
         metrics: result,
-        note: 'Mittelwerte beziehen sich nur auf tatsächlich vorhandene numerische Einträge; sie sind keine Readiness-Bewertung.'
+        metricRules: {
+            hrvMs: 'HRV ausschließlich in Millisekunden (ms); Garmin garminHrv hat Vorrang. Generisches hrv nur bei dokumentierter measurementSources.hrv.unit = ms und vorhandener Quellenangabe.',
+            rhrBpm: 'Ruheherzfrequenz ausschließlich in Schlägen pro Minute (bpm); garminRhr hat pro Tag Vorrang vor rhr. Beide Werte eines Tages werden nie doppelt gezählt.'
+        },
+        note: 'Mittelwerte beziehen sich nur auf tatsächlich vorhandene numerische Einträge; HRV und Ruheherzfrequenz werden getrennt mit expliziten Einheiten ausgewiesen. Die Kennzahlen sind keine Readiness-Bewertung.'
     };
 }
 
