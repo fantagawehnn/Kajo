@@ -293,6 +293,7 @@ export function getUserDataSnapshot(options = {}) {
     return {
         activities, disabledIntervals: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
+        seasonPlan: state.seasonPlan || null,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
         settings: state.settings || { sports: {}, categories: {}, heartRateZones: {} }
