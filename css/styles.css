@@ -771,8 +771,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     #app-navigation #nav-today,
     #app-navigation #nav-plan,
     #app-navigation #nav-analysis,
-    #app-navigation #nav-ich,
-     {
+    #app-navigation #nav-ich {
+     
         min-height: 42px;
         padding-inline: .9rem;
     }
@@ -2518,8 +2518,8 @@ html, body { max-width:100%; overflow-x:clip; }
   #app-navigation > div > div { gap:.25rem !important; }
   #app-navigation > div > div > div:first-child img { width:6.5rem !important; max-width:6.5rem !important; }
   #app-navigation #nav-today, #app-navigation #nav-plan,
-  #app-navigation #nav-analysis, #app-navigation #nav-ich,
-   {
+  #app-navigation #nav-analysis, #app-navigation #nav-ich {
+   
     min-width:2.65rem; width:2.65rem; height:2.65rem; padding:0;
     justify-content:center; gap:0;
   }
