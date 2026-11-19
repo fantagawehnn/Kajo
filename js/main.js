@@ -2183,6 +2183,51 @@ function setCloudSyncStatus(message) {
     const indicator = document.getElementById('cloud-sync-status');
     if (indicator) indicator.textContent = message;
 }
+function showNetworkStatus(offline){
+    const banner=document.getElementById('kajo-network-status');
+    if(!banner)return;
+    banner.classList.toggle('hidden',!offline);
+    if(offline)banner.textContent='Offline: Deine Einträge werden lokal gespeichert und später synchronisiert.';
+}
+window.addEventListener('offline',()=>showNetworkStatus(true));
+window.addEventListener('online',()=>{
+    showNetworkStatus(false);
+    if(activeAppUserId&&appUserReady)scheduleCloudSync(activeAppUserId);
+});
+if(typeof navigator!=='undefined'&&!navigator.onLine)showNetworkStatus(true);
+
+async function resolveCloudSyncConflict(choice){
+    if(!cloudSyncBlocked||!activeAppUserId||!['local','cloud'].includes(choice))return;
+    const actions=document.getElementById('cloud-sync-conflict-actions');
+    actions?.querySelectorAll('button').forEach(button=>{button.disabled=true;});
+    setCloudSyncStatus('Konflikt wird geprüft …');
+    try{
+        const latest=await fetchCloudSnapshot();
+        if(latest.userId!==activeAppUserId)throw new Error('Das angemeldete Konto hat sich geändert. Der Konflikt wurde nicht aufgelöst.');
+        if(choice==='local'){
+            const result=await saveCloudSnapshot(JSON.parse(JSON.stringify(getUserDataSnapshot())),latest.version,activeAppUserId);
+            if(!result.saved)throw new Error('Die Cloud-Version wurde erneut geändert. Bitte prüfe den Konflikt noch einmal.');
+            cloudSyncVersion=result.currentVersion;
+            setCloudSyncStatus('Lokale Version übernommen und in der Cloud gespeichert (Version '+cloudSyncVersion+').');
+            setCloudTransferMessage('Die lokale Version wurde nach deiner Auswahl als maßgeblicher Stand gespeichert.');
+        }else{
+            if(!latest.data)throw new Error('Es ist kein Cloud-Datensatz zum Übernehmen vorhanden.');
+            const applied=applyCloudDataSnapshot(latest.data);
+            if(applied===false)throw new Error('Die Cloud-Version konnte nicht lokal übernommen werden.');
+            if(saveDataToLocalStorage()!==true)throw new Error('Die Cloud-Version wurde geladen, konnte aber nicht lokal gespeichert werden.');
+            cloudSyncVersion=latest.version;
+            initEngine();
+            setCloudSyncStatus('Cloud-Version übernommen (Version '+cloudSyncVersion+').');
+            setCloudTransferMessage('Die Cloud-Version wurde nach deiner Auswahl lokal übernommen.');
+        }
+        cloudSyncBlocked=false;
+        actions?.classList.add('hidden');
+    }catch(error){
+        setCloudSyncStatus('Konflikt bleibt bestehen: '+(error?.message||'Bitte erneut versuchen.'));
+        actions?.querySelectorAll('button').forEach(button=>{button.disabled=false;});
+    }
+}
+
 
 function scheduleCloudSync(userId) {
     if (!appUserReady) {
@@ -2255,6 +2300,7 @@ async function flushCloudSync() {
         if (!result.saved) {
             cloudSyncBlocked = true;
             cloudInitialTransferState = 'exists';
+            document.getElementById('cloud-sync-conflict-actions')?.classList.remove('hidden');
             setCloudSyncStatus('Synchronisationskonflikt – Cloud-Daten sind geschützt; es wurde nichts überschrieben.');
             setCloudTransferMessage('Ein anderer Speicherstand wurde zwischenzeitlich geändert. Die automatische Synchronisierung wurde angehalten, damit keine Daten überschrieben werden.');
             console.warn('Cloud-Synchronisierung wegen Versionskonflikt angehalten.', result);
@@ -3045,6 +3091,7 @@ Object.assign(window, {
     closeCloudInitialTransferConfirmation,
     performCloudInitialTransfer,
     startManualCloudSync,
+    resolveCloudSyncConflict,
     openGarminConnectionModal,
     closeGarminConnectionModal,
     connectGarmin,
