@@ -421,10 +421,20 @@ const healthCircle = (key,label,value,detail,color) =>
   '<span class="kajo-recovery-metric-label">'+performanceEscape(label)+'</span><small>'+performanceEscape(detail)+'</small></button>';
 let selectedHealthView = 'health';
 let healthRelationshipChart = null;
+function cycleTrackingEnabled() {
+  return state.profile?.gender === 'female' && state.profile?.cycleTrackingEnabled === true;
+}
 function renderHealth() {
+  const cycleEnabled = cycleTrackingEnabled();
+  if (!cycleEnabled && selectedHealthView === 'cycle') {
+    selectedHealthView = 'health';
+    if (selectedHealthMetric === 'cycle') selectedHealthMetric = null;
+  }
+  document.querySelectorAll('[data-health-view="cycle"]').forEach(button => button.classList.toggle('hidden', !cycleEnabled));
+  document.getElementById('health-cycle-relationship-panel')?.classList.toggle('hidden', !cycleEnabled);
   const range = healthRangeWindow();
   const events = healthEntries();
-  const cycles = cycleEntries();
+  const cycles = cycleEnabled ? cycleEntries() : [];
   const sick = events.filter(([,item])=>item.status==='sick').length;
   const injured = events.filter(([,item])=>item.status==='injured').length;
   const cycleDays = cycles.length;
@@ -455,6 +465,7 @@ function renderHealth() {
 }
 export function setHealthAnalysisView(view) {
   if(!['health','cycle','relationships'].includes(view))return;
+  if(view==='cycle'&&!cycleTrackingEnabled())return;
   selectedHealthView=view;
   if(view==='cycle')selectedHealthMetric='cycle';
   else if(view==='health'&&selectedHealthMetric==='cycle')selectedHealthMetric=null;
@@ -509,7 +520,11 @@ function renderHealthComparisons(range) {
 }
 function renderHealthRelationships(range) {
   renderHealthComparisons(range);
+  const cyclePanel=document.getElementById('health-cycle-relationship-panel');
+  const cycleEnabled=cycleTrackingEnabled();
+  if(cyclePanel)cyclePanel.classList.toggle('hidden',!cycleEnabled);
   const canvas=document.getElementById('health-relationship-chart'),note=document.getElementById('health-relationship-note');
+  if(!cycleEnabled){if(healthRelationshipChart){healthRelationshipChart.destroy();healthRelationshipChart=null;}return;}
   if(!canvas||typeof Chart!=='function')return;
   if(healthRelationshipChart){healthRelationshipChart.destroy();healthRelationshipChart=null;}
   const pairs=Object.entries(state.dailyCheckins||{})
