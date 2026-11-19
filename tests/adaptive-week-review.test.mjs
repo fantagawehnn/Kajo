@@ -26,6 +26,15 @@ test('matches only unique same-day same-sport activity', () => {
     assert.equal(review.upcoming[0].id, 'p4');
 });
 
+test('prefers explicit canoe discipline over a generic activity type', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [{ id: 'c1-plan', date: '2026-11-16', name: 'C1', type: 'Kayaking', discipline: 'C1' }]
+    }, [{ date: '2026-11-16', type: 'Kayaking', discipline: 'C1', name: 'C1 paddling' }], '2026-11-19');
+    assert.equal(review.matched.length, 1);
+    assert.equal(review.matched[0].planned.id, 'c1-plan');
+});
+
 test('does not guess when multiple actual activities could match', () => {
     const review = buildAdaptiveWeekReview(plan, [
         { date: '2026-11-16', type: 'Kayaking', name: 'Paddeln 1' },
