@@ -116,7 +116,7 @@ function renderTrendChart() {
   for (const key of [...selectedMetrics]) if (!metricAvailability.has(key)) selectedMetrics.delete(key);
   if (!selectedMetrics.size && metricAvailability.size) selectedMetrics.add([...metricAvailability][0]);
   const datasets = adaptive.series.filter(item => item.available).map(item => {
-    const display = item.mode === 'daily' && item.chartType === 'line'
+    const display = item.chartType === 'line'
       ? carryForwardForDisplay(item.values) : { values: item.values, carried: item.values.map(() => false) };
     const indexed = toRelativeIndex(display.values);
     const rawBaseline = item.values.find(valid);
