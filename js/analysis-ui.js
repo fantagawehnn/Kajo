@@ -463,7 +463,7 @@ function healthMedian(values) {
   return sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;
 }
 function healthComparisonTable(title,rows,unitLabel) {
-  const body=rows.map(row=>'<tr><td>'+performanceEscape(row.label)+'</td><td class="text-right">'+(row.eventMedian==null?'—':performanceEscape(fmt(row.eventMedian,1)+' '+unitLabel))+'<small class="block text-slate-500">n = '+row.eventCount+'</small></td><td class="text-right">'+(row.otherMedian==null?'—':performanceEscape(fmt(row.otherMedian,1)+' '+unitLabel))+'<small class="block text-slate-500">n = '+row.otherCount+'</small></td></tr>').join('');
+  const body=rows.map(row=>'<tr><td>'+performanceEscape(row.label)+'</td><td class="text-right">'+(row.eventMedian==null?'—':performanceEscape(fmt(row.eventMedian,1)+' '+(row.unit||unitLabel)))+'<small class="block text-slate-500">n = '+row.eventCount+'</small></td><td class="text-right">'+(row.otherMedian==null?'—':performanceEscape(fmt(row.otherMedian,1)+' '+(row.unit||unitLabel)))+'<small class="block text-slate-500">n = '+row.otherCount+'</small></td></tr>').join('');
   return '<h3 class="text-sm font-semibold text-slate-200 mb-2">'+title+'</h3><table class="w-full text-xs"><thead><tr><th class="text-left">Kennzahl</th><th class="text-right">Krankheit / Verletzung</th><th class="text-right">Kein Eintrag</th></tr></thead><tbody>'+body+'</tbody></table>';
 }
 function renderHealthComparisons(range) {
