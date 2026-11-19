@@ -33,7 +33,7 @@
 
 ## Phase 4 – Erweiterte Module
 - [ ] Saisonanalyse
-- [ ] Trainingsplanung
+- [x] Saisonplan-Datenmodell mit Hybridmodus, Saisonhorizont, Phasenvalidierung, benutzerbezogener Speicherung, Backup-Kompatibilität und Coach-Kontext; Editor, Periodisierungsgenerierung und konkrete Wochen-/Einheitenplanung bleiben offen
 - [ ] Wettkämpfe
 - [ ] Krafttraining
 - [x] Profil und Einstellungen unter Mehr gruppiert
