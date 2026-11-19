@@ -478,15 +478,16 @@ function renderHealthComparisons(range) {
   const timeline=(state.dailyTimeline||[]).filter(day=>day?.date>=range.from&&day?.date<=range.to
     &&['complete','confirmed-rest'].includes(day.dataStatus)
     &&day.load!==null&&day.load!==undefined&&Number.isFinite(Number(day.load)));
+  const hasLoadProvenance=timeline.every(day=>String(day.loadMode||'').trim()&&String(day.loadUnit||'').trim());
   const modes=[...new Set(timeline.map(day=>String(day.loadMode||'')+'|'+String(day.loadUnit||'')))];
   const loadRows=[];
-  if(modes.length===1&&timeline.length){
+  if(modes.length===1&&timeline.length&&hasLoadProvenance){
     const values=timeline.map(day=>({value:Number(day.load),event:['sick','injured'].includes(String(logs[day.date]?.status||''))}));
     const event=values.filter(x=>x.event).map(x=>x.value),other=values.filter(x=>!x.event).map(x=>x.value);
     loadRows.push({label:'Tägliche Trainingsbelastung',eventMedian:healthMedian(event),eventCount:event.length,otherMedian:healthMedian(other),otherCount:other.length});
-    if(loadRoot)loadRoot.innerHTML=healthComparisonTable('Trainingsbelastung · '+(timeline[0].loadMode==='srpe'?'sRPE-Load':timeline[0].loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Garmin-Load'),loadRows,timeline[0].loadUnit||'');
+    if(loadRoot)loadRoot.innerHTML=healthComparisonTable('Trainingsbelastung · '+(timeline[0].loadMode==='srpe'?'sRPE-Load':timeline[0].loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':timeline[0].loadMode==='garmin-native'?'Garmin Training Load':String(timeline[0].loadMode)),loadRows,timeline[0].loadUnit);
   }else if(loadRoot){
-    loadRoot.innerHTML='<p class="kajo-health-note">'+(modes.length>1?'Die Load-Modelle oder Einheiten wechseln im gewählten Zeitraum. Deshalb wird kein gemeinsamer Median berechnet.':'Es liegen keine vollständigen Tages-Load-Werte im gewählten Zeitraum vor.')+'</p>';
+    loadRoot.innerHTML='<p class="kajo-health-note">'+(modes.length>1?'Die Load-Modelle oder Einheiten wechseln im gewählten Zeitraum. Deshalb wird kein gemeinsamer Median berechnet.':timeline.length&&!hasLoadProvenance?'Für einige Tageswerte fehlen Modell- oder Einheitenangaben. Deshalb wird kein gemeinsamer Median berechnet.':'Es liegen keine vollständigen Tages-Load-Werte im gewählten Zeitraum vor.')+'</p>';
   }
   const definitions=[
     ['HRV','hrv','ms'],['Ruheherzfrequenz','rhr','bpm'],['Schlafscore','sleepScore','Punkte'],['Atemfrequenz','respiration','/ min']
