@@ -517,7 +517,7 @@ function renderHealthTrend(key) {
     type,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:datasets.length>1,labels:{color:'#94a3b8',usePointStyle:true,boxWidth:8}},
-        tooltip:{callbacks:{label:item=>item.dataset.label==='Periode dokumentiert'?'Periode dokumentiert':item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 10':' dokumentiert'))}}},
+        tooltip:{callbacks:{label:item=>item.dataset.label==='Periodentag'?'Periodentag dokumentiert':item.dataset.label+': '+(item.parsed.y==null?'—':item.parsed.y+(key==='cycle'?' / 10':' dokumentiert'))}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:9}},
         y:{beginAtZero:true,max,ticks:{color:'#94a3b8',stepSize:key==='cycle'?2:1},
           grid:{color:'rgba(148,163,184,.12)'}}}}
