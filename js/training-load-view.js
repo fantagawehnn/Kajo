@@ -161,7 +161,16 @@ function renderEstimatedLoadQueue(){
   const reason=document.createElement('span');reason.className='block text-[11px] text-slate-500';
   const hasHr=Boolean(getGarminHeartRateSeries(activity));
   reason.textContent=hasHr?'HF-Daten vorhanden, aber kein berechenbarer HF-Zonenload.':'Keine auswertbare Herzfrequenz-Zeitreihe vorhanden.';
-  info.append(title,reason);
+  const durationLine=document.createElement('span');durationLine.className='mt-1 block text-[11px] text-slate-400';
+  const durationMinutes=Number(activity.duration);
+  if(activity.duration!==null&&activity.duration!==undefined&&activity.duration!==''&&Number.isFinite(durationMinutes)&&durationMinutes>0){
+   const totalMinutes=Math.round(durationMinutes),hours=Math.floor(totalMinutes/60),minutes=totalMinutes%60;
+   durationLine.textContent='Dauer · '+(hours?hours+' h ':'')+minutes+' min';
+  }else{
+   durationLine.textContent='Dauer nicht erfasst';
+   durationLine.classList.add('italic');
+  }
+  info.append(title,reason,durationLine);
   const affordance=document.createElement('span');affordance.className='text-xs text-sky-300';affordance.textContent='Load eintragen  ›';
   open.append(info,affordance);
   const editor=document.createElement('div');editor.className='hidden rounded-lg bg-slate-900/70 p-3';
