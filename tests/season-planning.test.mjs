@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
     normalizeSeasonPlan,
     validateSeasonPlan,
-    buildSeasonPlanningContext
+    buildSeasonPlanningContext,
+    normalizeWeeklyPlan,
+    validateWeeklyPlan
 } from '../js/season-planning.js';
 import { buildCoachRequestContext } from '../js/coach-data-context.js';
 
@@ -95,4 +97,51 @@ test('Coach receives season plan and competition context; no plan is explicitly 
     const emptyContext = buildCoachRequestContext({}, 'Wie sieht meine Saisonplanung aus?');
     assert.equal(emptyContext.seasonPlanning.available, false);
     assert.equal(emptyContext.seasonPlanning.planningMode, 'hybrid');
+});
+
+const approvedSeason = {
+    ...validPlan,
+    status: 'active',
+    athleteApprovedAt: '2026-11-19T10:00:00.000Z',
+    phases: [{
+        id: 'base', name: 'Grundlagen', type: 'preparation',
+        startDate: '2027-01-04', endDate: '2027-03-28',
+        objective: 'Grundlagen entwickeln', focus: ['Ausdauer']
+    }]
+};
+const validWeek = {
+    id: 'week-2027-01-04',
+    weekStartDate: '2027-01-04',
+    weekEndDate: '2027-01-10',
+    phaseId: 'base',
+    status: 'draft',
+    objective: 'Aerobe Grundlage und technische Stabilität',
+    focus: ['Grundlagenausdauer', 'Technik'],
+    sessions: [{
+        id: 'session-1', date: '2027-01-04', name: 'K1 Grundlagen',
+        type: 'Kayaking', category: 'GA', durationMinutes: 75,
+        discipline: 'K1', objective: 'Ruhige, gleichmäßige Belastung'
+    }]
+};
+
+test('normalizes and validates a weekly draft only inside an approved season phase', () => {
+    const normalized = normalizeWeeklyPlan(validWeek);
+    assert.equal(normalized.sessions[0].durationMinutes, 75);
+    assert.equal(validateWeeklyPlan(validWeek, approvedSeason).valid, true);
+    assert.equal(validateWeeklyPlan(validWeek, validPlan).valid, false);
+});
+
+test('rejects weekly plans with invalid week boundaries, phase placement or session dates', () => {
+    const invalid = structuredClone(validWeek);
+    invalid.weekEndDate = '2027-01-09';
+    invalid.sessions[0].date = '2027-01-11';
+    const result = validateWeeklyPlan(invalid, approvedSeason);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(error => error.includes('sieben Kalendertage')));
+    assert.ok(result.errors.some(error => error.includes('außerhalb der geplanten Woche')));
+});
+
+test('weekly plan normalization remains backward compatible with older season records', () => {
+    const plan = normalizeSeasonPlan(validPlan);
+    assert.deepEqual(plan.weeklyPlans, []);
 });
