@@ -40,9 +40,6 @@ export const state = {
     // --- Ansichts-Zustand ---
     selectedDashboardDate: null,
     activeTimeframe: '3m',
-    activeTimeframeExplicit: false,
-    metricHistoryRange: null,
-    metricHistoryRangeExplicit: false,
     activeCalendarFormat: 'week',
     selectedCalendarDay: null,
     calendarDisplayMode: null,
