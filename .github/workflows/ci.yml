@@ -8,6 +8,7 @@ on:
       - feat/garmin-data-quality-v2
       - feature/coach-v2-integration
       - garmin-full-export-import
+      - redesign-v3
   pull_request:
     branches:
       - v2
@@ -64,6 +65,7 @@ jobs:
           node --check js/performance-data-quality.js
           node --check js/health-data.js
           node --check js/analysis-ui.js
+          node --check js/weight-view.js
           node --check js/training-load-view.js
           node --check js/analysis-overview.js
           node --check js/period-summary.js
@@ -109,6 +111,9 @@ jobs:
 
       - name: Run readiness and training recommendation tests
         run: node --experimental-default-type=module --test tests/readiness.test.mjs
+
+      - name: Run weight trend tests
+        run: node --experimental-default-type=module --test tests/weight-view.test.mjs
 
       - name: Run period summary tests
         run: node --experimental-default-type=module --test tests/period-summary.test.mjs
