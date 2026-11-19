@@ -1354,6 +1354,22 @@ export function renderMetricHistory(kind) {
         return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
     });
     renderHistoryChart(kind, canvasLabels, chartDates ? chartDates.values : values, definition, key, baselineValues, { weekly: weeklyFallback });
+    if (chartNote && values.filter(validNumber).length >= 3) {
+        const basisButton = document.createElement('button');
+        basisButton.type = 'button';
+        basisButton.className = 'kajo-chart-data-basis';
+        basisButton.textContent = 'Datenbasis anzeigen';
+        basisButton.setAttribute('aria-expanded', 'false');
+        const basisText = document.createElement('span');
+        basisText.hidden = true;
+        basisText.textContent = 'Zeitraum: ' + window.from + ' bis ' + window.to + ' · ' + values.filter(validNumber).length + ' Messwerte';
+        basisButton.addEventListener('click', () => {
+            basisText.hidden = !basisText.hidden;
+            basisButton.setAttribute('aria-expanded', String(!basisText.hidden));
+            basisButton.textContent = basisText.hidden ? 'Datenbasis anzeigen' : 'Datenbasis ausblenden';
+        });
+        chartNote.append(' ', basisButton, ' ', basisText);
+    }
     renderHistoryRangeControls(kind);
     const tabsId = kind === 'health' ? 'health-metric-tabs' : 'training-metric-tabs';
     document.querySelectorAll('#' + tabsId + ' [data-history-metric]').forEach(button => {
