@@ -136,6 +136,18 @@ export async function requestAdaptiveWeekAdjustment(weekStartDate, review) {
                 sessionId: item.session?.id || null, date: item.session?.date || null,
                 name: item.session?.name || null, reason: item.reason
             })),
+            manuallyCompletedWithoutImport: (review.completedWithoutActivity || []).map(item => ({
+                sessionId: item.session?.id || null, date: item.session?.date || null,
+                name: item.session?.name || null, status: 'completed_unrecorded'
+            })),
+            manuallyMarkedMissed: (review.missed || []).map(item => ({
+                sessionId: item.session?.id || null, date: item.session?.date || null,
+                name: item.session?.name || null, status: 'missed'
+            })),
+            manualStatusCounts: {
+                completedWithoutActivity: review.coverage?.completedWithoutActivityCount || 0,
+                missed: review.coverage?.missedCount || 0
+            },
             unplannedActivities: (review.unplannedActivities || []).map(item => ({
                 date: item.activity?.date || null, name: item.activity?.name || null,
                 type: item.activity?.type || null, duration: item.activity?.duration || null,
