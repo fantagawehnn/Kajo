@@ -138,7 +138,7 @@ function bindCheckinDraftControls(dateStr){
  const modal=document.getElementById('day-detail-modal');if(!modal)return;
  modal.querySelectorAll('input,textarea').forEach(el=>{
   if(el.dataset.draftBound==='true')return;
-  ['input','change'].forEach(eventName=>el.addEventListener(eventName,()=>persistCheckinDraft(dateStr)));
+  ['input','change'].forEach(eventName=>el.addEventListener(eventName,()=>persistCheckinDraft(document.getElementById('day-edit-date')?.value||dateStr)));
   el.dataset.draftBound='true';
  });
  const group=document.getElementById('day-wellbeing-options');
