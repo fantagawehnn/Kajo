@@ -1,6 +1,6 @@
 # KAJO Season Planning Model
 
-**Status:** Season foundation, editor, reviewed AI periodization proposal, validated weekly-plan model and reviewed Coach-generated weekly proposals with explicit athlete approval are implemented. Adaptive week-to-week updates remain open; approved weekly plans can now be explicitly transferred to the training calendar.
+**Status:** Season foundation, editor, reviewed AI periodization and weekly proposals, calendar transfer, adaptive review and approved adaptive adjustment proposals are implemented. Manual activity matching is also supported.
 
 ## Purpose
 
@@ -72,3 +72,8 @@ The current workflow is a reviewed weekly-plan draft/approval flow. It does not 
 ## Transfer to the training calendar
 
 An approved weekly plan can be explicitly transferred to the existing planned-activities collection. The transfer maps recognized sports and canoe disciplines to the calendar's existing activity types, carries the session duration and structured workout content into the description, and leaves target training load unset rather than inventing a value. Each transferred entry stores the source weekly-plan and session IDs, making repeated transfers idempotent. Exact same-date, same-name and same-sport entries are skipped; unsupported or ambiguous sports are reported as skipped rather than guessed. Existing calendar entries are not overwritten. The transfer refreshes the calendar and planned-workout views.
+
+
+## Manual activity matching in the weekly review
+
+The weekly review supports explicit manual links between a planned session and one imported activity. Links are stored in the corresponding user-scoped weekly-plan record as stable session/activity IDs. A link is accepted only when both records exist, the activity falls on the planned session's calendar date, and the activity is not already linked to another session. Manual links take precedence over automatic matching and remove the activity from the unplanned-activity list. Clearing the selection removes the link. This metadata does not alter the approved workout itself; the review and Coach adjustment proposal use the updated matching result.
