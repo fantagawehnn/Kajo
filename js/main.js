@@ -11,7 +11,7 @@
 
 import { state, setRefreshHandler } from './state.js';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar } from './season-plan-editor.js?v=4';
-import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
+import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=5';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
@@ -26,7 +26,7 @@ import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './dat
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=6';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { groupHealthEpisodes } from './period-summary.js?v=2';
-import { renderAnalysisPageUI } from './analysis-ui.js?v=13';
+import { renderAnalysisPageUI } from './analysis-ui.js?v=14';
 import { renderWeightView, saveWeightTarget } from './weight-view.js?v=1';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=10';
@@ -34,7 +34,7 @@ import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDa
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, selectDayWellbeing, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=50';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=12';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=22';
-import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=80';
+import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=81';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=3';
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=3';
@@ -2000,12 +2000,7 @@ function hideSettingsModal() {
 }
 function updateProfileCycleVisibility() {
     const gender = document.getElementById('profile-gender')?.value;
-    const section = document.getElementById('profile-cycle-settings');
-    if (section) section.classList.toggle('hidden', gender !== 'female');
-    if (gender !== 'female') {
-        const toggle = document.getElementById('profile-cycle-tracking');
-        if (toggle) toggle.checked = false;
-    }
+    // Zyklusfunktionen werden automatisch anhand der Geschlechtsangabe freigeschaltet.
 }
 function loadProfileForm() {
     const p = state.profile || {};
@@ -2021,8 +2016,6 @@ function loadProfileForm() {
         const el = document.getElementById(id);
         if (el) el.value = p[key] ?? '';
     });
-    const cycleToggle = document.getElementById('profile-cycle-tracking');
-    if (cycleToggle) cycleToggle.checked = p.cycleTrackingEnabled === true;
     updateProfileCycleVisibility();
     const message = document.getElementById('profile-message');
     if (message) message.textContent = '';
@@ -2042,7 +2035,6 @@ async function saveUserProfile() {
     }
     const profile = {
         name: read('profile-name'), birthDate, gender,
-        cycleTrackingEnabled: gender === 'female' && document.getElementById('profile-cycle-tracking')?.checked === true,
         heightCm: numberOrNull('profile-height'), weightKg: numberOrNull('profile-weight'),
         sport: read('profile-sport'), discipline: read('profile-discipline'),
         level: read('profile-level'), maxHr: numberOrNull('profile-max-hr'),
