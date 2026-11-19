@@ -48,6 +48,7 @@ test('carry-forward is display-only and exposes a mask for missing spans', () =>
   assert.deepEqual(result.values, [10, 10, 10, 14, 14]);
   assert.deepEqual(result.carried, [false, true, true, false, true]);
   assert.deepEqual(source, [10, null, null, 14, null]);
+  assert.deepEqual(carryForwardForDisplay([0, null, 2]).values, [0, 0, 2], 'a confirmed zero remains a measured value, not a missing value');
 });
 
 test('counts only finite, explicitly present values', () => {
