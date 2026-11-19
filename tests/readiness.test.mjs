@@ -21,7 +21,8 @@ function makeState(overrides = {}) {
         dailyCheckins: { ...history, ...(overrides.dailyCheckins || {}) },
         healthLogs: overrides.healthLogs || {},
         dailyTimeline: overrides.dailyTimeline || [],
-        plannedActivities: overrides.plannedActivities || []
+        plannedActivities: overrides.plannedActivities || [],
+        profile: overrides.profile || {}
     };
 }
 
@@ -152,6 +153,14 @@ test('missing subjective check-in values remain missing, not negative', () => {
     assert.equal(result.domainCount, 2);
 });
 
+test('cycle context is omitted unless female cycle tracking is enabled', () => {
+    const source = makeState({
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, cycle: { trainingImpact: 5 } } }
+    });
+    const result = calculateReadiness(day, source);
+    assert.equal(result.subjective.some(item => item.key === 'cycleTrainingImpact'), false);
+});
+
 test('training load and ACWR are kept outside the readiness composite', () => {
     const lowLoad = makeState({
         dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 3 } },
@@ -170,6 +179,7 @@ test('subjective self-monitoring is context and does not change the readiness sc
         dailyCheckins: { [day]: { ...objective, sleepQuality: 1, motivation: 1, fatigue: 5, soreness: 5, stress: 5 } }
     });
     const highSubjective = makeState({
+        profile: { gender: 'female', cycleTrackingEnabled: true },
         dailyCheckins: { [day]: { ...objective, sleepQuality: 5, motivation: 5, fatigue: 1, soreness: 1, stress: 1,
             cycle: { trainingImpact: 5 } } }
     });
