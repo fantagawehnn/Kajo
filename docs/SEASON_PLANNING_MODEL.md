@@ -1,6 +1,6 @@
 # KAJO Season Planning Model
 
-**Status:** Foundation implemented; editor and periodization generation are subsequent steps.
+**Status:** Foundation, editor and reviewed AI periodization proposal are implemented; weekly planning and workout generation remain open.
 
 ## Purpose
 
@@ -40,3 +40,12 @@ The record is stored as the user-scoped `seasonPlan` collection, included in use
 ## Implemented boundary
 
 The current implementation provides normalization, validation, storage, backup compatibility and Coach-context integration. It does not yet provide a season-plan editor, auto-generated phase dates, weekly periodization, or individual workout generation. Those are intentionally separate follow-on steps.
+
+
+## Periodization proposal workflow
+
+The season editor can request a structured proposal from the authenticated Coach endpoint. The request uses the saved season dates and goal together with the existing athlete profile, training context and dated competition records. The Coach returns a proposal with phase boundaries, objectives, focus areas, rationale and open questions.
+
+The Worker validates phase dates, rejects overlaps and requires continuous coverage of the full season. Generated weekly hours, training days and session counts are not accepted; these remain unset until explicitly planned. A proposal is shown for review and is not persisted as the active phase structure until the athlete explicitly adopts it into the draft. The athlete must then save or approve the plan separately.
+
+The proposal does not generate weekly microcycles or individual sessions. It is not a substitute for confirming competition priorities, training availability or medical constraints.
