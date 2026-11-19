@@ -304,7 +304,7 @@ VERBINDLICHE REGELN:
     if (!season?.athleteApprovedAt || payload?.context?.seasonPlanning?.status !== "active"
       || !plan?.id || plan.status !== "approved" || !plan.athleteApprovedAt
       || !target?.weekStartDate || !target?.weekEndDate
-      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(currentDate || ""))) {
+      || !/^\d{4}-\\d{2}-\\d{2}$/.test(String(currentDate || ""))) {
       return json({ error: "Für adaptive Anpassungen wird ein freigegebener Saison- und Wochenplan benötigt." }, 400);
     }
     const openQuestions = Array.isArray(proposal?.openQuestions)
@@ -365,7 +365,7 @@ VERBINDLICHE REGELN:
         cooldown: typeof update.cooldown === "string" ? update.cooldown.slice(0, 1000) : original.cooldown,
         notes: typeof update.notes === "string" ? update.notes.slice(0, 1000) : original.notes
       };
-      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || date <= currentDate || date < target.weekStartDate || date > target.weekEndDate) errors.push("Eine Anpassung liegt nicht an einem zukünftigen Tag innerhalb der Woche.");
+      if (!/^\d{4}-\\d{2}-\\d{2}$/.test(date) || date <= currentDate || date < target.weekStartDate || date > target.weekEndDate) errors.push("Eine Anpassung liegt nicht an einem zukünftigen Tag innerhalb der Woche.");
       if (!updatedSession.name || !updatedSession.type) errors.push("Name und Trainingsart müssen erhalten bleiben.");
       if (duration !== null && (!Number.isFinite(duration) || duration <= 0)) errors.push("Eine vorgeschlagene Dauer ist ungültig.");
       if (/^(c1|canadian)$/i.test(updatedSession.discipline) && duration !== null && duration > 75) errors.push("Eine C1-Einheit überschreitet 75 Minuten.");
