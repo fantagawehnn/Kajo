@@ -32,7 +32,7 @@ test('switches to weekly averages when coverage is below 70 percent', () => {
   assert.equal(result.series[0].chartType, 'line');
   assert.equal(result.series[1].chartType, 'bar');
   assert.deepEqual(result.series[1].values, [50.5, 52.5]);
-  assert.equal(result.series[1].available, false);
+  assert.equal(result.series[1].available, true, 'four measurements remain visible as two weekly averages');
 });
 
 test('hides a metric with fewer than three measurements', () => {
