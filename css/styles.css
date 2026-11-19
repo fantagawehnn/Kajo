@@ -9178,7 +9178,7 @@ body.kajo-modal-open { overflow: hidden !important; }
 
 
 /* Missing wellbeing days stay neutral; recorded cells use the five-level status palette. */
-.kajo-wellbeing-heatmap{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.42rem}
+.kajo-wellbeing-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.42rem;margin-bottom:.35rem;color:var(--kajo-muted,#9CA3AF);font-size:.62rem;text-align:center}.kajo-wellbeing-heatmap{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.42rem}
 .kajo-wellbeing-cell{aspect-ratio:1;border-radius:7px;border:1px solid rgb(255 255 255 / .08);background:#475569;min-width:0;transition:transform .12s ease,filter .12s ease}
 .kajo-wellbeing-cell:hover{transform:scale(1.06);filter:brightness(1.12)}
 .kajo-wellbeing-cell[data-value="1"]{background:#F43F5E}.kajo-wellbeing-cell[data-value="2"]{background:#F97316}.kajo-wellbeing-cell[data-value="3"]{background:#EAB308}.kajo-wellbeing-cell[data-value="4"]{background:#14B8A6}.kajo-wellbeing-cell[data-value="5"]{background:#22C55E}.kajo-wellbeing-cell[data-value="missing"]{background:#475569;border:1px dashed #94A3B8}
