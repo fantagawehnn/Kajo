@@ -20,7 +20,16 @@ const setText=(id,value)=>{const node=document.getElementById(id);if(node)node.t
 const setVisible=(id,visible)=>document.getElementById(id)?.classList.toggle('hidden',!visible);
 function destroyChart(key){if(charts[key]){charts[key].destroy();delete charts[key];}}
 function carryForwardSeries(rows,key){let last=null;return rows.map(row=>{if(valid(row?.[key]))last=Number(row[key]);return last;});}
-function chartBase(id,key,config){const canvas=document.getElementById(id);if(!canvas||typeof Chart!=='function')return;destroyChart(key);charts[key]=new Chart(canvas.getContext('2d'),config);}
+function chartBase(id,key,config){
+  const canvas=document.getElementById(id);if(!canvas||typeof Chart!=='function')return;
+  destroyChart(key);
+  if(config.type==='line'){
+   const enough=(config.data?.datasets||[]).some(dataset=>(dataset.data||[]).filter(valid).length>=3);
+   if(!enough){canvas.parentElement?.classList.add('hidden');charts[key]=null;return;}
+  }
+  canvas.parentElement?.classList.remove('hidden');
+  charts[key]=new Chart(canvas.getContext('2d'),config);
+}
 function todayKey(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function getRange(){
  if(state.activeTimeframe==='custom'){const from=document.getElementById('date-from')?.value,to=document.getElementById('date-to')?.value;if(from&&to&&from<=to)return{from,to};}
