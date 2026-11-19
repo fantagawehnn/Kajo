@@ -508,6 +508,7 @@
   <div id="custom-date-box" class="hidden kajo-load-custom-range">
    <label>Von <input type="date" id="date-from"></label><label>Bis <input type="date" id="date-to"></label>
    <button type="button" onclick="applyCustomDateRange()">Anwenden</button>
+   <p id="custom-date-feedback" class="w-full text-xs text-slate-400" aria-live="polite"></p>
   </div>
   <section class="kajo-training-load-panel" aria-labelledby="training-load-status-title">
    <div class="kajo-training-load-heading"><div><p class="kajo-analysis-eyebrow">AKTUELLER STATUS</p><h3 id="training-load-status-title">Belastungsmodell</h3></div><span id="training-load-status-date" class="kajo-training-load-muted"></span></div>
@@ -664,7 +665,23 @@
     <p id="health-trend-note" class="kajo-health-note"></p>
   </section>
   <section id="analysis-health-events-panel" class="kajo-panel">
-    <div class="kajo-panel-heading"><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div>
+    <div class="kajo-panel-heading flex-wrap gap-3">
+      <div><h2>Gesundheitsereignisse</h2><span id="health-event-count" class="text-xs text-slate-500">—</span></div>
+      <nav class="kajo-health-range" aria-label="Zeitraum für Gesundheitszusammenfassung">
+        <button type="button" data-health-range="7d" onclick="setHealthRange('7d')">7 T</button>
+        <button type="button" data-health-range="28d" onclick="setHealthRange('28d')">28 T</button>
+        <button type="button" data-health-range="3m" onclick="setHealthRange('3m')">3 M</button>
+        <button type="button" data-health-range="6m" onclick="setHealthRange('6m')">6 M</button>
+        <button type="button" data-health-range="1y" onclick="setHealthRange('1y')">1 J</button>
+        <button type="button" data-health-range="custom" onclick="setHealthRange('custom')">Individuell</button>
+      </nav>
+    </div>
+    <div id="health-summary-custom-range" class="hidden kajo-load-custom-range">
+      <label>Von <input type="date" id="health-summary-from"></label>
+      <label>Bis <input type="date" id="health-summary-to"></label>
+      <button type="button" onclick="applyHealthCustomRange()">Anwenden</button>
+    </div>
+    <div id="health-event-summary" class="kajo-insight-grid mb-3"></div>
     <div id="health-event-list" class="space-y-2"></div>
   </section>
 </div>
@@ -1703,7 +1720,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=152"></script>
+    <script type="module" src="js/main.js?v=153"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
