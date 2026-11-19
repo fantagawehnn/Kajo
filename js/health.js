@@ -45,7 +45,7 @@ export function loadCheckinInputs() {
     toggleCheckinOptionalFields();
     const cycleSection = document.getElementById('cycle-checkin-section');
     const periodToggle = document.getElementById('period-checkin-toggle');
-    const cycleEnabled = state.profile?.gender === 'female' && state.profile?.cycleTrackingEnabled === true;
+    const cycleEnabled = state.profile?.gender === 'female';
     if (cycleSection) {
         cycleSection.classList.toggle('hidden', !cycleEnabled);
         cycleSection.style.display = cycleEnabled ? 'block' : 'none';
@@ -332,7 +332,7 @@ export function saveCheckin() {
 // Eigenständige Periodenverwaltung in der Gesundheitsdaten-Ansicht.
 let editingPeriodRange = null;
 function cycleTrackingEnabled() {
-    return state.profile?.gender === 'female' && state.profile?.cycleTrackingEnabled === true;
+    return state.profile?.gender === 'female';
 }
 function getManagedPeriodRanges() {
     if (!cycleTrackingEnabled()) return [];
