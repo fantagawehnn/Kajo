@@ -977,7 +977,7 @@ function historyRangeDates(from, to) {
     return dates;
 }
 function historyRecommendation(key, value, dateKey) {
-    if (value === null) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
+    if (value === null && key !== 'weight') return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
