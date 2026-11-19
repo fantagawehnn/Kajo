@@ -140,3 +140,73 @@ test('coach context flags a health event that overlaps a competition date withou
     assert.equal(context.dataIntegrity.healthCompetitionOverlaps[0].healthDiagnosis, 'Lungenentzündung');
     assert.match(context.dataIntegrity.healthCompetitionOverlaps[0].interpretation, /Teilnahme/);
 });
+
+
+test('Coach context preserves Garmin HRV and its measurement provenance', () => {
+    const context = buildCoachRequestContext({
+        dailyCheckins: {
+            [offsetDate(-1)]: {
+                hrv: 72,
+                garminHrv: 72,
+                rhr: 49,
+                garminRhr: 49,
+                measurementSources: {
+                    hrv: { source: 'garmin', metric: 'overnight_avg', unit: 'ms' }
+                }
+            }
+        }
+    }, 'Analysiere meine Regeneration und HRV');
+
+    const checkin = context.recovery.dailyCheckIns[0];
+    assert.equal(checkin.garminHrv, 72);
+    assert.equal(checkin.measurementSources.hrv.unit, 'ms');
+    assert.equal(checkin.garminRhr, 49);
+});
+
+test('Coach recovery summary separates HRV ms from resting heart rate bpm without double counting', () => {
+    const summary = buildCoachAnalysisSummary({
+        checkIns: [
+            {
+                date: '2026-11-17',
+                hrv: 72,
+                garminHrv: 72,
+                rhr: 49,
+                garminRhr: 49,
+                measurementSources: {
+                    hrv: { source: 'intervals', metric: 'rmssd', unit: 'ms' }
+                }
+            },
+            {
+                date: '2026-11-18',
+                hrv: 66,
+                rhr: 54,
+                measurementSources: {
+                    hrv: { source: 'intervals', metric: 'rmssd', unit: 'ms' }
+                }
+            },
+            {
+                date: '2026-11-19',
+                hrv: 60,
+                rhr: 52
+            }
+        ]
+    });
+    const metrics = summary.recoveryCheckInSummary.metrics;
+
+    assert.deepEqual(metrics.hrvMs, {
+        mean: 69,
+        count: 2,
+        unit: 'ms',
+        sourceCounts: { garmin: 1, intervals: 1 }
+    });
+    assert.deepEqual(metrics.rhrBpm, {
+        mean: 51.5,
+        count: 2,
+        unit: 'bpm',
+        sourceCounts: { garmin: 1, checkin: 1 }
+    });
+    assert.equal(metrics.hrv, undefined);
+    assert.equal(metrics.rhr, undefined);
+    assert.match(summary.recoveryCheckInSummary.metricRules.hrvMs, /ms/);
+    assert.match(summary.recoveryCheckInSummary.metricRules.rhrBpm, /bpm/);
+});
