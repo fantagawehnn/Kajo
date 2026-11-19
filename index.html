@@ -19,7 +19,7 @@
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=155">
+    <link rel="stylesheet" href="css/styles.css?v=156">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -806,7 +806,7 @@
             <section class="space-y-1">
               <label for="day-weight" class="block text-sm font-semibold text-white">Körpergewicht</label>
               <div class="flex items-center gap-2"><input id="day-weight" type="number" min="20" max="300" step="0.1" placeholder="z. B. 65,0" class="w-full min-w-0 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"><span class="text-sm text-slate-400">kg</span></div>
-              <p class="text-[11px] text-slate-500">Der letzte Wert wird als Orientierung übernommen. Er wird erst als neue Messung gespeichert, wenn du ihn bestätigst oder änderst.</p>
+              <p class="text-[11px] text-slate-500">Der letzte Wert dient nur als Orientierung und wird nicht automatisch als neue Messung übernommen.</p>
             </section>
             <details id="day-checkin-details" class="kajo-checkin-details">
               <summary>Weitere Angaben</summary>
@@ -1864,7 +1864,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=2"></script>
-    <script type="module" src="js/main.js?v=159"></script>
+    <script type="module" src="js/main.js?v=160"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
