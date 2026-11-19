@@ -43,7 +43,7 @@ function currentRange() {
     const toInput = document.getElementById('date-to')?.value;
     if (fromInput && toInput && fromInput <= toInput) return { from: fromInput, to: toInput };
   }
-  const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '3m', days: 90 }, { key: '6m', days: 180 }, { key: '1y', days: 365 }];
+  const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '30d', days: 30 }, { key: '42d', days: 42 }, { key: '3m', days: 90 }, { key: '1y', days: 365 }];
   if (!state.activeTimeframeExplicit) {
     for (const candidate of candidates) {
       const fromDate = new Date(to + 'T12:00:00');
