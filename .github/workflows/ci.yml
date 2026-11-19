@@ -61,6 +61,7 @@ jobs:
           node --check js/dashboard.js
           node --check js/readiness.js
           node --check js/charts.js
+          node --check js/activity-telemetry-core.js
           node --check js/garmin-metric-access.js
           node --check js/performance-data-quality.js
           node --check js/health-data.js
@@ -134,6 +135,9 @@ jobs:
 
       - name: Run Garmin metric provenance tests
         run: node --experimental-default-type=module --test tests/garmin-metric-access.test.mjs
+
+      - name: Run activity telemetry chart tests
+        run: node --experimental-default-type=module --test tests/activity-telemetry-core.test.mjs
 
       - name: Run performance data quality tests
         run: node --experimental-default-type=module --test tests/performance-data-quality.test.mjs
