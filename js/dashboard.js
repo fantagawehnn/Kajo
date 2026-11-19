@@ -55,7 +55,7 @@ export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=
       tile('Subjektiv',r.subjectiveScore,r.subjectiveCount,6,'text-emerald-400')+
       '</div><p class="mt-2 text-[10px] text-slate-300">'+domainLine+'</p>'+
       '<p class="mt-1 text-[10px] text-slate-400">'+escapeHtml(r.dataMode)+' · '+escapeHtml(r.dataQuality)+
-      ' · Trainingsbelastung wird separat beurteilt und nicht in den Readiness-Wert eingerechnet. Basisgewichtung: Physiologie 40 %, Schlaf 30 %, Befinden 30 %; fehlende Bereiche werden nicht ersetzt. Interner Orientierungsindex, keine validierte Trainingsfreigabe.</p>'+
+      ' · Trainingsbelastung wird separat beurteilt und nicht in den Bereitschaftswert eingerechnet. Basisgewichtung: Physiologie 40 %, Schlaf 30 %, Befinden 30 %; fehlende Bereiche werden nicht ersetzt. Interner Bereitschafts-Orientierungsindex, keine medizinische Aussage oder validierte Trainingsfreigabe.</p>'+
       (r.baselineRequirements?.length ? '<p class="mt-1 text-[10px] text-amber-300">Noch nicht in der Wertung (persönliche Basis benötigt): '+r.baselineRequirements.map(item=>escapeHtml(item.label)+' '+item.observations+'/'+item.required).join(', ')+'.</p>' : '');
   }
 }
@@ -155,7 +155,7 @@ function renderLoadPeriodSummary(timeline) {
         && day.dataStatus !== 'unknown'
         && day.dataStatus !== 'incomplete-activity-load';
     if (!current7.every(isCompleteDay)) {
-        root.innerHTML = '<p class="text-xs text-amber-300">Die 7-Tage-Belastung ist nicht vollständig auswertbar: Für mindestens einen Tag fehlt eine bestätigte Garmin-Aktivitätsabdeckung oder ein Load-Wert. Unbekannte Tage werden nicht als Ruhetage gewertet.</p>';
+        root.innerHTML = '<p class="text-xs text-amber-300">Die 7-Tage-Belastung ist nicht vollständig auswertbar: Für mindestens einen Tag fehlt eine bestätigte Garmin-Aktivitätsabdeckung oder ein Belastungswert. Unbekannte Tage werden nicht als Ruhetage gewertet.</p>';
         return;
     }
     const sumLoad = days => days.reduce((sum, day) => sum + Math.max(0, Number(day.load) || 0), 0);
@@ -207,7 +207,7 @@ function renderLoadPeriodSummary(timeline) {
         metric('Belastung · 7 Tage', currentLoad.toFixed(1), unit) +
         metric('Wochenvergleich', comparison, previous7 ? 'Gleiche Belastungseinheit' : 'Benötigt 14 Tage Daten') +
         metric('Trainingstage · 7 Tage', activeDays + '/7', 'Tage mit erfasster Belastung') +
-        metric('Load-Abdeckung', loadCoverage, 'Aktivitäten mit berechenbarem Load') +
+        metric('Belastungsabdeckung', loadCoverage, 'Aktivitäten mit berechenbarer Belastung') +
         metric('28-Tage-Schnitt', average28, 'Durchschnitt pro Woche') +
         '</div><p class="text-[10px] text-slate-400">' + changeNote + ' ' + baselineContext + '</p><p class="text-[10px] text-slate-500">' + modelText + '. CTL/ATL sind geglättete Belastungsmodelle und keine direkte Messung der Leistungsfähigkeit.</p>';
 }
@@ -244,7 +244,7 @@ export function renderSummaryKPICards(timeline) {
             const loadActivities = new Set(loadData.records.map(item => item.activity));
             const covered = recent.filter(activity => loadActivities.has(activity)).length;
             root.innerHTML = recent.length
-                ? '<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-xs font-semibold text-white">Load-Abdeckung · letzte 7 Tage: ' + covered + '/' + recent.length + '</div><p class="text-[10px] text-slate-400 mt-1">Aktivitäten mit berechenbarem Belastungswert. Für diese Woche liegt noch keine auswertbare Load-Zeitreihe vor; CTL/ATL werden deshalb nicht berechnet.</p></div>'
+                ? '<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-xs font-semibold text-white">Belastungsabdeckung · letzte 7 Tage: ' + covered + '/' + recent.length + '</div><p class="text-[10px] text-slate-400 mt-1">Aktivitäten mit berechenbarem Belastungswert. Für diese Woche liegt noch keine auswertbare Belastungszeitreihe vor; CTL/ATL werden deshalb nicht berechnet.</p></div>'
                 : '<p class="text-xs text-slate-500">Keine Aktivitäten der letzten sieben Tage vorhanden. Ohne berechenbare Belastungsdaten werden CTL/ATL nicht angezeigt.</p>';
         }
         ['kpi-ctl','kpi-atl','kpi-tsb','kpi-acwr'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
@@ -276,7 +276,7 @@ export function renderSummaryKPICards(timeline) {
         const recommendation = document.getElementById('kpi-rec-short');
         if (recommendation) recommendation.textContent = 'Keine aktuelle Belastungsbasis';
         const detail = document.getElementById('kpi-rec-sub');
-        if (detail) detail.textContent = 'Für diesen Tag fehlt eine vollständige Aktivitäts- oder Load-Abdeckung.';
+        if (detail) detail.textContent = 'Für diesen Tag fehlt eine vollständige Aktivitäts- oder Belastungsabdeckung.';
         const marker = document.getElementById('zone-gauge-marker');
         if (marker) marker.style.display = 'none';
         const gauge = document.getElementById('zone-gauge-text');
@@ -330,15 +330,15 @@ export function generateAutomatedNarrative(timeline) {
     const last = timeline[timeline.length - 1];
     if (last.load == null || last.ctl == null) {
         const root = document.getElementById('automated-narrative-text');
-        if (root) root.innerHTML = '<p>Die aktuelle Trainingsbelastung ist nicht berechenbar, weil für den jüngsten Tag keine vollständige Aktivitäts- und Load-Abdeckung vorliegt.</p><p class="text-slate-400">Unbekannte Tage werden nicht als Ruhetage oder Belastung 0 interpretiert. Bitte synchronisiere den betroffenen Garmin-Zeitraum erneut.</p>';
+        if (root) root.innerHTML = '<p>Die aktuelle Trainingsbelastung ist nicht berechenbar, weil für den jüngsten Tag keine vollständige Aktivitäts- und Belastungsabdeckung vorliegt.</p><p class="text-slate-400">Unbekannte Tage werden nicht als Ruhetage oder Belastung 0 interpretiert. Bitte synchronisiere den betroffenen Garmin-Zeitraum erneut.</p>';
         return;
     }
-    const sourceText = last.loadMode === 'srpe' ? 'Session-RPE (Dauer × Gesamtanstrengung)' : last.loadMode === 'garmin-zone' ? 'Garmin-FIT-HF-Zeitreihen; Endurance AI Zonen-Load' : last.loadMode === 'garmin-native' ? 'Garmin-eigene Trainingsload-Werte' : last.loadMode === 'garmin-mixed' ? 'Garmin-FIT-Zonen-Load und native Garmin-Load-Werte (je Aktivität nur eine Quelle)' : 'externe TSS-Daten';
+    const sourceText = last.loadMode === 'srpe' ? 'Session-RPE (Dauer × Gesamtanstrengung)' : last.loadMode === 'garmin-zone' ? 'Garmin-FIT-HF-Zeitreihen; Endurance AI Zonenbelastung' : last.loadMode === 'garmin-native' ? 'Garmin-eigene Trainingsload-Werte' : last.loadMode === 'garmin-mixed' ? 'Garmin-FIT-Zonenbelastung und native Garmin-Belastungswerte (je Aktivität nur eine Quelle)' : 'externe TSS-Daten';
     const formText = last.loadMode === 'srpe' ? `sRPE-Bilanz: ${last.tsb} AU` : last.loadMode?.startsWith('garmin') ? `Relativer Saldo: ${last.formPct}%` : `Belastungssaldo: ${last.tsb}`;
     document.getElementById('automated-narrative-text').innerHTML = `
         <p>Belastungsquelle: <strong>${sourceText}</strong>. CTL: <strong>${last.ctl}</strong>, ATL: <strong>${last.atl}</strong> (${formText}, ACWR: <strong>${last.acwr}</strong>).</p>
         <p class="text-slate-400">ACWR: ${last.acwr === null ? 'noch nicht auswertbar' : last.acwr}. Der Wert dient nur als ergänzende Belastungsorientierung und ist keine Verletzungsprognose.</p>
-        <p class="text-slate-400">${last.isProvisional ? 'Die ersten 126 Tage sind wegen des fehlenden historischen Ausgangswerts als vorläufige Anlaufphase zu interpretieren.' : 'CTL und ATL sind geglättete Belastungsmodelle, keine direkt gemessenen Fitness- oder Ermüdungswerte.'} ${last.loadMode?.startsWith('garmin') ? 'Die Garmin-Auswertung berücksichtigt nur Aktivitäten mit dem jeweils verfügbaren Garmin-Load; externe TSS-Werte werden nicht beigemischt.' : ''}</p>
+        <p class="text-slate-400">${last.isProvisional ? 'Die ersten 126 Tage sind wegen des fehlenden historischen Ausgangswerts als vorläufige Anlaufphase zu interpretieren.' : 'CTL und ATL sind geglättete Belastungsmodelle, keine direkt gemessenen Fitness- oder Ermüdungswerte.'} ${last.loadMode?.startsWith('garmin') ? 'Die Garmin-Auswertung berücksichtigt nur Aktivitäten mit dem jeweils verfügbaren Garmin-Belastungswert; externe TSS-Werte werden nicht beigemischt.' : ''}</p>
     `;
 }
 
@@ -365,8 +365,8 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     const dayPlanned = planned.filter(p => String(p?.date || '').slice(0, 10) === selectedDate && (!sportFocus || p.type === sportFocus))
         .sort((a,b)=>String(a.time||a.startTime||'').localeCompare(String(b.time||b.startTime||'')));
 
-    // Load-KPIs bleiben unabhängig. Wenn die Load-Zeitreihe lückenhaft ist,
-    // erzeugt das Dashboard eine vorsichtige Tagesempfehlung aus Readiness,
+    // Load-KPIs bleiben unabhängig. Wenn die Belastungszeitreihe lückenhaft ist,
+    // erzeugt das Dashboard eine vorsichtige Tagesempfehlung aus Bereitschaft,
     // Gesundheitsstatus und vorhandener Planung – ohne eine Einheit zu erfinden.
     const loadRecommendation = document.getElementById('kpi-rec-short')?.textContent?.trim();
     const loadDetail = document.getElementById('kpi-rec-sub')?.textContent?.trim();
@@ -417,7 +417,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     if (plannedList) plannedList.innerHTML = dayPlanned.map(p => {
         const sport = sportsCatalog[p.type]?.label || p.type || 'Training';
         const duration = validNumber(p.duration) ? Number(p.duration) + ' min' : 'Dauer offen';
-        const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Load' : '';
+        const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Belastung' : '';
         return '<button type="button" data-sport-type="' + escapeHtml(p.type || '') + '" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
     }).join('');
     plannedList?.querySelectorAll('[data-sport-type]').forEach((el, index) => { el.style.borderLeft = '3px solid ' + activityColor(dayPlanned[index]); });
@@ -432,7 +432,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const id = encodeURIComponent(String(act.id)).replace(/'/g,'%27');
         const duration = validNumber(act.duration) ? Number(act.duration) + ' min' : 'Dauer nicht erfasst';
         const sport = sportsCatalog[act.type]?.label || act.type || 'Training';
-        const load = validNumber(act.tss) ? ' · ' + Number(act.tss).toFixed(0) + ' Load' : '';
+        const load = validNumber(act.tss) ? ' · ' + Number(act.tss).toFixed(0) + ' Belastung' : '';
         return '<button type="button" data-sport-type="' + escapeHtml(act.type || '') + '" onclick="openCSVDetailsModal(\'' + id + '\')" class="home-session-card is-complete home-session-button"><span class="home-session-state">ABSOLVIERT</span><div><strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + load + '</small></div><i data-lucide="chevron-right"></i></button>';
     }).join('');
     completedList?.querySelectorAll('[data-sport-type]').forEach((el, index) => { el.style.borderLeft = '3px solid ' + activityColor(dayActivities[index]); });
@@ -850,7 +850,7 @@ export function inspectDay(dayObj) {
     } else {
         dayActs.forEach(act => {
             const activityLoad = loadDataForDay.records.find(item => item.activity === act)?.value;
-            const activityLoadLabel = activityLoad == null ? 'Load —' : `${loadDataForDay.unit} ${Number(activityLoad).toFixed(1)}`;
+            const activityLoadLabel = activityLoad == null ? 'Belastung —' : `${loadDataForDay.unit} ${Number(activityLoad).toFixed(1)}`;
             listEl.insertAdjacentHTML('beforeend', `
                 <div onclick="openCSVDetailsModal('${encodeURIComponent(String(act.id)).replace(/'/g, '%27')}')" class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs cursor-pointer hover:border-sky-500 transition">
                     <div>
@@ -893,27 +893,27 @@ export function inspectDay(dayObj) {
 // Verlauf einzelner Gesundheits- und Trainingskennzahlen
 // ------------------------------------------------------------
 const historyMetricDefinitions = {
-    rhr: { label: 'Ruheherzfrequenz', short: 'RHF', unit: 'bpm', group: 'wearable', icon: 'heart-pulse', color: '#fb7185' },
+    rhr: { label: 'Ruhepuls', short: 'Ruhepuls', unit: 'bpm', group: 'wearable', icon: 'heart-pulse', color: '#FB7185' },
     bodyBattery: { label: 'Body Battery', short: 'Body Battery', unit: '', group: 'wearable', icon: 'battery-full', color: '#34d399' },
     vo2max: { label: 'VO₂max', short: 'VO₂max', unit: 'ml/kg/min', group: 'wearable', icon: 'activity', color: '#f97316' },
-    hrv: { label: 'Herzfrequenzvariabilität', short: 'HRV', unit: 'ms', group: 'wearable', icon: 'activity', color: '#38bdf8' },
-    sleepScore: { label: 'Sleep Score', short: 'Sleep Score', unit: '/ 100', group: 'wearable', icon: 'moon-star', color: '#a78bfa' },
-    sleepDuration: { label: 'Schlafdauer', short: 'Schlafdauer', unit: 'h', group: 'wearable', icon: 'bed-double', color: '#818cf8' },
+    hrv: { label: 'Herzfrequenzvariabilität', short: 'HRV', unit: 'ms', group: 'wearable', icon: 'activity', color: '#0F766E' },
+    sleepScore: { label: 'Schlafscore', short: 'Schlafscore', unit: '/ 100', group: 'wearable', icon: 'moon-star', color: '#7DD3FC' },
+    sleepDuration: { label: 'Schlafdauer', short: 'Schlafdauer', unit: 'h', group: 'wearable', icon: 'bed-double', color: '#7DD3FC' },
     respiration: { label: 'Atemfrequenz', short: 'Atemfrequenz', unit: '/min', group: 'wearable', icon: 'wind', color: '#2dd4bf' },
-    sleepQuality: { label: 'Schlafqualität', short: 'Schlafqualität', unit: '/ 5', group: 'self', icon: 'bed', color: '#c084fc' },
-    soreness: { label: 'Muskelkater', short: 'Muskelkater', unit: '/ 5', group: 'self', icon: 'biceps-flexed', color: '#fb7185' },
-    fatigue: { label: 'Müdigkeit', short: 'Müdigkeit', unit: '/ 5', group: 'self', icon: 'battery-low', color: '#f59e0b' },
-    motivation: { label: 'Motivation', short: 'Motivation', unit: '/ 5', group: 'self', icon: 'zap', color: '#34d399' },
-    stress: { label: 'Stress', short: 'Stress', unit: '/ 5', group: 'self', icon: 'brain', color: '#38bdf8' },
-    weight: { label: 'Körpergewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#94a3b8' }
+    sleepQuality: { label: 'Schlafqualität', short: 'Schlafqualität', unit: '/ 5', group: 'self', icon: 'bed', color: '#7DD3FC' },
+    soreness: { label: 'Muskelkater', short: 'Muskelkater', unit: '/ 5', group: 'self', icon: 'biceps-flexed', color: '#A78BFA' },
+    fatigue: { label: 'Müdigkeit', short: 'Müdigkeit', unit: '/ 5', group: 'self', icon: 'battery-low', color: '#A78BFA' },
+    motivation: { label: 'Motivation', short: 'Motivation', unit: '/ 5', group: 'self', icon: 'zap', color: '#A78BFA' },
+    stress: { label: 'Stress', short: 'Stress', unit: '/ 5', group: 'self', icon: 'brain', color: '#A78BFA' },
+    weight: { label: 'Körpergewicht', short: 'Gewicht', unit: 'kg', group: 'self', icon: 'scale', color: '#EC7AAE' }
 };
 const trainingMetricDefinitions = {
-    fitness: { label: 'Fitness', short: 'Fitness (CTL)', unit: 'Load-Punkte', color: '#D32F2F', icon: 'trending-up' },
-    atl: { label: 'Akute Belastung (ATL)', short: 'ATL', unit: 'Load-Punkte', color: '#f97316', icon: 'activity' },
-    acwr: { label: 'Akut-chronisches Belastungsverhältnis (ACWR)', short: 'ACWR', unit: 'Verhältnis', color: '#f59e0b', icon: 'scale' },
-    tsb: { label: 'Trainingssaldo (TSB)', short: 'TSB', unit: 'Load-Punkte', color: '#38bdf8', icon: 'activity' },
-    form: { label: 'Trainingssaldo', short: 'Trainingssaldo', unit: 'Modellwert', color: '#f59e0b', icon: 'activity' },
-    readiness: { label: 'Readiness', short: 'Readiness', unit: '/ 100', color: '#34d399', icon: 'battery-full' }
+    fitness: { label: 'Fitness', short: 'Fitness (CTL)', unit: 'Belastungspunkte', color: '#6DA8F7', icon: 'trending-up' },
+    atl: { label: 'Ermüdung', short: 'Ermüdung (ATL)', unit: 'Belastungspunkte', color: '#F59E0B', icon: 'activity' },
+    acwr: { label: 'Belastungsverhältnis', short: 'Belastungsverhältnis (ACWR)', unit: 'Verhältnis', color: '#E5C45B', icon: 'scale' },
+    tsb: { label: 'Form', short: 'Form (TSB)', unit: 'Belastungspunkte', color: '#39A96B', icon: 'activity' },
+    form: { label: 'Form', short: 'Form', unit: 'Modellwert', color: '#39A96B', icon: 'activity' },
+    readiness: { label: 'Bereitschaft', short: 'Bereitschaft', unit: '/ 100', color: '#14B8A6', icon: 'battery-full' }
 };
 let healthHistoryChart = null;
 let trainingHistoryChart = null;
@@ -945,7 +945,7 @@ function historyValue(checkin, key) {
 function historyWindow(range, endKey = historyTodayKey()) {
     const end = endKey;
     const endDate = new Date(end + 'T12:00:00');
-    const days = ({ '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 })[range] || 90;
+    const days = ({ '7d': 7, '28d': 28, '30d': 30, '42d': 42, '3m': 90, '90d': 90, '6m': 180, '1y': 365, '365d': 365 })[range] || 90;
     const start = new Date(endDate);
     start.setDate(start.getDate() - days + 1);
     return { from: historyDateKey(start), to: end };
@@ -960,7 +960,7 @@ function historyRangeDates(from, to) {
 }
 function historyRecommendation(key, value, dateKey) {
     if (value === null) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
-    if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
+    if (key === 'fitness') return ['Modellierte Fitness (CTL)', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         return [day?.statusLabel || 'Modellierte Form', day?.isProvisional
@@ -968,9 +968,9 @@ function historyRecommendation(key, value, dateKey) {
             : 'Die Form wird aus dem Verhältnis von langfristiger und kurzfristiger Belastung abgeleitet. Zusammen mit subjektivem Befinden und Trainingsqualität einordnen.'];
     }
     if (key === 'readiness') {
-        if (value >= 80) return ['Günstige Readiness', 'Die verfügbaren objektiven und subjektiven Angaben fallen insgesamt günstig aus. Plane trotzdem passend zur Tagesform.'];
-        if (value >= 60) return ['Mittlere Readiness', 'Die Signale sind nicht durchgehend günstig. Prüfe besonders Müdigkeit, Muskelkater, Schlaf und den geplanten Trainingsreiz.'];
-        return ['Niedrige Readiness', 'Mehrere verfügbare Signale sprechen für erhöhte Beanspruchung. Erholung priorisieren und Belastung kritisch mit dem eigenen Befinden abgleichen.'];
+        if (value >= 80) return ['Günstige Bereitschaft', 'Die verfügbaren objektiven und subjektiven Angaben fallen insgesamt günstig aus. Plane trotzdem passend zur Tagesform.'];
+        if (value >= 60) return ['Mittlere Bereitschaft', 'Die Signale sind nicht durchgehend günstig. Prüfe besonders Müdigkeit, Muskelkater, Schlaf und den geplanten Trainingsreiz.'];
+        return ['Niedrige Bereitschaft', 'Mehrere verfügbare Signale sprechen für erhöhte Beanspruchung. Erholung priorisieren und Belastung kritisch mit dem eigenen Befinden abgleichen.'];
     }
     if (key === 'rhr' || key === 'hrv' || key === 'respiration' || key === 'sleepDuration' || key === 'sleepScore') {
         return ['Persönlicher Normalbereich noch nicht verfügbar', 'Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht verbindlich festgelegt. Der Messwert wird deshalb ohne pauschale oder vorläufige Normalbereichs-Einstufung dargestellt.'];
@@ -1093,16 +1093,26 @@ export function historyRingColor(key, value, dateKey) {
     const goodness = reverse ? (5 - value) / 4 * 100 : (value - 1) / 4 * 100;
     return fiveLevelColor(goodness);
 }
-function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null) {
+function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null, smoothedValues = null) {
     const canvas = document.getElementById(kind === 'health' ? 'health-metric-chart' : 'training-metric-chart');
     if (!canvas || typeof Chart !== 'function') return;
     const prior = kind === 'health' ? healthHistoryChart : trainingHistoryChart;
     if (prior) prior.destroy();
-    const datasets = [{
+    if (values.filter(validNumber).length < 3) {
+        canvas.parentElement?.classList.add('hidden');
+        if (kind === 'health') healthHistoryChart = null;
+        else trainingHistoryChart = null;
+        return;
+    }
+    canvas.parentElement?.classList.remove('hidden');
+    const datasets = Array.isArray(smoothedValues) ? [
+        { label: definition.label + ' · Einzelmessungen', data: values, showLine: false, borderColor: definition.color, backgroundColor: definition.color, pointRadius: values.map(value => validNumber(value) ? 2.5 : 0), pointHoverRadius: 4, pointHitRadius: 8 },
+        { label: definition.label + ' · 7-Tage-Mittel', data: smoothedValues, borderColor: definition.color, backgroundColor: definition.color + '20', fill: false, tension: .25, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 0, pointHitRadius: 0, spanGaps: true }
+    ] : [{
         label: definition.label, data: values, borderColor: definition.color,
         backgroundColor: definition.color + '20', fill: true, tension: .25,
         borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4,
-        pointHitRadius: 8, spanGaps: false
+        pointHitRadius: 8, spanGaps: true
     }];
     if (Array.isArray(baselineValues) && baselineValues.some(validNumber)) {
         datasets.push({
@@ -1110,7 +1120,7 @@ function renderHistoryChart(kind, labels, values, definition, key, baselineValue
             borderColor: '#94a3b8', backgroundColor: 'transparent',
             borderDash: [5, 5], fill: false, tension: 0,
             borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0,
-            pointHitRadius: 0, spanGaps: false
+            pointHitRadius: 0, spanGaps: true
         });
     }
     const instance = new Chart(canvas.getContext('2d'), {
@@ -1159,12 +1169,46 @@ function renderHistoryRangeControls(kind) {
     const custom = document.getElementById(kind + '-history-custom-range');
     if (custom) custom.classList.toggle('hidden', range !== 'custom');
 }
+function historyValuesForRange(isHealth, key, dates) {
+    if (isHealth) return dates.map(date => historyValue(state.dailyCheckins[date], key));
+    const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+    return dates.map(date => {
+        if (key === 'readiness') {
+            const result = calculateReadiness(date);
+            return result.score === null ? null : result.score;
+        }
+        const day = timeline.get(date);
+        if (!day) return null;
+        if (key === 'fitness') return day.ctl;
+        if (key === 'atl') return day.atl;
+        if (key === 'acwr') return day.acwr;
+        if (key === 'tsb') return day.tsb;
+        return day.loadMode?.startsWith('garmin') ? day.formPct : day.tsb;
+    });
+}
+function rollingHistoryAverage(values, days = 7) {
+    return values.map((_, index) => {
+        const observed = values.slice(Math.max(0, index - days + 1), index + 1).filter(validNumber).map(Number);
+        return observed.length ? observed.reduce((sum, value) => sum + value, 0) / observed.length : null;
+    });
+}
 export function renderMetricHistory(kind) {
     const isHealth = kind === 'health';
     const key = isHealth ? (state.healthHistoryMetric || 'rhr') : (state.trainingHistoryMetric || 'fitness');
     const definition = (isHealth ? historyMetricDefinitions : trainingMetricDefinitions)[key];
     if (!definition) return;
-    const range = state.metricHistoryRange || '28d';
+    let range = state.metricHistoryRange || '28d';
+    if (!state.metricHistoryRangeExplicit && range !== 'custom') {
+        const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '30d', days: 30 }, { key: '42d', days: 42 }, { key: '3m', days: 90 }, { key: '1y', days: 365 }];
+        range = '1y';
+        for (const candidate of candidates) {
+            const candidateWindow = historyWindow(candidate.key);
+            const candidateDates = historyRangeDates(candidateWindow.from, candidateWindow.to);
+            const candidateValues = historyValuesForRange(isHealth, key, candidateDates);
+            if (candidateValues.filter(validNumber).length / candidate.days >= .7) { range = candidate.key; break; }
+        }
+        state.metricHistoryRange = range;
+    }
     let window = historyWindow(range);
     if (range === 'custom') {
         const from = document.getElementById(kind + '-history-from')?.value;
@@ -1172,10 +1216,11 @@ export function renderMetricHistory(kind) {
         if (from && to && from <= to) window = { from, to };
     }
     const dates = historyRangeDates(window.from, window.to);
-    let values;
+    let values = historyValuesForRange(isHealth, key, dates);
     let baselineValues = null;
+    let smoothedValues = null;
     if (isHealth) {
-        values = dates.map(date => historyValue(state.dailyCheckins[date], key));
+        if (['weight','sleepQuality','soreness','fatigue','motivation','stress'].includes(key)) smoothedValues = rollingHistoryAverage(values, 7);
         if (['hrv', 'rhr', 'sleepDuration'].includes(key)) {
             baselineValues = dates.map(date => {
                 const dateMs = new Date(date + 'T12:00:00').getTime();
@@ -1187,21 +1232,6 @@ export function renderMetricHistory(kind) {
                 return priorValues.length >= 5 ? median(priorValues) : null;
             });
         }
-    } else {
-        const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
-        values = dates.map(date => {
-            if (key === 'readiness') {
-                const result = calculateReadiness(date);
-                return result.score === null ? null : result.score;
-            }
-            const day = timeline.get(date);
-            if (!day) return null;
-            if (key === 'fitness') return day.ctl;
-            if (key === 'atl') return day.atl;
-            if (key === 'acwr') return day.acwr;
-            if (key === 'tsb') return day.tsb;
-            return day.loadMode?.startsWith('garmin') ? day.formPct : day.tsb;
-        });
     }
     const today = historyTodayKey();
     const todayValue = dates.includes(today) ? values[dates.indexOf(today)] : null;
@@ -1219,7 +1249,7 @@ export function renderMetricHistory(kind) {
     if (unit) {
         const todayTimeline = state.dailyTimeline.find(item => item.date === today);
         unit.textContent = key === 'form'
-            ? (todayTimeline?.loadMode?.startsWith('garmin') ? 'Saldo · %' : 'Saldo · Load-Punkte')
+            ? (todayTimeline?.loadMode?.startsWith('garmin') ? 'Saldo · %' : 'Saldo · Belastungspunkte')
             : definition.unit;
     }
     if (value) value.textContent = historyDisplay(todayValue, key);
@@ -1241,12 +1271,15 @@ export function renderMetricHistory(kind) {
     } else if (baselineNote) {
         baselineNote.textContent = '';
     }
-    if (chartNote) chartNote.textContent = dates.length + ' Kalendertage · fehlende Messungen werden als Lücken dargestellt.';
+    const observedCount = values.filter(validNumber).length;
+    if (chartNote) chartNote.textContent = observedCount < 3
+        ? 'Das Diagramm erscheint ab mindestens drei Messwerten. ' + dates.length + ' Kalendertage im ausgewählten Zeitraum.'
+        : dates.length + ' Kalendertage · fehlende Messungen bleiben Lücken.' + (smoothedValues ? ' Linie: gleitendes 7-Tage-Mittel · Punkte: Einzelmessungen.' : '');
     const canvasLabels = dates.map(date => {
         const d = new Date(date + 'T12:00:00');
         return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
     });
-    renderHistoryChart(kind, canvasLabels, values, definition, key, baselineValues);
+    renderHistoryChart(kind, canvasLabels, values, definition, key, baselineValues, smoothedValues);
     renderHistoryRangeControls(kind);
     const tabsId = kind === 'health' ? 'health-metric-tabs' : 'training-metric-tabs';
     document.querySelectorAll('#' + tabsId + ' [data-history-metric]').forEach(button => {
@@ -1263,6 +1296,7 @@ export function setHistoryMetric(kind, key) {
 }
 export function setHistoryRange(range) {
     state.metricHistoryRange = range;
+    state.metricHistoryRangeExplicit = true;
     const activeKind = document.getElementById('view-health-data')?.classList.contains('hidden') ? 'training' : 'health';
     if (range === 'custom') {
         const from = document.getElementById(activeKind + '-history-from');
@@ -1281,12 +1315,14 @@ export function applyHistoryCustomRange(kind) {
         return;
     }
     state.metricHistoryRange = 'custom';
+    state.metricHistoryRangeExplicit = true;
     renderMetricHistory(kind);
 }
 export function openHealthMetric(key) {
     state.healthHistoryMetric = historyMetricDefinitions[key] ? key : 'rhr';
     state.metricHistoryDate = state.homeCheckinDate || state.selectedDashboardDate || localTodayKey();
     state.metricHistoryRange = '28d';
+    state.metricHistoryRangeExplicit = false;
     if (typeof window.switchTab === 'function') window.switchTab('health-data');
     else renderMetricHistory('health');
 }
@@ -1296,6 +1332,7 @@ export function openTrainingMetric(key) {
         ? (state.homeReadinessDate || state.selectedDashboardDate || localTodayKey())
         : (state.homeLoadDate || state.selectedDashboardDate || localTodayKey());
     state.metricHistoryRange = '28d';
+    state.metricHistoryRangeExplicit = false;
     if (typeof window.switchTab === 'function') window.switchTab('training-analysis');
     else renderMetricHistory('training');
 }

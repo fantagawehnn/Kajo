@@ -312,7 +312,9 @@ export function buildCoachRequestContext(appState, question) {
                 availableCount: Object.keys(checkins).length,
                 includedCount: selectedCheckIns.records.length,
                 truncated: selectedCheckIns.truncated,
-                includedDateRange: dateSpan(selectedCheckIns.records, item => item.date)
+                includedDateRange: dateSpan(selectedCheckIns.records, item => item.date),
+                excludedFields: ['weight', 'bodyWeight', 'cycle'],
+                exclusionReason: 'privacy_minimization'
             },
             adaptiveZoneCheckIns: {
                 availableCount: checkInRecords.filter(item => item.rhr !== undefined || item.garminRhr !== undefined).length,
@@ -359,6 +361,11 @@ export function buildCoachRequestContext(appState, question) {
         },
         competitions: {
             races: sanitizeRaces(raceWindow.records)
+        },
+        privacy: {
+            excludedFromCoachContext: ['bodyWeight', 'cycleData'],
+            reason: 'privacy_minimization',
+            note: 'Diese Daten werden absichtlich nicht an den KI-Coach übermittelt. Ihr Fehlen im Kontext belegt nicht, dass in KAJO keine entsprechenden Einträge existieren.'
         },
         dataIntegrity: {
             healthCompetitionOverlaps,

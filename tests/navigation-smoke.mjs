@@ -18,6 +18,9 @@ const health = readFileSync('js/health.js', 'utf8').replace(/\r\n/g, '\n');
 const uiActions = readFileSync('js/ui-actions.js', 'utf8').replace(/\r\n/g, '\n');
 const competitions = readFileSync('js/competitions.js', 'utf8').replace(/\r\n/g, '\n');
 const garminFunction = readFileSync('supabase/functions/garmin-personal/index.ts', 'utf8').replace(/\r\n/g, '\n');
+const settings = readFileSync('js/settings.js', 'utf8').replace(/\r\n/g, '\n');
+const theme = readFileSync('js/theme.js', 'utf8').replace(/\r\n/g, '\n');
+const analysisOverview = readFileSync('js/analysis-overview.js', 'utf8').replace(/\r\n/g, '\n');
 
 const primary = ['today', 'calendar', 'training', 'analysis', 'more'];
 for (const id of primary) {
@@ -26,6 +29,31 @@ for (const id of primary) {
 }
 assert.equal((html.match(/id="nav-(?:today|calendar|training|analysis|more)"/g) || []).length, 5);
 assert.equal((html.match(/id="mobile-nav-(?:today|calendar|training|analysis|more)"/g) || []).length, 5);
+assert.match(html, /id="nav-today"[^>]*>[\s\S]*?<span>Heute<\/span>/);
+assert.match(html, /id="nav-calendar"[^>]*>[\s\S]*?<span>Plan<\/span>/);
+assert.match(html, /id="nav-training"[^>]*>[\s\S]*?<span>Training<\/span>/);
+assert.match(html, /id="nav-analysis"[^>]*>[\s\S]*?<span>Analyse<\/span>/);
+assert.match(html, /id="nav-more"[^>]*>[\s\S]*?<span>Ich<\/span>/);
+assert.match(html, /id="mobile-nav-calendar"[^>]*>[\s\\S]*?<span>Plan<\/span>/);
+assert.match(html, /id="mobile-nav-more"[^>]*>[\s\\S]*?<span>Ich<\/span>/);
+assert.ok(html.includes('id="mobile-navigation"'), 'mobile navigation container has a stable customization target');
+assert.ok(['status','today','recommendation','health','race','week'].every(key => html.includes('data-dashboard-widget="'+key+'"')), 'all six dashboard widgets are customizable');
+assert.ok(html.includes('id="kajo-dashboard-widget-settings"') && html.includes('id="kajo-navigation-order-settings"'), 'dashboard and navigation customization controls exist');
+assert.ok(html.includes('id="kajo-accent-color"'), 'accent color control exists');
+assert.ok(settings.includes('export function applyCustomizationPreferences') && settings.includes('export function moveNavigationItem') && settings.includes('export function moveDashboardWidget'), 'dashboard and navigation preferences are applied and persisted');
+assert.ok(theme.includes('export function setKajoAccentColor') && theme.includes('--kajo-accent-rgb'), 'custom accent color is persisted and applied through CSS variables');
+assert.ok(main.includes('setDashboardWidgetVisibility') && main.includes('moveNavigationItem') && main.includes('resetCustomizationPreferences'), 'customization handlers are exposed to the UI');
+assert.ok(analysisOverview.includes('renderSharedPeriodControl') && analysisOverview.includes("['30d','30 T']") && analysisOverview.includes("['42d','42 T']") && analysisOverview.includes("['1y','365 T']"), 'analysis overview exposes all required periods');
+assert.ok(charts.includes("timeframe === '30d'") && charts.includes("timeframe === '42d'") && charts.includes("timeframe === '90d'") && charts.includes("timeframe === '365d'"), 'load chart supports the required period windows');
+assert.ok(['7d','28d','30d','42d','3m','1y'].every(key => html.includes("data-health-range=\\""+key+"\\"") || html.includes("data-kajo-health-range=\\""+key+"\\"")), 'health chart exposes the required standard period controls');
+assert.ok(html.includes('id="analysis-period-buttons"') === false, 'shared analysis period controls are rendered dynamically by the overview module');
+assert.ok(html.includes('min="1" max="10"') && health.includes("clearCheckinDraft(state.selectedDashboardDate") && health.includes("let hasDraft = false"), 'check-in preserves ten-point scales and unsaved drafts when closed');
+assert.ok(html.includes('id="daily-checkin-modal-content"') && html.includes('id="daily-checkin-panel"'), 'daily check-in modal has its required content wrapper and panel');
+assert.ok(html.includes('id="checkin-quick-mode"') && html.includes('id="input-weight"'), 'weight is available in the default quick check-in');
+assert.ok(html.includes('id="checkin-expanded-mode"') && html.includes('id="input-sleep-quality"') && html.includes('id="input-fatigue"'), 'extended check-in exposes optional subjective ratings');
+assert.ok(html.includes('id="checkin-date"'), 'check-in supports selecting a date for backfilling');
+assert.ok(health.includes('CHECKIN_DRAFT_PREFIX') && health.includes('restoreCheckinDraft(todayStr)') && health.includes('clearCheckinDraft(todayStr)'), 'check-in drafts are restored and cleared after save or discard');
+assert.ok(health.includes('weight: Number.isFinite(weightVal) ? weightVal : existing.weight'), 'quick-mode weight is saved without requiring an optional-field toggle');
 assert.doesNotMatch(html, /id="nav-(?:dashboard|analyses|areas)"/);
 
 const dataManagementStart = html.indexOf('id="view-data"');
@@ -155,7 +183,7 @@ const homeMarkup = html.slice(homeStart, homeEnd);
 for (const id of ['home-readiness-ring','home-form-ring','home-fitness-ring','home-wear-rhr-ring','home-wear-hrv-ring','home-wear-score-ring','home-wear-duration-ring','home-self-stress-ring','home-week-days','home-week-legend','home-week-summary']) {
   assert.ok(homeMarkup.includes('id="' + id + '"'), 'home contains ' + id);
 }
-assert.ok(homeMarkup.indexOf('home-readiness-ring') < homeMarkup.indexOf('home-form-ring') && homeMarkup.indexOf('home-form-ring') < homeMarkup.indexOf('home-fitness-ring'), 'status order is Recovery, Load, Performance');
+assert.ok(homeMarkup.indexOf('home-readiness-ring') < homeMarkup.indexOf('home-form-ring') && homeMarkup.indexOf('home-form-ring') < homeMarkup.indexOf('home-fitness-ring'), 'status order is Bereitschaft, Ermüdung, Fitness');
 assert.ok(homeMarkup.includes('kajo-week-chart'), 'weekly chart uses compact vertical bars');
 assert.ok(dashboard.includes('kajo-week-segment'), 'weekly chart renders sport segments');
 assert.ok(dashboard.includes("segment.setAttribute('aria-label'"), 'sport segments are accessible interactive targets');
@@ -348,13 +376,13 @@ assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
 assert.ok(performanceUi.includes('Zeitachse: Zeit seit Start') && performanceUi.includes('Keine verlässliche Zeitachse'), 'performance trend distinguishes elapsed-time axes from sample-index-only series');
 assert.ok(performanceUi.includes('state.strengthPBs'), 'strength progression uses stored exercise-specific personal best records');
-assert.ok(html.includes('<span>Fitness</span>') && html.includes('id="fitness-aerobic-metrics"'), 'analysis navigation identifies the fitness view separately from performance');
+assert.ok(html.includes('<span>Leistung</span>') && html.includes('id="fitness-aerobic-metrics"'), 'analysis navigation identifies the fitness view separately from performance');
 
 const overviewModule = readFileSync('js/analysis-overview.js', 'utf8').replace(/\r\n/g, '\n');
 assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedicated overview page');
 assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview begins with the four agreed metric circles');
 assert.ok(['load','recovery','performance','health'].every(id => html.includes('id="overview-' + id + '-ring"')), 'overview renders load, recovery, fitness and health circles');
-assert.ok(['Load','Recovery','Fitness','Health'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed performance dimensions');
+assert.ok(['Belastung','Regeneration','Leistung','Gesundheit'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed performance dimensions');
 assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has a combined four-dimension trend chart');
 assert.ok(html.includes('data-overview-metric="health"'), 'Health remains selectable but is explicitly marked as unavailable');
 assert.ok(html.includes('id="analysis-overview-activity-chart"') && html.includes('data-overview-activity-measure="sessions"'), 'sport distribution supports duration and session count');

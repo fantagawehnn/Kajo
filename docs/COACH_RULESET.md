@@ -53,6 +53,7 @@ Der Coach darf einen eingeschränkten Status nicht sprachlich zu einer sicheren 
 - Widersprüchliche Quellen werden nicht stillschweigend überschrieben.
 - Bei nicht auflösbaren Widersprüchen nennt der Coach die betroffenen Werte und fragt gegebenenfalls nach.
 - Ein unvollständiger Garmin-Sync muss als Einschränkung der Analyse berücksichtigt werden.
+- Körpergewicht und Zyklusdaten sind aus Datenschutzgründen ausdrücklich vom KI-Coach-Kontext ausgeschlossen. Ihr Fehlen im Kontext bedeutet nicht, dass in KAJO keine entsprechenden Einträge existieren. Der Coach darf diese Daten nicht erschließen oder ihre Übermittlung verlangen.
 
 ### 2.3 Datenherkunft
 
@@ -124,10 +125,11 @@ Die dokumentierte Methode gewichtet die Minuten in fünf Herzfrequenzzonen mit d
 - Subjektive Angaben wie Müdigkeit, Muskelkater oder Erholung bleiben als subjektive Daten gekennzeichnet.
 - Fehlende Check-ins werden nicht als gute Erholung interpretiert.
 - Mittelwerte werden nur mit Angabe des betrachteten Zeitraums und der Anzahl tatsächlich vorhandener Einträge dargestellt.
+- Ein Trend setzt mindestens drei tatsächlich vorhandene, zeitlich zuordenbare Messwerte voraus. Bei weniger Werten darf nur die Einzelbeobachtung beschrieben werden; ein belastbarer Verlauf ist nicht ableitbar.
 
 ### 4.3 Gesamteinordnung
 
-Der Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen neuen Gesamtscore erfinden. Ein kombinierter Readiness-Score darf nur verwendet werden, wenn dessen Berechnung, Datenanforderungen, Validierung und Grenzen ausdrücklich freigegeben wurden.
+Der KI-Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen eigenen Gesamtscore berechnen oder aus Einzelwerten rekonstruieren. KAJO kann in der App einen Bereitschafts-Orientierungswert darstellen; dieser ist keine medizinisch validierte Trainingsfreigabe. Der Coach darf ihn nur verwenden, wenn er ausdrücklich im übermittelten Kontext enthalten ist, und muss seine Grenzen nennen. Er darf weder fehlende Werte ergänzen noch einen eigenen alternativen Bereitschafts-Score bilden.
 
 ## 5. Regeln für Performance
 

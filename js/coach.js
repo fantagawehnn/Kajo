@@ -4,7 +4,7 @@
 import { state } from './state.js';
 import { supabase } from './supabase-client.js';
 import { buildAthleteContext } from './coach-context.js';
-import { buildCoachRequestContext } from './coach-data-context.js';
+import { buildCoachRequestContext } from './coach-data-context.js?v=2';
 
 const conversation = [];
 let requestPending = false;
@@ -24,6 +24,7 @@ function appendMessage(role, text) {
     message.textContent = text;
     container.appendChild(message);
     container.scrollTop = container.scrollHeight;
+    document.getElementById('coach-empty-state')?.classList.add('hidden');
 }
 
 function setPending(pending) {
@@ -34,6 +35,21 @@ function setPending(pending) {
     if (button) {
         button.disabled = pending;
         button.classList.toggle('opacity-50', pending);
+        button.setAttribute('aria-busy', String(pending));
+    }
+    const messages = document.getElementById('chat-messages');
+    let indicator = document.getElementById('coach-pending-message');
+    if (pending && messages && !indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'coach-pending-message';
+        indicator.className = 'bg-slate-950 border border-slate-800 p-3.5 rounded-2xl max-w-xl text-slate-400';
+        indicator.setAttribute('role', 'status');
+        indicator.setAttribute('aria-live', 'polite');
+        indicator.textContent = 'KAJO prüft die für deine Frage ausgewählten Daten …';
+        messages.appendChild(indicator);
+        messages.scrollTop = messages.scrollHeight;
+    } else if (!pending) {
+        indicator?.remove();
     }
 }
 

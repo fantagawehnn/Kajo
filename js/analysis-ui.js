@@ -3,8 +3,8 @@
  * readiness, performance or baseline formulas are introduced here.
  */
 import { state } from './state.js';
-import { calculateReadiness, historyRingColor } from './dashboard.js';
-import { getActivityTelemetrySeries } from './charts.js';
+import { calculateReadiness, historyRingColor } from './dashboard.js?v=9';
+import { getActivityTelemetrySeries } from './charts.js?v=13';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
@@ -56,7 +56,7 @@ function renderLoad() {
   if (!last) {
     setHero('load', '—', '', 'Keine auswertbare Belastung', 'ATL ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
     renderMetrics('load-analysis-metrics', [
-      metric('CTL', '—'), metric('ATL', '—'), metric('Belastungssaldo', '—'), metric('ACWR', '—')
+      metric('Fitness (CTL)', '—'), metric('Ermüdung (ATL)', '—'), metric('Form / Belastungssaldo', '—'), metric('Belastungsverhältnis (ACWR)', '—')
     ]);
     return;
   }
@@ -64,15 +64,15 @@ function renderLoad() {
     : last.loadMode === 'garmin-zone' ? 'Garmin-HF-Zonenindex'
     : last.loadMode === 'srpe' ? 'sRPE-Load'
     : last.loadMode || 'Belastungsmodell';
-  setHero('load', fmt(last.atl), last.loadUnit || 'Load-Punkte', 'Kurzfristige Belastung · ATL', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
+  setHero('load', fmt(last.atl), last.loadUnit || 'Belastungspunkte', 'Ermüdung · kurzfristige Belastung (ATL)', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
   const balance = String(last.loadMode || '').startsWith('garmin')
     ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—')
     : fmt(last.tsb);
   renderMetrics('load-analysis-metrics', [
-    metric('CTL', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
-    metric('ATL', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
-    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance, '', "openTrainingMetric('form')"),
-    metric('ACWR', fmt(last.acwr), '', "openTrainingMetric('acwr')")
+    metric('Fitness (CTL)', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
+    metric('Ermüdung (ATL)', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
+    metric(last.loadMode?.startsWith('garmin') ? 'Form / relativer Saldo' : 'Form (TSB)', balance, '', "openTrainingMetric('form')"),
+    metric('Belastungsverhältnis (ACWR)', fmt(last.acwr), '', "openTrainingMetric('acwr')")
   ]);
   const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
   const garminValues = activities.filter(activity => valid(activity.garminTrainingLoad)).length;
@@ -106,7 +106,7 @@ function renderRecovery() {
     .find(entry => entry.result?.enoughData && valid(entry.result.score));
   const score = readinessEntry ? readinessEntry.result.score : null;
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
-    'Readiness', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
+    'Bereitschaft', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für die Bereitschaftseinordnung vor.',
     score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
@@ -146,7 +146,7 @@ function renderRecovery() {
       availabilityNote.className = 'kajo-recovery-data-note';
       objectiveRoot.insertAdjacentElement('afterend', availabilityNote);
     }
-    availabilityNote.textContent = 'Body Battery – Garmin-Import noch nicht angebunden. Garmin-Stress und SpO₂ werden als Garmin-Datensätze gespeichert, sind aber noch nicht als tägliche Recovery-Verläufe integriert.';
+    availabilityNote.textContent = 'Body Battery – Garmin-Import noch nicht angebunden. Garmin-Stress und SpO₂ werden als Garmin-Datensätze gespeichert, sind aber noch nicht als tägliche Regenerationsverläufe integriert.';
   }
   const objective = document.getElementById('recovery-objective-count');
   const subjective = document.getElementById('recovery-subjective-count');
@@ -156,7 +156,7 @@ function renderRecovery() {
 let performanceChart = null;
 let selectedPerformanceMetric = null;
 let performanceRange = '28d';
-const performanceRangeDays = { '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 };
+const performanceRangeDays = { '7d': 7, '28d': 28, '30d': 30, '42d': 42, '3m': 90, '6m': 180, '1y': 365 };
 const performanceDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') : '';
@@ -341,15 +341,17 @@ function renderPerformanceTrend(key) {
   if (title) title.textContent = heading;
   if (note) note.textContent = explanation + (values.filter(valid).length ? ' Fehlende Messpunkte bleiben als Lücken erhalten.' : '');
   panel.classList.remove('hidden');
-  if (!values.some(valid)) {
+  const observedCount=values.filter(valid).length;
+  if (observedCount<3) {
     canvas.classList.add('hidden');
+    if(note)note.textContent=explanation+' Das Diagramm erscheint ab mindestens drei Messwerten; aktuell: '+observedCount+'.';
     return;
   }
   canvas.classList.remove('hidden');
   performanceChart = new Chart(canvas.getContext('2d'), {
     type:'line',
     data:{labels,datasets:[{label:heading,data:values,borderColor:color,backgroundColor:color+'22',
-      borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:false,fill:false}]},
+      borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:true,fill:false}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>Number(item.parsed.y).toLocaleString('de-DE',{maximumFractionDigits:2})+' '+unit}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8}},
@@ -383,7 +385,7 @@ if (typeof window !== 'undefined') {
 }
 let healthChart = null;
 let selectedHealthMetric = null;
-const healthRangeDays = { '7d':7, '28d':28, '3m':90, '6m':180, '1y':365 };
+const healthRangeDays = { '7d':7, '28d':28, '30d':30, '42d':42, '3m':90, '6m':180, '1y':365 };
 const healthDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
@@ -487,7 +489,7 @@ function renderHealthComparisons(range) {
     loadRows.push({label:'Tägliche Trainingsbelastung',eventMedian:healthMedian(event),eventCount:event.length,otherMedian:healthMedian(other),otherCount:other.length});
     if(loadRoot)loadRoot.innerHTML=healthComparisonTable('Trainingsbelastung · '+(timeline[0].loadMode==='srpe'?'sRPE-Load':timeline[0].loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':timeline[0].loadMode==='garmin-native'?'Garmin Training Load':String(timeline[0].loadMode)),loadRows,timeline[0].loadUnit);
   }else if(loadRoot){
-    loadRoot.innerHTML='<p class="kajo-health-note">'+(modes.length>1?'Die Load-Modelle oder Einheiten wechseln im gewählten Zeitraum. Deshalb wird kein gemeinsamer Median berechnet.':timeline.length&&!hasLoadProvenance?'Für einige Tageswerte fehlen Modell- oder Einheitenangaben. Deshalb wird kein gemeinsamer Median berechnet.':'Es liegen keine vollständigen Tages-Load-Werte im gewählten Zeitraum vor.')+'</p>';
+    loadRoot.innerHTML='<p class="kajo-health-note">'+(modes.length>1?'Die Belastungsmodelle oder Einheiten wechseln im gewählten Zeitraum. Deshalb wird kein gemeinsamer Median berechnet.':timeline.length&&!hasLoadProvenance?'Für einige Tageswerte fehlen Modell- oder Einheitenangaben. Deshalb wird kein gemeinsamer Median berechnet.':'Es liegen keine vollständigen Tageswerte im gewählten Zeitraum vor.')+'</p>';
   }
   const definitions=[
     ['HRV','hrv','ms'],['Ruheherzfrequenz','rhr','bpm'],['Schlafscore','sleepScore','Punkte'],['Atemfrequenz','respiration','/ min']
@@ -556,15 +558,16 @@ function renderHealthTrend(key) {
     type='line';max=5;
     datasets=[
       {label:'Periodentag',data:period,borderColor:'#be789f',backgroundColor:'#be789f',pointBackgroundColor:'#be789f',pointBorderColor:'#be789f',pointRadius:period.map(v=>v===null?0:6),pointHoverRadius:7,pointStyle:'rectRot',showLine:false},
-      {label:'Schmerzen',data:pain,borderColor:'#e879a9',backgroundColor:'#e879a922',pointRadius:3,tension:.15,spanGaps:false},
-      {label:'Trainingsbeeinträchtigung',data:impact,borderColor:'#f59e0b',backgroundColor:'#f59e0b22',pointRadius:3,tension:.15,spanGaps:false}
+      {label:'Schmerzen',data:pain,borderColor:'#e879a9',backgroundColor:'#e879a922',pointRadius:3,tension:.15,spanGaps:true},
+      {label:'Trainingsbeeinträchtigung',data:impact,borderColor:'#f59e0b',backgroundColor:'#f59e0b22',pointRadius:3,tension:.15,spanGaps:true}
     ];
   }
+  const observedCount=datasets.filter(dataset=>dataset.label!=='Periodentag').reduce((sum,dataset)=>sum+dataset.data.filter(valid).length,0);
   const hasValues=datasets.some(dataset=>dataset.data.some(valid));
   if(title)title.textContent=heading;
   if(noteEl)noteEl.textContent=explanation;
   panel.classList.remove('hidden');
-  if(!hasValues){canvas.classList.add('hidden');if(noteEl)noteEl.textContent+=' Für den gewählten Zeitraum liegen keine passenden Messwerte vor.';return;}
+  if(!hasValues||(key==='cycle'&&observedCount<3)){canvas.classList.add('hidden');if(noteEl)noteEl.textContent+=!hasValues?' Für den gewählten Zeitraum liegen keine passenden Messwerte vor.':' Das Diagramm erscheint ab mindestens drei dokumentierten Messwerten.';return;}
   canvas.classList.remove('hidden');
   healthChart=new Chart(canvas.getContext('2d'),{
     type,data:{labels,datasets},
@@ -603,14 +606,14 @@ export function setHealthRange(range){
     const feedback=document.getElementById('health-summary-custom-feedback');
     if(feedback)feedback.textContent='';
     document.getElementById('health-summary-custom-range')?.classList.remove('hidden');
-    state.activeTimeframe='custom';state.metricHistoryRange='custom';
+    state.activeTimeframe='custom';state.activeTimeframeExplicit=true;state.metricHistoryRange='custom';state.metricHistoryRangeExplicit=true;
     document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange==='custom'));
     renderHealth();window.kajoRenderHealthAnalysis?.();return;
   }
   if(!Object.prototype.hasOwnProperty.call(healthRangeDays,range))return;
   document.getElementById('health-summary-custom-range')?.classList.add('hidden');
   if(typeof window.setTimeframe==='function')window.setTimeframe(range);
-  else {state.activeTimeframe=range;state.metricHistoryRange=range;}
+  else {state.activeTimeframe=range;state.activeTimeframeExplicit=true;state.metricHistoryRange=range;state.metricHistoryRangeExplicit=true;}
   renderHealth();
 }
 export function applyHealthCustomRange(){

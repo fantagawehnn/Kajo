@@ -1,59 +1,67 @@
 # KAJO V2 – Navigation und Seitenstruktur
 
-Stand: 13.11.2026  
-Branch: `v2`
+Stand: 19.11.2026  
+Preview-Branch: `preview/kajo-redesign-v2` · Basis: `v2`
 
 ## Verbindliche Hauptnavigation
 
 Die Anwendung verwendet genau fünf Hauptbereiche:
 
 1. Heute
-2. Kalender
+2. Plan
 3. Training
 4. Analyse
-5. Mehr
+5. Ich
 
-Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones wird dieselbe Navigation als kompakte, fixierte Fünf-Tab-Leiste am unteren Bildschirmrand dargestellt. Unterbereiche werden ausschließlich innerhalb ihres Hauptbereichs angezeigt.
+Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones wird dieselbe Navigation als kompakte, fixierte Fünf-Tab-Leiste am unteren Bildschirmrand dargestellt. Die Reihenfolge ist in den Einstellungen anpassbar; alle fünf Bereiche bleiben sichtbar und erreichbar. Unterbereiche werden ausschließlich innerhalb ihres Hauptbereichs angezeigt.
+
+## Verbindliche Begriffe und Farben
+
+Die sichtbaren Kennzahlenbegriffe und ihre Farbcodierung folgen [`docs/GLOSSARY.md`](./GLOSSARY.md). Der Check-in ist in [`docs/CHECKIN.md`](./CHECKIN.md) dokumentiert. Technische Feldnamen bleiben aus Kompatibilitätsgründen unverändert. Statusfarben und Sportartenfarben sind von Kennzahlenfarben getrennt.
 
 ## Seitenzuordnung
 
 | Hauptbereich | Unterbereich / Ansicht | Bestehende Implementierung |
 |---|---|---|
 | Heute | Tagesstatus, Training heute, Wearables, nächster Wettkampf, Trainingswoche | bestehendes Dashboard plus interaktive Wochenübersicht |
-| Kalender | Tag, Woche, Monat, Jahr | bestehende Kalenderlogik; Woche als Standard |
+| Plan | Tag, Woche, Monat, Jahr | bestehende Kalenderlogik; Woche als Standard |
 | Training | Aktivitäten | bestehende chronologische Aktivitätsliste und Aktivitätsdetailmodal |
 | Training | Trainingsplanung | bestehende Planung und Wettkampfverwaltung |
-| Analyse | Training Load | bestehende Belastungsübersicht und Belastungsverlauf |
-| Analyse | Recovery | Readiness und Gesundheitsmetriken/Verlaufsdiagramme |
-| Analyse | Performance | Fitnessindikator, Wettkampfkontext und Leistungsmetriken |
-| Analyse | Health | dokumentierte Krankheits- und Verletzungsereignisse sowie Verfügbarkeitsstatus |
-| Mehr | Persönliches Profil | bestehende Profilansicht |
-| Mehr | Sport & Training | Kraftleistungen, Strecken und sportbezogene Einstellungen |
-| Mehr | Datenverwaltung | Garmin, Datenquellen, Import und Datenqualität |
-| Mehr | App | Darstellung, Benachrichtigungen, KI und allgemeine Einstellungen |
+| Analyse | Belastung | bestehende Belastungsübersicht und Belastungsverlauf |
+| Analyse | Regeneration | HRV, Ruhepuls, Schlaf und subjektive Regenerationsmetriken |
+| Analyse | Leistung | VO₂max, paddelspezifische Leistungswerte und Kraftentwicklung |
+| Analyse | Gesundheit | dokumentierte Krankheits- und Verletzungsereignisse sowie Verfügbarkeitsstatus |
+| Ich | Persönliches Profil | bestehende Profilansicht |
+| Ich | Sport & Training | Kraftleistungen, Strecken und sportbezogene Einstellungen |
+| Ich | Datenverwaltung | Garmin, Datenquellen, Import und Datenqualität |
+| Ich | App | Darstellung, Benachrichtigungen, KI und allgemeine Einstellungen |
 
 ## Technische Umsetzung
+
+- Die sichtbaren Hauptbereiche heißen verbindlich **Heute**, **Plan**, **Training**, **Analyse** und **Ich**. Die bestehenden internen Tab-IDs (`calendar`, `more`) bleiben aus Kompatibilitätsgründen unverändert.
 
 - Die Navigation wird zentral über `switchTab()` geroutet.
 - Bestehende Inline-Aktionen werden auf die neuen Haupt- und Unterbereiche abgebildet, damit vorhandene Funktionen weiter funktionieren.
 - Die Aktivitätsliste verwendet weiterhin die bestehende Kalender-/Aktivitätsdarstellung. Im Trainingsbereich wird nur der Listenmodus angezeigt; der zuvor ausgewählte Kalenderzeitraum-Modus wird beim Verlassen wiederhergestellt.
-- Die vier Analyse-Unterseiten verwenden eine gemeinsame Zeitraumsteuerung. Detailverläufe für Recovery und Performance bleiben in ihrem jeweiligen Analysebereich.
+- Die vier Analyse-Unterseiten verwenden eine gemeinsame Zeitraumsteuerung. Detailverläufe für Regeneration und Leistung bleiben in ihrem jeweiligen Analysebereich.
 - Die Wochenübersicht auf Heute greift auf vorhandene absolvierte und geplante Einheiten zurück. Trainingseinheiten und Tagesfelder sind anklickbar.
 - Der Kalender verwendet die vorhandenen Tages- und Wochenrenderer. Die Jahresansicht zeigt zwölf kompakte Monatsraster; ein Tag kann in die Tagesansicht geöffnet werden.
 
 ## Daten- und Darstellungsregeln
 
-- Die Navigation verändert keine Berechnungsformeln oder Datenmodelle.
+- Die Navigation verändert keine Berechnungsformeln oder Datenmodelle. Die fünf Hauptbereiche bleiben vollständig verfügbar; ihre Reihenfolge kann geräteübergreifend im gespeicherten App-Profil angepasst werden. Dashboard-Bereiche können ausgeblendet und neu angeordnet werden. Die Akzentfarbe ist lokal auf dem Gerät einstellbar; Kennzahlenfarben bleiben gemäß Glossar fest und Sportartenfarben separat konfigurierbar.
 - Fehlende Aktivitätsdauer und Belastungswerte werden in Wochen- und Listenansichten nicht als Nullwerte ausgegeben.
 - Eine Tages- oder Wochensumme wird nur gezeigt, wenn die dafür erforderlichen Einzelwerte vollständig vorliegen.
 - Die Trainingsverfügbarkeit bleibt als nicht berechenbar gekennzeichnet, solange die erforderliche Verknüpfung von Gesundheits- und Planungsdaten nicht nachgewiesen ist.
-- Der Performance-Ring auf Heute zeigt den vorhandenen CTL-Fitnessindikator. Er ist ausdrücklich kein direkter Leistungstest.
-- Die Load-Anzeige auf Heute nutzt den vorhandenen ATL-Wert. Die Berechnung selbst wurde nicht verändert.
+- Der Fitness-Ring auf Heute zeigt den vorhandenen CTL-Fitnessindikator. Er ist ausdrücklich kein direkter Leistungstest.
+- Die Ermüdungsanzeige auf Heute nutzt den vorhandenen ATL-Wert. Die Berechnung selbst wurde nicht verändert.
 
 ## Qualitätssicherung und offene Abnahme
 
 Automatisiert geprüft werden:
-- genau fünf Desktop- und fünf Mobile-Hauptnavigationseinträge,
+- genau fünf Desktop- und fünf Mobile-Hauptnavigationseinträge mit den Labels Heute, Plan, Training, Analyse und Ich,
+- Persistenz und DOM-Reihenfolge der Dashboard- und Navigationsanpassungen,
+- Akzentfarbe unabhängig von Kennzahlen- und Sportartenfarben,
 - Existenz der zwei Trainings- und vier Analyse-Unterbereiche,
 - Kalender-Modi Tag, Woche, Monat und Jahr sowie Wochenstandard,
 - JavaScript-Syntax der zentralen Module,
@@ -83,4 +91,4 @@ Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe
 - Vor Implementierung einer adaptiven Baseline ist die statistische Methode verbindlich festzulegen (robuste Lage-/Streuungsmaße, Mindestdatenbasis, Ausreißerbehandlung, Aktualisierungsfenster, Schutz vor kurzfristiger Baseline-Verschiebung und Änderungsprotokoll).
 - Für Performance fehlen derzeit eine sportartspezifische, methodisch vergleichbare Hauptkennzahl und ein entsprechend gefilterter Leistungsverlauf. VO₂max bleibt wegen der nicht getrennten Messart ein eingeschränkt interpretierbarer Importwert.
 - Eine getrennte, fachlich verifizierte Anzeige von Garmin Training Load, Edwards TRIMP und sRPE erfordert zunächst die eindeutige Zuordnung der vorhandenen Datenfelder.
-- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist damit noch nicht umgesetzt.
+- Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Der appweite Theme-Schalter sowie die gerätebezogene Akzentfarbe sind umgesetzt. Die fünf Hauptbereiche und Dashboard-Widgets lassen sich in den Einstellungen individuell anordnen.

@@ -4,7 +4,7 @@
  */
 import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
-import { renderHeartRateZoneDistribution } from './charts.js';
+import { renderHeartRateZoneDistribution } from './charts.js?v=13';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
@@ -20,7 +20,7 @@ const todayKey = () => {
 };
 const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
 const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
+const COLORS = { load: '#FDBA74', recovery: '#0F766E', performance: '#6DA8F7', health: '#E5C45B' };
 let trendChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
@@ -44,7 +44,21 @@ function currentRange() {
     const toInput = document.getElementById('date-to')?.value;
     if (fromInput && toInput && fromInput <= toInput) return { from: fromInput, to: toInput };
   }
-  const days = ({ '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 })[state.activeTimeframe] || 90;
+  const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '30d', days: 30 }, { key: '42d', days: 42 }, { key: '3m', days: 90 }, { key: '1y', days: 365 }];
+  if (!state.activeTimeframeExplicit) {
+    for (const candidate of candidates) {
+      const fromDate = new Date(to + 'T12:00:00');
+      fromDate.setDate(fromDate.getDate() - candidate.days + 1);
+      const from = fromDate.getFullYear() + '-' + String(fromDate.getMonth() + 1).padStart(2, '0') + '-' + String(fromDate.getDate()).padStart(2, '0');
+      const dates = rangeDates({ from, to });
+      const series = buildSeries(dates).filter(item => selectedMetrics.has(item.key) && item.key !== 'health');
+      const total = series.reduce((sum, item) => sum + item.raw.filter(valid).length, 0);
+      const coverage = series.length && dates.length ? total / (series.length * dates.length) : 0;
+      if (coverage >= .7) { state.activeTimeframe = candidate.key; break; }
+      if (candidate.key === '1y') state.activeTimeframe = '1y';
+    }
+  }
+  const days = candidates.find(item => item.key === state.activeTimeframe)?.days || 90;
   const fromDate = new Date(to + 'T12:00:00');
   fromDate.setDate(fromDate.getDate() - days + 1);
   const from = fromDate.getFullYear() + '-' + String(fromDate.getMonth() + 1).padStart(2, '0') + '-' + String(fromDate.getDate()).padStart(2, '0');
@@ -73,9 +87,9 @@ function buildSeries(dates) {
   const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
   const performance = dates.map(date => getGarminCheckinMetric(checkins[date], 'vo2max'));
   return [
-    { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
-    { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
+    { key: 'load', label: 'Belastung · Tageswert', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Belastungspunkte', raw: load, color: COLORS.load },
+    { key: 'recovery', label: 'Regeneration · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
+    { key: 'performance', label: 'Leistung · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
   ];
 }
 function toRelativeIndex(raw) {
@@ -146,7 +160,7 @@ function renderTrendChart() {
       pointRadius: 0,
       pointHoverRadius: 0,
       pointHitRadius: 0,
-      spanGaps: false,
+      spanGaps: true,
       fill: false,
       hidden: !selectedMetrics.has(item.key)
     };
@@ -183,7 +197,7 @@ function renderTrendChart() {
     }
   });
   renderHealthMarkers(dates);
-  const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
+  const healthNote = 'Gesundheit zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
   setText('analysis-overview-trend-note',
     'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
   updateMetricSwitch();
@@ -392,9 +406,20 @@ function renderIntensityDistribution() {
     chartKey: 'analysisOverviewZoneChartInstance'
   });
 }
+function renderSharedPeriodControl() {
+  const container=document.getElementById('analysis-shared-period');
+  if(!container)return;
+  const active=state.activeTimeframe||'3m';
+  const ranges=[['7d','7 T'],['28d','28 T'],['30d','30 T'],['42d','42 T'],['3m','90 T'],['1y','365 T']];
+  container.innerHTML='<div id="analysis-period-buttons" aria-label="Analysezeitraum auswählen">'+
+    ranges.map(([key,label])=>'<button type="button" id="tf-'+key+'" class="'+(active===key?'bg-cyan-600':'')+'" aria-pressed="'+String(active===key)+'" onclick="setTimeframe(\''+key+'\')">'+label+'</button>').join('')+
+    '<button type="button" id="tf-custom" class="'+(active==='custom'?'bg-cyan-600':'')+'" aria-pressed="'+String(active==='custom')+'" onclick="switchTab(\'analysis-load\');toggleCustomDatePicker()">Individuell</button>'+
+    '</div>';
+}
 export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderTrendChart();
+  renderSharedPeriodControl();
   renderActivityChart();
   renderIntensityDistribution();
   renderPeriodSummary();

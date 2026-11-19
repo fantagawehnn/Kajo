@@ -8,9 +8,80 @@ import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage, flushLocalPersistence } from './storage.js?v=5';
 import { toLocalDateString, parseLocalDate } from './utils.js';
 
+const CHECKIN_DRAFT_PREFIX = 'kajo:checkin:draft:';
+const CHECKIN_DRAFT_FIELDS = ['input-weight','input-sleep-quality','input-soreness','input-fatigue','input-motivation','input-stress','input-sick','input-health-diagnosis','input-period','input-cycle-bleeding','input-cycle-pain','input-cycle-impact','input-cycle-notes'];
+function checkinDraftKey(date) { return CHECKIN_DRAFT_PREFIX + date; }
+function saveCheckinDraft(date) {
+    try {
+        const panel = document.getElementById('daily-checkin-panel');
+        if (!panel || !date) return;
+        const fields = {};
+        for (const id of CHECKIN_DRAFT_FIELDS) {
+            const input = document.getElementById(id);
+            if (!input) continue;
+            fields[id] = input.type === 'checkbox' ? input.checked : input.value;
+        }
+        fields.cycleSymptoms = [...panel.querySelectorAll('#cycle-symptoms input:checked')].map(input => input.value);
+        fields.touched = CHECKIN_DRAFT_FIELDS.filter(id => { const input = document.getElementById(id); return ['input-cycle-pain','input-cycle-impact'].includes(id) ? input?.dataset?.cycleTouched === 'true' : input?.dataset?.checkinTouched === 'true'; });
+        fields.expandedOpen = document.getElementById('checkin-expanded-mode')?.open === true;
+        localStorage.setItem(checkinDraftKey(date), JSON.stringify(fields));
+        const status = document.getElementById('checkin-draft-status');
+        if (status) status.textContent = 'Entwurf lokal gespeichert · ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    } catch (error) { console.warn('Check-in-Entwurf konnte nicht gespeichert werden:', error); }
+}
+function restoreCheckinDraft(date) {
+    try {
+        const raw = localStorage.getItem(checkinDraftKey(date));
+        if (!raw) return false;
+        const draft = JSON.parse(raw);
+        for (const [id, value] of Object.entries(draft)) {
+            if (['cycleSymptoms','touched','expandedOpen'].includes(id)) continue;
+            const input = document.getElementById(id);
+            if (!input) continue;
+            if (input.type === 'checkbox') input.checked = value === true;
+            else if (value !== null && value !== undefined) input.value = String(value);
+        }
+        const selected = new Set(Array.isArray(draft.cycleSymptoms) ? draft.cycleSymptoms : []);
+        document.querySelectorAll('#cycle-symptoms input').forEach(input => { input.checked = selected.has(input.value); });
+        (draft.touched || []).forEach(id => { const input = document.getElementById(id); if (input) input.dataset[['input-cycle-pain','input-cycle-impact'].includes(id) ? 'cycleTouched' : 'checkinTouched'] = 'true'; });
+        const expanded = document.getElementById('checkin-expanded-mode');
+        if (expanded) expanded.open = draft.expandedOpen === true;
+        const status = document.getElementById('checkin-draft-status');
+        if (status) status.textContent = 'Nicht gespeicherter Entwurf wiederhergestellt.';
+        return true;
+    } catch (error) { console.warn('Check-in-Entwurf konnte nicht geladen werden:', error); return false; }
+}
+function clearCheckinDraft(date) {
+    try { if (date) localStorage.removeItem(checkinDraftKey(date)); } catch (error) { console.warn('Check-in-Entwurf konnte nicht entfernt werden:', error); }
+}
+function bindCheckinDraftAutosave() {
+    const panel = document.getElementById('daily-checkin-panel');
+    if (!panel || panel.dataset.draftBound === 'true') return;
+    panel.dataset.draftBound = 'true';
+    const save = () => saveCheckinDraft(state.selectedDashboardDate || toLocalDateString());
+    panel.addEventListener('input', save);
+    panel.addEventListener('change', save);
+    const expanded = document.getElementById('checkin-expanded-mode');
+    if (expanded) expanded.addEventListener('toggle', save);
+}
+
+
 export function loadCheckinInputs() {
     const todayStr = state.selectedDashboardDate || toLocalDateString();
     const current = state.dailyCheckins[todayStr] || {};
+    const dateInput = document.getElementById('checkin-date');
+    if (dateInput) {
+        dateInput.max = toLocalDateString();
+        dateInput.value = todayStr;
+        if (dateInput.dataset.bound !== 'true') {
+            dateInput.dataset.bound = 'true';
+            dateInput.addEventListener('change', () => {
+                if (!dateInput.value) return;
+                state.selectedDashboardDate = dateInput.value;
+                loadCheckinInputs();
+            });
+        }
+    }
     const dateLabel = document.getElementById('checkin-selected-date');
     if (dateLabel) dateLabel.textContent = todayStr === toLocalDateString() ? 'Heute' : new Date(todayStr + 'T12:00:00').toLocaleDateString('de-DE');
     const fields = [
@@ -81,6 +152,10 @@ export function loadCheckinInputs() {
     if (notes) notes.value = cycle.notes || '';
     document.querySelectorAll('#cycle-symptoms input').forEach(el => { el.checked = (cycle.symptoms || []).includes(el.value); });
     toggleCycleFields();
+    const expanded = document.getElementById('checkin-expanded-mode');
+    if (expanded) expanded.open = ['sleepQuality','soreness','fatigue','motivation','stress'].some(key => current[key] !== null && current[key] !== undefined && current[key] !== '') || current.cycle != null || state.healthLogs[todayStr]?.status === 'sick';
+    restoreCheckinDraft(todayStr);
+    toggleCheckinOptionalFields();
     updateCheckin();
 }
 
@@ -135,9 +210,7 @@ export function toggleCheckinOptionalFields() {
     const sick = document.getElementById('input-sick');
     const sickDetails = document.getElementById('sick-details');
     if (sickDetails) sickDetails.classList.toggle('hidden', !sick?.checked);
-    const weight = document.getElementById('input-weight-enabled');
-    const weightDetails = document.getElementById('weight-details');
-    if (weightDetails) weightDetails.classList.toggle('hidden', !weight?.checked);
+    // Gewicht bleibt im Schnellmodus immer sichtbar; die erweiterten Angaben sind optional.
 }
 
 export function toggleCycleFields() {
@@ -165,6 +238,8 @@ export function openDailyCheckinModal() {
         return;
     }
 
+    bindCheckinDraftAutosave();
+    if (!modal.dataset.originalSelectedDate) modal.dataset.originalSelectedDate = state.selectedDashboardDate || toLocalDateString();
     // Das Formular zuerst aus dem ggf. ausgeblendeten Dashboard-Detailbereich lösen.
     if (panel.parentElement !== content) content.appendChild(panel);
 
@@ -194,6 +269,9 @@ export function openDailyCheckinModal() {
 export function discardDailyCheckin() {
     const modal = document.getElementById("daily-checkin-modal");
     if (!modal) return;
+    clearCheckinDraft(state.selectedDashboardDate || document.getElementById('checkin-date')?.value || toLocalDateString());
+    if (modal.dataset.originalSelectedDate) state.selectedDashboardDate = modal.dataset.originalSelectedDate;
+    delete modal.dataset.originalSelectedDate;
     // Nicht gespeicherte Formularänderungen werden verworfen. Beim nächsten Öffnen
     // lädt loadCheckinInputs() wieder ausschließlich die gespeicherten Tagesdaten.
     modal.classList.add("hidden");
@@ -218,6 +296,12 @@ export function closeDailyCheckinModal() {
     modal.style.setProperty("pointer-events", "none", "important");
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("kajo-modal-open");
+    const saved = modal.dataset.saved === 'true';
+    const activeDate = document.getElementById('checkin-date')?.value || state.selectedDashboardDate;
+    let hasDraft = false;
+    try { hasDraft = Boolean(activeDate && localStorage.getItem(checkinDraftKey(activeDate))); } catch (_) {}
+    if ((saved || !hasDraft) && modal.dataset.originalSelectedDate) state.selectedDashboardDate = modal.dataset.originalSelectedDate;
+    delete modal.dataset.originalSelectedDate;
     delete modal.dataset.saved;
 }
 
@@ -245,11 +329,10 @@ export function saveCheckin() {
         }
         scaleUpdates[key] = value;
     }
-    const weightEnabled = document.getElementById('input-weight-enabled')?.checked === true;
     const weightRaw = document.getElementById('input-weight')?.value.trim() || '';
-    const weightVal = weightEnabled && weightRaw !== '' ? Number(weightRaw) : NaN;
-    if (weightEnabled && weightRaw !== '' && (!Number.isFinite(weightVal) || weightVal <= 0)) {
-        alert('Bitte gib ein gültiges Körpergewicht größer als 0 kg ein.');
+    const weightVal = weightRaw !== '' ? Number(weightRaw) : NaN;
+    if (weightRaw !== '' && (!Number.isFinite(weightVal) || weightVal < 20 || weightVal > 300)) {
+        alert('Bitte gib ein gültiges Körpergewicht zwischen 20 und 300 kg ein.');
         return;
     }
     const isSick = document.getElementById('input-sick')?.checked === true;
@@ -259,7 +342,7 @@ export function saveCheckin() {
     const checkin = {
         ...existing,
         ...scaleUpdates,
-        weight: weightEnabled && Number.isFinite(weightVal) ? weightVal : existing.weight
+        weight: Number.isFinite(weightVal) ? weightVal : existing.weight
     };
     const cycleSection = document.getElementById('cycle-checkin-section');
     const cycleEnabled = cycleSection && !cycleSection.classList.contains('hidden');
@@ -289,6 +372,13 @@ export function saveCheckin() {
         } else {
             delete checkin.cycle;
         }
+    }
+    const hasExistingCheckin = ['sleepQuality','soreness','fatigue','motivation','stress'].some(key => existing[key] !== null && existing[key] !== undefined && existing[key] !== '')
+        || (existing.weight !== null && existing.weight !== undefined && existing.weight !== '')
+        || existing.cycle != null;
+    if (!Number.isFinite(weightVal) && Object.keys(scaleUpdates).length === 0 && !isSick && !checkin.cycle && !hasExistingCheckin) {
+        alert('Bitte trage dein Gewicht ein oder erfasse mindestens eine Angabe im erweiterten Check-in.');
+        return;
     }
     const previousCheckin = state.dailyCheckins[todayStr];
     const previousHealthLog = state.healthLogs[todayStr];
@@ -322,6 +412,7 @@ export function saveCheckin() {
         return;
     }
 
+    clearCheckinDraft(todayStr);
     const checkinModal = document.getElementById('daily-checkin-modal');
     if (checkinModal) checkinModal.dataset.saved = 'true';
     closeDailyCheckinModal();
