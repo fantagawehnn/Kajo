@@ -16,7 +16,8 @@ const ACTIVITY_FIELDS = [
     'waterType', 'waterConditions', 'trainingPartner', 'garminTrainingLoad'
 ];
 const CHECKIN_FIELDS = [
-    'hrv', 'rhr', 'garminRhr', 'sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'vo2max',
+    'hrv', 'garminHrv', 'rhr', 'garminRhr', 'measurementSources',
+    'sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'vo2max',
     'fatigue', 'soreness', 'motivation', 'stress', 'respiration'
 ];
 const TIMELINE_FIELDS = [
