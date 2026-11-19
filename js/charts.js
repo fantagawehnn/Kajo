@@ -8,6 +8,8 @@
  * ============================================================ */
 
 import { state } from './state.js';
+import { saveDataToLocalStorage } from './storage.js';
+import { getDefaultActivityTelemetryMetrics, normalizeFitSpeed, normalizeMetricSpeed, PADDLE_ACTIVITY_TYPES } from './activity-telemetry-core.js';
 import { formatDateDDMMYY, sportsCatalog, toLocalDateString, getSportsCatalog } from './utils.js';
 import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard.js';
 import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=5';
@@ -583,7 +585,8 @@ const activitySeriesMeta = {
     swimPace: { label: 'Pace', unit: 's/100 m', color: '#f59e0b', min: 0 },
     speed: { label: 'Geschwindigkeit', unit: 'km/h', color: '#38bdf8', min: 0 },
     power: { label: 'Leistung', unit: 'W', color: '#a78bfa', min: 0 },
-    cadence: { label: 'Frequenz', unit: '/min', color: '#fbbf24', min: 0 },
+    cadence: { label: 'Kadenz', unit: '/min', color: '#fbbf24', min: 0 },
+    strokeRate: { label: 'Schlagfrequenz', unit: 'spm', color: '#fbbf24', min: 0 },
     altitude: { label: 'Höhe', unit: 'm', color: '#34d399' },
     distance: { label: 'Distanz', unit: 'km', color: '#60a5fa', min: 0 },
     respirationRate: { label: 'Atemfrequenz', unit: '/min', color: '#2dd4bf', min: 4, max: 80 },
@@ -700,6 +703,7 @@ export function getActivityTelemetrySeries(act) {
         swimPace: [telem.paceSecondsPer100m, fields.pace_seconds_per_100m],
         speed: [telem.speed, fields.speed, fields.enhanced_speed],
         power: [telem.power, fields.power],
+        strokeRate: [telem.strokeRate, fields.stroke_rate, fields.strokeRate, fields.cadence, telem.cadence],
         cadence: [telem.cadence, fields.cadence],
         altitude: [telem.altitude, fields.altitude, fields.enhanced_altitude],
         respirationRate: [telem.respirationRate, fields.respiration_rate],
@@ -728,7 +732,8 @@ export function getActivityTelemetrySeries(act) {
         if (/pace|tempo/.test(descriptor)) return 'pace';
         if (['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
             && /directfractionalcadence|double cadence/.test(descriptor)) return 'doubleCadence';
-        if (/cadence|frequenz|stroke.?rate|zugfrequenz/.test(descriptor)) return 'cadence';
+        if (/stroke.?rate|zugfrequenz|schlagfrequenz/.test(descriptor)) return 'strokeRate';
+        if (/cadence|frequenz/.test(descriptor)) return PADDLE_ACTIVITY_TYPES.includes(act?.type) ? 'strokeRate' : 'cadence';
         if (/body.?battery/.test(descriptor)) return 'bodyBattery';
         if (/grade|steigung/.test(descriptor)) return 'grade';
         if (/ground.?contact/.test(descriptor)) return 'groundcontacttime';
@@ -742,20 +747,29 @@ export function getActivityTelemetrySeries(act) {
     for (const [key, sources] of Object.entries(aliases)) {
         const meta = activitySeriesMeta[key];
         if (!isTelemetrySeriesAllowed(act, key, meta.label)) continue;
-        const values = sources.find(value => Array.isArray(value) && value.filter(item =>
+        const rawValues = sources.find(value => Array.isArray(value) && value.filter(item =>
             item !== null && item !== undefined && item !== '' && Number.isFinite(Number(item))
         ).length >= 2);
-        if (!values || (key === 'speed' && !isMeaningfulRideSpeed(act, values))) continue;
+        if (!rawValues || (key === 'speed' && !isMeaningfulRideSpeed(act, rawValues, 'm/s'))) continue;
         const semantic = semanticFor(key, meta.label);
         if (seenSemantics.has(semantic)) continue;
         seenSemantics.add(semantic);
         const metricColor = getActivityTelemetryColor(key, meta.label);
-        const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
-            && (key === 'speed' || key === 'power')
-            ? meta.label + ' (Gerätemesswert)' : meta.label;
-        result.push({ key, label: displayLabel, unit: meta.unit, color: metricColor,
-            time: getValidatedElapsedTimeAxis(telem, values.length),
-            values: values.map(value =>
+        const isPaddle = PADDLE_ACTIVITY_TYPES.includes(act?.type);
+        const isStrokeRate = semantic === 'strokeRate';
+        const displayLabel = key === 'speed' || key === 'power'
+            ? (isPaddle ? meta.label + ' (Garmin-Messwert)' : meta.label)
+            : isStrokeRate ? (isPaddle ? 'Schlagfrequenz' : act?.type === 'Swim' ? 'Zugfrequenz' : 'Frequenz')
+            : key === 'cadence' && act?.type === 'Run' ? 'Schrittfrequenz'
+            : key === 'cadence' && act?.type === 'Ride' ? 'Trittfrequenz' : meta.label;
+        const unit = key === 'speed' ? 'km/h'
+            : isStrokeRate ? 'spm'
+            : key === 'cadence' && act?.type === 'Ride' ? 'rpm'
+            : key === 'cadence' && act?.type === 'Run' ? 'Schritte/min' : meta.unit;
+        const normalized = key === 'speed' ? normalizeFitSpeed(rawValues).values : rawValues;
+        result.push({ key, label: displayLabel, unit, color: metricColor,
+            time: getValidatedElapsedTimeAxis(telem, rawValues.length),
+            values: normalized.map(value =>
                 value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
                     || (meta.min != null && Number(value) < meta.min) || (meta.max != null && Number(value) > meta.max)
                     ? null : Number(value)
@@ -779,23 +793,27 @@ export function getActivityTelemetrySeries(act) {
         // normalisierte Standardreihe, ansonsten die verfügbare Garmin-Rohreihe.
         if (seenSemantics.has(semantic)) continue;
         seenSemantics.add(semantic);
-        const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
-            && (semantic === 'speed' || semantic === 'power')
-            ? label + ' (Gerätemesswert)' : label;
+        const isPaddle = PADDLE_ACTIVITY_TYPES.includes(act?.type);
+        const isSpeed = semantic === 'speed';
+        const isStrokeRate = semantic === 'strokeRate';
+        const speed = isSpeed ? normalizeMetricSpeed(metric.values, metric.unit) : null;
+        const displayLabel = isSpeed || semantic === 'power'
+            ? (isPaddle ? label + ' (Garmin-Messwert)' : label)
+            : isStrokeRate ? (isPaddle ? 'Schlagfrequenz' : act?.type === 'Swim' ? 'Zugfrequenz' : label)
+            : label;
+        const unit = isSpeed ? speed.unit
+            : isStrokeRate ? 'spm'
+            : typeof metric.unit === 'string' ? metric.unit : '';
+        const values = isSpeed ? speed.values : metric.values;
         result.push({
             key,
             label: displayLabel,
-            unit: typeof metric.unit === 'string' ? metric.unit : '',
-            time: getValidatedElapsedTimeAxis(telem, metric.values.length),
+            unit,
+            time: getValidatedElapsedTimeAxis({ ...telem, time: metric.time || telem.metricSeriesTime || telem.time }, values.length),
             color: getActivityTelemetryColor(key, displayLabel),
-            values: metric.values.map(value => value === null || value === undefined || value === ''
+            values: values.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
         });
-    }
-    const selectedMetrics = state.settings?.telemetryMetrics?.[act?.type];
-    if (Array.isArray(selectedMetrics)) {
-        const selectedSet = new Set(selectedMetrics);
-        return result.filter(item => selectedSet.has(semanticFor(item.key, item.label)));
     }
     return result;
 }
@@ -839,6 +857,11 @@ export function setActivityTelemetryMetric(metric) {
     // Auch eine vollständig leere Auswahl ist erlaubt; alle Reihen lassen sich ausblenden.
     state.activityTelemetryMetrics = next;
     state.activityTelemetryMetric = next[0];
+    state.settings = state.settings && typeof state.settings === 'object' ? state.settings : {};
+    state.settings.telemetryMetrics = state.settings.telemetryMetrics && typeof state.settings.telemetryMetrics === 'object'
+        ? state.settings.telemetryMetrics : {};
+    state.settings.telemetryMetrics[act.type || 'Other'] = [...next];
+    saveDataToLocalStorage();
     renderActivityTelemetryChart(act);
 }
 
@@ -859,15 +882,10 @@ export function renderActivityTelemetryChart(act) {
         return;
     }
     panel.classList.remove('hidden');
-    let selectedKeys = Array.isArray(state.activityTelemetryMetrics)
-        ? state.activityTelemetryMetrics.filter(key => series.some(item => item.key === key))
-        : [];
-    if (!Array.isArray(state.activityTelemetryMetrics)) {
-        const initial = series.some(item => item.key === state.activityTelemetryMetric)
-            ? state.activityTelemetryMetric
-            : series.some(item => item.key === 'hr') ? 'hr' : series[0].key;
-        selectedKeys = [initial];
-    }
+    const savedSelection = state.settings?.telemetryMetrics?.[act?.type || 'Other'];
+    let selectedKeys = Array.isArray(savedSelection)
+        ? savedSelection.filter(key => series.some(item => item.key === key))
+        : getDefaultActivityTelemetryMetrics(act?.type, series.map(item => item.key));
     state.activityTelemetryMetrics = selectedKeys;
     state.activityTelemetryMetric = selectedKeys[0];
     if (controls) {
