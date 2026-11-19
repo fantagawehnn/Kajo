@@ -992,6 +992,57 @@ function historyRecommendation(key, value, dateKey) {
         : ['Niedrige Selbsteinschätzung', 'Prüfe mögliche Einflussfaktoren und beobachte, ob sich der Wert über mehrere Tage verändert.'];
     return ['Mittlere Selbsteinschätzung', 'Der Wert liegt im mittleren Skalenbereich. Beobachte die Entwicklung über mehrere Tage.'];
 }
+function metricHistoryValue(kind,key,date){
+ if(kind==='health')return historyValue(state.dailyCheckins[date],key);
+ if(key==='readiness'){const result=calculateReadiness(date);return result.score===null?null:result.score;}
+ const day=(state.dailyTimeline||[]).find(item=>item.date===date);
+ if(!day)return null;
+ if(key==='fitness')return day.ctl;
+ if(key==='atl')return day.atl;
+ if(key==='acwr')return day.acwr;
+ if(key==='tsb')return day.tsb;
+ return day.loadMode?.startsWith('garmin')?day.formPct:day.tsb;
+}
+function chooseAdaptiveHistoryRange(kind,key){
+ const candidates=['7d','28d','3m','6m','1y'];
+ for(const candidate of candidates){
+  const window=historyWindow(candidate),dates=historyRangeDates(window.from,window.to);
+  if(!dates.length)continue;
+  const count=dates.filter(date=>validNumber(metricHistoryValue(kind,key,date))).length;
+  if(count/dates.length>=.7)return {range:candidate,weekly:false};
+ }
+ return {range:'1y',weekly:!['weight','wellbeing'].includes(key)};
+}
+function rollingHistoryAverage(values,windowSize=7){
+ return values.map((_,index)=>{
+  const window=values.slice(Math.max(0,index-windowSize+1),index+1).filter(validNumber).map(Number);
+  return window.length?Number((window.reduce((sum,value)=>sum+value,0)/window.length).toFixed(2)):null;
+ });
+}
+function aggregateHistoryByWeek(dates,values){
+ const buckets=new Map();
+ dates.forEach((date,index)=>{
+  if(!validNumber(values[index]))return;
+  const monday=new Date(date+'T12:00:00');
+  monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+  const key=toLocalDateString(monday);
+  if(!buckets.has(key))buckets.set(key,[]);
+  buckets.get(key).push(Number(values[index]));
+ });
+ const rows=[...buckets.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+ return {
+  labels:rows.map(([key])=>{
+   const d=new Date(key+'T12:00:00');
+   const thursday=new Date(d);thursday.setDate(thursday.getDate()+3);
+   const jan4=new Date(thursday.getFullYear(),0,4);
+   const week1=new Date(jan4);week1.setDate(jan4.getDate()-((jan4.getDay()+6)%7));
+   const week=Math.round((d-week1)/604800000)+1;
+   return 'KW '+String(week).padStart(2,'0');
+  }),
+  values:rows.map(([,items])=>Number((items.reduce((sum,value)=>sum+value,0)/items.length).toFixed(2)))
+ };
+}
+
 function historyDisplay(value, key) {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
     const decimals = ['fitness', 'atl', 'acwr', 'tsb', 'form', 'vo2max', 'sleepDuration', 'respiration', 'weight'].includes(key) ? 1 : 0;
@@ -1095,28 +1146,55 @@ export function historyRingColor(key, value, dateKey) {
     const goodness = reverse ? (5 - value) / 4 * 100 : (value - 1) / 4 * 100;
     return fiveLevelColor(goodness);
 }
-function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null) {
+function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null, options = {}) {
     const canvas = document.getElementById(kind === 'health' ? 'health-metric-chart' : 'training-metric-chart');
     if (!canvas || typeof Chart !== 'function') return;
     const prior = kind === 'health' ? healthHistoryChart : trainingHistoryChart;
     if (prior) prior.destroy();
-    const datasets = [{
-        label: definition.label, data: values, borderColor: definition.color,
+    const validCount = values.filter(validNumber).length;
+    const chartNote = document.getElementById(kind + '-history-chart-note');
+    if (validCount < 3) {
+        canvas.parentElement?.classList.add('hidden');
+        if (chartNote) chartNote.textContent = 'Der Verlauf wird ab mindestens drei Messwerten angezeigt.';
+        if (kind === 'health') healthHistoryChart = null; else trainingHistoryChart = null;
+        return;
+    }
+    canvas.parentElement?.classList.remove('hidden');
+    const weekly = options.weekly === true;
+    const smoothed = !weekly && ['weight', 'wellbeing'].includes(key);
+    const lineValues = smoothed ? rollingHistoryAverage(values, 7) : values;
+    const datasets = weekly ? [{
+        label: definition.label + ' · Wochenmittel',
+        data: values,
+        backgroundColor: definition.color + '70',
+        borderColor: definition.color,
+        borderWidth: 1,
+        borderRadius: 5,
+        maxBarThickness: 34
+    }] : [{
+        label: smoothed ? definition.label + ' · 7-Tage-Mittel' : definition.label,
+        data: lineValues, borderColor: definition.color,
         backgroundColor: definition.color + '20', fill: true, tension: .25,
         borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4,
-        pointHitRadius: 8, spanGaps: false
+        pointHitRadius: 8, spanGaps: true
     }];
-    if (Array.isArray(baselineValues) && baselineValues.some(validNumber)) {
+    if (smoothed) datasets.push({
+        label: 'Einzelmessungen', data: values, showLine: false,
+        borderColor: definition.color, backgroundColor: definition.color,
+        pointRadius: values.map(value => validNumber(value) ? 2.5 : 0),
+        pointHoverRadius: 4, pointHitRadius: 7, spanGaps: true
+    });
+    if (!weekly && Array.isArray(baselineValues) && baselineValues.some(validNumber)) {
         datasets.push({
             label: 'Persönlicher Median (90 Tage)', data: baselineValues,
             borderColor: '#94a3b8', backgroundColor: 'transparent',
             borderDash: [5, 5], fill: false, tension: 0,
             borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0,
-            pointHitRadius: 0, spanGaps: false
+            pointHitRadius: 0, spanGaps: true
         });
     }
     const instance = new Chart(canvas.getContext('2d'), {
-        type: 'line',
+        type: weekly ? 'bar' : 'line',
         data: { labels, datasets },
         options: {
             responsive: true, maintainAspectRatio: false,
@@ -1147,6 +1225,10 @@ function renderHistoryChart(kind, labels, values, definition, key, baselineValue
             }
         }
     });
+    if (chartNote) chartNote.textContent = weekly
+        ? 'Wochenmittel aus den tatsächlich erfassten Messungen.'
+        : smoothed ? 'Linie: gleitender 7-Tage-Mittelwert · Punkte: einzelne Messungen.'
+        : 'Fehlende Messungen werden ohne Ersatzwerte dezent verbunden.';
     if (kind === 'health') healthHistoryChart = instance;
     else trainingHistoryChart = instance;
 }
@@ -1166,7 +1248,10 @@ export function renderMetricHistory(kind) {
     const key = isHealth ? (state.healthHistoryMetric || 'rhr') : (state.trainingHistoryMetric || 'fitness');
     const definition = (isHealth ? historyMetricDefinitions : trainingMetricDefinitions)[key];
     if (!definition) return;
-    const range = state.metricHistoryRange || '28d';
+    let range = state.metricHistoryRangeExplicit && state.metricHistoryRange
+        ? state.metricHistoryRange
+        : chooseAdaptiveHistoryRange(kind, key).range;
+    if (!state.metricHistoryRangeExplicit) state.metricHistoryRange = range;
     let window = historyWindow(range);
     if (range === 'custom') {
         const from = document.getElementById(kind + '-history-from')?.value;
@@ -1174,42 +1259,24 @@ export function renderMetricHistory(kind) {
         if (from && to && from <= to) window = { from, to };
     }
     const dates = historyRangeDates(window.from, window.to);
-    let values;
+    const values = dates.map(date => metricHistoryValue(kind, key, date));
+    const coverage = dates.length ? values.filter(validNumber).length / dates.length : 0;
+    const weeklyFallback = !['weight', 'wellbeing'].includes(key) && coverage < .7;
     let baselineValues = null;
-    if (isHealth) {
-        values = dates.map(date => historyValue(state.dailyCheckins[date], key));
-        if (['hrv', 'rhr', 'sleepDuration'].includes(key)) {
-            baselineValues = dates.map(date => {
-                const dateMs = new Date(date + 'T12:00:00').getTime();
-                const priorFrom = historyDateKey(new Date(dateMs - 90 * 86400000));
-                const priorValues = Object.entries(state.dailyCheckins || {})
-                    .filter(([entryDate]) => entryDate < date && entryDate >= priorFrom)
-                    .map(([, entry]) => historyValue(entry, key))
-                    .filter(value => value !== null);
-                return priorValues.length >= 5 ? median(priorValues) : null;
-            });
-        }
-    } else {
-        const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
-        values = dates.map(date => {
-            if (key === 'readiness') {
-                const result = calculateReadiness(date);
-                return result.score === null ? null : result.score;
-            }
-            const day = timeline.get(date);
-            if (!day) return null;
-            if (key === 'fitness') return day.ctl;
-            if (key === 'atl') return day.atl;
-            if (key === 'acwr') return day.acwr;
-            if (key === 'tsb') return day.tsb;
-            return day.loadMode?.startsWith('garmin') ? day.formPct : day.tsb;
+    if (isHealth && ['hrv', 'rhr', 'sleepDuration'].includes(key) && !weeklyFallback) {
+        baselineValues = dates.map(date => {
+            const dateMs = new Date(date + 'T12:00:00').getTime();
+            const priorFrom = historyDateKey(new Date(dateMs - 90 * 86400000));
+            const priorValues = Object.entries(state.dailyCheckins || {})
+                .filter(([entryDate]) => entryDate < date && entryDate >= priorFrom)
+                .map(([, entry]) => historyValue(entry, key))
+                .filter(value => value !== null);
+            return priorValues.length >= 5 ? median(priorValues) : null;
         });
     }
     const today = historyTodayKey();
     const todayValue = dates.includes(today) ? values[dates.indexOf(today)] : null;
-    const [headline, recommendation] = isHealth
-        ? historyRecommendation(key, todayValue, today)
-        : historyRecommendation(key, todayValue, today);
+    const [headline, recommendation] = historyRecommendation(key, todayValue, today);
     const title = document.getElementById(kind + '-history-title');
     const unit = document.getElementById(kind + '-history-unit');
     const value = document.getElementById(kind + '-history-current');
@@ -1221,7 +1288,7 @@ export function renderMetricHistory(kind) {
     if (unit) {
         const todayTimeline = state.dailyTimeline.find(item => item.date === today);
         unit.textContent = key === 'form'
-            ? (todayTimeline?.loadMode?.startsWith('garmin') ? 'Saldo · %' : 'Saldo · Load-Punkte')
+            ? (todayTimeline?.loadMode?.startsWith('garmin') ? 'Form · %' : 'Form · Punkte')
             : definition.unit;
     }
     if (value) value.textContent = historyDisplay(todayValue, key);
@@ -1235,7 +1302,7 @@ export function renderMetricHistory(kind) {
     if (status) status.textContent = headline;
     if (note) note.textContent = recommendation;
     const baselineNote = document.getElementById(kind + '-history-baseline-note');
-    if (baselineNote && isHealth && ['hrv', 'rhr', 'sleepDuration'].includes(key)) {
+    if (baselineNote && isHealth && ['hrv', 'rhr', 'sleepDuration'].includes(key) && !weeklyFallback) {
         const latestBaseline = baselineValues?.slice().reverse().find(validNumber);
         baselineNote.textContent = latestBaseline !== undefined
             ? 'Gestrichelte Linie: persönlicher Median der vorherigen 90 Tage (mindestens 5 gültige Vergleichswerte).'
@@ -1243,12 +1310,12 @@ export function renderMetricHistory(kind) {
     } else if (baselineNote) {
         baselineNote.textContent = '';
     }
-    if (chartNote) chartNote.textContent = dates.length + ' Kalendertage · fehlende Messungen werden als Lücken dargestellt.';
-    const canvasLabels = dates.map(date => {
+    const chartDates = weeklyFallback ? aggregateHistoryByWeek(dates, values) : null;
+    const canvasLabels = chartDates ? chartDates.labels : dates.map(date => {
         const d = new Date(date + 'T12:00:00');
         return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
     });
-    renderHistoryChart(kind, canvasLabels, values, definition, key, baselineValues);
+    renderHistoryChart(kind, canvasLabels, chartDates ? chartDates.values : values, definition, key, baselineValues, { weekly: weeklyFallback });
     renderHistoryRangeControls(kind);
     const tabsId = kind === 'health' ? 'health-metric-tabs' : 'training-metric-tabs';
     document.querySelectorAll('#' + tabsId + ' [data-history-metric]').forEach(button => {
@@ -1265,6 +1332,7 @@ export function setHistoryMetric(kind, key) {
 }
 export function setHistoryRange(range) {
     state.metricHistoryRange = range;
+    state.metricHistoryRangeExplicit = true;
     const activeKind = document.getElementById('view-health-data')?.classList.contains('hidden') ? 'training' : 'health';
     if (range === 'custom') {
         const from = document.getElementById(activeKind + '-history-from');
@@ -1283,6 +1351,7 @@ export function applyHistoryCustomRange(kind) {
         return;
     }
     state.metricHistoryRange = 'custom';
+    state.metricHistoryRangeExplicit = true;
     renderMetricHistory(kind);
 }
 export function openHealthMetric(key) {
