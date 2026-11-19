@@ -79,7 +79,7 @@ function rangeWindow() {
     const to = document.getElementById('kajo-health-to')?.value;
     if (from && to && from <= to) return { from, to };
   }
-  const candidates=[['7d',7],['28d',28],['3m',90],['6m',180],['1y',365]];
+  const candidates=[['7d',7],['28d',28],['30d',30],['42d',42],['3m',90],['1y',365]];
   if(!selectedRangeExplicit){
     for(const [key,days] of candidates){
       const start=new Date(end+'T12:00:00');start.setDate(start.getDate()-days+1);
@@ -235,7 +235,7 @@ export function closeGarminHealthMetric() {
   renderGarminHealthData();
 }
 export function setGarminHealthRange(range) {
-  if (!['7d','28d','3m','6m','1y','custom'].includes(range)) return;
+  if (!['7d','28d','30d','42d','3m','1y','custom'].includes(range)) return;
   selectedRange=range;
   selectedRangeExplicit=true;
   if (range==='custom') {
