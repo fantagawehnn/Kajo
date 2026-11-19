@@ -93,6 +93,9 @@ jobs:
       - name: Run adaptive weekly review tests
         run: node --experimental-default-type=module --test tests/adaptive-week-review.test.mjs
 
+      - name: Run adaptive weekly adjustment Worker tests
+        run: node --experimental-default-type=module --test tests/adaptive-week-adjustment-worker.test.mjs
+
       - name: Run Coach context regression tests
         run: node --experimental-default-type=module --test tests/coach-context.test.mjs
 
