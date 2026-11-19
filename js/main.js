@@ -32,7 +32,7 @@ import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=8';
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=47';
 import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=12';
-import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=22';
+import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, updateActivityStrengthSet, updateActivityStrengthExerciseName, toggleActivityStrengthSection } from './activities.js?v=23';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=80';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
 import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout } from './planning.js?v=3';
@@ -874,6 +874,16 @@ function applyGarminFitDetail(activity, detail) {
             ? detail.telemetry
             : mergeTelemetryData(activity.garminTelemetry, detail.telemetry).value;
     }
+    if (Array.isArray(detail.exercises) && detail.exercises.length
+        && (!Array.isArray(activity.exercises) || activity.exercises.length === 0)) {
+        activity.exercises = detail.exercises.map(exercise => ({
+            ...exercise,
+            sets: (Array.isArray(exercise.sets) ? exercise.sets : []).map(set => ({ ...set }))
+        }));
+        activity.strengthSource = 'garmin-fit';
+        activity.strengthImportedAt = new Date().toISOString();
+        if (!activity.type || activity.type === 'Workout') activity.type = 'WeightTraining';
+    }
     activity.garminFitData = {
         recordCount: detail.recordCount || 0,
         recordFields: detail.recordFields || {},
@@ -1605,6 +1615,17 @@ function mergeGarminActivity(existing, incoming) {
     const nextSources = Array.from(new Set([...priorSources, existing.source || 'local', 'garmin']));
     if (nextSources.length !== priorSources.length) { existing.sources = nextSources; changed = true; }
     if (!existing.source) { existing.source = 'garmin'; changed = true; }
+    if (Array.isArray(incoming.exercises) && incoming.exercises.length
+        && (!Array.isArray(existing.exercises) || existing.exercises.length === 0)) {
+        existing.exercises = incoming.exercises.map(exercise => ({
+            ...exercise,
+            sets: (Array.isArray(exercise.sets) ? exercise.sets : []).map(set => ({ ...set }))
+        }));
+        existing.strengthSource = incoming.strengthSource || 'garmin-fit';
+        existing.strengthImportedAt = incoming.strengthImportedAt || new Date().toISOString();
+        if (!existing.type || existing.type === 'Workout') existing.type = 'WeightTraining';
+        changed = true;
+    }
     if (incoming.garminFitData && typeof incoming.garminFitData === 'object') {
         const oldFitCount = Number(existing.garminFitData?.recordCount || 0);
         const newFitCount = Number(incoming.garminFitData.recordCount || 0);
@@ -1737,9 +1758,44 @@ async function downloadGarminFitTelemetry(activityId) {
     }
     const laps = Array.isArray(fit.laps) ? fit.laps : (Array.isArray(parsedMessages.lap) ? parsedMessages.lap : []);
     const sets = Array.isArray(fit.sets) ? fit.sets : (Array.isArray(parsedMessages.set) ? parsedMessages.set : []);
+    const exerciseMessages = Array.isArray(fit.exercises) ? fit.exercises
+        : (Array.isArray(parsedMessages.exercise) ? parsedMessages.exercise
+            : (Array.isArray(parsedMessages.exercise_title) ? parsedMessages.exercise_title : []));
     const workoutSteps = Array.isArray(fit.workout_steps) ? fit.workout_steps
         : (Array.isArray(parsedMessages.workout_step) ? parsedMessages.workout_step : []);
-    messageGroups.structured = { laps, sets, workoutSteps };
+    const strengthExercises = [];
+    const getExerciseName = value => {
+        const candidates = [value?.exercise_name, value?.exerciseName, value?.exercise_title,
+            value?.exerciseTitle, value?.name, value?.title];
+        const found = candidates.find(item => typeof item === 'string' && item.trim());
+        return found ? found.trim() : '';
+    };
+    const getNumericField = (...values) => {
+        const value = values.find(item => item !== null && item !== undefined && item !== ''
+            && Number.isFinite(Number(item)));
+        return value === undefined ? null : Number(value);
+    };
+    sets.forEach((set, index) => {
+        const matchedExercise = exerciseMessages.find(item => {
+            const setCategory = set?.exercise_category ?? set?.category;
+            const exerciseCategory = item?.exercise_category ?? item?.category;
+            return setCategory != null && exerciseCategory != null
+                && String(setCategory) === String(exerciseCategory);
+        });
+        const name = getExerciseName(set) || getExerciseName(matchedExercise)
+            || 'Garmin-Übung ' + (index + 1);
+        let exercise = strengthExercises.find(item => item.name === name);
+        if (!exercise) {
+            exercise = { name, sets: [], source: 'garmin-fit' };
+            strengthExercises.push(exercise);
+        }
+        exercise.sets.push({
+            reps: getNumericField(set?.repetitions, set?.reps, set?.repeat_count),
+            weight: getNumericField(set?.weight, set?.weight_kg, set?.weightKg),
+            source: 'garmin-fit'
+        });
+    });
+    messageGroups.structured = { laps, sets, exercises: exerciseMessages, workoutSteps };
     const lapSummaries = laps.map((lap, index) => ({
         lapNumber: index + 1,
         startTime: lap.start_time ?? lap.timestamp ?? null,
@@ -1756,6 +1812,7 @@ async function downloadGarminFitTelemetry(activityId) {
         telemetry, session, hrCount, speedCount, cadenceCount,
         recordFields, recordFieldCounts, recordCount: valid.length,
         messageGroups, lapSummaries, lapCount: laps.length, setCount: sets.length,
+        exercises: strengthExercises,
         workoutStepCount: workoutSteps.length
     };
 }
@@ -3238,6 +3295,8 @@ Object.assign(window, {
     saveManualSportCorrection,
     addActivityStrengthSet,
     removeActivityStrengthSet,
+    updateActivityStrengthSet,
+    updateActivityStrengthExerciseName,
     toggleActivityStrengthSection,
     toggleActivityEdit,
     updateActivityRPE,

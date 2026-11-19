@@ -978,7 +978,7 @@ export function addActivityStrengthSet() {
     let entry = act.exercises.find(item => String(item.name).toLowerCase() === exercise.toLowerCase());
     if (!entry) { entry = { name: exercise, sets: [] }; act.exercises.push(entry); }
     if (!Array.isArray(entry.sets)) entry.sets = [];
-    entry.sets.push({ reps, weight });
+    entry.sets.push({ reps, weight, source: 'manual' });
     saveDataToLocalStorage();
     renderActivityStrengthSets(act);
     renderSportSpecificActivityMetrics(act, getActivityLoadSummary(act));
@@ -1027,15 +1027,58 @@ export function toggleActivityStrengthSection(type) {
     const section = document.getElementById('activity-strength-section');
     if (section) section.classList.toggle('hidden', type !== 'WeightTraining');
 }
+export function updateActivityStrengthExerciseName(exerciseIndex, value) {
+    const act = state.selectedActivityForModal;
+    const exercise = act?.exercises?.[Number(exerciseIndex)];
+    const name = String(value ?? '').trim().slice(0, 80);
+    if (!exercise || !name) return;
+    exercise.name = name;
+    saveDataToLocalStorage();
+    renderActivityStrengthSets(act);
+    renderActivityStrengthAnalysis(act);
+    renderSportSpecificActivityMetrics(act, getActivityLoadSummary(act));
+}
+export function updateActivityStrengthSet(exerciseIndex, setIndex, field, value) {
+    const act = state.selectedActivityForModal;
+    const set = act?.exercises?.[Number(exerciseIndex)]?.sets?.[Number(setIndex)];
+    if (!set || !['reps', 'weight'].includes(field)) return;
+    if (String(value ?? '').trim() === '') set[field] = null;
+    else {
+        const numeric = Number(value);
+        const valid = Number.isFinite(numeric) && numeric >= 0
+            && (field !== 'reps' || (Number.isInteger(numeric) && numeric >= 1 && numeric <= 100))
+            && (field !== 'weight' || numeric <= 1000);
+        if (!valid) {
+            alert(field === 'reps' ? 'Bitte gib 1 bis 100 Wiederholungen an.' : 'Bitte gib ein gültiges Gewicht zwischen 0 und 1000 kg an.');
+            renderActivityStrengthSets(act);
+            return;
+        }
+        set[field] = numeric;
+    }
+    saveDataToLocalStorage();
+    renderActivityStrengthSets(act);
+    renderActivityStrengthAnalysis(act);
+    renderSportSpecificActivityMetrics(act, getActivityLoadSummary(act));
+}
 function renderActivityStrengthSets(act) {
     const panel = document.getElementById('activity-strength-editor');
     if (!panel) return;
     const exercises = Array.isArray(act.exercises) ? act.exercises : [];
+    const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     panel.innerHTML = exercises.length ? exercises.map((exercise, i) => {
         const sets = Array.isArray(exercise.sets) ? exercise.sets : [];
-        return '<div class="rounded-lg border border-slate-800 p-3 space-y-2"><strong class="text-xs text-white">' +
-            String(exercise.name || 'Übung').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) +
-            '</strong><div class="text-[10px] text-purple-300">Übungsvolumen: ' + sets.reduce((sum, set) => sum + (Number(set.reps) > 0 && Number(set.weight) >= 0 ? Number(set.reps) * Number(set.weight) : 0), 0).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg</div>' + sets.map((set, j) => '<div class="flex items-center justify-between text-xs text-slate-300"><span>Satz ' + (j + 1) + ': ' + Number(set.reps) + ' Wdh. × ' + Number(set.weight).toLocaleString('de-DE') + ' kg</span><button type="button" onclick="removeActivityStrengthSet(' + i + ',' + j + ')" class="text-rose-400">Entfernen</button></div>').join('') + '</div>';
+        const volumeComplete = sets.every(set => Number.isInteger(Number(set.reps)) && Number(set.reps) > 0
+            && set.weight != null && set.weight !== '' && Number.isFinite(Number(set.weight)) && Number(set.weight) >= 0);
+        const volume = volumeComplete ? sets.reduce((sum, set) => sum + Number(set.reps) * Number(set.weight), 0) : null;
+        return '<div class="rounded-lg border border-slate-800 p-3 space-y-2">'
+            + '<label class="block text-[10px] text-slate-400">Übung bearbeiten<input class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-xs text-white" maxlength="80" value="' + escape(exercise.name || '') + '" onchange="updateActivityStrengthExerciseName(' + i + ',this.value)"></label>'
+            + (volumeComplete ? '<div class="text-[10px] text-purple-300">Übungsvolumen: ' + volume.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' kg</div>' : '<div class="text-[10px] text-slate-500">Volumen nicht vollständig berechenbar · Angaben ergänzen</div>')
+            + sets.map((set, j) => '<div class="grid grid-cols-[1fr_1fr_auto] items-end gap-2 text-xs text-slate-300">'
+                + '<label class="text-[10px] text-slate-500">Wdh.<input type="number" min="1" max="100" step="1" placeholder="—" value="' + (set.reps ?? '') + '" class="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white" onchange="updateActivityStrengthSet(' + i + ',' + j + ',\'reps\',this.value)"></label>'
+                + '<label class="text-[10px] text-slate-500">Gewicht (kg)<input type="number" min="0" max="1000" step="0.5" placeholder="—" value="' + (set.weight ?? '') + '" class="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-white" onchange="updateActivityStrengthSet(' + i + ',' + j + ',\'weight\',this.value)"></label>'
+                + '<button type="button" onclick="removeActivityStrengthSet(' + i + ',' + j + ')" class="pb-2 text-rose-400">Entfernen</button></div>').join('')
+            + (exercise.source === 'garmin-fit' || sets.some(set => set.source === 'garmin-fit') ? '<p class="text-[9px] text-cyan-400">Aus Garmin übernommen · bearbeitbar</p>' : '')
+            + '</div>';
     }).join('') : '<p class="text-[11px] text-slate-500">Noch keine Übungen dokumentiert.</p>';
 }
 
