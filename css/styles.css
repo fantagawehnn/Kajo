@@ -9130,3 +9130,32 @@ body.kajo-modal-open { overflow: hidden !important; }
     width: 11px !important; height: 11px !important;
   }
 }
+
+
+/* Phase 2: kompakter Check-in und Gewichtsverlauf */
+.kajo-wellbeing-picker{display:grid;grid-template-columns:repeat(5,minmax(44px,1fr));gap:9px;max-width:340px}
+.kajo-wellbeing-picker button{min-width:44px;min-height:44px;border:1px solid var(--kajo-border);border-radius:999px;background:var(--kajo-surface);color:var(--kajo-text);font-size:.9rem;font-weight:750;transition:background .15s ease,border-color .15s ease}
+.kajo-wellbeing-picker button.is-selected{border-color:var(--kajo-blue);background:color-mix(in srgb,var(--kajo-blue) 18%,var(--kajo-surface));color:var(--kajo-text)}
+.kajo-wellbeing-picker button:focus-visible{outline:2px solid var(--kajo-blue);outline-offset:2px}
+.kajo-wellbeing-scale{display:flex;justify-content:space-between;max-width:340px;color:var(--kajo-muted);font-size:.65rem}
+.kajo-checkin-details{border-top:1px solid var(--kajo-border);padding-top:12px}
+.kajo-checkin-details>summary{cursor:pointer;color:var(--kajo-blue);font-size:.78rem;font-weight:700;list-style:none}
+.kajo-checkin-details>summary::-webkit-details-marker{display:none}
+.kajo-checkin-details>summary::after{content:"+";float:right;font-size:1rem}
+.kajo-checkin-details[open]>summary::after{content:"−"}
+.kajo-weight-view{padding:0 0 18px;margin:0 0 16px;border-bottom:1px solid var(--kajo-border);min-width:0}
+.kajo-weight-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.kajo-weight-heading h2{color:var(--kajo-text);font-size:.95rem;font-weight:800;line-height:1.25}
+.kajo-weight-heading p:last-child{margin-top:3px;color:var(--kajo-muted);font-size:.68rem}
+.kajo-weight-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:10px 0 12px}
+.kajo-weight-summary>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.kajo-weight-summary span{color:var(--kajo-muted);font-size:.65rem;font-weight:700}
+.kajo-weight-summary strong{color:var(--kajo-text);font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums}
+.kajo-weight-summary small{color:var(--kajo-muted);font-size:.63rem;line-height:1.4}
+.kajo-weight-chart{position:relative;width:100%;height:230px;min-width:0}
+.kajo-weight-target-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:9px;margin-top:12px}
+.kajo-weight-target-row label{display:flex;flex:1 1 170px;flex-direction:column;gap:5px;color:var(--kajo-muted);font-size:.68rem;font-weight:650}
+.kajo-weight-target-row input{width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--kajo-border);border-radius:12px;background:var(--kajo-surface);color:var(--kajo-text)}
+.kajo-weight-target-row button{min-height:44px;padding:0 16px;border-radius:999px;background:var(--kajo-blue);color:#fff;font-size:.72rem;font-weight:750}
+.kajo-weight-note{margin-top:6px;color:var(--kajo-muted);font-size:.63rem;line-height:1.45}
+@media(max-width:480px){.kajo-weight-chart{height:205px}.kajo-weight-target-row button{flex:1 1 100%}.kajo-weight-summary{gap:8px}}
