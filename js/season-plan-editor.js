@@ -3,6 +3,7 @@ import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
 import { requestSeasonPlanProposal, requestWeeklyPlanProposal } from './coach.js?v=2';
 import { renderCalendar } from './calendar.js';
+import { renderPlannedWorkouts } from './planning.js';
 
 let draftPhases = [];
 let pendingProposal = null;
@@ -195,7 +196,7 @@ export function approveWeeklyPlan(weekStartDate) {
 function calendarTypeForSession(session) {
     const discipline = String(session.discipline || '').toLowerCase();
     const type = String(session.type || '').toLowerCase();
-    if (discipline === 'k1' || type === 'kayaking' || type === 'k1' || type.includes('canoe')) return 'Kayaking';
+    if (discipline === 'k1' || type === 'kayaking' || type === 'k1') return 'Kayaking';
     if (discipline === 'c1' || type === 'c1') return 'C1';
     if (discipline === 'c2' || type === 'c2') return 'C2';
     if (type.includes('run') || type.includes('lauf')) return 'Run';
@@ -271,16 +272,11 @@ export function transferWeeklyPlanToCalendar(weekStartDate) {
             return false;
         }
         renderCalendar();
-        renderPlannedWorkoutsIfAvailable();
+        renderPlannedWorkouts();
     }
     if (message) message.textContent = additions.length + ' Einheit(en) in den Kalender übernommen; ' + skipped.length + ' übersprungen (bereits vorhanden oder Trainingsart nicht eindeutig).';
     renderWeeklyPlanPanel();
     return true;
-}
-
-function renderPlannedWorkoutsIfAvailable() {
-    const list = document.getElementById('planned-workouts-list');
-    if (list) list.dispatchEvent(new Event('kajo:planned-workouts-updated'));
 }
 
 export function discardWeeklyPlanProposal() {
