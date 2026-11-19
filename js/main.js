@@ -10,7 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
-import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar, reviewApprovedWeeklyPlan, reviewApprovedWeeklyPlan } from './season-plan-editor.js?v=5';
+import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar, reviewApprovedWeeklyPlan } from './season-plan-editor.js?v=5';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
@@ -3221,6 +3221,7 @@ Object.assign(window, {
     approveWeeklyPlan,
     discardWeeklyPlanProposal,
     transferWeeklyPlanToCalendar,
+    reviewApprovedWeeklyPlan,
     openStrengthModal,
     performIntervalsLiveSync,
     saveCheckin,
