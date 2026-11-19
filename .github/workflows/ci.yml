@@ -40,6 +40,7 @@ jobs:
           node --check js/daily-heart-rate.js
           node --check js/daily-hr-activity.js
           node --check js/main.js
+          node --check js/customization.js
           node --check js/analysis-insights.js
           node --check js/calculations.js
           node --check js/training-load.js
