@@ -22,7 +22,6 @@ Die Desktopnavigation ist in der oberen App-Leiste erreichbar. Auf Smartphones w
 | Heute | Tagesstatus, Training heute, Wearables, nächster Wettkampf, Trainingswoche | bestehendes Dashboard plus interaktive Wochenübersicht |
 | Plan | Kalender (Tag, Woche, Monat, Jahr) | bestehende Kalenderlogik; Woche als Standard |
 | Plan | Trainingsplanung und Wettkämpfe | bestehende Planung und Wettkampfverwaltung |
-| Training | Aktivitäten und Kraftleistungen | bestehende chronologische Aktivitätsliste, Aktivitätsdetailmodal und Kraftansicht |
 | Analyse | Training Load | bestehende Belastungsübersicht und Belastungsverlauf |
 | Analyse | Recovery | Readiness und Gesundheitsmetriken/Verlaufsdiagramme |
 | Analyse | Performance | Fitnessindikator, Wettkampfkontext und Leistungsmetriken |
