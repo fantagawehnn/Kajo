@@ -59,3 +59,49 @@ test('leaves unknown sport types unmatched instead of guessing', () => {
     assert.equal(review.unmatchedPlanned.length, 1);
     assert.equal(review.unplannedActivities.length, 1);
 });
+
+test('manual link overrides ambiguous auto matching and excludes linked activity from unplanned list', () => {
+    const activities = [
+        { id: 'a1', date: '2026-11-16', type: 'Kayaking', name: 'Paddeln 1' },
+        { id: 'a2', date: '2026-11-16', type: 'Kayaking', name: 'Paddeln 2' }
+    ];
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [{ id: 'p1', date: '2026-11-16', name: 'K1 locker', type: 'Kayaking', discipline: 'K1' }],
+        manualActivityLinks: [{ sessionId: 'p1', activityId: 'a2' }]
+    }, activities, '2026-11-19');
+    assert.equal(review.matched.length, 1);
+    assert.equal(review.matched[0].matchType, 'manual');
+    assert.equal(review.matched[0].actual.id, 'a2');
+    assert.deepEqual(review.unplannedActivities.map(item => item.activity.id), ['a1']);
+    assert.equal(review.ambiguous.length, 0);
+});
+
+test('manual links ignore duplicate activity use and invalid session/date references', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [
+            { id: 'p1', date: '2026-11-16', name: 'K1 locker', type: 'Kayaking', discipline: 'K1' },
+            { id: 'p2', date: '2026-11-16', name: 'K1 Technik', type: 'Kayaking', discipline: 'K1' }
+        ],
+        manualActivityLinks: [
+            { sessionId: 'p1', activityId: 'a1' }, { sessionId: 'p2', activityId: 'a1' },
+            { sessionId: 'missing', activityId: 'a2' }, { sessionId: 'p2', activityId: 'outside' }
+        ]
+    }, [
+        { id: 'a1', date: '2026-11-16', type: 'Kayaking' },
+        { id: 'outside', date: '2026-11-17', type: 'Kayaking' }
+    ], '2026-11-19');
+    assert.equal(review.manualLinks.length, 1);
+    assert.equal(review.manualLinks[0].sessionId, 'p1');
+});
+
+test('removing a manual link returns activity to automatic matching', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [{ id: 'p1', date: '2026-11-16', name: 'K1 locker', type: 'Kayaking', discipline: 'K1' }],
+        manualActivityLinks: []
+    }, [{ id: 'a1', date: '2026-11-16', type: 'Kayaking' }], '2026-11-19');
+    assert.equal(review.matched.length, 1);
+    assert.equal(review.matched[0].matchType, 'automatic');
+});
