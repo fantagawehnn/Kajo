@@ -50,6 +50,7 @@ jobs:
           node --check js/coach-analysis.js
           node --check js/coach-decision-guidance.js
           node --check js/season-planning.js
+          node --check js/adaptive-week-review.js
           node --check js/season-plan-editor.js
           node --check worker.js
           node --check js/profile.js
@@ -88,6 +89,9 @@ jobs:
 
       - name: Run weekly plan calendar tests
         run: node --experimental-default-type=module --test tests/weekly-plan-calendar.test.mjs
+
+      - name: Run adaptive weekly review tests
+        run: node --experimental-default-type=module --test tests/adaptive-week-review.test.mjs
 
       - name: Run Coach context regression tests
         run: node --experimental-default-type=module --test tests/coach-context.test.mjs
