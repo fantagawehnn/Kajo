@@ -4,7 +4,7 @@
  */
 import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
-import { renderHeartRateZoneDistribution } from './charts.js';
+import { renderHeartRateZoneDistribution } from './charts.js?v=13';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
