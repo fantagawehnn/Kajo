@@ -127,7 +127,7 @@ Die dokumentierte Methode gewichtet die Minuten in fünf Herzfrequenzzonen mit d
 
 ### 4.3 Gesamteinordnung
 
-Der Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen neuen Gesamtscore erfinden. Ein kombinierter Readiness-Score darf nur verwendet werden, wenn dessen Berechnung, Datenanforderungen, Validierung und Grenzen ausdrücklich freigegeben wurden.
+Der Coach darf Recovery-Daten gemeinsam interpretieren, aber keinen eigenen Gesamtscore erfinden. Wenn KAJO einen Bereitschaftswert tatsächlich berechnet und im Kontext bereitstellt, darf er ihn nur als konfigurierbare Hypothese mit Datenqualität und Grenzen einordnen. Die Standardgewichtung beträgt 70 % objektive und 30 % subjektive Daten; sie ist in den Einstellungen veränderbar und keine medizinisch validierte Messung.
 
 ## 5. Regeln für Performance
 
