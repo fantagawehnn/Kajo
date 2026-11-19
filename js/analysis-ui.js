@@ -446,6 +446,7 @@ function renderHealth() {
   const showTrend=(selectedHealthView==='cycle')||(selectedHealthView==='health'&&!!selectedHealthMetric);
   if(trendPanel)trendPanel.classList.toggle('hidden',!showTrend);
   if(showTrend)renderHealthTrend(selectedHealthView==='cycle'?'cycle':selectedHealthMetric);
+  else if(healthChart){healthChart.destroy();healthChart=null;}
   if(selectedHealthView==='relationships')renderHealthRelationships(range);
 }
 export function setHealthAnalysisView(view) {
