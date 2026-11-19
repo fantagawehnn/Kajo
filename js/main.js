@@ -23,12 +23,13 @@ import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=6';
 import { renderAnalysisInsights } from './analysis-insights.js';
-import { renderAnalysisPageUI } from './analysis-ui.js?v=6';
+import { groupHealthEpisodes } from './period-summary.js?v=2';
+import { renderAnalysisPageUI } from './analysis-ui.js?v=7';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=2';
-import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=8';
+import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=9';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=7';
 import { navigateCalendarPeriod, openCalendarPeriodPicker, applyCalendarPeriodDate, renderCalendar, setCalendarFormat, setCalendarDisplayMode, setActivitySportFilter, clearActivitySportFilter, openDayEditor, openHomeSelfMonitoring, closeDayEditor, saveDayEditor, toggleDayCycleFields, toggleDaySickFields, updateSelfMonitoringSlider, toggleCalendarAddMenu, closeCalendarAddMenu, toggleCalendarFormatMenu, closeCalendarFormatMenu, openCalendarHealthCreate, openCalendarPeriodCreate, closeCalendarPeriodCreate, saveCalendarPeriod, removeCalendarPeriodRange, openCalendarDay, openCalendarWeek, selectCalendarWeekDay, openPlannedCalendarDetail, closePlannedCalendarDetail, openCalendarTrainingCreate, openCalendarRaceCreate, confirmCalendarSeasonPhase, dismissCalendarSeasonPhase, deleteCalendarSeasonPhase, openCalendarPhaseEditor, closeCalendarPhaseEditor, saveCalendarPhaseEditor } from './calendar.js?v=45';
-import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=11';
+import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderHeartRateZoneDistribution, renderCanoeTrainingHours, resetCanoeDateRange, setTimeframe, toggleCustomDatePicker, setActivityTelemetryMetric } from './charts.js?v=12';
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, toggleActivityStrengthSection } from './activities.js?v=22';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=79';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
@@ -154,36 +155,62 @@ function openCoach() {
     switchTab('ai');
 }
 
+function getHealthAnalysisRange() {
+    const today = new Date();
+    const todayKey = [today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+    if (state.activeTimeframe === 'custom') {
+        const from = document.getElementById('health-summary-from')?.value || document.getElementById('date-from')?.value;
+        const to = document.getElementById('health-summary-to')?.value || document.getElementById('date-to')?.value;
+        if (from && to && from <= to && to <= todayKey) return { from, to };
+    }
+    const days = ({'7d':7,'28d':28,'3m':90,'6m':180,'1y':365})[state.activeTimeframe] || 90;
+    const start = new Date(todayKey + 'T12:00:00');
+    start.setDate(start.getDate() - days + 1);
+    const from = [start.getFullYear(),String(start.getMonth()+1).padStart(2,'0'),String(start.getDate()).padStart(2,'0')].join('-');
+    return { from, to:todayKey };
+}
 function renderHealthAnalysis() {
     const list = document.getElementById('health-event-list');
+    const summaryRoot = document.getElementById('health-event-summary');
     const count = document.getElementById('health-event-count');
     const status = document.getElementById('health-availability-status');
     if (!list) return;
-    const entries = Object.entries(state.healthLogs || {})
-        .filter(([, value]) => value && (value.status === 'sick' || value.status === 'injured'))
-        .sort(([a], [b]) => b.localeCompare(a));
-    if (count) count.textContent = entries.length ? String(entries.length) + ' dokumentierte Ereignisse' : 'Keine Einträge';
+    const range = getHealthAnalysisRange();
+    const summary = groupHealthEpisodes(state.healthLogs || {}, range.from, range.to);
+    const formatDate = date => new Date(date + 'T12:00:00').toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const rangeLabel = episode => episode.start === episode.end ? formatDate(episode.start) : formatDate(episode.start) + ' – ' + formatDate(episode.end);
+    if (count) count.textContent = summary.episodes.length
+        ? summary.episodes.length + ' Phasen · ' + summary.totalDays + ' dokumentierte Tage' : 'Keine dokumentierten Phasen';
+    if (summaryRoot) {
+        const cards = [
+            ['Krankheitstage',summary.sickDays,summary.sickEpisodes+' Krankheitsphasen'],
+            ['Krankheitsphasen',summary.sickEpisodes,'Zusammenhängende dokumentierte Zeiträume'],
+            ['Verletzungstage',summary.injuredDays,summary.injuredEpisodes+' Verletzungsphasen'],
+            ['Verletzungsphasen',summary.injuredEpisodes,'Zusammenhängende dokumentierte Zeiträume']
+        ];
+        summaryRoot.innerHTML = cards.map(([label,value,detail]) =>
+            '<div class="kajo-insight-metric"><span>'+label+'</span><strong>'+value+'</strong><small>'+detail+'</small></div>'
+        ).join('');
+    }
     list.replaceChildren();
-    if (!entries.length) {
-        const empty = document.createElement('p');
-        empty.className = 'text-xs text-slate-500';
-        empty.textContent = 'Noch keine Krankheits- oder Verletzungsereignisse dokumentiert.';
+    if (!summary.episodes.length) {
+        const empty=document.createElement('p');empty.className='text-xs text-slate-500';
+        empty.textContent='Im gewählten Zeitraum sind keine Krankheits- oder Verletzungsphasen dokumentiert.';
         list.appendChild(empty);
     } else {
-        entries.forEach(([date, value]) => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2';
-            const label = document.createElement('span');
-            label.className = 'text-sm text-slate-200';
-            label.textContent = value.status === 'sick' ? 'Krankheit' : 'Verletzung';
-            const detail = document.createElement('span');
-            detail.className = 'text-xs text-slate-400 text-right';
-            detail.textContent = [date, value.diagnosis].filter(Boolean).join(' · ');
-            row.append(label, detail);
-            list.appendChild(row);
+        [...summary.episodes].reverse().forEach(episode => {
+            const row=document.createElement('div');
+            row.className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-3';
+            const label=document.createElement('strong');label.className='text-sm text-slate-200';
+            label.textContent=episode.status==='sick'?'Krankheit':'Verletzung';
+            const detail=document.createElement('span');detail.className='text-xs text-slate-400 text-right';
+            detail.textContent=[rangeLabel(episode),episode.days+(episode.days===1?' dokumentierter Tag':' dokumentierte Tage'),episode.diagnosis].join(' · ');
+            row.append(label,detail);list.appendChild(row);
         });
     }
-    if (status) status.textContent = 'Noch nicht berechenbar – eine vollständige Verknüpfung von Gesundheits- und Planungsdaten für den betrachteten Zeitraum ist nicht nachgewiesen.';
+    document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange===state.activeTimeframe));
+    document.getElementById('health-summary-custom-range')?.classList.toggle('hidden',state.activeTimeframe!=='custom');
+    if (status) status.textContent='Trainingsverfügbarkeit bleibt nicht berechenbar, solange Gesundheits- und Planungsdaten nicht vollständig für denselben Zeitraum verknüpft sind.';
 }
 
 function switchTab(requestedTab) {
@@ -2978,6 +3005,7 @@ Object.assign(window, {
     toggleTrainingLoadPeriodMenu,
     setTrainingLoadPeriod,
     kajoRenderTrainingLoadView: renderTrainingLoadView,
+    kajoRenderHealthAnalysis: renderHealthAnalysis,
     renderAnalysisOverview,
     setAnalysisOverviewMetric,
     setAnalysisOverviewActivityMeasure,
