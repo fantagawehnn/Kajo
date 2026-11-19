@@ -127,6 +127,9 @@ jobs:
       - name: Run home activity color mode tests
         run: node --experimental-default-type=module --test tests/home-activity-colors.test.mjs
 
+      - name: Run calendar display data tests
+        run: node --experimental-default-type=module --test tests/calendar-display-data.test.mjs
+
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
 
