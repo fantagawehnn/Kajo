@@ -60,3 +60,39 @@ export function calculatePeriodSummary({ activities = [], races = [], healthLogs
     healthEntryCount: healthEntries.length
   };
 }
+
+
+/** Groups consecutive documented sick/injured days into episodes. */
+export function groupHealthEpisodes(healthLogs = {}, from, to) {
+  const validRange = validDate(from) && validDate(to) && from <= to;
+  if (!validRange) return { validRange:false, totalDays:0, sickDays:0, injuredDays:0, sickEpisodes:0, injuredEpisodes:0, episodes:[] };
+  const entries = Object.entries(healthLogs && typeof healthLogs === 'object' ? healthLogs : {})
+    .filter(([date,item]) => validDate(date) && date >= from && date <= to && (item?.status === 'sick' || item?.status === 'injured'))
+    .sort(([a],[b]) => a.localeCompare(b));
+  const episodes = [];
+  for (const [date,item] of entries) {
+    const diagnosis = String(item?.diagnosis || '').trim();
+    const diagnosisKey = diagnosis.toLocaleLowerCase('de');
+    const previous = episodes[episodes.length - 1];
+    let nextExpected = '';
+    if (previous) {
+      const next = new Date(previous.end + 'T12:00:00');
+      next.setDate(next.getDate() + 1);
+      nextExpected = [next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');
+    }
+    if (previous && previous.status === item.status && previous.diagnosisKey === diagnosisKey && nextExpected === date) {
+      previous.end = date;
+      previous.days++;
+    } else {
+      episodes.push({ status:item.status, diagnosis:diagnosis || 'Nicht näher bezeichnet', diagnosisKey, start:date, end:date, days:1 });
+    }
+  }
+  const sickDays = entries.filter(([,item]) => item.status === 'sick').length;
+  const injuredDays = entries.filter(([,item]) => item.status === 'injured').length;
+  return {
+    validRange:true, totalDays:entries.length, sickDays, injuredDays,
+    sickEpisodes:episodes.filter(item => item.status === 'sick').length,
+    injuredEpisodes:episodes.filter(item => item.status === 'injured').length,
+    episodes:episodes.map(({diagnosisKey,...episode}) => episode)
+  };
+}

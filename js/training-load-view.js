@@ -141,7 +141,23 @@ function renderActivityList(analysis){
  rows.forEach(item=>{const row=document.createElement('div');row.className='flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 py-2 text-xs';const left=document.createElement('span');left.className='text-slate-300';left.textContent=item.date+' · '+item.sport;const right=document.createElement('span');right.className='text-slate-400 text-right';const values=[];if(item.kajo&&(selectedModel==='kajo'||selectedModel==='compare'))values.push('KAJO '+fmt(item.kajo.value));if(item.edwards&&(selectedModel==='edwards'||selectedModel==='compare'))values.push('Edwards '+fmt(item.edwards.value));right.textContent=values.join(' · ')||'Nicht berechenbar';row.append(left,right);node.appendChild(row);});
 }
 export function toggleTrainingLoadPeriodMenu(){const menu=document.getElementById('training-load-period-menu'),button=document.getElementById('training-load-period-button');if(!menu)return;const open=menu.classList.toggle('hidden')===false;button?.setAttribute('aria-expanded',String(open));}
-export function setTrainingLoadPeriod(period){document.getElementById('training-load-period-menu')?.classList.add('hidden');document.getElementById('training-load-period-button')?.setAttribute('aria-expanded','false');if(period==='custom'){document.getElementById('custom-date-box')?.classList.remove('hidden');return;}if(!['7d','28d','3m','6m','1y'].includes(period))return;window.setTimeframe?.(period);}
+export function setTrainingLoadPeriod(period){
+ document.getElementById('training-load-period-menu')?.classList.add('hidden');
+ document.getElementById('training-load-period-button')?.setAttribute('aria-expanded','false');
+ if(period==='custom'){
+  const wasCustom=state.activeTimeframe==='custom';
+  const current=getRange(),from=document.getElementById('date-from'),to=document.getElementById('date-to');
+  if(from&&(!wasCustom||!from.value))from.value=current.from;
+  if(to&&(!wasCustom||!to.value))to.value=current.to;
+  state.activeTimeframe='custom';state.metricHistoryRange='custom';
+  document.getElementById('custom-date-box')?.classList.remove('hidden');
+  renderTrainingLoadView();
+  return;
+ }
+ if(!['7d','28d','3m','6m','1y'].includes(period))return;
+ if(typeof window.setTimeframe==='function')window.setTimeframe(period);
+ else {state.activeTimeframe=period;renderTrainingLoadView();}
+}
 export function setTrainingLoadSportFilter(sport){selectedSport=sport||'all';renderTrainingLoadView();}
 export function setTrainingLoadVolumeMeasure(measure){if(!['duration','sessions'].includes(measure))return;volumeMeasure=measure;document.querySelectorAll('[data-load-volume]').forEach(button=>{const active=button.dataset.loadVolume===measure;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderLoadTrend(selectedTimeline(),selectedActivities());}
 export function setTrainingLoadZoneDisplayMode(mode){if(!['minutes','percent'].includes(mode))return;zoneDisplayMode=mode;document.querySelectorAll('[data-zone-display]').forEach(button=>{const active=button.dataset.zoneDisplay===mode;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderTrainingLoadView();}

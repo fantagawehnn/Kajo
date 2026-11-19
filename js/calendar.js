@@ -443,7 +443,7 @@ export function toggleCalendarAddMenu(){document.getElementById('calendar-add-me
 export function closeCalendarAddMenu(){document.getElementById('calendar-add-menu')?.classList.add('hidden');}
 export function toggleCalendarFormatMenu(){const menu=document.getElementById('calendar-format-menu'),button=document.getElementById('calendar-format-button');const opening=menu?.classList.contains('hidden');menu?.classList.toggle('hidden');button?.setAttribute('aria-expanded',String(Boolean(opening)));}
 export function closeCalendarFormatMenu(){document.getElementById('calendar-format-menu')?.classList.add('hidden');document.getElementById('calendar-format-button')?.setAttribute('aria-expanded','false');}
-function calendarSeason(){const s=state.settings?.calendarSeason;return s&&/^\d{4}-\d{2}-\d{2}$/.test(s.start||'')&&/^\d{4}-\d{2}-\d{2}$/.test(s.end||'')&&s.start<=s.end?s:null;}
+function calendarSeason(){const settings=state.settings||{},seasons=Array.isArray(settings.calendarSeasons)?settings.calendarSeasons:[],selected=seasons.find(item=>item.id===settings.activeCalendarSeasonId)||seasons.at(-1)||settings.calendarSeason;return selected&&/^\d{4}-\d{2}-\d{2}$/.test(selected.start||'')&&/^\d{4}-\d{2}-\d{2}$/.test(selected.end||'')&&selected.start<=selected.end?selected:null;}
 export function openCalendarHealthCreate(){window.openHealthLogForDate?.(state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate));}
 export function openCalendarPeriodCreate(){
  const date=state.selectedCalendarDay||toLocalDateString();

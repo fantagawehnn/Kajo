@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { calculatePeriodSummary } from '../js/period-summary.js';
+import { calculatePeriodSummary, groupHealthEpisodes } from '../js/period-summary.js';
 import { getVisibleActivities } from '../js/activity-groups.js';
 
 const result = calculatePeriodSummary({
@@ -52,5 +52,24 @@ assert.equal(mergedSummary.activityCount, 1);
 assert.equal(mergedSummary.trainingDays, 1);
 assert.equal(mergedSummary.durationMinutes, 75);
 assert.equal(mergedSummary.canoeClasses.C1, 1);
+
+const healthEpisodes = groupHealthEpisodes({
+  '2026-01-02': { status:'sick', diagnosis:'Erkältung' },
+  '2026-01-03': { status:'sick', diagnosis:'Erkältung' },
+  '2026-01-04': { status:'sick', diagnosis:'Erkältung' },
+  '2026-01-07': { status:'sick', diagnosis:'Erkältung' },
+  '2026-01-08': { status:'injured', diagnosis:'Schulter' },
+  '2026-01-09': { status:'injured', diagnosis:'Schulter' },
+  '2025-12-31': { status:'sick', diagnosis:'Außerhalb' }
+}, '2026-01-01', '2026-01-31');
+assert.deepEqual(healthEpisodes, {
+  validRange:true, totalDays:6, sickDays:4, injuredDays:2, sickEpisodes:2, injuredEpisodes:1,
+  episodes:[
+    { status:'sick', diagnosis:'Erkältung', start:'2026-01-02', end:'2026-01-04', days:3 },
+    { status:'sick', diagnosis:'Erkältung', start:'2026-01-07', end:'2026-01-07', days:1 },
+    { status:'injured', diagnosis:'Schulter', start:'2026-01-08', end:'2026-01-09', days:2 }
+  ]
+});
+assert.equal(groupHealthEpisodes({}, '2026-02-01', '2026-01-01').validRange, false);
 
 console.log('Period summary tests passed.');
