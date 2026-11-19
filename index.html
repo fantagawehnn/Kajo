@@ -356,10 +356,10 @@
         <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
-        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load</span><small>ATL</small></div></div>
+        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Ermüdung</span><small>ATL</small></div></div>
       </button>
-      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
-        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small>CTL · Fitnessmodell</small></div></div>
+      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Fitness-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
+        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small>CTL · Fitnessmodell</small></div></div>
       </button>
     </div>
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
@@ -432,7 +432,7 @@
  <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
   <section class="kajo-analysis-circles" aria-label="Vier Performance-Dimensionen">
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-load')" aria-label="Load öffnen">
-    <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Load</strong>
+    <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Ermüdung</strong>
    </button>
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-recovery')" aria-label="Recovery öffnen">
     <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-domain="recovery"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span><strong>Recovery</strong>
@@ -524,7 +524,7 @@
    <div id="training-load-rings" class="kajo-training-load-rings" aria-live="polite">
     <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">CTL</span><small>Langfristig</small></div>
     <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">ATL</span><small>Kurzfristig</small></div>
-    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">TSB</span><small>Belastungssaldo</small></div>
+    <div class="kajo-load-metric"><span class="kajo-load-ring"><strong>—</strong></span><span class="kajo-load-label">TSB</span><small>Form</small></div>
    </div>
    <p id="training-load-status-note" class="kajo-training-load-method"></p>
   </section>
