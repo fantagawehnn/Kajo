@@ -60,9 +60,23 @@ export function loadCheckinInputs() {
     const bleeding = document.getElementById('input-cycle-bleeding');
     if (bleeding) bleeding.value = cycle.bleeding || '';
     const pain = document.getElementById('input-cycle-pain');
-    if (pain) pain.value = cycle.pain ?? 0;
+    if (pain) {
+        pain.value = cycle.pain ?? 0;
+        pain.dataset.cycleTouched = 'false';
+        if (!pain.dataset.cycleTouchBound) {
+            pain.addEventListener('input', () => { pain.dataset.cycleTouched = 'true'; });
+            pain.dataset.cycleTouchBound = 'true';
+        }
+    }
     const impact = document.getElementById('input-cycle-impact');
-    if (impact) impact.value = cycle.trainingImpact ?? 0;
+    if (impact) {
+        impact.value = cycle.trainingImpact ?? 0;
+        impact.dataset.cycleTouched = 'false';
+        if (!impact.dataset.cycleTouchBound) {
+            impact.addEventListener('input', () => { impact.dataset.cycleTouched = 'true'; });
+            impact.dataset.cycleTouchBound = 'true';
+        }
+    }
     const notes = document.getElementById('input-cycle-notes');
     if (notes) notes.value = cycle.notes || '';
     document.querySelectorAll('#cycle-symptoms input').forEach(el => { el.checked = (cycle.symptoms || []).includes(el.value); });
@@ -127,13 +141,13 @@ export function toggleCheckinOptionalFields() {
 }
 
 export function toggleCycleFields() {
+    // Zyklusbeschwerden und Trainingseinfluss können an jedem Zyklustag auftreten.
+    // Die Detailfelder bleiben deshalb unabhängig von der Periodenmarkierung sichtbar.
     const section = document.getElementById('cycle-details');
-    const period = document.getElementById('input-period');
-    if (section && period) {
-        const showDetails = period.checked === true;
-        section.classList.toggle('hidden', !showDetails);
-        section.style.display = showDetails ? 'block' : 'none';
-        section.setAttribute('aria-hidden', String(!showDetails));
+    if (section) {
+        section.classList.remove('hidden');
+        section.style.display = 'block';
+        section.setAttribute('aria-hidden', 'false');
     }
 }
 
@@ -250,14 +264,27 @@ export function saveCheckin() {
     const cycleSection = document.getElementById('cycle-checkin-section');
     const cycleEnabled = cycleSection && !cycleSection.classList.contains('hidden');
     if (cycleEnabled) {
-        if (document.getElementById('input-period')?.checked) {
+        const period = document.getElementById('input-period')?.checked === true;
+        const bleeding = document.getElementById('input-cycle-bleeding')?.value || '';
+        const painInput = document.getElementById('input-cycle-pain');
+        const impactInput = document.getElementById('input-cycle-impact');
+        const notes = document.getElementById('input-cycle-notes')?.value || '';
+        const symptoms = [...document.querySelectorAll('#cycle-symptoms input:checked')].map(el => el.value);
+        const painTouched = painInput?.dataset?.cycleTouched === 'true';
+        const impactTouched = impactInput?.dataset?.cycleTouched === 'true';
+        const hasCycleEntry = period || bleeding !== '' || notes.trim() !== '' || symptoms.length > 0
+            || painTouched || impactTouched
+            || (existing.cycle && (existing.cycle.pain != null || existing.cycle.trainingImpact != null
+                || existing.cycle.notes || (existing.cycle.symptoms || []).length));
+        if (hasCycleEntry) {
             checkin.cycle = {
-                period: true,
-                bleeding: document.getElementById('input-cycle-bleeding')?.value || '',
-                pain: Number(document.getElementById('input-cycle-pain')?.value || 0),
-                trainingImpact: Number(document.getElementById('input-cycle-impact')?.value || 0),
-                notes: document.getElementById('input-cycle-notes')?.value || '',
-                symptoms: [...document.querySelectorAll('#cycle-symptoms input:checked')].map(el => el.value)
+                ...existing.cycle,
+                period,
+                bleeding,
+                ...(painTouched || existing.cycle?.pain != null ? { pain: Number(painInput?.value || 0) } : {}),
+                ...(impactTouched || existing.cycle?.trainingImpact != null ? { trainingImpact: Number(impactInput?.value || 0) } : {}),
+                notes,
+                symptoms
             };
         } else {
             delete checkin.cycle;
