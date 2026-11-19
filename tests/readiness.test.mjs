@@ -269,3 +269,17 @@ test('illness still overrides a planned diagnostic test', () => {
     const recommendation = buildTrainingRecommendation(day, source.plannedActivities, source);
     assert.equal(recommendation.decision, 'health-review');
 });
+
+
+test('dashboard recommendation is short, actionable and does not repeat readiness metrics', () => {
+    const source = makeState({
+        dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, sleepQuality: 4 } }
+    });
+    const recommendation = buildTrainingRecommendation(day, [{
+        date: day, name: 'K1 Intervalle', duration: 60, category: 'interval'
+    }], source);
+    assert.match(recommendation.detail, /K1 Intervalle/);
+    assert.match(recommendation.detail, /wie geplant|reduzier|lockere Technik/);
+    assert.doesNotMatch(recommendation.detail, /Readiness|HRV|Ruheherzfrequenz|Garmin-Load|ATL|CTL|TSB|Body Battery/);
+    assert.ok(recommendation.detail.length < 260);
+});
