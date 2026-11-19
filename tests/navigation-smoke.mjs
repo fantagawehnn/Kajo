@@ -331,7 +331,7 @@ assert.ok(charts.includes('window.kajoRenderTrainingLoadView?.()'), 'shared anal
 assert.ok(trainingLoadView.includes('getHeartRateZoneAnalysis'), 'view uses the centralized HR-zone calculation');
 assert.ok(trainingLoadCalculation.includes('export function getHeartRateZoneAnalysis'), 'central calculation exposes both HR-zone models');
 assert.ok(/pct\s*<\s*50/.test(trainingLoadCalculation), 'Edwards excludes HR time below 50% HRmax');
-assert.ok(trainingLoadView.includes('spanGaps: false'), 'days without eligible HR data remain visible as chart gaps');
+assert.ok(trainingLoadView.includes('carryForwardForDisplay') && trainingLoadView.includes('borderDash') && trainingLoadView.includes("day?.dataStatus==='unknown'"), 'unknown training-load days are shown only as muted dashed display carry-forward, with their data status preserved');
 
 
 assert.ok(calculations.includes('export function calculateStrengthActivitySummary(exercises)'), 'strength volume calculation is centralized');
