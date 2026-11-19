@@ -156,7 +156,7 @@ function renderRecovery() {
 let performanceChart = null;
 let selectedPerformanceMetric = null;
 let performanceRange = '28d';
-const performanceRangeDays = { '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 };
+const performanceRangeDays = { '7d': 7, '28d': 28, '30d': 30, '42d': 42, '3m': 90, '1y': 365 };
 const performanceDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') : '';
@@ -383,7 +383,7 @@ if (typeof window !== 'undefined') {
 }
 let healthChart = null;
 let selectedHealthMetric = null;
-const healthRangeDays = { '7d':7, '28d':28, '3m':90, '6m':180, '1y':365 };
+const healthRangeDays = { '7d':7, '28d':28, '30d':30, '42d':42, '3m':90, '1y':365 };
 const healthDateKey = date => {
   const d = new Date(date);
   return Number.isFinite(d.getTime()) ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
@@ -554,7 +554,7 @@ function setupSharedPeriod() {
   const target = document.getElementById('analysis-shared-period');
   const buttons = document.getElementById('analysis-period-buttons');
   if (target && buttons && buttons.parentElement !== target) target.appendChild(buttons);
-  const labels = { '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '3m': 'Letzte 90 Tage', '6m': 'Letzte 180 Tage', '1y': 'Letztes Jahr' };
+  const labels = { '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '30d': 'Letzte 30 Tage', '42d': 'Letzte 42 Tage', '3m': 'Letzte 90 Tage', '1y': 'Letzte 365 Tage' };
   setText('analysis-period-label', labels[state.activeTimeframe] || 'Individueller Zeitraum');
 }
 export function renderAnalysisPageUI(subpage = 'load') {
