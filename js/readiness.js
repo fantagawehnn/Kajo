@@ -236,13 +236,11 @@ export function calculateReadiness(dateKey, sourceState = appState) {
     const subjectiveDomainScore = meanScore(subjective);
     const totalCount = physiological.length + sleepItems.length + subjective.length;
     const domainCount = objectiveDomains.length;
-    const dataQuality = domainCount >= 3
-        ? 'Gute Datenbasis · 3 Bereiche'
-        : domainCount === 2
-            ? 'Eingeschränkte Datenbasis · 2 Bereiche'
-            : domainCount === 1
-                ? 'Unvollständige Datenbasis · 1 Bereich'
-                : 'Noch keine ausreichende Datenbasis';
+    const dataQuality = domainCount === 2
+        ? 'Gute Datenbasis · 2 objektive Bereiche'
+        : domainCount === 1
+            ? 'Eingeschränkte Datenbasis · 1 objektiver Bereich'
+            : 'Noch keine ausreichende objektive Datenbasis';
 
     const health = sourceState?.healthLogs?.[dateKey] || {};
     const healthStatus = String(health.status || '').toLowerCase();
