@@ -4,14 +4,26 @@
  * ============================================================ */
 
 import { state } from './state.js';
-import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog } from './utils.js';
+import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog, getTypeColorMap } from './utils.js';
+import { getActivityDisplayColor } from './home-activity-colors.js?v=1';
 import { getTrainingLoadData } from './training-load.js';
 import { loadCheckinInputs } from './health.js';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js';
 export { calculateReadiness } from './readiness.js';
+
+function getHomeActivityDisplayMode() {
+    if (state.calendarDisplayMode !== 'sport' && state.calendarDisplayMode !== 'training') {
+        try {
+            state.calendarDisplayMode = getUserLocalSetting('calendarDisplayMode') === 'training' ? 'training' : 'sport';
+        } catch {
+            state.calendarDisplayMode = 'sport';
+        }
+    }
+    return state.calendarDisplayMode;
+}
 
 function localTodayKey() {
   const n = new Date();
@@ -345,6 +357,9 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
     const planned = Array.isArray(state.plannedActivities) ? state.plannedActivities : [];
     const sportsCatalog = getSportsCatalog();
+    const activityColorMode = getHomeActivityDisplayMode();
+    const activityCategories = getTypeColorMap();
+    const activityColor = item => getActivityDisplayColor(item, activityColorMode, sportsCatalog, activityCategories);
     const dayActivities = activities.filter(a => String(a?.date || '').slice(0, 10) === selectedDate && (!sportFocus || a.type === sportFocus))
         .sort((a,b)=>String(a.startTime||a.startTimeLocal||'').localeCompare(String(b.startTime||b.startTimeLocal||'')));
     const dayPlanned = planned.filter(p => String(p?.date || '').slice(0, 10) === selectedDate && (!sportFocus || p.type === sportFocus))
@@ -405,7 +420,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Load' : '';
         return '<button type="button" data-sport-type="' + escapeHtml(p.type || '') + '" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
     }).join('');
-    plannedList?.querySelectorAll('[data-sport-type]').forEach(el => { el.style.borderLeft = '3px solid ' + (sportsCatalog[el.dataset.sportType]?.color || '#64748b'); });
+    plannedList?.querySelectorAll('[data-sport-type]').forEach((el, index) => { el.style.borderLeft = '3px solid ' + activityColor(dayPlanned[index]); });
 
     const emptyDay = document.getElementById('home-training-empty');
     if (emptyDay) emptyDay.classList.toggle('hidden', dayActivities.length + dayPlanned.length > 0);
@@ -420,7 +435,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const load = validNumber(act.tss) ? ' · ' + Number(act.tss).toFixed(0) + ' Load' : '';
         return '<button type="button" data-sport-type="' + escapeHtml(act.type || '') + '" onclick="openCSVDetailsModal(\'' + id + '\')" class="home-session-card is-complete home-session-button"><span class="home-session-state">ABSOLVIERT</span><div><strong>' + escapeHtml(act.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + load + '</small></div><i data-lucide="chevron-right"></i></button>';
     }).join('');
-    completedList?.querySelectorAll('[data-sport-type]').forEach(el => { el.style.borderLeft = '3px solid ' + (sportsCatalog[el.dataset.sportType]?.color || '#64748b'); });
+    completedList?.querySelectorAll('[data-sport-type]').forEach((el, index) => { el.style.borderLeft = '3px solid ' + activityColor(dayActivities[index]); });
 
     const dayHeading = document.getElementById('home-daily-date-label');
     if (dayHeading) dayHeading.textContent = selectedDate === localTodayKey() ? 'HEUTE' : selectedDate < localTodayKey() ? 'RÜCKBLICK' : 'VORSCHAU';

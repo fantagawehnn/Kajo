@@ -120,6 +120,9 @@ jobs:
       - name: Run daily Garmin HR recovery tests
         run: node --experimental-default-type=module --test tests/daily-heart-rate.test.mjs
 
+      - name: Run home activity color mode tests
+        run: node --experimental-default-type=module --test tests/home-activity-colors.test.mjs
+
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
 
