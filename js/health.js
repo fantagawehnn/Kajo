@@ -331,7 +331,11 @@ export function saveCheckin() {
 
 // Eigenständige Periodenverwaltung in der Gesundheitsdaten-Ansicht.
 let editingPeriodRange = null;
+function cycleTrackingEnabled() {
+    return state.profile?.gender === 'female' && state.profile?.cycleTrackingEnabled === true;
+}
 function getManagedPeriodRanges() {
+    if (!cycleTrackingEnabled()) return [];
     const days = Object.keys(state.dailyCheckins || {})
         .filter(date => state.dailyCheckins[date]?.cycle?.period === true)
         .sort();
@@ -351,8 +355,11 @@ function formatPeriodDate(date) {
     return new Date(date + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 export function renderManagedPeriods() {
+    const manager = document.getElementById('kajo-period-manager');
     const list = document.getElementById('kajo-period-list');
+    if (manager) manager.classList.toggle('hidden', !cycleTrackingEnabled());
     if (!list) return;
+    if (!cycleTrackingEnabled()) { list.replaceChildren(); return; }
     const today = toLocalDateString();
     ['kajo-period-start','kajo-period-end'].forEach(id => { const input=document.getElementById(id); if(input) input.max=today; });
     const ranges = getManagedPeriodRanges();
@@ -373,6 +380,7 @@ export function renderManagedPeriods() {
     });
 }
 export function editPeriodRange(start,end) {
+    if (!cycleTrackingEnabled()) return;
     editingPeriodRange={start,end};
     document.getElementById('kajo-period-start').value=start;
     document.getElementById('kajo-period-end').value=end;
@@ -408,7 +416,7 @@ function applyPeriodRange(start,end,enabled) {
     while(date<=last){setPeriodFlag(toLocalDateString(date),enabled);date.setDate(date.getDate()+1);}
 }
 export function deleteManagedPeriod() {
-    if(!editingPeriodRange)return;
+    if(!cycleTrackingEnabled()||!editingPeriodRange)return;
     const range={...editingPeriodRange};
     const snapshot={};
     const cursor=new Date(range.start+'T12:00:00'),last=new Date(range.end+'T12:00:00');
@@ -428,6 +436,7 @@ export function deleteManagedPeriod() {
     refreshAll();
 }
 export function saveManagedPeriod() {
+    if(!cycleTrackingEnabled())return;
     const start=document.getElementById('kajo-period-start').value;
     const end=document.getElementById('kajo-period-end').value;
     const today=toLocalDateString(), feedback=document.getElementById('kajo-period-feedback');
