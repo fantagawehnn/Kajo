@@ -510,7 +510,7 @@ function renderHealthRelationships(range) {
   const pairs=Object.entries(state.dailyCheckins||{})
     .filter(([date,item])=>date>=range.from&&date<=range.to&&valid(item?.cycle?.pain)&&valid(item?.cycle?.trainingImpact))
     .map(([date,item])=>({x:Number(item.cycle.pain),y:Number(item.cycle.trainingImpact),date}))
-    .filter(p=>p.x>=0&&p.x<=10&&p.y>=0&&p.y<=10);
+    .filter(p=>p.x>=1&&p.x<=5&&p.y>=1&&p.y<=5);
   if(note)note.textContent=pairs.length
     ? pairs.length+' Tage mit gleichzeitig dokumentierten Angaben. Jeder Punkt steht für einen Tag. Die Darstellung beschreibt eine zeitliche Gemeinsamkeit, keinen ursächlichen Effekt. Fehlende Angaben werden nicht ergänzt.'
     : 'Für den gewählten Zeitraum liegen noch keine Tage mit gleichzeitig dokumentierten Angaben zu Beschwerden und Trainingseinfluss vor.';
@@ -518,9 +518,9 @@ function renderHealthRelationships(range) {
   canvas.classList.remove('hidden');
   healthRelationshipChart=new Chart(canvas.getContext('2d'),{type:'scatter',
     data:{datasets:[{label:'Dokumentierte Tage',data:pairs,backgroundColor:'#e879a9',pointRadius:5,pointHoverRadius:7}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>{const p=item.raw;return 'Schmerzen: '+p.x+'/10 · Trainingseinfluss: '+p.y+'/10 · '+dateLabel(p.date);}}}},
-      scales:{x:{min:0,max:10,title:{display:true,text:'Schmerzen / Beschwerden (0–10)',color:'#94a3b8'},ticks:{color:'#94a3b8',stepSize:2},grid:{color:'rgba(148,163,184,.12)'}},
-        y:{min:0,max:10,title:{display:true,text:'Trainingseinfluss (0–10)',color:'#94a3b8'},ticks:{color:'#94a3b8',stepSize:2},grid:{color:'rgba(148,163,184,.12)'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>{const p=item.raw;return 'Schmerzen: '+p.x+'/5 · Trainingseinfluss: '+p.y+'/5 · '+dateLabel(p.date);}}}},
+      scales:{x:{min:1,max:5,title:{display:true,text:'Schmerzen / Beschwerden (1–5)',color:'#94a3b8'},ticks:{color:'#94a3b8',stepSize:1},grid:{color:'rgba(148,163,184,.12)'}},
+        y:{min:1,max:5,title:{display:true,text:'Trainingseinfluss (1–5)',color:'#94a3b8'},ticks:{color:'#94a3b8',stepSize:1},grid:{color:'rgba(148,163,184,.12)'}}}}
   });
 }
 function renderHealthTrend(key) {
