@@ -116,7 +116,6 @@ state.seasonPlan = {
     phases: []
 };
 assert.equal(storage.saveDataToLocalStorage(), true);
-await storage.flushLocalPersistence();
 assert.deepEqual(
     JSON.parse(store.get('endurance:user:smoke-test-user:seasonPlan')),
     state.seasonPlan
