@@ -343,7 +343,7 @@ assert.ok(performanceUi.includes('isValidElapsedTimeAxis(series.time, series.val
 assert.ok(performanceUi.includes('resolvePaddlingPerformanceSeries'), 'paddling metrics resolve only explicitly supported Garmin series and units');
 assert.ok(charts.includes('directfractionalcadence|double cadence'), 'double cadence is not silently treated as stroke cadence in paddling');
 assert.ok(charts.includes('vertical.?speed|vertikale geschwindigkeit') && charts.includes('accumulated.?power|summierte leistung'), 'vertical speed and accumulated power are not mistaken for instantaneous performance metrics');
-assert.ok(charts.includes('getValidatedElapsedTimeAxis(telem, values.length)'), 'activity telemetry retains only a validated elapsed-time axis');
+assert.ok(charts.includes('getValidatedElapsedTimeAxis(telem, rawValues.length)') && charts.includes('getValidatedElapsedTimeAxis({ ...telem, time: metric.time || telem.metricSeriesTime || telem.time }, values.length)'), 'activity telemetry retains only validated, series-aligned elapsed-time axes');
 assert.ok(performanceUi.includes('Garmin-Schätzwert') && performanceUi.includes('keine direkte Spiroergometrie'), 'VO2max is explicitly described as a Garmin estimate');
 assert.ok(performanceUi.includes('Verlauf innerhalb einer Einheit; kein Vergleich'), 'activity telemetry is not misrepresented as comparable cross-session performance');
 assert.ok(performanceUi.includes('Zeitachse: Zeit seit Start') && performanceUi.includes('Keine verlässliche Zeitachse'), 'performance trend distinguishes elapsed-time axes from sample-index-only series');
