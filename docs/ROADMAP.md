@@ -33,7 +33,7 @@
 
 ## Phase 4 – Erweiterte Module
 - [ ] Saisonanalyse
-- [x] Saisonplan-Datenmodell mit Hybridmodus, Saisonhorizont, Phasenvalidierung, benutzerbezogener Speicherung, Backup-Kompatibilität und Coach-Kontext; Editor, Periodisierungsgenerierung und konkrete Wochen-/Einheitenplanung bleiben offen
+- [x] Saisonplan-Datenmodell, Editor und strukturierter KI-Periodisierungsvorschlag mit Prüfung durch die Athletin; Wochen-/Einheitenplanung bleibt offen
 - [ ] Wettkämpfe
 - [ ] Krafttraining
 - [x] Profil und Einstellungen unter Mehr gruppiert
