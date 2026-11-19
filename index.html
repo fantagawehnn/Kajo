@@ -375,6 +375,10 @@
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
   </button>
+  <div class="kajo-home-recommendation-meta">
+    <button type="button" id="home-recommendation-sources-toggle" onclick="toggleDashboardSourceDetails()" aria-expanded="false" aria-controls="home-recommendation-sources">ⓘ Datenbasis &amp; Sicherheit</button>
+    <div id="home-recommendation-sources" class="hidden" role="status" aria-live="polite"></div>
+  </div>
 
   <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
     <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Check-in</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Check-in öffnen" title="Check-in öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
