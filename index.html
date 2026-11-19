@@ -439,12 +439,14 @@
  <div id="analysis-overview-content" class="space-y-4" aria-label="Verlauf und Trainingsverteilung">
   <section class="kajo-analysis-overview-panel">
    <div class="kajo-analysis-section-heading kajo-analysis-trend-heading"><h2>Verlauf</h2><div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div></div>
-   <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery, Fitness und Health"></canvas></div>
-   <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihen ein- oder ausblenden">
+   <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery und Fitness"></canvas></div>
+   <div id="analysis-overview-health-markers" aria-label="Dokumentierte Erkrankungen und Verletzungen"></div>
+   <div id="analysis-overview-health-event" class="hidden" aria-live="polite" style="margin:8px 0;padding:9px 11px;border:1px solid rgba(148,163,184,.25);border-radius:9px;font-size:11px;color:#cbd5e1"></div>
+   <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihen und Health-Markierungen ein- oder ausblenden">
     <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Load</button>
     <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="true">Recovery</button>
     <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="true">Fitness</button>
-    <button type="button" data-overview-metric="health" aria-pressed="false" disabled title="Trainingsverfügbarkeit derzeit nicht berechenbar">Health*</button>
+    <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="true">Health</button>
    </nav>
    <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
   </section>

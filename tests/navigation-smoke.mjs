@@ -366,7 +366,7 @@ assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
-assert.ok(overviewModule.includes('Health availability is deliberately not inferred'), 'Health does not fabricate a continuous availability score');
+assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick','injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
 assert.ok(overviewModule.includes('renderHeartRateZoneDistribution'), 'intensity distribution reuses the existing heart-rate zone analysis');
 assert.ok(charts.includes('options.canvasId || \'heartRateZonesChart\''), 'heart-rate zone chart supports a dedicated overview target');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');

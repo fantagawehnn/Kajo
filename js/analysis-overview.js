@@ -24,6 +24,7 @@ const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', h
 let trendChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
+let healthMarkersVisible = true;
 let activityMeasure = 'duration';
 
 function sourceHero(domain) {
@@ -71,14 +72,10 @@ function buildSeries(dates) {
   });
   const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
   const performance = dates.map(date => getGarminCheckinMetric(checkins[date], 'vo2max'));
-  // Health availability is deliberately not inferred from illness/injury logs.
-  // No continuous availability series exists in the current data model.
-  const health = dates.map(() => null);
   return [
     { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance },
-    { key: 'health', label: 'Health · nicht berechenbar', unit: '', raw: health, color: COLORS.health, unavailable: true }
+    { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
   ];
 }
 function toRelativeIndex(raw) {
@@ -92,12 +89,40 @@ function toRelativeIndex(raw) {
 function updateMetricSwitch() {
   document.querySelectorAll('[data-overview-metric]').forEach(button => {
     const key = button.dataset.overviewMetric;
-    const active = selectedMetrics.has(key);
+    const active = key === 'health' ? healthMarkersVisible : selectedMetrics.has(key);
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
-    button.classList.toggle('is-unavailable', key === 'health');
-    button.disabled = key === 'health';
+    button.classList.remove('is-unavailable');
+    button.disabled = false;
   });
+}
+function renderHealthMarkers(dates) {
+  const root = document.getElementById('analysis-overview-health-markers');
+  if (!root) return;
+  if (!healthMarkersVisible) { root.innerHTML = ''; root.style.display = 'none'; root.classList.add('hidden'); return; }
+  const logs = state.healthLogs || {};
+  const buttons = dates.map((date,index) => {
+    const item = logs[date];
+    if (!['sick','injured'].includes(item?.status)) return '';
+    const illness = item.status === 'sick';
+    const label = illness ? 'Erkrankung' : 'Verletzung';
+    const color = illness ? '#eab308' : '#ef4444';
+    return '<button type="button" data-health-date="'+date+'" aria-label="'+label+' am '+date+'" title="'+label+' · '+date+'" style="grid-column:'+(index+1)+';justify-self:center;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:'+(illness?'#0f172a':'#fff')+';background:'+color+';border:1px solid rgba(255,255,255,.45);cursor:pointer">'+(illness?'K':'V')+'</button>';
+  }).filter(Boolean);
+  root.classList.remove('hidden');
+  root.style.display = 'grid';
+  root.style.gridTemplateColumns = 'repeat('+dates.length+',minmax(0,1fr))';
+  root.style.alignItems = 'center';
+  root.style.minHeight = '24px';
+  root.innerHTML = buttons.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:#64748b">Keine dokumentierten Erkrankungen oder Verletzungen im Zeitraum</span>';
+  root.querySelectorAll('[data-health-date]').forEach(button => button.addEventListener('click', () => {
+    const date = button.dataset.healthDate, item = logs[date] || {};
+    const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
+    const detail = document.getElementById('analysis-overview-health-event');
+    if (!detail) return;
+    detail.textContent = label+' · '+new Date(date+'T12:00:00').toLocaleDateString('de-DE')+' · '+(item.diagnosis || 'Keine weitere Beschreibung dokumentiert');
+    detail.classList.remove('hidden');
+  }));
 }
 function renderTrendChart() {
   const canvas = document.getElementById('analysis-overview-trend-chart');
@@ -157,13 +182,20 @@ function renderTrendChart() {
       }
     }
   });
-  const healthNote = 'Health: keine kontinuierliche Trainingsverfügbarkeit berechenbar. Dokumentierte Krankheits- und Verletzungseinträge werden nicht als täglicher Score interpretiert.';
+  renderHealthMarkers(dates);
+  const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
   setText('analysis-overview-trend-note',
     'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
   if (!['load', 'recovery', 'performance', 'health'].includes(metric)) return;
+  if (metric === 'health') {
+    healthMarkersVisible = !healthMarkersVisible;
+    renderHealthMarkers(rangeDates(currentRange()));
+    updateMetricSwitch();
+    return;
+  }
   if (selectedMetrics.has(metric)) {
     if (selectedMetrics.size === 1) return;
     selectedMetrics.delete(metric);
