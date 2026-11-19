@@ -898,7 +898,7 @@ export function renderActivityTelemetryChart(act) {
             return '<button type="button" class="activity-series-switch' + (active ? ' is-active' : '')
                 + '" data-metric="' + item.key + '" style="--series-color:' + item.color + '" aria-pressed="' + (active ? 'true' : 'false') + '">'
                 + '<span class="activity-series-color-dot" aria-hidden="true"></span>'
-                + item.label + (item.unit ? ' · ' + item.unit : '') + '</button>';
+                + item.label + ' · ' + (item.unit || 'Einheit unbekannt') + '</button>';
         }).join('');
         controls.querySelectorAll('[data-metric]').forEach(button => {
             button.addEventListener('click', () => setActivityTelemetryMetric(button.dataset.metric));
@@ -974,7 +974,7 @@ export function renderActivityTelemetryChart(act) {
             position: index === 0 ? 'left' : 'right',
             display: true,
             offset: index > 1,
-            title: { display: true, text: metric.label + (metric.unit ? ' (' + metric.unit + ')' : ''), color: metric.color, font: { size: 9 } },
+            title: { display: true, text: metric.label + ' (' + (metric.unit || 'Einheit unbekannt') + ')', color: metric.color, font: { size: 9 } },
             ticks: {
                 color: metric.color,
                 font: { size: 8 },
@@ -985,7 +985,7 @@ export function renderActivityTelemetryChart(act) {
         };
     });
     const datasets = selected.map((metric, index) => ({
-        label: metric.label + (metric.unit ? ' (' + metric.unit + ')' : ''),
+        label: metric.label + ' (' + (metric.unit || 'Einheit unbekannt') + ')',
         data: metric.values,
         yAxisID: 'y' + index,
         borderColor: metric.color,
@@ -1005,7 +1005,7 @@ export function renderActivityTelemetryChart(act) {
         if (value === null || value === undefined || !Number.isFinite(Number(value))) return;
         const timeLabel = labels[element.index] ?? ('Messpunkt ' + (element.index + 1));
         pointReadout.textContent = metric.label + ': ' + formatValue(metric, value)
-            + (metric.unit && metric.key !== 'pace' && metric.key !== 'swimPace' ? ' ' + metric.unit : '')
+             + (metric.key !== 'pace' && metric.key !== 'swimPace' ? ' ' + (metric.unit || 'Einheit unbekannt') : '')
             + ' · ' + timeLabel;
         pointReadout.hidden = false;
     };
