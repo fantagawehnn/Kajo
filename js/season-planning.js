@@ -74,6 +74,12 @@ export function normalizeWeeklyPlan(weeklyPlan = {}) {
                 sessionId: cleanText(link?.sessionId, 100),
                 activityId: cleanText(link?.activityId, 160)
             })).filter(link => link.sessionId && link.activityId).slice(0, 30) : [],
+        manualSessionStatuses: Array.isArray(weeklyPlan.manualSessionStatuses)
+            ? weeklyPlan.manualSessionStatuses.map(entry => ({
+                sessionId: cleanText(entry?.sessionId, 100),
+                status: ['completed_unrecorded', 'missed'].includes(entry?.status) ? entry.status : null,
+                updatedAt: typeof entry?.updatedAt === 'string' && Number.isFinite(Date.parse(entry.updatedAt)) ? entry.updatedAt : null
+            })).filter(entry => entry.sessionId && entry.status).slice(0, 30) : [],
         athleteApprovedAt: typeof weeklyPlan.athleteApprovedAt === 'string' && Number.isFinite(Date.parse(weeklyPlan.athleteApprovedAt)) ? weeklyPlan.athleteApprovedAt : null,
         createdAt: typeof weeklyPlan.createdAt === 'string' ? weeklyPlan.createdAt : null,
         updatedAt: typeof weeklyPlan.updatedAt === 'string' ? weeklyPlan.updatedAt : null
