@@ -83,6 +83,9 @@ jobs:
       - name: Run season periodization proposal tests
         run: node --experimental-default-type=module --test tests/season-plan-proposal-worker.test.mjs
 
+      - name: Run weekly plan proposal tests
+        run: node --experimental-default-type=module --test tests/weekly-plan-proposal-worker.test.mjs
+
       - name: Run Coach context regression tests
         run: node --experimental-default-type=module --test tests/coach-context.test.mjs
 
