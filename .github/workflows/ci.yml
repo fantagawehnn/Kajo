@@ -48,6 +48,7 @@ jobs:
           node --check js/coach-context.js
           node --check js/coach-data-context.js
           node --check js/coach-analysis.js
+          node --check js/coach-decision-guidance.js
           node --check worker.js
           node --check js/profile.js
           node --check js/settings.js
@@ -76,6 +77,9 @@ jobs:
 
       - name: Run Coach context regression tests
         run: node --experimental-default-type=module --test tests/coach-context.test.mjs
+
+      - name: Run Coach decision guidance tests
+        run: node --experimental-default-type=module --test tests/coach-decision-guidance.test.mjs
 
       - name: Run Coach Worker security tests
         run: node --experimental-default-type=module --test tests/coach-worker.test.mjs
