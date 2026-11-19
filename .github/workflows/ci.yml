@@ -8,6 +8,7 @@ on:
       - feat/garmin-data-quality-v2
       - feature/coach-v2-integration
       - garmin-full-export-import
+      - preview/kajo-redesign-current-v2
   pull_request:
     branches:
       - v2
