@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
-import { requestSeasonPlanProposal, requestWeeklyPlanProposal, requestAdaptiveWeekAdjustment } from './coach.js?v=2';
+import { requestSeasonPlanProposal, requestWeeklyPlanProposal, requestAdaptiveWeekAdjustment } from './coach.js?v=3';
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
 import { buildWeeklyPlanCalendarEntries, calendarTypeForSession, calendarCategoryForSession } from './weekly-plan-calendar.js';
