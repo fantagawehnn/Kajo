@@ -164,7 +164,7 @@ test('missing subjective check-in values remain missing, not negative', () => {
     assert.equal(result.domainCount, 2);
 });
 
-test('cycle context is omitted unless female cycle tracking is enabled', () => {
+test('cycle context is omitted for profiles other than female', () => {
     const source = makeState({
         dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 90, cycle: { trainingImpact: 5 } } }
     });
@@ -190,7 +190,7 @@ test('subjective self-monitoring is context and does not change the readiness sc
         dailyCheckins: { [day]: { ...objective, sleepQuality: 1, motivation: 1, fatigue: 5, soreness: 5, stress: 5 } }
     });
     const highSubjective = makeState({
-        profile: { gender: 'female', cycleTrackingEnabled: true },
+        profile: { gender: 'female' },
         dailyCheckins: { [day]: { ...objective, sleepQuality: 5, motivation: 5, fatigue: 1, soreness: 1, stress: 1,
             cycle: { trainingImpact: 5 } } }
     });
