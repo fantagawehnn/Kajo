@@ -99,7 +99,7 @@ function updateMetricSwitch() {
 function renderHealthMarkers(dates) {
   const root = document.getElementById('analysis-overview-health-markers');
   if (!root) return;
-  if (!healthMarkersVisible) { root.innerHTML = ''; root.classList.add('hidden'); return; }
+  if (!healthMarkersVisible) { root.innerHTML = ''; root.style.display = 'none'; root.classList.add('hidden'); return; }
   const logs = state.healthLogs || {};
   const buttons = dates.map((date,index) => {
     const item = logs[date];
