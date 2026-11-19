@@ -261,7 +261,7 @@ function calendarActivitySourceLabel(activity) {
 }
 function calendarActivityRow(activity, planned) {
     const sport = calendarSport(activity.type);
-    const color = sport.color || '#64748b';
+    const color = calendarActivityColor(activity, sport);
     const id = encodeURIComponent(String(activity.id || '')).replace(/'/g, '%27');
     const time = calendarDayTime(activity.startTimeLocal || activity.start_time_local || activity.startTime || activity.time);
     const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
@@ -533,6 +533,34 @@ function calendarTrainingLabel(act, categoryColors) {
     return category?.label || 'Training';
 }
 
+function calendarActivityColor(activity, sport = calendarSport(activity?.type)) {
+    if (calendarDisplayMode() === 'training') {
+        const categories = getTypeColorMap();
+        return categories[activity?.category || 'ga']?.color || categories.ga?.color || sport?.color || '#64748b';
+    }
+    return sport?.color || '#64748b';
+}
+
+function calendarActivityColorLabel(activity, sport = calendarSport(activity?.type)) {
+    if (calendarDisplayMode() === 'training') return calendarTrainingLabel(activity, getTypeColorMap());
+    return sport?.label || activity?.type || 'Training';
+}
+
+function renderCalendarDisplayModeControl() {
+    const mode = calendarDisplayMode();
+    [['sport', 'calendar-color-mode-sport'], ['training', 'calendar-color-mode-training']].forEach(([value, id]) => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        const active = mode === value;
+        button.classList.toggle('bg-cyan-500/15', active);
+        button.classList.toggle('border-cyan-500', active);
+        button.classList.toggle('text-cyan-200', active);
+        button.classList.toggle('border-slate-700', !active);
+        button.classList.toggle('text-slate-300', !active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
 export function setCalendarDisplayMode(mode) {
     state.calendarDisplayMode = mode === 'training' ? 'training' : 'sport';
     try { setUserLocalSetting('calendarDisplayMode', state.calendarDisplayMode); }
@@ -556,12 +584,16 @@ function renderCalendarLegend() {
     for (let day = 1; day <= new Date(state.currentCalendarDate.getFullYear(), state.currentCalendarDate.getMonth() + 1, 0).getDate(); day++) {
         dates.push(prefix + String(day).padStart(2, '0'));
     }
-    const types = new Set([...activities, ...planned].map(item => item.type || 'Workout'));
     const catalog = getSportsCatalog();
-    const items = [...types].map(type => {
-        const sport = catalog[type] || catalog.Workout;
-        return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + sport.color + '"></span>' + escapeHtml(sport.label || type) + '</span>';
-    });
+    const items = calendarDisplayMode() === 'training'
+        ? [...new Set([...activities, ...planned].map(item => item.category || 'ga'))].map(category => {
+            const config = getTypeColorMap()[category] || getTypeColorMap().ga;
+            return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + config.color + '"></span>' + escapeHtml(config.label || category) + '</span>';
+        })
+        : [...new Set([...activities, ...planned].map(item => item.type || 'Workout'))].map(type => {
+            const sport = catalog[type] || catalog.Workout;
+            return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:' + sport.color + '"></span>' + escapeHtml(sport.label || type) + '</span>';
+        });
     if (activities.length) items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-completed">●</span>Abgeschlossen</span>');
     if (planned.length) items.push('<span class="calendar-legend-item"><span class="calendar-entry-status is-planned">○</span>Geplant</span>');
     if ((state.races || []).some(item => dates.includes(item.date))) items.push('<span class="calendar-legend-item"><i data-lucide="trophy" class="calendar-event-icon calendar-event-race"></i>Wettkampf</span>');
@@ -612,6 +644,7 @@ export function applyCalendarPeriodDate(value) {
 }
 
 export function renderCalendar() {
+    renderCalendarDisplayModeControl();
     const formats = ['day', 'week', 'month', 'year', 'activities', 'season'];
     if(state.activeCalendarFormat==='season'&&!calendarSeason())state.activeCalendarFormat='month';
     const format = formats.includes(state.activeCalendarFormat) ? state.activeCalendarFormat : 'month';
@@ -1028,8 +1061,9 @@ function renderCalendarMonthSummary(date, target) {
     const loadText = data.loadValue === null ? '—' : Math.round(data.loadValue);
     const activityRows = (items, planned) => items.slice(0, 3).map(item => {
         const sport = calendarSport(item.type);
+        const color = calendarActivityColor(item, sport);
         return '<div class="calendar-month-summary-entry ' + (planned ? 'is-planned' : 'is-completed') + '">' +
-            '<span class="calendar-month-summary-dot" style="--activity-color:' + (sport.color || '#64748b') + '"></span>' +
+            '<span class="calendar-month-summary-dot" style="--activity-color:' + color + '"></span>' +
             '<span class="calendar-month-summary-entry-copy"><strong>' + escapeHtml(item.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
             '<small>' + escapeHtml(sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '')) + '</small></span>' +
             '<span class="calendar-month-summary-status">' + (planned ? 'Geplant' : 'Abgeschlossen') + '</span></div>';
@@ -1084,8 +1118,9 @@ export function renderMonthView() {
         ].sort((a, b) => calendarDayTime(a.item.startTimeLocal || a.item.start_time_local || a.item.startTime || a.item.time).localeCompare(calendarDayTime(b.item.startTimeLocal || b.item.start_time_local || b.item.startTime || b.item.time)));
         const markerMarkup = markers.map(({ item, planned }) => {
             const sport = catalog[item.type] || catalog.Workout;
-            const label = sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '');
-            return '<span class="calendar-month-sport-marker ' + (planned ? 'is-planned' : 'is-completed') + '" style="--activity-color:' + (sport.color || '#64748b') + '" title="' + escapeHtml(label + (planned ? ' · Geplant' : ' · Abgeschlossen')) + '"></span>';
+            const color = calendarActivityColor(item, sport);
+            const label = sport.label + (item.raceFormat ? ' · ' + item.raceFormat : '') + ' · ' + calendarActivityColorLabel(item, sport);
+            return '<span class="calendar-month-sport-marker ' + (planned ? 'is-planned' : 'is-completed') + '" style="--activity-color:' + color + '" title="' + escapeHtml(label + (planned ? ' · Geplant' : ' · Abgeschlossen')) + '"></span>';
         }).join('');
         const load = data.loadValue === null ? '' : '<small class="calendar-month-load">' + Math.round(data.loadValue) + '</small>';
         grid.insertAdjacentHTML('beforeend', '<button type="button" class="calendar-month-day ' + (date === today ? 'is-today ' : '') + (selected ? 'is-selected' : '') + '" data-date="' + date + '" aria-pressed="' + selected + '" aria-label="' + calendarDateLabel(date) + '" onclick="openCalendarDay(\'' + date + '\',true)">' +
@@ -1179,8 +1214,8 @@ export function renderWeekView() {
         const health = state.healthLogs?.[date];
         const cycle = state.dailyCheckins?.[date]?.cycle?.period === true;
         const markers = [
-            ...data.activities.map(item => ({ color: calendarSport(item.type).color || '#64748b', title: calendarSport(item.type).label, kind: 'training' })),
-            ...data.planned.map(item => ({ color: calendarSport(item.type).color || '#64748b', title: calendarSport(item.type).label + ' · geplant', kind: 'planned' })),
+            ...data.activities.map(item => ({ color: calendarActivityColor(item), title: calendarActivityColorLabel(item), kind: 'training' })),
+            ...data.planned.map(item => ({ color: calendarActivityColor(item), title: calendarActivityColorLabel(item) + ' · geplant', kind: 'planned' })),
             ...(data.races.length ? [{ color: 'var(--kajo-status-info,#63a9ee)', title: 'Wettkampf', kind: 'race' }] : []),
             ...(health?.status === 'sick' ? [{ color: 'var(--kajo-status-warning,#e5a43b)', title: 'Krankheit', kind: 'sick' }] : []),
             ...(health?.status === 'injured' ? [{ color: 'var(--kajo-status-critical,#e36b6b)', title: 'Verletzung', kind: 'injured' }] : []),
@@ -1201,7 +1236,7 @@ export function renderWeekView() {
         const d = new Date(date + 'T12:00:00');
         const weekActivityMarkup = (item, planned) => {
             const sport = calendarSport(item.type);
-            const color = sport.color || '#64748b';
+            const color = calendarActivityColor(item, sport);
             const id = encodeURIComponent(String(item.id || '')).replace(/'/g, '%27');
             const duration = item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration))
                 ? Math.round(Number(item.duration)) + ' min' : '';
@@ -1297,9 +1332,7 @@ export function renderListView() {
     }
     container.innerHTML = filtered.map(act => {
         const mode = calendarDisplayMode();
-        const activityColor = mode === 'training'
-            ? (getTypeColorMap()[act.category || 'ga'] || getTypeColorMap().ga).color
-            : (sportCatalog[act.type] || sportCatalog.Workout).color;
+        const activityColor = calendarActivityColor(act, sportCatalog[act.type] || sportCatalog.Workout);
         const isStrength = act.type === 'WeightTraining' || act.category === 'strength';
         const telemetry = getGarminTelemetry(act);
         const telemetryHr = Array.isArray(telemetry?.hr) ? telemetry.hr.map(Number).filter(v => Number.isFinite(v) && v > 0) : [];
