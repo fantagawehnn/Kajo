@@ -84,7 +84,8 @@ function renderRings(timeline){
  setText('training-load-status-date',last?'Stand '+new Date(last.date+'T12:00:00').toLocaleDateString('de-DE'):'Keine gültigen Modellwerte');
  const mode=last?.loadMode==='srpe'?'sRPE-Load':last?.loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Belastungsmodell';
  setText('training-load-status-title',mode);
- setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum. TSB wird aktuell an der Grundlagen-/Aufbauphase der Winter-Off-Season ausgerichtet: Grün −20 bis −5, Gelb −5 bis +5, Blau über +5 (geringe akute Belastung), Rot unter −20 (hohe akute Belastung). Orientierungsbereiche, keine starre Vorgabe; TSB allein bewertet weder Regeneration noch Trainingsbereitschaft.':'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
+ const hasEstimates=timeline.some(row=>Number(row.estimatedLoadCount)>0);
+ setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum. TSB wird aktuell an der Grundlagen-/Aufbauphase der Winter-Off-Season ausgerichtet: Grün −20 bis −5, Gelb −5 bis +5, Blau über +5 (geringe akute Belastung), Rot unter −20 (hohe akute Belastung). Orientierungsbereiche, keine starre Vorgabe; TSB allein bewertet weder Regeneration noch Trainingsbereitschaft.'+(hasEstimates?' Manuell geschätzte Load-Werte fließen vorläufig ein.':''):'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
 }
 function renderVolumeSummary(activities,range){
  const hasDuration=item=>item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0;
@@ -130,11 +131,12 @@ function renderZoneTrendChart(analysis,range){
  chartBase('training-load-daily-chart','dailyChart',{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#7d8a98',maxTicksLimit:9,maxRotation:0}},y:{stacked:true,beginAtZero:true,max:zoneDisplayMode==='percent'?100:undefined,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:'#7d8a98'},title:{display:true,text:zoneDisplayMode==='percent'?'Anteil pro Tag (%)':'Minuten pro Tag',color:'#7d8a98'}}},plugins:{legend:{display:true,position:'bottom',labels:{color:'#a9b5c2',usePointStyle:true,boxWidth:7,padding:8}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.y)+(zoneDisplayMode==='percent'?' %':' min')}}}}});
  setText('training-load-zone-trend-unit',zoneDisplayMode==='percent'?'Anteil je Tag':'Minuten pro Tag');
 }
-function renderCoverage(analysis){
+function renderCoverage(analysis,activities=[]){
  const c=analysis.coverage;
  setText('training-load-source-title',selectedModel==='kajo'?'KAJO-HF-Zonenindex':selectedModel==='edwards'?'Edwards TRIMP':'Vergleich der HF-Zonenmodelle');
  setText('training-load-source-description',selectedModel==='kajo'?'Gewichtete Zeit in adaptiven Herzfrequenzreserve-Zonen (Karvonen). Die Ruheherzfrequenz wird anhand des konfigurierten Rückblicks angepasst; HFmax stammt aus dem Athletenprofil.':selectedModel==='edwards'?'Gewichtete Zeit in fünf festen Bereichen relativ zur maximalen Herzfrequenz: 50–<60 %, 60–<70 %, 70–<80 %, 80–<90 % und ≥90 %. Zeit unter 50 % wird nicht gewertet.':'KAJO nutzt adaptive Herzfrequenzreserve-Zonen; Edwards verwendet feste Prozentbereiche der HFmax.');
- setText('training-load-coverage','Garmin-Aktivitäten: '+c.garminActivityCount+' · KAJO berechenbar: '+c.activitiesWithKajoZones+' · Edwards berechenbar: '+c.activitiesWithEdwards+(c.activitiesWithoutUsableAdaptiveRhr?' · KAJO ohne adaptive Ruhe-HF: '+c.activitiesWithoutUsableAdaptiveRhr:'')+(c.activitiesWithoutUsableEdwardsMaxHr?' · Edwards ohne gültige HFmax: '+c.activitiesWithoutUsableEdwardsMaxHr:''));
+ const estimatedCount=activities.filter(item=>item?.manualTrainingLoadEstimate?.source==='manual-estimate'&&Number.isFinite(Number(item.manualTrainingLoadEstimate.value))).length;
+ setText('training-load-coverage','Garmin-Aktivitäten: '+c.garminActivityCount+' · KAJO berechenbar: '+c.activitiesWithKajoZones+' · Edwards berechenbar: '+c.activitiesWithEdwards+(estimatedCount?' · manuell geschätzt: '+estimatedCount:'')+(c.activitiesWithoutUsableAdaptiveRhr?' · KAJO ohne adaptive Ruhe-HF: '+c.activitiesWithoutUsableAdaptiveRhr:'')+(c.activitiesWithoutUsableEdwardsMaxHr?' · Edwards ohne gültige HFmax: '+c.activitiesWithoutUsableEdwardsMaxHr:''));
  const maxHr=Number(state.profile?.maxHr);setText('training-load-edwards-maxhr-note',Number.isFinite(maxHr)&&maxHr>=100&&maxHr<=240?'HFmax '+maxHr+' bpm aus deinem Athletenprofil.':'Für Edwards ist eine gültige HFmax im Athletenprofil erforderlich.');
 }
 function renderEstimatedLoadQueue(activities){
@@ -152,14 +154,14 @@ function renderEstimatedLoadQueue(activities){
   reason.textContent=hasHr?'HF-Daten vorhanden, aber kein berechenbarer Zonenload (z. B. fehlende Zonenbasis oder Datenlücken).':'Keine auswertbare Herzfrequenz-Zeitreihe – möglicher Sensor-/Brustgurt-Aussetzer.';
   info.append(title,reason);
   const controls=document.createElement('div');controls.className='flex items-center gap-2';
-  const input=document.createElement('input');input.type='number';input.min='0';input.max='10000';input.step='0.1';input.inputMode='decimal';input.className='w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-white';input.setAttribute('aria-label','Geschätzter KAJO-Load in Punkten');
+  const input=document.createElement('input');input.type='number';input.min='0.1';input.max='10000';input.step='0.1';input.inputMode='decimal';input.className='w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-white';input.setAttribute('aria-label','Geschätzter KAJO-Load in Punkten');
   const existing=activity.manualTrainingLoadEstimate;
   input.value=existing?.source==='manual-estimate'&&Number.isFinite(Number(existing.value))?String(existing.value):'';
   input.placeholder='Punkte';
   const save=document.createElement('button');save.type='button';save.className='rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white';save.textContent=input.value?'Aktualisieren':'Speichern';
   save.addEventListener('click',()=>{
    const raw=input.value.trim(),value=Number(raw);
-   if(!raw||!Number.isFinite(value)||value<0||value>10000){input.focus();return;}
+   if(!raw||!Number.isFinite(value)||value<=0||value>10000){input.focus();return;}
    activity.manualTrainingLoadEstimate={value:Number(value.toFixed(1)),source:'manual-estimate',unit:'KAJO-HF-Punkte',estimatedAt:new Date().toISOString()};
    saveDataToLocalStorage();
    refreshAll();
@@ -203,7 +205,7 @@ export function renderTrainingLoadView(){
  updateSportOptions();updatePeriodControl();const range=getRange(),activities=selectedActivities(),timeline=selectedTimeline();
  renderRings(timeline);renderVolumeSummary(activities,range);renderLoadTrend(timeline,activities);
  const analysis=getHeartRateZoneAnalysis(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
- renderCoverage(analysis);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue(activities);
+ renderCoverage(analysis,activities);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue(activities);
  const hasZones=modelKeys().some(key=>analysis[key].daily.length>0);setVisible('training-load-no-data',!hasZones);setVisible('training-load-zone-analysis',hasZones);
  const note=document.getElementById('training-load-zone-method-note');
  if(note)note.textContent=selectedModel==='compare'?'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO nutzt adaptive HF-Reserve-Zonen; Edwards feste Prozentbereiche der HFmax. Werte nicht als identische Zonen vergleichen.':selectedModel==='edwards'?'Edwards verwendet feste Prozentbereiche der HFmax. Zeit unter 50 % HFmax wird nicht einer Zone zugeordnet.':'KAJO verwendet adaptive HF-Reserve-Zonen mit einer Ruhe-HF-Basis aus dem konfigurierten Rückblick; ein Profil-Fallback ist als eingeschränkte Datenbasis zu verstehen.';
