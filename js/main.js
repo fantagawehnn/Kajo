@@ -3295,6 +3295,8 @@ Object.assign(window, {
     saveManualSportCorrection,
     addActivityStrengthSet,
     removeActivityStrengthSet,
+    updateActivityStrengthSet,
+    updateActivityStrengthExerciseName,
     toggleActivityStrengthSection,
     toggleActivityEdit,
     updateActivityRPE,
