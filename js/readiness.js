@@ -299,7 +299,7 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     if (healthStatus === 'sick' || healthStatus === 'injured') {
         return {
             title: healthStatus === 'sick' ? 'Gesundheit hat Vorrang' : 'Verletzungsstatus berücksichtigen',
-            detail: 'Im Gesundheitsprotokoll ist eine Einschränkung dokumentiert. KAJO gibt deshalb keine Trainingsfreigabe. Belastung erst nach Symptomen, Verlauf und gegebenenfalls medizinischer Rücksprache festlegen. Geplant: ' + sessionText + '.',
+            detail: 'Heute keine Trainingsfreigabe: Kläre den Gesundheitsstatus und beachte medizinische Vorgaben, bevor du wieder belastest.',
             decision: 'health-review',
             readiness
         };
@@ -308,7 +308,7 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     if (assessmentSessions.length) {
         return {
             title: 'Leistungsdiagnostik hat Vorrang',
-            detail: assessmentNames(assessmentSessions) + ' ist heute als eigenständige Belastung eingeplant. KAJO berücksichtigt den Test als Tageshauptbelastung: keine zusätzliche intensive oder kraftbetonte Einheit ergänzen. Falls weitere Einheiten geplant sind (' + sessionText + '), sollten sie entfallen oder auf lockere Regeneration reduziert werden. Die Testbelastung wird nicht als Garmin-Load oder KAJO-Load geschätzt.',
+            detail: assessmentNames(assessmentSessions) + ' ist heute die Hauptbelastung. Keine zusätzliche intensive oder kraftbetonte Einheit; weitere Einheiten höchstens locker regenerativ.',
             decision: 'assessment-day',
             readiness
         };
@@ -317,7 +317,7 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     if (nextDayAssessments.length) {
         return {
             title: 'Belastung vor Leistungsdiagnostik reduzieren',
-            detail: 'Morgen steht ' + assessmentNames(nextDayAssessments) + ' an. Halte den heutigen Trainingsumfang niedrig und verzichte auf intensive Intervalle sowie schweres Krafttraining, damit die Diagnostik nicht durch zusätzliche Ermüdung beeinträchtigt wird. Wenn heute eine Einheit geplant ist (' + sessionText + '), reduziere sie auf lockere Technik oder Regeneration beziehungsweise lasse sie aus. Die Tagesform und mögliche gesundheitliche Einschränkungen haben weiterhin Vorrang.',
+            detail: 'Morgen steht ' + assessmentNames(nextDayAssessments) + ' an. Heute nur lockere Technik oder Regeneration; keine intensiven Intervalle und kein schweres Krafttraining.',
             decision: 'assessment-preparation',
             readiness
         };
@@ -326,7 +326,7 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     if (readiness.score === null) {
         return {
             title: 'Tagesform derzeit nicht sicher beurteilbar',
-            detail: 'Für einen Readiness-Orientierungswert fehlen mindestens zwei auswertbare Bereiche. Fehlende Angaben werden nicht als schlechte Tagesform gewertet. Prüfe dein subjektives Befinden und das Aufwärmen; bei Unsicherheit keine intensive Einheit allein aufgrund der App-Daten beginnen. Geplant: ' + sessionText + '.',
+            detail: 'Die Tagesform lässt sich nicht zuverlässig einordnen. Prüfe dein Befinden und das Aufwärmen; heute keine intensive Einheit allein aufgrund der App-Daten beginnen.',
             decision: 'insufficient-data',
             readiness
         };
@@ -395,6 +395,24 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
         detail += ' Der eingetragene Ziel-Load wird nicht automatisch mit Garmin Load oder KAJO-HF-Punkten verrechnet: Diese Belastungsskalen sind ohne validierte Umrechnung nicht direkt vergleichbar.';
     }
 
-    detail += ' Readiness ist ein Orientierungswert und keine medizinische Diagnose oder validierte Leistungsprognose.';
-    return { title, detail, decision, readiness };
+    // Dashboard copy is deliberately action-focused: the athlete already sees
+    // readiness and load metrics in adjacent cards, so do not repeat raw values.
+    const plannedNames = sessions.map(item => String(item.name || categoryLabels[item.category] || 'Trainingseinheit'));
+    const plannedLabel = plannedNames.length ? plannedNames.join(' + ') : '';
+    let conciseDetail;
+    if (decision === 'modify') {
+        conciseDetail = plannedLabel
+            ? 'Heute ' + plannedLabel + ' deutlich entschärfen: keine zusätzliche Intensität; bei auffälligem Aufwärmen auf lockere Technik oder Regeneration wechseln.'
+            : 'Heute nur lockere Technik oder Regeneration. Keine intensive oder kraftbetonte Belastung; bei auffälligem Befinden pausieren.';
+    } else if (decision === 'caution') {
+        conciseDetail = plannedLabel
+            ? plannedLabel + ' kontrolliert und ohne zusätzliche Belastungsspitzen durchführen. Umfang oder Intensität reduzieren, wenn sich das Aufwärmen ungewohnt schwer anfühlt.'
+            : 'Wenn du trainierst, halte die Einheit locker bis moderat und verzichte auf zusätzliche Belastungsspitzen.';
+    } else {
+        conciseDetail = plannedLabel
+            ? plannedLabel + ' wie geplant durchführen. Im Aufwärmen prüfen, ob sich Technik und Belastungsgefühl normal anfühlen.'
+            : 'Keine Einheit eingetragen. Wenn du trainieren möchtest, wähle eine lockere, technisch saubere Einheit passend zu deinem aktuellen Trainingsblock.';
+    }
+    if (sessions.length > 1) conciseDetail += ' Die zweite Einheit in die Tagesbelastung einrechnen.';
+    return { title, detail: conciseDetail, decision, readiness };
 }
