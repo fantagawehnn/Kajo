@@ -50,7 +50,7 @@ export function normalizeSeasonPlan(plan) {
         primaryGoal: cleanText(plan.primaryGoal, 1000),
         secondaryGoals: Array.isArray(plan.secondaryGoals) ? plan.secondaryGoals.map(item => cleanText(item, 300)).filter(Boolean).slice(0, 20) : [],
         phases: Array.isArray(plan.phases) ? plan.phases.map(normalizeSeasonPhase).slice(0, 30) : [],
-        athleteApprovedAt: validDate(plan.athleteApprovedAt) ? plan.athleteApprovedAt : null,
+        athleteApprovedAt: typeof plan.athleteApprovedAt === 'string' && Number.isFinite(Date.parse(plan.athleteApprovedAt)) ? plan.athleteApprovedAt : null,
         createdAt: typeof plan.createdAt === 'string' ? plan.createdAt : null,
         updatedAt: typeof plan.updatedAt === 'string' ? plan.updatedAt : null
     };
@@ -116,7 +116,8 @@ export function buildSeasonPlanningContext(input, races = []) {
         status: plan.status,
         season: {
             id: plan.id, name: plan.name || null, startDate: plan.startDate, endDate: plan.endDate,
-            primaryGoal: plan.primaryGoal || null, secondaryGoals: plan.secondaryGoals
+            primaryGoal: plan.primaryGoal || null, secondaryGoals: plan.secondaryGoals,
+            athleteApprovedAt: plan.athleteApprovedAt
         },
         phases: plan.phases,
         competitions: raceRecords,
