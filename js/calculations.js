@@ -47,6 +47,7 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
     const dailyLoad = {};
     const activityCountByDate = {};
     const loadActivityCountByDate = {};
+    const estimatedLoadCountByDate = {};
 
     list.forEach(activity => {
         const date = activityDateKey(activity?.date);
@@ -62,6 +63,9 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
         if (!date) return;
         dailyLoad[date] = (dailyLoad[date] || 0) + item.value;
         loadActivityCountByDate[date] = (loadActivityCountByDate[date] || 0) + 1;
+        if (item.source === 'manual-estimate') {
+            estimatedLoadCountByDate[date] = (estimatedLoadCountByDate[date] || 0) + 1;
+        }
     });
 
     let ctl = 0, atl = 0, modelActive = false, segmentDays = 0;
@@ -192,8 +196,11 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
             loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
             dataStatus: dayStatus, ctl: ctlDisplay, atl: atlDisplay,
             tsb: Number(form.toFixed(1)), formPct: formPct === null ? null : Number(formPct.toFixed(1)),
-            acwr: ratio === null ? null : Number(ratio.toFixed(2)), statusLabel,
-            isProvisional: segmentDays < 126
+            acwr: ratio === null ? null : Number(ratio.toFixed(2)),
+            statusLabel: estimatedLoadCountByDate[dateStr]
+                ? 'Vorläufig · manuelle Load-Schätzung' : statusLabel,
+            estimatedLoadCount: estimatedLoadCountByDate[dateStr] || 0,
+            isProvisional: segmentDays < 126 || Boolean(estimatedLoadCountByDate[dateStr])
         });
     }
     return timeline;
