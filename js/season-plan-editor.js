@@ -1,10 +1,10 @@
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
-import { requestSeasonPlanProposal, requestWeeklyPlanProposal } from './coach.js?v=2';
+import { requestSeasonPlanProposal, requestWeeklyPlanProposal, requestAdaptiveWeekAdjustment } from './coach.js?v=2';
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
-import { buildWeeklyPlanCalendarEntries } from './weekly-plan-calendar.js';
+import { buildWeeklyPlanCalendarEntries, calendarTypeForSession, calendarCategoryForSession } from './weekly-plan-calendar.js';
 import { buildAdaptiveWeekReview } from './adaptive-week-review.js';
 
 let draftPhases = [];
@@ -12,6 +12,10 @@ let pendingProposal = null;
 let proposalRequestPending = false;
 let pendingWeeklyProposal = null;
 let weeklyProposalPending = false;
+let activeAdaptiveReview = null;
+let activeAdaptiveWeekStartDate = null;
+let pendingAdaptiveProposal = null;
+let adaptiveProposalPending = false;
 
 const byId = id => document.getElementById(id);
 const value = id => byId(id)?.value ?? '';
@@ -229,7 +233,12 @@ export function reviewApprovedWeeklyPlan(weekStartDate) {
         if (message) message.textContent = 'Nur gespeicherte, freigegebene Wochenpläne können ausgewertet werden.';
         return false;
     }
-    const review = buildAdaptiveWeekReview(plan, state.rawActivities, new Date().toLocaleDateString('en-CA'));
+    const now = new Date();
+    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    const review = buildAdaptiveWeekReview(plan, state.rawActivities, today);
+    activeAdaptiveReview = review;
+    activeAdaptiveWeekStartDate = weekStartDate;
+    pendingAdaptiveProposal = null;
     root.classList.remove('hidden');
     const title = byId('adaptive-week-review-title');
     if (title) title.textContent = 'Wochenabgleich · ' + review.weekStartDate + ' bis ' + review.weekEndDate;
@@ -248,8 +257,136 @@ export function reviewApprovedWeeklyPlan(weekStartDate) {
     }
     const note = byId('adaptive-week-review-limitations');
     if (note) note.textContent = review.limitations;
+    const proposeButton = byId('adaptive-week-propose-button');
+    if (proposeButton) proposeButton.classList.toggle('hidden', !review.upcoming.some(item => item.date > today) || plan.status !== 'approved');
+    renderAdaptiveWeekProposal();
     if (message) message.textContent = 'Wochenabgleich erstellt. Nicht zugeordnete Einheiten werden nicht automatisch als ausgefallen bewertet.';
     root.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    return true;
+}
+
+function renderAdaptiveWeekProposal() {
+    const root = byId('adaptive-week-proposal');
+    if (!root) return;
+    const content = byId('adaptive-week-proposal-content');
+    if (!pendingAdaptiveProposal) {
+        root.classList.add('hidden');
+        return;
+    }
+    root.classList.remove('hidden');
+    const rationale = byId('adaptive-week-proposal-rationale');
+    if (rationale) rationale.textContent = pendingAdaptiveProposal.rationale || 'Der Coach hat die verbleibende Woche bewertet.';
+    const questions = byId('adaptive-week-proposal-questions');
+    if (questions) questions.innerHTML = (pendingAdaptiveProposal.openQuestions || []).map(item => '<p>• ' + escape(item) + '</p>').join('');
+    if (content) content.innerHTML = (pendingAdaptiveProposal.changes || []).map(change => {
+        const original = activeAdaptiveReview?.upcoming.find(item => item.id === change.sessionId);
+        const updated = change.updatedSession;
+        const actionLabels = { keep: 'Beibehalten', reduce: 'Reduzieren', modify: 'Anpassen', move: 'Verschieben', replace: 'Ersetzen' };
+        return '<article class="rounded-lg border border-slate-800 p-3 space-y-1"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(original?.name || change.sessionId) + '</strong><span class="text-[10px] text-cyan-200">' + escape(actionLabels[change.action] || change.action) + '</span></div><p class="text-[10px] text-slate-400">' + escape(original?.date || '') + (updated?.date && updated.date !== original?.date ? ' → ' + escape(updated.date) : '') + '</p><p class="text-xs text-slate-300">' + escape(change.rationale) + '</p>' + (updated ? '<p class="text-[10px] text-slate-400">' + escape(updated.name) + (updated.durationMinutes ? ' · ' + escape(updated.durationMinutes + ' min') : '') + (updated.intensity ? ' · ' + escape(updated.intensity) : '') + '</p><p class="text-xs text-slate-400">' + escape(updated.objective || '') + '</p>' : '') + '</article>';
+    }).join('');
+    const apply = byId('adaptive-week-proposal-apply');
+    if (apply) apply.classList.toggle('hidden', pendingAdaptiveProposal.status !== 'ready' || !pendingAdaptiveProposal.changes?.length);
+}
+
+export async function generateAdaptiveWeekProposal() {
+    const message = byId('season-plan-message');
+    if (adaptiveProposalPending || !activeAdaptiveReview || !activeAdaptiveWeekStartDate) return false;
+    adaptiveProposalPending = true;
+    pendingAdaptiveProposal = null;
+    renderAdaptiveWeekProposal();
+    const button = byId('adaptive-week-propose-button');
+    if (button) { button.disabled = true; button.textContent = 'Coach prüft die Woche …'; }
+    if (message) message.textContent = 'Der Coach gleicht Trainingshistorie, Belastung, Regeneration und Gesundheitsdaten ab …';
+    try {
+        pendingAdaptiveProposal = await requestAdaptiveWeekAdjustment(activeAdaptiveWeekStartDate, activeAdaptiveReview);
+        renderAdaptiveWeekProposal();
+        if (message) message.textContent = pendingAdaptiveProposal.status === 'ready'
+            ? 'Anpassungsvorschlag erstellt. Prüfe jede Einheit, bevor du die Änderungen freigibst.'
+            : 'Noch kein belastbarer Anpassungsvorschlag möglich. Bitte kläre die offenen Fragen.';
+        return true;
+    } catch (error) {
+        if (message) message.textContent = error?.message || 'Der Anpassungsvorschlag konnte nicht erstellt werden.';
+        return false;
+    } finally {
+        adaptiveProposalPending = false;
+        if (button) { button.disabled = false; button.textContent = '✦ Anpassungen mit Coach vorschlagen'; }
+    }
+}
+
+export function discardAdaptiveWeekProposal() {
+    pendingAdaptiveProposal = null;
+    renderAdaptiveWeekProposal();
+    return true;
+}
+
+export function applyAdaptiveWeekProposal() {
+    if (pendingAdaptiveProposal?.status !== 'ready' || !activeAdaptiveWeekStartDate || !activeAdaptiveReview) return false;
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    const plan = current?.weeklyPlans.find(item => item.weekStartDate === activeAdaptiveWeekStartDate);
+    if (!current || current.status !== 'active' || !plan || plan.status !== 'approved' || !plan.athleteApprovedAt) return false;
+    const now = new Date();
+    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    const matched = new Set(activeAdaptiveReview.matched.map(item => item.planned?.id).filter(Boolean));
+    const ambiguous = new Set(activeAdaptiveReview.ambiguous.map(item => item.session?.id).filter(Boolean));
+    const eligible = new Set(activeAdaptiveReview.upcoming.filter(item => item.date > today && !matched.has(item.id) && !ambiguous.has(item.id)).map(item => item.id));
+    const nextSessions = plan.sessions.map(session => {
+        const change = pendingAdaptiveProposal.changes.find(item => item.sessionId === session.id);
+        if (!change || change.action === 'keep' || !eligible.has(session.id) || !change.updatedSession) return session;
+        const updated = { ...session, ...change.updatedSession, id: session.id, targetLoad: session.targetLoad ?? null };
+        if (updated.date <= today || updated.date < plan.weekStartDate || updated.date > plan.weekEndDate) return session;
+        if (/^(c1|canadian)$/i.test(updated.discipline || '') && updated.durationMinutes != null && updated.durationMinutes > 75) return session;
+        return updated;
+    });
+    const changedIds = new Set(nextSessions.filter((session, index) => session !== plan.sessions[index]).map(session => session.id));
+    if (!changedIds.size) {
+        const message = byId('season-plan-message');
+        if (message) message.textContent = 'Es wurden keine gültigen zukünftigen Einheiten zur Änderung freigegeben.';
+        return false;
+    }
+    const nextPlan = { ...plan, sessions: nextSessions, updatedAt: new Date().toISOString() };
+    const nextWeeklyPlans = current.weeklyPlans.map(item => item.id === plan.id ? nextPlan : item);
+    const previousSeasonPlan = state.seasonPlan;
+    const previousPlanned = state.plannedActivities;
+    const nextPlanned = (Array.isArray(previousPlanned) ? previousPlanned : []).map(item => {
+        if (item.sourceWeeklyPlanId !== plan.id || !changedIds.has(item.sourceWeeklySessionId)) return item;
+        const session = nextSessions.find(entry => entry.id === item.sourceWeeklySessionId);
+        if (!session) return item;
+        const description = [
+            session.objective ? 'Ziel: ' + session.objective : '',
+            session.intensity ? 'Intensität: ' + session.intensity : '',
+            session.warmup ? 'Aufwärmen: ' + session.warmup : '',
+            session.mainSet ? 'Hauptteil: ' + session.mainSet : '',
+            session.cooldown ? 'Abwärmen: ' + session.cooldown : '',
+            session.raceFormat ? 'Rennformat: ' + session.raceFormat : '',
+            session.waterType ? 'Gewässer: ' + session.waterType : '',
+            session.notes || ''
+        ].filter(Boolean).join('\n');
+        return {
+            ...item,
+            date: session.date,
+            name: session.name,
+            type: calendarTypeForSession(session) || item.type,
+            duration: session.durationMinutes,
+            category: calendarCategoryForSession(session),
+            desc: description
+        };
+    });
+    state.seasonPlan = { ...current, weeklyPlans: nextWeeklyPlans, updatedAt: new Date().toISOString() };
+    state.plannedActivities = nextPlanned;
+    if (!saveDataToLocalStorage()) {
+        state.seasonPlan = previousSeasonPlan;
+        state.plannedActivities = previousPlanned;
+        const message = byId('season-plan-message');
+        if (message) message.textContent = 'Die Anpassungen konnten nicht gespeichert werden. Der ursprüngliche Plan bleibt unverändert.';
+        return false;
+    }
+    pendingAdaptiveProposal = null;
+    renderAdaptiveWeekProposal();
+    renderWeeklyPlanPanel();
+    renderCalendar();
+    renderPlannedWorkouts();
+    const message = byId('season-plan-message');
+    if (message) message.textContent = changedIds.size + ' zukünftige Einheit(en) wurden nach deiner Freigabe angepasst.';
     return true;
 }
 
