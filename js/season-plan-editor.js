@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
 import { requestSeasonPlanProposal, requestWeeklyPlanProposal } from './coach.js?v=2';
+import { renderCalendar } from './calendar.js';
 
 let draftPhases = [];
 let pendingProposal = null;
@@ -103,7 +104,7 @@ function renderWeeklyPlanPanel() {
     const plans = normalizeSeasonPlan(state.seasonPlan)?.weeklyPlans || [];
     const list = byId('weekly-plan-saved-list');
     if (list) list.innerHTML = plans.slice().sort((a,b) => a.weekStartDate.localeCompare(b.weekStartDate)).map(plan =>
-        '<article class="rounded-lg border border-slate-800 p-2"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(plan.weekStartDate) + ' – ' + escape(plan.weekEndDate) + '</strong><span class="text-[10px] text-slate-400">' + (plan.status === 'approved' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf') + '</span></div><p class="text-xs text-slate-300 mt-1">' + escape(plan.objective) + '</p><p class="text-[10px] text-slate-500">' + plan.sessions.length + ' Einheiten</p>' + (plan.status === 'draft' ? '<button type="button" onclick="approveWeeklyPlan(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 px-2 py-1 rounded bg-cyan-900 text-cyan-200 text-[10px]">Wochenplan freigeben</button>' : '') + '</article>'
+        '<article class="rounded-lg border border-slate-800 p-2"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(plan.weekStartDate) + ' – ' + escape(plan.weekEndDate) + '</strong><span class="text-[10px] text-slate-400">' + (plan.status === 'approved' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf') + '</span></div><p class="text-xs text-slate-300 mt-1">' + escape(plan.objective) + '</p><p class="text-[10px] text-slate-500">' + plan.sessions.length + ' Einheiten</p>' + (plan.status === 'draft' ? '<button type="button" onclick="approveWeeklyPlan(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 px-2 py-1 rounded bg-cyan-900 text-cyan-200 text-[10px]">Wochenplan freigeben</button>' : '') + (plan.status === 'approved' ? '<button type="button" onclick="transferWeeklyPlanToCalendar(\'' + escape(plan.weekStartDate) + '\')" class="mt-2 ml-2 px-2 py-1 rounded bg-cyan-700 text-white text-[10px]">In Kalender übernehmen</button>' : '') + '</article>'
     ).join('') || '<p class="text-xs text-slate-500">Noch keine Wochenpläne gespeichert.</p>';
     const proposal = byId('weekly-plan-proposal-content');
     if (!proposal) return;
@@ -188,6 +189,98 @@ export function approveWeeklyPlan(weekStartDate) {
     const message = byId('season-plan-message');
     if (message) message.textContent = 'Wochenplan ausdrücklich freigegeben. Er wird noch nicht automatisch in den Kalender übertragen.';
     return true;
+}
+
+
+function calendarTypeForSession(session) {
+    const discipline = String(session.discipline || '').toLowerCase();
+    const type = String(session.type || '').toLowerCase();
+    if (discipline === 'k1' || type === 'kayaking' || type === 'k1' || type.includes('canoe')) return 'Kayaking';
+    if (discipline === 'c1' || type === 'c1') return 'C1';
+    if (discipline === 'c2' || type === 'c2') return 'C2';
+    if (type.includes('run') || type.includes('lauf')) return 'Run';
+    if (type.includes('ride') || type.includes('rad') || type.includes('cycl')) return 'Ride';
+    if (type.includes('swim') || type.includes('schwimm')) return 'Swim';
+    if (type.includes('weight') || type.includes('kraft') || type.includes('gym') || type.includes('strength')) return 'WeightTraining';
+    return null;
+}
+
+function calendarCategoryForSession(session) {
+    const raw = String(session.category || '').toLowerCase();
+    if (raw.includes('interval') || raw.includes('intervall') || raw.includes('lz') || raw.includes('hz')) return 'interval';
+    if (raw.includes('strength') || raw.includes('kraft')) return 'strength';
+    if (raw.includes('reg') || raw.includes('recovery') || raw.includes('regen')) return 'reg';
+    if (raw.includes('tech') || raw.includes('technik')) return 'tech';
+    return 'ga';
+}
+
+export function transferWeeklyPlanToCalendar(weekStartDate) {
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    const plan = current?.weeklyPlans.find(item => item.weekStartDate === weekStartDate);
+    const message = byId('season-plan-message');
+    if (!current || current.status !== 'active' || !plan || plan.status !== 'approved' || !plan.athleteApprovedAt) {
+        if (message) message.textContent = 'Nur ausdrücklich freigegebene Wochenpläne können in den Kalender übernommen werden.';
+        return false;
+    }
+    const existing = Array.isArray(state.plannedActivities) ? state.plannedActivities : [];
+    const additions = [];
+    const skipped = [];
+    for (const session of plan.sessions) {
+        const linkId = 'season-' + plan.id + '-' + session.id;
+        const alreadyLinked = existing.some(item => item.sourceWeeklyPlanId === plan.id && item.sourceWeeklySessionId === session.id);
+        const duplicate = existing.some(item => item.date === session.date
+            && String(item.name || '').trim().toLocaleLowerCase('de') === String(session.name || '').trim().toLocaleLowerCase('de')
+            && item.type === calendarTypeForSession(session));
+        if (alreadyLinked || duplicate) {
+            skipped.push(session.name);
+            continue;
+        }
+        const type = calendarTypeForSession(session);
+        if (!type) {
+            skipped.push(session.name + ' (unbekannte Trainingsart)');
+            continue;
+        }
+        const description = [
+            session.objective ? 'Ziel: ' + session.objective : '',
+            session.intensity ? 'Intensität: ' + session.intensity : '',
+            session.warmup ? 'Aufwärmen: ' + session.warmup : '',
+            session.mainSet ? 'Hauptteil: ' + session.mainSet : '',
+            session.cooldown ? 'Abwärmen: ' + session.cooldown : '',
+            session.raceFormat ? 'Rennformat: ' + session.raceFormat : '',
+            session.waterType ? 'Gewässer: ' + session.waterType : '',
+            session.notes || ''
+        ].filter(Boolean).join('\n');
+        additions.push({
+            id: linkId,
+            date: session.date,
+            name: session.name,
+            type,
+            duration: session.durationMinutes,
+            targetTss: null,
+            category: calendarCategoryForSession(session),
+            desc: description,
+            sourceWeeklyPlanId: plan.id,
+            sourceWeeklySessionId: session.id
+        });
+    }
+    if (additions.length) {
+        state.plannedActivities = [...existing, ...additions];
+        if (!saveDataToLocalStorage()) {
+            state.plannedActivities = existing;
+            if (message) message.textContent = 'Die Kalenderübernahme konnte nicht gespeichert werden. Es wurden keine Einheiten übernommen.';
+            return false;
+        }
+        renderCalendar();
+        renderPlannedWorkoutsIfAvailable();
+    }
+    if (message) message.textContent = additions.length + ' Einheit(en) in den Kalender übernommen; ' + skipped.length + ' übersprungen (bereits vorhanden oder Trainingsart nicht eindeutig).';
+    renderWeeklyPlanPanel();
+    return true;
+}
+
+function renderPlannedWorkoutsIfAvailable() {
+    const list = document.getElementById('planned-workouts-list');
+    if (list) list.dispatchEvent(new Event('kajo:planned-workouts-updated'));
 }
 
 export function discardWeeklyPlanProposal() {
