@@ -68,7 +68,7 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
         }
     });
 
-    let ctl = 0, atl = 0, modelActive = false, segmentDays = 0;
+    let ctl = 0, atl = 0, modelActive = false, segmentDays = 0, segmentHasEstimatedLoad = false;
     const kCtl = 1 - Math.exp(-1 / 42), kAtl = 1 - Math.exp(-1 / 7);
     const timeline = [];
 
@@ -107,6 +107,7 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
             atl = 0;
             modelActive = false;
             segmentDays = 0;
+            segmentHasEstimatedLoad = false;
             timeline.push({
                 date: dateStr, load: Number(dayLoad.toFixed(1)), tss: Number(dayLoad.toFixed(1)),
                 activityCount, loadActivityCount: loadedCount,
@@ -127,7 +128,9 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
                 atl = 0;
                 modelActive = true;
                 segmentDays = 0;
+                segmentHasEstimatedLoad = false;
             }
+            if (estimatedLoadCountByDate[dateStr]) segmentHasEstimatedLoad = true;
             ctl += (dayLoad - ctl) * kCtl;
             atl += (dayLoad - atl) * kAtl;
             segmentDays++;
@@ -153,6 +156,7 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
             atl = 0;
             modelActive = false;
             segmentDays = 0;
+            segmentHasEstimatedLoad = false;
             timeline.push({
                 date: dateStr, load: null, tss: null, activityCount, loadActivityCount: loadedCount,
                 loadMode: loadData.mode, loadUnit: loadData.unit, loadCoverage: loadData.coverage || null,
@@ -167,7 +171,9 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
             atl = 0;
             modelActive = true;
             segmentDays = 0;
+            segmentHasEstimatedLoad = false;
         }
+        if (estimatedLoadCountByDate[dateStr]) segmentHasEstimatedLoad = true;
         ctl += (dayLoad - ctl) * kCtl;
         atl += (dayLoad - atl) * kAtl;
         segmentDays++;
@@ -197,10 +203,9 @@ export function computePerformanceTimeline(records, settings, profile, dailyChec
             dataStatus: dayStatus, ctl: ctlDisplay, atl: atlDisplay,
             tsb: Number(form.toFixed(1)), formPct: formPct === null ? null : Number(formPct.toFixed(1)),
             acwr: ratio === null ? null : Number(ratio.toFixed(2)),
-            statusLabel: estimatedLoadCountByDate[dateStr]
-                ? 'Vorläufig · manuelle Load-Schätzung' : statusLabel,
+            statusLabel: segmentHasEstimatedLoad ? 'Vorläufig · enthält manuelle Load-Schätzung' : statusLabel,
             estimatedLoadCount: estimatedLoadCountByDate[dateStr] || 0,
-            isProvisional: segmentDays < 126 || Boolean(estimatedLoadCountByDate[dateStr])
+            isProvisional: segmentDays < 126 || segmentHasEstimatedLoad
         });
     }
     return timeline;
