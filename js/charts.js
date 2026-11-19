@@ -31,6 +31,14 @@ if (typeof Chart !== 'undefined' && Chart.defaults) {
 }
 
 
+function carryForwardChartValues(rows, key) {
+    let lastKnown = null;
+    return rows.map(row => {
+        if (row && row[key] !== null && row[key] !== undefined && row[key] !== '' && Number.isFinite(Number(row[key]))) lastKnown = Number(row[key]);
+        return lastKnown;
+    });
+}
+
 function renderLoadSourceNote(timeline) {
     const note = document.getElementById('load-source-note');
     if (!note) return;
@@ -76,8 +84,8 @@ export function renderMainLoadChart(timeline, timeframe) {
     const isGarmin=last.loadMode === 'garmin-native' || last.loadMode === 'garmin-zone';
     const isSrpe=last.loadMode === 'srpe';
     const labels=filtered.map(t=>formatDateDDMMYY(t.date));
-    const ctl=filtered.map(t=>t.ctl);
-    const atl=filtered.map(t=>t.atl);
+    const ctl=carryForwardChartValues(filtered,'ctl');
+    const atl=carryForwardChartValues(filtered,'atl');
     const form=filtered.map(t=>isGarmin ? t.formPct : isSrpe ? t.tsb : null);
     const health=filtered.map(t=>state.healthLogs[t.date] ? t.ctl : null);
     const ctx=canvas.getContext('2d');
