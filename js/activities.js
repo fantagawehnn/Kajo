@@ -1553,7 +1553,7 @@ export function deleteSelectedActivity() {
     if (!state.selectedActivityForModal) return;
     const id = state.selectedActivityForModal.id;
     if (!confirm('Diese Aktivität wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.')) return;
-    const previousActivities=state.rawActivities.slice();
+    const previousActivities=JSON.parse(JSON.stringify(state.rawActivities));
     if (state.selectedActivityForModal?.mergedGroupId) unmergeActivityGroup(state.selectedActivityForModal, state.rawActivities);
     state.rawActivities = state.rawActivities.filter(a => a.id !== id);
     state.selectedActivityForModal = null;
