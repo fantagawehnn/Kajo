@@ -43,7 +43,21 @@ function currentRange() {
     const toInput = document.getElementById('date-to')?.value;
     if (fromInput && toInput && fromInput <= toInput) return { from: fromInput, to: toInput };
   }
-  const days = ({ '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 })[state.activeTimeframe] || 90;
+  const candidates = [{ key: '7d', days: 7 }, { key: '28d', days: 28 }, { key: '3m', days: 90 }, { key: '6m', days: 180 }, { key: '1y', days: 365 }];
+  if (!state.activeTimeframeExplicit) {
+    for (const candidate of candidates) {
+      const fromDate = new Date(to + 'T12:00:00');
+      fromDate.setDate(fromDate.getDate() - candidate.days + 1);
+      const from = fromDate.getFullYear() + '-' + String(fromDate.getMonth() + 1).padStart(2, '0') + '-' + String(fromDate.getDate()).padStart(2, '0');
+      const dates = rangeDates({ from, to });
+      const series = buildSeries(dates).filter(item => selectedMetrics.has(item.key) && item.key !== 'health');
+      const total = series.reduce((sum, item) => sum + item.raw.filter(valid).length, 0);
+      const coverage = series.length && dates.length ? total / (series.length * dates.length) : 0;
+      if (coverage >= .7) { state.activeTimeframe = candidate.key; break; }
+      if (candidate.key === '1y') state.activeTimeframe = '1y';
+    }
+  }
+  const days = (candidates.find(item => item.key === state.activeTimeframe)?.days) || 90;
   const fromDate = new Date(to + 'T12:00:00');
   fromDate.setDate(fromDate.getDate() - days + 1);
   const from = fromDate.getFullYear() + '-' + String(fromDate.getMonth() + 1).padStart(2, '0') + '-' + String(fromDate.getDate()).padStart(2, '0');
