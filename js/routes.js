@@ -1,6 +1,6 @@
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, showUndoToast } from './utils.js';
 
 const riverSuggestions = ['Sieg','Moldau – Prag','Inn – Rosenheim','Rhein – Bonn','Agger'];
 function isCanoeOnWaterActivity(activity) {
