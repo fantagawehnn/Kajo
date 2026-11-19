@@ -282,7 +282,6 @@ export async function saveAthleteProfileSection(event, sectionId) {
     else if (field.type === 'number') nextProfile[field.key] = input.value.trim() === '' ? null : Number(input.value);
     else nextProfile[field.key] = input.value.trim();
   }
-  if (sectionId === 'personal' && nextProfile.gender !== 'female') nextProfile.cycleTrackingEnabled = false;
   if (nextProfile.birthDate && new Date(nextProfile.birthDate + 'T12:00:00') > new Date()) {
     if (message) message.textContent = 'Das Geburtsdatum darf nicht in der Zukunft liegen.';
     return;
