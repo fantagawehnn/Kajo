@@ -30,7 +30,7 @@ function getRange(){
  const key=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
  return{from:key(start),to:key(end)};
 }
-function dateKeys(range){const out=[],d=new Date(range.from+'T12:00:00'),end=new Date(range.to+'T12:00:00');while(d<=end&&out.length<500){out.push([d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'));d.setDate(d.getDate()+1);}return out;}
+function dateKeys(range){const out=[],d=new Date(range.from+'T12:00:00'),end=new Date(range.to+'T12:00:00');while(d<=end&&out.length<5000){out.push([d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'));d.setDate(d.getDate()+1);}return out;}
 function uniqueActivities(records){
  const seen=new Set();return(Array.isArray(records)?records:[]).filter(item=>{const date=String(item?.date||'').slice(0,10);if(!date)return false;const stable=item.garminActivityId||item.externalId||item.id;const key=stable!=null&&stable!==''?'id:'+stable:[date,item.type,item.startTime||item.startTimeLocal||'',item.name||'',item.duration??''].join('|');if(seen.has(key))return false;seen.add(key);return true;});
 }
