@@ -96,6 +96,15 @@ export function renderMainLoadChart(timeline, timeframe) {
         const from=document.getElementById('date-from')?.value, to=document.getElementById('date-to')?.value;
         filtered=timeline.filter(t=>t.date>=from&&t.date<=to);
     }
+    const observedLoadDays = filtered.filter(row => row.load !== null && row.load !== undefined && Number.isFinite(Number(row.load))).length;
+    if (observedLoadDays < 3) {
+        if (state.mainChartInstance) { state.mainChartInstance.destroy(); state.mainChartInstance = null; }
+        canvas.parentElement?.classList.add('hidden');
+        const note = document.getElementById('load-source-note');
+        if (note) note.textContent = 'Der Belastungsverlauf erscheint ab mindestens drei auswertbaren Tageswerten.';
+        return;
+    }
+    canvas.parentElement?.classList.remove('hidden');
     if (!filtered.length) return;
     const last=timeline[timeline.length-1];
     const isGarmin=last.loadMode === 'garmin-native' || last.loadMode === 'garmin-zone';
