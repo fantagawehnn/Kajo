@@ -4,7 +4,7 @@
 
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, escapeHtml, toLocalDateString, showUndoToast } from './utils.js';
+import { formatDateDDMMYY, escapeHtml, toLocalDateString, showUndoToast } from './utils.js?v=2';
 
 export function renderStrengthView() {
     const grid = document.getElementById('strength-history-grid');
