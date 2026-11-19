@@ -75,7 +75,7 @@ export function updateZoneGaugeMarker(currentTSB, mode = 'tss') {
         label = currentTSB < -25 ? 'Stark ermüdet' : currentTSB < -10 ? 'Belastet' : currentTSB <= 5 ? 'Ausgeglichen' : currentTSB <= 20 ? 'Frisch' : 'Tapering';
     }
     if (gaugeText) {
-        gaugeText.textContent = mode === 'garmin' ? `Relativer Saldo ${currentTSB > 0 ? '+'+currentTSB : currentTSB}% (${label})` : `Belastungssaldo ${currentTSB > 0 ? '+'+currentTSB : currentTSB} (${label})`;
+        gaugeText.textContent = mode === 'garmin' ? `Relativer Saldo ${currentTSB > 0 ? '+'+currentTSB : currentTSB}% (${label})` : `Form (TSB) ${currentTSB > 0 ? '+'+currentTSB : currentTSB} (${label})`;
     }
 }
 
@@ -296,7 +296,7 @@ export function renderSummaryKPICards(timeline) {
     const formDisplay = isGarmin ? (last.formPct == null ? null : Number(last.formPct)) : Number(last.tsb);
     document.getElementById('kpi-tsb').textContent = formDisplay === null ? '—' : formDisplay > 0 ? `+${formDisplay}` : formDisplay;
     const tsbLabel = document.getElementById('kpi-tsb')?.previousElementSibling;
-    if (tsbLabel) tsbLabel.textContent = isSrpe ? 'sRPE-Bilanz (AU · Tagesende)' : isGarmin ? (last.loadMode === 'garmin-native' ? 'Relativer Saldo · Garmin Load (Tagesende)' : 'Relativer Saldo · EA-HF-Zonenindex (Tagesende)') : 'Belastungssaldo · TSS (Tagesende)';
+    if (tsbLabel) tsbLabel.textContent = isSrpe ? 'sRPE-Bilanz (AU · Tagesende)' : isGarmin ? (last.loadMode === 'garmin-native' ? 'Relativer Saldo · Garmin Load (Tagesende)' : 'Relativer Saldo · EA-HF-Zonenindex (Tagesende)') : 'Form (TSB) · TSS (Tagesende)';
     document.getElementById('kpi-tsb-status').textContent = isSrpe ? 'Modellwert' : last.statusLabel;
     document.getElementById('kpi-acwr').textContent = last.acwr === null ? '—' : last.acwr;
     // CTL/ATL and form are load-model estimates, not a sufficient basis
@@ -334,7 +334,7 @@ export function generateAutomatedNarrative(timeline) {
         return;
     }
     const sourceText = last.loadMode === 'srpe' ? 'Session-RPE (Dauer × Gesamtanstrengung)' : last.loadMode === 'garmin-zone' ? 'Garmin-FIT-HF-Zeitreihen; Endurance AI Zonen-Load' : last.loadMode === 'garmin-native' ? 'Garmin-eigene Trainingsload-Werte' : last.loadMode === 'garmin-mixed' ? 'Garmin-FIT-Zonen-Load und native Garmin-Load-Werte (je Aktivität nur eine Quelle)' : 'externe TSS-Daten';
-    const formText = last.loadMode === 'srpe' ? `sRPE-Bilanz: ${last.tsb} AU` : last.loadMode?.startsWith('garmin') ? `Relativer Saldo: ${last.formPct}%` : `Belastungssaldo: ${last.tsb}`;
+    const formText = last.loadMode === 'srpe' ? `sRPE-Bilanz: ${last.tsb} AU` : last.loadMode?.startsWith('garmin') ? `Relativer Saldo: ${last.formPct}%` : `Form (TSB): ${last.tsb}`;
     document.getElementById('automated-narrative-text').innerHTML = `
         <p>Belastungsquelle: <strong>${sourceText}</strong>. CTL: <strong>${last.ctl}</strong>, ATL: <strong>${last.atl}</strong> (${formText}, ACWR: <strong>${last.acwr}</strong>).</p>
         <p class="text-slate-400">ACWR: ${last.acwr === null ? 'noch nicht auswertbar' : last.acwr}. Der Wert dient nur als ergänzende Belastungsorientierung und ist keine Verletzungsprognose.</p>
