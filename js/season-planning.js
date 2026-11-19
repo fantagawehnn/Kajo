@@ -69,6 +69,11 @@ export function normalizeWeeklyPlan(weeklyPlan = {}) {
         rationale: cleanText(weeklyPlan.rationale, 2000),
         openQuestions: Array.isArray(weeklyPlan.openQuestions) ? weeklyPlan.openQuestions.map(item => cleanText(item, 300)).filter(Boolean).slice(0, 10) : [],
         sessions: Array.isArray(weeklyPlan.sessions) ? weeklyPlan.sessions.map(normalizeWeeklySession).slice(0, 30) : [],
+        manualActivityLinks: Array.isArray(weeklyPlan.manualActivityLinks)
+            ? weeklyPlan.manualActivityLinks.map(link => ({
+                sessionId: cleanText(link?.sessionId, 100),
+                activityId: cleanText(link?.activityId, 160)
+            })).filter(link => link.sessionId && link.activityId).slice(0, 30) : [],
         athleteApprovedAt: typeof weeklyPlan.athleteApprovedAt === 'string' && Number.isFinite(Date.parse(weeklyPlan.athleteApprovedAt)) ? weeklyPlan.athleteApprovedAt : null,
         createdAt: typeof weeklyPlan.createdAt === 'string' ? weeklyPlan.createdAt : null,
         updatedAt: typeof weeklyPlan.updatedAt === 'string' ? weeklyPlan.updatedAt : null
