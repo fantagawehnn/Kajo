@@ -45,6 +45,7 @@ const COLLECTION_KEYS = {
     checkins: 'dailyCheckins',
     health: 'healthLogs',
     races: 'races',
+    seasonPlan: 'seasonPlan',
     strength: 'strengthLogs',
     strengthPBs: 'strengthPBs',
     supplements: 'supplements',
@@ -211,6 +212,7 @@ function defaultUserState() {
     state.dailyCheckins = {};
     state.healthLogs = {};
     state.races = [];
+    state.seasonPlan = null;
     state.strengthLogs = [];
     state.strengthPBs = [];
     state.supplements = [];
@@ -250,6 +252,7 @@ export async function loadStateForUser(userId) {
     state.dailyCheckins = loaded.dailyCheckins && typeof loaded.dailyCheckins === 'object' ? loaded.dailyCheckins : {};
     state.healthLogs = loaded.healthLogs && typeof loaded.healthLogs === 'object' ? loaded.healthLogs : {};
     state.races = Array.isArray(loaded.races) ? loaded.races : [];
+    state.seasonPlan = loaded.seasonPlan && typeof loaded.seasonPlan === 'object' && !Array.isArray(loaded.seasonPlan) ? loaded.seasonPlan : null;
     state.strengthLogs = Array.isArray(loaded.strengthLogs) ? loaded.strengthLogs : [];
     state.strengthPBs = Array.isArray(loaded.strengthPBs) ? loaded.strengthPBs : [];
     state.supplements = Array.isArray(loaded.supplements) ? loaded.supplements : [];
@@ -290,6 +293,7 @@ export function getUserDataSnapshot(options = {}) {
     return {
         activities, disabledIntervals: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
+        seasonPlan: state.seasonPlan || null,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [], profile: state.profile || {},
         settings: state.settings || { sports: {}, categories: {}, heartRateZones: {} }
@@ -321,7 +325,7 @@ export function applyCloudDataSnapshot(snapshot) {
             throw new Error('Der Cloud-Datenstand enthält für "' + key + '" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
         }
     }
-    for (const key of ['checkins', 'health', 'profile', 'settings']) {
+    for (const key of ['checkins', 'health', 'profile', 'settings', 'seasonPlan']) {
         if (!snapshot[key] || typeof snapshot[key] !== 'object' || Array.isArray(snapshot[key])) {
             throw new Error('Der Cloud-Datenstand enthält für "' + key + '" kein gültiges Objekt. Der lokale Cache wurde nicht verändert.');
         }
@@ -334,6 +338,7 @@ export function applyCloudDataSnapshot(snapshot) {
     state.dailyCheckins = snapshot.checkins;
     state.healthLogs = snapshot.health;
     state.races = snapshot.races;
+    state.seasonPlan = snapshot.seasonPlan && typeof snapshot.seasonPlan === 'object' && !Array.isArray(snapshot.seasonPlan) ? snapshot.seasonPlan : null;
     state.strengthLogs = snapshot.strength;
     state.strengthPBs = snapshot.strengthPBs;
     state.supplements = snapshot.supplements;
@@ -438,12 +443,14 @@ export function exportDatabaseBackup() {
         checkins: state.dailyCheckins,
         health: state.healthLogs,
         races: state.races,
+        seasonPlan: state.seasonPlan || null,
         strength: state.strengthLogs,
         strengthPBs: state.strengthPBs || [],
         supplements: state.supplements || [],
         profile: state.profile || {},
         settings: state.settings || { sports: {}, categories: {}, heartRateZones: {} },
-        version: '2.2',
+        seasonPlan: state.seasonPlan || null,
+        version: '2.3',
         exportedAt: new Date().toISOString()
     };
     const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
@@ -477,7 +484,7 @@ export async function inspectDatabaseBackup(file) {
             throw new Error(`Ungültiges Backup: "${key}" muss eine Liste sein.`);
         }
     }
-    for (const key of ['checkins', 'health', 'profile', 'settings']) {
+    for (const key of ['checkins', 'health', 'profile', 'settings', 'seasonPlan']) {
         if (parsed[key] != null && (typeof parsed[key] !== 'object' || Array.isArray(parsed[key]))) {
             throw new Error(`Ungültiges Backup: "${key}" muss ein Objekt sein.`);
         }
@@ -526,7 +533,7 @@ export async function importDatabaseBackup(file, options = {}) {
     if (!file) return false;
     const parsed = JSON.parse(await file.text());
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Ungültiges Backup: JSON-Wurzel muss ein Objekt sein.');
-    const supported = ['activities', 'planned', 'checkins', 'health', 'races', 'strength', 'strengthPBs', 'supplements', 'profile', 'settings'];
+    const supported = ['activities', 'planned', 'checkins', 'health', 'races', 'strength', 'strengthPBs', 'supplements', 'profile', 'settings', 'seasonPlan'];
     if (!supported.some(key => Object.prototype.hasOwnProperty.call(parsed, key))) throw new Error('Die Datei enthält keine erkennbaren Endurance-AI-Backupdaten.');
     const arrays = ['activities', 'planned', 'races', 'strength', 'strengthPBs', 'supplements'];
     for (const key of arrays) {
