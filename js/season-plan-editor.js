@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
-import { requestSeasonPlanProposal } from './coach.js';
+import { requestSeasonPlanProposal } from './coach.js?v=2';
 
 let draftPhases = [];
 let pendingProposal = null;
