@@ -215,9 +215,19 @@ export function calculateReadiness(dateKey, sourceState = appState) {
         sleep: meanScore(sleepItems),
         subjective: meanScore(subjective)
     };
-    // Balanced domain weights: physiology 40%, sleep 30%, subjective 30%.
+    // Configurable hypothesis: default 70% objective (physiology + sleep) and 30% subjective.
+    // The objective share retains the existing 4:3 split between physiology and sleep.
     // Missing domains are excluded and the remaining weights are renormalized.
-    const weights = { physiology: 0.4, sleep: 0.3, subjective: 0.3 };
+    const requestedSubjectiveWeight = Number(sourceState?.settings?.readinessSubjectiveWeight ?? 30);
+    const subjectiveWeight = Math.min(100, Math.max(0,
+        Number.isFinite(requestedSubjectiveWeight) ? requestedSubjectiveWeight : 30
+    )) / 100;
+    const objectiveWeight = 1 - subjectiveWeight;
+    const weights = {
+        physiology: objectiveWeight * (4 / 7),
+        sleep: objectiveWeight * (3 / 7),
+        subjective: subjectiveWeight
+    };
     const availableDomains = Object.entries(domains).filter(([, score]) => score !== null);
     const totalWeight = availableDomains.reduce((sum, [key]) => sum + weights[key], 0);
     const score = availableDomains.length >= 2
