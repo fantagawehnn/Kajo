@@ -3250,7 +3250,7 @@ async function restoreDatabaseBackup(event) {
         const content = document.getElementById('backup-preview-content');
         const selection = document.getElementById('backup-import-categories');
         if (!content || !selection) throw new Error('Die Backup-Vorschau kann nicht geöffnet werden.');
-        content.textContent = details.join('\n');
+        content.textContent = details.join('\\n');
         selection.innerHTML = available.length ? available.map(([key, label]) => {
             return `<label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-200"><input type="checkbox" data-backup-category="${key}" checked class="accent-sky-500"><span class="flex-1">${label}</span><span class="text-xs text-slate-400">${count(key)}</span></label>`;
         }).join('') : '<p class="text-xs text-amber-300">Es wurden keine Datenbereiche mit importierbaren Einträgen gefunden.</p>';
@@ -3292,7 +3292,7 @@ async function confirmBackupRestore() {
     };
     const selectedNames = categories.map(key => labels[key] || key).join(', ');
     const confirmed = confirm(
-        `Die folgenden Datenbereiche werden aus dem Backup übernommen und ersetzen jeweils die vorhandenen lokalen Daten in diesen Bereichen:\n\n${selectedNames}\n\nNicht ausgewählte Bereiche bleiben unverändert. Die Cloud-Synchronisierung wird dadurch nicht gestartet. Möchtest du fortfahren?`
+        `Die folgenden Datenbereiche werden aus dem Backup übernommen und ersetzen jeweils die vorhandenen lokalen Daten in diesen Bereichen:\\n\\n${selectedNames}\\n\\nNicht ausgewählte Bereiche bleiben unverändert. Die Cloud-Synchronisierung wird dadurch nicht gestartet. Möchtest du fortfahren?`
     );
     if (!confirmed) return;
     try {
