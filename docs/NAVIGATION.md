@@ -84,3 +84,22 @@ Die Wearable-Detailansicht verwendet weiterhin die vorhandenen Messwertverläufe
 - Für Performance fehlen derzeit eine sportartspezifische, methodisch vergleichbare Hauptkennzahl und ein entsprechend gefilterter Leistungsverlauf. VO₂max bleibt wegen der nicht getrennten Messart ein eingeschränkt interpretierbarer Importwert.
 - Eine getrennte, fachlich verifizierte Anzeige von Garmin Training Load, Edwards TRIMP und sRPE erfordert zunächst die eindeutige Zuordnung der vorhandenen Datenfelder.
 - Die neuen Light-Theme-CSS-Hooks unterstützen die Analyse-Komponenten, sofern die Oberfläche `data-theme="light"` oder `theme-light` setzt. Ein appweiter Theme-Schalter ist damit noch nicht umgesetzt.
+
+
+## Glossar und Farbzuordnung (Preview)
+
+| Begriff | Bedeutung | Farbe |
+|---|---|---|
+| Bereitschaft | Gesamtwert für heute (einstellbare Hypothese) | Türkis |
+| Fitness | langfristige Belastung (bisher CTL) | Blau |
+| Ermüdung | kurzfristige Belastung (bisher ATL) | Orange |
+| Form | Fitness minus Ermüdung (bisher TSB) | Grün |
+| Belastung | Wert einer einzelnen Einheit | Hellorange |
+| Belastungsverhältnis | Ermüdung geteilt durch Fitness; keine Risikoaussage | Gelb |
+| Befinden | tägliche Selbsteinschätzung | Violett |
+| Gewicht | Körpergewicht | Pink |
+| HRV | Herzfrequenzvariabilität | Dunkeltürkis |
+| Ruhepuls | morgendlicher Puls | Rot-Rosa |
+| Schlaf | Dauer und Qualität | Hellblau |
+
+Die internen technischen Feldnamen (z. B. `ctl`, `atl`, `tsb`, `acwr`) bleiben aus Kompatibilitätsgründen unverändert. In der Oberfläche werden die Glossarbegriffe verwendet. Sportartenfarben sind getrennt von Kennzahl- und Statusfarben.
