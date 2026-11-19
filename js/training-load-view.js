@@ -3,8 +3,11 @@
  * No separate load formulas are introduced in this presentation layer.
  */
 import { state } from './state.js';
+import { saveDataToLocalStorage } from './storage.js?v=5';
+import { calculateGarminZoneLoad } from './training-load.js?v=7';
+import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
-import { getHeartRateZoneAnalysis } from './training-load.js?v=6';
+import { getHeartRateZoneAnalysis } from './training-load.js?v=7';
 import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } from './training-load-zones.js?v=1';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
@@ -134,6 +137,36 @@ function renderCoverage(analysis){
  setText('training-load-coverage','Garmin-Aktivitäten: '+c.garminActivityCount+' · KAJO berechenbar: '+c.activitiesWithKajoZones+' · Edwards berechenbar: '+c.activitiesWithEdwards+(c.activitiesWithoutUsableAdaptiveRhr?' · KAJO ohne adaptive Ruhe-HF: '+c.activitiesWithoutUsableAdaptiveRhr:'')+(c.activitiesWithoutUsableEdwardsMaxHr?' · Edwards ohne gültige HFmax: '+c.activitiesWithoutUsableEdwardsMaxHr:''));
  const maxHr=Number(state.profile?.maxHr);setText('training-load-edwards-maxhr-note',Number.isFinite(maxHr)&&maxHr>=100&&maxHr<=240?'HFmax '+maxHr+' bpm aus deinem Athletenprofil.':'Für Edwards ist eine gültige HFmax im Athletenprofil erforderlich.');
 }
+function renderEstimatedLoadQueue(activities){
+ const node=document.getElementById('training-load-estimated-load-list');if(!node)return;node.replaceChildren();
+ const missing=activities.filter(activity=>isGarminActivity(activity)
+  && !calculateGarminZoneLoad(activity,state.settings||{},state.profile||{},state.dailyCheckins||{}));
+ setText('training-load-estimated-load-count',missing.length+' Aktivitäten ohne berechenbaren HF-Zonenload');
+ if(!missing.length){const empty=document.createElement('p');empty.className='text-xs text-slate-500';empty.textContent='Im ausgewählten Zeitraum gibt es keine Garmin-Aktivitäten mit fehlendem HF-Zonenload.';node.appendChild(empty);return;}
+ missing.sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(activity=>{
+  const row=document.createElement('div');row.className='flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 py-3';
+  const info=document.createElement('div');info.className='min-w-0 flex-1';
+  const title=document.createElement('strong');title.className='block text-xs text-slate-200';title.textContent=String(activity.date).slice(0,10)+' · '+(activity.name||activity.type||'Training');
+  const reason=document.createElement('span');reason.className='block text-[11px] text-slate-500';
+  const hasHr=Boolean(getGarminHeartRateSeries(activity));
+  reason.textContent=hasHr?'HF-Daten vorhanden, aber kein berechenbarer Zonenload (z. B. fehlende Zonenbasis oder Datenlücken).':'Keine auswertbare Herzfrequenz-Zeitreihe – möglicher Sensor-/Brustgurt-Aussetzer.';
+  info.append(title,reason);
+  const controls=document.createElement('div');controls.className='flex items-center gap-2';
+  const input=document.createElement('input');input.type='number';input.min='0';input.max='10000';input.step='0.1';input.inputMode='decimal';input.className='w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-white';input.setAttribute('aria-label','Geschätzter KAJO-Load in Punkten');
+  const existing=activity.manualTrainingLoadEstimate;
+  input.value=existing?.source==='manual-estimate'&&Number.isFinite(Number(existing.value))?String(existing.value):'';
+  input.placeholder='Punkte';
+  const save=document.createElement('button');save.type='button';save.className='rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white';save.textContent=input.value?'Aktualisieren':'Speichern';
+  save.addEventListener('click',()=>{
+   const raw=input.value.trim(),value=Number(raw);
+   if(!raw||!Number.isFinite(value)||value<0||value>10000){input.focus();return;}
+   activity.manualTrainingLoadEstimate={value:Number(value.toFixed(1)),source:'manual-estimate',unit:'KAJO-HF-Punkte',estimatedAt:new Date().toISOString()};
+   saveDataToLocalStorage();
+   renderTrainingLoadView();
+  });
+  controls.append(input,save);row.append(info,controls);node.appendChild(row);
+ });
+}
 function renderActivityList(analysis){
  const node=document.getElementById('training-load-activity-list');if(!node)return;node.replaceChildren();
  const rows=analysis.records.filter(item=>selectedModel==='compare'?(item.kajo||item.edwards):Boolean(item[selectedModel])).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12);
@@ -170,7 +203,7 @@ export function renderTrainingLoadView(){
  updateSportOptions();updatePeriodControl();const range=getRange(),activities=selectedActivities(),timeline=selectedTimeline();
  renderRings(timeline);renderVolumeSummary(activities,range);renderLoadTrend(timeline,activities);
  const analysis=getHeartRateZoneAnalysis(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
- renderCoverage(analysis);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);
+ renderCoverage(analysis);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue(activities);
  const hasZones=modelKeys().some(key=>analysis[key].daily.length>0);setVisible('training-load-no-data',!hasZones);setVisible('training-load-zone-analysis',hasZones);
  const note=document.getElementById('training-load-zone-method-note');
  if(note)note.textContent=selectedModel==='compare'?'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO nutzt adaptive HF-Reserve-Zonen; Edwards feste Prozentbereiche der HFmax. Werte nicht als identische Zonen vergleichen.':selectedModel==='edwards'?'Edwards verwendet feste Prozentbereiche der HFmax. Zeit unter 50 % HFmax wird nicht einer Zone zugeordnet.':'KAJO verwendet adaptive HF-Reserve-Zonen mit einer Ruhe-HF-Basis aus dem konfigurierten Rückblick; ein Profil-Fallback ist als eingeschränkte Datenbasis zu verstehen.';
