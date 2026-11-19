@@ -164,6 +164,25 @@ test('training load and ACWR are kept outside the readiness composite', () => {
     assert.equal(calculateReadiness(day, lowLoad).score, calculateReadiness(day, highLoad).score);
 });
 
+test('subjective self-monitoring is context and does not change the readiness score', () => {
+    const objective = { garminHrv: 60, garminSleepScore: 90 };
+    const lowSubjective = makeState({
+        dailyCheckins: { [day]: { ...objective, sleepQuality: 1, motivation: 1, fatigue: 5, soreness: 5, stress: 5 } }
+    });
+    const highSubjective = makeState({
+        dailyCheckins: { [day]: { ...objective, sleepQuality: 5, motivation: 5, fatigue: 1, soreness: 1, stress: 1,
+            cycle: { trainingImpact: 5 } } }
+    });
+    const low = calculateReadiness(day, lowSubjective);
+    const high = calculateReadiness(day, highSubjective);
+    assert.equal(low.score, high.score);
+    assert.notEqual(low.subjectiveScore, high.subjectiveScore);
+    assert.equal(low.subjective.length, 5);
+    assert.equal(high.subjective.some(item => item.key === 'cycleTrainingImpact'), true);
+    assert.equal(low.domainCount, 2);
+    assert.equal(high.domainCount, 2);
+});
+
 test('illness overrides a favourable readiness score in the recommendation', () => {
     const source = makeState({
         dailyCheckins: { [day]: { garminHrv: 60, garminSleepScore: 95, sleepQuality: 5, motivation: 5 } },
