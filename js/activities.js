@@ -1527,13 +1527,42 @@ export function toggleActivityEdit() {
     if (!panel.classList.contains('hidden')) document.getElementById('modal-edit-name')?.focus();
 }
 
+let activityUndoTimer = null;
+function showActivityUndo(message, undo){
+    let toast=document.getElementById('kajo-undo-toast');
+    if(!toast){
+        toast=document.createElement('div');
+        toast.id='kajo-undo-toast';
+        toast.className='fixed bottom-5 left-1/2 -translate-x-1/2 z-[2147483601] flex items-center gap-4 rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-xs text-white shadow-2xl';
+        toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+        document.body.appendChild(toast);
+    }
+    if(activityUndoTimer)clearTimeout(activityUndoTimer);
+    toast.replaceChildren();
+    const label=document.createElement('span');label.textContent=message;
+    const button=document.createElement('button');button.type='button';button.textContent='Rückgängig';
+    button.className='font-bold text-cyan-300 underline underline-offset-2';
+    button.addEventListener('click',()=>{
+        if(activityUndoTimer)clearTimeout(activityUndoTimer);
+        undo();toast.remove();
+    },{once:true});
+    toast.append(label,button);toast.classList.remove('hidden');
+    activityUndoTimer=setTimeout(()=>{toast.remove();activityUndoTimer=null;},10000);
+}
 export function deleteSelectedActivity() {
     if (!state.selectedActivityForModal) return;
     const id = state.selectedActivityForModal.id;
-    if (!confirm('Diese Aktivität wirklich löschen?')) return;
+    if (!confirm('Diese Aktivität wirklich löschen? Du kannst den Vorgang anschließend 10 Sekunden lang rückgängig machen.')) return;
+    const previousActivities=state.rawActivities.slice();
     if (state.selectedActivityForModal?.mergedGroupId) unmergeActivityGroup(state.selectedActivityForModal, state.rawActivities);
     state.rawActivities = state.rawActivities.filter(a => a.id !== id);
-    state.selectedActivityForModal = null; saveDataToLocalStorage(); closeCSVDetailsModal(); refreshAll();
+    state.selectedActivityForModal = null;
+    saveDataToLocalStorage(); closeCSVDetailsModal(); refreshAll();
+    showActivityUndo('Aktivität gelöscht.',()=>{
+        state.rawActivities=previousActivities;
+        saveDataToLocalStorage();
+        refreshAll();
+    });
 }
 
 export function inferSport(name, rawType='') {
