@@ -207,7 +207,7 @@ function renderLoadPeriodSummary(timeline) {
         metric('Belastung · 7 Tage', currentLoad.toFixed(1), unit) +
         metric('Wochenvergleich', comparison, previous7 ? 'Gleiche Belastungseinheit' : 'Benötigt 14 Tage Daten') +
         metric('Trainingstage · 7 Tage', activeDays + '/7', 'Tage mit erfasster Belastung') +
-        metric('Load-Abdeckung', loadCoverage, 'Aktivitäten mit berechenbarem Load') +
+        metric('Belastungsabdeckung', loadCoverage, 'Aktivitäten mit berechenbarer Belastung') +
         metric('28-Tage-Schnitt', average28, 'Durchschnitt pro Woche') +
         '</div><p class="text-[10px] text-slate-400">' + changeNote + ' ' + baselineContext + '</p><p class="text-[10px] text-slate-500">' + modelText + '. CTL/ATL sind geglättete Belastungsmodelle und keine direkte Messung der Leistungsfähigkeit.</p>';
 }
@@ -276,7 +276,7 @@ export function renderSummaryKPICards(timeline) {
         const recommendation = document.getElementById('kpi-rec-short');
         if (recommendation) recommendation.textContent = 'Keine aktuelle Belastungsbasis';
         const detail = document.getElementById('kpi-rec-sub');
-        if (detail) detail.textContent = 'Für diesen Tag fehlt eine vollständige Aktivitäts- oder Load-Abdeckung.';
+        if (detail) detail.textContent = 'Für diesen Tag fehlt eine vollständige Aktivitäts- oder Belastungsabdeckung.';
         const marker = document.getElementById('zone-gauge-marker');
         if (marker) marker.style.display = 'none';
         const gauge = document.getElementById('zone-gauge-text');
@@ -417,7 +417,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     if (plannedList) plannedList.innerHTML = dayPlanned.map(p => {
         const sport = sportsCatalog[p.type]?.label || p.type || 'Training';
         const duration = validNumber(p.duration) ? Number(p.duration) + ' min' : 'Dauer offen';
-        const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Load' : '';
+        const target = validNumber(p.targetTss) ? ' · Ziel ' + Number(p.targetTss) + ' Belastung' : '';
         return '<button type="button" data-sport-type="' + escapeHtml(p.type || '') + '" onclick="switchTab(\'training-planning\')" class="home-session-card is-planned home-session-button"><span class="home-session-state">GEPLANT</span><div><strong>' + escapeHtml(p.name || 'Trainingseinheit') + '</strong><small>' + escapeHtml(sport) + ' · ' + duration + target + '</small></div><i data-lucide="calendar-check"></i></button>';
     }).join('');
     plannedList?.querySelectorAll('[data-sport-type]').forEach((el, index) => { el.style.borderLeft = '3px solid ' + activityColor(dayPlanned[index]); });
@@ -850,7 +850,7 @@ export function inspectDay(dayObj) {
     } else {
         dayActs.forEach(act => {
             const activityLoad = loadDataForDay.records.find(item => item.activity === act)?.value;
-            const activityLoadLabel = activityLoad == null ? 'Load —' : `${loadDataForDay.unit} ${Number(activityLoad).toFixed(1)}`;
+            const activityLoadLabel = activityLoad == null ? 'Belastung —' : `${loadDataForDay.unit} ${Number(activityLoad).toFixed(1)}`;
             listEl.insertAdjacentHTML('beforeend', `
                 <div onclick="openCSVDetailsModal('${encodeURIComponent(String(act.id)).replace(/'/g, '%27')}')" class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs cursor-pointer hover:border-sky-500 transition">
                     <div>
