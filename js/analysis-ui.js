@@ -442,6 +442,7 @@ function renderHealth() {
     const active=button.dataset.healthView===selectedHealthView;
     button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));
   });
+  document.querySelectorAll('[data-health-range]').forEach(button=>button.classList.toggle('is-active',button.dataset.healthRange===state.activeTimeframe));
   const trendPanel=document.getElementById('health-trend-panel');
   const showTrend=(selectedHealthView==='cycle')||(selectedHealthView==='health'&&!!selectedHealthMetric);
   if(trendPanel)trendPanel.classList.toggle('hidden',!showTrend);
@@ -607,7 +608,8 @@ export function setHealthRange(range){
   if(typeof window.setTimeframe==='function')window.setTimeframe(range);
   else {state.activeTimeframe=range;state.metricHistoryRange=range;}
   renderHealth();
-  if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
+  if(selectedHealthView==='relationships')renderHealthRelationships(healthRangeWindow());
+  else if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 export function applyHealthCustomRange(){
   const from=document.getElementById('health-summary-from')?.value;
@@ -625,7 +627,8 @@ export function applyHealthCustomRange(){
   if(typeof window.applyCustomDateRange==='function')window.applyCustomDateRange();
   else {renderHealth();window.kajoRenderHealthAnalysis?.();}
   renderHealth();
-  if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
+  if(selectedHealthView==='relationships')renderHealthRelationships(healthRangeWindow());
+  else if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 if(typeof window!=='undefined'){
   window.toggleHealthMetric=toggleHealthMetric;
