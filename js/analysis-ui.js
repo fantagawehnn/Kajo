@@ -54,25 +54,25 @@ function renderLoad() {
   const timeline = Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [];
   const last = [...timeline].filter(day => day?.date <= todayKey() && valid(day?.atl)).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
   if (!last) {
-    setHero('load', '—', '', 'Keine auswertbare Belastung', 'ATL ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
+    setHero('load', '—', '', 'Keine auswertbare Belastung', 'Ermüdung ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
     renderMetrics('load-analysis-metrics', [
       metric('CTL', '—'), metric('ATL', '—'), metric('Belastungssaldo', '—'), metric('ACWR', '—')
     ]);
     return;
   }
-  const mode = last.loadMode === 'garmin-native' ? 'Garmin Training Load'
+  const mode = last.loadMode === 'garmin-native' ? 'Garmin-Belastungswert'
     : last.loadMode === 'garmin-zone' ? 'Garmin-HF-Zonenindex'
-    : last.loadMode === 'srpe' ? 'sRPE-Load'
+    : last.loadMode === 'srpe' ? 'sRPE-Belastung'
     : last.loadMode || 'Belastungsmodell';
-  setHero('load', fmt(last.atl), last.loadUnit || 'Load-Punkte', 'Kurzfristige Belastung · ATL', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
+  setHero('load', fmt(last.atl), last.loadUnit || 'Load-Punkte', 'Ermüdung', mode + ' · Modellwert zum ' + dateLabel(last.date) + '. Kein künstlicher Gesamt-Score.', 'neutral');
   const balance = String(last.loadMode || '').startsWith('garmin')
     ? (valid(last.formPct) ? fmt(last.formPct) + ' %' : '—')
     : fmt(last.tsb);
   renderMetrics('load-analysis-metrics', [
-    metric('CTL', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
-    metric('ATL', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
-    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'TSB', balance, '', "openTrainingMetric('form')"),
-    metric('ACWR', fmt(last.acwr), '', "openTrainingMetric('acwr')")
+    metric('Fitness', fmt(last.ctl), 'langfristige Belastung', "openTrainingMetric('fitness')"),
+    metric('Ermüdung', fmt(last.atl), 'kurzfristige Belastung', "openTrainingMetric('atl')"),
+    metric(last.loadMode?.startsWith('garmin') ? 'Relativer Saldo' : 'Form', balance, '', "openTrainingMetric('form')"),
+    metric('Belastungsverhältnis', fmt(last.acwr), '', "openTrainingMetric('acwr')")
   ]);
   const activities = Array.isArray(state.rawActivities) ? state.rawActivities : [];
   const garminValues = activities.filter(activity => valid(activity.garminTrainingLoad)).length;
@@ -106,7 +106,7 @@ function renderRecovery() {
     .find(entry => entry.result?.enoughData && valid(entry.result.score));
   const score = readinessEntry ? readinessEntry.result.score : null;
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
-    'Readiness', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
+    'Bereitschaft', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
     score === null ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'attention' : 'critical');
 
   const objectiveEntries = [
