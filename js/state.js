@@ -19,6 +19,7 @@ export const state = {
     dailyCheckins: {},
     healthLogs: {},
     races: [],
+    seasonPlan: null,
     strengthLogs: [],
     strengthPBs: [],
     supplements: [],
