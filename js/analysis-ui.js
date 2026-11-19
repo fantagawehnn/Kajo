@@ -56,7 +56,7 @@ function renderLoad() {
   if (!last) {
     setHero('load', '—', '', 'Keine auswertbare Belastung', 'ATL ist nicht berechenbar, solange kein gültiger Belastungsverlauf vorliegt.');
     renderMetrics('load-analysis-metrics', [
-      metric('CTL', '—'), metric('ATL', '—'), metric('Belastungssaldo', '—'), metric('ACWR', '—')
+      metric('CTL', '—'), metric('ATL', '—'), metric('Form (TSB)', '—'), metric('ACWR', '—')
     ]);
     return;
   }
