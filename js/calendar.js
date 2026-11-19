@@ -92,35 +92,130 @@ export function updateSelfMonitoringSlider(input){
  const output=document.getElementById(input.id+'-value');
  if(output)output.textContent=value+' / '+max;
 }
+const CHECKIN_DRAFT_KEY = 'kajo-checkin-draft-v1';
+function getPreviousDayCheckin(dateStr){
+ const previous=new Date(dateStr+'T12:00:00');
+ previous.setDate(previous.getDate()-1);
+ return state.dailyCheckins[toLocalDateString(previous)]||{};
+}
+function readCheckinDraft(dateStr){
+ try{
+  const draft=JSON.parse(getUserLocalSetting(CHECKIN_DRAFT_KEY)||'null');
+  return draft?.date===dateStr&&draft.values&&typeof draft.values==='object'?draft.values:null;
+ }catch{return null;}
+}
+function persistCheckinDraft(dateStr){
+ try{
+  const values={};
+  ['day-weight','day-sick','day-injured','day-health-diagnosis','day-injury-diagnosis','day-sick-severity','day-period','day-cycle-pain','day-checkin-note'].forEach(id=>{
+   const el=document.getElementById(id);if(!el)return;
+   values[id]=el.type==='checkbox'?el.checked:el.value;
+  });
+  values.wellbeing=document.querySelector('#day-wellbeing-options')?.dataset.touched==='true'
+   ? document.querySelector('#day-wellbeing-options [aria-pressed="true"]')?.dataset.wellbeingValue||null
+   : null;
+  values.subjective={};
+  ['sleepQuality','soreness','fatigue','motivation','stress','mood'].forEach(key=>{
+   const el=document.getElementById('day-'+key);
+   if(el)values.subjective[key]={value:el.value,touched:el.dataset.touched==='true'};
+  });
+  setUserLocalSetting(CHECKIN_DRAFT_KEY,JSON.stringify({date:dateStr,values,updatedAt:new Date().toISOString()}));
+ }catch(error){console.warn('KAJO: Check-in-Entwurf konnte nicht gespeichert werden:',error);}
+}
+function setWellbeingSelection(value,touched=false){
+ const group=document.getElementById('day-wellbeing-options');if(!group)return;
+ group.dataset.touched=touched?'true':'false';
+ group.querySelectorAll('[data-wellbeing-value]').forEach(button=>{
+  const active=String(button.dataset.wellbeingValue)===String(value);
+  button.classList.toggle('is-selected',active);button.setAttribute('aria-pressed',String(active));
+ });
+}
+function toggleDayInjuryFields(){
+ const checked=document.getElementById('day-injured')?.checked===true;
+ document.getElementById('day-injury-fields')?.classList.toggle('hidden',!checked);
+}
+function bindCheckinDraftControls(dateStr){
+ const modal=document.getElementById('day-detail-modal');if(!modal)return;
+ modal.querySelectorAll('input,textarea').forEach(el=>{
+  if(el.dataset.draftBound==='true')return;
+  ['input','change'].forEach(eventName=>el.addEventListener(eventName,()=>persistCheckinDraft(dateStr)));
+  el.dataset.draftBound='true';
+ });
+ const group=document.getElementById('day-wellbeing-options');
+ group?.querySelectorAll('[data-wellbeing-value]').forEach(button=>{
+  if(button.dataset.quickBound==='true')return;
+  button.addEventListener('click',()=>{
+   setWellbeingSelection(button.dataset.wellbeingValue,true);
+   persistCheckinDraft(document.getElementById('day-edit-date')?.value||dateStr);
+  });
+  button.dataset.quickBound='true';
+ });
+ modal.querySelectorAll('[data-weight-step]').forEach(button=>{
+  if(button.dataset.stepBound==='true')return;
+  button.addEventListener('click',()=>{
+   const input=document.getElementById('day-weight');if(!input)return;
+   const current=Number(input.value||0);
+   const next=(Math.round((current+Number(button.dataset.weightStep))*10)/10);
+   if(Number.isFinite(next)&&next>=20&&next<=300)input.value=next.toFixed(1);
+   persistCheckinDraft(document.getElementById('day-edit-date')?.value||dateStr);
+  });
+  button.dataset.stepBound='true';
+ });
+ document.getElementById('day-injured')?.addEventListener('change',toggleDayInjuryFields);
+}
 export function openDayEditor(dateStr){
  const modal=document.getElementById('day-detail-modal');
  if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
  if(modal){modal.style.zIndex='2147483005';document.body.classList.add('kajo-modal-open');}
- const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{},cy=r.cycle||{};
+ const r=state.dailyCheckins[dateStr]||{},h=state.healthLogs[dateStr]||{},cy=r.cycle||{},previous=getPreviousDayCheckin(dateStr);
  document.getElementById('day-edit-date').value=dateStr;
- document.getElementById('day-detail-title').textContent='Self-Monitoring · '+formatDateDDMMYY(dateStr);
- const subj=[['Schlafqualität','sleepQuality',false],['Muskelkater','soreness',true],['Müdigkeit','fatigue',true],['Motivation','motivation',false],['Stress','stress',true]];
- document.getElementById('day-subjective-fields').innerHTML=subj.map(([label,key,inverted])=>selfMonitoringSliderMarkup(label,key,r[key],inverted)).join('');
- subj.forEach(([,key])=>{const el=document.getElementById('day-'+key);if(el)updateSelfMonitoringSlider(el);if(el&&r[key]==null){el.dataset.touched='false';const out=document.getElementById(el.id+'-value');if(out)out.textContent='—';}});
- document.getElementById('day-weight').value=r.weight??'';
- const sick=h.status==='sick';
+ document.getElementById('day-detail-title').textContent='Check-in · '+formatDateDDMMYY(dateStr);
+ const subj=[['Schlafqualität','sleepQuality',false],['Muskelkater','soreness',true],['Müdigkeit','fatigue',true],['Motivation','motivation',false],['Stress','stress',true],['Stimmung','mood',false]];
+ document.getElementById('day-subjective-fields').innerHTML=subj.map(([label,key,inverted])=>selfMonitoringSliderMarkup(label,key,r[key]??previous[key],inverted)).join('');
+ subj.forEach(([,key])=>{
+  const el=document.getElementById('day-'+key);if(!el)return;
+  updateSelfMonitoringSlider(el);
+  el.dataset.touched=r[key]!=null?'true':'false';
+  if(r[key]==null){const out=document.getElementById(el.id+'-value');if(out)out.textContent='—';}
+ });
+ const weight=document.getElementById('day-weight');if(weight)weight.value=r.weight??previous.weight??'';
+ setWellbeingSelection(r.wellbeing??previous.wellbeing??null,false);
+ const sick=h.status==='sick',injured=h.status==='injured';
  document.getElementById('day-sick').checked=sick;
+ document.getElementById('day-injured').checked=injured;
  document.getElementById('day-health-diagnosis').value=sick?(h.diagnosis||''):'';
+ document.getElementById('day-injury-diagnosis').value=injured?(h.diagnosis||''):'';
  const severity=Number.isFinite(Number(h.severity))?Math.min(5,Math.max(1,Number(h.severity))):3;
  document.getElementById('day-sick-severity').value=severity;
  document.getElementById('day-sick-severity').dataset.touched=h.severity!=null?'true':'false';
  document.getElementById('day-sick-severity-value').textContent=(h.severity??severity)+' / 5';
- toggleDaySickFields();
- const cycleEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
  document.getElementById('day-period').checked=cy.period===true;
  document.getElementById('day-cycle-pain').value=Math.min(5,Math.max(1,Number(cy.pain??1)));
  document.getElementById('day-cycle-pain').dataset.touched=cy.pain!=null?'true':'false';
  document.getElementById('day-cycle-pain-value').textContent=(cy.pain==null?'1':String(cy.pain))+' / 5';
+ document.getElementById('day-checkin-note').value=r.note||'';
+ const cycleEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
  document.getElementById('day-cycle-section')?.classList.toggle('hidden',!cycleEnabled);
  document.getElementById('day-period').closest('.space-y-2')?.classList.toggle('hidden',!cycleEnabled);
- toggleDayCycleFields();
+ toggleDaySickFields();toggleDayInjuryFields();toggleDayCycleFields();
  ['day-sick-severity','day-cycle-pain'].forEach(id=>updateSelfMonitoringSlider(document.getElementById(id)));
  if(document.getElementById('day-cycle-pain').dataset.touched==='false')document.getElementById('day-cycle-pain-value').textContent='—';
+ const draft=readCheckinDraft(dateStr);
+ if(draft){
+  for(const [id,value] of Object.entries(draft)){
+   if(id==='subjective'||id==='wellbeing')continue;
+   const el=document.getElementById(id);if(!el)continue;
+   if(el.type==='checkbox')el.checked=Boolean(value);else if(value!=null)el.value=value;
+  }
+  Object.entries(draft.subjective||{}).forEach(([key,item])=>{
+   const el=document.getElementById('day-'+key);if(!el||!item)return;
+   el.value=item.value;el.dataset.touched=item.touched?'true':'false';updateSelfMonitoringSlider(el);
+   if(!item.touched){el.dataset.touched='false';const out=document.getElementById(el.id+'-value');if(out)out.textContent='—';}
+  });
+  if(draft.wellbeing!=null)setWellbeingSelection(draft.wellbeing,true);
+  toggleDaySickFields();toggleDayInjuryFields();toggleDayCycleFields();
+ }
+ bindCheckinDraftControls(dateStr);
  document.getElementById('day-detail-modal').classList.remove('hidden');
 }
 export function toggleDaySickFields(){document.getElementById('day-sick-fields')?.classList.toggle('hidden',!document.getElementById('day-sick')?.checked);}
@@ -130,28 +225,37 @@ export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export async function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
  const r={...(state.dailyCheckins[date]||{})};
- const subj=['sleepQuality','soreness','fatigue','motivation','stress'];
+ const subj=['sleepQuality','soreness','fatigue','motivation','stress','mood'];
  for(const key of subj){const el=document.getElementById('day-'+key);if(el?.dataset.touched==='true')r[key]=dayNumber(el.value,1,5);}
- const weightRaw=document.getElementById('day-weight').value;
+ const wellbeingGroup=document.getElementById('day-wellbeing-options');
+ if(wellbeingGroup?.dataset.touched==='true'){
+  const selected=wellbeingGroup.querySelector('[aria-pressed="true"]')?.dataset.wellbeingValue;
+  const wellbeing=dayNumber(selected,1,5);if(wellbeing!==null)r.wellbeing=wellbeing;
+ }
+ const weightRaw=document.getElementById('day-weight').value.trim();
  if(weightRaw==='')delete r.weight;else{const weight=dayNumber(weightRaw,20,300);if(weight===null){alert('Bitte prüfe dein Körpergewicht.');return;}r.weight=weight;}
+ const note=document.getElementById('day-checkin-note')?.value.trim()||'';
+ if(note)r.note=note;else delete r.note;
  const periodEnabled=state.profile?.gender==='female'&&state.profile?.cycleTrackingEnabled===true;
  if(periodEnabled&&document.getElementById('day-period').checked){
   const pain=dayNumber(document.getElementById('day-cycle-pain').value,1,5);
   r.cycle={...(r.cycle||{}),period:true,pain:pain??1};
  }else if(periodEnabled&&r.cycle){delete r.cycle.period;delete r.cycle.pain;if(!Object.keys(r.cycle).length)delete r.cycle;}
  state.dailyCheckins[date]=r;
- const sick=document.getElementById('day-sick').checked;
+ const sick=document.getElementById('day-sick').checked,injured=document.getElementById('day-injured').checked;
  const previousHealth=state.healthLogs[date]||{};
- if(sick){
-  const health={...previousHealth,status:'sick',diagnosis:document.getElementById('day-health-diagnosis').value.trim()||'Erkrankung'};
+ if(sick||injured){
+  const status=sick?'sick':'injured';
+  const diagnosis=(sick?document.getElementById('day-health-diagnosis'):document.getElementById('day-injury-diagnosis'))?.value.trim()|| (sick?'Erkrankung':'Verletzung');
+  const health={...previousHealth,status,diagnosis};
   const severity=document.getElementById('day-sick-severity');
-  if(severity?.dataset.touched==='true')health.severity=dayNumber(severity.value,1,5);
+  if(sick&&severity?.dataset.touched==='true')health.severity=dayNumber(severity.value,1,5);
   state.healthLogs[date]=health;
- }else if(previousHealth.status==='sick'){delete state.healthLogs[date];}
+ }else if(['sick','injured'].includes(previousHealth.status)){delete state.healthLogs[date];}
 
  const saveButton=document.querySelector('#day-detail-modal button[onclick="saveDayEditor()"]');
  const saveStatus=document.getElementById('day-save-status');
- const originalLabel=saveButton?.textContent||'Check-in speichern';
+ const originalLabel=saveButton?.textContent||'Speichern';
  const modal=document.getElementById('day-detail-modal');
  if(modal)modal.dataset.saving='true';
  if(saveButton){saveButton.disabled=true;saveButton.textContent='Speichert …';}
@@ -168,11 +272,12 @@ export async function saveDayEditor(){
  });
  if(!cloudSaved){
   if(modal)modal.dataset.saving='false';
-  if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Bitte versuche es erneut und aktualisiere die App noch nicht.';
+  if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Der Entwurf bleibt erhalten; bitte versuche es erneut.';
   if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
   return;
  }
- if(saveStatus)saveStatus.textContent='Check-in erfolgreich in der Cloud gespeichert.';
+ try{setUserLocalSetting(CHECKIN_DRAFT_KEY,'');}catch{}
+ if(saveStatus)saveStatus.textContent='Check-in erfolgreich gespeichert.';
  if(modal)modal.dataset.saving='false';
  closeDayEditor();refreshAll();
 }
