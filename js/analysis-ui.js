@@ -349,7 +349,7 @@ function renderPerformanceTrend(key) {
   performanceChart = new Chart(canvas.getContext('2d'), {
     type:'line',
     data:{labels,datasets:[{label:heading,data:values,borderColor:color,backgroundColor:color+'22',
-      borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:false,fill:false}]},
+      borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:true,fill:false}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>Number(item.parsed.y).toLocaleString('de-DE',{maximumFractionDigits:2})+' '+unit}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8}},
