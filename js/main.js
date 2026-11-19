@@ -264,6 +264,7 @@ function switchTab(requestedTab) {
         const el = document.getElementById('view-' + id);
         if (el) el.classList.toggle('hidden', id !== view);
     });
+    document.getElementById('view-health-data')?.classList.toggle('hidden', requestedTab !== 'health-data');
 
     document.getElementById('plan-subnav')?.classList.toggle('hidden', parent !== 'plan');
     document.getElementById('training-subnav')?.classList.toggle('hidden', parent !== 'training');
@@ -327,7 +328,7 @@ function switchTab(requestedTab) {
     }
 
     if (view === 'analyses') { renderMainLoadChart(state.dailyTimeline, state.activeTimeframe); renderAnalysisInsights(); }
-    if (view === 'analyses') { renderAnalysisPageUI(sub || 'overview'); if (sub === 'recovery') { renderMetricHistory('health'); renderWeightView(); } }
+    if (view === 'analyses') renderAnalysisPageUI(sub || 'overview');
     const overviewContent = document.getElementById('analysis-overview-content');
     if (overviewContent) overviewContent.classList.toggle('hidden', view !== 'analyses' || sub !== 'overview');
     if (view === 'analyses' && sub === 'overview') renderAnalysisOverview();
@@ -338,7 +339,7 @@ function switchTab(requestedTab) {
     if (view === 'garmin-health') { renderGarminHealthData(); renderManagedPeriods(); }
     if (view === 'data') void renderGarminExportArchiveHistory();
     if (view === 'upload') renderImportHistory();
-    if (view === 'health-data') renderMetricHistory('health');
+    if (requestedTab === 'health-data') { renderMetricHistory('health'); renderWeightView(); }
     if (view === 'training-analysis') renderMetricHistory('training');
     if (view === 'routes') renderRoutesView();
     if (view === 'profile') renderAthleteProfile();
