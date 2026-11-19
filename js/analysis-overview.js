@@ -143,6 +143,14 @@ function renderTrendChart() {
     };
   });
   const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
+  const hasEnoughData = datasets.some(dataset => !dataset.hidden && dataset.data.filter(valid).length >= 3);
+  if (!hasEnoughData) {
+    canvas.parentElement?.classList.add('hidden');
+    if (trendChart) { trendChart.destroy(); trendChart = null; }
+    setText('analysis-overview-trend-note', 'Der Verlauf erscheint, sobald mindestens drei Messwerte für eine ausgewählte Kennzahl vorliegen.');
+    return;
+  }
+  canvas.parentElement?.classList.remove('hidden');
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   trendChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
