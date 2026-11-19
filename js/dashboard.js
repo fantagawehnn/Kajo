@@ -409,7 +409,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     if (recTitleEl) recTitleEl.textContent = recommendationTitle;
     if (recDetailEl) recDetailEl.textContent = recommendationDetail;
     const recContext = document.getElementById('home-training-recommendation-context');
-    if (recContext) recContext.textContent = selectedDate === localTodayKey() ? 'Basierend auf deinem aktuellen Belastungsmodell und den verfügbaren Check-in-Daten' : 'Tagesrückblick auf Basis der für diesen Tag verfügbaren Daten';
+    if (recContext) recContext.textContent = '';
 
     const plannedSection = document.getElementById('home-planned-section');
     const plannedList = document.getElementById('home-planned-list');
