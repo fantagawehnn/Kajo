@@ -18,15 +18,6 @@ function validDate(value) {
     return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-function optionalPositiveNumber(value, field, errors, allowZero = false) {
-    if (value == null || value === '') return null;
-    const number = Number(value);
-    if (!Number.isFinite(number) || (allowZero ? number < 0 : number <= 0)) {
-        errors.push(field + (allowZero ? ' muss eine Zahl ab 0 sein.' : ' muss eine Zahl größer 0 sein.'));
-        return null;
-    }
-    return number;
-}
 
 export function normalizeSeasonPhase(phase = {}) {
     return {
