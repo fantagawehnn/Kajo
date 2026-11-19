@@ -1,11 +1,13 @@
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
-import { requestSeasonPlanProposal } from './coach.js?v=2';
+import { requestSeasonPlanProposal, requestWeeklyPlanProposal } from './coach.js?v=2';
 
 let draftPhases = [];
 let pendingProposal = null;
 let proposalRequestPending = false;
+let pendingWeeklyProposal = null;
+let weeklyProposalPending = false;
 
 const byId = id => document.getElementById(id);
 const value = id => byId(id)?.value ?? '';
@@ -25,6 +27,7 @@ export function renderSeasonPlanEditor() {
     if (status) status.textContent = !plan ? 'Noch nicht angelegt' : plan.status === 'active' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf';
     renderPhaseList();
     renderSeasonPlanProposal();
+    renderWeeklyPlanPanel();
     const message = byId('season-plan-message');
     if (message) message.textContent = plan?.athleteApprovedAt ? 'Zuletzt von dir freigegeben: ' + new Date(plan.athleteApprovedAt).toLocaleString('de-DE') : '';
 }
@@ -90,6 +93,106 @@ export function applySeasonPlanProposal() {
 export function discardSeasonPlanProposal() {
     pendingProposal = null;
     renderSeasonPlanProposal();
+    return true;
+}
+
+
+function renderWeeklyPlanPanel() {
+    const root = byId('weekly-plan-proposal');
+    if (!root) return;
+    const plans = normalizeSeasonPlan(state.seasonPlan)?.weeklyPlans || [];
+    const list = byId('weekly-plan-saved-list');
+    if (list) list.innerHTML = plans.slice().sort((a,b) => a.weekStartDate.localeCompare(b.weekStartDate)).map(plan =>
+        '<article class="rounded-lg border border-slate-800 p-2"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(plan.weekStartDate) + ' – ' + escape(plan.weekEndDate) + '</strong><span class="text-[10px] text-slate-400">' + (plan.status === 'approved' ? 'Freigegeben' : plan.status === 'completed' ? 'Abgeschlossen' : 'Entwurf') + '</span></div><p class="text-xs text-slate-300 mt-1">' + escape(plan.objective) + '</p><p class="text-[10px] text-slate-500">' + plan.sessions.length + ' Einheiten</p></article>'
+    ).join('') || '<p class="text-xs text-slate-500">Noch keine Wochenpläne gespeichert.</p>';
+    const proposal = byId('weekly-plan-proposal-content');
+    if (!proposal) return;
+    if (!pendingWeeklyProposal) {
+        root.classList.add('hidden');
+        return;
+    }
+    root.classList.remove('hidden');
+    const rationale = byId('weekly-plan-proposal-rationale');
+    if (rationale) rationale.textContent = pendingWeeklyProposal.rationale || 'Der Coach hat einen Wochenvorschlag erstellt.';
+    const questions = byId('weekly-plan-proposal-questions');
+    if (questions) questions.innerHTML = (pendingWeeklyProposal.openQuestions || []).map(item => '<p>• ' + escape(item) + '</p>').join('');
+    const plan = pendingWeeklyProposal.weeklyPlan;
+    proposal.innerHTML = plan ? '<div class="space-y-2"><p class="text-sm font-semibold text-white">' + escape(plan.objective) + '</p>' + plan.sessions.map(session =>
+        '<article class="rounded-lg border border-slate-800 p-3 space-y-1"><div class="flex justify-between gap-2"><strong class="text-xs text-white">' + escape(session.name) + '</strong><span class="text-[10px] text-slate-400">' + escape(session.date) + (session.durationMinutes ? ' · ' + session.durationMinutes + ' min' : '') + '</span></div><p class="text-[10px] text-cyan-200">' + escape([session.discipline, session.raceFormat, session.waterType, session.intensity].filter(Boolean).join(' · ')) + '</p><p class="text-xs text-slate-300">' + escape(session.objective) + '</p><p class="text-xs text-slate-400">' + escape([session.warmup, session.mainSet, session.cooldown].filter(Boolean).join(' | ')) + '</p></article>'
+    ).join('') + '</div>' : '<p class="text-xs text-amber-200">Der Coach benötigt weitere Angaben, bevor eine Trainingswoche erstellt werden kann.</p>';
+    const apply = byId('weekly-plan-proposal-apply');
+    if (apply) apply.classList.toggle('hidden', pendingWeeklyProposal.status !== 'ready' || !plan?.sessions?.length);
+}
+
+export async function generateWeeklyPlanProposal() {
+    const message = byId('season-plan-message');
+    if (weeklyProposalPending) return false;
+    const startDate = value('weekly-plan-start');
+    if (!startDate) {
+        if (message) message.textContent = 'Bitte wähle den Montag der gewünschten Trainingswoche.';
+        return false;
+    }
+    weeklyProposalPending = true;
+    if (message) message.textContent = 'Der Coach prüft Saisonphase, Wettkämpfe, Trainingshistorie und Regeneration …';
+    const button = document.querySelector('[onclick="generateWeeklyPlanProposal()"]');
+    if (button) { button.disabled = true; button.textContent = 'Wochenvorschlag wird erstellt …'; }
+    try {
+        pendingWeeklyProposal = await requestWeeklyPlanProposal(startDate);
+        renderWeeklyPlanPanel();
+        if (message) message.textContent = pendingWeeklyProposal.status === 'ready'
+            ? 'Wochenvorschlag erstellt. Prüfe jede Einheit, bevor du den Entwurf übernimmst.'
+            : 'Noch kein belastbarer Wochenplan möglich. Bitte kläre die offenen Angaben.';
+        return true;
+    } catch (error) {
+        if (message) message.textContent = error?.message || 'Der Wochenvorschlag konnte nicht erstellt werden.';
+        return false;
+    } finally {
+        weeklyProposalPending = false;
+        if (button) { button.disabled = false; button.textContent = '✦ Trainingswoche mit Coach planen'; }
+    }
+}
+
+export function applyWeeklyPlanProposal() {
+    const plan = pendingWeeklyProposal?.weeklyPlan;
+    if (pendingWeeklyProposal?.status !== 'ready' || !plan?.sessions?.length) return false;
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    if (!current || current.status !== 'active' || !current.athleteApprovedAt) return false;
+    const existing = current.weeklyPlans.find(item => item.weekStartDate === plan.weekStartDate);
+    if (existing?.status === 'approved' || existing?.status === 'completed') {
+        const message = byId('season-plan-message');
+        if (message) message.textContent = 'Für diese Woche existiert bereits ein freigegebener oder abgeschlossener Plan. Er wird nicht überschrieben.';
+        return false;
+    }
+    const now = new Date().toISOString();
+    const saved = { ...plan, status: 'draft', athleteApprovedAt: null, createdAt: existing?.createdAt || now, updatedAt: now };
+    const weeklyPlans = current.weeklyPlans.filter(item => item.weekStartDate !== plan.weekStartDate).concat(saved);
+    state.seasonPlan = { ...current, weeklyPlans, updatedAt: now };
+    if (!saveDataToLocalStorage()) return false;
+    pendingWeeklyProposal = null;
+    renderWeeklyPlanPanel();
+    const message = byId('season-plan-message');
+    if (message) message.textContent = 'Wochenplan als Entwurf gespeichert. Prüfe ihn in der Übersicht und gib ihn bei Bedarf separat frei.';
+    return true;
+}
+
+export function approveWeeklyPlan(weekStartDate) {
+    const current = normalizeSeasonPlan(state.seasonPlan);
+    const plan = current?.weeklyPlans.find(item => item.weekStartDate === weekStartDate);
+    if (!current || current.status !== 'active' || !plan || plan.status !== 'draft') return false;
+    const now = new Date().toISOString();
+    const weeklyPlans = current.weeklyPlans.map(item => item.id === plan.id
+        ? { ...item, status: 'approved', athleteApprovedAt: now, updatedAt: now } : item);
+    state.seasonPlan = { ...current, weeklyPlans, updatedAt: now };
+    if (!saveDataToLocalStorage()) return false;
+    renderWeeklyPlanPanel();
+    const message = byId('season-plan-message');
+    if (message) message.textContent = 'Wochenplan ausdrücklich freigegeben. Er wird noch nicht automatisch in den Kalender übertragen.';
+    return true;
+}
+
+export function discardWeeklyPlanProposal() {
+    pendingWeeklyProposal = null;
+    renderWeeklyPlanPanel();
     return true;
 }
 
