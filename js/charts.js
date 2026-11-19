@@ -76,9 +76,9 @@ export function renderMainLoadChart(timeline, timeframe) {
     state.mainChartInstance=new Chart(ctx,{
         type:'line',
         data:{labels,datasets:[
-            {label:'Langfristige Belastung (CTL)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:'Kurzfristige Belastung (ATL)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
-            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Load-Quelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
+            {label:'Fitness (langfristige Belastung)',data:ctl,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:true,borderWidth:2.5,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
+            {label:'Ermüdung (kurzfristige Belastung)',data:atl,borderColor:'#d946ef',borderWidth:2,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y'},
+            {label:isGarmin?(last.loadMode==='garmin-native'?'Relativer Saldo (Garmin Load)':'Relativer Saldo (KAJO-HF-Zonenindex)'):isSrpe?'Belastungsbilanz (sRPE)':'Keine Belastungsquelle',data:form,borderColor:'#a3a3a3',borderWidth:1.8,tension:.25,pointRadius:0,pointHitRadius:8,yAxisID:'y1'},
             {label:'Krankheit / Verletzung',data:health,showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#facc15',yAxisID:'y'}
         ]},
         options:{
