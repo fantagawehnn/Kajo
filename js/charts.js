@@ -74,6 +74,9 @@ export function renderMainLoadChart(timeline, timeframe) {
     const ctlDisplay=carryForwardForDisplay(ctlRaw);
     const atlDisplay=carryForwardForDisplay(atlRaw);
     const formDisplay=carryForwardForDisplay(formRaw);
+    const hasEnoughPoints=[ctlRaw,atlRaw,formRaw].some(values=>values.filter(value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))).length>=3);
+    if(!hasEnoughPoints){if(state.mainChartInstance){state.mainChartInstance.destroy();state.mainChartInstance=null;}canvas.hidden=true;const note=document.getElementById('load-source-note');if(note)note.textContent+=' Für ein Verlaufsdiagramm sind mindestens drei Messwerte erforderlich.';['kpi-ctl','kpi-atl','kpi-tsb','kpi-acwr'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});return;}
+    canvas.hidden=false;
     const health=filtered.map(t=>state.healthLogs[t.date] ? t.ctl : null);
     const ctx=canvas.getContext('2d');
     if(state.mainChartInstance) state.mainChartInstance.destroy();
