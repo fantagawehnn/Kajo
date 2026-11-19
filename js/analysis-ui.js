@@ -608,8 +608,6 @@ export function setHealthRange(range){
   if(typeof window.setTimeframe==='function')window.setTimeframe(range);
   else {state.activeTimeframe=range;state.metricHistoryRange=range;}
   renderHealth();
-  if(selectedHealthView==='relationships')renderHealthRelationships(healthRangeWindow());
-  else if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 export function applyHealthCustomRange(){
   const from=document.getElementById('health-summary-from')?.value;
@@ -627,8 +625,6 @@ export function applyHealthCustomRange(){
   if(typeof window.applyCustomDateRange==='function')window.applyCustomDateRange();
   else {renderHealth();window.kajoRenderHealthAnalysis?.();}
   renderHealth();
-  if(selectedHealthView==='relationships')renderHealthRelationships(healthRangeWindow());
-  else if(selectedHealthMetric)renderHealthTrend(selectedHealthMetric);
 }
 if(typeof window!=='undefined'){
   window.toggleHealthMetric=toggleHealthMetric;
