@@ -112,10 +112,10 @@ function renderTrendChart() {
   const adaptive = prepareAdaptiveSeriesGroup(dates, source.map(item => ({
     key: item.key, label: item.label, unit: item.unit, color: item.color, values: item.raw
   })));
-  metricAvailability = new Set(adaptive.series.filter(item => item.available).map(item => item.key));
+  metricAvailability = new Set(adaptive.series.filter(item => item.available && item.values.some(value => valid(value) && Number(value) > 0)).map(item => item.key));
   for (const key of [...selectedMetrics]) if (!metricAvailability.has(key)) selectedMetrics.delete(key);
   if (!selectedMetrics.size && metricAvailability.size) selectedMetrics.add([...metricAvailability][0]);
-  const datasets = adaptive.series.filter(item => item.available).map(item => {
+  const datasets = adaptive.series.filter(item => metricAvailability.has(item.key)).map(item => {
     const display = item.chartType === 'line'
       ? carryForwardForDisplay(item.values) : { values: item.values, carried: item.values.map(() => false) };
     const indexed = toRelativeIndex(display.values);
@@ -162,7 +162,7 @@ function renderTrendChart() {
   canvas.hidden = !hasValues;
   if (!hasValues) {
     setText('analysis-overview-trend-note',
-      'Für mindestens eine Kennzahl liegen weniger als drei auswertbare Messwerte im gewählten Zeitraum vor. Das Diagramm bleibt ausgeblendet, statt eine leere oder irreführende Darstellung zu zeigen.');
+      'Für mindestens eine Kennzahl liegen weniger als drei auswertbare Messwerte oder keine positive Bezugsbasis im gewählten Zeitraum vor. Das Diagramm bleibt ausgeblendet, statt eine leere oder irreführende Darstellung zu zeigen.');
     updateMetricSwitch();
     return;
   }
@@ -208,13 +208,13 @@ function renderTrendChart() {
             const change = Number(index) - 100;
             const sign = change > 0 ? '+' : '';
             return dataset.label + ': ' + fmt(raw) + (dataset.unit ? ' ' + dataset.unit : '') +
-              ' · ' + sign + fmt(change) + ' % zum ersten Messwert';
+              ' · ' + sign + fmt(change) + ' % zum ersten positiven Messwert';
           }
         } }
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
-        y: { grid: { color: 'rgba(148,163,184,.12)' }, ticks: { color: textColor, maxTicksLimit: 5 }, title: { display: true, text: 'Index · erster Messwert = 100', color: textColor, font: { size: 9 } } }
+        y: { grid: { color: 'rgba(148,163,184,.12)' }, ticks: { color: textColor, maxTicksLimit: 5 }, title: { display: true, text: 'Index · erster positiver Messwert = 100', color: textColor, font: { size: 9 } } }
       }
     }
   });
