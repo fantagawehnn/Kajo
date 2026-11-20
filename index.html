@@ -349,8 +349,8 @@
         
 
         <div id="view-dashboard" class="kajo-home">
-  <section class="kajo-home-status" aria-labelledby="home-status-heading">
-    <h2 id="home-status-heading">Dein Status</h2>
+  <section id="home-status-section" class="kajo-home-status" aria-labelledby="home-status-heading">
+    <div class="kajo-home-section-heading"><h2 id="home-status-heading">Dein Status</h2><button type="button" class="kajo-dashboard-edit-button" onclick="openDashboardCustomization()" aria-label="Dashboard anpassen">Anpassen</button></div>
     <div class="kajo-readiness-grid">
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
         <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
@@ -378,14 +378,14 @@
     <p id="home-training-empty" class="kajo-empty hidden">Für heute sind keine Trainingseinheiten hinterlegt.</p>
   </section>
 
-  <button type="button" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
+  <button type="button" id="home-training-recommendation-card" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
     <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
     <strong id="home-training-recommendation">Wird berechnet …</strong>
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
   </button>
 
-  <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
+  <section id="home-wearables-section" class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
     <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Self-Monitoring</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Self-Monitoring öffnen" title="Self-Monitoring öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
@@ -419,6 +419,18 @@
     <span id="kpi-rec-short">Noch keine Empfehlung</span><span id="kpi-rec-sub">Warte auf auswertbare Trainingsdaten</span><span id="kpi-tsb-status">Wird berechnet</span>
     <span id="kpi-ctl-trend"></span><span id="kpi-atl-trend"></span>
   </div>
+</div>
+
+<div id="dashboard-customization-modal" class="hidden fixed inset-0 z-[96] items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="dashboard-customization-title" aria-hidden="true">
+  <section class="kajo-dashboard-custom-modal">
+    <div class="kajo-dashboard-custom-heading"><h2 id="dashboard-customization-title">Dashboard anpassen</h2><button type="button" onclick="closeDashboardCustomization()" aria-label="Schließen">×</button></div>
+    <p class="kajo-dashboard-custom-note">Lege fest, welche Bereiche angezeigt werden und in welcher Reihenfolge sie erscheinen.</p>
+    <ol id="dashboard-customization-list" class="kajo-dashboard-custom-list"></ol>
+    <div class="kajo-dashboard-custom-footer">
+      <button type="button" class="kajo-dashboard-custom-reset" onclick="resetDashboardCustomization()">Standard wiederherstellen</button>
+      <button type="button" class="kajo-dashboard-custom-save" onclick="saveDashboardCustomization()">Speichern</button>
+    </div>
+  </section>
 </div>
 
 <div id="race-detail-modal" class="hidden fixed inset-0 z-[94] items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="race-detail-title">
