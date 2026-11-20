@@ -445,4 +445,6 @@ assert.ok(html.includes('id="analysis-load-recovery-association"'), 'load and re
 assert.ok(analysisOverview.includes('function spearmanCorrelation'), 'Spearman calculation exists');
 assert.ok(analysisOverview.includes('mindestens 10 vollständige Wertepaarungen'), 'small samples are not interpreted');
 assert.ok(analysisOverview.includes('mehrere Load-Modelle oder Einheiten'), 'incompatible load models are not mixed');
+assert.ok(analysisOverview.includes("!['complete','confirmed-rest'].includes(day.dataStatus)"), 'statistical load comparisons exclude incomplete and unknown load days');
+assert.ok(analysisOverview.includes("!['complete', 'confirmed-rest'].includes(day.dataStatus)"), 'next-day context excludes incomplete and unknown load days');
 assert.ok(analysisOverview.includes('Readiness enthält physiologische Messwerte einschließlich HRV'), 'Readiness and HRV overlap is disclosed');
