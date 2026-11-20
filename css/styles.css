@@ -9159,3 +9159,22 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-weight-target-row button{min-height:44px;padding:0 16px;border-radius:999px;background:var(--kajo-blue);color:#fff;font-size:.72rem;font-weight:750}
 .kajo-weight-note{margin-top:6px;color:var(--kajo-muted);font-size:.63rem;line-height:1.45}
 @media(max-width:480px){.kajo-weight-chart{height:205px}.kajo-weight-target-row button{flex:1 1 100%}.kajo-weight-summary{gap:8px}}
+
+/* Dashboard customization */
+.kajo-dashboard-edit-button{min-height:36px;padding:0 13px;border:1px solid var(--kajo-border);border-radius:999px;background:transparent;color:var(--kajo-muted);font-size:.68rem;font-weight:700}
+.kajo-dashboard-custom-modal{width:min(100%,460px);max-height:min(82vh,680px);overflow:auto;padding:18px;border:1px solid var(--kajo-border);border-radius:18px;background:var(--kajo-surface);color:var(--kajo-text)}
+.kajo-dashboard-custom-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kajo-dashboard-custom-heading h2{font-size:1.05rem;font-weight:800}
+.kajo-dashboard-custom-heading>button{width:40px;height:40px;border-radius:50%;font-size:1.5rem;color:var(--kajo-muted)}
+.kajo-dashboard-custom-note{margin:5px 0 14px;color:var(--kajo-muted);font-size:.75rem;line-height:1.45}
+.kajo-dashboard-custom-list{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
+.kajo-dashboard-custom-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:54px;border-bottom:1px solid var(--kajo-border)}
+.kajo-dashboard-custom-row>label{display:flex;align-items:center;gap:10px;min-width:0;font-size:.82rem;font-weight:650}
+.kajo-dashboard-custom-row input{width:19px;height:19px;accent-color:var(--kajo-blue)}
+.kajo-dashboard-custom-actions{display:flex;gap:6px}
+.kajo-dashboard-custom-actions button{width:36px;height:36px;border:1px solid var(--kajo-border);border-radius:50%;color:var(--kajo-text);font-size:1rem}
+.kajo-dashboard-custom-actions button:disabled{opacity:.25}
+.kajo-dashboard-custom-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:16px}
+.kajo-dashboard-custom-reset{min-height:44px;color:var(--kajo-muted);font-size:.72rem;font-weight:700}
+.kajo-dashboard-custom-save{min-height:44px;padding:0 20px;border-radius:999px;background:var(--kajo-blue);color:white;font-size:.75rem;font-weight:800}
+@media(max-width:420px){.kajo-dashboard-custom-modal{padding:15px}.kajo-dashboard-custom-footer{align-items:stretch;flex-direction:column-reverse}.kajo-dashboard-custom-save{width:100%}}
