@@ -143,7 +143,7 @@ function renderSourceCoverage(activities=[]){
   const measured=c.currentHeartRateCount+c.limitedHeartRateCount+c.cachedHeartRateCount;
   lines.push('HF-basierter KAJO-Load: '+measured+' von '+c.garminEligibleCount+pct(measured,c.garminEligibleCount)+'.');
   lines.push('Aktuelle HF-Zeitreihe: '+c.currentHeartRateCount+'; eingeschränkte HF-Aufzeichnung: '+c.limitedHeartRateCount+'; gespeicherte HF-Analyse ohne lokal verfügbare Zeitreihe: '+c.cachedHeartRateCount+'.');
-  lines.push('Manuell geschätzt: '+c.manualEstimateCount+'; HF vorhanden, aber Load nicht berechenbar: '+c.heartRateWithoutLoadCount+'; keine nutzbare HF-Zeitreihe und kein Load: '+c.missingUsableHeartRateCount+'.');
+  lines.push('Manuell geschätzt: '+c.manualEstimateCount+'; HF vorhanden, aber Load nicht berechenbar: '+c.heartRateWithoutLoadCount+'; keine nutzbare HF-Zeitreihe / kein KAJO-Load: '+c.missingUsableHeartRateCount+'.');
   if(c.nativeLoadAvailableCount)lines.push('Garmin-native Training-Load-Werte zusätzlich vorhanden: '+c.nativeLoadAvailableCount+' (separate Vergleichsquelle, nicht im KAJO-CTL/ATL/TSB enthalten).');
  }
  node.textContent=lines.join(' ');
