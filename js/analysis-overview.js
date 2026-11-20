@@ -232,6 +232,84 @@ function renderFitnessRecoveryContext(dates) {
     '<p class="kajo-analysis-chart-note">Zeitliche Gegenüberstellung der gespeicherten Tageswerte, keine Kausalitäts- oder Wirkungsanalyse. CTL, ATL und TSB werden nur innerhalb desselben Load-Modells interpretiert; Garmin-Form ist ein eigener Prozentindikator und nicht mit TSB gleichzusetzen. Bei fehlender oder abweichender Load-Modell-Angabe werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt. HRV und Readiness sind nicht unabhängig, da HRV in die Readiness eingehen kann. Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch. Fehlende Werte bleiben offen; fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden.</p>';
 }
 
+
+function renderTrendObservations(dates) {
+  const root = document.getElementById('analysis-trend-observations');
+  if (!root) return;
+  if (dates.length < 14) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Für einen Vergleich zweier vollständiger Sieben-Tage-Zeiträume werden mindestens 14 Kalendertage benötigt.</p>';
+    return;
+  }
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const healthLogs = state.healthLogs || {};
+  const recentDates = dates.slice(-7);
+  const priorDates = dates.slice(-14, -7);
+  const latestLoadDay = [...recentDates].reverse().map(date => timeline.get(date)).find(day =>
+    day && day.loadMode && day.loadUnit && (valid(day.ctl) || valid(day.atl) || valid(day.tsb) || valid(day.formPct))
+  );
+  const loadMode = latestLoadDay?.loadMode || '';
+  const loadUnit = latestLoadDay?.loadUnit || '';
+  const isGarminForm = loadMode === 'garmin-native' || loadMode === 'garmin-zone';
+  const metrics = [
+    { key: 'ctl', label: 'CTL', unit: loadUnit, source: 'Load-Modell', minimum: 3, load: true },
+    { key: 'atl', label: 'ATL', unit: loadUnit, source: 'Load-Modell', minimum: 3, load: true },
+    { key: 'form', label: isGarminForm ? 'Garmin-Form' : 'TSB', unit: isGarminForm ? '%' : loadUnit, source: loadMode || 'Load-Modell', minimum: 3, load: true },
+    { key: 'hrv', label: 'Garmin-HRV', unit: 'ms', source: 'Garmin', minimum: 3 },
+    { key: 'readiness', label: 'Readiness', unit: '/ 100', source: 'KAJO-Berechnung', minimum: 3 },
+    { key: 'vo2max', label: 'Garmin-VO₂max', unit: 'ml/kg/min', source: 'Garmin-Schätzwert', minimum: 2 }
+  ];
+  const getValue = (date, metric) => {
+    const day = timeline.get(date);
+    const checkin = checkins[date] || {};
+    if (metric.load) {
+      if (!day || day.loadMode !== loadMode || day.loadUnit !== loadUnit) return null;
+      if (metric.key === 'form') {
+        const value = isGarminForm ? day.formPct : day.tsb;
+        return valid(value) ? Number(value) : null;
+      }
+      return valid(day[metric.key]) ? Number(day[metric.key]) : null;
+    }
+    if (metric.key === 'hrv') {
+      const value = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+      return valid(value) && Number(value) > 0 ? Number(value) : null;
+    }
+    if (metric.key === 'readiness') {
+      if (date > todayKey() || !checkins[date]) return null;
+      const result = calculateReadiness(date, state);
+      return result?.enoughData && valid(result.score) ? Number(result.score) : null;
+    }
+    const value = getGarminCheckinMetric(checkin, 'vo2max');
+    return valid(value) ? Number(value) : null;
+  };
+  const average = values => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const rows = [];
+  for (const metric of metrics) {
+    if (metric.load && !loadMode) continue;
+    const prior = priorDates.map(date => getValue(date, metric)).filter(valid);
+    const recent = recentDates.map(date => getValue(date, metric)).filter(valid);
+    if (prior.length < metric.minimum || recent.length < metric.minimum) continue;
+    const priorMean = average(prior), recentMean = average(recent);
+    const delta = recentMean - priorMean;
+    const direction = delta > 0 ? 'gestiegen' : delta < 0 ? 'gesunken' : 'unverändert';
+    const signed = delta > 0 ? '+' : '';
+    rows.push('<div class="kajo-analysis-availability-row"><div><strong>' + escapeHtml(metric.label) +
+      '</strong><small>Vorperiode: ' + fmt(priorMean) + ' · letzte 7 Tage: ' + fmt(recentMean) +
+      ' · Veränderung: ' + signed + fmt(delta) + ' ' + escapeHtml(metric.unit) +
+      '<br>Messabdeckung: ' + prior.length + '/7 und ' + recent.length + '/7 Tage · Quelle: ' + escapeHtml(metric.source) +
+      '</small></div><span>' + direction + '</span></div>');
+  }
+  const events = dates.filter(date => ['sick', 'injured'].includes(healthLogs[date]?.status));
+  const eventNote = events.length
+    ? '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum dokumentierte Gesundheitsereignisse: ' + events.length +
+      ' Tage (' + events.map(dateLabel).join(', ') + '). Das ist eine Dokumentationszählung, keine vollständige Erfassung des Gesundheitsstatus.</p>'
+    : '<p class="kajo-analysis-chart-note">Keine Erkrankungs- oder Verletzungstage dokumentiert. Daraus lässt sich kein unauffälliger Gesundheitsstatus ableiten.</p>';
+  root.innerHTML = rows.length
+    ? '<div class="kajo-analysis-availability">' + rows.join('') + '</div>' + eventNote +
+      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Garmin-Form und TSB bleiben getrennte Indikatoren.</p>'
+    : '<p class="kajo-analysis-chart-note">Für zwei aufeinanderfolgende Sieben-Tage-Zeiträume liegen nicht genügend vergleichbare Messwerte vor. Es wird kein Trend abgeleitet.</p>' + eventNote;
+}
+
 function renderHealthMarkers(dates) {
   const root = document.getElementById('analysis-overview-health-markers');
   if (!root) return;
@@ -834,6 +912,7 @@ export function renderAnalysisOverview() {
   renderDataAvailability(rangeDates(currentRange()));
   renderReadinessBreakdown(rangeDates(currentRange()));
   renderFitnessRecoveryContext(rangeDates(currentRange()));
+  renderTrendObservations(rangeDates(currentRange()));
   renderHealthEventContext(rangeDates(currentRange()));
   renderNextDayContext(rangeDates(currentRange()));
   renderLoadRecoveryAssociation(rangeDates(currentRange()));
