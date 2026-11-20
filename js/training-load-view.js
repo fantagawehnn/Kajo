@@ -9,6 +9,7 @@ import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { getHeartRateZoneAnalysis } from './training-load.js?v=8';
 import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } from './training-load-zones.js?v=1';
+import { setChartEmptyState } from './charts.js?v=14';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
 const charts=Object.create(null);
@@ -22,7 +23,16 @@ const fmtDuration=minutes=>{if(!valid(minutes))return '—';const n=Math.round(N
 const setText=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value==null?'':String(value);};
 const setVisible=(id,visible)=>document.getElementById(id)?.classList.toggle('hidden',!visible);
 function destroyChart(key){if(charts[key]){charts[key].destroy();delete charts[key];}}
-function chartBase(id,key,config){const canvas=document.getElementById(id);if(!canvas||typeof Chart!=='function')return;destroyChart(key);charts[key]=new Chart(canvas.getContext('2d'),config);}
+function chartBase(id,key,config){
+ const canvas=document.getElementById(id);if(!canvas)return;
+ destroyChart(key);
+ if(typeof Chart!=='function'){setChartEmptyState(canvas,'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.',true);return;}
+ const datasets=Array.isArray(config?.data?.datasets)?config.data.datasets:[];
+ const hasValues=datasets.some(dataset=>Array.isArray(dataset.data)&&dataset.data.some(value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))));
+ if(!hasValues){setChartEmptyState(canvas,'Für diesen Zeitraum liegen keine auswertbaren Werte für dieses Diagramm vor.',true);return;}
+ setChartEmptyState(canvas,'',false);
+ charts[key]=new Chart(canvas.getContext('2d'),config);
+}
 function todayKey(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function getRange(){
  if(state.activeTimeframe==='custom'){const from=document.getElementById('date-from')?.value,to=document.getElementById('date-to')?.value;if(from&&to&&from<=to)return{from,to};}
