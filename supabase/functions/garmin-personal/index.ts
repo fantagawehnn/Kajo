@@ -835,10 +835,7 @@ async function syncGarminActivitiesForUser(
       const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
       const parsedStart = rawStart ? new Date(String(rawStart)) : null;
       const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
-      const localStart = typeof activity.startTimeLocal === "string" ? activity.startTimeLocal : "";
-      const activityDate = /^\\d{4}-\\d{2}-\\d{2}/.test(localStart)
-        ? localStart.slice(0, 10)
-        : startTime?.slice(0, 10) ?? null;
+      const activityDate = resolveGarminActivityDate(activity);
       if (activityDate && activityDate >= range.startDate && activityDate <= range.endDate) {
         activityCounts.set(activityDate, (activityCounts.get(activityDate) ?? 0) + 1);
       }
