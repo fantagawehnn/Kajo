@@ -218,7 +218,7 @@ function renderFitnessRecoveryContext(dates) {
     const formUnit = row.garminMode ? ' %' : ' ' + row.unit;
     return '<div class="kajo-analysis-availability-row"><div><strong>' +
       escapeHtml(new Date(row.date + 'T12:00:00').toLocaleDateString('de-DE')) +
-      '</strong><small>CTL: ' + formatLoad(ctl) + ' · ATL: ' + formatLoad(atl) +
+      '</strong><small>CTL: ' + (valid(ctl) ? fmt(ctl) + ' ' + escapeHtml(row.unit) : '—') + ' · ATL: ' + (valid(atl) ? fmt(atl) + ' ' + escapeHtml(row.unit) : '—') +
       '<br>' + formLabel + ': ' + (valid(form) ? fmt(form) + formUnit : '—') +
       ' · Load-Modell: ' + escapeHtml(row.mode || 'keine Modellangabe') +
       '<br>Garmin-HRV: ' + (valid(row.hrv) ? fmt(row.hrv) + ' ms' : '—') +
