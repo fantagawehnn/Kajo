@@ -278,6 +278,64 @@ function calculateSessionRpeLoad(activity) {
     if (!activity?.date || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(rpe) || rpe < 0 || rpe > 10) return null;
     return Number((duration * rpe).toFixed(1));
 }
+/**
+ * Source coverage for a selected period. Counts activities by the source that
+ * actually contributes to the chosen KAJO load model; sources are never mixed.
+ */
+export function summarizeTrainingLoadSourceCoverage(records, settings, profile, dailyCheckins = {}) {
+    const activities = (Array.isArray(records) ? records : []).filter(activity => activity?.date);
+    const data = getTrainingLoadData(activities, settings, profile, dailyCheckins);
+    const loadedByActivity = new Map(data.records.map(item => [item.activity, item]));
+    const summary = {
+        activityCount: activities.length,
+        garminEligibleCount: activities.filter(isGarminActivity).length,
+        nonGarminCount: activities.filter(activity => !isGarminActivity(activity)).length,
+        currentHeartRateCount: 0,
+        limitedHeartRateCount: 0,
+        cachedHeartRateCount: 0,
+        manualEstimateCount: 0,
+        heartRateWithoutLoadCount: 0,
+        missingUsableHeartRateCount: 0,
+        nativeLoadAvailableCount: data.comparisonRecords?.length || 0,
+        srpeCount: 0,
+        missingSrpeCount: 0,
+        model: data.mode
+    };
+    if (data.mode === 'srpe') {
+        summary.srpeCount = data.records.length;
+        summary.missingSrpeCount = Math.max(0, activities.length - data.records.length);
+        return summary;
+    }
+    activities.filter(isGarminActivity).forEach(activity => {
+        const item = loadedByActivity.get(activity);
+        if (item?.source === 'manual-estimate') {
+            summary.manualEstimateCount++;
+            return;
+        }
+        if (item?.source === 'heart-rate') {
+            if (item.dataQuality === 'limited') summary.limitedHeartRateCount++;
+            else {
+                const series = getGarminHeartRateSeries(activity);
+                const validSamples = Array.isArray(series?.hr)
+                    ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
+                        && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length
+                    : 0;
+                if (validSamples >= 2) summary.currentHeartRateCount++;
+                else summary.cachedHeartRateCount++;
+            }
+            return;
+        }
+        const series = getGarminHeartRateSeries(activity);
+        const validSamples = Array.isArray(series?.hr)
+            ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length
+            : 0;
+        if (validSamples >= 2) summary.heartRateWithoutLoadCount++;
+        else summary.missingUsableHeartRateCount++;
+    });
+    return summary;
+}
+
 export function getTrainingLoadData(records, settings, profile, dailyCheckins = {}) {
     const list = Array.isArray(records) ? records : [];
     const eligible = list.filter(activity => activity?.date);
