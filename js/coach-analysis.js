@@ -419,7 +419,7 @@ function summarizeCheckIns(checkIns) {
     }, 'bpm');
 
     const metricDefinitions = {
-        hrvMs: { unit: 'ms', select: item => validNumber(item?.garminHrv) && Number(item.garminHrv) > 0 ? Number(item.garminHrv) : validNumber(item?.hrv) && item?.measurementSources?.hrv?.unit === 'ms' ? Number(item.hrv) : null },
+        hrvMs: { unit: 'ms', select: item => validNumber(item?.garminHrv) && Number(item.garminHrv) > 0 ? Number(item.garminHrv) : validNumber(item?.hrv) && item?.measurementSources?.hrv?.unit === 'ms' && typeof item?.measurementSources?.hrv?.source === 'string' && item.measurementSources.hrv.source.trim() ? Number(item.hrv) : null },
         rhrBpm: { unit: 'bpm', select: item => validNumber(item?.garminRhr) && Number(item.garminRhr) > 0 ? Number(item.garminRhr) : validNumber(item?.rhr) && Number(item.rhr) > 0 ? Number(item.rhr) : null },
         sleepDuration: { unit: 'h', select: item => selectGarminFirstMetric(item, 'garminSleepDuration', 'sleepDuration')?.value ?? null },
         sleepScore: { unit: 'points', select: item => selectGarminFirstMetric(item, 'garminSleepScore', 'sleepScore')?.value ?? null },
