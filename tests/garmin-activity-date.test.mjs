@@ -9,6 +9,8 @@ test('uses the Garmin local calendar date when it is available', () => {
 
 test('falls back to a valid GMT timestamp when local date is unavailable', () => {
   assert.equal(resolveGarminActivityDate({ startTimeGMT: '2026-06-04T06:35:12Z' }), '2026-06-04');
+  assert.equal(resolveGarminActivityDate({ startTimeLocal: 1787909585000 }), '2026-08-28');
+  assert.equal(resolveGarminActivityDate({ startTimeLocal: '1787909585000' }), '2026-08-28');
 });
 
 test('returns null for missing or invalid timestamps', () => {
