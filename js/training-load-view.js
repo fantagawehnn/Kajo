@@ -8,7 +8,7 @@ import { calculateGarminZoneLoad, summarizeTrainingLoadSourceCoverage } from './
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { getHeartRateZoneAnalysis } from './training-load.js?v=9';
-import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } from './training-load-zones.js?v=1';
+import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin, hasZoneModelData, getZoneChartValues } from './training-load-zones.js?v=1';
 import { setChartEmptyState } from './charts.js?v=14';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
@@ -127,14 +127,8 @@ function renderLoadTrend(timeline,activities){
 }
 function modelKeys(){return selectedModel==='compare'?['kajo','edwards']:[selectedModel];}
 function modelName(key){return key==='kajo'?'KAJO · HF-Reserve':'Edwards · %HFmax';}
-function hasZoneModelData(analysis,key){return Number(analysis?.coverage?.[key==='kajo'?'activitiesWithKajoZones':'activitiesWithEdwards']||0)>0;}
-function zoneValues(seconds,hasData=true){
- if(!hasData||!Array.isArray(seconds)||seconds.length<5||!seconds.every(valid))return [null,null,null,null,null];
- const values=seconds.slice(0,5).map(Number),total=values.reduce((sum,value)=>sum+value,0);
- return zoneDisplayMode==='percent'?(total>0?values.map(value=>Number((value/total*100).toFixed(1))):[null,null,null,null,null]):values.map(value=>Number((value/60).toFixed(1)));
-}
 function renderZoneChart(analysis){
- const keys=modelKeys(),rows=keys.map(key=>({key,label:modelName(key),hasData:hasZoneModelData(analysis,key),values:zoneValues(analysis[key].zonesSeconds,hasZoneModelData(analysis,key))}));
+ const keys=modelKeys(),rows=keys.map(key=>({key,label:modelName(key),hasData:hasZoneModelData(analysis.coverage,key),values:getZoneChartValues(analysis[key].zonesSeconds,zoneDisplayMode,hasZoneModelData(analysis.coverage,key))}));
  const datasets=zoneNames.map((name,index)=>({label:name,data:rows.map(row=>row.values[index]),backgroundColor:zoneColors[index],borderWidth:0,borderRadius:3,barThickness:18,stack:'zone-'+(keys.length>1?'comparison':'single')}));
  chartBase('training-load-zone-chart','zoneChart',{type:'bar',data:{labels:rows.map(row=>row.label),datasets},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,beginAtZero:true,max:zoneDisplayMode==='percent'?100:undefined,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:'#7d8a98'},title:{display:true,text:zoneDisplayMode==='percent'?'Anteil der erfassten Zonenzeit (%)':'Zeit (Minuten)',color:'#7d8a98'}},y:{stacked:true,grid:{display:false},ticks:{color:'#a9b5c2'}}},plugins:{legend:{display:true,position:'bottom',labels:{color:'#a9b5c2',usePointStyle:true,boxWidth:8,padding:12}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.x)+(zoneDisplayMode==='percent'?' %':' min')}}}}});
  setText('training-load-zone-totals',rows.map(row=>row.label+': '+(row.hasData?fmt(analysis[row.key].totalZoneMinutes)+' min · gewichteter Index '+fmt(analysis[row.key].weightedLoad)+' Punkte':'keine auswertbaren HF-Zonenaktivitäten im Zeitraum')).join('  |  '));
