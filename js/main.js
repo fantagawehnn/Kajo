@@ -2668,10 +2668,17 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
         const activity = activities[index];
         if (isCacheCurrent(activity)) {
             if (activity?.garminAnalysis?.status === 'unavailable') {
-                const rawId = activity?.sourceRefs?.garminActivityId
-                    ?? activity?.garminData?.activityId ?? activity?.id;
-                const id = String(rawId ?? '').replace(/^garmin-/, '');
-                if (/^\d+$/.test(id)) unavailableCacheCandidates.push({ activity, id });
+                const series = getGarminHeartRateSeries(activity);
+                if (series?.hr?.length >= 2) {
+                    const summary = buildGarminActivityAnalysis(activity, state.settings, state.profile, state.dailyCheckins);
+                    activity.garminAnalysis = summary || unavailableCacheFor(activity);
+                    calculated++;
+                } else {
+                    const rawId = activity?.sourceRefs?.garminActivityId
+                        ?? activity?.garminData?.activityId ?? activity?.id;
+                    const id = String(rawId ?? '').replace(/^garmin-/, '');
+                    if (/^\d+$/.test(id)) unavailableCacheCandidates.push({ activity, id });
+                }
             }
         } else {
             const series = getGarminHeartRateSeries(activity);
