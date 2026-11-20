@@ -363,6 +363,8 @@ assert.ok(!html.includes('<h1 class="text-2xl sm:text-3xl font-black tracking-ti
 assert.ok(!html.includes('id="analysis-overview-detail-content"'), 'overview keeps detailed analysis in the four dedicated subpages');
 assert.ok(overviewModule.includes('setAnalysisOverviewMetric') && overviewModule.includes('selectedMetrics = new Set'), 'overview exposes multi-series toggles with all currently supported series selected initially');
 assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.includes('baseline: Number(baseline)'), 'overview normalizes supported series to a relative index');
+assert.ok(overviewModule.includes("import { calculateReadiness } from './readiness.js';") && overviewModule.includes("key: 'readiness', label: 'Recovery · Readiness'") && overviewModule.includes('result?.enoughData'), 'overview plots only valid daily readiness scores alongside HRV');
+assert.ok(overviewModule.includes('HRV und Readiness sind deshalb keine unabhängigen Messgrößen'), 'overview explains the shared inputs behind HRV and readiness');
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
