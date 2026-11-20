@@ -174,6 +174,63 @@ function renderFormTrendChart() {
       : 'TSB entspricht CTL minus ATL und nutzt dieselbe Load-Einheit. ') +
     'Modelllücken bleiben sichtbar; Werte verschiedener Load-Quellen werden nicht in einer Linie vermischt.');
 }
+function renderFitnessRecoveryContext(dates) {
+  const root = document.getElementById('analysis-fitness-recovery-context');
+  if (!root) return;
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const rows = dates.map(date => {
+    const day = timeline.get(date);
+    const checkin = checkins[date] || {};
+    const mode = day?.loadMode || '';
+    const garminMode = mode === 'garmin-native' || mode === 'garmin-zone';
+    const ctl = valid(day?.ctl) ? Number(day.ctl) : null;
+    const atl = valid(day?.atl) ? Number(day.atl) : null;
+    const formValue = garminMode
+      ? (valid(day?.formPct) ? Number(day.formPct) : null)
+      : (valid(day?.tsb) ? Number(day.tsb) : null);
+    const hrvRaw = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const hrv = valid(hrvRaw) && Number(hrvRaw) > 0 ? Number(hrvRaw) : null;
+    const readinessResult = date <= todayKey() && checkins[date] ? calculateReadiness(date, state) : null;
+    const readiness = readinessResult?.enoughData && valid(readinessResult.score) ? Number(readinessResult.score) : null;
+    const vo2max = getGarminCheckinMetric(checkin, 'vo2max');
+    const healthStatus = state.healthLogs?.[date]?.status;
+    const health = healthStatus === 'sick' ? 'Erkrankung dokumentiert' : healthStatus === 'injured' ? 'Verletzung dokumentiert' : null;
+    const hasAny = ctl !== null || atl !== null || formValue !== null || hrv !== null || readiness !== null || valid(vo2max) || health;
+    return hasAny ? { date, mode, unit: day?.loadUnit || 'Load-Punkte', ctl, atl, formValue, garminMode, hrv, readiness, vo2max: valid(vo2max) ? Number(vo2max) : null, health } : null;
+  }).filter(Boolean);
+  if (!rows.length) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum liegen keine passenden Fitness-, Recovery- oder Gesundheitswerte für eine gemeinsame zeitliche Einordnung vor.</p>';
+    return;
+  }
+  const modeCounts = new Map();
+  rows.filter(row => row.mode).forEach(row => modeCounts.set(row.mode, (modeCounts.get(row.mode) || 0) + 1));
+  const selectedMode = [...modeCounts.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] || '';
+  const visible = rows.slice(-12).reverse();
+  const formatLoad = value => valid(value) ? fmt(value) : '—';
+  const cards = visible.map(row => {
+    const sameMode = !row.mode || !selectedMode || row.mode === selectedMode;
+    const ctl = sameMode ? row.ctl : null;
+    const atl = sameMode ? row.atl : null;
+    const form = sameMode ? row.formValue : null;
+    const formLabel = row.garminMode ? 'Garmin-Form' : 'TSB';
+    const formUnit = row.garminMode ? ' %' : ' ' + row.unit;
+    return '<div class="kajo-analysis-availability-row"><div><strong>' +
+      escapeHtml(new Date(row.date + 'T12:00:00').toLocaleDateString('de-DE')) +
+      '</strong><small>CTL: ' + formatLoad(ctl) + ' · ATL: ' + formatLoad(atl) +
+      '<br>' + formLabel + ': ' + (valid(form) ? fmt(form) + formUnit : '—') +
+      ' · Load-Modell: ' + escapeHtml(row.mode || 'keine Modellangabe') +
+      '<br>Garmin-HRV: ' + (valid(row.hrv) ? fmt(row.hrv) + ' ms' : '—') +
+      ' · Readiness: ' + (valid(row.readiness) ? Math.round(row.readiness) + ' / 100' : '—') +
+      '<br>Garmin-VO₂max: ' + (valid(row.vo2max) ? fmt(row.vo2max) + ' ml/kg/min' : '—') +
+      (row.health ? '<br><strong>' + escapeHtml(row.health) + '</strong>' : '') +
+      '</small></div><span>' + (row.health ? '!' : '·') + '</span></div>';
+  }).join('');
+  root.innerHTML = '<div class="kajo-analysis-availability">' + cards + '</div>' +
+    (rows.length > visible.length ? '<p class="kajo-analysis-chart-note">' + (rows.length - visible.length) + ' weitere Tage mit Messwerten liegen im gewählten Zeitraum vor.</p>' : '') +
+    '<p class="kajo-analysis-chart-note">Zeitliche Gegenüberstellung der gespeicherten Tageswerte, keine Kausalitäts- oder Wirkungsanalyse. CTL, ATL und TSB werden nur innerhalb desselben Load-Modells interpretiert; Garmin-Form ist ein eigener Prozentindikator und nicht mit TSB gleichzusetzen. Bei abweichendem Load-Modell werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt. HRV und Readiness sind nicht unabhängig, da HRV in die Readiness eingehen kann. Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch. Fehlende Werte bleiben offen; fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden.</p>';
+}
+
 function renderHealthMarkers(dates) {
   const root = document.getElementById('analysis-overview-health-markers');
   if (!root) return;
@@ -775,6 +832,7 @@ export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderDataAvailability(rangeDates(currentRange()));
   renderReadinessBreakdown(rangeDates(currentRange()));
+  renderFitnessRecoveryContext(rangeDates(currentRange()));
   renderHealthEventContext(rangeDates(currentRange()));
   renderNextDayContext(rangeDates(currentRange()));
   renderLoadRecoveryAssociation(rangeDates(currentRange()));
