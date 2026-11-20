@@ -25,9 +25,10 @@ test('rescans days without coverage and days whose stored activity count disagre
   assert.deepEqual(result.ranges, [
     { startDate: '2026-06-01', endDate: '2026-06-01' },
     { startDate: '2026-06-03', endDate: '2026-06-03' },
+    { startDate: '2026-06-05', endDate: '2026-06-05' },
   ]);
-  assert.equal(result.scannedDaysToRetry, 2);
-  assert.equal(result.skippedDays, 3);
+  assert.equal(result.scannedDaysToRetry, 3);
+  assert.equal(result.skippedDays, 2);
 });
 
 test('keeps matching historical coverage and groups consecutive missing days into 14-day ranges', () => {
@@ -53,7 +54,8 @@ test('supports numeric Garmin epoch timestamps in stored activity rows', () => {
     endDate: '2026-08-28',
     coveredRows: [{ sync_date: '2026-08-28', activity_count: 1 }],
     storedActivities: [{ activity: { startTimeLocal: 1787909585000 } }],
-    rescanAnchorDate: '2026-08-01',
+    rescanAnchorDate: '2026-08-28',
+    scanWindowDays: 1,
   });
   assert.equal(result.ranges.length, 0);
   assert.equal(result.skippedDays, 1);
