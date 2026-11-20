@@ -9141,43 +9141,22 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-analysis-availability-row > span { flex:0 0 auto; color:var(--kajo-text,#e2e8f0); font-size:11px; font-weight:650; text-align:right; font-variant-numeric:tabular-nums; }
 @media (max-width:520px) { .kajo-analysis-availability-row { align-items:flex-start; padding:11px 12px; gap:8px; } .kajo-analysis-availability-row > span { max-width:42%; white-space:normal; } }
 
-/* Consistent empty states: chart space remains intentional, never an unexplained blank. */
-.kajo-chart-empty-state { position:absolute; inset:0; display:grid; place-items:center; padding:14px 18px; border:1px dashed var(--kajo-border,rgba(148,163,184,.28)); border-radius:10px; color:var(--kajo-text-secondary,#94a3b8); background:color-mix(in srgb,var(--kajo-surface,transparent) 88%,transparent); font-size:11px; line-height:1.5; text-align:center; }
-.has-chart-empty-state { position:relative!important; min-height:76px!important; height:auto!important; }
-.kajo-analysis-chart-wrap.has-chart-empty-state,.kajo-performance-chart-wrap.has-chart-empty-state,.kajo-health-chart-wrap.has-chart-empty-state { min-height:190px!important; height:190px!important; }
-.kajo-analysis-bar-wrap.has-chart-empty-state,.kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
-@media(max-width:640px){ .kajo-chart-empty-state { padding:12px; font-size:10px; } .kajo-analysis-chart-wrap.has-chart-empty-state,.kajo-performance-chart-wrap.has-chart-empty-state,.kajo-health-chart-wrap.has-chart-empty-state { min-height:170px!important; height:170px!important; } }
-
-/* Higher-specificity overrides for the compact overview bars. */
-#view-analyses #analysis-subpage-overview .kajo-analysis-sport-distribution > .kajo-analysis-bar-wrap.has-chart-empty-state { height:76px!important; min-height:76px!important; }
-#view-analyses #analysis-subpage-overview .kajo-analysis-intensity-wrap.has-chart-empty-state { height:76px!important; min-height:76px!important; }
-
-/* KAJO analysis: reserve the real chart footprint when a series is unavailable. */
-#view-analyses .kajo-chart-empty-state {
-  position:absolute;
-  inset:0;
-  display:grid;
-  place-items:center;
-  padding:14px 18px;
-  border:1px dashed var(--kajo-border,rgba(148,163,184,.28));
-  border-radius:10px;
-  color:var(--kajo-text-secondary,#94a3b8);
+/* Analysis charts: stable footprints and readable empty states across view sizes. */
+.kajo-chart-empty-state {
+  position:absolute; inset:0; display:grid; place-items:center;
+  padding:14px 18px; border:1px dashed var(--kajo-border,rgba(148,163,184,.28));
+  border-radius:10px; color:var(--kajo-text-secondary,#94a3b8);
   background:var(--kajo-surface-raised,rgba(15,23,42,.24));
-  font-size:11px;
-  line-height:1.5;
-  text-align:center;
-  overflow-wrap:anywhere;
+  font-size:11px; line-height:1.5; text-align:center; overflow-wrap:anywhere;
 }
 #view-analyses .has-chart-empty-state {
-  position:relative!important;
-  min-height:190px!important;
-  height:190px!important;
-  box-sizing:border-box;
+  position:relative!important; min-height:76px!important; height:auto!important; box-sizing:border-box;
 }
+#view-analyses .kajo-analysis-chart-wrap.has-chart-empty-state { min-height:210px!important; height:230px!important; }
+#view-analyses .kajo-training-load-chart-wrap.has-chart-empty-state { min-height:190px!important; height:clamp(190px,28vw,260px)!important; }
+#view-analyses .kajo-performance-chart-wrap.has-chart-empty-state,
+#view-analyses .kajo-health-chart-wrap.has-chart-empty-state { min-height:220px!important; height:250px!important; }
 #view-analyses .kajo-load-weekly-chart.has-chart-empty-state { min-height:94px!important; height:94px!important; }
-#view-analyses .kajo-load-volume-chart.has-chart-empty-state { min-height:180px!important; height:180px!important; }
-#view-analyses .kajo-load-tsb-chart.has-chart-empty-state,
-#view-analyses .kajo-load-zone-summary-chart.has-chart-empty-state { min-height:150px!important; height:150px!important; }
 #view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
 #view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
 #view-analyses .kajo-analysis-overview-panel,
@@ -9186,24 +9165,12 @@ body.kajo-modal-open { overflow: hidden !important; }
 #view-analyses .kajo-analysis-distribution-heading { min-width:0; flex-wrap:wrap; gap:8px; }
 #view-analyses .kajo-analysis-chart-note { overflow-wrap:anywhere; }
 @media(max-width:640px) {
-  #view-analyses .kajo-chart-empty-state { padding:12px; font-size:10px; }
-  #view-analyses .has-chart-empty-state { min-height:170px!important; height:170px!important; }
-  #view-analyses .kajo-load-weekly-chart.has-chart-empty-state { min-height:94px!important; height:94px!important; }
-  #view-analyses .kajo-load-volume-chart.has-chart-empty-state { min-height:170px!important; height:170px!important; }
-  #view-analyses .kajo-load-tsb-chart.has-chart-empty-state,
-  #view-analyses .kajo-load-zone-summary-chart.has-chart-empty-state { min-height:145px!important; height:145px!important; }
-  #view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
-  #view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
-}
-
-/* Match empty-state dimensions to each analysis chart's normal plotting area. */
-#view-analyses .kajo-analysis-chart-wrap.has-chart-empty-state { min-height:210px!important; height:230px!important; }
-#view-analyses .kajo-training-load-chart-wrap.has-chart-empty-state { min-height:190px!important; height:220px!important; }
-#view-analyses .kajo-performance-chart-wrap.has-chart-empty-state,
-#view-analyses .kajo-health-chart-wrap.has-chart-empty-state { min-height:220px!important; height:250px!important; }
-@media(max-width:640px) {
+  .kajo-chart-empty-state { padding:12px; font-size:10px; }
   #view-analyses .kajo-analysis-chart-wrap.has-chart-empty-state { min-height:190px!important; height:210px!important; }
-  #view-analyses .kajo-training-load-chart-wrap.has-chart-empty-state { min-height:180px!important; height:190px!important; }
+  #view-analyses .kajo-training-load-chart-wrap.has-chart-empty-state { min-height:190px!important; height:190px!important; }
   #view-analyses .kajo-performance-chart-wrap.has-chart-empty-state,
   #view-analyses .kajo-health-chart-wrap.has-chart-empty-state { min-height:190px!important; height:210px!important; }
+  #view-analyses .kajo-load-weekly-chart.has-chart-empty-state { min-height:94px!important; height:94px!important; }
+  #view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
+  #view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
 }
