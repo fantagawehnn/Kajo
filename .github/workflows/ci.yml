@@ -76,6 +76,7 @@ jobs:
           node --check js/garmin-export-archive.js
           node --check js/garmin-export-import-core.js
           node --check js/garmin-export-import.js
+          node --check supabase/functions/garmin-personal/activity-date.js
 
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
@@ -130,6 +131,9 @@ jobs:
 
       - name: Run Garmin full export import tests
         run: node --experimental-default-type=module --test tests/garmin-export-import.test.mjs
+
+      - name: Run Garmin activity date parsing tests
+        run: node --experimental-default-type=module --test tests/garmin-activity-date.test.mjs
 
       - name: Run Garmin activity pagination tests
         run: node --experimental-default-type=module --test tests/garmin-activity-pagination.test.mjs
