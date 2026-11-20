@@ -267,7 +267,7 @@ function renderHealthEventContext(dates) {
     const readiness = date <= todayKey() && checkin ? calculateReadiness(date, state) : null;
     const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
     const load = day && valid(day.load)
-      ? fmt(day.load) + ' ' + (day.loadUnit || 'Load-Punkte') + (day.loadMode ? ' · ' + escapeHtml(day.loadMode) : '')
+      ? fmt(day.load) + ' ' + escapeHtml(day.loadUnit || 'Load-Punkte') + (day.loadMode ? ' · ' + escapeHtml(day.loadMode) : '')
       : 'Kein auswertbarer Tagesload';
     const recovery = valid(hrv) && Number(hrv) > 0 ? fmt(hrv) + ' ms Garmin-HRV' : 'Keine eindeutig zugeordnete Garmin-HRV';
     const readinessValue = readiness?.enoughData && valid(readiness.score)
