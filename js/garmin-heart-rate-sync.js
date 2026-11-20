@@ -5,8 +5,12 @@ export function countValidHeartRateSamples(heartRate, time) {
     if (!Array.isArray(heartRate) || !Array.isArray(time) || heartRate.length !== time.length) return 0;
     let count = 0;
     for (let index = 0; index < heartRate.length; index++) {
-        const bpm = Number(heartRate[index]);
-        const seconds = Number(time[index]);
+        const rawBpm = heartRate[index];
+        const rawSeconds = time[index];
+        if (rawBpm === null || rawBpm === undefined || rawBpm === ''
+            || rawSeconds === null || rawSeconds === undefined || rawSeconds === '') continue;
+        const bpm = Number(rawBpm);
+        const seconds = Number(rawSeconds);
         if (Number.isFinite(bpm) && bpm >= 30 && bpm <= 250
             && Number.isFinite(seconds) && seconds >= 0) count++;
     }
