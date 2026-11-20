@@ -460,8 +460,8 @@
   </section>
  </div>
  <div id="analysis-overview-content" class="space-y-4" aria-label="Verlauf und Trainingsverteilung">
-  <section class="kajo-analysis-overview-panel">
-   <div class="kajo-analysis-section-heading kajo-analysis-trend-heading"><h2>Verlauf</h2><div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div></div>
+  <section id="analysis-overview-section-trend" class="kajo-analysis-overview-panel">
+   <div class="kajo-analysis-section-heading kajo-analysis-trend-heading"><h2>Verlauf</h2><button type="button" class="kajo-dashboard-edit-button" onclick="openAnalysisCustomization()">Anpassen</button><div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div></div>
    <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery, Fitness und Health"></canvas></div>
    <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihen ein- oder ausblenden">
     <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Load</button>
@@ -471,7 +471,7 @@
    </nav>
    <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
   </section>
-  <section class="kajo-analysis-overview-panel">
+  <section id="analysis-overview-section-distribution" class="kajo-analysis-overview-panel">
    <div class="kajo-analysis-section-heading"><h2>Trainingsverteilung</h2></div>
    <div class="kajo-analysis-distribution-block">
     <div class="kajo-analysis-distribution-heading"><strong>Nach Sportart</strong>
@@ -493,7 +493,7 @@
     <p id="analysis-overview-intensity-note" class="kajo-analysis-chart-note"></p>
    </div>
   </section>
-  <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-period-summary-title">
+  <section id="analysis-overview-section-period" class="kajo-analysis-overview-panel" aria-labelledby="analysis-period-summary-title">
    <div class="kajo-analysis-section-heading"><h2 id="analysis-period-summary-title">Zeitraum-Bilanz</h2></div>
    <div id="analysis-period-summary" class="kajo-insight-grid" aria-live="polite"></div>
    <p id="analysis-period-summary-note" class="kajo-analysis-chart-note"></p>
@@ -502,6 +502,28 @@
    <p id="analysis-period-canoe-note" class="kajo-analysis-chart-note"></p>
   </section>
  </div>
+
+<div id="analysis-customization-modal" class="hidden fixed inset-0 z-[96] items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="analysis-customization-title" aria-hidden="true">
+ <section class="kajo-dashboard-custom-modal">
+  <div class="kajo-dashboard-custom-heading"><h2 id="analysis-customization-title">Analyse anpassen</h2><button type="button" onclick="closeAnalysisCustomization()" aria-label="Schließen">×</button></div>
+  <p class="kajo-dashboard-custom-note">Passe die Analyseübersicht an. Die Auswahl verändert nur die Darstellung, nicht die zugrunde liegenden Messwerte oder Berechnungen.</p>
+  <h3 class="kajo-dashboard-custom-subtitle">Bereiche und Reihenfolge</h3>
+  <ol id="analysis-customization-list" class="kajo-dashboard-custom-list"></ol>
+  <h3 class="kajo-dashboard-custom-subtitle">Kennzahlen im Verlaufsdiagramm</h3>
+  <div id="analysis-customization-metrics" class="kajo-dashboard-custom-metrics"></div>
+  <div class="kajo-analysis-custom-fields">
+   <label>Standardzeitraum
+    <select id="analysis-customization-period"><option value="7d">Letzte 7 Tage</option><option value="28d">Letzte 28 Tage</option><option value="3m">Letzte 90 Tage</option><option value="6m">Letzte 180 Tage</option><option value="1y">Letztes Jahr</option></select>
+   </label>
+   <label>Trainingsverteilung
+    <select id="analysis-customization-activity"><option value="duration">Nach Dauer</option><option value="sessions">Nach Einheiten</option></select>
+   </label>
+  </div>
+  <p class="kajo-dashboard-custom-note">Der Diagrammtyp des Verlaufs bleibt datenabhängig: KAJO wählt Tages- oder Wochenansichten anhand der vorhandenen Datenabdeckung.</p>
+  <div class="kajo-dashboard-custom-footer"><button type="button" class="kajo-dashboard-custom-reset" onclick="resetAnalysisCustomization()">Standard wiederherstellen</button><button type="button" class="kajo-dashboard-custom-save" onclick="saveAnalysisCustomization()">Speichern</button></div>
+ </section>
+</div>
+
 <div id="analysis-subpage-load" class="space-y-4">
 <div id="load-analysis-metrics" class="hidden" aria-hidden="true"></div>
 <div id="load-analysis-sources" class="hidden" aria-hidden="true"></div>
