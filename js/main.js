@@ -44,7 +44,8 @@ import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSpo
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
-import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds } from './garmin-cloud-telemetry.js?v=5';
+import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds, loadGarminTelemetryMetadataForActivityIds } from './garmin-cloud-telemetry.js?v=6';
+import { shouldRefreshUnavailableGarminAnalysis } from './garmin-analysis-cache.js?v=1';
 import { countValidHeartRateSamples, shouldSkipHeartRateRetry } from './garmin-heart-rate-sync.js?v=1';
 
 /* Selten genutzte Bereiche werden erst bei Bedarf geladen.
@@ -2632,12 +2633,14 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
         const adaptive = getAdaptiveRestingHr(
             state.dailyCheckins, String(activity.date).slice(0, 10), expectedWindow, state.profile
         );
+        const checkedAt = Date.now();
         return {
             version: 1,
             status: 'unavailable',
             // Fehlende Telemetrie ist kein endgültiger Zustand: nach 24 Stunden
-            // erneut prüfen. Geänderte HR-Parameter invalidieren den Cache sofort.
-            retryAfter: Date.now() + 24 * 60 * 60 * 1000,
+            // erneut prüfen. Neuere Cloud-Telemetrie invalidiert den Cache sofort.
+            checkedAt,
+            retryAfter: checkedAt + 24 * 60 * 60 * 1000,
             durationMinutes: Number(activity.duration) || null,
             maxHr: Number(state.profile?.maxHr) || null,
             restingHr: adaptive?.value != null && Number.isFinite(Number(adaptive.value)) ? Number(adaptive.value) : null,
@@ -2659,10 +2662,18 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
         return Boolean(cache.kajo || cache.edwards);
     };
     const pending = [];
+    const unavailableCacheCandidates = [];
     let calculated = 0;
     for (let index = 0; index < activities.length; index++) {
         const activity = activities[index];
-        if (!isCacheCurrent(activity)) {
+        if (isCacheCurrent(activity)) {
+            if (activity?.garminAnalysis?.status === 'unavailable') {
+                const rawId = activity?.sourceRefs?.garminActivityId
+                    ?? activity?.garminData?.activityId ?? activity?.id;
+                const id = String(rawId ?? '').replace(/^garmin-/, '');
+                if (/^\d+$/.test(id)) unavailableCacheCandidates.push({ activity, id });
+            }
+        } else {
             const series = getGarminHeartRateSeries(activity);
             if (series?.hr?.length >= 2) {
                 const summary = buildGarminActivityAnalysis(activity, state.settings, state.profile, state.dailyCheckins);
@@ -2680,6 +2691,27 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
         if (index > 0 && index % 100 === 0) {
             await new Promise(resolve => setTimeout(resolve, 0));
             if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
+        }
+    }
+
+    // Prüfe bei noch gültigen Negativ-Caches nur die Cloud-Zeitstempel. Die
+    // vollständigen Messreihen werden erst geladen, wenn sie neuer als der
+    // Cache sind. So bleiben wiederholte App-Starts daten- und netzwerksparsam.
+    if (unavailableCacheCandidates.length) {
+        try {
+            const metadata = await loadGarminTelemetryMetadataForActivityIds(
+                supabase, userId, unavailableCacheCandidates.map(item => item.id)
+            );
+            if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
+            const metadataById = new Map(metadata.map(item => [String(item.garmin_activity_id), item]));
+            for (const item of unavailableCacheCandidates) {
+                const cloudRecord = metadataById.get(item.id);
+                if (shouldRefreshUnavailableGarminAnalysis(item.activity.garminAnalysis, cloudRecord?.created_at)) {
+                    pending.push(item);
+                }
+            }
+        } catch (error) {
+            console.warn('KAJO: Garmin-Telemetrie-Zeitstempel konnten nicht auf neue Messreihen geprüft werden:', error);
         }
     }
 
