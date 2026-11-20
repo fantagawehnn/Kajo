@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveGarminActivityDate } from "./activity-date.js";
+import { buildGarminActivityRescanPlan } from "./activity-scan-plan.js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://kajo.fantagawehn.workers.dev",
@@ -763,45 +764,41 @@ async function syncGarminActivitiesForUser(
   let skippedDays = 0;
 
   if (onlyMissingDays) {
-    // Existing activity rows are not proof that the complete day was scanned.
-    // Track successful scans separately, including days with zero activities.
+    // A coverage row is trusted only when its activity count agrees with the
+    // activities already stored for that local calendar date.
     const { data: coveredRows, error: coveredError } = await admin
       .from("garmin_activity_sync_days")
-      .select("sync_date")
+      .select("sync_date,activity_count")
       .eq("user_id", userId)
       .gte("sync_date", startDate)
       .lte("sync_date", endDate);
     if (coveredError) throw coveredError;
 
-    const coveredDates = new Set((coveredRows ?? []).map((row) => String(row.sync_date).slice(0, 10)));
-    const recentRescanStart = addUtcDays(rescanAnchorDate, -(scanWindowDays - 1));
-    const datesToScan: string[] = [];
-    const totalDays = Math.floor(
-      (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) / 86400000,
-    ) + 1;
-
-    for (let date = startDate; date <= endDate; date = addUtcDays(date, 1)) {
-      // Revisit recent days to catch late-synced workouts or second sessions.
-      if (!coveredDates.has(date) || date >= recentRescanStart) datesToScan.push(date);
+    const storedActivities: Array<Record<string, unknown>> = [];
+    const storedPageSize = 1000;
+    for (let offset = 0; ; offset += storedPageSize) {
+      const { data: pageRows, error: activitiesError } = await admin
+        .from("garmin_activities")
+        .select("activity,start_time,garmin_activity_id")
+        .eq("user_id", userId)
+        .order("garmin_activity_id", { ascending: true })
+        .range(offset, offset + storedPageSize - 1);
+      if (activitiesError) throw activitiesError;
+      storedActivities.push(...(pageRows ?? []));
+      if (!pageRows || pageRows.length < storedPageSize) break;
     }
-    skippedDays = totalDays - datesToScan.length;
 
-    // Combine consecutive dates into bounded 14-day requests instead of one
-    // Garmin API request per calendar day.
-    syncRanges = [];
-    let index = 0;
-    while (index < datesToScan.length) {
-      const rangeStart = datesToScan[index];
-      let rangeEnd = rangeStart;
-      let count = 1;
-      while (index + count < datesToScan.length && count < 14 &&
-        datesToScan[index + count] === addUtcDays(rangeEnd, 1)) {
-        rangeEnd = datesToScan[index + count];
-        count++;
-      }
-      syncRanges.push({ startDate: rangeStart, endDate: rangeEnd });
-      index += count;
-    }
+    const plan = buildGarminActivityRescanPlan({
+      startDate,
+      endDate,
+      coveredRows: coveredRows ?? [],
+      storedActivities,
+      rescanAnchorDate,
+      scanWindowDays,
+      maxRangeDays: 14,
+    });
+    syncRanges = plan.ranges;
+    skippedDays = plan.skippedDays;
   }
 
   let fetched = 0;
