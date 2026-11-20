@@ -352,13 +352,13 @@
   <section id="home-status-section" class="kajo-home-status" aria-labelledby="home-status-heading">
     <div class="kajo-home-section-heading"><h2 id="home-status-heading">Dein Status</h2><button type="button" class="kajo-dashboard-edit-button" onclick="openDashboardCustomization()" aria-label="Dashboard anpassen">Anpassen</button></div>
     <div class="kajo-readiness-grid">
-      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
+      <button type="button" id="home-readiness-metric" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-recovery')" aria-label="Recovery-Detailanalyse öffnen">
         <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
       </button>
-      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
+      <button type="button" id="home-fatigue-metric" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
         <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Ermüdung</span><small>ATL</small></div></div>
       </button>
-      <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Fitness-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
+      <button type="button" id="home-fitness-metric" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Fitness-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
         <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small>CTL · Fitnessmodell</small></div></div>
       </button>
     </div>
@@ -388,11 +388,11 @@
   <section id="home-wearables-section" class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
     <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Self-Monitoring</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Self-Monitoring öffnen" title="Self-Monitoring öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
     <div class="kajo-circle-grid">
-      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
-      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
-      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-score-ring" aria-label="Sleep-Score-Detailansicht öffnen" onclick="openHealthMetric('sleepScore')"><strong id="home-wear-score" class="kajo-wearable-value">—</strong></button><span>Sleep</span></article>
-      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-duration-ring" aria-label="Schlafdauer-Detailansicht öffnen" onclick="openHealthMetric('sleepDuration')"><strong id="home-wear-duration" class="kajo-wearable-value">—</strong></button><span>Schlaf</span></article>
-      <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-self-stress-ring" aria-label="Stress-Detailansicht öffnen" onclick="openHealthMetric('stress')"><strong id="home-self-stress" class="kajo-wearable-value">—</strong></button><span>Stress</span></article>
+      <article id="home-wear-rhr-item" class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
+      <article id="home-wear-hrv-item" class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
+      <article id="home-wear-score-item" class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-score-ring" aria-label="Sleep-Score-Detailansicht öffnen" onclick="openHealthMetric('sleepScore')"><strong id="home-wear-score" class="kajo-wearable-value">—</strong></button><span>Sleep</span></article>
+      <article id="home-wear-duration-item" class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-duration-ring" aria-label="Schlafdauer-Detailansicht öffnen" onclick="openHealthMetric('sleepDuration')"><strong id="home-wear-duration" class="kajo-wearable-value">—</strong></button><span>Schlaf</span></article>
+      <article id="home-self-stress-item" class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-self-stress-ring" aria-label="Stress-Detailansicht öffnen" onclick="openHealthMetric('stress')"><strong id="home-self-stress" class="kajo-wearable-value">—</strong></button><span>Stress</span></article>
     </div>
   </section>
 
@@ -426,6 +426,8 @@
     <div class="kajo-dashboard-custom-heading"><h2 id="dashboard-customization-title">Dashboard anpassen</h2><button type="button" onclick="closeDashboardCustomization()" aria-label="Schließen">×</button></div>
     <p class="kajo-dashboard-custom-note">Lege fest, welche Bereiche angezeigt werden und in welcher Reihenfolge sie erscheinen.</p>
     <ol id="dashboard-customization-list" class="kajo-dashboard-custom-list"></ol>
+    <h3 class="kajo-dashboard-custom-subtitle">Kennzahlen</h3>
+    <div id="dashboard-customization-metrics" class="kajo-dashboard-custom-metrics"></div>
     <div class="kajo-dashboard-custom-footer">
       <button type="button" class="kajo-dashboard-custom-reset" onclick="resetDashboardCustomization()">Standard wiederherstellen</button>
       <button type="button" class="kajo-dashboard-custom-save" onclick="saveDashboardCustomization()">Speichern</button>
