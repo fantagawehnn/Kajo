@@ -9140,3 +9140,10 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-analysis-availability-row small { color:var(--kajo-text-secondary,#94a3b8); font-size:10px; line-height:1.45; }
 .kajo-analysis-availability-row > span { flex:0 0 auto; color:var(--kajo-text,#e2e8f0); font-size:11px; font-weight:650; text-align:right; font-variant-numeric:tabular-nums; }
 @media (max-width:520px) { .kajo-analysis-availability-row { align-items:flex-start; padding:11px 12px; gap:8px; } .kajo-analysis-availability-row > span { max-width:42%; white-space:normal; } }
+
+/* Consistent empty states: chart space remains intentional, never an unexplained blank. */
+.kajo-chart-empty-state { position:absolute; inset:0; display:grid; place-items:center; padding:14px 18px; border:1px dashed var(--kajo-border,rgba(148,163,184,.28)); border-radius:10px; color:var(--kajo-text-secondary,#94a3b8); background:color-mix(in srgb,var(--kajo-surface,transparent) 88%,transparent); font-size:11px; line-height:1.5; text-align:center; }
+.has-chart-empty-state { position:relative!important; min-height:76px!important; height:auto!important; }
+.kajo-analysis-chart-wrap.has-chart-empty-state,.kajo-performance-chart-wrap.has-chart-empty-state,.kajo-health-chart-wrap.has-chart-empty-state { min-height:190px!important; height:190px!important; }
+.kajo-analysis-bar-wrap.has-chart-empty-state,.kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
+@media(max-width:640px){ .kajo-chart-empty-state { padding:12px; font-size:10px; } .kajo-analysis-chart-wrap.has-chart-empty-state,.kajo-performance-chart-wrap.has-chart-empty-state,.kajo-health-chart-wrap.has-chart-empty-state { min-height:170px!important; height:170px!important; } }
