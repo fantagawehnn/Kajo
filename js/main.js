@@ -45,6 +45,7 @@ import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, load
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds } from './garmin-cloud-telemetry.js?v=5';
+import { countValidHeartRateSamples, shouldSkipHeartRateRetry } from './garmin-heart-rate-sync.js?v=1';
 
 /* Selten genutzte Bereiche werden erst bei Bedarf geladen.
    Die Promise-Caches verhindern parallele Mehrfachimporte. */
@@ -382,24 +383,51 @@ function closeGarminConnectionModal() {
 
 async function callGarminFunction(body) {
     if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich zuerst an.');
-    const { data, error } = await supabase.functions.invoke('garmin-personal', { body });
-    if (error) {
+
+    const readInvocationError = async error => {
+        const response = error?.context;
         let detail = '';
-        const response = error.context;
         if (response && typeof response.clone === 'function') {
             try {
                 const payload = await response.clone().json();
                 detail = payload?.error || payload?.message || '';
             } catch (_) {
-                try {
-                    detail = (await response.clone().text()).slice(0, 500);
-                } catch (_) {}
+                try { detail = (await response.clone().text()).slice(0, 500); } catch (_) {}
             }
         }
-        throw new Error(detail || error.message || 'Die Garmin-Serverfunktion konnte nicht erreicht werden.');
+        return { detail, status: Number(response?.status || error?.status || 0) };
+    };
+
+    let result = await supabase.functions.invoke('garmin-personal', { body });
+    if (result.error) {
+        const firstError = await readInvocationError(result.error);
+        const isSessionError = firstError.status === 401
+            || /Sitzung ungültig|Anmeldung erforderlich|Invalid JWT|invalid claim/i.test(firstError.detail);
+        if (isSessionError) {
+            // Ein abgelaufenes Access-Token einmal über den gespeicherten Refresh-Token erneuern.
+            let refreshResult;
+            try {
+                refreshResult = await supabase.auth.refreshSession();
+            } catch (_) {
+                throw new Error('Die Supabase-Sitzung konnte nicht automatisch erneuert werden. Bitte prüfe die Verbindung und melde dich gegebenenfalls erneut an.');
+            }
+            const refreshed = refreshResult?.data;
+            const refreshError = refreshResult?.error;
+            const refreshedUserId = refreshed?.session?.user?.id || null;
+            if (refreshError || !refreshed?.session || refreshedUserId !== activeAppUserId) {
+                throw new Error('Die Supabase-Sitzung konnte nicht automatisch erneuert werden. Bitte melde dich erneut an.');
+            }
+            result = await supabase.functions.invoke('garmin-personal', { body });
+            if (result.error) {
+                const retryError = await readInvocationError(result.error);
+                throw new Error(retryError.detail || 'Die Sitzung ist weiterhin ungültig. Bitte melde dich erneut an.');
+            }
+        } else {
+            throw new Error(firstError.detail || result.error.message || 'Die Garmin-Serverfunktion konnte nicht erreicht werden.');
+        }
     }
-    if (!data?.ok) throw new Error(data?.error || 'Die Garmin-Anfrage ist fehlgeschlagen.');
-    return data;
+    if (!result.data?.ok) throw new Error(result.data?.error || 'Die Garmin-Anfrage ist fehlgeschlagen.');
+    return result.data;
 }
 
 async function loadGarminActivitiesFromCloud() {
@@ -1220,17 +1248,14 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
         const date = String(activity.date || '').slice(0, 10);
         const hr = Array.isArray(activity.garminTelemetry?.hr) ? activity.garminTelemetry.hr : [];
         const time = Array.isArray(activity.garminTelemetry?.time) ? activity.garminTelemetry.time : [];
-        const validCount = hr.reduce((count, value, index) => {
-            const bpm = Number(value), seconds = Number(time[index]);
-            return count + (Number.isFinite(bpm) && bpm >= 30 && bpm <= 250
-                && Number.isFinite(seconds) && seconds >= 0 ? 1 : 0);
-        }, 0);
         return id != null && /^\d+$/.test(String(id))
             && date >= startDate && date <= endDate
-            && (hr.length < 2 || time.length !== hr.length || validCount < 2);
+            && countValidHeartRateSamples(hr, time) < 2
+            && !shouldSkipHeartRateRetry(activity.garminHeartRateImport);
     });
 
-    let imported = 0, failed = 0;
+    let imported = 0, failed = 0, noHeartRate = 0, insufficientHeartRate = 0;
+    let authFailed = false;
     const errors = [];
     for (let index = 0; index < pending.length; index++) {
         const activity = pending[index];
@@ -1252,37 +1277,62 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
             }
             const hr = Array.isArray(detail?.telemetry?.hr) ? detail.telemetry.hr : [];
             const time = Array.isArray(detail?.telemetry?.time) ? detail.telemetry.time : [];
-            const validHrCount = hr.reduce((count, value, pointIndex) => {
-                const bpm = Number(value), seconds = Number(time[pointIndex]);
-                return count + (Number.isFinite(bpm) && bpm >= 30 && bpm <= 250
-                    && Number.isFinite(seconds) && seconds >= 0 ? 1 : 0);
-            }, 0);
-            if (hr.length < 2 || time.length !== hr.length || validHrCount < 2) {
-                throw new Error('Keine ausreichende HF-Zeitreihe in der FIT-Datei gefunden.');
+            const validHrCount = countValidHeartRateSamples(hr, time);
+            if (validHrCount < 2) {
+                const previousStatus = activity.garminHeartRateImport;
+                activity.garminHeartRateImport = {
+                    status: validHrCount === 0 ? 'no_hr_data' : 'insufficient_hr_data',
+                    checkedAt: new Date().toISOString(),
+                    parserVersion: 1,
+                    recordCount: Number(detail?.recordCount || hr.length || 0),
+                    sampleCount: validHrCount
+                };
+                if (saveDataToLocalStorage() === false) {
+                    activity.garminHeartRateImport = previousStatus;
+                    throw new Error('Der Status der fehlenden HF-Zeitreihe konnte nicht lokal gespeichert werden.');
+                }
+                if (validHrCount === 0) noHeartRate++;
+                else insufficientHeartRate++;
+            } else {
+                const previous = activity.garminTelemetry;
+                const previousStatus = activity.garminHeartRateImport;
+                activity.garminTelemetry = {
+                    ...(previous && typeof previous === 'object' ? previous : {}),
+                    hr: [...hr],
+                    time: [...time]
+                };
+                activity.garminHeartRateImport = {
+                    status: 'imported',
+                    checkedAt: new Date().toISOString(),
+                    parserVersion: 1,
+                    recordCount: Number(detail?.recordCount || hr.length),
+                    sampleCount: validHrCount
+                };
+                if (saveDataToLocalStorage() === false) {
+                    activity.garminTelemetry = previous;
+                    activity.garminHeartRateImport = previousStatus;
+                    throw new Error('Die HF-Zeitreihe konnte nicht lokal gespeichert werden.');
+                }
+                imported++;
+                initEngine();
             }
-
-            const previous = activity.garminTelemetry;
-            activity.garminTelemetry = {
-                ...(previous && typeof previous === 'object' ? previous : {}),
-                hr: [...hr],
-                time: [...time]
-            };
-            if (saveDataToLocalStorage() === false) {
-                activity.garminTelemetry = previous;
-                throw new Error('Die HF-Zeitreihe konnte nicht lokal gespeichert werden.');
-            }
-            imported++;
-            // Jede erfolgreich gespeicherte HF-Zeitreihe aktualisiert die Load-Anzeige.
-            initEngine();
         } catch (error) {
             failed++;
             errors.push(id + ': ' + (error?.message || 'HF-Nachladen fehlgeschlagen'));
             console.warn('Garmin-HF-Zeitreihe konnte nicht nachgeladen werden:', id, error);
+            if (/Supabase-Sitzung|Sitzung ungültig|erneut anmelden|Invalid JWT|Anmeldung erforderlich/i.test(error?.message || '')) {
+                authFailed = true;
+                break;
+            }
         }
-        if (index < pending.length - 1) await new Promise(resolve => setTimeout(resolve, 900));
+        if (index < pending.length - 1 && !authFailed) await new Promise(resolve => setTimeout(resolve, 900));
     }
     if (imported > 0) initEngine();
-    return { total: pending.length, imported, failed, errors };
+    return {
+        total: pending.length, imported, failed, noHeartRate, insufficientHeartRate,
+        remaining: Math.max(0, pending.length - imported - failed - noHeartRate - insufficientHeartRate),
+        authFailed, errors
+    };
 }
 
 async function syncGarminSelectedRange() {
@@ -1306,11 +1356,17 @@ async function syncGarminSelectedRange() {
         try {
             const result = await syncGarminHeartRateRange(startDate, endDate, status);
             status.removeAttribute('aria-busy');
-            status.textContent = result.total === 0
-                ? 'Keine Garmin-Aktivitäten mit fehlender oder unvollständiger HF-Zeitreihe im gewählten Zeitraum gefunden.'
-                : 'HF-Nachladen abgeschlossen: ' + result.imported + '/' + result.total + ' Zeitreihen geladen; ' +
-                    result.failed + ' fehlgeschlagen. Andere Garmin-Daten und Gesundheitsdaten wurden nicht synchronisiert.' +
-                    (result.errors.length ? ' Erste Fehler: ' + result.errors.slice(0, 3).join(' | ') : '');
+            status.textContent = result.authFailed
+                ? 'HF-Nachladen pausiert: Supabase-Sitzung konnte nicht erneuert werden. Bitte melde dich erneut an. ' +
+                    result.imported + ' geladen, ' + result.remaining + ' noch nicht versucht.'
+                : result.total === 0
+                    ? 'Keine Garmin-Aktivitäten mit fehlender oder unvollständiger HF-Zeitreihe im gewählten Zeitraum gefunden.'
+                    : 'HF-Nachladen abgeschlossen: ' + result.imported + '/' + result.total + ' Zeitreihen geladen; ' +
+                        result.noHeartRate + ' ohne HF-Daten in der FIT-Datei; ' +
+                        result.insufficientHeartRate + ' mit zu wenigen HF-Messpunkten; ' +
+                        result.failed + ' technische Fehler. Andere Garmin-Daten und Gesundheitsdaten wurden nicht synchronisiert.' +
+                        (result.remaining ? ' Noch nicht versucht: ' + result.remaining + '.' : '') +
+                        (result.errors.length ? ' Erste Fehler: ' + result.errors.slice(0, 3).join(' | ') : '');
             setGarminSyncIndicator('current', 'Verbunden');
             await refreshGarminConnectionStatus();
         } catch (error) {
@@ -1597,7 +1653,7 @@ function mergeMissingObject(current, incoming) {
 function mergeGarminActivity(existing, incoming) {
     if (!existing || !incoming) return false;
     let changed = false;
-    const protectedKeys = new Set(['id','sourceId','source','sources','sourceRefs','garminData','garminFitImported','garminTelemetry','telemetry']);
+    const protectedKeys = new Set(['id','sourceId','source','sources','sourceRefs','garminData','garminFitImported','garminTelemetry','garminHeartRateImport','telemetry']);
     for (const [key, next] of Object.entries(incoming)) {
         if (protectedKeys.has(key) || next == null || next === '') continue;
         const current = existing[key];
