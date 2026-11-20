@@ -20,5 +20,10 @@ export function normalizeAnalysisPreferences(value) {
     const period = ANALYSIS_PERIODS.includes(value?.defaultPeriod) ? value.defaultPeriod : '3m';
     const activityMeasure = ['duration', 'sessions'].includes(value?.activityMeasure) ? value.activityMeasure : 'duration';
     const performanceRange = ['7d', '28d', '3m', '6m', '1y'].includes(value?.performanceRange) ? value.performanceRange : '28d';
-    return { order, visible, metrics, defaultPeriod: period, activityMeasure, performanceRange };
+    const trainingLoad = {
+        model: ['kajo', 'edwards', 'compare'].includes(value?.trainingLoad?.model) ? value.trainingLoad.model : 'kajo',
+        volumeMeasure: ['duration', 'sessions'].includes(value?.trainingLoad?.volumeMeasure) ? value.trainingLoad.volumeMeasure : 'duration',
+        zoneDisplayMode: ['minutes', 'percent'].includes(value?.trainingLoad?.zoneDisplayMode) ? value.trainingLoad.zoneDisplayMode : 'minutes'
+    };
+    return { order, visible, metrics, defaultPeriod: period, activityMeasure, performanceRange, trainingLoad };
 }
