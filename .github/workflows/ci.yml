@@ -113,6 +113,9 @@ jobs:
       - name: Run Garmin load and coverage tests
         run: node --experimental-default-type=module --test tests/training-load.test.mjs
 
+      - name: Run CTL ATL TSB timeline reference tests
+        run: node --experimental-default-type=module --test tests/training-load-timeline.test.mjs
+
       - name: Run training load chart zone tests
         run: node --experimental-default-type=module --test tests/training-load-zones.test.mjs
 
