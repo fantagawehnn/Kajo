@@ -307,7 +307,8 @@ function renderLoadRecoveryAssociation(dates) {
   const dateSet=new Set(dates),timeline=new Map((state.dailyTimeline||[]).map(day=>[day.date,day]));
   const checkins=state.dailyCheckins||{},pairs=[];
   for(const date of dates){
-    const day=timeline.get(date);if(!day||!valid(day.load)||!day.loadMode||!day.loadUnit)continue;
+    const day=timeline.get(date);
+    if(!day||!['complete','confirmed-rest'].includes(day.dataStatus)||!valid(day.load)||!day.loadMode||!day.loadUnit)continue;
     const next=new Date(date+'T12:00:00');next.setDate(next.getDate()+1);
     const nextDate=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');
     if(!dateSet.has(nextDate)||nextDate>todayKey())continue;
@@ -333,7 +334,7 @@ function renderNextDayContext(dates) {
   const pairs = [];
   for (const date of dates) {
     const day = timeline.get(date);
-    if (!day || !valid(day.load)) continue;
+    if (!day || !['complete', 'confirmed-rest'].includes(day.dataStatus) || !valid(day.load)) continue;
     const next = new Date(date + 'T12:00:00');
     next.setDate(next.getDate() + 1);
     const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
