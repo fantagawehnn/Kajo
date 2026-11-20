@@ -95,8 +95,8 @@ function toRelativeIndex(raw) {
 function updateMetricSwitch() {
   document.querySelectorAll('[data-overview-metric]').forEach(button => {
     const key = button.dataset.overviewMetric;
-    const active = selectedMetrics.has(key);
     const available = key !== 'health' && metricAvailability.has(key);
+    const active = selectedMetrics.has(key) && available;
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
     button.classList.toggle('is-unavailable', !available);
