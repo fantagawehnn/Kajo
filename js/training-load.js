@@ -107,12 +107,23 @@ function getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins) {
 export function getActivityLoadQualityStatus(activity, loadItem, loadMode) {
     if (loadItem?.source === 'heart-rate') {
         const limited = loadItem.dataQuality === 'limited';
+        const series = getGarminHeartRateSeries(activity);
+        const validSamples = Array.isArray(series?.hr)
+            ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length
+            : 0;
+        const cachedOnly = validSamples < 2
+            && Array.isArray(activity?.garminAnalysis?.kajo?.secondsByZone);
         return {
-            status: limited ? 'limited-measured' : 'measured',
-            label: limited ? 'HF-Load · eingeschränkte Messqualität' : 'HF-Load · Messdaten vorhanden',
-            detail: loadItem.dataQualityLabel || (limited
-                ? 'Die HF-Belastung wurde aus einer zeitlich gröberen Aufzeichnung angenähert.'
-                : 'Die HF-Belastung wurde aus der Herzfrequenz-Zeitreihe berechnet.')
+            status: limited ? 'limited-measured' : cachedOnly ? 'cached-measured' : 'measured',
+            label: limited ? 'HF-Load · eingeschränkte Messqualität'
+                : cachedOnly ? 'HF-Load · gespeicherte Analyse'
+                    : 'HF-Load · Messdaten vorhanden',
+            detail: cachedOnly
+                ? 'Der HF-Load stammt aus einer zuvor berechneten und gespeicherten Herzfrequenzanalyse. Die ursprüngliche Zeitreihe liegt in dieser Aktivitätsansicht aktuell nicht lokal vor.'
+                : loadItem.dataQualityLabel || (limited
+                    ? 'Die HF-Belastung wurde aus einer zeitlich gröberen Aufzeichnung angenähert.'
+                    : 'Die HF-Belastung wurde aus der Herzfrequenz-Zeitreihe berechnet.')
         };
     }
     if (loadItem?.source === 'manual-estimate') {
