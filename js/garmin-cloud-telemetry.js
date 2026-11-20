@@ -88,6 +88,36 @@ export async function loadGarminTelemetryForActivityIds(supabase, userId, activi
     }));
 }
 
+/**
+ * Loads only cloud timestamps for selected activity IDs. This lets the
+ * analysis backfill detect telemetry uploaded after a cached "unavailable"
+ * result without downloading the full measurement arrays for every activity.
+ */
+export async function loadGarminTelemetryMetadataForActivityIds(supabase, userId, activityIds = []) {
+    const id = requireContext(supabase, userId);
+    const uniqueIds = Array.from(new Set((Array.isArray(activityIds) ? activityIds : [])
+        .map(value => String(value ?? '').replace(/^garmin-/, ''))
+        .filter(value => /^\\d+$/.test(value))));
+    const rows = [];
+    const QUERY_BATCH_SIZE = 100;
+
+    for (let offset = 0; offset < uniqueIds.length; offset += QUERY_BATCH_SIZE) {
+        const idBatch = uniqueIds.slice(offset, offset + QUERY_BATCH_SIZE);
+        const { data, error } = await supabase
+            .from(TABLE)
+            .select('garmin_activity_id, created_at')
+            .eq('user_id', id)
+            .in('garmin_activity_id', idBatch);
+        if (error) throw error;
+        rows.push(...(Array.isArray(data) ? data : []));
+    }
+
+    return rows.map(row => ({
+        garmin_activity_id: String(row.garmin_activity_id),
+        created_at: row.created_at || null
+    }));
+}
+
 export async function uploadMissingGarminTelemetry(supabase, userId, candidateRecords = []) {
     const id = requireContext(supabase, userId);
     const candidates = new Map();
