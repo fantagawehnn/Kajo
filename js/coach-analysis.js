@@ -1,5 +1,5 @@
 import { calculateGarminZoneLoad } from './training-load.js';
-import { isGarminActivity } from './data-source.js';
+import { isGarminActivity, getGarminHeartRateSeries } from './data-source.js';
 
 /**
  * Deterministische, beschreibende Kennzahlen für den KI-Coach.
@@ -224,14 +224,33 @@ function summarizeLoad(timeline) {
 }
 
 function summarizeHeartRateZones(activities, settings, profile, dailyCheckins = {}) {
-    const eligible = activities.filter(isGarminActivity);
+    const eligible = activities.filter(item => dateKey(item?.date) && isGarminActivity(item));
     const groups = new Map();
     let analyzedCount = 0;
+    let missingUsableHeartRateCount = 0;
+    let usableHeartRateWithoutLoadCount = 0;
+    let cachedHeartRateAnalysisCount = 0;
+    let manualEstimateAvailableCount = 0;
 
     eligible.forEach(activity => {
+        const series = getGarminHeartRateSeries(activity);
+        const validHrSamples = Array.isArray(series?.hr)
+            ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length
+            : 0;
+        const hasUsableHeartRate = validHrSamples >= 2;
+        if (!hasUsableHeartRate) missingUsableHeartRateCount++;
+
         const result = calculateGarminZoneLoad(activity, settings, profile, dailyCheckins);
-        if (!result || !Array.isArray(result.secondsByZone) || result.secondsByZone.length !== 5) return;
+        if (!result || !Array.isArray(result.secondsByZone) || result.secondsByZone.length !== 5) {
+            if (hasUsableHeartRate) usableHeartRateWithoutLoadCount++;
+            if (!hasUsableHeartRate && activity?.manualTrainingLoadEstimate?.source === 'manual-estimate'
+                && validNumber(activity.manualTrainingLoadEstimate.value)
+                && Number(activity.manualTrainingLoadEstimate.value) >= 0) manualEstimateAvailableCount++;
+            return;
+        }
         analyzedCount++;
+        if (!hasUsableHeartRate) cachedHeartRateAnalysisCount++;
         const type = typeof activity.type === 'string' && activity.type.trim() ? activity.type.trim() : 'Nicht angegeben';
         const key = type + '::' + result.zoneSource;
         if (!groups.has(key)) groups.set(key, {
@@ -254,6 +273,15 @@ function summarizeHeartRateZones(activities, settings, profile, dailyCheckins = 
         eligibleGarminActivities: eligible.length,
         analyzedActivities: analyzedCount,
         excludedOrUnanalyzableActivities: eligible.length - analyzedCount,
+        dataCoverage: {
+            analyzedWithCurrentHeartRateSeries: analyzedCount - cachedHeartRateAnalysisCount,
+            analyzedFromCachedHeartRateData: cachedHeartRateAnalysisCount,
+            missingUsableHeartRateSeries: missingUsableHeartRateCount,
+            usableHeartRateButNoCalculatedLoad: usableHeartRateWithoutLoadCount,
+            manualLoadEstimateAvailable: manualEstimateAvailableCount,
+            excludedFromHeartRateZoneAnalysis: Math.max(0, eligible.length - analyzedCount),
+            interpretationLimit: 'Aktivitäten ohne mindestens zwei plausible HF-Messpunkte werden nicht als HF-Zonenbelastung berechnet. Ein vorhandener manueller Load-Schätzwert bleibt eine getrennte Schätzquelle und wird nicht als HF-basierter Load ausgewiesen. Fehlende HF-Daten beweisen nicht, dass Garmin keine Messung aufgezeichnet oder synchronisiert hat.'
+        },
         groups: [...groups.values()].map(group => {
             const totalSeconds = group.secondsByZone.reduce((sum, value) => sum + value, 0);
             return {
