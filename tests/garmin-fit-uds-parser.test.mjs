@@ -41,6 +41,12 @@ test('UDS parser extracts dated RHR and seven-day average with provenance',()=>{
     assert.equal(result.records[0].sevenDayAverageRestingHeartRateBpm,54);
     assert.equal(result.records[0].source,'garmin-uds-export');
 });
+test('UDS parser keeps overnight and weekly HRV averages separate',()=>{
+    const result=extractGarminUdsDailyMetrics({records:[{calendarDate:'2024-02-01',lastNightAvg:68,weeklyAvg:64}]});
+    assert.equal(result.records[0].hrvLastNightAverageMs,68);
+    assert.equal(result.records[0].hrvWeeklyAverageMs,64);
+});
+
 test('UDS parser ignores undated defaults and flags conflicting values',()=>{
     const result=extractGarminUdsDailyMetrics({
         profile:{restingHeartRate:56},
