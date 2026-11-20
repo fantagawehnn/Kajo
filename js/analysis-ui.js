@@ -4,7 +4,7 @@
  */
 import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
-import { getActivityTelemetrySeries } from './charts.js';
+import { getActivityTelemetrySeries, setChartEmptyState } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
@@ -342,10 +342,10 @@ function renderPerformanceTrend(key) {
   if (note) note.textContent = explanation + (values.filter(valid).length ? ' Fehlende Messpunkte bleiben als Lücken erhalten.' : '');
   panel.classList.remove('hidden');
   if (!values.some(valid)) {
-    canvas.classList.add('hidden');
+    setChartEmptyState(canvas, 'Für diese Kennzahl liegen im gewählten Zeitraum keine auswertbaren Messpunkte vor.', true);
     return;
   }
-  canvas.classList.remove('hidden');
+  setChartEmptyState(canvas, '', false);
   performanceChart = new Chart(canvas.getContext('2d'), {
     type:'line',
     data:{labels,datasets:[{label:heading,data:values,borderColor:color,backgroundColor:color+'22',
@@ -519,8 +519,8 @@ function renderHealthRelationships(range) {
   if(note)note.textContent=pairs.length
     ? pairs.length+' Tage mit gleichzeitig dokumentierten Angaben. Jeder Punkt steht für einen Tag. Die Darstellung beschreibt eine zeitliche Gemeinsamkeit, keinen ursächlichen Effekt. Fehlende Angaben werden nicht ergänzt.'
     : 'Für den gewählten Zeitraum liegen noch keine Tage mit gleichzeitig dokumentierten Angaben zu Beschwerden und Trainingseinfluss vor.';
-  if(!pairs.length){canvas.classList.add('hidden');return;}
-  canvas.classList.remove('hidden');
+  if(!pairs.length){setChartEmptyState(canvas,'Keine Tage mit gleichzeitig dokumentierten Angaben zu Beschwerden und Trainingseinfluss im gewählten Zeitraum.',true);return;}
+  setChartEmptyState(canvas,'',false);
   healthRelationshipChart=new Chart(canvas.getContext('2d'),{type:'scatter',
     data:{datasets:[{label:'Dokumentierte Tage',data:pairs,backgroundColor:'#e879a9',pointRadius:5,pointHoverRadius:7}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>{const p=item.raw;return 'Schmerzen: '+p.x+'/5 · Trainingseinfluss: '+p.y+'/5 · '+dateLabel(p.date);}}}},
@@ -564,8 +564,8 @@ function renderHealthTrend(key) {
   if(title)title.textContent=heading;
   if(noteEl)noteEl.textContent=explanation;
   panel.classList.remove('hidden');
-  if(!hasValues){canvas.classList.add('hidden');if(noteEl)noteEl.textContent+=' Für den gewählten Zeitraum liegen keine passenden Messwerte vor.';return;}
-  canvas.classList.remove('hidden');
+  if(!hasValues){setChartEmptyState(canvas,'Für diesen Zeitraum liegen keine passenden Gesundheits- oder Zyklusmesswerte vor.',true);if(noteEl)noteEl.textContent+=' Fehlende Angaben werden nicht ergänzt oder als Nullwerte interpretiert.';return;}
+  setChartEmptyState(canvas,'',false);
   healthChart=new Chart(canvas.getContext('2d'),{
     type,data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
