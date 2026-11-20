@@ -11,6 +11,11 @@ test('activity load quality labels distinguish measured, limited, estimated and 
     assert.equal(getActivityLoadQualityStatus({}, {
         source: 'heart-rate', dataQuality: 'limited', dataQualityLabel: 'Eingeschränkte Näherung aus Garmin-Tagesaufzeichnung'
     }, 'garmin-zone').status, 'limited-measured');
+    assert.equal(getActivityLoadQualityStatus({
+        garminAnalysis: { kajo: { secondsByZone: [60, 60, 60, 0, 0] } }
+    }, {
+        source: 'heart-rate', dataQuality: 'standard'
+    }, 'garmin-zone').status, 'cached-measured');
     assert.equal(getActivityLoadQualityStatus({}, {
         source: 'manual-estimate', value: 40
     }, 'garmin-unavailable').status, 'manual-estimate');
