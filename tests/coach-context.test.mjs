@@ -100,6 +100,47 @@ test('heart-rate zone summary remains explicitly empty when no usable Garmin tel
 });
 
 
+test('Coach data quality explicitly excludes activities without usable heart-rate data from HR-zone load', () => {
+    const summary = buildCoachAnalysisSummary({
+        activities: [{
+            date: '2026-11-19',
+            name: 'Kanu ohne HF',
+            type: 'C1',
+            source: 'garmin',
+            duration: 60,
+            manualTrainingLoadEstimate: { source: 'manual-estimate', value: 42 }
+        }],
+        today: '2026-11-20'
+    });
+
+    const coverage = summary.heartRateZoneDistribution.dataCoverage;
+    assert.equal(summary.heartRateZoneDistribution.eligibleGarminActivities, 1);
+    assert.equal(summary.heartRateZoneDistribution.analyzedActivities, 0);
+    assert.equal(coverage.missingUsableHeartRateSeries, 1);
+    assert.equal(coverage.manualLoadEstimateAvailable, 1);
+    assert.equal(coverage.excludedFromHeartRateZoneAnalysis, 1);
+    assert.match(coverage.interpretationLimit, /nicht als HF-Zonenbelastung berechnet/);
+});
+
+test('Coach data quality separates usable heart-rate series from missing zone/load prerequisites', () => {
+    const summary = buildCoachAnalysisSummary({
+        activities: [{
+            date: '2026-11-19',
+            name: 'Kanu mit HF aber ohne Profilzonen',
+            type: 'C1',
+            source: 'garmin',
+            duration: 60,
+            garminTelemetry: { hr: [130, 145, 160], time: [0, 20, 40] }
+        }],
+        today: '2026-11-20'
+    });
+
+    const coverage = summary.heartRateZoneDistribution.dataCoverage;
+    assert.equal(coverage.missingUsableHeartRateSeries, 0);
+    assert.equal(coverage.usableHeartRateButNoCalculatedLoad, 1);
+    assert.equal(summary.heartRateZoneDistribution.analyzedActivities, 0);
+});
+
 test('weekly volume reports correct ISO calendar week numbers and Monday-Sunday ranges', () => {
     const summary = buildCoachAnalysisSummary({
         activities: [
