@@ -114,7 +114,7 @@ function renderHealthMarkers(dates) {
   root.style.gridTemplateColumns = 'repeat('+dates.length+',minmax(0,1fr))';
   root.style.alignItems = 'center';
   root.style.minHeight = '24px';
-  root.innerHTML = buttons.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:#64748b">Keine dokumentierten Erkrankungen oder Verletzungen im Zeitraum</span>';
+  root.innerHTML = buttons.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:#64748b">Keine Ereignisse dokumentiert · Gesundheitsstatus nicht beurteilbar</span>';
   root.querySelectorAll('[data-health-date]').forEach(button => button.addEventListener('click', () => {
     const date = button.dataset.healthDate, item = logs[date] || {};
     const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
@@ -123,6 +123,33 @@ function renderHealthMarkers(dates) {
     detail.textContent = label+' · '+new Date(date+'T12:00:00').toLocaleDateString('de-DE')+' · '+(item.diagnosis || 'Keine weitere Beschreibung dokumentiert');
     detail.classList.remove('hidden');
   }));
+}
+function renderDataAvailability(dates) {
+  const root = document.getElementById('analysis-data-availability');
+  const note = document.getElementById('analysis-data-availability-note');
+  if (!root) return;
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const activities = getActivitiesInRange(dates);
+  const loadDays = dates.filter(date => { const day = timeline.get(date); return day && valid(day.load); }).length;
+  const hrvDays = dates.filter(date => {
+    const item = checkins[date] || {};
+    const value = item.garminHrv ?? (item.measurementSources?.hrv?.source === 'garmin' ? item.hrv : null);
+    return valid(value) && Number(value) > 0;
+  }).length;
+  const vo2Days = dates.filter(date => valid(getGarminCheckinMetric(checkins[date], 'vo2max'))).length;
+  const healthEntries = Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= dates[0] && date <= dates[dates.length - 1] && ['sick', 'injured'].includes(item?.status));
+  const rows = [
+    ['Training Load', loadDays + ' / ' + dates.length + ' Tagen', loadDays ? 'Tageswerte vorhanden; unbekannte Tage bleiben offen' : 'Keine auswertbaren Tageswerte im Zeitraum'],
+    ['Recovery · HRV', hrvDays + ' Messtagen', hrvDays ? 'Eindeutig als Garmin-HRV zugeordnete Werte' : 'Keine eindeutig zugeordneten Garmin-HRV-Werte'],
+    ['Performance · VO₂max', vo2Days + ' Messtagen', vo2Days ? 'Garmin-Schätzwerte; keine direkte Leistungsdiagnostik' : 'Keine Garmin-VO₂max-Werte im Zeitraum'],
+    ['Health', healthEntries.length + ' dokumentierte Ereignistage', healthEntries.length ? 'Erfasste Krankheits- oder Verletzungseinträge' : 'Keine Ereignisse dokumentiert; Gesundheitsstatus daraus nicht ableitbar'],
+    ['Training', activities.length + ' Aktivitäten', activities.length ? 'Gespeicherte Aktivitäten nach Duplikatprüfung' : 'Keine gespeicherten Aktivitäten im Zeitraum']
+  ];
+  root.innerHTML = rows.map(([label, value, detail]) =>
+    '<div class="kajo-analysis-availability-row"><div><strong>' + escapeHtml(label) + '</strong><small>' + escapeHtml(detail) + '</small></div><span>' + escapeHtml(value) + '</span></div>'
+  ).join('');
+  if (note) note.textContent = 'Die Angaben beschreiben ausschließlich die im gewählten Zeitraum gespeicherten Daten. Sie sind keine Bewertung der Trainingsqualität oder des Gesundheitszustands. Nicht dokumentierte Werte werden nicht als Nullwerte, Ruhetage oder unauffällige Befunde interpretiert.';
 }
 function renderTrendChart() {
   const canvas = document.getElementById('analysis-overview-trend-chart');
@@ -183,6 +210,7 @@ function renderTrendChart() {
     }
   });
   renderHealthMarkers(dates);
+  renderDataAvailability(dates);
   const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
   setText('analysis-overview-trend-note',
     'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
