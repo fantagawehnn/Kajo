@@ -284,6 +284,54 @@ function renderHealthEventContext(dates) {
     (events.length > 8 ? '<p class="kajo-analysis-chart-note">' + (events.length - 8) + ' weitere dokumentierte Ereignistage sind im Zeitraum vorhanden.</p>' : '') +
     '<p class="kajo-analysis-chart-note">Die Werte beschreiben ausschließlich Daten desselben Kalendertags. Sie zeigen zeitliche Koexistenz, keinen ursächlichen Zusammenhang. Load-Methoden und Einheiten bleiben entsprechend ihrer jeweiligen Datenquelle gekennzeichnet; fehlende Werte werden nicht ergänzt.</p>';
 }
+function renderNextDayContext(dates) {
+  const root = document.getElementById('analysis-next-day-context');
+  if (!root) return;
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const dateSet = new Set(dates);
+  const pairs = [];
+  for (const date of dates) {
+    const day = timeline.get(date);
+    if (!day || !valid(day.load)) continue;
+    const next = new Date(date + 'T12:00:00');
+    next.setDate(next.getDate() + 1);
+    const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
+    if (!dateSet.has(nextDate) || nextDate > todayKey()) continue;
+    const checkin = checkins[nextDate] || {};
+    const hrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
+    const hasHrv = valid(hrv) && Number(hrv) > 0;
+    const hasReadiness = readiness?.enoughData && valid(readiness.score);
+    pairs.push({
+      date, nextDate, load: Number(day.load), unit: day.loadUnit || 'Load-Punkte',
+      mode: day.loadMode || 'Belastungsmodell',
+      hrv: hasHrv ? Number(hrv) : null,
+      readiness: hasReadiness ? Number(readiness.score) : null
+    });
+  }
+  const hrvPairs = pairs.filter(item => valid(item.hrv));
+  const readinessPairs = pairs.filter(item => valid(item.readiness));
+  if (!pairs.length) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum gibt es keine auswertbaren Load-Tage mit einem Folgetag innerhalb desselben Zeitraums. Für diese Gegenüberstellung werden keine Werte ergänzt.</p>';
+    return;
+  }
+  const rows = pairs.slice(-10).reverse().map(item =>
+    '<div class="kajo-analysis-availability-row"><div><strong>Load · ' +
+    escapeHtml(new Date(item.date + 'T12:00:00').toLocaleDateString('de-DE')) +
+    ' → Folgetag · ' + escapeHtml(new Date(item.nextDate + 'T12:00:00').toLocaleDateString('de-DE')) +
+    '</strong><small>' + fmt(item.load) + ' ' + escapeHtml(item.unit) + ' · ' + escapeHtml(item.mode) +
+    '<br>Folgetag HRV: ' + (valid(item.hrv) ? fmt(item.hrv) + ' ms' : 'keine Garmin-HRV') +
+    ' · Readiness: ' + (valid(item.readiness) ? Math.round(item.readiness) + ' / 100' : 'nicht ausreichend belegt') +
+    '</small></div><span>+1 Tag</span></div>'
+  ).join('');
+  root.innerHTML =
+    '<div class="kajo-analysis-availability">' + rows + '</div>' +
+    '<p class="kajo-analysis-chart-note">Datenabdeckung im Zeitraum: ' + pairs.length + ' Load-Folgetag-Paare · davon ' +
+    hrvPairs.length + ' mit Garmin-HRV und ' + readinessPairs.length + ' mit ausreichend belegter Readiness. Angezeigt werden die letzten ' +
+    Math.min(10, pairs.length) + ' Paare. Es werden nur aufeinanderfolgende Kalendertage innerhalb des gewählten Zeitraums verglichen.</p>' +
+    '<p class="kajo-analysis-chart-note">Dies ist eine zeitliche Gegenüberstellung (Load an Tag D, Recovery an Tag D+1), keine statistische Korrelation und kein Nachweis eines Trainingseffekts. Load-Modelle und Einheiten können sich unterscheiden und werden deshalb pro Tag ausgewiesen. Fehlende HRV- oder Readiness-Werte bleiben offen.</p>';
+}
 function renderDataAvailability(dates) {
   const root = document.getElementById('analysis-data-availability');
   const note = document.getElementById('analysis-data-availability-note');
@@ -604,6 +652,7 @@ export function renderAnalysisOverview() {
   renderDataAvailability(rangeDates(currentRange()));
   renderReadinessBreakdown(rangeDates(currentRange()));
   renderHealthEventContext(rangeDates(currentRange()));
+  renderNextDayContext(rangeDates(currentRange()));
   renderTrendChart();
   renderFormTrendChart();
   renderActivityChart();
