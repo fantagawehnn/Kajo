@@ -28,7 +28,7 @@ import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './dat
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=6';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { groupHealthEpisodes } from './period-summary.js?v=2';
-import { renderAnalysisPageUI } from './analysis-ui.js?v=14';
+import { renderAnalysisPageUI } from './analysis-ui.js?v=15';
 import { renderWeightView, saveWeightTarget } from './weight-view.js?v=1';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=5';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=12';
