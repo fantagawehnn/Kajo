@@ -397,8 +397,9 @@ export function setChartEmptyState(canvas, message, visible) {
     if (visible) {
         if (!empty) { empty = document.createElement('div'); empty.className = 'kajo-chart-empty-state'; empty.setAttribute('role', 'status'); wrapper.appendChild(empty); }
         empty.textContent = message || 'Für diesen Zeitraum liegen keine auswertbaren Daten vor.';
+        wrapper.classList.add('has-chart-empty-state');
         canvas.classList.add('hidden');
-    } else { empty?.remove(); canvas.classList.remove('hidden'); }
+    } else { empty?.remove(); wrapper.classList.remove('has-chart-empty-state'); canvas.classList.remove('hidden'); }
 }
 export function renderHeartRateZoneDistribution(records, options = {}) {
     const canvas = document.getElementById(options.canvasId || 'heartRateZonesChart');
