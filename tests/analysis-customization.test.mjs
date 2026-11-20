@@ -8,7 +8,9 @@ test('uses the existing analysis defaults', () => {
     visible: { trend: true, distribution: true, period: true },
     metrics: { load: true, recovery: true, performance: true },
     defaultPeriod: '3m',
-    activityMeasure: 'duration'
+    activityMeasure: 'duration',
+    performanceRange: '28d',
+    performanceRange: '28d'
   });
 });
 test('normalizes order, visibility and invalid options', () => {
@@ -32,4 +34,9 @@ test('keeps at least one trend metric visible', () => {
 test('only accepts supported default periods', () => {
   assert.deepEqual(ANALYSIS_PERIODS, ['7d', '28d', '3m', '6m', '1y']);
   assert.equal(normalizeAnalysisPreferences({ defaultPeriod: '1y' }).defaultPeriod, '1y');
+});
+
+test('validates the independent performance detail range', () => {
+  assert.equal(normalizeAnalysisPreferences({ performanceRange: '1y' }).performanceRange, '1y');
+  assert.equal(normalizeAnalysisPreferences({ performanceRange: 'custom' }).performanceRange, '28d');
 });
