@@ -368,6 +368,9 @@ assert.ok(overviewModule.includes("import { calculateReadiness } from './readine
 assert.ok(overviewModule.includes('HRV und Readiness sind deshalb keine unabhängigen Messgrößen'), 'overview explains the shared inputs behind HRV and readiness');
 assert.ok(html.includes('id="analysis-readiness-breakdown"') && overviewModule.includes('function renderReadinessBreakdown') && overviewModule.includes('result.objective') && overviewModule.includes('result.subjective'), 'overview exposes the actual objective and subjective readiness inputs');
 assert.ok(html.includes('id="analysis-health-event-context"') && analysisOverview.includes('renderHealthEventContext'), 'unified overview exposes a cross-domain context for documented health events');
+assert.ok(html.includes('id="analysis-next-day-context"') && analysisOverview.includes('renderNextDayContext'), 'overview exposes a time-shifted load-to-recovery comparison');
+assert.ok(analysisOverview.includes('nextDate > todayKey()') && analysisOverview.includes('dateSet.has(nextDate)'), 'next-day comparison requires a real following day within the selected period');
+assert.ok(analysisOverview.includes('Garmin-HRV') && analysisOverview.includes('keine statistische Korrelation') && analysisOverview.includes('Fehlende HRV- oder Readiness-Werte bleiben offen'), 'lagged context distinguishes source data, missing values and causal limits');
 assert.ok(analysisOverview.includes('Gleicher Kalendertag') && analysisOverview.includes('keinen ursächlichen Zusammenhang') && analysisOverview.includes('Garmin-HRV'), 'health context reports same-day source values without implying causality');
 assert.ok(overviewModule.includes('Physiologie 40 %') && overviewModule.includes('Schlaf 30 %') && overviewModule.includes('subjektives Befinden 30 %'), 'overview explains the established readiness domain weights');
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
