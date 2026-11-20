@@ -106,7 +106,7 @@ test('manual estimated KAJO load fills a missing-HR activity without treating it
     };
     const result = getTrainingLoadData([activity], {}, {});
     assert.equal(result.mode, 'garmin-zone');
-    assert.equal(result.unit, 'KAJO-HF-Punkte');
+    assert.equal(result.unit, 'KAJO-Load-Punkte (HF + Schätzung)');
     assert.equal(result.records.length, 1);
     assert.equal(result.records[0].value, 42.5);
     assert.equal(result.records[0].source, 'manual-estimate');
