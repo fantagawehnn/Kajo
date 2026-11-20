@@ -150,6 +150,13 @@ function renderFormTrendChart() {
     { label: 'ATL · kurzfristig', data: atl, borderColor: '#D98AB5', backgroundColor: '#D98AB5', borderWidth: 2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
     { label: formLabel, data: form, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2.2, tension: .18, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: garminMode ? 'y1' : 'y' }
   ];
+  const formScales = {
+    x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
+    y: { position: 'left', grid: { color: 'rgba(148,163,184,.10)' }, ticks: { color: textColor }, title: { display: true, text: 'CTL / ATL · ' + (latest.loadUnit || 'Load-Punkte'), color: textColor, font: { size: 9 } } }
+  };
+  if (garminMode) {
+    formScales.y1 = { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: textColor }, title: { display: true, text: 'Form · %', color: textColor, font: { size: 9 } } };
+  }
   formChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
     data: { labels: dates.map(dateLabel), datasets },
@@ -160,11 +167,7 @@ function renderFormTrendChart() {
         legend: { display: true, position: 'bottom', labels: { color: textColor, boxWidth: 12, usePointStyle: true, font: { size: 10 } } },
         tooltip: { callbacks: { title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '' } }
       },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
-        y: { position: 'left', grid: { color: 'rgba(148,163,184,.10)' }, ticks: { color: textColor }, title: { display: true, text: 'CTL / ATL · ' + (latest.loadUnit || 'Load-Punkte'), color: textColor, font: { size: 9 } } },
-        ...(garminMode ? { y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: textColor }, title: { display: true, text: 'Form · %', color: textColor, font: { size: 9 } } } : {})
-      }
+      scales: formScales
     }
   });
   setText('analysis-overview-form-note',
