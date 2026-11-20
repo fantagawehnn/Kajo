@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { normalizeAnalysisPreferences, ANALYSIS_PERIODS } from '../js/analysis-customization.js';
+import { normalizeAnalysisPreferences, ANALYSIS_PERIODS } from '../js/analysis-preferences.js';
 
 test('uses the existing analysis defaults', () => {
   assert.deepEqual(normalizeAnalysisPreferences({}), {
