@@ -437,6 +437,11 @@
   </section>
  </div>
  <div id="analysis-overview-content" class="space-y-4" aria-label="Verlauf und Trainingsverteilung">
+  <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-data-availability-title">
+   <div class="kajo-analysis-section-heading"><div><h2 id="analysis-data-availability-title">Datenbasis &amp; Aussagekraft</h2><p class="kajo-analysis-chart-note">Welche Informationen stehen für die Analyse tatsächlich zur Verfügung?</p></div></div>
+   <div id="analysis-data-availability" class="kajo-analysis-availability" aria-live="polite"><p class="kajo-analysis-chart-note">Datenbasis wird ausgewertet …</p></div>
+   <p id="analysis-data-availability-note" class="kajo-analysis-chart-note"></p>
+  </section>
   <section class="kajo-analysis-overview-panel">
    <div class="kajo-analysis-section-heading kajo-analysis-trend-heading"><h2>Verlauf</h2><div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div></div>
    <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery und Fitness"></canvas></div>
