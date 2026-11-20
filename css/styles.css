@@ -9147,3 +9147,7 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-analysis-chart-wrap.has-chart-empty-state,.kajo-performance-chart-wrap.has-chart-empty-state,.kajo-health-chart-wrap.has-chart-empty-state { min-height:190px!important; height:190px!important; }
 .kajo-analysis-bar-wrap.has-chart-empty-state,.kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
 @media(max-width:640px){ .kajo-chart-empty-state { padding:12px; font-size:10px; } .kajo-analysis-chart-wrap.has-chart-empty-state,.kajo-performance-chart-wrap.has-chart-empty-state,.kajo-health-chart-wrap.has-chart-empty-state { min-height:170px!important; height:170px!important; } }
+
+/* Higher-specificity overrides for the compact overview bars. */
+#view-analyses #analysis-subpage-overview .kajo-analysis-sport-distribution > .kajo-analysis-bar-wrap.has-chart-empty-state { height:76px!important; min-height:76px!important; }
+#view-analyses #analysis-subpage-overview .kajo-analysis-intensity-wrap.has-chart-empty-state { height:76px!important; min-height:76px!important; }
