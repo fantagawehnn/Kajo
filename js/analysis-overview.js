@@ -303,26 +303,68 @@ function spearmanCorrelation(pairs,key) {
   return denominator>0?{n:rows.length,value:numerator/denominator,reason:''}:{n:rows.length,value:null,reason:'Keine ausreichende Streuung für eine Rangkorrelation.'};
 }
 function renderLoadRecoveryAssociation(dates) {
-  const root=document.getElementById('analysis-load-recovery-association');if(!root)return;
-  const dateSet=new Set(dates),timeline=new Map((state.dailyTimeline||[]).map(day=>[day.date,day]));
-  const checkins=state.dailyCheckins||{},pairs=[];
-  for(const date of dates){
-    const day=timeline.get(date);
-    if(!day||!['complete','confirmed-rest'].includes(day.dataStatus)||!valid(day.load)||!day.loadMode||!day.loadUnit)continue;
-    const next=new Date(date+'T12:00:00');next.setDate(next.getDate()+1);
-    const nextDate=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');
-    if(!dateSet.has(nextDate)||nextDate>todayKey())continue;
-    const item=checkins[nextDate]||{},rawHrv=item.garminHrv??(item.measurementSources?.hrv?.source==='garmin'?item.hrv:null);
-    const readiness=item?calculateReadiness(nextDate,state):null;
-    pairs.push({load:Number(day.load),mode:String(day.loadMode),unit:String(day.loadUnit),
-      hrv:valid(rawHrv)&&Number(rawHrv)>0?Number(rawHrv):null,
-      readiness:readiness?.enoughData&&valid(readiness.score)?Number(readiness.score):null});
+  const root = document.getElementById('analysis-load-recovery-association');
+  if (!root) return;
+  const dateSet = new Set(dates);
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const healthLogs = state.healthLogs || {};
+  const pairs = [];
+
+  for (const date of dates) {
+    const day = timeline.get(date);
+    if (!day || !['complete', 'confirmed-rest'].includes(day.dataStatus) ||
+        !valid(day.load) || !day.loadMode || !day.loadUnit) continue;
+
+    const next = new Date(date + 'T12:00:00');
+    next.setDate(next.getDate() + 1);
+    const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
+    if (!dateSet.has(nextDate) || nextDate > todayKey()) continue;
+
+    const item = checkins[nextDate] || {};
+    const rawHrv = item.garminHrv ?? (item.measurementSources?.hrv?.source === 'garmin' ? item.hrv : null);
+    const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
+    const eventOnLoadDay = ['sick', 'injured'].includes(healthLogs[date]?.status);
+    const eventOnRecoveryDay = ['sick', 'injured'].includes(healthLogs[nextDate]?.status);
+
+    pairs.push({
+      load: Number(day.load),
+      mode: String(day.loadMode),
+      unit: String(day.loadUnit),
+      hrv: valid(rawHrv) && Number(rawHrv) > 0 ? Number(rawHrv) : null,
+      readiness: readiness?.enoughData && valid(readiness.score) ? Number(readiness.score) : null,
+      healthEvent: eventOnLoadDay || eventOnRecoveryDay
+    });
   }
-  if(!pairs.length){root.innerHTML='<p class="kajo-analysis-chart-note">Keine vollständigen Load-Folgetag-Paare mit eindeutigem Load-Modell und Einheit vorhanden. Eine statistische Auswertung wird nicht berechnet.</p>';return;}
-  if(new Set(pairs.map(p=>p.mode+'|'+p.unit)).size!==1){root.innerHTML='<p class="kajo-analysis-chart-note">Im Zeitraum kommen mehrere Load-Modelle oder Einheiten vor. Diese Werte werden nicht vermischt; eine gemeinsame Rangkorrelation wird nicht berechnet.</p>';return;}
-  const render=(label,result)=>'<div class="kajo-analysis-availability-row"><div><strong>'+label+'</strong><small>Spearman-Rangkorrelation · n = '+result.n+(result.reason?'<br>'+escapeHtml(result.reason):'')+'</small></div><span>'+(valid(result.value)?'rₛ = '+Number(result.value).toLocaleString('de-DE',{maximumFractionDigits:2}):'—')+'</span></div>';
-  root.innerHTML='<div class="kajo-analysis-availability">'+render('Load an Tag D ↔ Garmin-HRV an D+1',spearmanCorrelation(pairs,'hrv'))+render('Load an Tag D ↔ Readiness an D+1',spearmanCorrelation(pairs,'readiness'))+'</div>'+
-    '<p class="kajo-analysis-chart-note">Nur vollständige Folgetag-Paare desselben Load-Modells ('+escapeHtml(pairs[0].mode)+', '+escapeHtml(pairs[0].unit)+') werden verwendet. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>';
+
+  if (!pairs.length) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Keine vollständigen Load-Folgetag-Paare mit eindeutigem Load-Modell und Einheit vorhanden. Eine statistische Auswertung wird nicht berechnet.</p>';
+    return;
+  }
+  if (new Set(pairs.map(pair => pair.mode + '|' + pair.unit)).size !== 1) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Im Zeitraum kommen mehrere Load-Modelle oder Einheiten vor. Diese Werte werden nicht vermischt; eine gemeinsame Rangkorrelation wird nicht berechnet.</p>';
+    return;
+  }
+
+  const withoutLoggedEvent = pairs.filter(pair => !pair.healthEvent);
+  const withLoggedEvent = pairs.filter(pair => pair.healthEvent);
+  const render = (label, result) =>
+    '<div class="kajo-analysis-availability-row"><div><strong>' + label + '</strong><small>Spearman-Rangkorrelation · n = ' +
+    result.n + (result.reason ? '<br>' + escapeHtml(result.reason) : '') + '</small></div><span>' +
+    (valid(result.value) ? 'rₛ = ' + Number(result.value).toLocaleString('de-DE', { maximumFractionDigits: 2 }) : '—') + '</span></div>';
+  const renderGroup = (label, group) =>
+    '<h3 class="kajo-analysis-subheading">' + label + ' · ' + group.length + ' Paare</h3>' +
+    render('Load D ↔ Garmin-HRV D+1', spearmanCorrelation(group, 'hrv')) +
+    render('Load D ↔ Readiness D+1', spearmanCorrelation(group, 'readiness'));
+
+  root.innerHTML =
+    '<div class="kajo-analysis-availability">' +
+    renderGroup('Ohne dokumentierten Krankheits-/Verletzungseintrag an D oder D+1', withoutLoggedEvent) +
+    renderGroup('Mit dokumentiertem Krankheits-/Verletzungseintrag an D oder D+1', withLoggedEvent) +
+    '</div>' +
+    '<p class="kajo-analysis-chart-note">Die Aufteilung ist eine Sensitivitätsbetrachtung und keine statistische Kontrolle von Krankheit oder Verletzung. Ein fehlender Eintrag bedeutet nicht, dass die Person gesund war. Einträge an Belastungstag D oder Recovery-Tag D+1 kennzeichnen das jeweilige Wertepaar.</p>' +
+    '<p class="kajo-analysis-chart-note">Nur vollständige Folgetag-Paare desselben Load-Modells (' + escapeHtml(pairs[0].mode) + ', ' + escapeHtml(pairs[0].unit) +
+    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>';
 }
 
 function renderNextDayContext(dates) {
