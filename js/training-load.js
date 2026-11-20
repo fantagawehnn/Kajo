@@ -100,6 +100,67 @@ function getAdaptiveZoneConfig(activity, settings, profile, dailyCheckins) {
  * Weighted HR-zone minutes: Z1=1 ... Z5=5 points per minute.
  * This is a KAJO index, not TSS and not Garmin's native Training Load.
  */
+/**
+ * Explains which source, if any, supports the active load value for one activity.
+ * Missing HR data is never represented as zero load.
+ */
+export function getActivityLoadQualityStatus(activity, loadItem, loadMode) {
+    if (loadItem?.source === 'heart-rate') {
+        const limited = loadItem.dataQuality === 'limited';
+        return {
+            status: limited ? 'limited-measured' : 'measured',
+            label: limited ? 'HF-Load · eingeschränkte Messqualität' : 'HF-Load · Messdaten vorhanden',
+            detail: loadItem.dataQualityLabel || (limited
+                ? 'Die HF-Belastung wurde aus einer zeitlich gröberen Aufzeichnung angenähert.'
+                : 'Die HF-Belastung wurde aus der Herzfrequenz-Zeitreihe berechnet.')
+        };
+    }
+    if (loadItem?.source === 'manual-estimate') {
+        return {
+            status: 'manual-estimate',
+            label: 'Manuelle Load-Schätzung',
+            detail: 'Dieser Wert wurde manuell geschätzt und ist keine gemessene Herzfrequenzbelastung.'
+        };
+    }
+    if (loadItem?.source === 'srpe' || loadMode === 'srpe') {
+        return loadItem
+            ? {
+                status: 'subjective',
+                label: 'Subjektiver Load · sRPE',
+                detail: 'Berechnet aus Trainingsdauer und subjektiver Anstrengung (RPE), nicht aus Herzfrequenzdaten.'
+            }
+            : {
+                status: 'unavailable',
+                label: 'Keine berechenbare Belastung',
+                detail: 'Für den sRPE-Load fehlen eine gültige Trainingsdauer oder die subjektive RPE-Angabe.'
+            };
+    }
+    if (isGarminActivity(activity)) {
+        const series = getGarminHeartRateSeries(activity);
+        const validSamples = Array.isArray(series?.hr)
+            ? series.hr.filter(value => value !== null && value !== undefined && value !== ''
+                && Number.isFinite(Number(value)) && Number(value) >= 30 && Number(value) <= 250).length
+            : 0;
+        if (validSamples < 2) {
+            return {
+                status: 'unavailable',
+                label: 'Keine berechenbare Belastung',
+                detail: 'Es liegen keine mindestens zwei plausiblen Herzfrequenz-Messpunkte und kein verwendbarer manueller Load-Schätzwert vor.'
+            };
+        }
+        return {
+            status: 'unavailable',
+            label: 'HF-Daten vorhanden · Load nicht berechenbar',
+            detail: 'Eine HF-Zeitreihe ist vorhanden, aber die Belastung konnte mit den aktuellen HF-Zonen- oder Zeitangaben nicht berechnet werden.'
+        };
+    }
+    return {
+        status: 'unavailable',
+        label: 'Keine berechenbare Belastung',
+        detail: 'Für diese Aktivität liegt kein Wert aus der aktuell gewählten Belastungsmethode vor.'
+    };
+}
+
 export function calculateGarminZoneLoad(activity, settings, profile, dailyCheckins = {}) {
     // FIT-Zeitreihen können bei älteren/zusammengeführten Datensätzen bereits
     // vorhanden sein, auch wenn das Import-Flag fehlt. Nur Garmin-Aktivitäten
