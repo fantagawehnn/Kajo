@@ -407,6 +407,11 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
     const summary = document.getElementById(options.summaryId || 'heart-rate-zone-summary');
     const chartKey = options.chartKey || 'zoneChartInstance';
     if (!canvas) return;
+    if (typeof Chart !== 'function') {
+        setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true);
+        if (note) note.textContent = 'Das Diagramm ist momentan nicht verfügbar.';
+        return;
+    }
 
     const catalog = getSportsCatalog();
     const totals = {};
