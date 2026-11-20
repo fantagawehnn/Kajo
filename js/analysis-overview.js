@@ -248,6 +248,42 @@ function renderReadinessBreakdown(dates) {
     '</div>' +
     '<p class="kajo-analysis-chart-note">Berechnung gemäß bestehendem Readiness-Modell: Physiologie 40 %, Schlaf 30 %, subjektives Befinden 30 %; nicht verfügbare Bereiche werden aus der Gewichtung herausgenommen und die übrigen Gewichte angepasst. Mindestens zwei Bereiche müssen verfügbar sein. Der Wert ist ein Orientierungsindex, keine medizinische Diagnose und keine automatische Trainingsfreigabe.</p>';
 }
+function renderHealthEventContext(dates) {
+  const root = document.getElementById('analysis-health-event-context');
+  if (!root) return;
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const checkins = state.dailyCheckins || {};
+  const events = Object.entries(state.healthLogs || {})
+    .filter(([date, item]) => date >= dates[0] && date <= dates[dates.length - 1] && ['sick', 'injured'].includes(item?.status))
+    .sort(([a], [b]) => b.localeCompare(a));
+  if (!events.length) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum sind keine Krankheits- oder Verletzungsereignisse dokumentiert. Daraus lässt sich kein unauffälliger Gesundheitsstatus ableiten.</p>';
+    return;
+  }
+  const cards = events.slice(0, 8).map(([date, item]) => {
+    const day = timeline.get(date);
+    const checkin = checkins[date] || {};
+    const hrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const readiness = date <= todayKey() && checkin ? calculateReadiness(date, state) : null;
+    const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
+    const load = day && valid(day.load)
+      ? fmt(day.load) + ' ' + (day.loadUnit || 'Load-Punkte') + (day.loadMode ? ' · ' + escapeHtml(day.loadMode) : '')
+      : 'Kein auswertbarer Tagesload';
+    const recovery = valid(hrv) && Number(hrv) > 0 ? fmt(hrv) + ' ms Garmin-HRV' : 'Keine eindeutig zugeordnete Garmin-HRV';
+    const readinessValue = readiness?.enoughData && valid(readiness.score)
+      ? Math.round(Number(readiness.score)) + ' / 100'
+      : 'Kein ausreichender Readiness-Wert';
+    const detail = item.diagnosis ? ' · ' + escapeHtml(item.diagnosis) : '';
+    return '<div class="kajo-analysis-availability-row"><div><strong>' +
+      escapeHtml(label) + ' · ' + escapeHtml(new Date(date + 'T12:00:00').toLocaleDateString('de-DE')) +
+      '</strong><small>Gleicher Kalendertag' + detail + '<br>Load: ' + load +
+      '<br>Recovery: ' + recovery + '<br>Readiness: ' + readinessValue +
+      '</small></div><span>' + (item.status === 'sick' ? 'K' : 'V') + '</span></div>';
+  }).join('');
+  root.innerHTML = '<div class="kajo-analysis-availability">' + cards + '</div>' +
+    (events.length > 8 ? '<p class="kajo-analysis-chart-note">' + (events.length - 8) + ' weitere dokumentierte Ereignistage sind im Zeitraum vorhanden.</p>' : '') +
+    '<p class="kajo-analysis-chart-note">Die Werte beschreiben ausschließlich Daten desselben Kalendertags. Sie zeigen zeitliche Koexistenz, keinen ursächlichen Zusammenhang. Load-Methoden und Einheiten bleiben entsprechend ihrer jeweiligen Datenquelle gekennzeichnet; fehlende Werte werden nicht ergänzt.</p>';
+}
 function renderDataAvailability(dates) {
   const root = document.getElementById('analysis-data-availability');
   const note = document.getElementById('analysis-data-availability-note');
@@ -567,6 +603,7 @@ export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderDataAvailability(rangeDates(currentRange()));
   renderReadinessBreakdown(rangeDates(currentRange()));
+  renderHealthEventContext(rangeDates(currentRange()));
   renderTrendChart();
   renderFormTrendChart();
   renderActivityChart();
