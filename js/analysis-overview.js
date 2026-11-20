@@ -113,8 +113,7 @@ function renderTrendChart() {
     key: item.key, label: item.label, unit: item.unit, color: item.color, values: item.raw
   })));
   metricAvailability = new Set(adaptive.series.filter(item => item.available && item.values.some(value => valid(value) && Number(value) > 0)).map(item => item.key));
-  for (const key of [...selectedMetrics]) if (!metricAvailability.has(key)) selectedMetrics.delete(key);
-  if (!selectedMetrics.size && metricAvailability.size) selectedMetrics.add([...metricAvailability][0]);
+  if (![...selectedMetrics].some(key => metricAvailability.has(key)) && metricAvailability.size) selectedMetrics.add([...metricAvailability][0]);
   const datasets = adaptive.series.filter(item => metricAvailability.has(item.key)).map(item => {
     const display = item.chartType === 'line'
       ? carryForwardForDisplay(item.values) : { values: item.values, carried: item.values.map(() => false) };
@@ -227,6 +226,16 @@ function renderTrendChart() {
     'Load basiert auf dem vorhandenen Tagesload, Recovery auf Garmin-HRV und Fitness auf Garmin-VO₂max-Schätzungen. Die Reihen werden relativ zum ersten gültigen Messwert normiert und sind dimensionsübergreifend nicht vergleichbar. ' + healthNote);
   updateMetricSwitch();
 }
+export function applyAnalysisOverviewPreferences(metrics, measure) {
+  const allowed = ['load', 'recovery', 'performance'];
+  const next = new Set(allowed.filter(key => metrics?.[key] !== false));
+  if (!next.size) next.add('load');
+  selectedMetrics = next;
+  if (['duration', 'sessions'].includes(measure)) activityMeasure = measure;
+  renderTrendChart();
+  renderActivityChart();
+}
+
 export function setAnalysisOverviewMetric(metric) {
   if (!['load', 'recovery', 'performance'].includes(metric) || !metricAvailability.has(metric)) return;
   if (selectedMetrics.has(metric)) {
