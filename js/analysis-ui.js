@@ -283,7 +283,8 @@ function renderPerformanceTrend(key) {
   const canvas = document.getElementById('performance-trend-chart');
   const title = document.getElementById('performance-trend-title');
   const note = document.getElementById('performance-trend-note');
-  if (!panel || !canvas || typeof Chart !== 'function') return;
+  if (!panel || !canvas) return;
+  if (typeof Chart !== 'function') { panel.classList.remove('hidden'); setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true); return; }
   if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
   let labels = [], values = [], heading = '', unit = '', explanation = '', color = '#38bdf8';
   if (key === 'vo2max') {
@@ -510,7 +511,8 @@ function renderHealthComparisons(range) {
 function renderHealthRelationships(range) {
   renderHealthComparisons(range);
   const canvas=document.getElementById('health-relationship-chart'),note=document.getElementById('health-relationship-note');
-  if(!canvas||typeof Chart!=='function')return;
+  if(!canvas)return;
+  if(typeof Chart!=='function'){setChartEmptyState(canvas,'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.',true);return;}
   if(healthRelationshipChart){healthRelationshipChart.destroy();healthRelationshipChart=null;}
   const pairs=Object.entries(state.dailyCheckins||{})
     .filter(([date,item])=>date>=range.from&&date<=range.to&&valid(item?.cycle?.pain)&&valid(item?.cycle?.trainingImpact))
@@ -533,7 +535,8 @@ function renderHealthTrend(key) {
   const canvas=document.getElementById('health-trend-chart');
   const title=document.getElementById('health-trend-title');
   const noteEl=document.getElementById('health-trend-note');
-  if(!panel||!canvas||typeof Chart!=='function')return;
+  if(!panel||!canvas)return;
+  if(typeof Chart!=='function'){panel.classList.remove('hidden');setChartEmptyState(canvas,'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.',true);return;}
   if(healthChart){healthChart.destroy();healthChart=null;}
   const dates=healthRangeDates();
   const labels=dates.map(date=>new Date(date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}));
