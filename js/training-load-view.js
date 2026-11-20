@@ -8,8 +8,22 @@ import { getHeartRateZoneAnalysis } from './training-load.js?v=6';
 import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } from './training-load-zones.js?v=1';
 import { prepareAdaptiveSeriesGroup, carryForwardForDisplay } from './chart-series.js?v=1';
 import { showChartSummaryReadout } from './chart-readout.js';
+import { loadPersonalPreferences, savePersonalPreferences } from './personal-preferences.js?v=1';
+import { normalizeAnalysisPreferences } from './analysis-preferences.js?v=1';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
+let trainingLoadPreferencesInitialized=false;
+function initializeTrainingLoadPreferences(){
+ if(trainingLoadPreferencesInitialized)return;
+ const preferences=normalizeAnalysisPreferences(loadPersonalPreferences().analysis).trainingLoad;
+ selectedModel=preferences.model;volumeMeasure=preferences.volumeMeasure;zoneDisplayMode=preferences.zoneDisplayMode;
+ trainingLoadPreferencesInitialized=true;
+}
+function saveTrainingLoadPreferences(){
+ const preferences=loadPersonalPreferences();
+ preferences.analysis={...preferences.analysis,trainingLoad:{model:selectedModel,volumeMeasure,zoneDisplayMode}};
+ savePersonalPreferences(preferences);
+}
 const charts=Object.create(null);
 const periodCounts={'7d':7,'28d':28,'3m':90,'6m':180,'1y':365};
 const zoneNames=['Z1','Z2','Z3','Z4','Z5'];
@@ -209,15 +223,15 @@ export function setTrainingLoadPeriod(period){
  else {state.activeTimeframe=period;renderTrainingLoadView();}
 }
 export function setTrainingLoadSportFilter(sport){selectedSport=sport||'all';renderTrainingLoadView();}
-export function setTrainingLoadVolumeMeasure(measure){if(!['duration','sessions'].includes(measure))return;volumeMeasure=measure;document.querySelectorAll('[data-load-volume]').forEach(button=>{const active=button.dataset.loadVolume===measure;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderLoadTrend(selectedTimeline(),selectedActivities());}
-export function setTrainingLoadZoneDisplayMode(mode){if(!['minutes','percent'].includes(mode))return;zoneDisplayMode=mode;document.querySelectorAll('[data-zone-display]').forEach(button=>{const active=button.dataset.zoneDisplay===mode;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderTrainingLoadView();}
-export function setTrainingLoadModel(model){if(!['kajo','edwards','compare'].includes(model))return;selectedModel=model;document.querySelectorAll('[data-training-load-model]').forEach(button=>{const active=button.dataset.trainingLoadModel===model;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderTrainingLoadView();}
+export function setTrainingLoadVolumeMeasure(measure){if(!['duration','sessions'].includes(measure))return;volumeMeasure=measure;saveTrainingLoadPreferences();document.querySelectorAll('[data-load-volume]').forEach(button=>{const active=button.dataset.loadVolume===measure;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderLoadTrend(selectedTimeline(),selectedActivities());}
+export function setTrainingLoadZoneDisplayMode(mode){if(!['minutes','percent'].includes(mode))return;zoneDisplayMode=mode;saveTrainingLoadPreferences();document.querySelectorAll('[data-zone-display]').forEach(button=>{const active=button.dataset.zoneDisplay===mode;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderTrainingLoadView();}
+export function setTrainingLoadModel(model){if(!['kajo','edwards','compare'].includes(model))return;selectedModel=model;saveTrainingLoadPreferences();document.querySelectorAll('[data-training-load-model]').forEach(button=>{const active=button.dataset.trainingLoadModel===model;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});renderTrainingLoadView();}
 export function setTrainingLoadDailyMeasure(){}
 export function setTrainingLoadChartMetric(){}
 export function openTrainingLoadMetric(){}
 export function closeTrainingLoadMetric(){renderTrainingLoadView();}
 export function renderTrainingLoadView(){
- updateSportOptions();updatePeriodControl();const range=getRange(),activities=selectedActivities(),timeline=selectedTimeline();
+ initializeTrainingLoadPreferences();updateSportOptions();updatePeriodControl();const range=getRange(),activities=selectedActivities(),timeline=selectedTimeline();
  renderRings(timeline);renderVolumeSummary(activities,range);renderLoadTrend(timeline,activities);
  const analysis=getHeartRateZoneAnalysis(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
  renderCoverage(analysis);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);
