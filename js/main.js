@@ -1241,7 +1241,7 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
         const date = String(activity.date || '').slice(0, 10);
         const hr = Array.isArray(activity.garminTelemetry?.hr) ? activity.garminTelemetry.hr : [];
         const time = Array.isArray(activity.garminTelemetry?.time) ? activity.garminTelemetry.time : [];
-        return id != null && /^\\d+$/.test(String(id))
+        return id != null && /^\d+$/.test(String(id))
             && date >= startDate && date <= endDate
             && countValidHeartRateSamples(hr, time) < 2
             && !shouldSkipHeartRateRetry(activity.garminHeartRateImport);
