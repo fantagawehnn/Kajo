@@ -367,6 +367,30 @@ function summarizeSourceAwareMetric(records, selectValue, unit) {
     };
 }
 
+function selectGarminFirstMetric(item, garminKey, fallbackKey) {
+    if (validNumber(item?.[garminKey])) return { value: Number(item[garminKey]), source: 'garmin' };
+    if (validNumber(item?.[fallbackKey])) return { value: Number(item[fallbackKey]), source: 'checkin' };
+    return null;
+}
+
+function summarizeMetricCoverage(checkIns, metricDefinitions) {
+    const metrics = {};
+    for (const [key, definition] of Object.entries(metricDefinitions)) {
+        const count = checkIns.filter(item => definition.select(item) !== null).length;
+        metrics[key] = {
+            observedCount: count,
+            absentFromObservedCheckIns: checkIns.length - count,
+            coveragePct: checkIns.length ? Number((count / checkIns.length * 100).toFixed(1)) : null,
+            unit: definition.unit
+        };
+    }
+    return {
+        observedCheckInCount: checkIns.length,
+        metrics,
+        interpretationLimit: 'Abwesenheit eines Werts in einem Check-in bedeutet nicht automatisch, dass Garmin ihn nicht gemessen oder synchronisiert hat. Diese Übersicht beschreibt ausschließlich die an den Coach übergebenen Check-in-Datensätze; sie unterscheidet keine fehlende Messung von einem Import- oder Synchronisationsproblem.'
+    };
+}
+
 function summarizeCheckIns(checkIns) {
     const hrvMs = summarizeSourceAwareMetric(checkIns, item => {
         // Garmin's dedicated field is authoritative when both representations exist.
@@ -394,20 +418,47 @@ function summarizeCheckIns(checkIns) {
         return null;
     }, 'bpm');
 
-    const fields = ['sleepDuration', 'sleepScore', 'sleepQuality', 'bodyBattery', 'garminStress', 'fatigue', 'soreness', 'motivation', 'stress', 'respiration'];
-    const result = {};
-    fields.forEach(key => { result[key] = mean(checkIns, key); });
-    result.hrvMs = hrvMs;
-    result.rhrBpm = rhrBpm;
+    const metricDefinitions = {
+        hrvMs: { unit: 'ms', select: item => validNumber(item?.garminHrv) && Number(item.garminHrv) > 0 ? Number(item.garminHrv) : validNumber(item?.hrv) && item?.measurementSources?.hrv?.unit === 'ms' ? Number(item.hrv) : null },
+        rhrBpm: { unit: 'bpm', select: item => validNumber(item?.garminRhr) && Number(item.garminRhr) > 0 ? Number(item.garminRhr) : validNumber(item?.rhr) && Number(item.rhr) > 0 ? Number(item.rhr) : null },
+        sleepDuration: { unit: 'h', select: item => selectGarminFirstMetric(item, 'garminSleepDuration', 'sleepDuration')?.value ?? null },
+        sleepScore: { unit: 'points', select: item => selectGarminFirstMetric(item, 'garminSleepScore', 'sleepScore')?.value ?? null },
+        respiration: { unit: 'breaths/min', select: item => selectGarminFirstMetric(item, 'garminRespiration', 'respiration')?.value ?? null },
+        stress: { unit: 'points', select: item => selectGarminFirstMetric(item, 'garminStress', 'stress')?.value ?? null },
+        bodyBattery: { unit: 'points', select: item => selectGarminFirstMetric(item, 'garminBodyBattery', 'bodyBattery')?.value ?? null },
+        spo2: { unit: '%', select: item => validNumber(item?.garminSpo2) ? Number(item.garminSpo2) : null },
+        weight: { unit: 'kg', select: item => validNumber(item?.garminWeight) ? Number(item.garminWeight) : null },
+        steps: { unit: 'steps', select: item => validNumber(item?.garminSteps) ? Number(item.garminSteps) : null },
+        fitnessAge: { unit: 'years', select: item => validNumber(item?.garminFitnessAge) ? Number(item.garminFitnessAge) : null }
+    };
+    const result = {
+        hrvMs,
+        rhrBpm,
+        sleepDuration: summarizeSourceAwareMetric(checkIns, item => selectGarminFirstMetric(item, 'garminSleepDuration', 'sleepDuration'), 'h'),
+        sleepScore: summarizeSourceAwareMetric(checkIns, item => selectGarminFirstMetric(item, 'garminSleepScore', 'sleepScore'), 'points'),
+        respiration: summarizeSourceAwareMetric(checkIns, item => selectGarminFirstMetric(item, 'garminRespiration', 'respiration'), 'breaths/min'),
+        stress: summarizeSourceAwareMetric(checkIns, item => selectGarminFirstMetric(item, 'garminStress', 'stress'), 'points'),
+        bodyBattery: summarizeSourceAwareMetric(checkIns, item => selectGarminFirstMetric(item, 'garminBodyBattery', 'bodyBattery'), 'points'),
+        spo2: summarizeSourceAwareMetric(checkIns, item => validNumber(item?.garminSpo2) ? { value: Number(item.garminSpo2), source: 'garmin' } : null, '%'),
+        weight: summarizeSourceAwareMetric(checkIns, item => validNumber(item?.garminWeight) ? { value: Number(item.garminWeight), source: 'garmin' } : null, 'kg'),
+        steps: summarizeSourceAwareMetric(checkIns, item => validNumber(item?.garminSteps) ? { value: Number(item.garminSteps), source: 'garmin' } : null, 'steps'),
+        fitnessAge: summarizeSourceAwareMetric(checkIns, item => validNumber(item?.garminFitnessAge) ? { value: Number(item.garminFitnessAge), source: 'garmin' } : null, 'years'),
+        sleepQuality: mean(checkIns, 'sleepQuality'),
+        fatigue: mean(checkIns, 'fatigue'),
+        soreness: mean(checkIns, 'soreness'),
+        motivation: mean(checkIns, 'motivation')
+    };
 
     return {
         entryCount: checkIns.length,
         metrics: result,
+        dataQuality: summarizeMetricCoverage(checkIns, metricDefinitions),
         metricRules: {
             hrvMs: 'HRV ausschließlich in Millisekunden (ms); Garmin garminHrv hat Vorrang. Generisches hrv nur bei dokumentierter measurementSources.hrv.unit = ms und vorhandener Quellenangabe.',
-            rhrBpm: 'Ruheherzfrequenz ausschließlich in Schlägen pro Minute (bpm); garminRhr hat pro Tag Vorrang vor rhr. Beide Werte eines Tages werden nie doppelt gezählt.'
+            rhrBpm: 'Ruheherzfrequenz ausschließlich in Schlägen pro Minute (bpm); garminRhr hat pro Tag Vorrang vor rhr. Beide Werte eines Tages werden nie doppelt gezählt.',
+            garminMetrics: 'Dedizierte Garmin-Felder haben Vorrang vor generischen Check-in-Feldern. Die Herkunft wird in sourceCounts ausgewiesen; fehlende Werte werden nicht als Null interpretiert.'
         },
-        note: 'Mittelwerte beziehen sich nur auf tatsächlich vorhandene numerische Einträge; HRV und Ruheherzfrequenz werden getrennt mit expliziten Einheiten ausgewiesen. Die Kennzahlen sind keine Readiness-Bewertung.'
+        note: 'Mittelwerte beziehen sich nur auf tatsächlich vorhandene numerische Einträge; Messwerte und Einheiten werden getrennt ausgewiesen. Die Kennzahlen sind keine Readiness-Bewertung.'
     };
 }
 
