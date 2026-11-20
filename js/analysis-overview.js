@@ -210,7 +210,6 @@ function renderTrendChart() {
     }
   });
   renderHealthMarkers(dates);
-  renderDataAvailability(dates);
   const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
   setText('analysis-overview-trend-note',
     'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
@@ -422,6 +421,7 @@ function renderIntensityDistribution() {
 }
 export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
+  renderDataAvailability(rangeDates(currentRange()));
   renderTrendChart();
   renderActivityChart();
   renderIntensityDistribution();
