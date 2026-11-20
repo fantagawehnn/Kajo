@@ -604,7 +604,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         if (candidates.garminSteps === null) candidates.garminSteps = findGarminNumber(summaryPayload, ['value']);
         if (candidates.garminSleepDuration !== null) candidates.garminSleepDuration /= 3600;
         const sourceMetadata = {
-            garminHrv: { source: 'garmin', metric: 'unspecified', unit: 'ms' },
+            garminHrv: { source: 'garmin', metric: 'overnight_hrv_average', unit: 'ms' },
             garminRhr: { source: 'garmin', metric: 'resting_heart_rate', unit: 'bpm' },
             garminSleepDuration: { source: 'garmin', metric: 'sleep_duration', unit: 'h' },
             garminSleepScore: { source: 'garmin', metric: 'sleep_score', unit: 'points' },
