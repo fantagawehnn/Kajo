@@ -439,3 +439,10 @@ assert.ok(garminArchive.includes('hydration|kilocalorie|calorie|bmr|sweatloss|nu
 assert.ok(garminArchive.includes('activeseconds|highlyactiveseconds|floorsascended|floorsdescended'), 'bundled daily activity fields are distinguished from training sessions');
 assert.ok(garminArchive.includes('function garminCategoryLabel'), 'field inventory categories use readable German labels');
 assert.ok(garminArchive.includes("if (/summarizedactivities|activitydetails/.test(value)) return 'activities';"), 'only concrete completed-activity exports are classified as activities');
+
+
+assert.ok(html.includes('id="analysis-load-recovery-association"'), 'load and recovery association panel exists');
+assert.ok(analysisOverview.includes('function spearmanCorrelation'), 'Spearman calculation exists');
+assert.ok(analysisOverview.includes('mindestens 10 vollständige Wertepaarungen'), 'small samples are not interpreted');
+assert.ok(analysisOverview.includes('mehrere Load-Modelle oder Einheiten'), 'incompatible load models are not mixed');
+assert.ok(analysisOverview.includes('Readiness enthält physiologische Messwerte einschließlich HRV'), 'Readiness and HRV overlap is disclosed');
