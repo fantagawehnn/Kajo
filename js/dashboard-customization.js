@@ -111,6 +111,11 @@ export function initializeDashboardCustomization() {
         if (!row || !sibling) return;
         if (button.dataset.dashboardMove === 'up') list.insertBefore(row, sibling);
         else list.insertBefore(sibling, row);
-        renderEditor();
+        list.querySelectorAll('[data-dashboard-custom-row]').forEach((item, index, rows) => {
+            const up = item.querySelector('[data-dashboard-move="up"]');
+            const down = item.querySelector('[data-dashboard-move="down"]');
+            if (up) up.disabled = index === 0;
+            if (down) down.disabled = index === rows.length - 1;
+        });
     });
 }
