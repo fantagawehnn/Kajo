@@ -153,7 +153,8 @@ function renderDataAvailability(dates) {
 }
 function renderTrendChart() {
   const canvas = document.getElementById('analysis-overview-trend-chart');
-  if (!canvas || typeof Chart !== 'function') return;
+  if (!canvas) return;
+  if (typeof Chart !== 'function') { setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true); return; }
   if (trendChart) trendChart.destroy();
   const dates = rangeDates(currentRange());
   const labels = dates.map(dateLabel);
@@ -265,7 +266,8 @@ export function setAnalysisOverviewActivityMeasure(measure) {
 }
 function renderActivityChart() {
   const canvas = document.getElementById('analysis-overview-activity-chart');
-  if (!canvas || typeof Chart !== 'function') return;
+  if (!canvas) return;
+  if (typeof Chart !== 'function') { setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true); return; }
   if (activityChart) activityChart.destroy();
   const dates = rangeDates(currentRange());
   const activities = getActivitiesInRange(dates);
