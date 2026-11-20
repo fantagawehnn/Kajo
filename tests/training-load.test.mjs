@@ -28,7 +28,7 @@ test('activity load quality distinguishes missing HR data from missing zone prer
 
     const hrButNoLoad = getActivityLoadQualityStatus({
         source: 'garmin',
-        telemetry: { hr: [130, 145, 160], time: [0, 20, 40] }
+        garminTelemetry: { hr: [130, 145, 160], time: [0, 20, 40] }
     }, null, 'garmin-unavailable');
     assert.equal(hrButNoLoad.status, 'unavailable');
     assert.match(hrButNoLoad.label, /HF-Daten vorhanden/);
