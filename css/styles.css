@@ -9195,3 +9195,15 @@ body.kajo-modal-open { overflow: hidden !important; }
   #view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
   #view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
 }
+
+/* Match empty-state dimensions to each analysis chart's normal plotting area. */
+#view-analyses .kajo-analysis-chart-wrap.has-chart-empty-state { min-height:210px!important; height:230px!important; }
+#view-analyses .kajo-training-load-chart-wrap.has-chart-empty-state { min-height:190px!important; height:220px!important; }
+#view-analyses .kajo-performance-chart-wrap.has-chart-empty-state,
+#view-analyses .kajo-health-chart-wrap.has-chart-empty-state { min-height:220px!important; height:250px!important; }
+@media(max-width:640px) {
+  #view-analyses .kajo-analysis-chart-wrap.has-chart-empty-state { min-height:190px!important; height:210px!important; }
+  #view-analyses .kajo-training-load-chart-wrap.has-chart-empty-state { min-height:180px!important; height:190px!important; }
+  #view-analyses .kajo-performance-chart-wrap.has-chart-empty-state,
+  #view-analyses .kajo-health-chart-wrap.has-chart-empty-state { min-height:190px!important; height:210px!important; }
+}
