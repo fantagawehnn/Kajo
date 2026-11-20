@@ -20,7 +20,7 @@ const CHECKIN_FIELDS = [
     'hrv', 'garminHrv', 'rhr', 'garminRhr', 'measurementSources',
     'sleepDuration', 'garminSleepDuration', 'sleepScore', 'garminSleepScore', 'sleepQuality',
     'bodyBattery', 'garminBodyBattery', 'garminStress', 'garminSpo2', 'garminRespiration',
-    'garminWeight', 'garminSteps', 'garminFitnessAge', 'vo2max',
+    'garminWeight', 'garminSteps', 'garminFitnessAge', 'garminVo2max', 'garminVo2maxSource', 'vo2max',
     'fatigue', 'soreness', 'motivation', 'stress', 'respiration'
 ];
 const TIMELINE_FIELDS = [
