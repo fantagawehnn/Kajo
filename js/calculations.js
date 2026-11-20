@@ -3,7 +3,7 @@
  * Fehlende Tage werden nur innerhalb erfolgreich synchronisierter
  * Garmin-Aktivitätszeiträume als Ruhetage interpretiert.
  * ============================================================ */
-import { getTrainingLoadData } from './training-load.js?v=6';
+import { getTrainingLoadData } from './training-load.js?v=7';
 
 function activityDateKey(value) {
     if (typeof value !== 'string') return '';
