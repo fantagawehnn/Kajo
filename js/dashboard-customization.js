@@ -40,7 +40,7 @@ export function applyDashboardCustomization() {
         const section = byId.get(id);
         const element = section && document.getElementById(section.elementId);
         if (!element) return;
-        element.hidden = !layout.visible[id];
+        element.classList.toggle('hidden', !layout.visible[id]);
         element.dataset.dashboardOrder = String(index);
         if (anchor && element.parentElement === root) root.insertBefore(element, anchor);
     });
