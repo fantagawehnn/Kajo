@@ -7,6 +7,8 @@ import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
+import { loadPersonalPreferences, savePersonalPreferences } from './personal-preferences.js?v=1';
+import { normalizeAnalysisPreferences } from './analysis-preferences.js?v=1';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -372,6 +374,9 @@ export function togglePerformanceMetric(key) {
 export function setPerformanceRange(range) {
   if (!Object.prototype.hasOwnProperty.call(performanceRangeDays,range)) return;
   performanceRange = range;
+  const preferences = loadPersonalPreferences();
+  preferences.analysis = { ...preferences.analysis, performanceRange: range };
+  savePersonalPreferences(preferences);
   document.querySelectorAll('[data-performance-range]').forEach(button =>
     button.classList.toggle('is-active',button.dataset.performanceRange===range));
   if (selectedPerformanceMetric && ['vo2max','speed','hr','power','cadence'].includes(selectedPerformanceMetric))
@@ -661,6 +666,10 @@ function setupSharedPeriod() {
   setText('analysis-period-label', labels[state.activeTimeframe] || 'Individueller Zeitraum');
 }
 export function renderAnalysisPageUI(subpage = 'load') {
+  const preferences = normalizeAnalysisPreferences(loadPersonalPreferences().analysis);
+  performanceRange = preferences.performanceRange;
+  document.querySelectorAll('[data-performance-range]').forEach(button =>
+    button.classList.toggle('is-active', button.dataset.performanceRange === performanceRange));
   setupSharedPeriod();
   renderLoad();
   renderRecovery();
