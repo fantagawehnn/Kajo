@@ -9151,3 +9151,47 @@ body.kajo-modal-open { overflow: hidden !important; }
 /* Higher-specificity overrides for the compact overview bars. */
 #view-analyses #analysis-subpage-overview .kajo-analysis-sport-distribution > .kajo-analysis-bar-wrap.has-chart-empty-state { height:76px!important; min-height:76px!important; }
 #view-analyses #analysis-subpage-overview .kajo-analysis-intensity-wrap.has-chart-empty-state { height:76px!important; min-height:76px!important; }
+
+/* KAJO analysis: reserve the real chart footprint when a series is unavailable. */
+#view-analyses .kajo-chart-empty-state {
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:14px 18px;
+  border:1px dashed var(--kajo-border,rgba(148,163,184,.28));
+  border-radius:10px;
+  color:var(--kajo-text-secondary,#94a3b8);
+  background:var(--kajo-surface-raised,rgba(15,23,42,.24));
+  font-size:11px;
+  line-height:1.5;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+#view-analyses .has-chart-empty-state {
+  position:relative!important;
+  min-height:190px!important;
+  height:190px!important;
+  box-sizing:border-box;
+}
+#view-analyses .kajo-load-weekly-chart.has-chart-empty-state { min-height:94px!important; height:94px!important; }
+#view-analyses .kajo-load-volume-chart.has-chart-empty-state { min-height:180px!important; height:180px!important; }
+#view-analyses .kajo-load-tsb-chart.has-chart-empty-state,
+#view-analyses .kajo-load-zone-summary-chart.has-chart-empty-state { min-height:150px!important; height:150px!important; }
+#view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
+#view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
+#view-analyses .kajo-analysis-overview-panel,
+#view-analyses .kajo-training-load-panel { min-width:0; }
+#view-analyses .kajo-analysis-section-heading,
+#view-analyses .kajo-analysis-distribution-heading { min-width:0; flex-wrap:wrap; gap:8px; }
+#view-analyses .kajo-analysis-chart-note { overflow-wrap:anywhere; }
+@media(max-width:640px) {
+  #view-analyses .kajo-chart-empty-state { padding:12px; font-size:10px; }
+  #view-analyses .has-chart-empty-state { min-height:170px!important; height:170px!important; }
+  #view-analyses .kajo-load-weekly-chart.has-chart-empty-state { min-height:94px!important; height:94px!important; }
+  #view-analyses .kajo-load-volume-chart.has-chart-empty-state { min-height:170px!important; height:170px!important; }
+  #view-analyses .kajo-load-tsb-chart.has-chart-empty-state,
+  #view-analyses .kajo-load-zone-summary-chart.has-chart-empty-state { min-height:145px!important; height:145px!important; }
+  #view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
+  #view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
+}
