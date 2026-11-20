@@ -6,6 +6,8 @@ test('counts only paired, plausible heart-rate samples and timestamps', () => {
     assert.equal(countValidHeartRateSamples([120, null, 260, 135], [0, 1, 2, 3]), 2);
     assert.equal(countValidHeartRateSamples([120, 130], [0]), 0);
     assert.equal(countValidHeartRateSamples([120, 130], [-1, 2]), 1);
+    assert.equal(countValidHeartRateSamples([120, 130], [null, 2]), 1);
+    assert.equal(countValidHeartRateSamples([120, 130], ['', 2]), 1);
 });
 
 test('does not retry a FIT file without heart-rate data for 30 days', () => {
