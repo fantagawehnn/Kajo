@@ -9178,3 +9178,9 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-dashboard-custom-reset{min-height:44px;color:var(--kajo-muted);font-size:.72rem;font-weight:700}
 .kajo-dashboard-custom-save{min-height:44px;padding:0 20px;border-radius:999px;background:var(--kajo-blue);color:white;font-size:.75rem;font-weight:800}
 @media(max-width:420px){.kajo-dashboard-custom-modal{padding:15px}.kajo-dashboard-custom-footer{align-items:stretch;flex-direction:column-reverse}.kajo-dashboard-custom-save{width:100%}}
+
+.kajo-dashboard-custom-subtitle{margin:18px 0 7px;font-size:.76rem;font-weight:800;color:var(--kajo-text)}
+.kajo-dashboard-custom-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+.kajo-dashboard-custom-metric{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--kajo-border);font-size:.72rem;color:var(--kajo-text)}
+.kajo-dashboard-custom-metric input{width:17px;height:17px;accent-color:var(--kajo-blue)}
+@media(max-width:420px){.kajo-dashboard-custom-metrics{grid-template-columns:1fr}}
