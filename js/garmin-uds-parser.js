@@ -65,15 +65,25 @@ export function extractGarminUdsDailyMetrics(value) {
             const values=new Set(candidates.map(item=>item[key]).filter(value=>value!==null));
             return values.size===1?[...values][0]:values.size===0?null:undefined;
         };
+        const sourceField=key=>{
+            const values=new Set(candidates.map(item=>item[key]).filter(value=>value!==null));
+            return values.size===1?[...values][0]:null;
+        };
         const rhr=pick('restingHeartRateBpm'),rhr7=pick('sevenDayAverageRestingHeartRateBpm');
         const hrvNight=pick('hrvLastNightAverageMs'),hrvWeekly=pick('hrvWeeklyAverageMs');
+        const rhrField=sourceField('restingHeartRateSourceField'),rhr7Field=sourceField('sevenDayAverageSourceField');
+        const hrvNightField=sourceField('hrvLastNightSourceField'),hrvWeeklyField=sourceField('hrvWeeklySourceField');
         const ambiguous=rhr===undefined||rhr7===undefined||hrvNight===undefined||hrvWeekly===undefined;
         if(ambiguous) ambiguousDates.push(date);
         records.push({
             date,restingHeartRateBpm:rhr===undefined?null:rhr,
+            restingHeartRateSourceField:rhrField,
             sevenDayAverageRestingHeartRateBpm:rhr7===undefined?null:rhr7,
+            sevenDayAverageSourceField:rhr7Field,
             hrvLastNightAverageMs:hrvNight===undefined?null:hrvNight,
+            hrvLastNightSourceField:hrvNightField,
             hrvWeeklyAverageMs:hrvWeekly===undefined?null:hrvWeekly,
+            hrvWeeklySourceField:hrvWeeklyField,
             source:'garmin-uds-export',ambiguous
         });
     }
