@@ -4,9 +4,9 @@
  */
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
 const INVALID = new Map([
-    [0, new Set([0xff])], [1, new Set([0x7f])], [3, new Set([0x7fffffff])],
-    [4, new Set([0x7fff])], [5, new Set([0x7fffffff])], [6, new Set([0xffffffff])],
-    [8, new Set([0xffffffff])], [9, new Set([0xffffffffffffffffn])]
+    [0, new Set([0xff])], [1, new Set([0x7f])], [2, new Set([0xff])],
+    [3, new Set([0x7fffffff])], [4, new Set([0x7fff])], [5, new Set([0xffff])],
+    [6, new Set([0xffffffff])], [10, new Set([0])], [11, new Set([0])], [12, new Set([0])]
 ]);
 function bytesOf(input) {
     if (input instanceof Uint8Array) return input;
