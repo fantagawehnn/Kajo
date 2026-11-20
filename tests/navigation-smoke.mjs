@@ -461,3 +461,12 @@ assert.ok(analysisOverview.includes('fehlende Health-Einträge bedeuten nicht, d
 assert.ok(analysisOverview.includes('drei aufeinanderfolgende, vollständig belegte Tage'), 'cumulative load requires three consecutive complete days');
 assert.ok(analysisOverview.includes('Drei-Tage-Fenster enthalten unterschiedliche Load-Modelle oder Einheiten'), 'cumulative load does not mix models or units');
 assert.ok(analysisOverview.includes('unbekannte Tage werden niemals als 0 eingesetzt'), 'cumulative load does not impute unknown days as zero');
+
+
+assert.ok(html.includes('id="analysis-trend-observations"') && analysisOverview.includes('function renderTrendObservations'), 'analysis overview exposes a separate trend observation section');
+assert.ok(analysisOverview.includes('dates.length < 14') && analysisOverview.includes('dates.slice(-14, -7)') && analysisOverview.includes('dates.slice(-7)'), 'trend comparison uses two consecutive seven-day windows');
+assert.ok(analysisOverview.includes('prior.length < metric.minimum || recent.length < metric.minimum'), 'trend observations require minimum measured coverage in both windows');
+assert.ok(analysisOverview.includes('day.loadMode !== loadMode || day.loadUnit !== loadUnit'), 'trend observations do not mix load models or units');
+assert.ok(analysisOverview.includes('Fehlende Tage werden nicht aufgefüllt'), 'trend observations do not impute missing measurements');
+assert.ok(analysisOverview.includes('keine Trainingsempfehlung') && analysisOverview.includes('keine Diagnose'), 'trend observations remain descriptive and do not diagnose or recommend training');
+assert.ok(analysisOverview.includes('Garmin-Form und TSB bleiben getrennte Indikatoren'), 'Garmin form and TSB are not conflated in trend observations');
