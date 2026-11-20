@@ -284,6 +284,46 @@ function renderHealthEventContext(dates) {
     (events.length > 8 ? '<p class="kajo-analysis-chart-note">' + (events.length - 8) + ' weitere dokumentierte Ereignistage sind im Zeitraum vorhanden.</p>' : '') +
     '<p class="kajo-analysis-chart-note">Die Werte beschreiben ausschließlich Daten desselben Kalendertags. Sie zeigen zeitliche Koexistenz, keinen ursächlichen Zusammenhang. Load-Methoden und Einheiten bleiben entsprechend ihrer jeweiligen Datenquelle gekennzeichnet; fehlende Werte werden nicht ergänzt.</p>';
 }
+
+function averageRanks(values) {
+  const sorted = values.map((value,index)=>({value,index})).sort((a,b)=>a.value-b.value);
+  const ranks=Array(values.length);
+  for(let start=0;start<sorted.length;){let end=start+1;while(end<sorted.length&&sorted[end].value===sorted[start].value)end++;
+    const rank=((start+1)+end)/2;for(let i=start;i<end;i++)ranks[sorted[i].index]=rank;start=end;}
+  return ranks;
+}
+function spearmanCorrelation(pairs,key) {
+  const rows=pairs.filter(pair=>valid(pair.load)&&valid(pair[key]));
+  if(rows.length<10)return {n:rows.length,value:null,reason:'Für eine vorsichtige explorative Einordnung sind mindestens 10 vollständige Wertepaarungen erforderlich.'};
+  const x=averageRanks(rows.map(pair=>Number(pair.load))),y=averageRanks(rows.map(pair=>Number(pair[key])));
+  const mx=x.reduce((a,b)=>a+b,0)/x.length,my=y.reduce((a,b)=>a+b,0)/y.length;
+  let numerator=0,sx=0,sy=0;
+  for(let i=0;i<x.length;i++){const dx=x[i]-mx,dy=y[i]-my;numerator+=dx*dy;sx+=dx*dx;sy+=dy*dy;}
+  const denominator=Math.sqrt(sx*sy);
+  return denominator>0?{n:rows.length,value:numerator/denominator,reason:''}:{n:rows.length,value:null,reason:'Keine ausreichende Streuung für eine Rangkorrelation.'};
+}
+function renderLoadRecoveryAssociation(dates) {
+  const root=document.getElementById('analysis-load-recovery-association');if(!root)return;
+  const dateSet=new Set(dates),timeline=new Map((state.dailyTimeline||[]).map(day=>[day.date,day]));
+  const checkins=state.dailyCheckins||{},pairs=[];
+  for(const date of dates){
+    const day=timeline.get(date);if(!day||!valid(day.load)||!day.loadMode||!day.loadUnit)continue;
+    const next=new Date(date+'T12:00:00');next.setDate(next.getDate()+1);
+    const nextDate=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');
+    if(!dateSet.has(nextDate)||nextDate>todayKey())continue;
+    const item=checkins[nextDate]||{},rawHrv=item.garminHrv??(item.measurementSources?.hrv?.source==='garmin'?item.hrv:null);
+    const readiness=item?calculateReadiness(nextDate,state):null;
+    pairs.push({load:Number(day.load),mode:String(day.loadMode),unit:String(day.loadUnit),
+      hrv:valid(rawHrv)&&Number(rawHrv)>0?Number(rawHrv):null,
+      readiness:readiness?.enoughData&&valid(readiness.score)?Number(readiness.score):null});
+  }
+  if(!pairs.length){root.innerHTML='<p class="kajo-analysis-chart-note">Keine vollständigen Load-Folgetag-Paare mit eindeutigem Load-Modell und Einheit vorhanden. Eine statistische Auswertung wird nicht berechnet.</p>';return;}
+  if(new Set(pairs.map(p=>p.mode+'|'+p.unit)).size!==1){root.innerHTML='<p class="kajo-analysis-chart-note">Im Zeitraum kommen mehrere Load-Modelle oder Einheiten vor. Diese Werte werden nicht vermischt; eine gemeinsame Rangkorrelation wird nicht berechnet.</p>';return;}
+  const render=(label,result)=>'<div class="kajo-analysis-availability-row"><div><strong>'+label+'</strong><small>Spearman-Rangkorrelation · n = '+result.n+(result.reason?'<br>'+escapeHtml(result.reason):'')+'</small></div><span>'+(valid(result.value)?'rₛ = '+Number(result.value).toLocaleString('de-DE',{maximumFractionDigits:2}):'—')+'</span></div>';
+  root.innerHTML='<div class="kajo-analysis-availability">'+render('Load an Tag D ↔ Garmin-HRV an D+1',spearmanCorrelation(pairs,'hrv'))+render('Load an Tag D ↔ Readiness an D+1',spearmanCorrelation(pairs,'readiness'))+'</div>'+
+    '<p class="kajo-analysis-chart-note">Nur vollständige Folgetag-Paare desselben Load-Modells ('+escapeHtml(pairs[0].mode)+', '+escapeHtml(pairs[0].unit)+') werden verwendet. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>';
+}
+
 function renderNextDayContext(dates) {
   const root = document.getElementById('analysis-next-day-context');
   if (!root) return;
@@ -653,6 +693,7 @@ export function renderAnalysisOverview() {
   renderReadinessBreakdown(rangeDates(currentRange()));
   renderHealthEventContext(rangeDates(currentRange()));
   renderNextDayContext(rangeDates(currentRange()));
+  renderLoadRecoveryAssociation(rangeDates(currentRange()));
   renderTrendChart();
   renderFormTrendChart();
   renderActivityChart();
