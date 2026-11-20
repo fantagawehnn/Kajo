@@ -1,8 +1,41 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
-import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis, getAdaptiveRestingHr, calculateHeartRateReserveZones } from '../js/training-load.js';
+import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis, getAdaptiveRestingHr, calculateHeartRateReserveZones, getActivityLoadQualityStatus } from '../js/training-load.js';
 import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
+
+test('activity load quality labels distinguish measured, limited, estimated and unavailable values', () => {
+    assert.equal(getActivityLoadQualityStatus({}, {
+        source: 'heart-rate', dataQuality: 'standard', dataQualityLabel: 'Reguläre HF-Zeitreihe'
+    }, 'garmin-zone').status, 'measured');
+    assert.equal(getActivityLoadQualityStatus({}, {
+        source: 'heart-rate', dataQuality: 'limited', dataQualityLabel: 'Eingeschränkte Näherung aus Garmin-Tagesaufzeichnung'
+    }, 'garmin-zone').status, 'limited-measured');
+    assert.equal(getActivityLoadQualityStatus({}, {
+        source: 'manual-estimate', value: 40
+    }, 'garmin-unavailable').status, 'manual-estimate');
+    assert.equal(getActivityLoadQualityStatus({ source: 'garmin' }, null, 'garmin-unavailable').status, 'unavailable');
+});
+
+test('activity load quality distinguishes missing HR data from missing zone prerequisites', () => {
+    const noHr = getActivityLoadQualityStatus({ source: 'garmin' }, null, 'garmin-unavailable');
+    assert.match(noHr.detail, /keine mindestens zwei plausible/);
+
+    const hrButNoLoad = getActivityLoadQualityStatus({
+        source: 'garmin',
+        telemetry: { hr: [130, 145, 160], time: [0, 20, 40] }
+    }, null, 'garmin-unavailable');
+    assert.equal(hrButNoLoad.status, 'unavailable');
+    assert.match(hrButNoLoad.label, /HF-Daten vorhanden/);
+    assert.match(hrButNoLoad.detail, /HF-Zonen- oder Zeitangaben/);
+});
+
+test('sRPE load is explicitly identified as subjective and not as heart-rate load', () => {
+    const status = getActivityLoadQualityStatus({}, { value: 35 }, 'srpe');
+    assert.equal(status.status, 'subjective');
+    assert.match(status.detail, /nicht aus Herzfrequenzdaten/);
+    assert.equal(getActivityLoadQualityStatus({}, null, 'srpe').status, 'unavailable');
+});
 
 function dateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
