@@ -392,7 +392,10 @@ export function getTrainingLoadData(records, settings, profile, dailyCheckins = 
         .map(activity => ({ activity, value: Number(activity.garminTrainingLoad), sourceMode: 'garmin-native' }));
     return {
         mode: zoneValues.length ? 'garmin-zone' : 'garmin-unavailable',
-        unit: zoneValues.length ? 'KAJO-HF-Punkte' : null,
+        unit: zoneValues.length
+            ? (zoneValues.some(item => item.source === 'manual-estimate')
+                ? 'KAJO-Load-Punkte (HF + Schätzung)' : 'KAJO-HF-Punkte')
+            : null,
         records: zoneValues,
         comparisonRecords: nativeValues,
         coverage: {
