@@ -9,7 +9,6 @@ test('uses the existing analysis defaults', () => {
     metrics: { load: true, recovery: true, performance: true },
     defaultPeriod: '3m',
     activityMeasure: 'duration',
-    performanceRange: '28d',
     performanceRange: '28d'
   });
 });
@@ -23,7 +22,7 @@ test('normalizes order, visibility and invalid options', () => {
     order: ['period', 'trend', 'distribution'],
     visible: { trend: false, distribution: true, period: false },
     metrics: { load: false, recovery: false, performance: true },
-    defaultPeriod: '3m', activityMeasure: 'duration'
+    defaultPeriod: '3m', activityMeasure: 'duration', performanceRange: '28d'
   });
 });
 test('keeps at least one trend metric visible', () => {
