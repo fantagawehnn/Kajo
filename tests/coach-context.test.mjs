@@ -163,6 +163,37 @@ test('Coach context preserves Garmin HRV and its measurement provenance', () => 
     assert.equal(checkin.garminRhr, 49);
 });
 
+test('Coach context forwards dedicated Garmin sleep and daily health metrics with provenance', () => {
+    const context = buildCoachRequestContext({
+        dailyCheckins: {
+            [offsetDate(-1)]: {
+                garminSleepDuration: 7.5,
+                garminSleepScore: 88,
+                garminRespiration: 15,
+                garminStress: 24,
+                garminBodyBattery: 91,
+                garminSpo2: 97,
+                garminWeight: 61.2,
+                garminSteps: 8200,
+                garminFitnessAge: 23,
+                measurementSources: {
+                    garminSleepDuration: { source: 'garmin', metric: 'sleep_duration', unit: 'h' }
+                }
+            }
+        }
+    }, 'Analysiere meine Regeneration und Gesundheit');
+
+    const checkin = context.recovery.dailyCheckIns[0];
+    assert.equal(checkin.garminSleepDuration, 7.5);
+    assert.equal(checkin.garminSleepScore, 88);
+    assert.equal(checkin.garminRespiration, 15);
+    assert.equal(checkin.garminBodyBattery, 91);
+    assert.equal(checkin.garminSpo2, 97);
+    assert.equal(checkin.garminWeight, 61.2);
+    assert.equal(checkin.garminSteps, 8200);
+    assert.equal(checkin.garminFitnessAge, 23);
+});
+
 test('Coach recovery summary separates HRV ms from resting heart rate bpm without double counting', () => {
     const summary = buildCoachAnalysisSummary({
         checkIns: [
@@ -209,4 +240,28 @@ test('Coach recovery summary separates HRV ms from resting heart rate bpm withou
     assert.equal(metrics.rhr, undefined);
     assert.match(summary.recoveryCheckInSummary.metricRules.hrvMs, /ms/);
     assert.match(summary.recoveryCheckInSummary.metricRules.rhrBpm, /bpm/);
+});
+
+test('recovery summary prefers Garmin sleep metrics and reports observed check-in coverage', () => {
+    const summary = buildCoachAnalysisSummary({
+        checkIns: [
+            { date: '2026-11-19', garminSleepDuration: 7.5, sleepDuration: 6.8, garminSleepScore: 88, sleepScore: 70, garminRespiration: 15, garminStress: 24, garminBodyBattery: 91, garminSpo2: 97 },
+            { date: '2026-11-20', sleepDuration: 8.0, sleepScore: 82 }
+        ]
+    });
+    const recovery = summary.recoveryCheckInSummary;
+
+    assert.deepEqual(recovery.metrics.sleepDuration, {
+        mean: 7.8, count: 2, unit: 'h', sourceCounts: { garmin: 1, checkin: 1 }
+    });
+    assert.deepEqual(recovery.metrics.sleepScore, {
+        mean: 85, count: 2, unit: 'points', sourceCounts: { garmin: 1, checkin: 1 }
+    });
+    assert.deepEqual(recovery.metrics.respiration, {
+        mean: 15, count: 1, unit: 'breaths/min', sourceCounts: { garmin: 1 }
+    });
+    assert.equal(recovery.dataQuality.observedCheckInCount, 2);
+    assert.equal(recovery.dataQuality.metrics.sleepDuration.observedCount, 2);
+    assert.equal(recovery.dataQuality.metrics.spo2.absentFromObservedCheckIns, 1);
+    assert.match(recovery.dataQuality.interpretationLimit, /Synchronisationsproblem/);
 });
