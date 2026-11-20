@@ -22,6 +22,7 @@ const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maxi
 const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
 let trendChart = null;
+let formChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
 let healthMarkersVisible = true;
@@ -30,12 +31,18 @@ let activityMeasure = 'duration';
 function sourceHero(domain) {
   const value = document.getElementById('analysis-' + domain + '-hero-value')?.textContent?.trim() || '—';
   const unit = document.getElementById('analysis-' + domain + '-hero-unit')?.textContent?.trim() || '';
-  return { value, unit };
+  const status = document.getElementById('analysis-' + domain + '-hero-status')?.textContent?.trim() || '';
+  const note = document.getElementById(domain + '-hero-note')?.textContent?.trim() || '';
+  return { value, unit, status, note };
 }
 function renderCircle(domain) {
   const data = sourceHero(domain);
   setText('analysis-overview-' + domain + '-value', data.value);
   setText('analysis-overview-' + domain + '-unit', data.unit);
+  if (domain === 'recovery') {
+    const detail = [data.status, data.note].filter(Boolean).join(' · ');
+    setText('analysis-overview-recovery-detail', detail || 'Readiness · / 100');
+  }
 }
 function currentRange() {
   const to = todayKey();
@@ -95,6 +102,70 @@ function updateMetricSwitch() {
     button.classList.remove('is-unavailable');
     button.disabled = false;
   });
+}
+function renderFormTrendChart() {
+  const canvas = document.getElementById('analysis-overview-form-chart');
+  if (!canvas) return;
+  if (formChart) { formChart.destroy(); formChart = null; }
+  if (typeof Chart !== 'function') {
+    setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true);
+    return;
+  }
+  const dates = rangeDates(currentRange());
+  const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
+  const rows = dates.map(date => timeline.get(date) || null);
+  const latest = [...rows].reverse().find(row => row && (valid(row.ctl) || valid(row.atl) || valid(row.tsb) || valid(row.formPct)));
+  if (!latest) {
+    setChartEmptyState(canvas, 'Für den gewählten Zeitraum liegt kein berechenbarer CTL-/ATL-/Formverlauf vor.', true);
+    setText('analysis-overview-form-note', 'Unbekannte Tage unterbrechen die Belastungsberechnung. Sie werden weder als Ruhetage noch als Nullbelastung ergänzt.');
+    return;
+  }
+  const mode = latest.loadMode || 'load-model';
+  const garminMode = mode === 'garmin-native' || mode === 'garmin-zone';
+  const compatible = row => row && (row.loadMode || 'load-model') === mode;
+  const ctl = rows.map(row => compatible(row) && valid(row.ctl) ? Number(row.ctl) : null);
+  const atl = rows.map(row => compatible(row) && valid(row.atl) ? Number(row.atl) : null);
+  const form = rows.map(row => {
+    if (!compatible(row)) return null;
+    const value = garminMode ? row.formPct : row.tsb;
+    return valid(value) ? Number(value) : null;
+  });
+  const hasAny = ctl.some(valid) || atl.some(valid) || form.some(valid);
+  if (!hasAny) {
+    setChartEmptyState(canvas, 'Für den gewählten Zeitraum liegen keine kompatiblen Modellwerte vor.', true);
+    return;
+  }
+  setChartEmptyState(canvas, '', false);
+  const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
+  const formLabel = garminMode ? 'Garmin-Form · relativ zu CTL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
+  const datasets = [
+    { label: 'CTL · langfristig', data: ctl, borderColor: '#6DA8F7', backgroundColor: '#6DA8F7', borderWidth: 2.2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
+    { label: 'ATL · kurzfristig', data: atl, borderColor: '#D98AB5', backgroundColor: '#D98AB5', borderWidth: 2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
+    { label: formLabel, data: form, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2.2, tension: .18, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: garminMode ? 'y1' : 'y' }
+  ];
+  formChart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels: dates.map(dateLabel), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { color: textColor, boxWidth: 12, usePointStyle: true, font: { size: 10 } } },
+        tooltip: { callbacks: { title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '' } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
+        y: { position: 'left', grid: { color: 'rgba(148,163,184,.10)' }, ticks: { color: textColor }, title: { display: true, text: 'CTL / ATL · ' + (latest.loadUnit || 'Load-Punkte'), color: textColor, font: { size: 9 } } },
+        ...(garminMode ? { y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: textColor }, title: { display: true, text: 'Form · %', color: textColor, font: { size: 9 } } } : {})
+      }
+    }
+  });
+  setText('analysis-overview-form-note',
+    'Dargestellt wird ausschließlich der zuletzt verwendete Belastungsmodus (' + mode + '). CTL und ATL zeigen die langfristige bzw. kurzfristige Belastungsentwicklung. ' +
+    (garminMode
+      ? 'Der Garmin-Formwert ist relativ zu CTL und wird deshalb auf einer eigenen Prozentachse dargestellt; er ist nicht mit TSB gleichzusetzen.'
+      : 'TSB entspricht CTL minus ATL und nutzt dieselbe Load-Einheit. ') +
+    'Modelllücken bleiben sichtbar; Werte verschiedener Load-Quellen werden nicht in einer Linie vermischt.');
 }
 function renderHealthMarkers(dates) {
   const root = document.getElementById('analysis-overview-health-markers');
@@ -443,6 +514,7 @@ export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderDataAvailability(rangeDates(currentRange()));
   renderTrendChart();
+  renderFormTrendChart();
   renderActivityChart();
   renderIntensityDistribution();
   renderPeriodSummary();
