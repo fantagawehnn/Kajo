@@ -37,6 +37,7 @@ jobs:
           node --check js/user-storage.js
           node --check js/local-db.js
           node --check js/garmin-cloud-telemetry.js
+          node --check js/garmin-analysis-cache.js
           node --check js/garmin-heart-rate-sync.js
           node --check js/daily-heart-rate.js
           node --check js/daily-hr-activity.js
@@ -129,6 +130,9 @@ jobs:
 
       - name: Run Garmin activity pagination tests
         run: node --experimental-default-type=module --test tests/garmin-activity-pagination.test.mjs
+
+      - name: Run Garmin analysis cache tests
+        run: node --experimental-default-type=module --test tests/garmin-analysis-cache.test.mjs
 
       - name: Run Garmin heart-rate sync tests
         run: node --experimental-default-type=module --test tests/garmin-heart-rate-sync.test.mjs
