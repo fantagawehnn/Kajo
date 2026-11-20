@@ -203,9 +203,7 @@ function renderFitnessRecoveryContext(dates) {
     root.innerHTML = '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum liegen keine passenden Fitness-, Recovery- oder Gesundheitswerte für eine gemeinsame zeitliche Einordnung vor.</p>';
     return;
   }
-  const modeCounts = new Map();
-  rows.filter(row => row.mode).forEach(row => modeCounts.set(row.mode, (modeCounts.get(row.mode) || 0) + 1));
-  const selectedMode = [...modeCounts.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] || '';
+  const selectedMode = [...rows].reverse().find(row => row.mode && (row.ctl !== null || row.atl !== null || row.formValue !== null))?.mode || '';
   const visible = rows.slice(-12).reverse();
   const formatLoad = value => valid(value) ? fmt(value) : '—';
   const cards = visible.map(row => {
