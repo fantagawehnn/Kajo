@@ -453,3 +453,7 @@ assert.ok(analysisOverview.includes('Mit dokumentiertem Krankheits-/Verletzungse
 assert.ok(analysisOverview.includes('Ein fehlender Eintrag bedeutet nicht, dass die Person gesund war'), 'missing health records are not treated as proof of health');
 assert.ok(analysisOverview.includes('keine statistische Kontrolle von Krankheit oder Verletzung'), 'health-event split is disclosed as sensitivity analysis, not statistical adjustment');
 assert.ok(analysisOverview.includes('Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren'), 'uncontrolled confounders are disclosed');
+assert.ok(analysisOverview.includes('Drei-Tage-Summe') && analysisOverview.includes('D−2 bis D'), 'load recovery analysis includes a three-day cumulative load perspective');
+assert.ok(analysisOverview.includes('drei aufeinanderfolgende, vollständig belegte Tage'), 'cumulative load requires three consecutive complete days');
+assert.ok(analysisOverview.includes('Drei-Tage-Fenster enthalten unterschiedliche Load-Modelle oder Einheiten'), 'cumulative load does not mix models or units');
+assert.ok(analysisOverview.includes('unbekannte Tage werden niemals als 0 eingesetzt'), 'cumulative load does not impute unknown days as zero');
