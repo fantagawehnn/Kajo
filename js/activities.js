@@ -8,7 +8,7 @@ import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmer
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=5';
 import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml } from './utils.js';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
-import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis } from './training-load.js?v=5';
+import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis, getActivityLoadQualityStatus } from './training-load.js?v=6';
 import { calculateStrengthActivitySummary } from './calculations.js';
 import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summarizeTimeAxis } from './data-source.js';
 import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
@@ -1109,19 +1109,20 @@ function renderActivityTrainingInsights(act) {
     const load = loadItem && Number.isFinite(Number(loadItem.value))
         ? Number(loadItem.value).toFixed(1) + ' ' + (loadData.unit || '')
         : '—';
-    const missingText = loadItem
-        ? ''
-        : configuredSource === 'kajo-zone'
-            ? 'Für diese Aktivität liegen keine auswertbaren Herzfrequenz-Zeitreihen für die KAJO-Zonenmethode vor.'
-            : configuredSource === 'srpe'
-                ? 'Bitte Dauer und Gesamtanstrengung (RPE) für diese Aktivität erfassen.'
-                : 'Für diese Aktivität liegt kein Load-Wert aus der aktuell automatisch gewählten Methode vor.';
+    const qualityStatus = getActivityLoadQualityStatus(act, loadItem, loadData.mode);
+    const qualityTone = qualityStatus.status === 'measured'
+        ? 'border-sky-800/50 bg-sky-950/20 text-sky-300'
+        : qualityStatus.status === 'limited-measured' || qualityStatus.status === 'manual-estimate'
+            ? 'border-amber-800/50 bg-amber-950/20 text-amber-300'
+            : qualityStatus.status === 'subjective'
+                ? 'border-indigo-800/50 bg-indigo-950/20 text-indigo-300'
+                : 'border-slate-700 bg-slate-900 text-slate-400';
 
     stimulus.innerHTML = '<div class="grid grid-cols-2 gap-2">'
         + '<div class="rounded-lg bg-slate-900 p-2"><div class="text-[10px] text-slate-500">Kategorie</div><strong class="mt-1 block text-sm text-white">' + category + '</strong></div>'
         + '<div class="rounded-lg bg-slate-900 p-2"><div class="text-[10px] text-slate-500">' + loadLabel + '</div><strong class="mt-1 block text-sm text-sky-300">' + load + '</strong></div>'
         + '</div>'
-        + (missingText ? '<p class="mt-2 text-[10px] leading-relaxed text-slate-500">' + missingText + '</p>' : '')
+        + '<div class="mt-2 rounded-lg border px-3 py-2 ' + qualityTone + '" data-load-quality="' + qualityStatus.status + '"><div class="text-[11px] font-semibold">' + qualityStatus.label + '</div><p class="mt-1 text-[10px] leading-relaxed opacity-90">' + qualityStatus.detail + '</p></div>'
         + '<details class="mt-2 text-[10px] text-slate-500"><summary class="cursor-pointer">Methoden & Datenbasis</summary><p class="mt-2">Angezeigt wird ausschließlich die aktuell in den Einstellungen gewählte Berechnungsmethode. Unterschiedliche Load-Skalen werden nicht vermischt und fehlende Werte nicht durch alternative Methoden ersetzt. Die automatische Auswahl verwendet die verfügbare Datenabdeckung.</p></details>';
     renderTrainingBenefitProfile(act);
     const zoneTime = calculateActivityZoneTime(act);
