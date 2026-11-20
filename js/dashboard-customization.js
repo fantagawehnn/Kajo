@@ -9,13 +9,26 @@ export const DASHBOARD_SECTIONS = [
     { id: 'week', label: 'Trainingswoche', elementId: 'home-training-week' }
 ];
 
+export const DASHBOARD_METRICS = [
+    { id: 'readiness', label: 'Recovery', elementId: 'home-readiness-metric' },
+    { id: 'fatigue', label: 'Ermüdung (ATL)', elementId: 'home-fatigue-metric' },
+    { id: 'fitness', label: 'Fitness (CTL)', elementId: 'home-fitness-metric' },
+    { id: 'rhr', label: 'Ruhepuls', elementId: 'home-wear-rhr-item' },
+    { id: 'hrv', label: 'Herzfrequenzvariabilität', elementId: 'home-wear-hrv-item' },
+    { id: 'sleepScore', label: 'Sleep-Score', elementId: 'home-wear-score-item' },
+    { id: 'sleepDuration', label: 'Schlafdauer', elementId: 'home-wear-duration-item' },
+    { id: 'stress', label: 'Stress', elementId: 'home-self-stress-item' }
+];
+
 export function normalizeDashboardLayout(value) {
     const defaults = DASHBOARD_SECTIONS.map(section => section.id);
     const candidate = Array.isArray(value?.order) ? value.order : [];
     const order = [...new Set(candidate.filter(id => defaults.includes(id))), ...defaults.filter(id => !candidate.includes(id))];
     const visible = {};
     for (const id of defaults) visible[id] = value?.visible?.[id] !== false;
-    return { order, visible };
+    const metrics = {};
+    for (const metric of DASHBOARD_METRICS) metrics[metric.id] = value?.metrics?.[metric.id] !== false;
+    return { order, visible, metrics };
 }
 
 function readLayout() {
@@ -44,6 +57,10 @@ export function applyDashboardCustomization() {
         element.dataset.dashboardOrder = String(index);
         if (anchor && element.parentElement === root) root.insertBefore(element, anchor);
     });
+    for (const metric of DASHBOARD_METRICS) {
+        const element = document.getElementById(metric.elementId);
+        if (element) element.classList.toggle('hidden', !layout.metrics[metric.id]);
+    }
 }
 
 function renderEditor() {
@@ -62,6 +79,14 @@ function renderEditor() {
             </span>
         </li>`;
     }).join('');
+    const metricsList = document.getElementById('dashboard-customization-metrics');
+    if (metricsList) {
+        metricsList.innerHTML = DASHBOARD_METRICS.map(metric => `
+            <label class="kajo-dashboard-custom-metric">
+                <input type="checkbox" data-dashboard-metric="${metric.id}" ${layout.metrics[metric.id] ? 'checked' : ''}>
+                <span>${metric.label}</span>
+            </label>`).join('');
+    }
 }
 
 export function openDashboardCustomization() {
@@ -84,11 +109,16 @@ export function saveDashboardCustomization() {
     if (!list) return;
     const order = [...list.querySelectorAll('[data-dashboard-custom-row]')].map(row => row.dataset.dashboardCustomRow);
     const visible = {};
+    const metrics = {};
+    for (const metric of DASHBOARD_METRICS) {
+        const checkbox = document.querySelector(`[data-dashboard-metric="${metric.id}"]`);
+        metrics[metric.id] = checkbox ? checkbox.checked : true;
+    }
     for (const section of DASHBOARD_SECTIONS) {
         const checkbox = list.querySelector(`[data-dashboard-visible="${section.id}"]`);
         visible[section.id] = checkbox ? checkbox.checked : true;
     }
-    writeLayout({ order, visible });
+    writeLayout({ order, visible, metrics });
     applyDashboardCustomization();
     closeDashboardCustomization();
 }
