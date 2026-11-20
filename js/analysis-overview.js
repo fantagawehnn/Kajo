@@ -202,6 +202,52 @@ function renderHealthMarkers(dates) {
     detail.classList.remove('hidden');
   }));
 }
+function renderReadinessBreakdown(dates) {
+  const root = document.getElementById('analysis-readiness-breakdown');
+  if (!root) return;
+  const checkins = state.dailyCheckins || {};
+  const entry = [...dates].reverse().filter(date => date <= todayKey() && checkins[date])
+    .map(date => ({ date, result: calculateReadiness(date, state) }))
+    .find(item => item.result?.enoughData && valid(item.result.score));
+  if (!entry) {
+    root.innerHTML = '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum liegt kein Readiness-Tageswert vor, der die Mindestanforderungen von mindestens zwei verfügbaren Bereichen erfüllt. Fehlende Bereiche werden nicht als Nullwerte gewertet.</p>';
+    return;
+  }
+  const { date, result } = entry;
+  const domainLabels = { physiology: 'Physiologie', sleep: 'Schlaf', subjective: 'Subjektives Befinden' };
+  const domainCards = Object.entries(domainLabels).map(([key, label]) => {
+    const score = result.domains?.[key];
+    return '<div class="kajo-analysis-availability-row"><div><strong>' + label + '</strong><small>' +
+      (score === null || score === undefined ? 'Keine ausreichenden Daten für diesen Bereich' : 'Bereichswert aus den verfügbaren Einzelindikatoren') +
+      '</small></div><span>' + (valid(score) ? Math.round(Number(score)) + ' / 100' : '—') + '</span></div>';
+  }).join('');
+  const units = { hrv: 'ms', rhr: 'bpm', respiration: '/min', sleepDuration: 'h', sleepScore: '/100' };
+  const renderItems = (items, kind) => items.length ? items.map(item => {
+    const unit = units[item.key] || (kind === 'subjective' ? '/ 5' : '');
+    const baseline = valid(item.baseline)
+      ? ' · persönliche Baseline (Median): ' + fmt(item.baseline) + (unit ? ' ' + unit : '') +
+        (valid(item.observations) ? ' aus ' + item.observations + ' Messungen' : '')
+      : '';
+    const score = valid(item.score) ? ' · Teilscore ' + Math.round(Number(item.score)) + ' / 100' : '';
+    const value = valid(item.value) ? fmt(item.value) + (unit ? ' ' + unit : '') : '—';
+    return '<div class="kajo-analysis-availability-row"><div><strong>' + escapeHtml(item.label) + '</strong><small>' +
+      (kind === 'subjective' ? 'Subjektiver Check-in' : 'Messwert') + baseline + score +
+      '</small></div><span>' + value + '</span></div>';
+  }).join('') : '<p class="kajo-analysis-chart-note">Keine Werte in diesem Bereich in die Berechnung eingeflossen.</p>';
+  root.innerHTML =
+    '<div class="kajo-analysis-availability">' +
+    '<div class="kajo-analysis-availability-row"><div><strong>Readiness</strong><small>' +
+    escapeHtml(result.dataQuality || '') + ' · ' + escapeHtml(result.dataMode || '') +
+    '</small></div><span><strong>' + Math.round(Number(result.score)) + ' / 100</strong></span></div>' +
+    '<div class="kajo-analysis-chart-note" style="margin:10px 0 6px">Bereichswerte · ' + escapeHtml(new Date(date + 'T12:00:00').toLocaleDateString('de-DE')) + '</div>' +
+    domainCards +
+    '<div class="kajo-analysis-chart-note" style="margin:12px 0 6px">Einbezogene objektive Messwerte</div>' +
+    renderItems(result.objective || [], 'objective') +
+    '<div class="kajo-analysis-chart-note" style="margin:12px 0 6px">Einbezogene subjektive Angaben</div>' +
+    renderItems(result.subjective || [], 'subjective') +
+    '</div>' +
+    '<p class="kajo-analysis-chart-note">Berechnung gemäß bestehendem Readiness-Modell: Physiologie 40 %, Schlaf 30 %, subjektives Befinden 30 %; nicht verfügbare Bereiche werden aus der Gewichtung herausgenommen und die übrigen Gewichte angepasst. Mindestens zwei Bereiche müssen verfügbar sein. Der Wert ist ein Orientierungsindex, keine medizinische Diagnose und keine automatische Trainingsfreigabe.</p>';
+}
 function renderDataAvailability(dates) {
   const root = document.getElementById('analysis-data-availability');
   const note = document.getElementById('analysis-data-availability-note');
@@ -520,6 +566,7 @@ function renderIntensityDistribution() {
 export function renderAnalysisOverview() {
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderDataAvailability(rangeDates(currentRange()));
+  renderReadinessBreakdown(rangeDates(currentRange()));
   renderTrendChart();
   renderFormTrendChart();
   renderActivityChart();
