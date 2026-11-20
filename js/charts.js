@@ -389,6 +389,17 @@ export function renderSportDistribution(records) {
     });
 }
 
+export function setChartEmptyState(canvas, message, visible) {
+    if (!canvas) return;
+    const wrapper = canvas.parentElement;
+    if (!wrapper) return;
+    let empty = wrapper.querySelector(':scope > .kajo-chart-empty-state');
+    if (visible) {
+        if (!empty) { empty = document.createElement('div'); empty.className = 'kajo-chart-empty-state'; empty.setAttribute('role', 'status'); wrapper.appendChild(empty); }
+        empty.textContent = message || 'Für diesen Zeitraum liegen keine auswertbaren Daten vor.';
+        canvas.classList.add('hidden');
+    } else { empty?.remove(); canvas.classList.remove('hidden'); }
+}
 export function renderHeartRateZoneDistribution(records, options = {}) {
     const canvas = document.getElementById(options.canvasId || 'heartRateZonesChart');
     const note = document.getElementById(options.noteId || 'heart-rate-zone-note');
@@ -487,17 +498,12 @@ export function renderHeartRateZoneDistribution(records, options = {}) {
     if (state[chartKey]) state[chartKey].destroy();
     const keys = Object.keys(totals);
     if (!keys.length) {
-        state[chartKey] = new Chart(canvas.getContext('2d'), {
-            type: 'bar', data: { labels: [], datasets: [] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Noch keine auswertbaren Herzfrequenz-Zeitreihen und Zonen', color: '#94a3b8' }
-            }}
-        });
+        setChartEmptyState(canvas, 'Keine auswertbaren Herzfrequenz-Zeitreihen und Zonen im gewählten Zeitraum.', true);
         if (summary) summary.innerHTML = '';
-        if (note) note.textContent = 'Noch keine auswertbaren Herzfrequenz-Zeitreihen.';
+        if (note) note.textContent = 'Keine auswertbaren Herzfrequenz-Zeitreihen. Dafür werden gültige Herzfrequenzdaten und passende Zonenparameter benötigt.';
         return;
     }
+    setChartEmptyState(canvas, '', false);
 
     const palette = ['#38bdf8', '#34d399', '#facc15', '#fb923c', '#f43f5e'];
     const zoneTotals = [0, 0, 0, 0, 0];
