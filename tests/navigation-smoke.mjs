@@ -448,3 +448,8 @@ assert.ok(analysisOverview.includes('mehrere Load-Modelle oder Einheiten'), 'inc
 assert.ok(analysisOverview.includes("!['complete','confirmed-rest'].includes(day.dataStatus)"), 'statistical load comparisons exclude incomplete and unknown load days');
 assert.ok(analysisOverview.includes("!['complete', 'confirmed-rest'].includes(day.dataStatus)"), 'next-day context excludes incomplete and unknown load days');
 assert.ok(analysisOverview.includes('Readiness enthält physiologische Messwerte einschließlich HRV'), 'Readiness and HRV overlap is disclosed');
+assert.ok(analysisOverview.includes('Ohne dokumentierten Krankheits-/Verletzungseintrag an D oder D+1'), 'load recovery comparison separates pairs without recorded health events');
+assert.ok(analysisOverview.includes('Mit dokumentiertem Krankheits-/Verletzungseintrag an D oder D+1'), 'load recovery comparison identifies pairs with recorded health events');
+assert.ok(analysisOverview.includes('Ein fehlender Eintrag bedeutet nicht, dass die Person gesund war'), 'missing health records are not treated as proof of health');
+assert.ok(analysisOverview.includes('keine statistische Kontrolle von Krankheit oder Verletzung'), 'health-event split is disclosed as sensitivity analysis, not statistical adjustment');
+assert.ok(analysisOverview.includes('Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren'), 'uncontrolled confounders are disclosed');
