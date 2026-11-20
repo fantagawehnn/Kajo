@@ -11,6 +11,7 @@
 
 import { state, setRefreshHandler } from './state.js';
 import { initializeDashboardCustomization, applyDashboardCustomization, openDashboardCustomization, closeDashboardCustomization, saveDashboardCustomization, resetDashboardCustomization } from './dashboard-customization.js?v=1';
+import { initializeAnalysisCustomization, applyAnalysisCustomization } from './analysis-customization.js?v=1';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar } from './season-plan-editor.js?v=4';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=5';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
@@ -2876,7 +2877,9 @@ async function handleAuthSession(session) {
             try {
                 initializeSettings();
                 initializeDashboardCustomization();
+                initializeAnalysisCustomization();
                 initEngine();
+                applyAnalysisCustomization();
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
                 void syncGarminTodayOnOpen(userId);
