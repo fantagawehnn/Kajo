@@ -28,6 +28,14 @@ export function applyAnalysisCustomization() {
     const preferences = readPreferences();
     applySections(preferences);
     applyAnalysisOverviewPreferences(preferences.metrics, preferences.activityMeasure);
+    if (state.activeTimeframe !== preferences.defaultPeriod) {
+        if (typeof window !== 'undefined' && typeof window.setTimeframe === 'function') {
+            window.setTimeframe(preferences.defaultPeriod);
+        } else {
+            state.activeTimeframe = preferences.defaultPeriod;
+            state.metricHistoryRange = preferences.defaultPeriod;
+        }
+    }
 }
 function renderEditor() {
     const list = document.getElementById('analysis-customization-list');
