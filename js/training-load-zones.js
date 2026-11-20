@@ -70,3 +70,18 @@ export function createZoneBackgroundPlugin(zones = []) {
     }
   };
 }
+
+
+/* Preserve the distinction between a measured zero and an unavailable zone model. */
+export function hasZoneModelData(coverage = {}, key = 'kajo') {
+  const count = Number(coverage?.[key === 'kajo' ? 'activitiesWithKajoZones' : 'activitiesWithEdwards']);
+  return Number.isFinite(count) && count > 0;
+}
+
+export function getZoneChartValues(seconds, mode = 'minutes', hasData = true) {
+  if (!hasData || !Array.isArray(seconds) || seconds.length < 5 || !seconds.slice(0, 5).every(valid)) return [null, null, null, null, null];
+  const values = seconds.slice(0, 5).map(Number);
+  const total = values.reduce((sum, value) => sum + value, 0);
+  if (mode === 'percent') return total > 0 ? values.map(value => Number((value / total * 100).toFixed(1))) : [null, null, null, null, null];
+  return values.map(value => Number((value / 60).toFixed(1)));
+}
