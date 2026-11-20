@@ -1110,7 +1110,7 @@ function renderActivityTrainingInsights(act) {
         ? Number(loadItem.value).toFixed(1) + ' ' + (loadData.unit || '')
         : '—';
     const qualityStatus = getActivityLoadQualityStatus(act, loadItem, loadData.mode);
-    const qualityTone = qualityStatus.status === 'measured'
+    const qualityTone = qualityStatus.status === 'measured' || qualityStatus.status === 'cached-measured'
         ? 'border-sky-800/50 bg-sky-950/20 text-sky-300'
         : qualityStatus.status === 'limited-measured' || qualityStatus.status === 'manual-estimate'
             ? 'border-amber-800/50 bg-amber-950/20 text-amber-300'
