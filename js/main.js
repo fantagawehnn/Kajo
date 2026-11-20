@@ -405,7 +405,14 @@ async function callGarminFunction(body) {
             || /Sitzung ungültig|Anmeldung erforderlich|Invalid JWT|invalid claim/i.test(firstError.detail);
         if (isSessionError) {
             // Ein abgelaufenes Access-Token einmal über den gespeicherten Refresh-Token erneuern.
-            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+            let refreshResult;
+            try {
+                refreshResult = await supabase.auth.refreshSession();
+            } catch (_) {
+                throw new Error('Die Supabase-Sitzung konnte nicht automatisch erneuert werden. Bitte prüfe die Verbindung und melde dich gegebenenfalls erneut an.');
+            }
+            const refreshed = refreshResult?.data;
+            const refreshError = refreshResult?.error;
             const refreshedUserId = refreshed?.session?.user?.id || null;
             if (refreshError || !refreshed?.session || refreshedUserId !== activeAppUserId) {
                 throw new Error('Die Supabase-Sitzung konnte nicht automatisch erneuert werden. Bitte melde dich erneut an.');
