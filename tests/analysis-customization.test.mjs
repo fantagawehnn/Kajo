@@ -9,7 +9,8 @@ test('uses the existing analysis defaults', () => {
     metrics: { load: true, recovery: true, performance: true },
     defaultPeriod: '3m',
     activityMeasure: 'duration',
-    performanceRange: '28d'
+    performanceRange: '28d',
+    trainingLoad: { model: 'kajo', volumeMeasure: 'duration', zoneDisplayMode: 'minutes' }
   });
 });
 test('normalizes order, visibility and invalid options', () => {
@@ -22,7 +23,8 @@ test('normalizes order, visibility and invalid options', () => {
     order: ['period', 'trend', 'distribution'],
     visible: { trend: false, distribution: true, period: false },
     metrics: { load: false, recovery: false, performance: true },
-    defaultPeriod: '3m', activityMeasure: 'duration', performanceRange: '28d'
+    defaultPeriod: '3m', activityMeasure: 'duration', performanceRange: '28d',
+    trainingLoad: { model: 'kajo', volumeMeasure: 'duration', zoneDisplayMode: 'minutes' }
   });
 });
 test('keeps at least one trend metric visible', () => {
@@ -38,4 +40,13 @@ test('only accepts supported default periods', () => {
 test('validates the independent performance detail range', () => {
   assert.equal(normalizeAnalysisPreferences({ performanceRange: '1y' }).performanceRange, '1y');
   assert.equal(normalizeAnalysisPreferences({ performanceRange: 'custom' }).performanceRange, '28d');
+});
+
+test('normalizes Training Load view preferences without accepting unknown modes', () => {
+  assert.deepEqual(normalizeAnalysisPreferences({ trainingLoad: {
+    model: 'compare', volumeMeasure: 'sessions', zoneDisplayMode: 'percent'
+  } }).trainingLoad, { model: 'compare', volumeMeasure: 'sessions', zoneDisplayMode: 'percent' });
+  assert.deepEqual(normalizeAnalysisPreferences({ trainingLoad: {
+    model: 'unknown', volumeMeasure: 'pace', zoneDisplayMode: 'watts'
+  } }).trainingLoad, { model: 'kajo', volumeMeasure: 'duration', zoneDisplayMode: 'minutes' });
 });
