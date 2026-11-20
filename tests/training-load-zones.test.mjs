@@ -42,3 +42,18 @@ test('background plugin safely skips charts without a chart area or y scale', ()
   const plugin = createZoneBackgroundPlugin(buildRelativeLoadZones([{ ctl: 1, atl: 2 }]));
   assert.doesNotThrow(() => plugin.beforeDraw({ chartArea: null, scales: {}, ctx: {} }));
 });
+
+
+test('unavailable heart-rate zone model stays distinct from measured zero minutes', async () => {
+  const { hasZoneModelData, getZoneChartValues } = await import('../js/training-load-zones.js');
+  assert.equal(hasZoneModelData({ activitiesWithKajoZones: 0 }, 'kajo'), false);
+  assert.deepEqual(getZoneChartValues([0, 0, 0, 0, 0], 'minutes', false), [null, null, null, null, null]);
+  assert.deepEqual(getZoneChartValues([0, 60, 0, 0, 0], 'minutes', true), [0, 1, 0, 0, 0]);
+});
+
+test('zone percentages require complete values and a positive measured total', async () => {
+  const { getZoneChartValues } = await import('../js/training-load-zones.js');
+  assert.deepEqual(getZoneChartValues([60, 60, 0, 0, 0], 'percent', true), [50, 50, 0, 0, 0]);
+  assert.deepEqual(getZoneChartValues([0, 0, 0, 0, 0], 'percent', true), [null, null, null, null, null]);
+  assert.deepEqual(getZoneChartValues([60, null, 0, 0, 0], 'minutes', true), [null, null, null, null, null]);
+});
