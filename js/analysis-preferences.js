@@ -19,5 +19,6 @@ export function normalizeAnalysisPreferences(value) {
     if (!Object.values(metrics).some(Boolean)) metrics.load = true;
     const period = ANALYSIS_PERIODS.includes(value?.defaultPeriod) ? value.defaultPeriod : '3m';
     const activityMeasure = ['duration', 'sessions'].includes(value?.activityMeasure) ? value.activityMeasure : 'duration';
-    return { order, visible, metrics, defaultPeriod: period, activityMeasure };
+    const performanceRange = ['7d', '28d', '3m', '6m', '1y'].includes(value?.performanceRange) ? value.performanceRange : '28d';
+    return { order, visible, metrics, defaultPeriod: period, activityMeasure, performanceRange };
 }
