@@ -310,6 +310,7 @@ function renderLoadRecoveryAssociation(dates) {
   const checkins = state.dailyCheckins || {};
   const healthLogs = state.healthLogs || {};
   const pairs = [];
+  const cumulativePairs = [];
 
   for (const date of dates) {
     const day = timeline.get(date);
@@ -326,14 +327,41 @@ function renderLoadRecoveryAssociation(dates) {
     const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
     const eventOnLoadDay = ['sick', 'injured'].includes(healthLogs[date]?.status);
     const eventOnRecoveryDay = ['sick', 'injured'].includes(healthLogs[nextDate]?.status);
+    const hrvValue = valid(rawHrv) && Number(rawHrv) > 0 ? Number(rawHrv) : null;
+    const readinessValue = readiness?.enoughData && valid(readiness.score) ? Number(readiness.score) : null;
 
     pairs.push({
       load: Number(day.load),
       mode: String(day.loadMode),
       unit: String(day.loadUnit),
-      hrv: valid(rawHrv) && Number(rawHrv) > 0 ? Number(rawHrv) : null,
-      readiness: readiness?.enoughData && valid(readiness.score) ? Number(readiness.score) : null,
+      hrv: hrvValue,
+      readiness: readinessValue,
       healthEvent: eventOnLoadDay || eventOnRecoveryDay
+    });
+
+    // Drei-Tage-Summe nur bei drei lückenlos belegten Tagen desselben Modells
+    // und derselben Einheit; unbekannte Tage werden niemals als 0 eingesetzt.
+    const priorDates = [];
+    for (let offset = 2; offset >= 1; offset--) {
+      const prior = new Date(date + 'T12:00:00');
+      prior.setDate(prior.getDate() - offset);
+      priorDates.push([prior.getFullYear(), String(prior.getMonth() + 1).padStart(2, '0'), String(prior.getDate()).padStart(2, '0')].join('-'));
+    }
+    const exposureDates = [...priorDates, date];
+    if (!exposureDates.every(value => dateSet.has(value))) continue;
+    const exposureDays = exposureDates.map(value => timeline.get(value));
+    const completeExposure = exposureDays.every(value =>
+      value && ['complete', 'confirmed-rest'].includes(value.dataStatus) &&
+      valid(value.load) && String(value.loadMode || '') === String(day.loadMode) &&
+      String(value.loadUnit || '') === String(day.loadUnit)
+    );
+    if (!completeExposure) continue;
+    cumulativePairs.push({
+      load: exposureDays.reduce((sum, value) => sum + Number(value.load), 0),
+      hrv: hrvValue,
+      readiness: readinessValue,
+      mode: String(day.loadMode),
+      unit: String(day.loadUnit)
     });
   }
 
@@ -357,6 +385,18 @@ function renderLoadRecoveryAssociation(dates) {
     render('Load D ↔ Garmin-HRV D+1', spearmanCorrelation(group, 'hrv')) +
     render('Load D ↔ Readiness D+1', spearmanCorrelation(group, 'readiness'));
 
+  const cumulativeModes = new Set(cumulativePairs.map(pair => pair.mode + '|' + pair.unit));
+  const cumulativeSection = !cumulativePairs.length
+    ? '<p class="kajo-analysis-chart-note">Für die Drei-Tage-Summe liegen keine vollständigen, lückenlosen Belastungsfenster mit Folgetags-Recovery vor.</p>'
+    : cumulativeModes.size !== 1
+      ? '<p class="kajo-analysis-chart-note">Die Drei-Tage-Fenster enthalten unterschiedliche Load-Modelle oder Einheiten. Eine gemeinsame Auswertung wird nicht berechnet.</p>'
+      : '<div class="kajo-analysis-availability">' +
+        '<h3 class="kajo-analysis-subheading">Kumulative Belastung · D−2 bis D · ' + cumulativePairs.length + ' vollständige Fenster</h3>' +
+        render('3-Tage-Load ↔ Garmin-HRV D+1', spearmanCorrelation(cumulativePairs, 'hrv')) +
+        render('3-Tage-Load ↔ Readiness D+1', spearmanCorrelation(cumulativePairs, 'readiness')) +
+        '</div>' +
+        '<p class="kajo-analysis-chart-note">Die Drei-Tage-Summe ist eine zusätzliche explorative Belastungsperspektive, kein neuer Trainings- oder Ermüdungsscore. Berücksichtigt werden nur drei aufeinanderfolgende, vollständig belegte Tage desselben Load-Modells und derselben Einheit (' + escapeHtml(cumulativePairs[0].mode) + ', ' + escapeHtml(cumulativePairs[0].unit) + ').</p>';
+
   root.innerHTML =
     '<div class="kajo-analysis-availability">' +
     renderGroup('Ohne dokumentierten Krankheits-/Verletzungseintrag an D oder D+1', withoutLoggedEvent) +
@@ -364,7 +404,8 @@ function renderLoadRecoveryAssociation(dates) {
     '</div>' +
     '<p class="kajo-analysis-chart-note">Die Aufteilung ist eine Sensitivitätsbetrachtung und keine statistische Kontrolle von Krankheit oder Verletzung. Ein fehlender Eintrag bedeutet nicht, dass die Person gesund war. Einträge an Belastungstag D oder Recovery-Tag D+1 kennzeichnen das jeweilige Wertepaar.</p>' +
     '<p class="kajo-analysis-chart-note">Nur vollständige Folgetag-Paare desselben Load-Modells (' + escapeHtml(pairs[0].mode) + ', ' + escapeHtml(pairs[0].unit) +
-    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>';
+    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>' +
+    '<h3 class="kajo-analysis-subheading">Ergänzende Mehrtagesperspektive</h3>' + cumulativeSection;
 }
 
 function renderNextDayContext(dates) {
