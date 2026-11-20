@@ -8,7 +8,7 @@ import { calculateGarminZoneLoad, summarizeTrainingLoadSourceCoverage } from './
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { getHeartRateZoneAnalysis } from './training-load.js?v=9';
-import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin, hasZoneModelData, getZoneChartValues } from './training-load-zones.js?v=1';
+import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin, hasZoneModelData, getZoneChartValues } from './training-load-zones.js?v=2';
 import { setChartEmptyState } from './charts.js?v=14';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
