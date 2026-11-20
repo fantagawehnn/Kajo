@@ -54,7 +54,7 @@ test('supports numeric Garmin epoch timestamps in stored activity rows', () => {
     endDate: '2026-08-28',
     coveredRows: [{ sync_date: '2026-08-28', activity_count: 1 }],
     storedActivities: [{ activity: { startTimeLocal: 1787909585000 } }],
-    rescanAnchorDate: '2026-08-28',
+    rescanAnchorDate: '2026-08-29',
     scanWindowDays: 1,
   });
   assert.equal(result.ranges.length, 0);
