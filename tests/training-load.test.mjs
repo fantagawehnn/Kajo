@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { computePerformanceTimeline } from '../js/calculations.js';
-import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis, getAdaptiveRestingHr, calculateHeartRateReserveZones, getActivityLoadQualityStatus } from '../js/training-load.js';
+import { calculateGarminZoneLoad, getTrainingLoadData, getHeartRateZoneAnalysis, getAdaptiveRestingHr, calculateHeartRateReserveZones, getActivityLoadQualityStatus, summarizeTrainingLoadSourceCoverage } from '../js/training-load.js';
 import { getGarminTelemetry, getGarminHeartRateSeries, summarizeTimeAxis } from '../js/data-source.js';
 
 test('activity load quality labels distinguish measured, limited, estimated and unavailable values', () => {
@@ -64,6 +64,38 @@ function entryOn(date, records, settings) {
 const today = dateKey(new Date());
 const completedDay = offsetDate(today, -1);
 
+
+test('selected-period load coverage separates measured, manual, missing and non-Garmin activities', () => {
+    const records = [
+        { id: 'g-manual', source: 'garmin', date: completedDay, manualTrainingLoadEstimate: {
+            value: 42, source: 'manual-estimate', unit: 'KAJO-HF-Punkte'
+        } },
+        { id: 'g-missing', source: 'garmin', date: completedDay, duration: 45 },
+        { id: 'g-native', source: 'garmin', date: completedDay, garminTrainingLoad: 30 },
+        { id: 'csv', source: 'csv', date: completedDay, duration: 30 }
+    ];
+    const summary = summarizeTrainingLoadSourceCoverage(records, {}, {});
+    assert.equal(summary.activityCount, 4);
+    assert.equal(summary.garminEligibleCount, 3);
+    assert.equal(summary.nonGarminCount, 1);
+    assert.equal(summary.manualEstimateCount, 1);
+    assert.equal(summary.missingUsableHeartRateCount, 2);
+    assert.equal(summary.nativeLoadAvailableCount, 1);
+    assert.equal(summary.currentHeartRateCount, 0);
+    assert.equal(summary.heartRateWithoutLoadCount, 0);
+});
+
+test('selected-period sRPE coverage stays separate from Garmin heart-rate load', () => {
+    const records = [
+        { id: 'rpe-ok', source: 'manual', date: completedDay, duration: 60, perceivedEffort: 6 },
+        { id: 'rpe-missing', source: 'manual', date: completedDay, duration: 45 }
+    ];
+    const summary = summarizeTrainingLoadSourceCoverage(records, { trainingLoadSource: 'srpe' }, {});
+    assert.equal(summary.model, 'srpe');
+    assert.equal(summary.srpeCount, 1);
+    assert.equal(summary.missingSrpeCount, 1);
+    assert.equal(summary.currentHeartRateCount, 0);
+});
 
 test('manual estimated KAJO load fills a missing-HR activity without treating it as zero', () => {
     const activity = {
