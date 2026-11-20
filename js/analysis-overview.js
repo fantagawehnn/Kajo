@@ -8,6 +8,7 @@ import { renderHeartRateZoneDistribution, setChartEmptyState } from './charts.js
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { calculateReadiness } from './readiness.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
@@ -78,11 +79,17 @@ function buildSeries(dates) {
     return day && valid(day.load) ? Number(day.load) : null;
   });
   const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
+  const readiness = dates.map(date => {
+    if (date > todayKey() || !checkins[date]) return null;
+    const result = calculateReadiness(date, state);
+    return result?.enoughData && valid(result.score) ? Number(result.score) : null;
+  });
   const performance = dates.map(date => getGarminCheckinMetric(checkins[date], 'vo2max'));
   return [
     { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'performance', label: 'Performance · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
+    { key: 'readiness', label: 'Recovery · Readiness', unit: '/ 100', raw: readiness, color: '#34D399' },
+    { key: 'performance', label: 'Fitness · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
   ];
 }
 function toRelativeIndex(raw) {
@@ -292,7 +299,7 @@ function renderTrendChart() {
   renderHealthMarkers(dates);
   const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
   setText('analysis-overview-trend-note',
-    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
+    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Im Tooltip bleibt zusätzlich der Originalwert sichtbar. Readiness ist ein zusammengesetzter Orientierungswert aus verfügbaren Recovery-Domänen und enthält unter anderem physiologische Daten wie HRV; HRV und Readiness sind deshalb keine unabhängigen Messgrößen. Fehlende Readiness-Tage bedeuten, dass die Mindestdatenanforderungen nicht erfüllt waren. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
