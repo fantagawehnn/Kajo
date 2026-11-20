@@ -454,6 +454,10 @@ assert.ok(analysisOverview.includes('Ein fehlender Eintrag bedeutet nicht, dass 
 assert.ok(analysisOverview.includes('keine statistische Kontrolle von Krankheit oder Verletzung'), 'health-event split is disclosed as sensitivity analysis, not statistical adjustment');
 assert.ok(analysisOverview.includes('Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren'), 'uncontrolled confounders are disclosed');
 assert.ok(analysisOverview.includes('Drei-Tage-Summe') && analysisOverview.includes('D−2 bis D'), 'load recovery analysis includes a three-day cumulative load perspective');
+assert.ok(html.includes('id="analysis-fitness-recovery-context"') && analysisOverview.includes('renderFitnessRecoveryContext'), 'unified overview exposes a dated fitness and recovery context');
+assert.ok(analysisOverview.includes('CTL: ') && analysisOverview.includes('Garmin-HRV: ') && analysisOverview.includes('Readiness: ') && analysisOverview.includes('Garmin-VO₂max: '), 'fitness and recovery context displays the existing source metrics');
+assert.ok(analysisOverview.includes('Bei abweichendem Load-Modell werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt'), 'fitness and recovery context does not mix load models');
+assert.ok(analysisOverview.includes('fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden'), 'fitness and recovery context does not infer health from missing logs');
 assert.ok(analysisOverview.includes('drei aufeinanderfolgende, vollständig belegte Tage'), 'cumulative load requires three consecutive complete days');
 assert.ok(analysisOverview.includes('Drei-Tage-Fenster enthalten unterschiedliche Load-Modelle oder Einheiten'), 'cumulative load does not mix models or units');
 assert.ok(analysisOverview.includes('unbekannte Tage werden niemals als 0 eingesetzt'), 'cumulative load does not impute unknown days as zero');
