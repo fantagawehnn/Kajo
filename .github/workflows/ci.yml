@@ -34,6 +34,7 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
+          node --check js/dashboard-customization.js
           node --check js/storage.js
           node --check js/personal-preferences.js
           node --check js/user-storage.js
@@ -155,6 +156,9 @@ jobs:
 
       - name: Run personal preferences tests
         run: node --experimental-default-type=module --test tests/personal-preferences.test.mjs
+
+      - name: Run dashboard customization tests
+        run: node --experimental-default-type=module --test tests/dashboard-customization.test.mjs
 
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
