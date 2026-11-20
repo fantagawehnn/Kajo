@@ -97,7 +97,7 @@ export async function loadGarminTelemetryMetadataForActivityIds(supabase, userId
     const id = requireContext(supabase, userId);
     const uniqueIds = Array.from(new Set((Array.isArray(activityIds) ? activityIds : [])
         .map(value => String(value ?? '').replace(/^garmin-/, ''))
-        .filter(value => /^\\d+$/.test(value))));
+        .filter(value => /^\d+$/.test(value))));
     const rows = [];
     const QUERY_BATCH_SIZE = 100;
 
