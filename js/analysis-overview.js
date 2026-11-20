@@ -207,7 +207,7 @@ function renderFitnessRecoveryContext(dates) {
   const visible = rows.slice(-12).reverse();
   const formatLoad = value => valid(value) ? fmt(value) : '—';
   const cards = visible.map(row => {
-    const sameMode = !row.mode || !selectedMode || row.mode === selectedMode;
+    const sameMode = Boolean(selectedMode) && row.mode === selectedMode;
     const ctl = sameMode ? row.ctl : null;
     const atl = sameMode ? row.atl : null;
     const form = sameMode ? row.formValue : null;
@@ -226,7 +226,7 @@ function renderFitnessRecoveryContext(dates) {
   }).join('');
   root.innerHTML = '<div class="kajo-analysis-availability">' + cards + '</div>' +
     (rows.length > visible.length ? '<p class="kajo-analysis-chart-note">' + (rows.length - visible.length) + ' weitere Tage mit Messwerten liegen im gewählten Zeitraum vor.</p>' : '') +
-    '<p class="kajo-analysis-chart-note">Zeitliche Gegenüberstellung der gespeicherten Tageswerte, keine Kausalitäts- oder Wirkungsanalyse. CTL, ATL und TSB werden nur innerhalb desselben Load-Modells interpretiert; Garmin-Form ist ein eigener Prozentindikator und nicht mit TSB gleichzusetzen. Bei abweichendem Load-Modell werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt. HRV und Readiness sind nicht unabhängig, da HRV in die Readiness eingehen kann. Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch. Fehlende Werte bleiben offen; fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden.</p>';
+    '<p class="kajo-analysis-chart-note">Zeitliche Gegenüberstellung der gespeicherten Tageswerte, keine Kausalitäts- oder Wirkungsanalyse. CTL, ATL und TSB werden nur innerhalb desselben Load-Modells interpretiert; Garmin-Form ist ein eigener Prozentindikator und nicht mit TSB gleichzusetzen. Bei fehlender oder abweichender Load-Modell-Angabe werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt. HRV und Readiness sind nicht unabhängig, da HRV in die Readiness eingehen kann. Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch. Fehlende Werte bleiben offen; fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden.</p>';
 }
 
 function renderHealthMarkers(dates) {
