@@ -4,7 +4,7 @@
  */
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { calculateGarminZoneLoad } from './training-load.js?v=7';
+import { calculateGarminZoneLoad, summarizeTrainingLoadSourceCoverage } from './training-load.js?v=8';
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { getHeartRateZoneAnalysis } from './training-load.js?v=7';
@@ -130,6 +130,23 @@ function renderZoneTrendChart(analysis,range){
  keys.forEach(key=>{const daily=new Map(analysis[key].daily.map(row=>[row.date,row]));zoneNames.forEach((name,index)=>datasets.push({label:(keys.length>1?(key==='kajo'?'KAJO ':'Edwards '):'')+name,data:dates.map(date=>{const row=daily.get(date);if(!row)return null;const seconds=row.secondsByZone||[0,0,0,0,0],total=seconds.reduce((sum,v)=>sum+Number(v||0),0);return zoneDisplayMode==='percent'?(total>0?Number((Number(seconds[index])/total*100).toFixed(1)):null):Number((Number(seconds[index])/60).toFixed(1));}),backgroundColor:zoneColors[index],borderColor:zoneColors[index],borderWidth:0,stack:key}));});
  chartBase('training-load-daily-chart','dailyChart',{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#7d8a98',maxTicksLimit:9,maxRotation:0}},y:{stacked:true,beginAtZero:true,max:zoneDisplayMode==='percent'?100:undefined,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:'#7d8a98'},title:{display:true,text:zoneDisplayMode==='percent'?'Anteil pro Tag (%)':'Minuten pro Tag',color:'#7d8a98'}}},plugins:{legend:{display:true,position:'bottom',labels:{color:'#a9b5c2',usePointStyle:true,boxWidth:7,padding:8}},tooltip:{callbacks:{label:item=>item.dataset.label+': '+fmt(item.parsed.y)+(zoneDisplayMode==='percent'?' %':' min')}}}}});
  setText('training-load-zone-trend-unit',zoneDisplayMode==='percent'?'Anteil je Tag':'Minuten pro Tag');
+}
+function renderSourceCoverage(activities=[]){
+ const c=summarizeTrainingLoadSourceCoverage(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
+ const node=document.getElementById('training-load-source-coverage');if(!node)return;
+ const pct=(count,total)=>total>0?' ('+Math.round(count/total*100)+' %)':'';
+ const lines=[];
+ lines.push('Im gewählten Zeitraum: '+c.activityCount+' Aktivitäten; davon '+c.garminEligibleCount+' Garmin-Aktivitäten und '+c.nonGarminCount+' andere Aktivitäten.');
+ if(c.model==='srpe'){
+  lines.push('sRPE-Load berechenbar: '+c.srpeCount+' von '+c.activityCount+pct(c.srpeCount,c.activityCount)+'. Ohne gültige Dauer oder RPE: '+c.missingSrpeCount+'.');
+ }else{
+  const measured=c.currentHeartRateCount+c.limitedHeartRateCount+c.cachedHeartRateCount;
+  lines.push('HF-basierter KAJO-Load: '+measured+' von '+c.garminEligibleCount+pct(measured,c.garminEligibleCount)+'.');
+  lines.push('Aktuelle HF-Zeitreihe: '+c.currentHeartRateCount+'; eingeschränkte HF-Aufzeichnung: '+c.limitedHeartRateCount+'; gespeicherte HF-Analyse ohne lokal verfügbare Zeitreihe: '+c.cachedHeartRateCount+'.');
+  lines.push('Manuell geschätzt: '+c.manualEstimateCount+'; HF vorhanden, aber Load nicht berechenbar: '+c.heartRateWithoutLoadCount+'; keine nutzbare HF-Zeitreihe und kein Load: '+c.missingUsableHeartRateCount+'.');
+  if(c.nativeLoadAvailableCount)lines.push('Garmin-native Training-Load-Werte zusätzlich vorhanden: '+c.nativeLoadAvailableCount+' (separate Vergleichsquelle, nicht im KAJO-CTL/ATL/TSB enthalten).');
+ }
+ node.textContent=lines.join(' ');
 }
 function renderCoverage(analysis,activities=[]){
  const c=analysis.coverage;
@@ -266,7 +283,7 @@ export function renderTrainingLoadView(){
  updateSportOptions();updatePeriodControl();const range=getRange(),activities=selectedActivities(),timeline=selectedTimeline();
  renderRings(timeline);renderVolumeSummary(activities,range);renderLoadTrend(timeline,activities);
  const analysis=getHeartRateZoneAnalysis(activities,state.settings||{},state.profile||{},state.dailyCheckins||{});
- renderCoverage(analysis,activities);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue();
+ renderCoverage(analysis,activities);renderSourceCoverage(activities);renderZoneChart(analysis);renderZoneTrendChart(analysis,range);renderActivityList(analysis);renderEstimatedLoadQueue();
  const hasZones=modelKeys().some(key=>analysis[key].daily.length>0);setVisible('training-load-no-data',!hasZones);setVisible('training-load-zone-analysis',hasZones);
  const note=document.getElementById('training-load-zone-method-note');
  if(note)note.textContent=selectedModel==='compare'?'Die Zonenbezeichnungen Z1–Z5 sind zwischen den Modellen nicht physiologisch identisch. KAJO nutzt adaptive HF-Reserve-Zonen; Edwards feste Prozentbereiche der HFmax. Werte nicht als identische Zonen vergleichen.':selectedModel==='edwards'?'Edwards verwendet feste Prozentbereiche der HFmax. Zeit unter 50 % HFmax wird nicht einer Zone zugeordnet.':'KAJO verwendet adaptive HF-Reserve-Zonen mit einer Ruhe-HF-Basis aus dem konfigurierten Rückblick; ein Profil-Fallback ist als eingeschränkte Datenbasis zu verstehen.';
