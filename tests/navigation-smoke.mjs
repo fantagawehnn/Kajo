@@ -9,6 +9,7 @@ const main = readFileSync('js/main.js', 'utf8').replace(/\r\n/g, '\n');
 const calendar = readFileSync('js/calendar.js', 'utf8').replace(/\r\n/g, '\n');
 const state = readFileSync('js/state.js', 'utf8').replace(/\r\n/g, '\n');
 const analysisUI = readFileSync('js/analysis-ui.js', 'utf8').replace(/\r\n/g, '\n');
+const analysisOverview = readFileSync('js/analysis-overview.js', 'utf8').replace(/\r\n/g, '\n');
 const analysisInsights = readFileSync('js/analysis-insights.js', 'utf8').replace(/\r\n/g, '\n');
 const charts = readFileSync('js/charts.js', 'utf8').replace(/\r\n/g, '\n');
 const dashboard = readFileSync('js/dashboard.js', 'utf8').replace(/\r\n/g, '\n');
@@ -366,6 +367,8 @@ assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.
 assert.ok(overviewModule.includes("import { calculateReadiness } from './readiness.js';") && overviewModule.includes("key: 'readiness', label: 'Recovery · Readiness'") && overviewModule.includes('result?.enoughData'), 'overview plots only valid daily readiness scores alongside HRV');
 assert.ok(overviewModule.includes('HRV und Readiness sind deshalb keine unabhängigen Messgrößen'), 'overview explains the shared inputs behind HRV and readiness');
 assert.ok(html.includes('id="analysis-readiness-breakdown"') && overviewModule.includes('function renderReadinessBreakdown') && overviewModule.includes('result.objective') && overviewModule.includes('result.subjective'), 'overview exposes the actual objective and subjective readiness inputs');
+assert.ok(html.includes('id="analysis-health-event-context"') && analysisOverview.includes('renderHealthEventContext'), 'unified overview exposes a cross-domain context for documented health events');
+assert.ok(analysisOverview.includes('Gleicher Kalendertag') && analysisOverview.includes('keinen ursächlichen Zusammenhang') && analysisOverview.includes('Garmin-HRV'), 'health context reports same-day source values without implying causality');
 assert.ok(overviewModule.includes('Physiologie 40 %') && overviewModule.includes('Schlaf 30 %') && overviewModule.includes('subjektives Befinden 30 %'), 'overview explains the established readiness domain weights');
 assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
