@@ -4,7 +4,7 @@
  */
 import { state } from './state.js';
 import { getSportsCatalog, escapeHtml } from './utils.js';
-import { renderHeartRateZoneDistribution } from './charts.js';
+import { renderHeartRateZoneDistribution, setChartEmptyState } from './charts.js';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
@@ -170,15 +170,23 @@ function renderTrendChart() {
       backgroundColor: item.color,
       borderWidth: 2.2,
       tension: .22,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      pointHitRadius: 0,
+      pointRadius: context => valid(context.raw) ? 2.5 : 0,
+      pointHoverRadius: 4,
+      pointHitRadius: 7,
       spanGaps: false,
       fill: false,
       hidden: !selectedMetrics.has(item.key)
     };
   });
   const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
+  if (!hasValues) {
+    setChartEmptyState(canvas, 'Für die ausgewählten Kennzahlen liegen im gewählten Zeitraum keine Messwerte vor.', true);
+    renderHealthMarkers(dates);
+    setText('analysis-overview-trend-note', 'Das Diagramm bleibt bewusst ohne künstliche Nullwerte. Wähle einen längeren Zeitraum oder eine andere Kennzahl, sofern dafür Daten vorliegen.');
+    updateMetricSwitch();
+    return;
+  }
+  setChartEmptyState(canvas, '', false);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   trendChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
@@ -285,6 +293,16 @@ function renderActivityChart() {
   const colors = entries.map(item => item.color);
   const totalSessions = activities.length;
   const completeSports = entries.length;
+  if (!entries.length) {
+    const legend = document.getElementById('analysis-overview-activity-legend');
+    if (legend) legend.innerHTML = '';
+    const message = !activities.length ? 'Keine Trainingsaktivitäten im gewählten Zeitraum dokumentiert.' : 'Aktivitäten sind vorhanden, aber für diese Darstellung fehlen vollständige Dauern. Wechsle zu „Einheiten“, um die dokumentierten Aktivitäten zu sehen.';
+    setChartEmptyState(canvas, message, true);
+    setText('analysis-overview-activity-note', message + ' Fehlende Werte werden nicht als 0 dargestellt.');
+    updateActivitySwitch();
+    return;
+  }
+  setChartEmptyState(canvas, '', false);
   const incompleteSports = [...bySport.values()].filter(items => !items.every(validDuration)).length;
   const totalDuration = entries.reduce((sum, item) => sum + (item.minutes || 0), 0);
   const note = !activities.length ? 'Keine gespeicherten Aktivitäten im gewählten Zeitraum.' :
