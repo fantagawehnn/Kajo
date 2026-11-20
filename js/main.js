@@ -10,6 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
+import { initializeDashboardCustomization, applyDashboardCustomization, openDashboardCustomization, closeDashboardCustomization, saveDashboardCustomization, resetDashboardCustomization } from './dashboard-customization.js?v=1';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar } from './season-plan-editor.js?v=4';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=5';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
@@ -1934,6 +1935,7 @@ function initEngine() {
     runInitStep('Trainingsplanung', () => renderPlannedWorkouts());
     runInitStep('Krafttraining', () => renderStrengthView());
     runInitStep('Home-Tagesübersicht', () => renderSelectedDashboardDay());
+    runInitStep('Dashboard-Anpassung', () => applyDashboardCustomization());
 }
 
 // Alle Module lösen nach Datenänderungen refreshAll() aus → initEngine()
@@ -2873,6 +2875,7 @@ async function handleAuthSession(session) {
 
             try {
                 initializeSettings();
+                initializeDashboardCustomization();
                 initEngine();
                 // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
                 // und hält den App-Start dadurch nicht auf.
@@ -3067,6 +3070,10 @@ Object.assign(window, {
     openAthleteProfileSection,
     closeAthleteProfileSection,
     setKajoTheme,
+    openDashboardCustomization,
+    closeDashboardCustomization,
+    saveDashboardCustomization,
+    resetDashboardCustomization,
     openSettingsModal: showSettingsModal,
     kajoSettingsOpenPage: (page) => {
         const allowed = ['menu', 'training', 'performance', 'telemetry', 'app', 'notifications', 'calendar'];
