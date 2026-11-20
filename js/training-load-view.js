@@ -7,7 +7,7 @@ import { saveDataToLocalStorage } from './storage.js?v=5';
 import { calculateGarminZoneLoad, summarizeTrainingLoadSourceCoverage } from './training-load.js?v=8';
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
-import { getHeartRateZoneAnalysis } from './training-load.js?v=7';
+import { getHeartRateZoneAnalysis } from './training-load.js?v=8';
 import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } from './training-load-zones.js?v=1';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
