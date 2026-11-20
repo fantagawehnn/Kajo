@@ -9184,3 +9184,11 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-dashboard-custom-metric{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--kajo-border);font-size:.72rem;color:var(--kajo-text)}
 .kajo-dashboard-custom-metric input{width:17px;height:17px;accent-color:var(--kajo-blue)}
 @media(max-width:420px){.kajo-dashboard-custom-metrics{grid-template-columns:1fr}}
+
+/* Phase 4.3: Analyse individuell konfigurieren */
+.kajo-analysis-custom-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.kajo-analysis-custom-fields label{display:flex;flex-direction:column;gap:6px;color:var(--kajo-muted);font-size:.72rem;font-weight:700}
+.kajo-analysis-custom-fields select{width:100%;min-height:46px;padding:8px 11px;border:1px solid var(--kajo-border);border-radius:12px;background:var(--kajo-surface);color:var(--kajo-text);font-size:.8rem}
+#analysis-overview-section-trend .kajo-analysis-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#analysis-overview-section-trend .kajo-analysis-section-heading h2{min-width:0}
+@media(max-width:420px){.kajo-analysis-custom-fields{grid-template-columns:1fr}}
