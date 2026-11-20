@@ -426,7 +426,7 @@
     <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Load</strong>
    </button>
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-recovery')" aria-label="Recovery öffnen">
-    <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-domain="recovery"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span><strong>Recovery</strong>
+    <span class="kajo-analysis-hero-ring" id="overview-recovery-ring" data-domain="recovery"><span><strong id="analysis-overview-recovery-value">—</strong><small id="analysis-overview-recovery-unit">ms</small></span></span><strong>Recovery · Readiness</strong><small id="analysis-overview-recovery-detail">Tageswert · / 100</small>
    </button>
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-performance')" aria-label="Fitness öffnen">
     <span class="kajo-analysis-hero-ring" id="overview-performance-ring" data-domain="performance"><span><strong id="analysis-overview-performance-value">—</strong><small id="analysis-overview-performance-unit">ml/kg/min</small></span></span><strong>Fitness</strong>
@@ -454,6 +454,11 @@
     <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="true">Health</button>
    </nav>
    <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
+  </section>
+  <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-overview-form-title">
+   <div class="kajo-analysis-section-heading"><div><h2 id="analysis-overview-form-title">Fitnessaufbau &amp; Form</h2><p class="kajo-analysis-chart-note">Langfristige und kurzfristige Belastung sowie der daraus berechnete Formindikator</p></div></div>
+   <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-form-chart" aria-label="Verlauf von CTL, ATL und dem modellabhängigen Formindikator"></canvas></div>
+   <p id="analysis-overview-form-note" class="kajo-analysis-chart-note"></p>
   </section>
   <section class="kajo-analysis-overview-panel">
    <div class="kajo-analysis-section-heading"><h2>Trainingsverteilung</h2></div>
