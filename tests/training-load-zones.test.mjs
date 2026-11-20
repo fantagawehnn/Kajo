@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin } from '../js/training-load-zones.js';
+import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin, hasZoneModelData, getZoneChartValues } from '../js/training-load-zones.js';
 
 test('CTL/ATL bands use a shared scale and divide the selected period into thirds', () => {
   const zones = buildRelativeLoadZones([
@@ -44,15 +44,13 @@ test('background plugin safely skips charts without a chart area or y scale', ()
 });
 
 
-test('unavailable heart-rate zone model stays distinct from measured zero minutes', async () => {
-  const { hasZoneModelData, getZoneChartValues } = await import('../js/training-load-zones.js');
+test('unavailable heart-rate zone model stays distinct from measured zero minutes', () => {
   assert.equal(hasZoneModelData({ activitiesWithKajoZones: 0 }, 'kajo'), false);
   assert.deepEqual(getZoneChartValues([0, 0, 0, 0, 0], 'minutes', false), [null, null, null, null, null]);
   assert.deepEqual(getZoneChartValues([0, 60, 0, 0, 0], 'minutes', true), [0, 1, 0, 0, 0]);
 });
 
-test('zone percentages require complete values and a positive measured total', async () => {
-  const { getZoneChartValues } = await import('../js/training-load-zones.js');
+test('zone percentages require complete values and a positive measured total', () => {
   assert.deepEqual(getZoneChartValues([60, 60, 0, 0, 0], 'percent', true), [50, 50, 0, 0, 0]);
   assert.deepEqual(getZoneChartValues([0, 0, 0, 0, 0], 'percent', true), [null, null, null, null, null]);
   assert.deepEqual(getZoneChartValues([60, null, 0, 0, 0], 'minutes', true), [null, null, null, null, null]);
