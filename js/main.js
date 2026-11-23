@@ -21,7 +21,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
-import { mergeCloudSnapshots, cloudSnapshotsEqual } from './cloud-merge.js';
+import { mergeCloudSnapshots, cloudSnapshotsEqual } from './cloud-merge.js?v=1';
 import { fetchCloudActivities, getCloudActivityIds, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
@@ -43,7 +43,7 @@ import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActi
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=6';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds, loadGarminTelemetryMetadataForActivityIds } from './garmin-cloud-telemetry.js?v=6';
@@ -2548,6 +2548,27 @@ window.addEventListener('endurance:user-ready', event => {
     scheduleCloudSync(userId);
 });
 
+let cloudPullInFlight = false;
+
+async function pullCloudChanges() {
+    if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId ||
+        cloudSyncBlocked || cloudSyncInFlight || cloudPullInFlight) return;
+    cloudPullInFlight = true;
+    try {
+        await flushCloudSync();
+    } finally {
+        cloudPullInFlight = false;
+    }
+}
+
+// Erkennt Änderungen eines zweiten Geräts auch dann, wenn auf diesem Gerät
+// gerade keine neue Eingabe erfolgt.
+window.addEventListener('focus', () => { void pullCloudChanges(); });
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void pullCloudChanges();
+});
+setInterval(() => { void pullCloudChanges(); }, 60000);
+
 async function startManualCloudSync() {
     const button = document.getElementById('cloud-sync-manual-button');
     if (cloudSyncInFlight || button?.disabled) return;
@@ -3104,8 +3125,8 @@ async function handleAuthSession(session) {
             // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
             const localTelemetryForMigration = getGarminTelemetryRecordsForCloud();
 
-            // Ein vorhandener zentraler Datensatz ist die maßgebliche Datenquelle.
-            // Der lokale, kontogebundene Speicher dient danach nur als Cache.
+            // Lokaler und zentraler Datenstand werden anhand der letzten gemeinsamen
+            // Synchronisierungsbasis abgeglichen; keiner der beiden wird pauschal ersetzt.
             if (cloudSnapshot.userId !== userId) {
                 throw new Error('Das angemeldete Konto stimmt nicht mit dem geladenen Cloud-Datensatz überein.');
             }
