@@ -22,7 +22,14 @@ class KajoConnectRecordingEngine {
             :subSport => Activity.SUB_SPORT_WHITEWATER
         });
 
-        return mSession.start();
+        var started = mSession.start();
+        if (!started) {
+            // Einen fehlgeschlagenen Start sauber verwerfen, damit kein
+            // zweites Session-Objekt neben dem ersten angelegt wird.
+            mSession.discard();
+            mSession = null;
+        }
+        return started;
     }
 
     function isRecording() as Lang.Boolean {
@@ -43,11 +50,15 @@ class KajoConnectRecordingEngine {
         }
 
         if (mSession.isRecording()) {
-            mSession.stop();
+            if (!mSession.stop()) {
+                return false;
+            }
         }
 
         var saved = mSession.save();
-        mSession = null;
+        if (saved) {
+            mSession = null;
+        }
         return saved;
     }
 }
