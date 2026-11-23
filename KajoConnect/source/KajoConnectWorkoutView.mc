@@ -62,6 +62,16 @@ class KajoConnectWorkoutView extends WatchUi.View {
 
         drawCentered(dc, center, unit * 0.445, date, contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
         drawCentered(dc, center, unit * 0.50, type, contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        var raceFormat = valueText("raceFormat", "");
+        var waterType = valueText("waterType", "");
+        var sportContext = raceFormat;
+        if (waterType.length() > 0) {
+            sportContext = sportContext.length() > 0 ? sportContext + " · " + waterType : waterType;
+        }
+        if (sportContext.length() > 48) { sportContext = sportContext.substring(0, 45) + "..."; }
+        if (sportContext.length() > 0) {
+            drawCentered(dc, center, unit * 0.545, sportContext, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        }
 
         if (!isRestDay) {
             var leftX = center - unit * 0.19;
@@ -84,16 +94,20 @@ class KajoConnectWorkoutView extends WatchUi.View {
             || mainSet.length() > 0 || warmup.length() > 0 || cooldown.length() > 0;
 
         if (hasStructuredDetails && !isRestDay) {
-            var lineOne = objective.length() > 0 ? "ZIEL: " + objective : "INTENSITAET: " + intensity;
-            if (objective.length() > 0 && intensity.length() > 0) {
-                lineOne = "ZIEL: " + objective;
+            var lineOne = objective.length() > 0 ? "ZIEL: " + objective : "";
+            if (intensity.length() > 0) {
+                lineOne = lineOne.length() > 0 ? lineOne + " · " + intensity : "INTENSITAET: " + intensity;
             }
             if (lineOne.length() > 72) { lineOne = lineOne.substring(0, 69) + "..."; }
-            drawCentered(dc, center, unit * 0.765, lineOne, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            if (lineOne.length() > 0) {
+                drawCentered(dc, center, unit * 0.765, lineOne, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            }
 
-            var lineTwo = mainSet.length() > 0 ? "HAUPTTEIL: " + mainSet : "INTENSITAET: " + intensity;
+            var lineTwo = mainSet.length() > 0 ? "HAUPTTEIL: " + mainSet : "";
             if (lineTwo.length() > 78) { lineTwo = lineTwo.substring(0, 75) + "..."; }
-            drawCentered(dc, center, unit * 0.805, lineTwo, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            if (lineTwo.length() > 0) {
+                drawCentered(dc, center, unit * 0.805, lineTwo, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            }
 
             var lineThree = warmup.length() > 0 ? "AUFW.: " + warmup : "";
             if (lineThree.length() > 72) { lineThree = lineThree.substring(0, 69) + "..."; }
