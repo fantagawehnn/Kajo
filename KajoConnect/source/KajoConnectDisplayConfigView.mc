@@ -117,9 +117,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
                 mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
         }
 
-        var saveWidth = mUnit * 0.46;
         var saveHeight = mUnit * 0.085;
-        var saveY = mUnit * 0.825;
+        var saveY = mUnit * 0.78;
+        var saveWidth = mLayout.safeRectWidth(saveY, saveHeight, mUnit * 0.46);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
