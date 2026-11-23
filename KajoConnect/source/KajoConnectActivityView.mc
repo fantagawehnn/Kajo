@@ -964,7 +964,7 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(
             dc,
             centerX,
-            top + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
+            top + (height - dc.getFontHeight(mLayout.fontForPercent(dc, 0.055))) / 2,
             label,
             safeWidth * 0.86,
             Graphics.FONT_SMALL,
