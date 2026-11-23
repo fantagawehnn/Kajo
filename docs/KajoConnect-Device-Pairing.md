@@ -146,3 +146,33 @@ Die Venu 3S bleibt das erste Build- und Testziel. Unterstützte API-Level, Produ
 - Sichere atomare Einmal-Code-Einlösung und Rate-Limit-Strategie.
 - Connect-IQ-Details zur sicheren lokalen Token-Speicherung und HTTPS-Request-Ausführung.
 - Aktivitätsformat und Importpfad für Watch-Aufzeichnungen.
+
+
+## 11. Datenbank- und Migrationsabgleich (Read-only-Prüfung)
+
+Am 23.11.2026 wurden die Migrationsliste des verbundenen Supabase-Projekts, die Dateien unter `supabase/migrations/` im Branch `feature/kajo-connect` sowie die tatsächlichen Tabellen und Policies read-only verglichen.
+
+### Ergebnis
+
+Die Datenbank enthält die Tabellen und Spalten, die zu den vorhandenen Garmin-/Export-Migrationen gehören. Auch die zusätzliche Update-Policy für Garmin-Telemetrie und die Spalte `kajo_notification_schedules.last_sent_local_date` sind im Live-Schema vorhanden. Die Datenbankstruktur ist damit nicht einfach „unvollständig“; das Problem ist die fehlende eindeutige Zuordnung zwischen Repository-Migrationsdateien und registrierter Migrationshistorie.
+
+| Repository-Datei | Beobachtung im Live-Projekt |
+|---|---|
+| `20261115000100_garmin_activity_telemetry.sql` | Tabelle und Basis-Policies sind vorhanden; eine passende Version ist in der Live-Migrationsliste nicht sichtbar. |
+| `202611150001_garmin_activity_sync_days.sql` | Tabelle ist vorhanden; Live-Historie führt stattdessen Version `20261115224846` mit gleichem Namen. |
+| `20261115000200_kajo_push_delivery_tracking.sql` | Die Spalte `last_sent_local_date` ist vorhanden; die Datei ist in der Live-Migrationsliste nicht als Version registriert. |
+| `20261115000300_garmin_activity_telemetry_update_policy.sql` | Update-Policy und Update-Berechtigung sind vorhanden; keine passende Version in der Live-Migrationsliste sichtbar. |
+| `20261118000100_garmin_export_archive_storage.sql` | Tabellen, Bucket und zugehörige Policies sind vorhanden; Live-Historie führt stattdessen Version `20261118105435` mit gleichem Namen. |
+| `20261118191919_garmin_export_data_import.sql` | Version und Name stimmen mit der Live-Migrationsliste überein; zugehörige Tabellen und Policies sind vorhanden. |
+
+Zusätzlich enthält die Live-Migrationshistorie `20261116104737_increase_save_user_data_statement_timeout`; eine entsprechende Datei wurde im geprüften Repository-Verzeichnis nicht gefunden.
+
+### Konsequenz für KAJO Connect
+
+- Keine bestehende Migration wird umbenannt, gelöscht oder erneut angewendet.
+- Keine neue Migration wird auf Basis einer geratenen Versionsnummer angelegt.
+- Vor dem ersten KAJO-Connect-Schema-Change muss die Migrationshistorie mit dem Repository abgeglichen und ein reproduzierbarer Ausgangsstand hergestellt werden.
+- Die vorhandenen Garmin- und Aktivitätsdatenbanken werden nicht für Geräte-Pairing zweckentfremdet.
+- Die Pairing-Tabellen bleiben ein separater, noch nicht angelegter Datenbankbaustein.
+
+Diese Prüfung war ausschließlich lesend. Es wurden weder Tabellen, Policies, Funktionen noch Migrationsdatensätze verändert.
