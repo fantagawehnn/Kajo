@@ -1,7 +1,7 @@
 # KAJO Connect – Aktivitätsaufzeichnung und Trainingsdaten
 
-**Stand:** Quellcode im Branch `feature/kajo-connect` vorbereitet. Garmin-Build, Backend-Deployment und Gerätetest stehen noch aus.  
-**Zielgeräte:** Garmin Venu 3S und Venu 2 Plus.
+**Stand:** Quellcode im Branch `feature/kajo-connect` vorbereitet. Venu-3S-Build, Backend-Deployment und Gerätetest stehen noch aus.  
+**Aktuelles Entwicklungsziel:** Garmin Venu 3S (390 × 390 px, Connect IQ API 5.2). Venu 2 Plus ist vorerst nicht Teil des Build-Ziels.
 
 ## 1. Aktivitätsaufzeichnung
 
@@ -72,7 +72,7 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 - Pixelgenaue freie Feldpositionen und mehr als vier Kennzahlen pro Seite sind weiterhin nicht umgesetzt. Die Positionierung ist bewusst auf fünf kollisionsfreie Rasterplätze begrenzt.
 - Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
 - End-to-end-Test von Pairing, Trainingsplan-Synchronisierung, strukturierten Trainingsschritten und Herzfrequenzzonen.
-- Prüfung der Schritt-Timer, automatischen Übergänge und manuellen Vor-/Zurücksteuerung auf beiden Zielgeräten.
+- Prüfung der Schritt-Timer, automatischen Übergänge und manuellen Vor-/Zurücksteuerung auf der Garmin Venu 3S.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
 - Prüfung der physischen Tasten, GPS-Aufzeichnung, Datenseiten und Offline-Cache auf Venu 3S und Venu 2 Plus.
 - Ein direkter FIT-Upload an KAJO und eine Upload-Queue sind nicht implementiert.
