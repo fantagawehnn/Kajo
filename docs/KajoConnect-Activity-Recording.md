@@ -43,7 +43,7 @@ Nach dem Öffnen der Startansicht ruft die Uhr über den gekoppelten Geräte-End
 - `id`, `date`, `name`, `type`
 - `duration`, `targetTss`, `category`, `desc`
 
-Die Uhr lädt Einheiten von gestern bis 14 Tage in die Zukunft, maximal 30 Einträge. Beschreibungen und Textfelder werden für die begrenzte Watch-Speichergröße gekürzt. Die Trainingsübersicht zeigt Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
+Die Uhr lädt Einheiten von gestern bis 14 Tage in die Zukunft, maximal 30 Einträge. Beschreibungen und Textfelder werden für die begrenzte Watch-Speichergröße gekürzt. Der Menüpunkt „Trainingsübersicht“ öffnet eine paginierte Liste des lokal synchronisierten Plans. Ein Eintrag öffnet die Detailansicht mit Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
 
 Der zuletzt synchronisierte Trainingsplan wird lokal gespeichert und bleibt bei fehlender Verbindung als Offline-Ansicht verfügbar. Die Synchronisierung ist im Branch vorbereitet, aber noch nicht end-to-end getestet.
 
