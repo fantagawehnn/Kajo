@@ -1,3 +1,4 @@
+import Toybox.Lang;
 import Toybox.WatchUi;
 
 class KajoConnectPairingDelegate extends WatchUi.BehaviorDelegate {
