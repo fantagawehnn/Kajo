@@ -3,7 +3,8 @@ const TYPE_MAP = {
     run: 'Run', running: 'Run', laufen: 'Run',
     ride: 'Ride', cycling: 'Ride', radfahren: 'Ride',
     swim: 'Swim', swimming: 'Swim', schwimmen: 'Swim',
-    weighttraining: 'WeightTraining', strength: 'WeightTraining', krafttraining: 'WeightTraining', gym: 'WeightTraining'
+    weighttraining: 'WeightTraining', strength: 'WeightTraining', krafttraining: 'WeightTraining', gym: 'WeightTraining',
+    restday: 'RestDay', rest: 'RestDay', ruhetag: 'RestDay'
 };
 
 export function calendarTypeForSession(session = {}) {
@@ -15,6 +16,7 @@ export function calendarTypeForSession(session = {}) {
 
 export function calendarCategoryForSession(session = {}) {
     const raw = String(session.category || '').toLowerCase();
+    if (raw.includes('rest') || raw.includes('ruhetag')) return 'rest';
     if (raw.includes('interval') || raw.includes('intervall') || raw.includes('lz') || raw.includes('hz')) return 'interval';
     if (raw.includes('strength') || raw.includes('kraft')) return 'strength';
     if (raw.includes('reg') || raw.includes('recovery') || raw.includes('regen')) return 'reg';
