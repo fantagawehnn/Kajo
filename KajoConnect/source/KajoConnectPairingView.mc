@@ -1,5 +1,4 @@
 import Toybox.Application.Storage;
-import Toybox.Communications;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Timer;
@@ -50,7 +49,7 @@ class KajoConnectPairingView extends WatchUi.View {
         );
     }
 
-    function onCreateResponse(responseCode as Lang.Number, data) as Void {
+    function onCreateResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
         if (responseCode != 200 || data == null) {
             mStatus = "VERBINDUNG FEHLGESCHLAGEN";
             WatchUi.requestUpdate();
@@ -88,7 +87,7 @@ class KajoConnectPairingView extends WatchUi.View {
         );
     }
 
-    function onPollResponse(responseCode as Lang.Number, data) as Void {
+    function onPollResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
         if (responseCode != 200 || data == null) {
             mStatus = "WARTE AUF VERBINDUNG";
             WatchUi.requestUpdate();
