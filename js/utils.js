@@ -13,11 +13,13 @@ export const sportsCatalog = {
     'Ride': { label: 'Radfahren', color: '#43A047' },
     'Swim': { label: 'Schwimmen', color: '#1E88E5' },
     'WeightTraining': { label: 'Krafttraining', color: '#8E24AA' },
-    'Workout': { label: 'Allg. Fitness', color: '#3949AB' }
+    'Workout': { label: 'Allg. Fitness', color: '#3949AB' },
+    'RestDay': { label: 'Ruhetag', color: '#94A3B8' }
 };
 
 export const typeColorMap = {
     race: { bg: 'bg-rose-950', text: 'text-rose-400', border: 'border-rose-800', bar: 'bg-rose-500', label: 'Wettkampf', color: '#f43f5e' },
+    rest: { bg: 'bg-slate-800', text: 'text-slate-300', border: 'border-slate-600', bar: 'bg-slate-500', label: 'Ruhetag', color: '#94A3B8' },
     ga: { bg: 'bg-emerald-950', text: 'text-emerald-400', border: 'border-emerald-800', bar: 'bg-emerald-500', label: 'GA Ausdauer', color: '#10b981' },
     interval: { bg: 'bg-amber-950', text: 'text-amber-400', border: 'border-amber-800', bar: 'bg-amber-500', label: 'Intervalle', color: '#f59e0b' },
     reg: { bg: 'bg-blue-950', text: 'text-blue-400', border: 'border-blue-800', bar: 'bg-blue-500', label: 'Regeneration', color: '#3b82f6' },
