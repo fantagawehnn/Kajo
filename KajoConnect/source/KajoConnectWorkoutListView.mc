@@ -83,8 +83,8 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             return;
         }
 
-        mRowTop = mUnit * 0.225;
-        mRowHeight = mUnit * 0.175;
+        mRowTop = Math.floor(mUnit * 0.225).toNumber();
+        mRowHeight = Math.floor(mUnit * 0.175).toNumber();
         var cardWidth = mUnit * 0.70;
         var cardHeight = mUnit * 0.145;
         var cardX = cx - (cardWidth / 2);
