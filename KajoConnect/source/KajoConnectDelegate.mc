@@ -36,7 +36,7 @@ class KajoConnectDelegate extends WatchUi.BehaviorDelegate {
 
         WatchUi.pushView(
             new Rez.Menus.MainMenu(),
-            new KajoConnectMenuDelegate(),
+            new KajoConnectMenuDelegate(mView),
             WatchUi.SLIDE_UP
         );
 
