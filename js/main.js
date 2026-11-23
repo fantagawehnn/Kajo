@@ -2356,6 +2356,9 @@ async function reconcileCloudState(userId, initialCloudSnapshot, localSnapshot, 
             if (!cloudSnapshotsEqual(latestLocal, local)) {
                 // Ein lokaler Speichervorgang lief parallel zum Upload.
                 // Den gerade gespeicherten Stand erneut einlesen und mit ihm mergen.
+                baselineSnapshot = merged.snapshot;
+                try { await saveCloudSyncBaseline(merged.snapshot); }
+                catch (baselineError) { console.warn('Zwischenstand konnte nicht lokal als Synchronisierungsbasis gesichert werden:', baselineError); }
                 cloud = await fetchCloudSnapshot();
                 local = latestLocal;
                 continue;
@@ -2512,6 +2515,50 @@ async function flushCloudSync() {
     }
     return saveSucceeded;
 }
+
+let cloudPullInFlight = false;
+
+async function pullCloudChanges() {
+    const userId = activeAppUserId;
+    if (!appUserReady || !userId || userId !== cloudSyncUserId || cloudSyncBlocked || cloudSyncInFlight || cloudPullInFlight) return;
+    cloudPullInFlight = true;
+    try {
+        const cloud = await fetchCloudSnapshot();
+        if (activeAppUserId !== userId || cloud.userId !== userId || cloud.version <= cloudSyncVersion || cloud.data === null) return;
+        const localBefore = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const baseline = await loadCloudSyncBaseline();
+        const reconciliation = await reconcileCloudState(userId, cloud, localBefore, baseline);
+        if (activeAppUserId !== userId) return;
+        if (!reconciliation.ok) {
+            cloudSyncBlocked = true;
+            const details = reconciliation.conflicts?.length
+                ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 4).join('; ') + (reconciliation.conflicts.length > 4 ? ' …' : '')
+                : '';
+            setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
+            setCloudTransferMessage('KAJO hat unterschiedliche Änderungen erkannt. Es wurde nichts automatisch überschrieben.' + details);
+            return;
+        }
+        cloudSyncVersion = reconciliation.version;
+        cloudSyncBlocked = false;
+        setCloudSyncStatus('Neue Cloud-Daten übernommen (Version ' + cloudSyncVersion + ').');
+        if (!cloudSnapshotsEqual(localBefore, reconciliation.snapshot)) initEngine();
+    } catch (error) {
+        console.warn('Neue Cloud-Daten konnten nicht automatisch abgeglichen werden:', error);
+        setCloudSyncStatus('Cloud-Abgleich derzeit nicht möglich; lokale Daten bleiben erhalten.');
+    } finally {
+        cloudPullInFlight = false;
+    }
+}
+
+window.addEventListener('focus', () => { void pullCloudChanges(); });
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void pullCloudChanges();
+});
+// Aktive Geräte prüfen zusätzlich regelmäßig auf Änderungen anderer Geräte.
+// Im Hintergrund wird nicht gepollt, um unnötige Netzwerkzugriffe zu vermeiden.
+window.setInterval(() => {
+    if (document.visibilityState === 'visible') void pullCloudChanges();
+}, 60000);
 
 window.addEventListener('endurance:data-saved', event => {
     scheduleCloudSync(event.detail?.userId || null);
