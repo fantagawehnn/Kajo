@@ -57,6 +57,16 @@ class KajoConnectActivityView extends WatchUi.View {
         loadCurrentWorkout();
     }
 
+    function setSelectedWorkout(workout as Lang.Dictionary) as Void {
+        mCurrentWorkoutState = "PLANNED";
+        mCurrentWorkoutName = workout["name"] == null ? "GEPLANTE EINHEIT" : workout["name"].toString();
+        mCurrentWorkoutType = workout["type"] == null ? "" : workout["type"].toString();
+        mCurrentWorkoutDuration = workout["duration"] == null ? "" : workout["duration"].toString();
+        mCurrentWorkoutDescription = workout["desc"] == null ? "" : workout["desc"].toString();
+        mCurrentWorkoutIntensity = workout["intensity"] == null ? "" : workout["intensity"].toString();
+        mCurrentWorkoutMainSet = workout["mainSet"] == null ? "" : workout["mainSet"].toString();
+    }
+
     function loadCurrentWorkout() as Void {
         var sessions = Storage.getValue("kajoPlannedSessions");
         mCurrentWorkoutState = "FREE";
