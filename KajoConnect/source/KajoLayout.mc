@@ -84,11 +84,12 @@ class KajoLayout {
     }
 
     function safeTextY(y, textHeight) as Lang.Number {
-        var margin = mUnit * 0.035;
-        var top = mCenterY - mRadius + margin;
-        var bottom = mCenterY + mRadius - margin - textHeight;
-        if (y < top) { return Math.round(top).toNumber(); }
-        if (y > bottom) { return Math.round(bottom).toNumber(); }
+        // Text darf niemals automatisch vertikal verschoben werden.
+        // Ein Clamping an den Kreisrand hat zuvor mehrere unabhaengige
+        // Textzeilen auf dieselbe y-Position gesetzt und Ueberlagerungen
+        // verursacht. Die Kreisbreite wird separat ueber safeTextWidth
+        // begrenzt; die vom jeweiligen Bildschirm definierte Zeile bleibt
+        // exakt an ihrer vorgesehenen Position.
         return Math.round(y).toNumber();
     }
 
