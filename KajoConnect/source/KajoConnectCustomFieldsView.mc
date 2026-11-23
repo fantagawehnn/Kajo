@@ -173,6 +173,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             Graphics.FONT_XTINY, "Bis zu vier Kennzahlen", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.19).toNumber(),
             Graphics.FONT_XTINY, "Seite " + (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.215).toNumber(),
+            Graphics.FONT_XTINY, "Links AN/AUS · Rechts auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
         mRowTop = mUnit * 0.235;
         mRowHeight = mUnit * 0.125;
