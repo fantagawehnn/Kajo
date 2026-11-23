@@ -259,9 +259,9 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
         mRowTop = Math.round(mUnit * 0.245).toNumber();
         mRowHeight = Math.round(mUnit * 0.108).toNumber();
-        var cardWidth = mUnit * 0.70;
-        var cardX = cx - (cardWidth / 2);
         var cardHeight = mRowHeight * 0.82;
+        var cardWidth = mLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.70);
+        var cardX = cx - (cardWidth / 2);
 
         for (var row = 0; row < 4; row += 1) {
             var index = (mPage * 4) + row;
