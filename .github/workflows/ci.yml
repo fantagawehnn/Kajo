@@ -5,9 +5,6 @@ on:
   push:
     branches:
       - v2
-      - feat/garmin-data-quality-v2
-      - feature/coach-v2-integration
-      - garmin-full-export-import
   pull_request:
     branches:
       - v2
