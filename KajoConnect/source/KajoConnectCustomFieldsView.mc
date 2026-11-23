@@ -288,9 +288,9 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
                 Math.round(mUnit * 0.02).toNumber());
 
-            drawFit(dc, cardX + cardWidth * 0.36, y + (cardHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.045))) / 2,
+            drawFit(dc, cardX + cardWidth * 0.36, Math.round(y + (cardHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.045))) / 2).toNumber(),
                 mMetricLabels[index], cardWidth * 0.62, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
-            drawFit(dc, cardX + cardWidth * 0.83, y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+            drawFit(dc, cardX + cardWidth * 0.83, Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2).toNumber(),
                 stateText, cardWidth * 0.25, Graphics.FONT_TINY, isEnabled ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
         }
 
@@ -305,7 +305,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             dc.drawRoundedRectangle(Math.round(centers[b] - controlWidth / 2).toNumber(),
                 Math.round(mControlTop).toNumber(), Math.round(controlWidth).toNumber(),
                 Math.round(controlHeight).toNumber(), Math.round(mUnit * 0.02).toNumber());
-            drawFit(dc, centers[b], mControlTop + (controlHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.035))) / 2,
+            drawFit(dc, centers[b], Math.round(mControlTop + (controlHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.035))) / 2).toNumber(),
                 labels[b], controlWidth * 0.92, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
 
@@ -316,7 +316,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
             Math.round(mSaveTop).toNumber(), Math.round(saveWidth).toNumber(),
             Math.round((mSaveBottom - mSaveTop)).toNumber(), Math.round(mUnit * 0.02).toNumber());
-        drawFit(dc, cx, mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.035))) / 2,
+        drawFit(dc, cx, Math.round(mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.035))) / 2).toNumber(),
             "SPEICHERN", saveWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
     }
 }
