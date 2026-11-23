@@ -12,7 +12,7 @@ import Toybox.WatchUi;
 
 class KajoConnectActivityView extends WatchUi.View {
 
-    var mLayout as KajoLayout;
+    var mKajoLayout as KajoLayout;
 
     var mBoatClass as Lang.String;
     var mEngine;
@@ -115,7 +115,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
-        mLayout = new KajoLayout();
+        mKajoLayout = new KajoLayout();
         mBoatClass = boatClass;
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
@@ -483,7 +483,7 @@ class KajoConnectActivityView extends WatchUi.View {
             }
 
             var tileTop = y - (mUnit * 0.055);
-            tileWidth = mLayout.safeRectWidthAt(x, tileTop, tileHeight, tileWidth);
+            tileWidth = mKajoLayout.safeRectWidthAt(x, tileTop, tileHeight, tileWidth);
             drawDashboardPanel(dc, x - (tileWidth / 2), tileTop, tileWidth, tileHeight);
 
             var label = getCustomMetricLabel(metricId);
@@ -545,7 +545,7 @@ class KajoConnectActivityView extends WatchUi.View {
         activityInfo) as Void {
         var cyan = 0x00E5CC;
         var muted = 0xA0AAB2;
-        var metricSafeWidth = mLayout.safeWidthAt(cx, mUnit * 0.715, mUnit * 0.79);
+        var metricSafeWidth = mKajoLayout.safeWidthAt(cx, mUnit * 0.715, mUnit * 0.79);
         var left = cx - (metricSafeWidth / 2);
         var right = cx + (metricSafeWidth / 2);
 
@@ -585,7 +585,7 @@ class KajoConnectActivityView extends WatchUi.View {
             : compactWorkoutText(stepLabel, 34);
         var statusY = mUnit * 0.145;
         var statusH = mUnit * 0.075;
-        var statusW = mLayout.safeRectWidth(statusY, statusH, mUnit * 0.79);
+        var statusW = mKajoLayout.safeRectWidth(statusY, statusH, mUnit * 0.79);
         var statusX = cx - (statusW / 2);
         dc.setColor(0x041216, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(statusX.toNumber(), statusY.toNumber(), statusW.toNumber(),
@@ -668,8 +668,8 @@ class KajoConnectActivityView extends WatchUi.View {
 
         // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
         dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
-        var heartFont = mLayout.fontForPercent(dc, 0.055);
-        var heartY = mLayout.safeTextY(mUnit * 0.715, dc.getFontHeight(heartFont));
+        var heartFont = mKajoLayout.fontForPercent(dc, 0.055);
+        var heartY = mKajoLayout.safeTextY(mUnit * 0.715, dc.getFontHeight(heartFont));
         dc.drawText((mUnit * 0.16).toNumber(), heartY.toNumber(),
             heartFont, "♥", Graphics.TEXT_JUSTIFY_CENTER);
         drawFit(dc, mUnit * 0.34, mUnit * 0.71, hrNow,
@@ -918,18 +918,18 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        return mLayout.fitFont(dc, text, maxWidth, preferredFont);
+        return mKajoLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
+        var font = mKajoLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
         while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
         if (displayText == "" || safeWidth <= 0) { return; }
-        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
+        var safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -952,7 +952,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function drawButton(dc as Dc, centerX, top, width, label as Lang.String) as Void {
         var height = mButtonBottom - mButtonTop;
-        var safeWidth = mLayout.safeRectWidth(top, height, width);
+        var safeWidth = mKajoLayout.safeRectWidth(top, height, width);
         var left = centerX - (safeWidth / 2);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(
@@ -965,7 +965,7 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(
             dc,
             centerX,
-            top + (height - dc.getFontHeight(mLayout.fontForPercent(dc, 0.055))) / 2,
+            top + (height - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.055))) / 2,
             label,
             safeWidth * 0.86,
             Graphics.FONT_SMALL,
@@ -979,7 +979,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mScreenHeight = dc.getHeight();
         mUnit = mScreenWidth;
         if (mScreenHeight < mUnit) { mUnit = mScreenHeight; }
-        mLayout.configure(mScreenWidth, mScreenHeight);
+        mKajoLayout.configure(mScreenWidth, mScreenHeight);
 
         var cx = mScreenWidth / 2;
         if (mPage < mEnabledPageIds.size()) {
