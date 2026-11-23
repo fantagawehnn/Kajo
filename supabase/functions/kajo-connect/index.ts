@@ -299,6 +299,16 @@ Deno.serve(async (request) => {
       if (lookupError) throw lookupError;
       if (!pairing) return json(404, { error: "The pairing code is invalid or has expired." });
 
+      const { count: activeDeviceCount, error: countError } = await admin
+        .from("kajo_connect_devices")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("revoked_at", null);
+      if (countError) throw countError;
+      if ((activeDeviceCount ?? 0) >= 5) {
+        return json(409, { error: "This KAJO account already has the maximum of five active devices." });
+      }
+
       const deviceToken = randomHex(32);
       const encrypted = await encryptToken(deviceToken);
       const deviceId = crypto.randomUUID();
