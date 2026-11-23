@@ -448,15 +448,13 @@ class KajoConnectActivityView extends WatchUi.View {
             mCurrentPageId = mEnabledPageIds[mPage] as Lang.Number;
         } else {
             var customIndex = mPage - mEnabledPageIds.size();
-            var customPageId = 5;
             for (var i = 0; i < 3; i += 1) {
                 if (getCustomMetricIds(i).size() > 0) {
                     if (customIndex == 0) {
-                        mCurrentPageId = customPageId;
+                        mCurrentPageId = 5 + i;
                         break;
                     }
                     customIndex -= 1;
-                    customPageId += 1;
                 }
             }
         }
