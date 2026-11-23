@@ -7,6 +7,7 @@ Supabase project: `zgvargkfzgekokuisarv`
 
 - [x] Database migration `20261123000000_kajo_connect_pairing_schema` applied.
 - [x] Database migration `20261123000100_kajo_connect_device_limit` applied.
+- [x] Database migration `20261123000200_kajo_connect_pairing_fk_indexes` applied (indexes for pairing-request foreign keys).
 - [x] Edge Function `kajo-connect` deployed and reported ACTIVE (version 1).
 - [x] Edge Function deployed with `verify_jwt = false`; authentication is checked per action in the handler.
 - [x] User confirmed that both custom Edge Function secrets have been added.
@@ -27,8 +28,10 @@ Apply the migrations in timestamp order:
 2. `20261123000100_kajo_connect_device_limit.sql`
    - Creates the atomic device-registration RPC.
    - Enforces a maximum of five active devices per account.
+3. `20261123000200_kajo_connect_pairing_fk_indexes.sql`
+   - Adds indexes for the pairing-request user and device foreign keys.
 
-Both migrations are already applied to the production project.
+All three migrations are already applied to the production project.
 
 ## 3. Edge Function secrets
 
