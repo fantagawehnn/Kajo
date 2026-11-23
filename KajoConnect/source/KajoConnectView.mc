@@ -365,8 +365,11 @@ class KajoConnectView extends WatchUi.View {
             var cardY = mUnit * 0.205;
             var cardWidth = mUnit * 0.74;
             var cardHeight = mUnit * 0.185;
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+            dc.setColor(0x07151D, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
+                cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.035).toNumber());
+            dc.setColor(0x12485A, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
                 cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.035).toNumber());
 
             drawCentered(dc, cx, cardY + (mUnit * 0.022), "HEUTE GEPLANT",
@@ -450,7 +453,7 @@ class KajoConnectView extends WatchUi.View {
             var bx = left + (b * (buttonWidth + buttonGap));
             var selected = (labels[b] == mSelectedBoat);
             if (selected) {
-                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+                dc.setColor(0x20C6B4, Graphics.COLOR_BLACK);
                 dc.fillRoundedRectangle(bx.toNumber(), buttonY.toNumber(),
                     buttonWidth.toNumber(), buttonHeight.toNumber(),
                     (mUnit * 0.03).toNumber());
@@ -474,7 +477,7 @@ class KajoConnectView extends WatchUi.View {
         mStartTop = startY;
         mStartBottom = startY + startHeight;
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.setColor(0x20C6B4, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(startX.toNumber(), startY.toNumber(),
             startWidth.toNumber(), startHeight.toNumber(), (mUnit * 0.035).toNumber());
         drawCentered(dc, cx,
