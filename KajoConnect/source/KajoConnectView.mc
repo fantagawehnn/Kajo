@@ -197,7 +197,7 @@ class KajoConnectView extends WatchUi.View {
             var activityView = new KajoConnectActivityView(mSelectedBoat);
             var storedZoneDate = Storage.getValue("kajoHeartRateZoneDate");
             if (storedZoneDate != null && storedZoneDate.toString() == getLocalDate()) {
-                var zoneValues as Lang.Array<Lang.Number> = [];
+                var zoneValues = [];
                 var zonesValid = true;
                 for (var zoneIndex = 0; zoneIndex < 4; zoneIndex += 1) {
                     var zoneValue = Storage.getValue("kajoHeartRateZone" + zoneIndex.toString());
