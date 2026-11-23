@@ -492,7 +492,16 @@ export function applyAdaptiveWeekProposal() {
             type: calendarTypeForSession(session) || item.type,
             duration: session.durationMinutes,
             category: calendarCategoryForSession(session),
-            desc: description
+            desc: description,
+            discipline: session.discipline || '',
+            raceFormat: session.raceFormat || '',
+            waterType: session.waterType || '',
+            intensity: session.intensity || '',
+            objective: session.objective || '',
+            warmup: session.warmup || '',
+            mainSet: session.mainSet || '',
+            cooldown: session.cooldown || '',
+            notes: session.notes || ''
         };
     });
     state.seasonPlan = { ...current, weeklyPlans: nextWeeklyPlans, updatedAt: new Date().toISOString() };
