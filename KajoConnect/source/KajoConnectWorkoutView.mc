@@ -112,8 +112,8 @@ class KajoConnectWorkoutView extends WatchUi.View {
             target = mWorkout["intensity"].toString();
         }
 
-        drawCentered(dc, center, unit * 0.075, "GEPLANTES TRAINING", contentWidth, Graphics.FONT_SMALL, 0x00E5CC);
-        drawCentered(dc, center, unit * 0.12, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, center, unit * 0.065, "GEPLANTES TRAINING", contentWidth, Graphics.FONT_SMALL, 0x00E5CC);
+        drawCentered(dc, center, unit * 0.125, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         var cardTop = unit * 0.17;
         var cardHeight = unit * 0.14;
