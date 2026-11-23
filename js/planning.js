@@ -26,14 +26,15 @@ export function renderPlannedWorkouts() {
         return;
     }
     list.forEach(p=>{
-        const cat=categories[p.category||'ga']||categories.ga, sport=(sports[p.type]||sports.Workout).label;
+        const isRestDay=p.type==='RestDay';
+        const cat=categories[p.category||'ga']||categories.ga, sport=isRestDay?'Ruhetag':(sports[p.type]||sports.Workout).label;
         const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
         el.insertAdjacentHTML('beforeend', `
             <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <span class="text-[10px] ${cat.text}">${formatDateDDMMYY(p.date)} · ${escapeHtml(cat.label)}</span>
                     <h4 class="text-sm font-bold text-white">${escapeHtml(p.name)}</h4>
-                    <p class="text-xs text-slate-400">${escapeHtml(sport)} · ${p.duration||'—'} min · Ziel-Load ${p.targetTss??'—'}</p>
+                    <p class="text-xs text-slate-400">${escapeHtml(sport)}${isRestDay?' · keine geplante Trainingsbelastung':` · ${p.duration||'—'} min · Ziel-Load ${p.targetTss??'—'}`}</p>
                 </div>
                 <div class="flex shrink-0 items-center gap-3">
                     <button type="button" onclick="openPlannedWorkoutModal('${id}')" class="text-xs text-cyan-400 hover:text-white">Bearbeiten</button>
@@ -48,11 +49,22 @@ export function deletePlannedWorkout(id){
     saveDataToLocalStorage();renderPlannedWorkouts();renderCalendar();
 }
 function setPlanField(id,value){const field=document.getElementById(id);if(field)field.value=value??'';}
+export function setPlannedWorkoutKind(kind){
+    const restDay=kind==='rest';
+    ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
+    const name=document.getElementById('plan-name');
+    if(restDay&&name&&!name.value.trim())name.value='Ruhetag';
+    const note=document.getElementById('plan-desc');
+    if(note)note.placeholder=restDay?'Optionaler Hinweis, z. B. vollständige Trainingspause':'Intervalle im Schwellenbereich...';
+    const save=document.getElementById('planned-workout-save-button');
+    if(save)save.textContent=restDay?'Ruhetag speichern':(editingPlannedWorkoutId?'Änderungen speichern':'Einheit speichern');
+}
 export function openPlannedWorkoutModal(id=null){
     const item=id==null?null:state.plannedActivities.find(p=>String(p.id)===decodeURIComponent(String(id)));
     if(id!=null&&!item)return;
     editingPlannedWorkoutId=item?String(item.id):null;
     setPlanField('plan-date',item?.date||toLocalDateString());
+    setPlanField('plan-kind',item?.type==='RestDay'?'rest':'training');
     setPlanField('plan-name',item?.name||'');
     setPlanField('plan-sport',item?.type||'Kayaking');
     const isAssessment = String(item?.category || '').startsWith('diagnostic-');
@@ -60,6 +72,7 @@ export function openPlannedWorkoutModal(id=null){
     setPlanField('plan-tss',isAssessment ? '' : item?.targetTss??70);
     setPlanField('plan-category',item?.category||'ga');
     setPlanField('plan-desc',item?.desc||'');
+    setPlannedWorkoutKind(item?.type==='RestDay'?'rest':'training');
     const title=document.getElementById('planned-workout-modal-title');
     if(title)title.textContent=item?'Trainingseinheit bearbeiten':'Trainingseinheit planen';
     const button=document.getElementById('planned-workout-save-button');
@@ -73,14 +86,15 @@ export function closePlannedWorkoutModal(){
 }
 export function savePlannedWorkout(){
     const date=document.getElementById('plan-date').value||toLocalDateString();
-    const name=document.getElementById('plan-name').value||'Geplante Einheit';
-    const type=document.getElementById('plan-sport').value;
+    const isRestDay=document.getElementById('plan-kind')?.value==='rest';
+    const name=isRestDay?'Ruhetag':(document.getElementById('plan-name').value||'Geplante Einheit');
+    const type=isRestDay?'RestDay':document.getElementById('plan-sport').value;
     const durationRaw=document.getElementById('plan-duration').value;
     const targetTssRaw=document.getElementById('plan-tss').value;
-    const category=document.getElementById('plan-category').value;
+    const category=isRestDay?'rest':document.getElementById('plan-category').value;
     const isAssessment=String(category).startsWith('diagnostic-');
-    const duration=isAssessment||durationRaw===''?null:(parseInt(durationRaw,10)||60);
-    const targetTss=isAssessment||targetTssRaw===''?null:(parseInt(targetTssRaw,10)||60);
+    const duration=isRestDay||isAssessment||durationRaw===''?null:(parseInt(durationRaw,10)||60);
+    const targetTss=isRestDay||isAssessment||targetTssRaw===''?null:(parseInt(targetTssRaw,10)||60);
     const desc=document.getElementById('plan-desc').value;
     if(editingPlannedWorkoutId!==null){
         const index=state.plannedActivities.findIndex(p=>String(p.id)===editingPlannedWorkoutId);
