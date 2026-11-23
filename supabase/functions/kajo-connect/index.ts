@@ -172,7 +172,7 @@ function adaptiveZones(
 
   return {
     date,
-    upperBounds,
+    zones: upperBounds,
     source,
     quality,
     windowDays: days,
