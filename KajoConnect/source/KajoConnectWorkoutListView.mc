@@ -14,9 +14,11 @@ class KajoConnectWorkoutListView extends WatchUi.View {
     var mUnit as Lang.Number = 0;
     var mWidth as Lang.Number = 0;
     var mHeight as Lang.Number = 0;
+    var mHomeView as KajoConnectView;
 
-    function initialize() {
+    function initialize(homeView as KajoConnectView) {
         View.initialize();
+        mHomeView = homeView;
         var saved = Storage.getValue("kajoPlannedSessions");
         if (saved != null) {
             mSessions = saved as Lang.Array<Lang.Dictionary>;
@@ -56,9 +58,10 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             var index = (mPage * 3) + row;
             if (index < mSessions.size()) {
                 var selected = mSessions[index] as Lang.Dictionary;
+                var workoutView = new KajoConnectWorkoutView(selected, mHomeView);
                 WatchUi.pushView(
-                    new KajoConnectWorkoutView(selected),
-                    new KajoConnectWorkoutDelegate(),
+                    workoutView,
+                    new KajoConnectWorkoutDelegate(workoutView),
                     WatchUi.SLIDE_UP
                 );
             }
