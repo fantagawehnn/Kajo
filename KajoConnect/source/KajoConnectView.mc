@@ -15,6 +15,8 @@ class KajoConnectView extends WatchUi.View {
     var mBoatRight = 0;
     var mStartTop = 0;
     var mStartBottom = 0;
+    var mMenuTop = 0;
+    var mMenuBottom = 0;
     var mPlanStartY = 0;
     var mPlanRowHeight = 0;
     var mPlanStartIndex = 0;
@@ -59,6 +61,16 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) {
+        // Die sichtbare MENUE-Beschriftung ist direkt antippbar.
+        if (y >= mMenuTop && y <= mMenuBottom) {
+            WatchUi.pushView(
+                new Rez.Menus.MainMenu(),
+                new KajoConnectMenuDelegate(),
+                WatchUi.SLIDE_UP
+            );
+            return;
+        }
+
         if (mPlannedSessions.size() > 0 &&
             y >= mPlanStartY &&
             y < mPlanStartY + (mPlanRowHeight * 2)) {
@@ -168,11 +180,11 @@ class KajoConnectView extends WatchUi.View {
 
         // Drei große, gleich breite Auswahlflächen mit ausreichend Abstand.
         var buttonGap = scale * 0.025;
-        var buttonWidth = scale * 0.205;
-        var buttonHeight = scale * 0.115;
+        var buttonWidth = scale * 0.24;
+        var buttonHeight = scale * 0.13;
         var totalWidth = (buttonWidth * 3) + (buttonGap * 2);
         var left = cx - (totalWidth / 2);
-        var buttonY = scale * 0.585;
+        var buttonY = scale * 0.575;
 
         mBoatTop = buttonY;
         mBoatBottom = buttonY + buttonHeight;
@@ -212,6 +224,8 @@ class KajoConnectView extends WatchUi.View {
             mStartTop + (startHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             "STARTEN", startWidth * 0.85, Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
 
-        drawCentered(dc, cx, scale * 0.875, "MENUE", scale * 0.50, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        mMenuTop = scale * 0.875;
+        mMenuBottom = scale * 0.985;
+        drawCentered(dc, cx, scale * 0.91, "MENUE", scale * 0.50, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
     }
 }
