@@ -242,6 +242,8 @@ class KajoConnectView extends WatchUi.View {
         var activityView = new KajoConnectActivityView(mSelectedBoat);
         if (workout != null) {
             activityView.setSelectedWorkout(workout as Lang.Dictionary);
+        } else {
+            activityView.setFreeActivity();
         }
 
         var storedZoneDate = Storage.getValue("kajoHeartRateZoneDate");
