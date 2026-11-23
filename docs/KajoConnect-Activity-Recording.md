@@ -51,3 +51,13 @@ Die KAJO-Web-App speichert geplante Einheiten mit den Feldern `id`, `date`, `nam
 5. Trainingsübersicht aus dem Menü und über einen angezeigten Trainingseintrag öffnen.
 
 Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persistenz und Touch-Bedienung müssen zusätzlich im Simulator und auf der Venu 3S geprüft werden.
+
+
+## Trainingsübersicht auf der Uhr
+
+Die Startansicht kann vollständige geplante Einheiten als `Lang.Dictionary` entgegennehmen. Die erwarteten Felder entsprechen dem bestehenden KAJO-Planungsmodell:
+
+- `id`, `date`, `name`, `type`
+- `duration`, `targetTss`, `category`, `desc`
+
+Beim Öffnen einer Einheit zeigt die Detailansicht Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und Beschreibung an. Ruhetage werden gesondert dargestellt. Die Datenzufuhr über die noch zu implementierende Geräte-Kopplung ist davon getrennt und noch nicht aktiv.
