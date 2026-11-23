@@ -239,12 +239,28 @@ function safeDisplayLayouts(value: unknown) {
         seen.add(id);
         return true;
       })
-      .slice(0, 4)
-      .map((metric) => ({
+      .slice(0, 4);
+    const defaultPositions = metrics.length === 1 ? [4]
+      : metrics.length === 2 ? [0, 1]
+      : metrics.length === 3 ? [0, 1, 4] : [0, 1, 2, 3];
+    const usedPositions = new Set<number>();
+    const safeMetrics = metrics.map((metric, metricIndex) => {
+      let position = Number.isInteger(metric.position) && Number(metric.position) >= 0 && Number(metric.position) <= 4
+        ? Number(metric.position) : defaultPositions[metricIndex];
+      if (usedPositions.has(position)) {
+        position = defaultPositions[metricIndex];
+        if (usedPositions.has(position)) {
+          position = [0, 1, 2, 3, 4].find((candidate) => !usedPositions.has(candidate)) ?? defaultPositions[metricIndex];
+        }
+      }
+      usedPositions.add(position);
+      return {
         id: metric.id,
         size: ["small", "medium", "large"].includes(String(metric.size)) ? metric.size : "medium",
-      }));
-    return { id: "layout-" + (index + 1), name: "Datenseite " + (index + 1), metrics };
+        position,
+      };
+    });
+    return { id: "layout-" + (index + 1), name: "Datenseite " + (index + 1), metrics: safeMetrics };
   });
 }
 
