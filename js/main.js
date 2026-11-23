@@ -2451,7 +2451,7 @@ async function flushCloudSync() {
             setCloudSyncStatus('Geräte abgeglichen (Cloud-Version ' + cloudSyncVersion + ').');
             setCloudTransferMessage('Lokale und Cloud-Daten wurden automatisch abgeglichen. Neue Einträge wurden ergänzt; widersprüchliche Änderungen wurden nicht überschrieben.');
             initEngine();
-            return;
+            return true;
         }
 
         cloudSyncVersion = result.currentVersion;
@@ -2633,6 +2633,8 @@ async function performCloudInitialTransfer() {
         cloudSyncUserId = userId;
         cloudSyncVersion = result.currentVersion;
         cloudSyncBlocked = false;
+        try { await saveCloudSyncBaseline(getUserDataSnapshot()); }
+        catch (baselineError) { console.warn('Erstupload erfolgreich, aber der lokale Synchronisierungs-Basisstand konnte nicht gespeichert werden:', baselineError); }
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). Die lokalen Daten und die separaten Garmin-Speicher wurden nicht gelöscht oder verändert.');
     } catch (error) {
