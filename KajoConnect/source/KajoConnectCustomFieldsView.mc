@@ -20,6 +20,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     ];
     var mSelected as Lang.Array<Lang.String> = [];
     var mLargeMetricId as Lang.String = "";
+    var mMetricSizes as Lang.Dictionary = {};
     var mLayoutIndex as Lang.Number = 0;
     var mLayoutCount as Lang.Number = 3;
     var mControlTop as Lang.Number = 0;
@@ -45,6 +46,11 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     function loadLayout(layoutIndex as Lang.Number) as Void {
         mSelected = [];
         mLargeMetricId = "";
+        mMetricSizes = {};
+        var savedSizes = Storage.getValue("kajoMetricSizes" + layoutIndex.toString());
+        if (savedSizes != null) {
+            mMetricSizes = savedSizes as Lang.Dictionary;
+        }
         var saved = Storage.getValue("kajoCustomMetrics" + layoutIndex.toString());
         if (saved == null && layoutIndex == 0) {
             saved = Storage.getValue("kajoCustomMetrics");
@@ -63,14 +69,21 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         }
         if (largeSaved != null && selectedIndex(largeSaved.toString()) >= 0) {
             mLargeMetricId = largeSaved.toString();
+            if (mMetricSizes[mLargeMetricId] == null) { mMetricSizes[mLargeMetricId] = 2; }
+        }
+        for (var i = 0; i < mSelected.size(); i += 1) {
+            var selectedMetric = mSelected[i];
+            if (mMetricSizes[selectedMetric] == null) { mMetricSizes[selectedMetric] = 1; }
         }
     }
 
     function saveCurrentLayout() as Void {
         Storage.setValue("kajoCustomMetrics" + mLayoutIndex.toString(), mSelected);
+        Storage.setValue("kajoMetricSizes" + mLayoutIndex.toString(), mMetricSizes);
         Storage.setValue("kajoLargeMetricId" + mLayoutIndex.toString(), mLargeMetricId);
         if (mLayoutIndex == 0) {
             Storage.setValue("kajoCustomMetrics", mSelected);
+            Storage.setValue("kajoMetricSizes", mMetricSizes);
             Storage.setValue("kajoLargeMetricId", mLargeMetricId);
         }
     }
@@ -158,7 +171,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             if (x < mWidth * 0.375) {
                 moveSelected(-1);
             } else if (x < mWidth * 0.625) {
-                toggleLargeMetric();
+                cycleMetricSize();
             } else {
                 moveSelected(1);
             }
@@ -177,7 +190,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
-    function toggleLargeMetric() as Void {
+    function cycleMetricSize() as Void {
         if (mSelectedRow < 0 || mSelectedRow >= mMetricIds.size()) {
             WatchUi.showToast("Zuerst rechts ein Datenfeld auswaehlen", null);
             return;
@@ -187,7 +200,11 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             WatchUi.showToast("Datenfeld zuerst aktivieren", null);
             return;
         }
-        mLargeMetricId = mLargeMetricId == metricId ? "" : metricId;
+        var currentSize = mMetricSizes[metricId];
+        if (currentSize == null) { currentSize = 1; }
+        var nextSize = (currentSize + 1) % 3;
+        mMetricSizes[metricId] = nextSize;
+        mLargeMetricId = nextSize == 2 ? metricId : "";
         WatchUi.requestUpdate();
     }
 
@@ -214,7 +231,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             Graphics.FONT_SMALL, "EIGENE DATENFELDER", Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.15).toNumber(),
-            Graphics.FONT_XTINY, "Bis zu vier Kennzahlen", Graphics.TEXT_JUSTIFY_CENTER);
+            Graphics.FONT_XTINY, "K / M / G = klein / mittel / gross", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.19).toNumber(),
             Graphics.FONT_XTINY, "DATENSEITE " + (mLayoutIndex + 1).toString() + " / " + mLayoutCount.toString() + " · <  >", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.215).toNumber(),
@@ -234,7 +251,13 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             var orderIndex = selectedIndex(metricId);
             var isEnabled = orderIndex >= 0;
             var isFocused = mSelectedRow == index;
-            var stateText = isEnabled ? (orderIndex + 1).toString() + " AN" : "AUS";
+            var sizeText = "M";
+            if (isEnabled) {
+                var fieldSize = mMetricSizes[metricId];
+                if (fieldSize == null) { fieldSize = 1; }
+                sizeText = fieldSize == 0 ? "K" : fieldSize == 2 ? "G" : "M";
+            }
+            var stateText = isEnabled ? (orderIndex + 1).toString() + " " + sizeText : "AUS";
             dc.setColor(isFocused ? Graphics.COLOR_WHITE : Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
@@ -255,7 +278,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         var controlWidth = mUnit * 0.20;
         var controlHeight = mControlBottom - mControlTop;
         var centers = [cx - (mUnit * 0.25), cx, cx + (mUnit * 0.25)];
-        var labels = ["HOCH", "GROSS", "RUNTER"];
+        var labels = ["HOCH", "GROESSE", "RUNTER"];
         for (var b = 0; b < 3; b += 1) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(centers[b] - controlWidth / 2).toNumber(),
