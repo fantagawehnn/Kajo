@@ -12,7 +12,7 @@ class KajoConnectMenuDelegate extends WatchUi.MenuInputDelegate {
             var view = new KajoConnectDisplayConfigView();
             WatchUi.pushView(view, new KajoConnectDisplayConfigDelegate(view), WatchUi.SLIDE_UP);
         } else if (item == :item_2) {
-            var view = new KajoConnectWorkoutView("Trainingsplan");
+            var view = new KajoConnectWorkoutView({ "name" => "Trainingsplan" });
             WatchUi.pushView(view, new KajoConnectWorkoutDelegate(), WatchUi.SLIDE_UP);
         }
     }
