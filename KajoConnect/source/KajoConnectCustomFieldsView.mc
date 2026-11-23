@@ -219,6 +219,25 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         }
     }
 
+    function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
+        var font = preferredFont;
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        var displayText = text;
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+            if (displayText.length() <= 4) { displayText = ""; }
+            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
+        }
+        if (displayText == "") { return; }
+        var safeY = y;
+        var textHeight = dc.getFontHeight(font);
+        if (safeY < 2) { safeY = 2; }
+        if (safeY + textHeight > mHeight - 2) { safeY = mHeight - textHeight - 2; }
+        dc.setColor(color, Graphics.COLOR_BLACK);
+        dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
     function onUpdate(dc as Dc) {
         dc.clear();
         mWidth = dc.getWidth();
@@ -227,19 +246,13 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         if (mHeight < mUnit) { mUnit = mHeight; }
         var cx = mWidth / 2;
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.085).toNumber(),
-            Graphics.FONT_SMALL, "EIGENE DATENFELDER", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.15).toNumber(),
-            Graphics.FONT_XTINY, "K / M / G = klein / mittel / gross", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.19).toNumber(),
-            Graphics.FONT_XTINY, "DATENSEITE " + (mLayoutIndex + 1).toString() + " / " + mLayoutCount.toString() + " · <  >", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.215).toNumber(),
-            Graphics.FONT_XTINY, "FELDER " + (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, cx, mUnit * 0.075, "DATENFELDER", mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.13, "K / M / G = KLEIN / MITTEL / GROSS", mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.17, "SEITE " + (mLayoutIndex + 1).toString() + " / " + mLayoutCount.toString(), mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.205, "FELDER " + (mPage + 1).toString() + " / " + mPageCount.toString(), mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        mRowTop = Math.round(mUnit * 0.235).toNumber();
-        mRowHeight = Math.round(mUnit * 0.125).toNumber();
+        mRowTop = Math.round(mUnit * 0.245).toNumber();
+        mRowHeight = Math.round(mUnit * 0.108).toNumber();
         var cardWidth = mUnit * 0.70;
         var cardX = cx - (cardWidth / 2);
         var cardHeight = mRowHeight * 0.82;
@@ -265,18 +278,14 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
                 Math.round(mUnit * 0.02).toNumber());
 
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawText(Math.round(cardX + cardWidth * 0.36).toNumber(),
-                Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2).toNumber(),
-                Graphics.FONT_TINY, mMetricLabels[index], Graphics.TEXT_JUSTIFY_CENTER);
-            dc.setColor(isEnabled ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawText(Math.round(cardX + cardWidth * 0.83).toNumber(),
-                Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2).toNumber(),
-                Graphics.FONT_TINY, stateText, Graphics.TEXT_JUSTIFY_CENTER);
+            drawFit(dc, cardX + cardWidth * 0.36, y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+                mMetricLabels[index], cardWidth * 0.62, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
+            drawFit(dc, cardX + cardWidth * 0.83, y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+                stateText, cardWidth * 0.25, Graphics.FONT_TINY, isEnabled ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
         }
 
-        mControlTop = Math.round(mUnit * 0.755).toNumber();
-        mControlBottom = Math.round(mUnit * 0.82).toNumber();
+        mControlTop = Math.round(mUnit * 0.70).toNumber();
+        mControlBottom = Math.round(mUnit * 0.775).toNumber();
         var controlWidth = mUnit * 0.20;
         var controlHeight = mControlBottom - mControlTop;
         var centers = [cx - (mUnit * 0.25), cx, cx + (mUnit * 0.25)];
@@ -286,20 +295,18 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             dc.drawRoundedRectangle(Math.round(centers[b] - controlWidth / 2).toNumber(),
                 Math.round(mControlTop).toNumber(), Math.round(controlWidth).toNumber(),
                 Math.round(controlHeight).toNumber(), Math.round(mUnit * 0.02).toNumber());
-            dc.drawText(Math.round(centers[b]).toNumber(),
-                Math.round(mControlTop + (controlHeight - dc.getFontHeight(Graphics.FONT_XTINY)) / 2).toNumber(),
-                Graphics.FONT_XTINY, labels[b], Graphics.TEXT_JUSTIFY_CENTER);
+            drawFit(dc, centers[b], mControlTop + (controlHeight - dc.getFontHeight(Graphics.FONT_XTINY)) / 2,
+                labels[b], controlWidth * 0.92, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
 
-        mSaveTop = Math.round(mUnit * 0.85).toNumber();
-        mSaveBottom = (mUnit * 91 / 100).toNumber();
+        mSaveTop = Math.round(mUnit * 0.815).toNumber();
+        mSaveBottom = (mUnit * 89 / 100).toNumber();
         var saveWidth = mUnit * 0.48;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
             Math.round(mSaveTop).toNumber(), Math.round(saveWidth).toNumber(),
             Math.round((mSaveBottom - mSaveTop)).toNumber(), Math.round(mUnit * 0.02).toNumber());
-        dc.drawText(Math.round(cx).toNumber(),
-            Math.round(mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(Graphics.FONT_XTINY)) / 2).toNumber(),
-            Graphics.FONT_XTINY, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, cx, mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(Graphics.FONT_XTINY)) / 2,
+            "SPEICHERN", saveWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
     }
 }
