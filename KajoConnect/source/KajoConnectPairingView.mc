@@ -219,6 +219,14 @@ class KajoConnectPairingView extends WatchUi.View {
         var unit = width;
         if (height < unit) { unit = height; }
         var center = width / 2;
+        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
+            (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
+        dc.drawLine((unit * 0.12).toNumber(), (unit * 0.075).toNumber(),
+            (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
+        dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
+            (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
         var contentWidth = unit * 0.78;
 
         drawFit(dc, center, unit * 0.13, "KAJO", contentWidth, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
@@ -228,6 +236,10 @@ class KajoConnectPairingView extends WatchUi.View {
             var codeText = formatCode();
             dc.setColor(0x05181C, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle((center - unit * 0.37).toNumber(),
+                (unit * 0.345).toNumber(), (unit * 0.74).toNumber(),
+                (unit * 0.13).toNumber(), (unit * 0.03).toNumber());
+            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle((center - unit * 0.37).toNumber(),
                 (unit * 0.345).toNumber(), (unit * 0.74).toNumber(),
                 (unit * 0.13).toNumber(), (unit * 0.03).toNumber());
             drawFit(dc, center, unit * 0.38, codeText, contentWidth * 0.90,
