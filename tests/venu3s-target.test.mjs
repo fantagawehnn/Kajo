@@ -8,6 +8,12 @@ const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnect
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
 const homeView = readFileSync(new URL("../KajoConnect/source/KajoConnectView.mc", import.meta.url), "utf8");
+const workoutSelectView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutSelectView.mc", import.meta.url), "utf8");
+const workoutListView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutListView.mc", import.meta.url), "utf8");
+const workoutView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutView.mc", import.meta.url), "utf8");
+const customFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnectCustomFieldsView.mc", import.meta.url), "utf8");
+const displayConfigView = readFileSync(new URL("../KajoConnect/source/KajoConnectDisplayConfigView.mc", import.meta.url), "utf8");
+const pairingView = readFileSync(new URL("../KajoConnect/source/KajoConnectPairingView.mc", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -78,12 +84,36 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 });
 
 
-test("Activity screen avoids status text overlapping the bottom touch controls", () => {
-  assert.doesNotMatch(activityView, /mUnit \* 0\.805, mStatus/);
-  assert.match(activityView, /mStatus == "START FEHLGESCHLAGEN" \? "START FEHLGESCHLAGEN" : "BEREIT"/);
+test("Activity screen uses bounded text and reserves a separate bottom control area", () => {
+  assert.match(activityView, /function drawFit\(/);
+  assert.match(activityView, /displayText\.substring/);
+  assert.match(activityView, /mButtonTop = mUnit \* 0\.82/);
+  assert.match(activityView, /mButtonBottom = mUnit \* 0\.90/);
+  assert.match(activityView, /drawFit\(dc, cx, mUnit \* 0\.335/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
 
+test("all custom Garmin screens truncate text to measured width instead of drawing overflow", () => {
+  for (const [name, source] of [
+    ["home", homeView],
+    ["activity", activityView],
+    ["workout select", workoutSelectView],
+    ["workout list", workoutListView],
+    ["workout detail", workoutView],
+    ["custom fields", customFieldsView],
+    ["display config", displayConfigView],
+    ["pairing", pairingView],
+  ]) {
+    assert.match(source, /displayText\.substring/, name + " must truncate text after reaching the smallest font");
+  }
+});
+
+test("custom field editor keeps header, four rows, controls and save action in distinct vertical bands", () => {
+  assert.match(customFieldsView, /mRowTop = Math\.round\(mUnit \* 0\.245\)/);
+  assert.match(customFieldsView, /mRowHeight = Math\.round\(mUnit \* 0\.108\)/);
+  assert.match(customFieldsView, /mControlTop = Math\.round\(mUnit \* 0\.70\)/);
+  assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.815\)/);
+});
 
 test("home screen shows only today's non-rest-day sessions and has separate planned/free activity actions", () => {
   assert.match(homeView, /function getTodaysSessions\(\)/);
@@ -103,5 +133,5 @@ test("home screen uses compact conditional layout with a single primary action",
   assert.match(homeView, /mStartTop = startY/);
   assert.match(homeView, /mFreeTop = mUnit \* 0\.80/);
   assert.match(homeView, /mFreeTop = -1/);
-  assert.match(homeView, /drawCentered\(dc, cx, mUnit \* 0\.93, "MENUE"/);
+  assert.match(homeView, /drawCentered\(dc, cx, menuY \+ \(menuHeight \* 0\.22\), "MENUE"/);
 });
