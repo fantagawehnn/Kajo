@@ -122,6 +122,8 @@ Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden
 
 Es wurden keine produktiven Tabellen verändert und keine Edge Function deployed. Der Quellcode ist daher als vorbereitete Implementierung, nicht als betriebsbereite Verbindung zu verstehen.
 
+**Read-only-Statusprüfung am 23.11.2026:** Im verbundenen Supabase-Projekt ist `kajo-connect` noch nicht als Edge Function vorhanden. Aktiv sind dort `garmin-personal` (Version 50) und `kajo-push-scheduler` (Version 5). Auch die drei Tabellen `kajo_connect_pairing_requests`, `kajo_connect_devices` und `kajo_connect_rate_limits` fehlen. Die vorhandene Migrationshistorie enthält vier Einträge und wurde nicht verändert.
+
 
 ## 11. Deployment-Voraussetzungen
 
