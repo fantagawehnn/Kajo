@@ -75,9 +75,14 @@ class KajoConnectView extends WatchUi.View {
 
     function onSyncResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
         if (responseCode != 200 || data == null) {
-            mSyncStatus = mPlannedSessions.size() > 0
-                ? "OFFLINE · GESPEICHERTER PLAN"
-                : responseCode == 401 ? "GERAET NICHT AUTORISIERT" : "KAJO NICHT ERREICHBAR";
+            if (responseCode == 401) {
+                Storage.setValue("kajoDeviceToken", "");
+                mSyncStatus = "ZUGRIFF WIDERRUFEN – NEU KOPPELN";
+            } else {
+                mSyncStatus = mPlannedSessions.size() > 0
+                    ? "OFFLINE · GESPEICHERTER PLAN"
+                    : "KAJO NICHT ERREICHBAR";
+            }
             WatchUi.requestUpdate();
             return;
         }
