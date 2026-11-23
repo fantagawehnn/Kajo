@@ -7,7 +7,7 @@ import Toybox.WatchUi;
 
 class KajoConnectPairingView extends WatchUi.View {
 
-    const ENDPOINT = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
+    var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
 
     var mApi as KajoConnectApi;
     var mTimer as Timer.Timer;
@@ -24,6 +24,11 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function onShow() as Void {
+        if (Storage.getValue("kajoDeviceToken") != null) {
+            mPaired = true;
+            mStatus = "BEREITS MIT KAJO VERBUNDEN";
+            return;
+        }
         if (!mStarted) {
             mStarted = true;
             createPairing();
@@ -38,7 +43,7 @@ class KajoConnectPairingView extends WatchUi.View {
         mStatus = "KOPPLUNGSCODE WIRD ERSTELLT";
         WatchUi.requestUpdate();
         mApi.postJson(
-            ENDPOINT,
+            mEndpoint,
             { "action" => "create-pairing", "deviceLabel" => "Garmin KAJO Connect" },
             null,
             method(:onCreateResponse)
@@ -46,7 +51,7 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function onCreateResponse(responseCode as Lang.Number, data) as Void {
-        if (responseCode != 200 || data == null || !(data instanceof Lang.Dictionary)) {
+        if (responseCode != 200 || data == null) {
             mStatus = "VERBINDUNG FEHLGESCHLAGEN";
             WatchUi.requestUpdate();
             return;
@@ -76,7 +81,7 @@ class KajoConnectPairingView extends WatchUi.View {
             return;
         }
         mApi.postJson(
-            ENDPOINT,
+            mEndpoint,
             { "action" => "poll-pairing", "code" => mCode, "pollSecret" => mPollSecret },
             null,
             method(:onPollResponse)
@@ -84,7 +89,7 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function onPollResponse(responseCode as Lang.Number, data) as Void {
-        if (responseCode != 200 || data == null || !(data instanceof Lang.Dictionary)) {
+        if (responseCode != 200 || data == null) {
             mStatus = "WARTE AUF VERBINDUNG";
             WatchUi.requestUpdate();
             return;
