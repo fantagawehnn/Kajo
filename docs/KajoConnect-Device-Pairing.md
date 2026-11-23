@@ -58,6 +58,8 @@ Alle Aktionen werden als JSON-POST an `/functions/v1/kajo-connect` gesendet.
 | `claim-pairing` | bestehender Supabase-User-JWT | Code dem angemeldeten Konto zuordnen |
 | `poll-pairing` | zwölfstelliger Code plus Polling-Secret | Status prüfen und Gerätetoken abholen |
 | `sync` | Geräte-Bearer-Token | geplante Einheiten und Herzfrequenzzonen abrufen |
+| `list-devices` | bestehender Supabase-User-JWT | Geräte des eigenen Kontos auflisten |
+| `revoke-device` | bestehender Supabase-User-JWT | ein Gerät des eigenen Kontos widerrufen |
 
 Die `sync`-Antwort enthält nur:
 - geplante Einheiten von gestern bis 14 Tage in die Zukunft, begrenzt auf 40 Einträge und die oben genannten Felder;
@@ -101,6 +103,8 @@ Die vorhandene `KajoConnectApi.mc` ist derzeit nur eine generische asynchrone JS
 Die Uhr speichert Aktivitäten derzeit über `ActivityRecording.Session` als Garmin-Aktivität. Das ist nicht gleichbedeutend mit einem direkten Upload der FIT-Datei an KAJO. Ein späterer KAJO-Import kann den bestehenden Garmin-Synchronisationsweg nutzen, muss aber anhand eines echten Testdatensatzes geprüft werden. Ein direkter FIT-Upload von der Uhr ist nicht implementiert.
 
 ## 10. Sicherheits- und Testanforderungen vor Freigabe
+
+Ein separates serverseitiges Rate-Limit für Code-Erzeugung und ungültige Code-Eingaben ist noch nicht implementiert. Der zwölfstellige Code, HMAC-Pepper und die kurze Ablaufzeit erhöhen die Hürde, ersetzen aber kein Rate-Limit.
 
 Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden:
 - abgelaufener, ungültiger und bereits beanspruchter Code;
