@@ -264,9 +264,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
 
         drawFit(dc, cx, mUnit * 0.075, "4-FELDER-LAYOUT", mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.13, "FREIE AUSWAHL · MAX. 4 FELDER", mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawFit(dc, cx, mUnit * 0.17, "DATENSEITE " + (mLayoutIndex + 1).toString() + " / " + mLayoutCount.toString(), mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawFit(dc, cx, mUnit * 0.205, "FELDER " + (mPage + 1).toString() + " / " + mPageCount.toString(), mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.13, "MAX. 4 FELDER AUSWAEHLEN", mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.18, "SEITE " + (mLayoutIndex + 1).toString() + "/" + mLayoutCount.toString() + "  ·  FELDER " + (mPage + 1).toString() + "/" + mPageCount.toString(), mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         mRowTop = Math.round(mUnit * 0.245).toNumber();
         mRowHeight = Math.round(mUnit * 0.108).toNumber();
