@@ -66,3 +66,18 @@ test('GPS tracking is enabled only after the FIT session starts successfully', (
     assert.match(start, /Position\.LOCATION_CONTINUOUS/);
     assert.match(start, /else\s*\{\s*mStatus = "START FEHLGESCHLAGEN"/);
 });
+
+
+test('an existing active Garmin FIT session is reused after an app restart', () => {
+    const start = method(engine, 'start', 'isRecording');
+    assert.match(start, /mSession = ActivityRecording\.createSession\(/);
+    assert.match(start, /if \(mSession\.isRecording\(\)\) \{\s*return true;/);
+    assert.ok(start.indexOf('mSession.isRecording()') < start.indexOf('mSession.start()'));
+});
+
+test('a failed start attempt never discards a potentially existing FIT session', () => {
+    const start = method(engine, 'start', 'isRecording');
+    assert.doesNotMatch(start, /mSession\.discard\(/);
+    assert.match(start, /if \(!started\) \{[\s\S]*?return false;/);
+    assert.doesNotMatch(start, /mSession = null/);
+});
