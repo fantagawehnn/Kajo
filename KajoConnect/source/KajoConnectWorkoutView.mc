@@ -147,7 +147,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var shownSteps = stepCount < 3 ? stepCount : 3;
         var y = unit * 0.56;
         for (var i = 0; i < shownSteps; i += 1) {
-            var step = steps[i] as Lang.Dictionary;
+            var step = stepsValue.get(i) as Lang.Dictionary;
             var stepLabel = step["label"] == null ? "Trainingsschritt" : step["label"].toString();
             var stepDuration = step["durationSeconds"] == null ? "" : step["durationSeconds"].toString();
             var minutes = "";
