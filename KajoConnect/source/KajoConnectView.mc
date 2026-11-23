@@ -8,6 +8,8 @@ import Toybox.WatchUi;
 
 class KajoConnectView extends WatchUi.View {
 
+    var mLayout;
+
     var mSelectedBoat = "K1";
     var mPlannedSessions as Lang.Array<Lang.Dictionary> = [];
     var mWidth = 0;
@@ -33,6 +35,7 @@ class KajoConnectView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
+        mLayout = new KajoLayout();
         mApi = new KajoConnectApi();
         var cachedSessions = Storage.getValue("kajoPlannedSessions");
         if (cachedSessions != null) {
@@ -186,13 +189,8 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        var font = preferredFont;
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
-        return font;
+        return mLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
-
     function compactSyncStatus() as Lang.String {
         if (mSyncStatus == "KAJO SYNCHRONISIERT …") { return "SYNC …"; }
         if (mSyncStatus == "KAJO AKTUALISIERT") { return "SYNC OK"; }
@@ -206,24 +204,18 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
-        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
-            if (displayText.length() <= 4) {
-                displayText = "";
-            } else {
-                displayText = displayText.substring(0, displayText.length() - 4) + "...";
-            }
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
+            if (displayText.length() <= 4) { displayText = ""; }
+            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
-        if (displayText == "") { return; }
-        var safeY = y;
-        var textHeight = dc.getFontHeight(font);
-        if (safeY < 2) { safeY = 2; }
-        if (safeY + textHeight > mHeight - 2) { safeY = mHeight - textHeight - 2; }
+        if (displayText == "" || safeWidth <= 0) { return; }
+        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(x.toNumber(), safeY.toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
-
     function setPlannedSessions(sessions as Lang.Array<Lang.Dictionary>) {
         mPlannedSessions = sessions;
         mPlanStartIndex = 0;
@@ -369,6 +361,7 @@ class KajoConnectView extends WatchUi.View {
         mHeight = dc.getHeight();
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
+        mLayout.configure(mWidth, mHeight);
 
         var cx = mWidth / 2;
         var todaySessions = getTodaysSessions();
