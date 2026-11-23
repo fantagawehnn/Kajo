@@ -94,11 +94,15 @@ export function parseGarminFitActivity(input) {
         }
         const definition = definitions.get(local);
         if (!definition) throw new Error('FIT-Datensatz ohne vorherige Definition.');
+        const timestampField = definition.fields.find(field => field.number === 253);
+        const omittedTimestampBytes = compressed ? (timestampField?.size ?? 0) : 0;
         const fieldBytes = definition.fields.reduce((sum,f)=>sum+f.size,0);
         const developerBytes = definition.developerFields.reduce((sum,f)=>sum+f.size,0);
-        if (position + fieldBytes + developerBytes > dataEnd) throw new Error('Unvollständiger FIT-Datensatz.');
+        const recordBytes = fieldBytes - omittedTimestampBytes + developerBytes;
+        if (position + recordBytes > dataEnd) throw new Error('Unvollständiger FIT-Datensatz.');
         const values = new Map();
         for (const field of definition.fields) {
+            if (compressed && field.number === 253) continue;
             values.set(field.number,readField(view,position,field,definition.littleEndian));
             position += field.size;
         }
@@ -108,9 +112,11 @@ export function parseGarminFitActivity(input) {
             let timestamp = get(253);
             if (compressed) {
                 const offset = header & 0x1f;
-                if (lastTimestamp === null) continue;
-                timestamp = (lastTimestamp & ~0x1f) + offset;
-                if (timestamp < lastTimestamp) timestamp += 0x20;
+                timestamp = null;
+                if (lastTimestamp !== null) {
+                    timestamp = (lastTimestamp & ~0x1f) + offset;
+                    if (timestamp < lastTimestamp) timestamp += 0x20;
+                }
             }
             if (typeof timestamp === 'number') lastTimestamp = timestamp;
             for (const bpm of list(get(3))) {
