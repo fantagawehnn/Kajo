@@ -31,9 +31,9 @@ Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
 - Distanz & Zeit: Distanz, Zeit und Kalorien
 - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge entspricht vorerst der festgelegten Reihenfolge.
+Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich kann eine eigene Datenseite mit bis zu vier Kennzahlen aktiviert werden. Dafür stehen 16 Kennzahlen zur Auswahl; aktivierte Felder lassen sich innerhalb der Auswahl nach oben oder unten sortieren. Die eigene Seite passt die Darstellung automatisch an die Anzahl der gewählten Felder an (ein Feld groß, zwei nebeneinander, drei oder vier im Raster).
 
-**Noch nicht umgesetzt:** Einzelne Kennzahlen innerhalb einer Seite frei austauschen, hinzufügen, entfernen, verschieben oder in ihrer Größe verändern. Der aktuelle Editor schaltet ganze Datenseiten an oder aus.
+**Noch nicht umgesetzt:** Kennzahlen frei auf mehrere selbst angelegte Seiten verteilen, mehr als vier Kennzahlen gleichzeitig anzeigen und die Größe einzelner Felder unabhängig voneinander manuell einstellen. Die automatische Größenanpassung richtet sich derzeit ausschließlich nach der Anzahl der ausgewählten Felder.
 
 ## 4. Trainingsplan-Synchronisierung
 
@@ -62,7 +62,7 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 
 ## 6. Noch offen
 
-- Individueller Layout-Editor für einzelne Kennzahlen (Auswahl, Reihenfolge und Größe).
+- Erweiterung des Layout-Editors: mehrere eigene Seiten, mehr als vier Felder und manuelle Größensteuerung pro Kennzahl.
 - Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
 - End-to-end-Test von Pairing, Trainingsplan-Synchronisierung und Herzfrequenzzonen.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
