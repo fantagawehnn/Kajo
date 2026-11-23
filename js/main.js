@@ -2500,7 +2500,7 @@ function scheduleCloudSync(userId) {
     }, 900);
 }
 
-async function flushCloudSync() {
+async function flushCloudSync(options = {}) {
     if (cloudSyncApplyingRemote) return false;
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return false;
     if (cloudSyncInFlight) {
@@ -2515,18 +2515,20 @@ async function flushCloudSync() {
     setCloudSyncStatus('Cloud-Speicherung läuft …');
 
     try {
-        // Rohtelemetrie wird getrennt und nur dann übertragen, wenn die
-        // jeweilige Aktivität noch keinen Cloud-Datensatz besitzt.
+        // Rohtelemetrie wird getrennt übertragen. Reine Hintergrund-Pulls
+        // überspringen diesen Upload, damit sie keine unnötigen Garmin-Requests auslösen.
         let telemetryUpload = { uploaded: 0, failed: false };
-        try {
-            telemetryUpload = await uploadMissingGarminTelemetry(
-                supabase,
-                userId,
-                getGarminTelemetryRecordsForCloud()
-            );
-        } catch (telemetryError) {
-            telemetryUpload = { uploaded: 0, failed: true };
-            console.warn('Garmin-Telemetrie konnte nicht separat in der Cloud gesichert werden; lokale Daten bleiben erhalten:', telemetryError);
+        if (!options.skipTelemetry) {
+            try {
+                telemetryUpload = await uploadMissingGarminTelemetry(
+                    supabase,
+                    userId,
+                    getGarminTelemetryRecordsForCloud()
+                );
+            } catch (telemetryError) {
+                telemetryUpload = { uploaded: 0, failed: true };
+                console.warn('Garmin-Telemetrie konnte nicht separat in der Cloud gesichert werden; lokale Daten bleiben erhalten:', telemetryError);
+            }
         }
 
         const [latestCloud, latestActivities, baseline] = await Promise.all([
@@ -2609,7 +2611,7 @@ async function pullCloudChanges() {
         cloudSyncBlocked || cloudSyncInFlight || cloudPullInFlight) return;
     cloudPullInFlight = true;
     try {
-        await flushCloudSync();
+        await flushCloudSync({ skipTelemetry: true });
     } finally {
         cloudPullInFlight = false;
     }
