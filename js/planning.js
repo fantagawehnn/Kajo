@@ -8,6 +8,58 @@ import { renderCalendar } from './calendar.js';
 
 let editingPlannedWorkoutId = null;
 
+let editingWorkoutSteps = [];
+const WORKOUT_STEP_TYPES = [['warmup','Aufwärmen'],['work','Belastung'],['recovery','Erholung'],['cooldown','Abwärmen'],['other','Sonstiges']];
+function normalizeWorkoutSteps(value) {
+    if (!Array.isArray(value)) return [];
+    return value.slice(0,40).filter(step=>step&&typeof step==='object').map((step,index)=>({
+        id:String(step.id||'step-'+(index+1)).slice(0,80),
+        type:WORKOUT_STEP_TYPES.some(([type])=>type===step.type)?step.type:'other',
+        label:String(step.label||'').slice(0,80),
+        durationSeconds:Number.isInteger(Number(step.durationSeconds))&&Number(step.durationSeconds)>0?Math.min(21600,Number(step.durationSeconds)):null,
+        target:String(step.target||'').slice(0,120)
+    })).filter(step=>step.label&&step.durationSeconds);
+}
+export function renderPlannedWorkoutSteps() {
+    const root=document.getElementById('plan-steps-list'); if(!root)return;
+    if(!editingWorkoutSteps.length){root.innerHTML='<p class="text-[11px] text-slate-500">Noch keine einzelnen Schritte angelegt. Du kannst die Einheit weiterhin nur mit den Textfeldern oben planen.</p>';return;}
+    root.innerHTML=editingWorkoutSteps.map((step,index)=>{
+        const options=WORKOUT_STEP_TYPES.map(([type,label])=>'<option value="'+type+'"'+(step.type===type?' selected':'')+'>'+label+'</option>').join('');
+        const minutes=step.durationSeconds?(step.durationSeconds/60):'';
+        return '<div data-workout-step class="rounded-xl border border-slate-700 bg-slate-950/70 p-3 space-y-2">'+
+        '<div class="flex items-center justify-between gap-2"><strong class="text-[11px] text-cyan-300">SCHRITT '+(index+1)+'</strong><button type="button" onclick="removePlannedWorkoutStep('+index+')" class="text-[11px] text-rose-300">Entfernen</button></div>'+
+        '<div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">Abschnittstyp<select data-field="type" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 p-2 text-xs text-white">'+options+'</select></label>'+
+        '<label class="text-[10px] text-slate-400">Dauer (Minuten)<input data-field="duration" type="number" min="0.1" max="360" step="0.1" value="'+(minutes===''?'':minutes)+'" placeholder="z. B. 3" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 p-2 text-xs text-white"></label></div>'+
+        '<label class="block text-[10px] text-slate-400">Bezeichnung<input data-field="label" maxlength="80" value="'+escapeHtml(step.label)+'" placeholder="z. B. Intervall 1" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 p-2 text-xs text-white"></label>'+
+        '<label class="block text-[10px] text-slate-400">Ziel / Anweisung (optional)<input data-field="target" maxlength="120" value="'+escapeHtml(step.target)+'" placeholder="z. B. Schwellenbereich, technisch sauber" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 p-2 text-xs text-white"></label></div>';
+    }).join('');
+}
+export function addPlannedWorkoutStep() {
+    if(editingWorkoutSteps.length>=40)return;
+    editingWorkoutSteps.push({id:'step-'+Date.now(),type:'work',label:'',durationSeconds:null,target:''});
+    renderPlannedWorkoutSteps();
+}
+export function removePlannedWorkoutStep(index) {
+    if(!Number.isInteger(index)||index<0||index>=editingWorkoutSteps.length)return;
+    editingWorkoutSteps.splice(index,1);renderPlannedWorkoutSteps();
+}
+function readPlannedWorkoutSteps() {
+    const root=document.getElementById('plan-steps-list');if(!root)return {steps:[],error:null};
+    const rows=[...root.querySelectorAll('[data-workout-step]')],steps=[];
+    for(let index=0;index<rows.length;index+=1){
+        const row=rows[index],type=row.querySelector('[data-field="type"]')?.value||'other';
+        const label=row.querySelector('[data-field="label"]')?.value.trim()||'';
+        const durationMinutes=Number(row.querySelector('[data-field="duration"]')?.value);
+        const target=row.querySelector('[data-field="target"]')?.value.trim()||'';
+        if(!label||!Number.isFinite(durationMinutes)||durationMinutes<=0||durationMinutes>360)
+            return {steps:[],error:'Bitte ergänze bei Schritt '+(index+1)+' eine Bezeichnung und eine gültige Dauer.'};
+        steps.push({id:editingWorkoutSteps[index]?.id||'step-'+(index+1),
+            type:WORKOUT_STEP_TYPES.some(([allowed])=>allowed===type)?type:'other',
+            label:label.slice(0,80),durationSeconds:Math.round(durationMinutes*60),target:target.slice(0,120)});
+    }
+    return {steps,error:null};
+}
+
 export function renderPlannedWorkouts() {
     const sports=getSportsCatalog(), categories=getTypeColorMap();
     const el=document.getElementById('planned-workouts-list');
@@ -79,6 +131,8 @@ export function openPlannedWorkoutModal(id=null){
     setPlanField('plan-warmup',item?.warmup||'');
     setPlanField('plan-main-set',item?.mainSet||'');
     setPlanField('plan-cooldown',item?.cooldown||'');
+    editingWorkoutSteps=normalizeWorkoutSteps(item?.steps);
+    renderPlannedWorkoutSteps();
     setPlanField('plan-desc',item?.desc||'');
     setPlannedWorkoutKind(item?.type==='RestDay'?'rest':'training');
     const title=document.getElementById('planned-workout-modal-title');
@@ -90,7 +144,7 @@ export function openPlannedWorkoutModal(id=null){
 }
 export function closePlannedWorkoutModal(){
     document.getElementById('planned-workout-modal')?.classList.add('hidden');
-    editingPlannedWorkoutId=null;
+    editingPlannedWorkoutId=null;editingWorkoutSteps=[];
 }
 export function savePlannedWorkout(){
     const date=document.getElementById('plan-date').value||toLocalDateString();
@@ -109,7 +163,11 @@ export function savePlannedWorkout(){
     const mainSet=document.getElementById('plan-main-set')?.value.trim()||'';
     const cooldown=document.getElementById('plan-cooldown')?.value.trim()||'';
     const desc=document.getElementById('plan-desc').value;
-    const workoutDetails={intensity,objective,warmup,mainSet,cooldown};
+    const parsedSteps=readPlannedWorkoutSteps();
+    const error=document.getElementById('plan-steps-error');
+    if(error)error.textContent=parsedSteps.error||'';
+    if(parsedSteps.error)return;
+    const workoutDetails={intensity,objective,warmup,mainSet,cooldown,steps:isRestDay?[]:parsedSteps.steps};
     if(editingPlannedWorkoutId!==null){
         const index=state.plannedActivities.findIndex(p=>String(p.id)===editingPlannedWorkoutId);
         if(index<0)return;
