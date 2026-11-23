@@ -21,7 +21,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
-import { fetchCloudActivities, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
+import { fetchCloudActivities, getCloudActivityIds, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
@@ -2370,6 +2370,7 @@ async function flushCloudSync() {
         // großen versionierten user_data-Snapshot herausgenommen.
         const activityUpload = await syncCloudActivities(supabase, userId, state.rawActivities || []);
         const snapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        snapshot.activityIds = getCloudActivityIds(userId, snapshot.activities || []);
         snapshot.activities = [];
         const result = await saveCloudSnapshot(snapshot, cloudSyncVersion, userId);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
@@ -2550,6 +2551,7 @@ async function performCloudInitialTransfer() {
         // user_data-Snapshot bleibt unangetastet, falls ein Paket fehlschlägt.
         const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
         const activityUpload = await syncCloudActivities(supabase, userId, initialSnapshot.activities || []);
+        initialSnapshot.activityIds = getCloudActivityIds(userId, initialSnapshot.activities || []);
         initialSnapshot.activities = [];
         const result = await saveCloudSnapshot(initialSnapshot, 0, userId);
         if (!result.saved) {
@@ -3000,7 +3002,7 @@ async function handleAuthSession(session) {
             if (cloudSnapshot.data !== null) {
                 const mergedSnapshot = {
                     ...cloudSnapshot.data,
-                    activities: mergeCloudActivities(cloudSnapshot.data.activities, cloudActivities)
+                    activities: mergeCloudActivities(cloudSnapshot.data.activities, cloudActivities, Array.isArray(cloudSnapshot.data.activityIds) ? cloudSnapshot.data.activityIds : null)
                 };
                 applyCloudDataSnapshot(mergedSnapshot);
                 const indicator = document.getElementById('sync-status-indicator');
