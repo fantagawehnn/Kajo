@@ -57,3 +57,61 @@ revoke all on public.kajo_connect_devices from anon, authenticated;
 revoke all on public.kajo_connect_pairing_requests from anon, authenticated;
 grant all on public.kajo_connect_devices to service_role;
 grant all on public.kajo_connect_pairing_requests to service_role;
+
+create table if not exists public.kajo_connect_rate_limits (
+  bucket_key text primary key
+    check (bucket_key ~ '^[a-f0-9]{64}
+),
+  window_started_at timestamptz not null,
+  request_count integer not null check (request_count >= 1),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.kajo_connect_rate_limits enable row level security;
+revoke all on public.kajo_connect_rate_limits from anon, authenticated;
+grant all on public.kajo_connect_rate_limits to service_role;
+
+-- Atomic fixed-window counter. SECURITY INVOKER is intentional; only service_role
+-- receives EXECUTE and table access.
+create or replace function public.kajo_connect_consume_rate_limit(
+  p_bucket_key text,
+  p_limit integer,
+  p_window_seconds integer
+)
+returns boolean
+language plpgsql
+set search_path = public, pg_temp
+as $
+declare
+  allowed boolean;
+begin
+  if p_bucket_key !~ '^[a-f0-9]{64}
+ or p_limit < 1 or p_window_seconds < 1 then
+    raise exception 'Invalid rate limit parameters';
+  end if;
+
+  insert into public.kajo_connect_rate_limits as existing
+    (bucket_key, window_started_at, request_count, updated_at)
+  values
+    (p_bucket_key, now(), 1, now())
+  on conflict (bucket_key) do update set
+    window_started_at = case
+      when existing.window_started_at + make_interval(secs => p_window_seconds) <= now()
+        then now()
+      else existing.window_started_at
+    end,
+    request_count = case
+      when existing.window_started_at + make_interval(secs => p_window_seconds) <= now()
+        then 1
+      else existing.request_count + 1
+    end,
+    updated_at = now()
+  returning request_count <= p_limit into allowed;
+
+  return allowed;
+end;
+$;
+
+revoke all on function public.kajo_connect_consume_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.kajo_connect_consume_rate_limit(text, integer, integer) to service_role;
+
