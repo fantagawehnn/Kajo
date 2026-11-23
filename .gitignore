@@ -1,0 +1,13 @@
+# Garmin Connect IQ generated build output
+KajoConnect/bin/
+KajoConnect/gen/
+KajoConnect/mir/
+KajoConnect/internal-mir/
+KajoConnect/*.prg
+KajoConnect/*.prg.debug.xml
+
+# Local signing keys (never commit private developer keys)
+developer_key
+**/developer_key
+*.pem
+*.p12
