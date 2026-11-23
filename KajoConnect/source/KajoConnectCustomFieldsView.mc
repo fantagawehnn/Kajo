@@ -245,6 +245,14 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
         var cx = mWidth / 2;
+        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
+            (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
+        dc.drawLine((unit * 0.12).toNumber(), (unit * 0.075).toNumber(),
+            (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
+        dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
+            (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
 
         drawFit(dc, cx, mUnit * 0.075, "DATENFELDER", mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         drawFit(dc, cx, mUnit * 0.13, "K / M / G = KLEIN / MITTEL / GROSS", mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
@@ -273,7 +281,11 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 sizeText = fieldSize == 0 ? "K" : fieldSize == 2 ? "G" : "M";
             }
             var stateText = isEnabled ? (orderIndex + 1).toString() + " " + sizeText : "AUS";
-            dc.setColor(isFocused ? Graphics.COLOR_WHITE : 0x0A1A1E, Graphics.COLOR_BLACK);
+            dc.setColor(isFocused ? 0x102A2E : 0x091417, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
+                Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
+                Math.round(mUnit * 0.02).toNumber());
+            dc.setColor(isFocused ? 0x00E5CC : 0x1A4A52, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
                 Math.round(mUnit * 0.02).toNumber());
