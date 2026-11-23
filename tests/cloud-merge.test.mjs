@@ -124,6 +124,39 @@ test('führt unabhängige Änderungen derselben Aktivität konfliktfrei zusammen
     ]);
 });
 
+test('rekonstruiert abgeleitete activityIds vor dem Abgleich statt eine lokale Löschung zu melden', () => {
+    const base = {
+        activityIds: ['activity-1'],
+        activities: [{ id: 'activity-1', duration: 60 }]
+    };
+    const localStorageSnapshot = {
+        activities: [{ id: 'activity-1', duration: 60 }]
+    };
+    const local = {
+        ...localStorageSnapshot,
+        activityIds: localStorageSnapshot.activities.map(activity => activity.id)
+    };
+    const cloud = {
+        activityIds: ['activity-1', 'activity-2'],
+        activities: [
+            { id: 'activity-1', duration: 60 },
+            { id: 'activity-2', duration: 45 }
+        ]
+    };
+    const result = merge(base, local, cloud);
+    assert.deepEqual(plain(result.conflicts), []);
+    assert.deepEqual(plain(result.snapshot.activityIds), ['activity-1', 'activity-2']);
+});
+
+test('erkennt weiterhin das tatsächliche Löschen einer geänderten Aktivität', () => {
+    const result = merge(
+        { activities: [{ id: 'activity-1', duration: 60 }] },
+        { activities: [] },
+        { activities: [{ id: 'activity-1', duration: 75 }] }
+    );
+    assert.ok(result.conflicts.some(path => path.includes('Löschung gegen Änderung')));
+});
+
 test('erkennt identische Snapshots unabhängig von Objektschlüssel-Reihenfolge', () => {
     assert.equal(cloudSnapshotsEqual({ a: 1, b: { x: 2, y: 3 } }, { b: { y: 3, x: 2 }, a: 1 }), true);
 });
