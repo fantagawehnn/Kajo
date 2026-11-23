@@ -25,7 +25,7 @@ Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
 
 Über „Anzeigen anpassen“ lassen sich die fünf vorhandenen Datenseiten aktivieren oder deaktivieren:
 
-- Übersicht: Geschwindigkeit, aktuelle Herzfrequenz, Zeit und Herzfrequenzzone
+- Übersicht: individuelles KAJO-Dashboard mit Trainingsname/-art und geplanter Dauer (falls für heute synchronisiert), groß dargestellter aktueller Herzfrequenz, Zeit und Distanz; Geschwindigkeit wird kleiner ergänzt. Ein äußerer, fünfteiliger Ring zeigt die HF-Zonen farblich und hebt die aktuelle Zone hervor.
 - Geschwindigkeit: aktuell, Durchschnitt und Maximum
 - Herzfrequenz: aktuell, Durchschnitt, Maximum und Herzfrequenzzone
 - Distanz & Zeit: Distanz, Zeit und Kalorien
@@ -82,3 +82,10 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 6. FIT-Aktivität aufzeichnen, speichern und in Garmin Connect sowie anschließend in KAJO prüfen.
 
 Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persistenz, Tasten, FIT-Datei und Synchronisierung müssen zusätzlich im Simulator und auf den echten Geräten geprüft werden.
+
+
+## 8. Gestaltung der Aktivitätsübersicht
+
+Die erste Aktivitätsseite verwendet ein eigenständiges KAJO-Dashboard statt des klassischen Garmin-Datenfeldrasters. Der Trainingsname und die Trainingsart der für den aktuellen lokalen Tag synchronisierten Einheit stehen oben. Herzfrequenz, Zeit und Distanz erhalten die größte visuelle Priorität; Geschwindigkeit wird bewusst kleiner dargestellt. Der äußere Ring zeigt fünf farblich unterschiedene Herzfrequenzzonen und hebt die aktuell ermittelte Zone hervor. KAJO-Logo und Bootsklasse werden in dieser Trainingsansicht nicht als Überschrift angezeigt.
+
+Die Trainingsübersicht greift auf den lokal gespeicherten Plan unter `kajoPlannedSessions` zurück. Angezeigt werden nur die vorhandenen Felder Name, Trainingsart und geplante Dauer. Eine Intervall-/Schrittfolge wird weiterhin nicht angezeigt, da diese strukturierte Information derzeit nicht Bestandteil des übertragenen Datensatzes ist.
