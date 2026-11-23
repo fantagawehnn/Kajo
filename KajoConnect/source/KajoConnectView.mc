@@ -400,10 +400,10 @@ class KajoConnectView extends WatchUi.View {
             (mUnit * 0.014).toNumber());
         dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.239).toNumber(),
             (cx + mUnit * 0.272).toNumber(), (mUnit * 0.255).toNumber());
-        dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.199).toNumber(),
+        dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.239).toNumber(),
             (cx + mUnit * 0.282).toNumber(), (mUnit * 0.247).toNumber());
-        dc.drawLine((cx + mUnit * 0.282).toNumber(), (mUnit * 0.207).toNumber(),
-            (cx + mUnit * 0.272).toNumber(), (mUnit * 0.215).toNumber());
+        dc.drawLine((cx + mUnit * 0.282).toNumber(), (mUnit * 0.247).toNumber(),
+            (cx + mUnit * 0.272).toNumber(), (mUnit * 0.255).toNumber());
         drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.262, "AKTIV",
             mUnit * 0.25, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
