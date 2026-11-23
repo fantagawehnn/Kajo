@@ -43,7 +43,7 @@ class KajoConnectView extends WatchUi.View {
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x).toNumber(), Math.round(y).toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x.toNumber(), y.toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function setPlannedSessions(sessions) {
@@ -123,7 +123,6 @@ class KajoConnectView extends WatchUi.View {
         if (mHeight < mUnit) { mUnit = mHeight; }
 
         var cx = mWidth / 2;
-        var cy = mHeight / 2;
         var scale = mUnit;
 
         // Die Inhalte bleiben in der zentralen, kreisförmig sicheren Displayzone.
@@ -149,7 +148,7 @@ class KajoConnectView extends WatchUi.View {
                     var cardHeight = scale * 0.075;
                     var cardX = cx - (cardWidth / 2);
                     dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-                    dc.fillRoundedRectangle(Math.round(cardX).toNumber(), Math.round(rowY).toNumber(), Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(), Math.round(scale * 0.025).toNumber());
+                    dc.fillRoundedRectangle(cardX.toNumber(), rowY.toNumber(), cardWidth.toNumber(), cardHeight.toNumber(), (scale * 0.025).toNumber());
                     var sessionText = mPlannedSessions[index] as String;
                     drawCentered(
                         dc, cx,
@@ -199,13 +198,13 @@ class KajoConnectView extends WatchUi.View {
 
             if (selected) {
                 dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle(Math.round(bx).toNumber(), Math.round(buttonY).toNumber(), Math.round(buttonWidth).toNumber(), Math.round(buttonHeight).toNumber(), Math.round(scale * 0.035).toNumber());
+                dc.fillRoundedRectangle(bx.toNumber(), buttonY.toNumber(), buttonWidth.toNumber(), buttonHeight.toNumber(), (scale * 0.035).toNumber());
                 drawCentered(dc, bx + buttonWidth / 2,
                     buttonY + (buttonHeight - dc.getFontHeight(Graphics.FONT_MEDIUM)) / 2,
                     labels[b], buttonWidth * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
             } else {
                 dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-                dc.drawRoundedRectangle(Math.round(bx).toNumber(), Math.round(buttonY).toNumber(), Math.round(buttonWidth).toNumber(), Math.round(buttonHeight).toNumber(), Math.round(scale * 0.035).toNumber());
+                dc.drawRoundedRectangle(bx.toNumber(), buttonY.toNumber(), buttonWidth.toNumber(), buttonHeight.toNumber(), (scale * 0.035).toNumber());
                 drawCentered(dc, bx + buttonWidth / 2,
                     buttonY + (buttonHeight - dc.getFontHeight(Graphics.FONT_MEDIUM)) / 2,
                     labels[b], buttonWidth * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
@@ -220,7 +219,7 @@ class KajoConnectView extends WatchUi.View {
         mStartBottom = mStartTop + startHeight;
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(Math.round(startX).toNumber(), Math.round(mStartTop).toNumber(), Math.round(startWidth).toNumber(), Math.round(startHeight).toNumber(), Math.round(scale * 0.04).toNumber());
+        dc.fillRoundedRectangle(startX.toNumber(), mStartTop.toNumber(), startWidth.toNumber(), startHeight.toNumber(), (scale * 0.04).toNumber());
         drawCentered(dc, cx,
             mStartTop + (startHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             "STARTEN", startWidth * 0.85, Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
