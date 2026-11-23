@@ -1,51 +1,52 @@
-# KAJO Connect – Aktivitätsoberfläche und erste FIT-Aufzeichnung
+# KAJO Connect – Aktivitätsanzeigen und Trainingsübersicht
 
-**Status:** Erste mehrseitige Implementierungsstufe im Branch `feature/kajo-connect`; lokaler Build und Gerätetest der aktuellen Änderungen stehen noch aus.  
+**Status:** UI-Grundlage im Branch `feature/kajo-connect`; lokaler Garmin-Build und Gerätetest dieser Änderungen stehen noch aus.  
 **Zielgerät:** Garmin Venu 3S.
 
-## 1. Bedienablauf
+## 1. Individuelle Aktivitätsseiten
 
-1. Auf dem KAJO-Startbildschirm wird K1, C1 oder C2 ausgewählt.
-2. „STARTEN“ öffnet die Aktivitätsansicht. Die Bootsklasse wird dort nicht als Überschrift angezeigt; sie bleibt Teil des FIT-Aktivitätsnamens.
-3. In der Aktivitätsansicht startet die Nutzerin die Aufzeichnung über „STARTEN“.
-4. Während der Aufzeichnung stehen fünf vertikal durch Wischen nach oben/unten erreichbare Datenseiten bereit:
-   - Übersicht: aktuelle Geschwindigkeit, aktuelle Herzfrequenz und Zeit
-   - Geschwindigkeit: aktuell, Durchschnitt und Maximum
-   - Herzfrequenz: aktuell, Durchschnitt und Maximum
-   - Distanz und Zeit: Distanz, Zeit und Kalorien
-   - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
-5. „RUNDE“ fügt einen FIT-Lap hinzu.
-6. „ENDE“ beendet die Aufzeichnung und speichert die FIT-Datei.
-7. Nach dem Speichern führt „ZURUECK“ zurück zur Startansicht.
+Über das Uhrenmenü „Anzeigen anpassen“ lassen sich die fünf vorhandenen Datenseiten einzeln aktivieren oder deaktivieren:
 
-## 2. Datenverfügbarkeit
+- Übersicht: aktuelle Geschwindigkeit, Herzfrequenz und Zeit
+- Geschwindigkeit: aktuell, Durchschnitt und Maximum
+- Herzfrequenz: aktuell, Durchschnitt und Maximum
+- Distanz & Zeit: Distanz, Zeit und Kalorien
+- Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Seiten verwenden verfügbare Eigenschaften aus `Toybox.Activity.Info`. Fehlende Werte werden als „--“ dargestellt. Welche Werte tatsächlich geliefert werden, hängt von Gerät, Sportprofil und Sensoren ab. Herzfrequenzzonen, Runden-spezifische Kennzahlen und individuelle KAJO-Feldlayouts sind in dieser Stufe noch nicht angebunden.
+Die Auswahl wird über die Garmin-App-Properties auf dem Gerät gespeichert und beim nächsten Öffnen der Aktivität wieder geladen. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der aktiven Seiten entspricht vorerst der Reihenfolge in der Liste.
 
-## 3. Implementierte Dateien
+**Abgrenzung:** In dieser Stufe können ganze Datenseiten ausgewählt werden. Einzelne Kennzahlen innerhalb einer Seite lassen sich noch nicht frei austauschen, verschieben oder in ihrer Größe verändern. Dafür ist ein weitergehender Layout-Editor erforderlich.
 
-- `KajoConnect/source/KajoConnectRecordingEngine.mc`: FIT-Aufzeichnung, Rundenmarkierung, Stoppen und Speichern.
-- `KajoConnect/source/KajoConnectActivityView.mc`: fünf Aktivitäts-Datenseiten und Live-Abfrage von Aktivitätsdaten.
-- `KajoConnect/source/KajoConnectActivityDelegate.mc`: Touch-Eingaben und vertikale Seitenwechsel.
-- `KajoConnect/source/KajoConnectView.mc`: Bootsklassenauswahl und Start-Einstieg im Startmenü.
-- `KajoConnect/manifest.xml`: Berechtigungen Fit, Positioning und Communications.
+## 2. Trainingsübersicht
 
-Die FIT-Aufzeichnung verwendet vorerst `Activity.SPORT_GENERIC` und `Activity.SUB_SPORT_GENERIC`. Ein spezifischer Garmin-Sporttyp für Kanu-Wildwasserrennsport wurde noch nicht verifiziert.
+- Ein Eintrag aus der Trainingsliste auf dem Startbildschirm öffnet eine eigene Trainingsübersicht.
+- Über das Uhrenmenü ist die Trainingsübersicht ebenfalls erreichbar.
+- Derzeit kann die Uhr aus der bestehenden lokalen Anzeige nur den Namen der ausgewählten Einheit übernehmen.
 
-## 4. Noch nicht umgesetzt
+Die KAJO-Web-App speichert geplante Einheiten mit den Feldern `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc`. Die geplanten Einheiten werden aktuell aber noch nicht an KAJO Connect übertragen. Daher zeigt die neue Uhrenansicht noch keine echten Dauer-, Belastungs- oder Beschreibungswerte an. Eine strukturierte Intervall-/Schrittfolge ist im geprüften Planungsmodul nicht vorhanden und wird nicht erfunden.
 
+## 3. Bedienung und Aufzeichnung
+
+- Datenseiten während der Aufzeichnung vertikal nach oben/unten wechseln.
+- „RUNDE“ fügt einen FIT-Lap hinzu.
+- „ENDE“ beendet die Aufzeichnung und speichert die FIT-Datei.
+- Bootsklasse wird im Startmenü ausgewählt und nicht als Aktivitätsüberschrift angezeigt.
+
+## 4. Noch offen
+
+- Synchronisierung der geplanten KAJO-Einheit samt Metadaten zur Uhr.
+- Darstellung strukturierter Intervalle, sobald ein entsprechendes Datenmodell in KAJO existiert.
+- Freies Anordnen und individuelles Bearbeiten einzelner Kennzahlen innerhalb einer Datenseite.
 - Herzfrequenzzonen aus dem KAJO-Athletenprofil.
-- Individuelles Austauschen, Entfernen, Hinzufügen und Anordnen einzelner Datenfelder über die KAJO-App.
-- Runden-spezifische Kennzahlen und Intervall-/Workout-Steuerung.
+- Hardware-Tastensteuerung für Start/Stop und Runde.
 - Automatischer Upload nach KAJO, Pairing und Offline-Queue.
-- Hardware-Tastensteuerung für Start/Stop und Runde; die aktuelle Ansicht nutzt weiterhin die vorhandenen Touch-Flächen.
-- Fehlerbehandlung für GPS-/FIT-Abbruch, App-Unterbrechung und Akkuverhalten.
 
-## 5. Testreihenfolge
+## 5. Test
 
-1. Pull des aktuellen Branches und Build für `venu3s`.
-2. Simulatorprüfung: Startansicht → Aktivitätsansicht → vertikales Wischen durch alle Seiten → Start → Runde → Ende → Zurück.
-3. Test auf der Venu 3S mit erteilten Berechtigungen.
-4. FIT-Datei exportieren und Sporttyp, GPS-Track, Zeitstempel und Runden prüfen.
+1. `git pull origin feature/kajo-connect`
+2. Build mit `Monkey C: Build for Device` für `venu3s`.
+3. Menü „Anzeigen anpassen“ öffnen, Seiten abwählen, speichern, App neu öffnen und Auswahl kontrollieren.
+4. Aktivität starten und prüfen, ob nur die aktivierten Seiten per Wischgeste erreichbar sind.
+5. Trainingsübersicht aus dem Menü und über einen angezeigten Trainingseintrag öffnen.
 
-Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. GPS, Herzfrequenz, FIT-Speicherung und Export müssen zusätzlich auf dem Gerät geprüft werden.
+Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persistenz und Touch-Bedienung müssen zusätzlich im Simulator und auf der Venu 3S geprüft werden.
