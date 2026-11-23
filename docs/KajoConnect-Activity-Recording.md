@@ -62,7 +62,9 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 
 ## 6. Noch offen
 
-- Erweiterung des Layout-Editors: mehr als vier Felder pro Seite, freie Feldpositionen und Konfiguration aus der KAJO-Web-App. Mehrere eigene Seiten und unabhängige Größenstufen pro Kennzahl sind im Quellcode vorbereitet.
+- Die KAJO-Web-App enthält jetzt einen Editor für drei eigene Datenseiten mit jeweils bis zu vier Kennzahlen, Reihenfolge und Größenstufe. Die Einstellungen werden im benutzerspezifischen `settings.kajoConnectDisplayLayouts` gespeichert und durch die bestehende Cloud-Synchronisierung übertragen.
+- Die Edge Function `kajo-connect` gibt diese Layouts über die bestehende `sync`-Antwort zurück. Die Garmin-Uhr übernimmt diese Web-Konfiguration noch nicht; dafür muss der Watch-Sync-Client ergänzt und getestet werden.
+- Freie Feldpositionen und mehr als vier Kennzahlen pro Seite sind weiterhin nicht umgesetzt.
 - Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
 - End-to-end-Test von Pairing, Trainingsplan-Synchronisierung und Herzfrequenzzonen.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
