@@ -2,9 +2,8 @@ import Toybox.Activity;
 import Toybox.ActivityRecording;
 import Toybox.Lang;
 
-// Minimaler FIT-Aufzeichnungs-Wrapper für KAJO Connect.
-// Die Aktivität wird zunächst als GENERIC aufgezeichnet, damit keine
-// nicht verifizierte Garmin-Sportklassifizierung vorgetäuscht wird.
+// FIT-Aufzeichnungs-Wrapper für KAJO Connect.
+// Garmin führt Kayaking und Whitewater als eigene Sport-/Subsportwerte.
 class KajoConnectRecordingEngine {
 
     var mSession as ActivityRecording.Session? = null;
@@ -19,8 +18,8 @@ class KajoConnectRecordingEngine {
 
         mSession = ActivityRecording.createSession({
             :name => "KAJO " + boatClass,
-            :sport => Activity.SPORT_GENERIC,
-            :subSport => Activity.SUB_SPORT_GENERIC
+            :sport => Activity.SPORT_KAYAKING,
+            :subSport => Activity.SUB_SPORT_WHITEWATER
         });
 
         return mSession.start();
