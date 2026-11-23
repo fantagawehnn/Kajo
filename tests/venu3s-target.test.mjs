@@ -85,12 +85,10 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 });
 
 
-test("shared Garmin layout provides the percentage-based font selector used by compact controls", () => {
+test("shared Garmin layout measures real font heights before selecting a display font", () => {
   assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
   assert.ok(layoutView.includes("dc.getFontHeight(candidate)"));
-  assert.ok(activityView.includes("fontForPercent"));
-  assert.ok(customFieldsView.includes("fontForPercent"));
-  assert.ok(displayConfigView.includes("fontForPercent"));
+  assert.ok(layoutView.includes("getTextWidthInPixels(text, font)"));
 });
 
 test("Activity screen uses shared bounded text and reserves a separate bottom control area", () => {
@@ -120,10 +118,10 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
 });
 
 test("custom field editor keeps header, four rows, controls and save action in distinct vertical bands", () => {
-  assert.match(customFieldsView, /mRowTop = Math\.round\(mUnit \* 0\.245\)/);
+  assert.match(customFieldsView, /mRowTop = Math\.round\(mUnit \* 0\.225\)/);
   assert.match(customFieldsView, /mRowHeight = Math\.round\(mUnit \* 0\.108\)/);
   assert.match(customFieldsView, /mControlTop = Math\.round\(mUnit \* 0\.70\)/);
-  assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.78\)/);
+  assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.79\)/);
 });
 
 test("custom metric layouts relocate the wide center tile when a lower side tile would overlap it", () => {
@@ -148,12 +146,11 @@ test("home screen filters today's sessions and separates planned and free traini
 });
 
 test("home screen keeps the hero card, scrollable menu and lower controls in distinct bands", () => {
-  assert.match(homeView, /var cardY = mUnit \* 0\.255/);
-  assert.match(homeView, /var cardHeight = mUnit \* 0\.18/);
-  assert.match(homeView, /var dividerY = mUnit \* 0\.52/);
-  assert.match(homeView, /mFreeTop = mUnit \* 0\.56/);
-  assert.match(homeView, /mFreeBottom = mUnit \* 0\.85/);
-  assert.match(homeView, /var rowHeight = mUnit \* 0\.073/);
-  assert.match(homeView, /"GEPLANTE TRAININGS"/);
+  assert.match(homeView, /mStartTop = mUnit \* 0\.265/);
+  assert.match(homeView, /mStartBottom = mUnit \* 0\.465/);
+  assert.match(homeView, /mFreeTop = mUnit \* 0\.515/);
+  assert.match(homeView, /mFreeBottom = mUnit \* 0\.825/);
+  assert.match(homeView, /var rowStep = mUnit \* 0\.073/);
+  assert.match(homeView, /"TRAININGSPLAN"/);
   assert.match(homeView, /"EINSTELLUNGEN"/);
 });
