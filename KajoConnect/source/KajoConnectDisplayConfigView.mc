@@ -79,19 +79,19 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(Math.round(cardX) as Lang.Number, Math.round(y) as Lang.Number, Math.round(cardWidth) as Lang.Number, Math.round(cardHeight) as Lang.Number, Math.round(mUnit * 0.025) as Lang.Number);
+            dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(), Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(), Math.round(mUnit * 0.025).toNumber());
 
             var state = mEnabled[i] ? "AN" : "AUS";
-            var labelWidth = Math.floor(cardWidth * 0.62) as Lang.Number;
+            var labelWidth = Math.floor(cardWidth * 0.62).toNumber();
             var font = fitFont(dc, labels[i], labelWidth, Graphics.FONT_SMALL);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawText(Math.round(cardX + (labelWidth / 2) + (mUnit * 0.015)) as Lang.Number,
-                Math.round(y + (cardHeight - dc.getFontHeight(font)) / 2) as Lang.Number,
+            dc.drawText(Math.round(cardX + (labelWidth / 2) + (mUnit * 0.015)).toNumber(),
+                Math.round(y + (cardHeight - dc.getFontHeight(font)) / 2).toNumber(),
                 font, labels[i], Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawText(Math.round(cardX + cardWidth * 0.84) as Lang.Number,
-                Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2) as Lang.Number,
+            dc.drawText(Math.round(cardX + cardWidth * 0.84).toNumber(),
+                Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2).toNumber(),
                 Graphics.FONT_TINY, state, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
