@@ -27,6 +27,20 @@ async function sha256(value: string): Promise<string> {
   return hex(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))));
 }
 
+async function pairingCodeHash(code: string): Promise<string> {
+  const pepper = Deno.env.get("KAJO_CONNECT_PAIRING_PEPPER");
+  if (!pepper || pepper.length < 32) throw new Error("KAJO_CONNECT_PAIRING_PEPPER is not configured.");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(pepper),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(code));
+  return hex(new Uint8Array(signature));
+}
+
 function decodeBase64(value: string): Uint8Array {
   return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
 }
@@ -210,7 +224,7 @@ Deno.serve(async (request) => {
         ? body.deviceLabel.trim().slice(0, 80)
         : "KAJO Connect";
       const { error } = await admin.from("kajo_connect_pairing_requests").insert({
-        code_hash: await sha256(code),
+        code_hash: await pairingCodeHash(code),
         poll_secret_hash: await sha256(pollSecret),
         device_label: deviceLabel || "KAJO Connect",
         expires_at: expiresAt,
@@ -229,7 +243,7 @@ Deno.serve(async (request) => {
       const { data: pairing, error: lookupError } = await admin
         .from("kajo_connect_pairing_requests")
         .select("id,device_label")
-        .eq("code_hash", await sha256(code))
+        .eq("code_hash", await pairingCodeHash(code))
         .is("claimed_at", null)
         .gt("expires_at", new Date().toISOString())
         .maybeSingle();
