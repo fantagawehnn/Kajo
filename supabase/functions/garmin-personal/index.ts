@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveGarminActivityDate } from "./activity-date.js";
 import { buildGarminActivityRescanPlan } from "./activity-scan-plan.js";
+import { fetchWithTransientRetry } from "./fit-download-retry.js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://kajo.fantagawehn.workers.dev",
@@ -422,7 +423,7 @@ function safeActivityPreview(item: Record<string, unknown>) {
 }
 
 async function garminDownloadFit(token: string, activityId: string): Promise<string> {
-  const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
+  const response = await fetchWithTransientRetry(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/zip, application/octet-stream, */*" },
   });
   if (!response.ok) {
@@ -441,7 +442,7 @@ async function garminDownloadFit(token: string, activityId: string): Promise<str
 
 
 async function garminDownloadFitFile(token: string, activityId: string): Promise<{ bytes: Uint8Array; extension: "zip" | "fit"; contentType: string }> {
-  const response = await fetch(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
+  const response = await fetchWithTransientRetry(`https://personal.connectapi.garmin.com/download-service/files/activity/${encodeURIComponent(activityId)}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/zip, application/octet-stream, */*" },
   });
   if (!response.ok) {
