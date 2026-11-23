@@ -677,8 +677,8 @@ class KajoConnectActivityView extends WatchUi.View {
             mUnit * 0.16, Graphics.FONT_XTINY, muted);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
-        var barLeft = mUnit * 0.13;
-        var barWidth = mUnit * 0.47;
+        var barLeft = mUnit * 0.16;
+        var barWidth = mUnit * 0.44;
         var gap = mUnit * 0.012;
         var segmentWidth = (barWidth - (gap * 4)) / 5;
         for (var z = 0; z < 5; z += 1) {
