@@ -1,6 +1,6 @@
 # KAJO Connect – Geräte-Kopplung und Synchronisierung
 
-**Stand:** Pairing-UI, Backend-Quellcode und lesende Watch-Synchronisierung im Branch vorbereitet; noch nicht deployed oder end-to-end getestet  
+**Stand:** Pairing-UI, Backend-Quellcode, lesende Watch-Synchronisierung und zusätzliche Device-Limit-Migration im Branch vorbereitet; noch nicht deployed oder end-to-end getestet  
 **Branch:** `feature/kajo-connect`  
 **Erstes Zielgerät:** Garmin Venu 3S; zusätzlich Venu 2 Plus
 
@@ -29,7 +29,7 @@ Der implementierte Backend-Vertrag nutzt einen vom Gerät gestarteten Kopplungsv
 1. Die Uhr fordert über `create-pairing` einen Kopplungscode und ein zusätzliches geheimes Polling-Secret an.
 2. Die Uhr zeigt den zwölfstelligen Code an und fragt den Status mit Code plus Polling-Secret ab.
 3. Die Nutzerin meldet sich in der KAJO-Web-App an und gibt den Code dort ein. Die Web-App ruft `claim-pairing` mit dem bestehenden Supabase-User-JWT auf.
-4. Der Server prüft den JWT über Supabase Auth, registriert ein Gerät für genau diese Benutzer-ID und erzeugt ein zufälliges Geräte-Token. Pro Konto sind maximal fünf aktive Geräte vorgesehen.
+4. Der Server prüft den JWT über Supabase Auth, registriert ein Gerät für genau diese Benutzer-ID und erzeugt ein zufälliges Geräte-Token. Pro Konto sind maximal fünf aktive Geräte vorgesehen. Die Prüfung und Registrierung erfolgen inzwischen atomar über die SQL-Funktion `kajo_connect_register_device(...)`.
 5. Das Geräte-Token wird serverseitig verschlüsselt in der kurzlebigen Pairing-Anfrage zwischengespeichert. Die Uhr kann es nur mit Code und Polling-Secret abholen.
 6. Die Uhr speichert das Geräte-Token lokal. Danach verwendet sie für Synchronisierungen ausschließlich dieses Token.
 
@@ -39,7 +39,8 @@ Der Code läuft nach zehn Minuten ab. Der Code wird serverseitig nicht im Klarte
 
 Neu angelegt:
 - `supabase/functions/kajo-connect/index.ts`
-- `docs/kajo-connect-pairing-schema-draft.sql`
+- `docs/kajo-connect-pairing-schema-draft.sql` (ursprünglicher Schemaentwurf)
+- `supabase/migrations/20261123000100_kajo_connect_device_limit.sql` (Migration zur atomaren Begrenzung aktiver Geräte)
 
 In `supabase/config.toml` ist für diese Funktion `verify_jwt = false` gesetzt, weil die Uhr vor dem Pairing noch kein Supabase-JWT besitzt. Die Funktion prüft Credentials deshalb selbst:
 - `claim-pairing`: Supabase-User-JWT wird explizit mit `auth.getUser()` verifiziert.
@@ -70,11 +71,12 @@ Die Herzfrequenzzonen folgen der bestehenden KAJO-Logik aus `js/training-load.js
 
 ## 6. Datenbankentwurf – noch nicht angewendet
 
-Die SQL-Datei unter `docs/kajo-connect-pairing-schema-draft.sql` ist ausdrücklich ein Entwurf und keine Migration. Sie beschreibt drei Tabellen und eine serverseitige SQL-Funktion:
+Die SQL-Datei unter `docs/kajo-connect-pairing-schema-draft.sql` bleibt der ursprüngliche Schemaentwurf und ist keine Migration. Die zusätzliche Datei `supabase/migrations/20261123000100_kajo_connect_device_limit.sql` ist eine reguläre Migration im Entwicklungsbranch; sie ergänzt die atomare Geräte-Registrierung. Keine dieser Änderungen wurde auf die Live-Datenbank angewendet. Der ursprüngliche Entwurf beschreibt drei Tabellen und eine serverseitige SQL-Funktion:
 - `public.kajo_connect_pairing_requests`: Code-Hash, Polling-Secret-Hash, Ablauf, Claim-Status und kurzzeitig verschlüsseltes Geräte-Token.
 - `public.kajo_connect_devices`: Benutzer-ID, Gerätebezeichnung, Token-Hash, letzte Nutzung und Widerrufszeitpunkt.
 - `public.kajo_connect_rate_limits`: gehashte Rate-Limit-Buckets mit Zeitfenster und Zähler.
 - `public.kajo_connect_consume_rate_limit(...)`: atomare, transaktionssichere Zählerfunktion; Ausführung ist nur für `service_role` vorgesehen.
+- `public.kajo_connect_register_device(...)`: atomare Geräte-Registrierung mit per Benutzer serialisierter Prüfung des Limits von fünf aktiven Geräten; Ausführung ist nur für `service_role` vorgesehen.
 
 Alle drei Tabellen aktivieren RLS und erhalten keine Client-Policies. Zugriff ist ausschließlich über die Edge Function mit serverseitigem Service-Role-Key vorgesehen. Die tatsächlichen Datenbankänderungen sind nicht freigegeben und wurden nicht ausgeführt.
 
