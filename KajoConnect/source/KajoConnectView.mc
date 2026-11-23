@@ -214,9 +214,7 @@ class KajoConnectView extends WatchUi.View {
                         zoneValues.add(numericZoneValue);
                     }
                     if (zonesValid) {
-                        if (zoneValues.size() == 4) {
-                            activityView.setHeartRateZones(zoneValues);
-                        }
+                        activityView.setHeartRateZones(zoneValues);
                     }
                 }
             }
