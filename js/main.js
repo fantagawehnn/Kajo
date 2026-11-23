@@ -2368,8 +2368,8 @@ async function flushCloudSync() {
         // Vollständige Aktivitäten einschließlich FIT-Daten werden einzeln
         // übertragen. Erst nach bestätigtem Readback wird die Sammlung aus dem
         // großen versionierten user_data-Snapshot herausgenommen.
-        const activityUpload = await syncCloudActivities(supabase, userId, state.rawActivities || []);
         const snapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const activityUpload = await syncCloudActivities(supabase, userId, snapshot.activities || []);
         snapshot.activityIds = getCloudActivityIds(userId, snapshot.activities || []);
         snapshot.activities = [];
         const result = await saveCloudSnapshot(snapshot, cloudSyncVersion, userId);
