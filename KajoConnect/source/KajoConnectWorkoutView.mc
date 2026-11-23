@@ -56,23 +56,12 @@ class KajoConnectWorkoutView extends WatchUi.View {
 
     function onUpdate(dc as Dc) {
         dc.clear();
-
         var width = dc.getWidth();
         var height = dc.getHeight();
-        var unit = width;
-        if (height < unit) { unit = height; }
+        var unit = width < height ? width : height;
         mKajoLayout.configure(width, height);
         var center = width / 2;
         var contentWidth = unit * 0.78;
-
-        // Einheitlicher KAJO-Randakzent.
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
-            (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
-        dc.drawLine((unit * 0.12).toNumber(), (unit * 0.075).toNumber(),
-            (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
-        dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
-            (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
 
         var name = valueText("name", "Geplante Einheit");
         var date = valueText("date", "Datum offen");
@@ -84,60 +73,52 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var target = "";
         if (stepCount > 0) {
             var firstStep = stepsValue.get(0) as Lang.Dictionary;
-            if (firstStep["target"] != null) {
-                target = firstStep["target"].toString();
-            }
+            if (firstStep["target"] != null) { target = firstStep["target"].toString(); }
         }
         if (target.length() == 0 && mWorkout["intensity"] != null) {
             target = mWorkout["intensity"].toString();
         }
 
-        drawCentered(dc, center, unit * 0.065, "GEPLANTES TRAINING", contentWidth, Graphics.FONT_SMALL, 0x00E5CC);
-        drawCentered(dc, center, unit * 0.125, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, center, unit * 0.075, "TRAININGSDETAILS",
+            contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, unit * 0.13, date,
+            contentWidth, Graphics.FONT_XTINY, 0x00E5CC);
 
-        var cardTop = unit * 0.17;
-        var cardHeight = unit * 0.14;
-        var cardWidth = mKajoLayout.safeRectWidth(cardTop, cardHeight, unit * 0.76);
+        var cardTop = unit * 0.19;
+        var cardHeight = unit * 0.15;
+        var cardWidth = mKajoLayout.safeRectWidth(cardTop, cardHeight, unit * 0.78);
         var cardLeft = center - (cardWidth / 2);
-        dc.setColor(0x05181C, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(cardLeft.toNumber(),
-            cardTop.toNumber(), cardWidth.toNumber(),
-            cardHeight.toNumber(), (unit * 0.035).toNumber());
-        dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(cardLeft.toNumber(),
-            cardTop.toNumber(), cardWidth.toNumber(),
-            cardHeight.toNumber(), (unit * 0.035).toNumber());
-        drawCentered(dc, center, unit * 0.205, compactText(name, 38),
-            cardWidth * 0.88, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawCentered(dc, center, unit * 0.26, compactText(type, 30),
-            cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        dc.setColor(0x07191D, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(cardLeft.toNumber(), cardTop.toNumber(),
+            cardWidth.toNumber(), cardHeight.toNumber(), (unit * 0.035).toNumber());
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle((cardLeft + unit * 0.018).toNumber(),
+            (cardTop + unit * 0.025).toNumber(), (unit * 0.01).toNumber(),
+            (cardHeight - unit * 0.05).toNumber(), (unit * 0.004).toNumber());
+        drawCentered(dc, center, cardTop + unit * 0.035, compactText(name, 36),
+            cardWidth * 0.86, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, cardTop + unit * 0.095, compactText(type, 28),
+            cardWidth * 0.86, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        // Drei dynamische Kennzahlen: nur vorhandene Planwerte werden angezeigt.
-        var colX = [center - unit * 0.245, center, center + unit * 0.245];
-        var labels = ["DAUER", "SCHRITTE", "ZIEL"];
-        var values = [
-            duration.length() > 0 ? duration + " MIN" : "—",
-            stepCount > 0 ? stepCount.toString() : "—",
-            target.length() > 0 ? compactText(target, 16) : (targetLoad.length() > 0 ? targetLoad : "—")
+        var statY = unit * 0.385;
+        var statLabels = ["DAUER", "SCHRITTE", "ZIEL"];
+        var statValues = [
+            duration.length() > 0 ? duration + " MIN" : "--",
+            stepCount > 0 ? stepCount.toString() : "--",
+            target.length() > 0 ? compactText(target, 13) : (targetLoad.length() > 0 ? targetLoad : "--")
         ];
+        var statCenters = [center - unit * 0.22, center, center + unit * 0.22];
         for (var c = 0; c < 3; c += 1) {
-            if (c > 0) {
-                dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
-                dc.drawLine((colX[c] - unit * 0.122).toNumber(), (unit * 0.365).toNumber(),
-                    (colX[c] - unit * 0.122).toNumber(), (unit * 0.49).toNumber());
-            }
-            drawCentered(dc, colX[c], unit * 0.37, labels[c], unit * 0.22,
-                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawCentered(dc, colX[c], unit * 0.415, values[c], unit * 0.22,
-                Graphics.FONT_SMALL, c == 2 ? 0x00E5CC : Graphics.COLOR_WHITE);
+            drawCentered(dc, statCenters[c], statY, statLabels[c],
+                unit * 0.20, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawCentered(dc, statCenters[c], statY + unit * 0.045, statValues[c],
+                unit * 0.22, Graphics.FONT_SMALL, c == 2 ? 0x00E5CC : Graphics.COLOR_WHITE);
         }
 
-        drawCentered(dc, center, unit * 0.515, "TRAININGSABLAUF", contentWidth,
-            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-
-        // Maximal drei reale Trainingsschritte; bei mehr Schritten wird die Anzahl genannt.
+        drawCentered(dc, center, unit * 0.51, "ABLAUF",
+            contentWidth, Graphics.FONT_XTINY, 0x00E5CC);
         var shownSteps = stepCount < 3 ? stepCount : 3;
-        var y = unit * 0.56;
+        var y = unit * 0.555;
         for (var i = 0; i < shownSteps; i += 1) {
             var step = stepsValue.get(i) as Lang.Dictionary;
             var stepLabel = step["label"] == null ? "Trainingsschritt" : step["label"].toString();
@@ -147,41 +128,35 @@ class KajoConnectWorkoutView extends WatchUi.View {
                 var seconds = step["durationSeconds"] as Lang.Number;
                 minutes = Math.floor(seconds / 60).toString() + " MIN";
             }
-            var line = compactText(stepLabel, 24);
-            if (minutes.length() > 0) { line += " (" + minutes + ")"; }
-            drawCentered(dc, center, y, line, contentWidth, Graphics.FONT_TINY,
-                i == 0 ? Graphics.COLOR_WHITE : Graphics.COLOR_LT_GRAY);
+            var line = compactText(stepLabel, 22);
+            if (minutes.length() > 0) { line += "  /  " + minutes; }
+            drawCentered(dc, center, y, line, contentWidth,
+                Graphics.FONT_TINY, i == 0 ? Graphics.COLOR_WHITE : Graphics.COLOR_LT_GRAY);
             y += unit * 0.052;
         }
         if (stepCount > 3) {
-            drawCentered(dc, center, y, "+ " + (stepCount - 3).toString() + " WEITERE SCHRITTE",
+            drawCentered(dc, center, y, "+ " + (stepCount - 3).toString() + " WEITERE",
                 contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         } else if (stepCount == 0) {
             var mainSet = valueText("mainSet", "");
             var description = valueText("desc", "");
-            var detail = mainSet.length() > 0 ? mainSet : description;
-            if (detail.length() > 0) {
-                drawCentered(dc, center, unit * 0.585, compactText(detail, 50),
-                    contentWidth, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
-            } else {
-                drawCentered(dc, center, unit * 0.585, "Keine Schrittfolge hinterlegt",
-                    contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            }
+            var detailText = mainSet.length() > 0 ? mainSet : description;
+            drawCentered(dc, center, unit * 0.585,
+                detailText.length() > 0 ? compactText(detailText, 52) : "Keine Schrittfolge hinterlegt",
+                contentWidth, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
         }
 
-        // Startaktion liegt als große, klar erkennbare Fläche am unteren Rand.
-        mStartTop = (unit * 0.78).toNumber();
-        mStartBottom = (unit * 0.87).toNumber();
+        mStartTop = (unit * 0.775).toNumber();
+        mStartBottom = (unit * 0.865).toNumber();
         var startHeight = mStartBottom - mStartTop;
-        var startWidth = mKajoLayout.safeRectWidth(mStartTop, startHeight, unit * 0.62);
+        var startWidth = mKajoLayout.safeRectWidth(mStartTop, startHeight, unit * 0.68);
         var startLeft = center - (startWidth / 2);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(startLeft.toNumber(),
-            mStartTop.toNumber(), startWidth.toNumber(),
-            startHeight.toNumber(), (unit * 0.04).toNumber());
-        drawCentered(dc, center, unit * 0.805, "TRAINING STARTEN",
-            startWidth * 0.86, Graphics.FONT_SMALL, 0x00E5CC);
-        drawCentered(dc, center, unit * 0.90, "ZURUECK",
-            unit * 0.45, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        dc.fillRoundedRectangle(startLeft.toNumber(), mStartTop.toNumber(),
+            startWidth.toNumber(), startHeight.toNumber(), (unit * 0.03).toNumber());
+        drawCentered(dc, center, unit * 0.795, "TRAINING STARTEN",
+            startWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+        drawCentered(dc, center, unit * 0.89, "ZURUECK",
+            unit * 0.48, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
