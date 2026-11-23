@@ -34,12 +34,30 @@ export function renderPlannedWorkoutSteps() {
         '<label class="block text-[10px] text-slate-400">Ziel / Anweisung (optional)<input data-field="target" maxlength="120" value="'+escapeHtml(step.target)+'" placeholder="z. B. Schwellenbereich, technisch sauber" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 p-2 text-xs text-white"></label></div>';
     }).join('');
 }
+function capturePlannedWorkoutSteps() {
+    const root=document.getElementById('plan-steps-list');
+    if(!root)return;
+    const rows=[...root.querySelectorAll('[data-workout-step]')];
+    editingWorkoutSteps=rows.map((row,index)=>{
+        const old=editingWorkoutSteps[index]||{};
+        const minutes=Number(row.querySelector('[data-field="duration"]')?.value);
+        return {
+            id:old.id||'step-'+(index+1),
+            type:row.querySelector('[data-field="type"]')?.value||'other',
+            label:(row.querySelector('[data-field="label"]')?.value||'').trim().slice(0,80),
+            durationSeconds:Number.isFinite(minutes)&&minutes>0&&minutes<=360?Math.round(minutes*60):null,
+            target:(row.querySelector('[data-field="target"]')?.value||'').trim().slice(0,120)
+        };
+    });
+}
 export function addPlannedWorkoutStep() {
+    capturePlannedWorkoutSteps();
     if(editingWorkoutSteps.length>=40)return;
     editingWorkoutSteps.push({id:'step-'+Date.now(),type:'work',label:'',durationSeconds:null,target:''});
     renderPlannedWorkoutSteps();
 }
 export function removePlannedWorkoutStep(index) {
+    capturePlannedWorkoutSteps();
     if(!Number.isInteger(index)||index<0||index>=editingWorkoutSteps.length)return;
     editingWorkoutSteps.splice(index,1);renderPlannedWorkoutSteps();
 }
