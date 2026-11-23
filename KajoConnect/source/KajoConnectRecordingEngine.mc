@@ -1,5 +1,6 @@
 import Toybox.Activity;
 import Toybox.ActivityRecording;
+import Toybox.Lang;
 
 // Minimaler FIT-Aufzeichnungs-Wrapper für KAJO Connect.
 // Die Aktivität wird zunächst als GENERIC aufgezeichnet, damit keine
