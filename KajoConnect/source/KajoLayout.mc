@@ -26,13 +26,13 @@ class KajoLayout {
     function fontPercent(preferredFont) as Lang.Float {
         // Garmin-Fonts sind auf kleinen Runddisplays deutlich groesser als
         // ihre Bezeichnung vermuten laesst. Deshalb konservative Zielhoehen.
-        if (preferredFont == Graphics.FONT_NUMBER_HOT) { return 0.075; }
-        if (preferredFont == Graphics.FONT_NUMBER_MEDIUM) { return 0.065; }
-        if (preferredFont == Graphics.FONT_LARGE) { return 0.055; }
-        if (preferredFont == Graphics.FONT_MEDIUM) { return 0.048; }
-        if (preferredFont == Graphics.FONT_SMALL) { return 0.041; }
-        if (preferredFont == Graphics.FONT_TINY) { return 0.036; }
-        return 0.032;
+        if (preferredFont == Graphics.FONT_NUMBER_HOT) { return 0.070; }
+        if (preferredFont == Graphics.FONT_NUMBER_MEDIUM) { return 0.060; }
+        if (preferredFont == Graphics.FONT_LARGE) { return 0.045; }
+        if (preferredFont == Graphics.FONT_MEDIUM) { return 0.040; }
+        if (preferredFont == Graphics.FONT_SMALL) { return 0.035; }
+        if (preferredFont == Graphics.FONT_TINY) { return 0.030; }
+        return 0.028;
     }
 
     function fontForPercent(dc as Dc, percent as Lang.Float) {
