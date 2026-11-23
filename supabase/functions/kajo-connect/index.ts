@@ -216,10 +216,10 @@ Deno.serve(async (request) => {
 
     // The watch creates a short-lived pairing request and retains the poll secret.
     if (action === "create-pairing") {
-      const codeBytes = crypto.getRandomValues(new Uint32Array(1));
-      const code = String(codeBytes[0] % 100000000).padStart(8, "0");
+      const code = (BigInt("0x" + randomHex(8)) % 1000000000000n).toString().padStart(12, "0");
       const pollSecret = randomHex(32);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      await admin.from("kajo_connect_pairing_requests").delete().lt("expires_at", new Date().toISOString());
       const deviceLabel = typeof body.deviceLabel === "string"
         ? body.deviceLabel.trim().slice(0, 80)
         : "KAJO Connect";
