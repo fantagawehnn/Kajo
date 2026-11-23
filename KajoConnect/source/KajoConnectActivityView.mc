@@ -313,7 +313,7 @@ class KajoConnectActivityView extends WatchUi.View {
                 tileHeight = mUnit * 0.18;
                 valueFont = Graphics.FONT_SMALL;
             } else if (fieldSize == 2) {
-                tileWidth = position == 4 ? slotWidth : slotWidth * 1.08;
+                tileWidth = position == 4 ? slotWidth : slotWidth * 1.04;
                 tileHeight = mUnit * 0.24;
                 valueFont = Graphics.FONT_LARGE;
             }
