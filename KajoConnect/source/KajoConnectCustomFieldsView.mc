@@ -6,6 +6,8 @@ import Toybox.WatchUi;
 
 class KajoConnectCustomFieldsView extends WatchUi.View {
 
+    var mLayout;
+
     var mMetricIds as Lang.Array<Lang.String> = [
         "speedNow", "speedAvg", "speedMax", "heartRate", "heartRateZone",
         "heartRateAvg", "heartRateMax", "distance", "elapsed",
@@ -38,6 +40,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
+        mLayout = new KajoLayout();
         mPageCount = Math.floor(mMetricIds.size() / 4).toNumber();
         if ((mMetricIds.size() % 4) > 0) { mPageCount += 1; }
         loadLayout(0);
@@ -220,30 +223,25 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     }
 
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = preferredFont;
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
-        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
-        if (displayText == "") { return; }
-        var safeY = y;
-        var textHeight = dc.getFontHeight(font);
-        if (safeY < 2) { safeY = 2; }
-        if (safeY + textHeight > mHeight - 2) { safeY = mHeight - textHeight - 2; }
+        if (displayText == "" || safeWidth <= 0) { return; }
+        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
-
     function onUpdate(dc as Dc) {
         dc.clear();
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
+        mLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
         // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
