@@ -148,7 +148,7 @@ class KajoConnectActivityView extends WatchUi.View {
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = fitFont(dc, text, maxWidth, preferredFont);
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x) as Lang.Number, Math.round(y) as Lang.Number, font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x).toNumber(), Math.round(y).toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
@@ -164,7 +164,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var valueY = y + (mUnit * 0.065);
         var font = fitFont(dc, value, maxWidth, valueFont);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x) as Lang.Number, Math.round(valueY) as Lang.Number, font, value, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x) as Lang.Number, Math.round(valueY).toNumber(), font, value, Graphics.TEXT_JUSTIFY_CENTER);
         if (unit != "") {
             drawFit(dc, x, valueY + (mUnit * 0.065), unit, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
@@ -175,11 +175,11 @@ class KajoConnectActivityView extends WatchUi.View {
         var left = centerX - (width / 2);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(
-            Math.round(left) as Lang.Number,
-            Math.round(top) as Lang.Number,
-            Math.round(width) as Lang.Number,
-            Math.round(height) as Lang.Number,
-            Math.round(mUnit * 0.025) as Lang.Number
+            Math.round(left).toNumber(),
+            Math.round(top).toNumber(),
+            Math.round(width).toNumber(),
+            Math.round(height).toNumber(),
+            Math.round(mUnit * 0.025).toNumber()
         );
         drawFit(
             dc,
