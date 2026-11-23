@@ -136,14 +136,20 @@ export async function fetchCloudActivities(client, userId) {
  * Table rows override same-ID snapshot entries; unmatched legacy entries remain
  * available until a complete upload has been confirmed.
  */
-export function mergeCloudActivities(snapshotActivities, cloudRows) {
+export function mergeCloudActivities(snapshotActivities, cloudRows, allowedRecordIds = null) {
     const merged = new Map();
     for (const activity of Array.isArray(snapshotActivities) ? snapshotActivities : []) {
         if (activity && typeof activity === 'object') merged.set(getActivityRecordId(activity), activity);
     }
+    const allowed = Array.isArray(allowedRecordIds) ? new Set(allowedRecordIds.map(String)) : null;
     for (const row of Array.isArray(cloudRows) ? cloudRows : []) {
         if (!row?.record_id || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
+        if (allowed && !allowed.has(String(row.record_id))) continue;
         merged.set(String(row.record_id), row.payload);
     }
     return Array.from(merged.values());
+}
+
+export function getCloudActivityIds(userId, activities) {
+    return prepareCloudActivityRows(userId, activities).map(row => row.record_id);
 }
