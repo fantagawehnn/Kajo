@@ -117,9 +117,9 @@ class KajoConnectWorkoutView extends WatchUi.View {
             cardTop.toNumber(), cardWidth.toNumber(),
             cardHeight.toNumber(), (unit * 0.035).toNumber());
         drawCentered(dc, center, unit * 0.205, compactText(name, 38),
-            unit * 0.68, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            cardWidth * 0.88, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         drawCentered(dc, center, unit * 0.26, compactText(type, 30),
-            unit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         // Drei dynamische Kennzahlen: nur vorhandene Planwerte werden angezeigt.
         var colX = [center - unit * 0.245, center, center + unit * 0.245];
@@ -189,7 +189,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
             mStartTop.toNumber(), startWidth.toNumber(),
             startHeight.toNumber(), (unit * 0.04).toNumber());
         drawCentered(dc, center, unit * 0.805, "TRAINING STARTEN",
-            unit * 0.56, Graphics.FONT_SMALL, 0x00E5CC);
+            startWidth * 0.86, Graphics.FONT_SMALL, 0x00E5CC);
         drawCentered(dc, center, unit * 0.90, "ZURUECK",
             unit * 0.45, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
