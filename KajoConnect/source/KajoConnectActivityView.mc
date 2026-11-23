@@ -581,10 +581,10 @@ class KajoConnectActivityView extends WatchUi.View {
         var statusText = stepCount > 0
             ? "INTERVALL " + stepNumber.toString() + "/" + stepCount.toString() + "  •  " + compactWorkoutText(stepLabel, 18)
             : compactWorkoutText(stepLabel, 34);
-        var statusX = mUnit * 0.105;
-        var statusY = mUnit * 0.075;
-        var statusW = mUnit * 0.79;
-        var statusH = mUnit * 0.105;
+        var statusY = mUnit * 0.145;
+        var statusH = mUnit * 0.075;
+        var statusW = mLayout.safeRectWidth(statusY, statusH, mUnit * 0.79);
+        var statusX = cx - (statusW / 2);
         dc.setColor(0x041216, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(statusX.toNumber(), statusY.toNumber(), statusW.toNumber(),
             statusH.toNumber(), (mUnit * 0.035).toNumber());
@@ -609,18 +609,18 @@ class KajoConnectActivityView extends WatchUi.View {
             (activityInfo != null && activityInfo.timerTime != null
                 ? formatTime(activityInfo.timerTime) : elapsed);
         var ringCx = cx;
-        var ringCy = mUnit * 0.365;
-        var ringRadius = mUnit * 0.245;
+        var ringCy = mUnit * 0.37;
+        var ringRadius = mUnit * 0.205;
         dc.setColor(cyan, Graphics.COLOR_BLACK);
         dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
             Graphics.ARC_CLOCKWISE, 205, 335);
         dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
             Graphics.ARC_CLOCKWISE, 25, 155);
-        drawFit(dc, cx, mUnit * 0.285, timerText, mUnit * 0.66,
+        drawFit(dc, cx, mUnit * 0.30, timerText, mUnit * 0.66,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, cx + (mUnit * 0.275), mUnit * 0.305, "min",
+        drawFit(dc, cx + (mUnit * 0.235), mUnit * 0.315, "min",
             mUnit * 0.10, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.435,
+        drawFit(dc, cx, mUnit * 0.455,
             target == "" ? "INTERVALL" : compactWorkoutText(target, 30),
             mUnit * 0.62, Graphics.FONT_SMALL, cyan);
 
@@ -643,15 +643,15 @@ class KajoConnectActivityView extends WatchUi.View {
             distanceMeters = numberText(activityInfo.elapsedDistance, 0);
         }
 
-        var metricTop = mUnit * 0.59;
+        var metricTop = mUnit * 0.575;
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
         dc.drawLine(cx.toNumber(), (metricTop - mUnit * 0.005).toNumber(),
-            cx.toNumber(), (mUnit * 0.765).toNumber());
+            cx.toNumber(), (mUnit * 0.735).toNumber());
         drawFit(dc, cx - (mUnit * 0.205), metricTop,
             "min/km", mUnit * 0.34, Graphics.FONT_XTINY, muted);
-        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.635,
+        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.62,
             pace, mUnit * 0.36, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.715,
+        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.69,
             "PACE", mUnit * 0.34, Graphics.FONT_XTINY, muted);
 
         drawFit(dc, cx + (mUnit * 0.205), metricTop,
@@ -666,11 +666,11 @@ class KajoConnectActivityView extends WatchUi.View {
 
         // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
         dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
-        dc.drawText((mUnit * 0.16).toNumber(), (mUnit * 0.79).toNumber(),
+        dc.drawText((mUnit * 0.16).toNumber(), (mUnit * 0.735).toNumber(),
             Graphics.FONT_SMALL, "♥", Graphics.TEXT_JUSTIFY_CENTER);
-        drawFit(dc, mUnit * 0.34, mUnit * 0.785, hrNow,
+        drawFit(dc, mUnit * 0.34, mUnit * 0.73, hrNow,
             mUnit * 0.25, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, mUnit * 0.43, mUnit * 0.80, "bpm",
+        drawFit(dc, mUnit * 0.43, mUnit * 0.745, "bpm",
             mUnit * 0.16, Graphics.FONT_XTINY, muted);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
@@ -681,24 +681,24 @@ class KajoConnectActivityView extends WatchUi.View {
         for (var z = 0; z < 5; z += 1) {
             var zx = barLeft + (z * (segmentWidth + gap));
             dc.setColor(zoneColors[z], Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(zx.toNumber(), (mUnit * 0.855).toNumber(),
+            dc.fillRoundedRectangle(zx.toNumber(), (mUnit * 0.795).toNumber(),
                 segmentWidth.toNumber(), (mUnit * 0.018).toNumber(),
                 (mUnit * 0.009).toNumber());
         }
         if (zone > 0 && zone <= 5) {
-            drawFit(dc, mUnit * 0.36, mUnit * 0.88, "ZONE " + zone.toString(),
+            drawFit(dc, mUnit * 0.36, mUnit * 0.825, "ZONE " + zone.toString(),
                 mUnit * 0.35, Graphics.FONT_XTINY, zoneColors[zone - 1]);
         } else {
-            drawFit(dc, mUnit * 0.36, mUnit * 0.88, "ZONE --",
+            drawFit(dc, mUnit * 0.36, mUnit * 0.825, "ZONE --",
                 mUnit * 0.35, Graphics.FONT_XTINY, muted);
         }
 
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
         dc.drawLine((mUnit * 0.64).toNumber(), (mUnit * 0.79).toNumber(),
             (mUnit * 0.64).toNumber(), (mUnit * 0.925).toNumber());
-        drawFit(dc, mUnit * 0.77, mUnit * 0.815, "› PAUSE",
+        drawFit(dc, mUnit * 0.77, mUnit * 0.755, "› PAUSE",
             mUnit * 0.27, Graphics.FONT_XTINY, muted);
-        drawFit(dc, mUnit * 0.77, mUnit * 0.865,
+        drawFit(dc, mUnit * 0.77, mUnit * 0.80,
             nextLabel == "" ? "--:--" : compactWorkoutText(nextLabel, 15),
             mUnit * 0.27, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
     }
@@ -931,8 +931,8 @@ class KajoConnectActivityView extends WatchUi.View {
     }
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
         var cx = mScreenWidth / 2;
-        drawFit(dc, cx, mUnit * 0.105, title, mUnit * 0.58, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.17,
+        drawFit(dc, cx, mUnit * 0.16, title, mUnit * 0.58, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.215,
             (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  ↑ ↓",
             mUnit * 0.65, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
@@ -1178,20 +1178,20 @@ class KajoConnectActivityView extends WatchUi.View {
             drawFit(dc, cx, mUnit * 0.765, "Anstieg " + ascent + " m · Abstieg " + descent + " m", mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
 
-        mButtonTop = mUnit * 0.865;
-        mButtonBottom = mUnit * 0.96;
+        mButtonTop = mUnit * 0.82;
+        mButtonBottom = mUnit * 0.90;
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
-            drawButton(dc, cx, mUnit * 0.855, mUnit * 0.54, "STARTEN");
+            drawButton(dc, cx, mUnit * 0.81, mUnit * 0.54, "STARTEN");
         } else if (mStatus == "AUFZEICHNUNG") {
             // Page navigation replaces the old lap/end pair. Activity is never ended here.
-            drawFit(dc, mScreenWidth * 0.23, mUnit * 0.885, "<", mUnit * 0.12,
+            drawFit(dc, mScreenWidth * 0.23, mUnit * 0.835, "<", mUnit * 0.12,
                 Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
             for (var dot = 0; dot < mPageCount && dot < 5; dot += 1) {
                 dc.setColor(dot == mPage ? 0x00E5CC : 0x555555, Graphics.COLOR_BLACK);
                 dc.fillCircle((cx + ((dot - ((mPageCount < 5 ? mPageCount : 5) - 1) / 2) * mUnit * 0.055)).toNumber(),
-                    (mUnit * 0.90).toNumber(), (mUnit * 0.009).toNumber());
+                    (mUnit * 0.855).toNumber(), (mUnit * 0.009).toNumber());
             }
-            drawFit(dc, mScreenWidth * 0.77, mUnit * 0.885, ">", mUnit * 0.12,
+            drawFit(dc, mScreenWidth * 0.77, mUnit * 0.835, ">", mUnit * 0.12,
                 Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             drawButton(dc, cx, mUnit * 0.855, mUnit * 0.54, "ERNEUT SPEICHERN");
