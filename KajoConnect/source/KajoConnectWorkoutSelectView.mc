@@ -36,7 +36,7 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (y > mUnit * 0.87) {
+        if (y > mUnit * 0.82) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
