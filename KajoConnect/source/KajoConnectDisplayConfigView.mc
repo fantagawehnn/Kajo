@@ -93,7 +93,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+            dc.setColor(0x0A1A1E, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(), Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(), Math.round(mUnit * 0.025).toNumber());
 
             var state = mEnabled[i] ? "AN" : "AUS";
@@ -112,9 +112,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         var saveWidth = mUnit * 0.46;
         var saveHeight = mUnit * 0.085;
         var saveY = mUnit * 0.825;
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         drawFit(dc, cx, saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             "SPEICHERN", saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
     }
