@@ -73,7 +73,7 @@ function dayActivitySummary(dateStr){
  if(ready.score!==null){const tone=ready.score>=80?'text-green-300 bg-green-950/40':ready.score>=60?'text-yellow-300 bg-yellow-950/40':ready.score>=40?'text-orange-300 bg-orange-950/40':ready.score>=20?'text-red-300 bg-red-950/40':'text-purple-300 bg-purple-950/40';out.push('<div class="rounded-lg p-2 '+tone+'"><b>Readiness:</b> '+ready.score+'/100 · objektiv '+(ready.objectiveScore??'—')+' · subjektiv '+(ready.subjectiveScore??'—')+'</div>');}
  if(metrics)out.push('<div class="bg-sky-950/40 rounded-lg p-2 text-sky-300"><b>Belastungskennzahlen:</b> CTL '+metrics.ctl+' · ATL '+metrics.atl+' · TSB '+metrics.tsb+' · ACWR '+(metrics.acwr??'—')+'</div>');
  state.rawActivities.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Aktivität:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · '+(a.distance==null?'—':formatKm(a.distance))+' km · '+(a.hr??'—')+' bpm · '+(a.tss??'—')+' Load'+(a.perceivedEffort!=null?' · Empfinden '+a.perceivedEffort+'/10':'')+' · sRPE '+(a.sRpeLoad??'—')+'</div>'));
- getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Geplant:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · Ziel '+(a.targetTss??'—')+' Load</div>'));
+ getVisiblePlannedActivities(state.plannedActivities, toLocalDateString()).filter(x=>x.date===dateStr).forEach(a=>out.push(a.type==='RestDay'?'<div><b>Geplant:</b> Ruhetag</div>':'<div><b>Geplant:</b> '+escapeHtml(a.name)+' · '+(a.duration??'—')+' min · Ziel '+(a.targetTss??'—')+' Load</div>'));
  state.races.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Wettkampf:</b> '+escapeHtml(a.name)+' · Rang '+escapeHtml(a.prio||'—')+'</div>'));
  state.strengthLogs.filter(x=>x.date===dateStr).forEach(a=>out.push('<div><b>Kraft:</b> '+escapeHtml(a.exercise)+' · '+a.sets+' × '+a.reps+' · '+a.weight+' kg · RPE '+a.rpe+'</div>'));
  return out.length?out.join(''):'<span class="text-slate-500">Keine Aktivitäten oder Einheiten erfasst.</span>';
@@ -265,15 +265,16 @@ function calendarActivityRow(activity, planned) {
     const color = calendarActivityColor(activity, sport);
     const id = encodeURIComponent(String(activity.id || '')).replace(/'/g, '%27');
     const time = calendarDayTime(activity.startTimeLocal || activity.start_time_local || activity.startTime || activity.time);
+    const isRestDay=activity.type==='RestDay';
     const duration = activity.duration !== null && activity.duration !== undefined && activity.duration !== '' && Number.isFinite(Number(activity.duration)) ? Math.round(Number(activity.duration)) + ' min' : '';
-    const status = planned ? 'Geplant' : 'Abgeschlossen';
+    const status = isRestDay ? 'Ruhetag geplant' : planned ? 'Geplant' : 'Abgeschlossen';
     const action = planned
         ? 'openPlannedWorkoutModal(\'' + id + '\')'
         : 'openCSVDetailsModal(\'' + id + '\')';
     return '<button type="button" class="calendar-day-activity-row ' + (planned ? 'is-planned' : 'is-completed') + '" style="--activity-color:' + color + '" onclick="' + action + '">' +
         '<span class="calendar-day-activity-main"><span class="calendar-day-activity-sport">' + escapeHtml(sport.label + (activity.raceFormat ? ' · ' + activity.raceFormat : '')) + '</span>' +
         '<strong>' + escapeHtml(activity.name || (planned ? 'Geplante Einheit' : 'Trainingseinheit')) + '</strong>' +
-        '<small>' + [time, duration, planned ? 'Planung' : calendarActivitySourceLabel(activity)].filter(Boolean).map(escapeHtml).join(' · ') + '</small></span>' +
+        '<small>' + (isRestDay ? 'Keine Trainingseinheit geplant' : [time, duration, planned ? 'Planung' : calendarActivitySourceLabel(activity)].filter(Boolean).map(escapeHtml).join(' · ')) + '</small></span>' +
         '<span class="calendar-entry-status ' + (planned ? 'is-planned' : 'is-completed') + '">' + status + '</span></button>';
 }
 
