@@ -80,12 +80,15 @@ class KajoConnectView extends WatchUi.View {
         }
 
         var zoneInfo = data["heartRateZones"];
-        var zones = null;
+        var zoneValues as Lang.Array<Lang.Number> = [];
         if (zoneInfo != null) {
-            zones = (zoneInfo as Lang.Dictionary)["zones"];
+            var zoneDictionary = zoneInfo as Lang.Dictionary;
+            var receivedZones = zoneDictionary["zones"];
+            if (receivedZones != null) {
+                zoneValues = receivedZones as Lang.Array<Lang.Number>;
+            }
         }
-        if (zones != null && (zones as Lang.Array<Lang.Number>).size() == 4) {
-            var zoneValues = zones as Lang.Array<Lang.Number>;
+        if (zoneValues.size() == 4) {
             for (var i = 0; i < 4; i += 1) {
                 Storage.setValue("kajoHeartRateZone" + i.toString(), zoneValues[i]);
             }
