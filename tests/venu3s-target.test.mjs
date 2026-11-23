@@ -54,7 +54,7 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
           assert.equal(
             members.has(memberMatch[1]),
             false,
-            \`\${fileName}:\${index + 1} redeclares \${className}.\${memberMatch[1]}\`
+            fileName + ":" + (index + 1) + " redeclares " + className + "." + memberMatch[1]
           );
           members.add(memberMatch[1]);
         }
