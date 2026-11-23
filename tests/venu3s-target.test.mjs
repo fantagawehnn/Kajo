@@ -87,8 +87,8 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 test("Activity screen uses bounded text and reserves a separate bottom control area", () => {
   assert.match(activityView, /function drawFit\(/);
   assert.match(activityView, /displayText\.substring/);
-  assert.match(activityView, /mButtonTop = mUnit \* 0\.82/);
-  assert.match(activityView, /mButtonBottom = mUnit \* 0\.90/);
+  assert.match(activityView, /mButtonTop = mUnit \* 0\.81/);
+  assert.match(activityView, /mButtonBottom = mUnit \* 0\.89/);
   assert.match(activityView, /drawFit\(dc, cx, mUnit \* 0\.335/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
@@ -131,7 +131,7 @@ test("home screen shows only today's non-rest-day sessions and has separate plan
 test("home screen uses compact conditional layout with a single primary action", () => {
   assert.match(homeView, /if \(hasTrainingToday\)/);
   assert.match(homeView, /mStartTop = startY/);
-  assert.match(homeView, /mFreeTop = mUnit \* 0\.80/);
+  assert.match(homeView, /mFreeTop = mUnit \* 0\.79/);
   assert.match(homeView, /mFreeTop = -1/);
   assert.match(homeView, /drawCentered\(dc, cx, menuY \+ \(menuHeight \* 0\.18\), "MENUE"/);
 });
