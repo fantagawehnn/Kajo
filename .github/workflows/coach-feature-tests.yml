@@ -2,6 +2,9 @@ name: KAJO Coach Feature Tests
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/kajo-connect
 
 permissions:
   contents: read
