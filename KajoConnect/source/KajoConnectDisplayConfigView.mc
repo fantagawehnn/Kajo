@@ -112,7 +112,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
                 labels[i], labelWidth * 0.96, font, Graphics.COLOR_WHITE);
 
             drawFit(dc, cardX + cardWidth * 0.84,
-                y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+                y + (cardHeight - dc.getFontHeight(mLayout.fontForPercent(dc, 0.045))) / 2,
                 state, cardWidth * 0.22, Graphics.FONT_TINY,
                 mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
         }
@@ -123,7 +123,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        drawFit(dc, cx, saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
+        drawFit(dc, cx, saveY + (saveHeight - dc.getFontHeight(mLayout.fontForPercent(dc, 0.055))) / 2,
             "SPEICHERN", saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
     }
 }
