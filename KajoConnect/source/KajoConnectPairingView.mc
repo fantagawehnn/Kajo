@@ -30,13 +30,35 @@ class KajoConnectPairingView extends WatchUi.View {
             mStatus = "BEREITS MIT KAJO VERBUNDEN";
             return;
         }
-        if (!mStarted) {
+        if (mPaired) { return; }
+
+        // Einen noch gültigen Kopplungsvorgang nach dem Öffnen der Ansicht
+        // oder einem Neustart der App fortsetzen.
+        var savedCode = Storage.getValue("kajoPairingCode");
+        var savedSecret = Storage.getValue("kajoPairingPollSecret");
+        if (mCode.length() != 12 && savedCode != null) {
+            mCode = savedCode.toString();
+        }
+        if (mPollSecret.length() != 64 && savedSecret != null) {
+            mPollSecret = savedSecret.toString();
+        }
+
+        if (mCode.length() == 12 && mPollSecret.length() == 64) {
             mStarted = true;
-            createPairing();
-        } else if (mCode.length() == 12 && mPollSecret.length() == 64 && !mPaired) {
             mStatus = "WARTE AUF KAJO";
             pollPairing();
             mTimer.start(method(:pollPairing), 10000, true);
+        } else {
+            // Unvollständige lokale Zugangsdaten nicht weiterverwenden.
+            mCode = "";
+            mPollSecret = "";
+            try {
+                Storage.setValue("kajoPairingCode", "");
+                Storage.setValue("kajoPairingPollSecret", "");
+            } catch (error) {
+            }
+            mStarted = true;
+            createPairing();
         }
     }
 
@@ -110,6 +132,9 @@ class KajoConnectPairingView extends WatchUi.View {
         if (responseCode == 404) {
             mStatus = "KOPPLUNG ABGELAUFEN";
             mTimer.stop();
+            mCode = "";
+            mPollSecret = "";
+            mStarted = false;
             try {
                 Storage.setValue("kajoPairingCode", "");
                 Storage.setValue("kajoPairingPollSecret", "");
