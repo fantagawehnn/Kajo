@@ -102,7 +102,7 @@ class KajoConnectView extends WatchUi.View {
         }
 
         var zoneInfo = data["heartRateZones"];
-        var zoneValues as Lang.Array<Lang.Number> = [];
+        var zoneValues = [];
         if (zoneInfo != null) {
             var zoneDictionary = zoneInfo as Lang.Dictionary;
             var receivedZones = zoneDictionary["zones"];
