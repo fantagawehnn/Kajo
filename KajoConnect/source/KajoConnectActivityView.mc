@@ -485,7 +485,9 @@ class KajoConnectActivityView extends WatchUi.View {
             startRecording();
         } else if (mStatus == "AUFZEICHNUNG") {
             finishRecording();
-        } else if (mStatus == "GESPEICHERT" || mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+        } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+            finishRecording();
+        } else if (mStatus == "GESPEICHERT") {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
         }
     }
@@ -519,7 +521,11 @@ class KajoConnectActivityView extends WatchUi.View {
             }
             return;
         }
-        if (mStatus == "GESPEICHERT" || mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+        if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+            finishRecording();
+            return;
+        }
+        if (mStatus == "GESPEICHERT") {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
         }
     }
@@ -764,6 +770,8 @@ class KajoConnectActivityView extends WatchUi.View {
         } else if (mStatus == "AUFZEICHNUNG") {
             drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "RUNDE");
             drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "ENDE");
+        } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+            drawButton(dc, cx, mButtonTop, mUnit * 0.72, "ERNEUT SPEICHERN");
         } else {
             drawButton(dc, cx, mButtonTop, mUnit * 0.58, "ZURUECK");
         }
