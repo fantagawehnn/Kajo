@@ -96,7 +96,7 @@ Diese Werte gehören ausschließlich in die Supabase-Function-Secrets. Sie dürf
 - Deployment der Edge Function und Setzen der Secrets.
 - End-to-end-Tests und Garmin-Gerätetests.
 
-Die vorhandene `KajoConnectApi.mc` ist derzeit nur eine generische asynchrone JSON-POST-Transportebene. Sie ist noch nicht mit dem neuen Endpunkt verdrahtet.
+Die `KajoConnectApi.mc` sendet asynchrone JSON-POST-Anfragen an den neuen Endpunkt und ergänzt den öffentlichen Supabase-Publishable-Key im `apikey`-Header. Die Watch-Pairing-Ansicht verwendet sie für Code-Erzeugung und Polling. Der Geräte-Token wird lokal gespeichert, sobald der Server ihn nach erfolgreichem Claim zurückgibt.
 
 ## 9. Aktivitätsaufzeichnung
 
