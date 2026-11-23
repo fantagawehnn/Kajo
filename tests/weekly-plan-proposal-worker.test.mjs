@@ -76,6 +76,25 @@ test('weekly proposal returns a validated draft without fabricated load targets'
     assert.equal(payload.proposal.weeklyPlan.sessions[0].date, '2027-01-05');
 });
 
+test('weekly proposal preserves valid structured workout steps and filters invalid durations', async t => {
+    const proposal = structuredClone(readyProposal);
+    proposal.sessions[0].steps = [
+        { type: 'warmup', label: 'Einpaddeln', durationSeconds: 600, target: 'Locker' },
+        { type: 'work', label: 'Belastung 1', durationSeconds: 180, target: 'Schwelle' },
+        { type: 'recovery', label: 'Erholung 1', durationSeconds: 120, target: 'Sehr locker' },
+        { type: 'work', label: 'Ungültiger Schritt', durationSeconds: 0, target: '' }
+    ];
+    const response = await worker.fetch(makeRequest({
+        task: 'weekly_plan_proposal', question: 'Plane meine Trainingswoche', context
+    }), authorizedEnv(t, JSON.stringify(proposal)));
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload.proposal.weeklyPlan.sessions[0].steps.map(step => step.label), [
+        'Einpaddeln', 'Belastung 1', 'Erholung 1'
+    ]);
+    assert.equal(payload.proposal.weeklyPlan.sessions[0].steps[1].durationSeconds, 180);
+});
+
 test('weekly proposal requires a complete Monday-to-Sunday week inside the approved phase', async t => {
     const invalidContext = structuredClone(context);
     invalidContext.weeklyPlanning.targetWeek.weekStartDate = '2027-01-05';
