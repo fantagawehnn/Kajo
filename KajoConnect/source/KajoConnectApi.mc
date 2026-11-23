@@ -18,7 +18,9 @@ class KajoConnectApi {
     ) as Void {
 
         var headers = {
-            "Content-Type" => Communications.REQUEST_CONTENT_TYPE_JSON
+            "Content-Type" => Communications.REQUEST_CONTENT_TYPE_JSON,
+            // Öffentlicher Publishable Key; kein Benutzer- oder Service-Secret.
+            "apikey" => "sb_publishable_r2jD8lZ6vm9ueStigYm-Ig_h0SuyDNL"
         };
 
         if (bearerToken != null && bearerToken.length() > 0) {
