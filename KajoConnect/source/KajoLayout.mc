@@ -36,22 +36,12 @@ class KajoLayout {
     }
 
     function fontForPercent(dc as Dc, percent as Lang.Float) {
-        var targetHeight = mUnit * percent;
-        var fonts = [
-            Graphics.FONT_XTINY,
-            Graphics.FONT_TINY,
-            Graphics.FONT_SMALL,
-            Graphics.FONT_MEDIUM,
-            Graphics.FONT_LARGE,
-            Graphics.FONT_NUMBER_MEDIUM,
-            Graphics.FONT_NUMBER_HOT
-        ];
-        var selected = Graphics.FONT_XTINY;
-        for (var i = 0; i < fonts.size(); i += 1) {
-            var candidate = fonts[i];
-            if (dc.getFontHeight(candidate) <= targetHeight) { selected = candidate; }
-        }
-        return selected;
+        // Einheitliche, kleine UI-Schrift fuer alle Beschriftungen.
+        // Garmin-Fontgroessen sind auf dem Venu 3S deutlich hoeher als
+        // die Prozentwerte vermuten lassen. Deshalb keine dynamische
+        // Auswahl grosser Fonts mehr fuer normale Textzeilen.
+        if (percent >= 0.060) { return Graphics.FONT_SMALL; }
+        return Graphics.FONT_XTINY;
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
