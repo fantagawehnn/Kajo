@@ -90,6 +90,14 @@ class KajoLayout {
         return y;
     }
 
+    function safeRectWidthAt(x as Lang.Number, top as Lang.Number, height as Lang.Number,
+        requestedWidth as Lang.Number) as Lang.Number {
+        var margin = mUnit * 0.01;
+        var topWidth = safeWidthAt(x, top + margin, requestedWidth);
+        var bottomWidth = safeWidthAt(x, top + height - margin, requestedWidth);
+        return topWidth < bottomWidth ? topWidth : bottomWidth;
+    }
+
     function safeRectWidth(top as Lang.Number, height as Lang.Number,
         requestedWidth as Lang.Number) as Lang.Number {
         var margin = mUnit * 0.01;
