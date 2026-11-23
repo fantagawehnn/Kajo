@@ -16,6 +16,8 @@ Die Session wird lokal als Garmin-FIT-Aktivität gespeichert. Das ist kein direk
 - Obere physische Taste (`KEY_ENTER` bzw. `KEY_START`): startet die Aufzeichnung oder beendet und speichert sie.
 - Untere physische Taste (`KEY_ESC`): setzt während der Aufzeichnung eine FIT-Rundenmarkierung; außerhalb einer Aufzeichnung bleibt die Zurück-Funktion erhalten.
 - Touch-Schaltflächen bleiben als zusätzliche Bedienmöglichkeit verfügbar.
+- Schlägt das Stoppen fehl und Garmin meldet die Session weiterhin als aktiv, bleiben Timer, GPS und Rundenmarkierungen aktiv. Die obere Taste kann erneut zum Stoppen verwendet werden.
+- Ist die Session bereits gestoppt, aber das FIT-Speichern schlägt fehl, werden Timer und GPS beendet. Die obere Taste versucht anschließend erneut zu speichern, ohne eine zweite Aktivität anzulegen.
 - Datenseiten können während der Aufzeichnung vertikal nach oben/unten gewechselt werden.
 - Die Bootsklasse wird vor dem Start im Startmenü ausgewählt und nicht als Überschrift in der Aktivitätsansicht angezeigt.
 
