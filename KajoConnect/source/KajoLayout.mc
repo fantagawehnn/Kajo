@@ -20,10 +20,10 @@ class KajoLayout {
         mUnit = width < height ? width : height;
         mCenterX = width / 2;
         mCenterY = height / 2;
-        mRadius = mUnit * 0.465;
+        mRadius = Math.round(mUnit * 0.465).toNumber();
     }
 
-    function fontPercent(preferredFont) as Lang.Number {
+    function fontPercent(preferredFont) as Lang.Float {
         if (preferredFont == Graphics.FONT_NUMBER_HOT) { return 0.105; }
         if (preferredFont == Graphics.FONT_NUMBER_MEDIUM) { return 0.085; }
         if (preferredFont == Graphics.FONT_LARGE) { return 0.075; }
@@ -33,7 +33,7 @@ class KajoLayout {
         return 0.035;
     }
 
-    function fontForPercent(dc as Dc, percent as Lang.Number) {
+    function fontForPercent(dc as Dc, percent as Lang.Float) {
         var targetHeight = mUnit * percent;
         var fonts = [
             Graphics.FONT_XTINY,
@@ -73,7 +73,7 @@ class KajoLayout {
         var available = availableLeft < availableRight ? availableLeft : availableRight;
         available = available * 2;
         if (available < 0) { return 0; }
-        return available < requestedWidth ? available : requestedWidth;
+        return Math.round(available < requestedWidth ? available : requestedWidth).toNumber();
     }
 
     function safeTextWidth(dc as Dc, x, y,
@@ -85,9 +85,9 @@ class KajoLayout {
         var margin = mUnit * 0.035;
         var top = mCenterY - mRadius + margin;
         var bottom = mCenterY + mRadius - margin - textHeight;
-        if (y < top) { return top; }
-        if (y > bottom) { return bottom; }
-        return y;
+        if (y < top) { return Math.round(top).toNumber(); }
+        if (y > bottom) { return Math.round(bottom).toNumber(); }
+        return Math.round(y).toNumber();
     }
 
     function safeRectWidthAt(x, top, height,
@@ -95,7 +95,7 @@ class KajoLayout {
         var margin = mUnit * 0.01;
         var topWidth = safeWidthAt(x, top + margin, requestedWidth);
         var bottomWidth = safeWidthAt(x, top + height - margin, requestedWidth);
-        return topWidth < bottomWidth ? topWidth : bottomWidth;
+        return Math.round(topWidth < bottomWidth ? topWidth : bottomWidth).toNumber();
     }
 
     function safeRectWidth(top, height,
