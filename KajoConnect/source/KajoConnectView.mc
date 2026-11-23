@@ -94,7 +94,12 @@ class KajoConnectView extends WatchUi.View {
         } else {
             mPlannedSessions = [];
         }
-        Storage.setValue("kajoPlannedSessions", mPlannedSessions);
+        var cacheSaved = true;
+        try {
+            Storage.setValue("kajoPlannedSessions", mPlannedSessions);
+        } catch (error) {
+            cacheSaved = false;
+        }
 
         var zoneInfo = data["heartRateZones"];
         var zoneValues as Lang.Array<Lang.Number> = [];
@@ -105,19 +110,23 @@ class KajoConnectView extends WatchUi.View {
                 zoneValues = receivedZones as Lang.Array<Lang.Number>;
             }
         }
-        if (zoneValues.size() == 4) {
-            for (var i = 0; i < 4; i += 1) {
-                Storage.setValue("kajoHeartRateZone" + i.toString(), zoneValues[i]);
+        try {
+            if (zoneValues.size() == 4) {
+                for (var i = 0; i < 4; i += 1) {
+                    Storage.setValue("kajoHeartRateZone" + i.toString(), zoneValues[i]);
+                }
+                Storage.setValue("kajoHeartRateZoneDate", getLocalDate());
+            } else {
+                for (var i = 0; i < 4; i += 1) {
+                    Storage.setValue("kajoHeartRateZone" + i.toString(), 0);
+                }
+                Storage.setValue("kajoHeartRateZoneDate", "");
             }
-            Storage.setValue("kajoHeartRateZoneDate", getLocalDate());
-        } else {
-            for (var i = 0; i < 4; i += 1) {
-                Storage.setValue("kajoHeartRateZone" + i.toString(), 0);
-            }
-            Storage.setValue("kajoHeartRateZoneDate", "");
+        } catch (error) {
+            cacheSaved = false;
         }
 
-        mSyncStatus = "KAJO AKTUALISIERT";
+        mSyncStatus = cacheSaved ? "KAJO AKTUALISIERT" : "KAJO AKTUALISIERT · CACHE FEHLER";
         WatchUi.requestUpdate();
     }
 
