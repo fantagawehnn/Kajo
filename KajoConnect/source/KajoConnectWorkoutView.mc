@@ -92,11 +92,10 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var duration = valueText("duration", "");
         var targetLoad = valueText("targetTss", "");
         var stepsValue = mWorkout["steps"];
-        var steps = stepsValue == null ? [] : stepsValue as Lang.Array<Lang.Dictionary>;
-        var stepCount = steps.size();
+        var stepCount = stepsValue == null ? 0 : stepsValue.size();
         var target = "";
         if (stepCount > 0) {
-            var firstStep = steps[0] as Lang.Dictionary;
+            var firstStep = stepsValue.get(0) as Lang.Dictionary;
             if (firstStep["target"] != null) {
                 target = firstStep["target"].toString();
             }
