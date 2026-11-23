@@ -91,9 +91,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         mRowTop = mUnit * 0.235;
         mRowHeight = mUnit * 0.108;
 
-        var cardWidth = mUnit * 0.68;
-        var cardX = cx - (cardWidth / 2);
         var cardHeight = mRowHeight * 0.82;
+        var cardWidth = mLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.68);
+        var cardX = cx - (cardWidth / 2);
 
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
