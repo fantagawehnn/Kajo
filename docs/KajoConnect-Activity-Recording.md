@@ -43,15 +43,13 @@ Nach dem Öffnen der Startansicht ruft die Uhr über den gekoppelten Geräte-End
 - `id`, `date`, `name`, `type`
 - `duration`, `targetTss`, `category`, `desc`
 
-Bei Wochenplänen, die über den bestehenden Saisonplan-Workflow in den Kalender übernommen werden, bleiben zusätzlich die getrennten Angaben `discipline`, `raceFormat`, `waterType`, `intensity`, `objective`, `warmup`, `mainSet`, `cooldown` und `notes` erhalten. Die Edge Function validiert diese optionalen Textfelder und begrenzt ihre Länge vor der Übertragung. Ältere oder manuell angelegte Kalendereinträge ohne diese Felder bleiben kompatibel.
+Bei Wochenplänen, die über den bestehenden Saisonplan-Workflow in den Kalender übernommen werden, bleiben zusätzlich die getrennten Angaben `discipline`, `raceFormat`, `waterType`, `intensity`, `objective`, `warmup`, `mainSet`, `cooldown` und `notes` erhalten. Optional kann eine strukturierte Liste `steps` übertragen werden. Jeder Schritt enthält `id`, `type` (warmup/work/recovery/cooldown/other), `label`, `durationSeconds` und optional `target`. Die Web-App begrenzt die Liste auf 40 Schritte; die Edge Function prüft Typ, Bezeichnung und Dauer erneut. Ältere oder manuell angelegte Kalendereinträge ohne diese Felder bleiben kompatibel.
 
 Die Uhr lädt Einheiten von gestern bis 14 Tage in die Zukunft, maximal 30 Einträge. Textfelder werden für die begrenzte Watch-Anzeige gekürzt. Der Menüpunkt „Trainingsübersicht“ öffnet eine paginierte Liste des lokal synchronisierten Plans. Ein Eintrag öffnet die Detailansicht mit Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – bei strukturiert übertragenen Wochenplänen – Rennformat/Gewässer, Ziel, Intensität, Hauptteil, Aufwärmen und Abwärmen. Die Watch-Ansicht zeigt aktuell nur kurze, gekürzte Textzeilen; längere Inhalte werden nicht vollständig dargestellt. Ruhetage werden gesondert dargestellt.
 
-Wichtig: `mainSet` ist im bestehenden KAJO-Wochenplanmodell ein Freitextfeld. Eine einzelne Intervall-/Schrittfolge mit separat definierten Belastungs- und Erholungsphasen ist damit nicht belegt und wird weiterhin nicht als strukturierte Intervallliste übertragen.
+Wichtig: `mainSet` bleibt ein Freitextfeld. Die strukturierte Schrittfolge ist ein separates optionales Feld und wird nicht aus Freitext automatisch abgeleitet. Bei manuell geplanten Einheiten kann sie direkt in der Trainingsplanung angelegt werden. Bei KI-Wochenplänen darf der Coach Schritte nur aus eindeutig geordneten Vorgaben mit ausdrücklich genannten Dauern erzeugen; unklare Abläufe bleiben Freitext und erhalten `steps: []`.
 
 Der zuletzt synchronisierte Trainingsplan wird lokal gespeichert und bleibt bei fehlender Verbindung als Offline-Ansicht verfügbar. Die Synchronisierung ist im Branch vorbereitet, aber noch nicht end-to-end getestet.
-
-Eine strukturierte Intervall-/Schrittfolge wird nicht übertragen, solange sie nicht in tatsächlich gespeicherten Planobjekten belegt ist.
 
 ## 5. Herzfrequenzzonen
 
@@ -71,7 +69,8 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 - Diese Übertragung ist im Quellcode vorbereitet, aber noch nicht mit einem Garmin-Build, einer bereitgestellten Edge Function oder einem echten Gerät getestet.
 - Pixelgenaue freie Feldpositionen und mehr als vier Kennzahlen pro Seite sind weiterhin nicht umgesetzt. Die Positionierung ist bewusst auf fünf kollisionsfreie Rasterplätze begrenzt.
 - Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
-- End-to-end-Test von Pairing, Trainingsplan-Synchronisierung und Herzfrequenzzonen.
+- End-to-end-Test von Pairing, Trainingsplan-Synchronisierung, strukturierten Trainingsschritten und Herzfrequenzzonen.
+- Prüfung der Schritt-Timer, automatischen Übergänge und manuellen Vor-/Zurücksteuerung auf beiden Zielgeräten.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
 - Prüfung der physischen Tasten, GPS-Aufzeichnung, Datenseiten und Offline-Cache auf Venu 3S und Venu 2 Plus.
 - Ein direkter FIT-Upload an KAJO und eine Upload-Queue sind nicht implementiert.
@@ -103,4 +102,4 @@ Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persi
 
 Die erste Aktivitätsseite verwendet ein eigenständiges KAJO-Dashboard statt des klassischen Garmin-Datenfeldrasters. Der Trainingsname und die Trainingsart der für den aktuellen lokalen Tag synchronisierten Einheit stehen oben. Herzfrequenz, Zeit und Distanz erhalten die größte visuelle Priorität; Geschwindigkeit wird bewusst kleiner dargestellt. Der äußere Ring zeigt fünf farblich unterschiedene Herzfrequenzzonen und hebt die aktuell ermittelte Zone hervor. KAJO-Logo und Bootsklasse werden in dieser Trainingsansicht nicht als Überschrift angezeigt.
 
-Die Trainingsübersicht greift auf den lokal gespeicherten Plan unter `kajoPlannedSessions` zurück. Angezeigt werden nur die vorhandenen Felder Name, Trainingsart und geplante Dauer. Eine Intervall-/Schrittfolge wird weiterhin nicht angezeigt, da diese strukturierte Information derzeit nicht Bestandteil des übertragenen Datensatzes ist.
+Die Trainingsübersicht greift auf den lokal gespeicherten Plan unter `kajoPlannedSessions` zurück. Wenn eine strukturierte Schrittfolge vorhanden ist, erscheint eine zusätzliche Seite „Trainingsablauf“ mit aktuellem Schritt, Abschnittstyp, verbleibender Zeit und optionalem Ziel. Der Countdown startet mit der Aufzeichnung und wechselt nach Ablauf automatisch zum nächsten Schritt. Auf dieser Seite steuern die linke und rechte Touch-Fläche den vorherigen bzw. nächsten Schritt; die physische untere Taste bleibt die FIT-Rundenmarkierung. Ohne strukturierte Schritte bleibt die bisherige kompakte Textseite für Intensität, Ziel, Aufwärmen, Hauptteil und Abwärmen erhalten.
