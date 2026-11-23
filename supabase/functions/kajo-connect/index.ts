@@ -334,6 +334,39 @@ Deno.serve(async (request) => {
       return json(200, { ok: true, status: "paired", deviceToken });
     }
 
+    // Device management is restricted to the currently authenticated KAJO account.
+    if (action === "list-devices") {
+      const user = await authenticatedUser(request);
+      if (!user) return json(401, { error: "An authenticated KAJO account is required." });
+      const { data, error } = await admin
+        .from("kajo_connect_devices")
+        .select("id,device_label,created_at,last_seen_at,revoked_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return json(200, { ok: true, devices: data ?? [] });
+    }
+
+    if (action === "revoke-device") {
+      const user = await authenticatedUser(request);
+      if (!user) return json(401, { error: "An authenticated KAJO account is required." });
+      const deviceId = typeof body.deviceId === "string" ? body.deviceId : "";
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(deviceId)) {
+        return json(400, { error: "Invalid device ID." });
+      }
+      const { data, error } = await admin
+        .from("kajo_connect_devices")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("id", deviceId)
+        .eq("user_id", user.id)
+        .is("revoked_at", null)
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return json(404, { error: "Active device not found for this account." });
+      return json(200, { ok: true, status: "revoked" });
+    }
+
     // All watch requests after pairing use a random bearer token; only its hash is stored.
     if (action === "sync") {
       const authorization = request.headers.get("Authorization") || "";
