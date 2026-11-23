@@ -69,34 +69,37 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         dc.clear();
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
-        mUnit = mWidth;
-        if (mHeight < mUnit) { mUnit = mHeight; }
+        mUnit = mWidth < mHeight ? mWidth : mHeight;
         mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
-        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawLine((mUnit * 0.105).toNumber(), (mUnit * 0.105).toNumber(),
-            (mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber());
-        dc.drawLine((mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber(),
-            (mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber());
-        dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
-            (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
-        drawCentered(dc, cx, mUnit * 0.075, "TRAININGSPLAN", mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.135,
-            mSessions.size().toString() + " GEPLANTE EINHEITEN",
-            mUnit * 0.70, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+
+        drawCentered(dc, cx, mUnit * 0.075, "TRAININGSPLAN", mUnit * 0.72,
+            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawCentered(dc, cx, mUnit * 0.125,
+            mSessions.size().toString() + " EINHEITEN", mUnit * 0.68,
+            Graphics.FONT_XTINY, 0x00E5CC);
 
         if (mSessions.size() == 0) {
-            drawCentered(dc, cx, mUnit * 0.42, "NOCH KEIN TRAININGSPLAN", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawCentered(dc, cx, mUnit * 0.51, "UHR MIT KAJO VERBINDEN", mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawCentered(dc, cx, mUnit * 0.90, "ZURUECK", mUnit * 0.55, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            var emptyY = mUnit * 0.34;
+            var emptyH = mUnit * 0.22;
+            var emptyW = mKajoLayout.safeRectWidth(emptyY, emptyH, mUnit * 0.72);
+            var emptyX = cx - (emptyW / 2);
+            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(emptyX.toNumber(), emptyY.toNumber(), emptyW.toNumber(),
+                emptyH.toNumber(), (mUnit * 0.035).toNumber());
+            drawCentered(dc, cx, emptyY + mUnit * 0.055, "NOCH KEIN PLAN",
+                emptyW * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawCentered(dc, cx, emptyY + mUnit * 0.12, "UHR IN DER KAJO APP VERBINDEN",
+                emptyW * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawCentered(dc, cx, mUnit * 0.84, "ZURUECK", mUnit * 0.52,
+                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             return;
         }
 
-        mRowTop = Math.floor(mUnit * 0.225).toNumber();
-        mRowHeight = Math.floor(mUnit * 0.175).toNumber();
+        mRowTop = Math.floor(mUnit * 0.215).toNumber();
+        mRowHeight = Math.floor(mUnit * 0.178).toNumber();
         var cardHeight = mUnit * 0.145;
-        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.70);
+        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.76);
         var cardX = cx - (cardWidth / 2);
 
         for (var row = 0; row < 3; row += 1) {
@@ -107,19 +110,30 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             var name = session["name"] == null ? "Geplante Einheit" : session["name"].toString();
             var date = session["date"] == null ? "Datum offen" : session["date"].toString();
             var type = session["type"] == null ? "Training" : session["type"].toString();
-            var duration = session["duration"] == null ? "—" : session["duration"].toString();
-            dc.setColor(0x0A1A1E, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.025).toNumber());
+            var duration = session["duration"] == null ? "--" : session["duration"].toString();
+            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
+                cardHeight.toNumber(), (mUnit * 0.026).toNumber());
+            dc.setColor(0x17343A, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
+                cardHeight.toNumber(), (mUnit * 0.026).toNumber());
             dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.025).toNumber());
-            drawCentered(dc, cx, y + (mUnit * 0.025), name, cardWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawCentered(dc, cx, y + (mUnit * 0.075), date + " · " + type, cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawCentered(dc, cx, y + (mUnit * 0.105), type == "RestDay" ? "RUHETAG" : duration + " MIN", cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            dc.fillRoundedRectangle((cardX + mUnit * 0.016).toNumber(),
+                (y + mUnit * 0.025).toNumber(), (mUnit * 0.009).toNumber(),
+                (cardHeight - mUnit * 0.05).toNumber(), (mUnit * 0.004).toNumber());
+            drawCentered(dc, cx, y + mUnit * 0.025, name, cardWidth * 0.86,
+                Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawCentered(dc, cx, y + mUnit * 0.073, date + "  /  " + type,
+                cardWidth * 0.86, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawCentered(dc, cx, y + mUnit * 0.108,
+                type == "RestDay" ? "RUHETAG" : duration + " MIN",
+                cardWidth * 0.86, Graphics.FONT_XTINY, 0x00E5CC);
         }
 
-        drawCentered(dc, cx, mUnit * 0.84,
-            (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN",
-            mUnit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawCentered(dc, cx, mUnit * 0.91, "ZURUECK", mUnit * 0.55, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, cx, mUnit * 0.795,
+            (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  WISCHEN",
+            mUnit * 0.66, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, cx, mUnit * 0.86, "ZURUECK", mUnit * 0.52,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
