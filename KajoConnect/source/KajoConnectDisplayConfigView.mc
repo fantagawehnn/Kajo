@@ -6,7 +6,7 @@ import Toybox.WatchUi;
 
 class KajoConnectDisplayConfigView extends WatchUi.View {
 
-    var mLayout;
+    var mLayout as KajoLayout;
 
     var mEnabled as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
     var mRowTop = 0;
