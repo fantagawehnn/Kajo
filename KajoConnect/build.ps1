@@ -27,7 +27,7 @@ if (-not (Test-Path -LiteralPath $DeveloperKeyPath -PathType Leaf)) {
 
 New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 
-$devices = @("venu2plus", "venu3s")
+$devices = @("venu3s")
 Push-Location $projectRoot
 
 try {
