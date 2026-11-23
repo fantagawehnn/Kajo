@@ -2366,7 +2366,11 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         const cloudActivityRowsById = new Map(
             (Array.isArray(cloudActivities) ? cloudActivities : [])
                 .filter(row => row?.record_id != null && row?.payload && typeof row.payload === 'object')
-                .map(row => [String(row.record_id), row.payload])
+                .map(row => {
+                    const compact = { ...row.payload };
+                    delete compact.garminTelemetry;
+                    return [String(row.record_id), compact];
+                })
         );
         const activityConflicts = [];
         const activitiesToUpload = [];
