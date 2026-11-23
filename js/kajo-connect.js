@@ -129,7 +129,9 @@ export function renderKajoConnectDisplayConfig() {
         checkbox.className = 'h-4 w-4 accent-cyan-500';
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
-                layout.metrics.push({ id, size: 'medium' });
+                const usedPositions = new Set(layout.metrics.map(metric => metric.position).filter(Number.isInteger));
+                const position = [4, 0, 1, 2, 3].find(candidate => !usedPositions.has(candidate));
+                layout.metrics.push({ id, size: 'medium', position });
             } else {
                 layout.metrics = layout.metrics.filter(metric => metric.id !== id);
             }
