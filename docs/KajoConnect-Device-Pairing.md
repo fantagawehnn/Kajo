@@ -76,7 +76,9 @@ Die SQL-Datei unter `docs/kajo-connect-pairing-schema-draft.sql` ist ausdrückli
 - `public.kajo_connect_rate_limits`: gehashte Rate-Limit-Buckets mit Zeitfenster und Zähler.
 - `public.kajo_connect_consume_rate_limit(...)`: atomare, transaktionssichere Zählerfunktion; Ausführung ist nur für `service_role` vorgesehen.
 
-Beide Tabellen aktivieren RLS und erhalten keine Client-Policies. Zugriff ist ausschließlich über die Edge Function mit serverseitigem Service-Role-Key vorgesehen. Die tatsächlichen Datenbankänderungen sind nicht freigegeben und wurden nicht ausgeführt.
+Alle drei Tabellen aktivieren RLS und erhalten keine Client-Policies. Zugriff ist ausschließlich über die Edge Function mit serverseitigem Service-Role-Key vorgesehen. Die tatsächlichen Datenbankänderungen sind nicht freigegeben und wurden nicht ausgeführt.
+
+**Zusätzliche Deployment-Prüfung:** Die Edge Function verwendet für diese Tabellen `supabase-js`-Abfragen über die Supabase Data API. Vor einer späteren Bereitstellung muss deshalb geprüft werden, ob die neu angelegten Tabellen in den Data-API-Einstellungen des Projekts erreichbar sind. Seit der Supabase-Änderung vom 30. Oktober 2026 werden neu angelegte Tabellen nicht mehr automatisch für die Data API freigegeben. Das ist getrennt von RLS und SQL-Berechtigungen zu prüfen.
 
 Vor dem Erstellen einer echten Migration muss die bestehende Abweichung zwischen Repository-Migrationsdateien und Live-Migrationshistorie bereinigt bzw. reproduzierbar dokumentiert werden. Bestehende Migrationen werden nicht umbenannt, erneut angewendet oder geraten.
 
@@ -119,3 +121,10 @@ Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden
 - Offline-Betrieb, Wiederholungsversuche und Versionswechsel des Cloud-Snapshots.
 
 Es wurden keine produktiven Tabellen verändert und keine Edge Function deployed. Der Quellcode ist daher als vorbereitete Implementierung, nicht als betriebsbereite Verbindung zu verstehen.
+
+
+## 7. Offene Punkte
+
+- Vor einem Deployment die Erreichbarkeit der neuen Tabellen über die Data API prüfen; RLS und SQL-Grants allein garantieren keine API-Exposition.
+- Die korrigierte SQL-Datei ist weiterhin nur ein Entwurf und wurde nicht gegen die Live-Datenbank ausgeführt.
+
