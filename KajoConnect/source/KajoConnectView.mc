@@ -25,7 +25,6 @@ class KajoConnectView extends WatchUi.View {
     var mPlanRowHeight = 0;
     var mPlanStartIndex = 0;
     var mApi as KajoConnectApi;
-    var mSyncStarted as Lang.Boolean = false;
     var mSyncStatus as Lang.String = "NICHT MIT KAJO VERBUNDEN";
     var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
 
@@ -35,10 +34,7 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function onShow() as Void {
-        if (!mSyncStarted) {
-            mSyncStarted = true;
-            syncFromKajo();
-        }
+        syncFromKajo();
     }
 
     function padDatePart(value as Lang.Number) as Lang.String {
