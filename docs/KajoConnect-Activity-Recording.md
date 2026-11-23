@@ -19,12 +19,13 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät ges
 
 ## 2. Trainingsübersicht
 
-- Ein Eintrag aus der Trainingsliste auf dem Startbildschirm öffnet eine eigene Trainingsübersicht.
-- Die Detailansicht ist für vollständige Einheits-Dictionaries mit den KAJO-Feldern `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc vorbereitet.
+- Die Startansicht lädt geplante Einheiten über den gekoppelten Geräte-Endpunkt aus `user_data.data.planned`.
+- Übertragen werden `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc`.
 - Die Detailansicht zeigt Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
-- Der Menüeintrag „Trainingsübersicht“ öffnet derzeit eine Platzhalteransicht und keine echte Liste geplanter Einheiten.
+- Der Menüeintrag „Trainingsübersicht“ ist weiterhin eine Platzhalteransicht und keine eigenständige Liste geplanter Einheiten.
+- Der zuletzt synchronisierte Trainingsplan wird lokal in `Toybox.Application.Storage` zwischengespeichert und bleibt bei fehlender Verbindung als Offline-Ansicht verfügbar.
 
-**Wichtige Abgrenzung:** Die geplanten Einheiten werden noch nicht an KAJO Connect übertragen. Die Trainingsübersicht ist daher noch nicht mit echten KAJO-Trainingsdaten befüllt. Die Anzeige der Felder ist vorbereitet, die Datenübergabe fehlt. Eine strukturierte Intervall-/Schrittfolge ist im geprüften Planungsmodul nicht belegt und wird nicht erfunden.
+**Wichtige Abgrenzung:** Die Intervall-/Schrittstruktur wird nicht übertragen, solange sie nicht in tatsächlich gespeicherten Planobjekten belegt ist. Die Kopplungs- und Synchronisierungslogik ist im Branch vorbereitet, aber noch nicht kompiliert, deployed oder am Gerät getestet.
 
 ## 3. Bedienung und Aufzeichnung
 
@@ -36,12 +37,12 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät ges
 
 ## 4. Noch offen
 
-- Synchronisierung der geplanten KAJO-Einheit samt Metadaten zur Uhr.
+- Automatische Aktualisierung des Trainingsplans beim Anzeigen der Startseite ist im Branch vorbereitet; Verbindung und Offline-Cache sind noch nicht end-to-end getestet.
 - Darstellung strukturierter Intervalle, sobald ein entsprechendes Datenmodell in KAJO existiert.
 - Freies Anordnen und individuelles Bearbeiten einzelner Kennzahlen innerhalb einer Datenseite.
-- Übergabe der in KAJO berechneten Herzfrequenzzonen an die Uhr (Anzeige und Zonenzuordnung sind vorbereitet, die Datenübergabe fehlt).
+- Übergabe der in KAJO berechneten Herzfrequenzzonen an die Uhr ist im Branch angebunden; korrekte Anzeige und Zonenzuordnung müssen noch im Build und am Gerät geprüft werden.
 - Hardware-Tastensteuerung ist im Branch implementiert; die tatsächliche Tastenbelegung muss noch auf Venu 3S und Venu 2 Plus geprüft werden.
-- Automatischer Upload nach KAJO, Pairing und Offline-Queue.
+- Direkter Upload von FIT-Daten zur KAJO-API und eine Upload-Queue sind nicht implementiert. Pairing und lesende Synchronisierung sind im Branch vorbereitet.
 
 ## 5. Test
 
@@ -61,11 +62,11 @@ Die Startansicht kann vollständige geplante Einheiten als `Lang.Dictionary` ent
 - `id`, `date`, `name`, `type`
 - `duration`, `targetTss`, `category`, `desc`
 
-Beim Öffnen einer Einheit zeigt die Detailansicht Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und Beschreibung an. Ruhetage werden gesondert dargestellt. Die Datenzufuhr über die noch zu implementierende Geräte-Kopplung ist davon getrennt und noch nicht aktiv.
+Beim Öffnen einer Einheit zeigt die Detailansicht Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und Beschreibung an. Ruhetage werden gesondert dargestellt. Die Datenzufuhr erfolgt über den im Branch vorbereiteten Geräte-Endpunkt. Deployment, Datenbanktabellen und End-to-End-Test stehen noch aus.
 
 
 ## Herzfrequenzzonen während der Aktivität
 
 Die Aktivitätsansicht kann die vier oberen Herzfrequenzgrenzen aus KAJO übernehmen. Die Uhr ordnet den aktuellen Garmin-Herzfrequenzwert anhand dieser Grenzen Z1 bis Z5 zu und zeigt Zone sowie eine fünfteilige Balkenanzeige auf der Übersichts- und Herzfrequenzseite.
 
-Die Uhr berechnet weder eine eigene HFmax noch eine eigene Ruhe-HF oder ein alternatives Zonenmodell. KAJO bleibt für die adaptive Ruhe-HF (Median gültiger Garmin-Ruhe-HF-Tageswerte im konfigurierten Rückblick, mit Profil-Ruhe-HF als gekennzeichnetem Fallback) und die Karvonen-Grenzen bei 60/70/80/90 % der Herzfrequenzreserve verantwortlich. Die Datenübergabe über die Geräte-Synchronisierung ist noch nicht angebunden; ohne gültige Grenzen wird „ZONE --“ angezeigt.
+Die Uhr berechnet weder eine eigene HFmax noch eine eigene Ruhe-HF oder ein alternatives Zonenmodell. KAJO bleibt für die adaptive Ruhe-HF (Median gültiger Garmin-Ruhe-HF-Tageswerte im konfigurierten Rückblick, mit Profil-Ruhe-HF als gekennzeichnetem Fallback) und die Karvonen-Grenzen bei 60/70/80/90 % der Herzfrequenzreserve verantwortlich. Die Grenzen werden über den im Branch vorbereiteten Geräte-Sync übernommen und für das aktuelle lokale Datum gespeichert. Ohne gültige Grenzen wird „ZONE --“ angezeigt. Build und Gerätetest stehen noch aus.
