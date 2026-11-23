@@ -31,17 +31,33 @@ function normalizeDisplayLayouts(value) {
     return [0, 1, 2].map(index => {
         const layout = source[index] && typeof source[index] === 'object' ? source[index] : {};
         const seen = new Set();
-        const metrics = (Array.isArray(layout.metrics) ? layout.metrics : [])
+        const rawMetrics = (Array.isArray(layout.metrics) ? layout.metrics : [])
             .filter(metric => {
                 if (!metric || typeof metric.id !== 'string' || !allowed.has(metric.id) || seen.has(metric.id)) return false;
                 seen.add(metric.id);
                 return true;
             })
-            .slice(0, 4)
-            .map(metric => ({
+            .slice(0, 4);
+        const defaultPositions = rawMetrics.length === 1 ? [4]
+            : rawMetrics.length === 2 ? [0, 1]
+            : rawMetrics.length === 3 ? [0, 1, 4] : [0, 1, 2, 3];
+        const usedPositions = new Set();
+        const metrics = rawMetrics.map((metric, metricIndex) => {
+            let position = Number.isInteger(metric.position) && metric.position >= 0 && metric.position <= 4
+                ? metric.position : defaultPositions[metricIndex];
+            if (usedPositions.has(position)) {
+                position = defaultPositions[metricIndex];
+                if (usedPositions.has(position)) {
+                    position = [0, 1, 2, 3, 4].find(candidate => !usedPositions.has(candidate));
+                }
+            }
+            usedPositions.add(position);
+            return {
                 id: metric.id,
-                size: ['small', 'medium', 'large'].includes(metric.size) ? metric.size : 'medium'
-            }));
+                size: ['small', 'medium', 'large'].includes(metric.size) ? metric.size : 'medium',
+                position
+            };
+        });
         return {
             id: 'layout-' + (index + 1),
             name: 'Datenseite ' + (index + 1),
@@ -96,7 +112,7 @@ export function renderKajoConnectDisplayConfig() {
     root.appendChild(tabs);
 
     const description = createConfigElement('p', 'text-xs leading-relaxed text-slate-400',
-        'Wähle bis zu vier Kennzahlen. Reihenfolge und Größe gelten nur für diese Datenseite.');
+        'Wähle bis zu vier Kennzahlen. Größe und Position lassen sich für jedes Feld separat festlegen.');
     root.appendChild(description);
 
     const list = createConfigElement('div', 'space-y-2');
@@ -138,6 +154,26 @@ export function renderKajoConnectDisplayConfig() {
                 layout.metrics[selectedIndex].size = size.value;
             });
             controls.appendChild(size);
+
+            const position = document.createElement('select');
+            position.className = 'min-w-28 rounded-md border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-white';
+            [['0', 'Oben links'], ['1', 'Oben rechts'], ['2', 'Unten links'], ['3', 'Unten rechts'], ['4', 'Unten Mitte']].forEach(([value, title]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = title;
+                position.appendChild(option);
+            });
+            position.value = String(layout.metrics[selectedIndex].position);
+            position.setAttribute('aria-label', label + ' – Position');
+            position.addEventListener('change', () => {
+                const nextPosition = Number(position.value);
+                const occupied = layout.metrics.findIndex((metric, index) => index !== selectedIndex && metric.position === nextPosition);
+                const oldPosition = layout.metrics[selectedIndex].position;
+                layout.metrics[selectedIndex].position = nextPosition;
+                if (occupied >= 0) layout.metrics[occupied].position = oldPosition;
+                renderKajoConnectDisplayConfig();
+            });
+            controls.appendChild(position);
 
             [['↑', -1, 'Nach oben'], ['↓', 1, 'Nach unten']].forEach(([symbol, direction, title]) => {
                 const move = createConfigElement('button', 'rounded-md border border-slate-700 px-2.5 py-2 text-xs text-slate-200 hover:bg-slate-800', symbol);
