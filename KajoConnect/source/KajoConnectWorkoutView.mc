@@ -115,7 +115,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
                 drawCentered(dc, center, unit * 0.845, lineThree, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             }
 
-            var lineFour = cooldown.length() > 0 ? "ABW.: " + cooldown : "INTENSITAET: " + intensity;
+            var lineFour = cooldown.length() > 0 ? "ABW.: " + cooldown : "";
             if (lineFour.length() > 72) { lineFour = lineFour.substring(0, 69) + "..."; }
             if (lineFour.length() > 0) {
                 drawCentered(dc, center, unit * 0.885, lineFour, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
