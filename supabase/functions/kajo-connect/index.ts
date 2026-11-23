@@ -203,7 +203,7 @@ function safePlannedSession(value: unknown): PlannedSession | null {
     duration: typeof session.duration === "number" || typeof session.duration === "string" ? session.duration : null,
     targetTss: typeof session.targetTss === "number" || typeof session.targetTss === "string" ? session.targetTss : null,
     category: typeof session.category === "string" ? session.category.slice(0, 80) : null,
-    desc: typeof session.desc === "string" ? session.desc.slice(0, 1000) : null,
+    desc: typeof session.desc === "string" ? session.desc.slice(0, 500) : null,
   };
 }
 
@@ -406,7 +406,7 @@ Deno.serve(async (request) => {
         .filter((session): session is PlannedSession => session !== null)
         .filter((session) => session.date >= addDays(localDate, -1) && session.date <= addDays(localDate, 14))
         .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 40);
+        .slice(0, 30);
 
       const profile = data.profile && typeof data.profile === "object" ? data.profile as JsonRecord : {};
       const settings = data.settings && typeof data.settings === "object" ? data.settings as JsonRecord : {};
