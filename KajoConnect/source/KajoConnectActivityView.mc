@@ -73,7 +73,7 @@ class KajoConnectActivityView extends WatchUi.View {
             (info.month < 10 ? "0" : "") + info.month.toString() + "-" +
             (info.day < 10 ? "0" : "") + info.day.toString();
         var planned = sessions as Lang.Array<Lang.Dictionary>;
-        var todaysSession = null;
+        var todayIndex = -1;
         var todayCount = 0;
 
         for (var i = 0; i < planned.size(); i += 1) {
@@ -81,7 +81,7 @@ class KajoConnectActivityView extends WatchUi.View {
             var sessionDate = session["date"];
             if (sessionDate != null && sessionDate.toString() == today) {
                 todayCount += 1;
-                todaysSession = session;
+                todayIndex = i;
             }
         }
 
@@ -93,7 +93,7 @@ class KajoConnectActivityView extends WatchUi.View {
         }
 
         mCurrentWorkoutState = "PLANNED";
-        var selected = todaysSession as Lang.Dictionary;
+        var selected = planned[todayIndex] as Lang.Dictionary;
         if (selected["name"] != null) { mCurrentWorkoutName = selected["name"].toString(); }
         if (selected["type"] != null) { mCurrentWorkoutType = selected["type"].toString(); }
         if (selected["duration"] != null) { mCurrentWorkoutDuration = selected["duration"].toString(); }
