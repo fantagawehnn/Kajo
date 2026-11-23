@@ -372,7 +372,6 @@ class KajoConnectView extends WatchUi.View {
 
         var cx = mWidth / 2;
         var todaySessions = getTodaysSessions();
-        var hasTrainingToday = todaySessions.size() > 0;
 
         // Feiner cyanfarbener Randbogen oben links als AMOLED-Detail.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
