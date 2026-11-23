@@ -1062,9 +1062,11 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawPageHeader(dc, "BEREIT");
-            var readyPanelX = mUnit * 0.14;
-            var readyPanelWidth = mUnit * 0.72;
-            drawDashboardPanel(dc, readyPanelX, mUnit * 0.29, readyPanelWidth, mUnit * 0.24);
+            var readyPanelY = mUnit * 0.29;
+            var readyPanelHeight = mUnit * 0.24;
+            var readyPanelWidth = mKajoLayout.safeRectWidth(readyPanelY, readyPanelHeight, mUnit * 0.72);
+            var readyPanelX = cx - (readyPanelWidth / 2);
+            drawDashboardPanel(dc, readyPanelX, readyPanelY, readyPanelWidth, readyPanelHeight);
             drawFit(dc, cx, mUnit * 0.335, compactWorkoutText(mCurrentWorkoutName, 30),
                 readyPanelWidth * 0.86, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
             drawFit(dc, cx, mUnit * 0.405, mBoatClass,
