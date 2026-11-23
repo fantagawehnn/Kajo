@@ -253,7 +253,8 @@ class KajoConnectActivityView extends WatchUi.View {
         if (metricId == "altitude") { return "HOEHE"; }
         if (metricId == "ascent") { return "ANSTIEG"; }
         if (metricId == "descent") { return "ABSTIEG"; }
-        return "GPS-GENAUIGKEIT";
+        if (metricId == "gpsAccuracy") { return "GPS-QUALITAET"; }
+        return "GPS-QUALITAET";
     }
 
     function getCustomMetricValue(metricId as Lang.String, values as Lang.Dictionary) as Lang.String {
@@ -269,7 +270,6 @@ class KajoConnectActivityView extends WatchUi.View {
         if (metricId == "cadence") { return "RPM"; }
         if (metricId == "power") { return "W"; }
         if (metricId == "altitude" || metricId == "ascent" || metricId == "descent") { return "M"; }
-        if (metricId == "gpsAccuracy") { return "M"; }
         return "";
     }
 
@@ -530,6 +530,17 @@ class KajoConnectActivityView extends WatchUi.View {
         return value.toString();
     }
 
+    // Garmin liefert GPS-Qualitaet als Enum (0 bis 4), nicht als Distanz in Metern.
+    function gpsQualityText(value) as Lang.String {
+        if (value == null) { return "--"; }
+        if (value == Position.QUALITY_NOT_AVAILABLE) { return "KEIN FIX"; }
+        if (value == Position.QUALITY_LAST_KNOWN) { return "LETZTER FIX"; }
+        if (value == Position.QUALITY_POOR) { return "SCHWACH"; }
+        if (value == Position.QUALITY_USABLE) { return "NUTZBAR"; }
+        if (value == Position.QUALITY_GOOD) { return "GUT"; }
+        return "--";
+    }
+
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
         var font = preferredFont;
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
@@ -653,7 +664,7 @@ class KajoConnectActivityView extends WatchUi.View {
             ascent = valueOrDash(activityInfo.totalAscent);
             descent = valueOrDash(activityInfo.totalDescent);
             gpsText = activityInfo.currentLocation != null ? "GPS AKTIV" : "GPS SUCHT";
-            gpsAccuracy = valueOrDash(activityInfo.currentLocationAccuracy);
+            gpsAccuracy = gpsQualityText(activityInfo.currentLocationAccuracy);
         }
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
