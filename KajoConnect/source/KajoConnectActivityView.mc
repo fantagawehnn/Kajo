@@ -263,6 +263,25 @@ class KajoConnectActivityView extends WatchUi.View {
             positions[metricId] = position;
             used.add(position);
         }
+
+        // Das breite zentrierte Feld (Position 4) darf nie mit einem unteren
+        // Seitenfeld (Position 2 oder 3) kollidieren.
+        var centerMetric = "";
+        var hasLowerSideMetric = false;
+        for (var i = 0; i < metrics.size() && i < 4; i += 1) {
+            var currentId = metrics[i];
+            var currentPosition = positions[currentId] as Lang.Number;
+            if (currentPosition == 4) { centerMetric = currentId; }
+            if (currentPosition == 2 || currentPosition == 3) { hasLowerSideMetric = true; }
+        }
+        if (centerMetric != "" && hasLowerSideMetric) {
+            for (var candidate = 0; candidate <= 3; candidate += 1) {
+                if (used.indexOf(candidate) < 0) {
+                    positions[centerMetric] = candidate;
+                    break;
+                }
+            }
+        }
         return positions;
     }
 
