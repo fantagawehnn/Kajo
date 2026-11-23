@@ -39,11 +39,15 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Minde
 
 Nach dem Öffnen der Startansicht ruft die Uhr über den gekoppelten Geräte-Endpunkt geplante Einheiten aus `public.user_data.data.planned` ab. Das ist dieselbe Datenquelle, die der bestehende KAJO-Cloud-Snapshot verwendet; die separate Tabelle `planned_sessions` wird nicht als neue führende Quelle eingeführt.
 
-Übertragen werden die vorhandenen Felder:
+Übertragen werden die Basisfelder:
 - `id`, `date`, `name`, `type`
 - `duration`, `targetTss`, `category`, `desc`
 
-Die Uhr lädt Einheiten von gestern bis 14 Tage in die Zukunft, maximal 30 Einträge. Beschreibungen und Textfelder werden für die begrenzte Watch-Speichergröße gekürzt. Der Menüpunkt „Trainingsübersicht“ öffnet eine paginierte Liste des lokal synchronisierten Plans. Ein Eintrag öffnet die Detailansicht mit Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
+Bei Wochenplänen, die über den bestehenden Saisonplan-Workflow in den Kalender übernommen werden, bleiben zusätzlich die getrennten Angaben `discipline`, `raceFormat`, `waterType`, `intensity`, `objective`, `warmup`, `mainSet`, `cooldown` und `notes` erhalten. Die Edge Function validiert diese optionalen Textfelder und begrenzt ihre Länge vor der Übertragung. Ältere oder manuell angelegte Kalendereinträge ohne diese Felder bleiben kompatibel.
+
+Die Uhr lädt Einheiten von gestern bis 14 Tage in die Zukunft, maximal 30 Einträge. Textfelder werden für die begrenzte Watch-Anzeige gekürzt. Der Menüpunkt „Trainingsübersicht“ öffnet eine paginierte Liste des lokal synchronisierten Plans. Ein Eintrag öffnet die Detailansicht mit Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – bei strukturiert übertragenen Wochenplänen – Rennformat/Gewässer, Ziel, Intensität, Hauptteil, Aufwärmen und Abwärmen. Die Watch-Ansicht zeigt aktuell nur kurze, gekürzte Textzeilen; längere Inhalte werden nicht vollständig dargestellt. Ruhetage werden gesondert dargestellt.
+
+Wichtig: `mainSet` ist im bestehenden KAJO-Wochenplanmodell ein Freitextfeld. Eine einzelne Intervall-/Schrittfolge mit separat definierten Belastungs- und Erholungsphasen ist damit nicht belegt und wird weiterhin nicht als strukturierte Intervallliste übertragen.
 
 Der zuletzt synchronisierte Trainingsplan wird lokal gespeichert und bleibt bei fehlender Verbindung als Offline-Ansicht verfügbar. Die Synchronisierung ist im Branch vorbereitet, aber noch nicht end-to-end getestet.
 
