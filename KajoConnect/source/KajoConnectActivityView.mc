@@ -434,8 +434,8 @@ class KajoConnectActivityView extends WatchUi.View {
         var workoutCue = compactWorkoutText(mCurrentWorkoutMainSet, 34);
         if (mCurrentWorkoutIntensity != "") {
             workoutCue = workoutCue != ""
-                ? mCurrentWorkoutIntensity + "  ·  " + workoutCue
-                 : compactWorkoutText(mCurrentWorkoutIntensity, 34);
+                ? compactWorkoutText(mCurrentWorkoutIntensity, 12) + "  ·  " + workoutCue
+                : compactWorkoutText(mCurrentWorkoutIntensity, 34);
         }
         if (workoutCue == "") { workoutCue = compactWorkoutText(mCurrentWorkoutDescription, 42); }
         if (workoutCue != "") {
