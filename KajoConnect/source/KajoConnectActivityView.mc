@@ -583,8 +583,8 @@ class KajoConnectActivityView extends WatchUi.View {
         var statusText = stepCount > 0
             ? "INTERVALL " + stepNumber.toString() + "/" + stepCount.toString() + "  •  " + compactWorkoutText(stepLabel, 18)
             : compactWorkoutText(stepLabel, 34);
-        var statusY = mUnit * 0.145;
-        var statusH = mUnit * 0.075;
+        var statusY = mUnit * 0.105;
+        var statusH = mUnit * 0.065;
         var statusW = mKajoLayout.safeRectWidth(statusY, statusH, mUnit * 0.79);
         var statusX = cx - (statusW / 2);
         dc.setColor(0x041216, Graphics.COLOR_BLACK);
@@ -611,26 +611,26 @@ class KajoConnectActivityView extends WatchUi.View {
             (activityInfo != null && activityInfo.timerTime != null
                 ? formatTime(activityInfo.timerTime) : elapsed);
         var ringCx = cx;
-        var ringCy = mUnit * 0.39;
-        var ringRadius = mUnit * 0.17;
+        var ringCy = mUnit * 0.305;
+        var ringRadius = mUnit * 0.135;
         dc.setColor(cyan, Graphics.COLOR_BLACK);
         dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
             Graphics.ARC_CLOCKWISE, 205, 335);
         dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
             Graphics.ARC_CLOCKWISE, 25, 155);
-        drawFit(dc, cx, mUnit * 0.30, timerText, mUnit * 0.66,
+        drawFit(dc, cx, mUnit * 0.245, timerText, mUnit * 0.62,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, cx + (mUnit * 0.235), mUnit * 0.315, "min",
+        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.265, "min", 
             mUnit * 0.10, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.455,
+        drawFit(dc, cx, mUnit * 0.385,
             target == "" ? "INTERVALL" : compactWorkoutText(target, 30),
             mUnit * 0.62, Graphics.FONT_SMALL, cyan);
 
         if (nextLabel != "") {
-            drawFit(dc, cx, mUnit * 0.535, compactWorkoutText(nextLabel, 42),
+            drawFit(dc, cx, mUnit * 0.445, compactWorkoutText(nextLabel, 36),
                 mUnit * 0.78, Graphics.FONT_XTINY, muted);
         } else {
-            drawFit(dc, cx, mUnit * 0.535, "TRAINING LAEUFT",
+            drawFit(dc, cx, mUnit * 0.445, "TRAINING LAEUFT", 
                 mUnit * 0.78, Graphics.FONT_XTINY, muted);
         }
 
@@ -645,22 +645,22 @@ class KajoConnectActivityView extends WatchUi.View {
             distanceMeters = numberText(activityInfo.elapsedDistance, 0);
         }
 
-        var metricTop = mUnit * 0.575;
+        var metricTop = mUnit * 0.505;
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
         dc.drawLine(cx.toNumber(), (metricTop - mUnit * 0.005).toNumber(),
-            cx.toNumber(), (mUnit * 0.715).toNumber());
+            cx.toNumber(), (mUnit * 0.655).toNumber());
         drawFit(dc, cx - (mUnit * 0.205), metricTop,
             "min/km", mUnit * 0.34, Graphics.FONT_XTINY, muted);
-        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.62,
+        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.555,
             pace, mUnit * 0.36, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.67,
+        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.615,
             "PACE", mUnit * 0.34, Graphics.FONT_XTINY, muted);
 
         drawFit(dc, cx + (mUnit * 0.205), metricTop,
             "m", mUnit * 0.34, Graphics.FONT_XTINY, muted);
-        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.62,
+        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.555,
             distanceMeters, mUnit * 0.36, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.67,
+        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.615,
             "DISTANZ", mUnit * 0.34, Graphics.FONT_XTINY, muted);
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
         dc.drawLine(left.toNumber(), (mUnit * 0.715).toNumber(),
@@ -669,12 +669,12 @@ class KajoConnectActivityView extends WatchUi.View {
         // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
         dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
         var heartFont = mKajoLayout.fontForPercent(dc, 0.055);
-        var heartY = Math.round(mKajoLayout.safeTextY(mUnit * 0.715, dc.getFontHeight(heartFont))).toNumber();
+        var heartY = Math.round(mKajoLayout.safeTextY(mUnit * 0.665, dc.getFontHeight(heartFont))).toNumber();
         dc.drawText((mUnit * 0.16).toNumber(), heartY.toNumber(),
             heartFont, "♥", Graphics.TEXT_JUSTIFY_CENTER);
-        drawFit(dc, mUnit * 0.34, mUnit * 0.71, hrNow,
+        drawFit(dc, mUnit * 0.34, mUnit * 0.665, hrNow,
             mUnit * 0.25, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, mUnit * 0.43, mUnit * 0.725, "bpm",
+        drawFit(dc, mUnit * 0.43, mUnit * 0.68, "bpm", 
             mUnit * 0.16, Graphics.FONT_XTINY, muted);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
@@ -685,26 +685,19 @@ class KajoConnectActivityView extends WatchUi.View {
         for (var z = 0; z < 5; z += 1) {
             var zx = barLeft + (z * (segmentWidth + gap));
             dc.setColor(zoneColors[z], Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(zx.toNumber(), (mUnit * 0.765).toNumber(),
+            dc.fillRoundedRectangle(zx.toNumber(), (mUnit * 0.735).toNumber(),
                 segmentWidth.toNumber(), (mUnit * 0.018).toNumber(),
                 (mUnit * 0.009).toNumber());
         }
         if (zone > 0 && zone <= 5) {
-            drawFit(dc, mUnit * 0.36, mUnit * 0.795, "ZONE " + zone.toString(),
+            drawFit(dc, mUnit * 0.36, mUnit * 0.755, "ZONE " + zone.toString(), 
                 mUnit * 0.35, Graphics.FONT_XTINY, zoneColors[zone - 1]);
         } else {
-            drawFit(dc, mUnit * 0.36, mUnit * 0.795, "ZONE --",
+            drawFit(dc, mUnit * 0.36, mUnit * 0.755, "ZONE --", 
                 mUnit * 0.35, Graphics.FONT_XTINY, muted);
         }
 
-        dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
-        dc.drawLine((mUnit * 0.64).toNumber(), (mUnit * 0.715).toNumber(),
-            (mUnit * 0.64).toNumber(), (mUnit * 0.82).toNumber());
-        drawFit(dc, mUnit * 0.77, mUnit * 0.725, "› PAUSE",
-            mUnit * 0.27, Graphics.FONT_XTINY, muted);
-        drawFit(dc, mUnit * 0.77, mUnit * 0.765,
-            nextLabel == "" ? "--:--" : compactWorkoutText(nextLabel, 15),
-            mUnit * 0.27, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+        // Untere rechte Ecke bleibt frei, damit die runde Displaykante nichts abschneidet.
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
