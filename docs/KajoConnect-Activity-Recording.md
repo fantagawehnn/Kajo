@@ -28,8 +28,9 @@ Die KAJO-Web-App speichert geplante Einheiten mit den Feldern `id`, `date`, `nam
 ## 3. Bedienung und Aufzeichnung
 
 - Datenseiten während der Aufzeichnung vertikal nach oben/unten wechseln.
-- „RUNDE“ fügt einen FIT-Lap hinzu.
-- „ENDE“ beendet die Aufzeichnung und speichert die FIT-Datei.
+- Obere physische Taste (`KEY_ENTER` bzw. `KEY_START`): startet die Aufzeichnung beziehungsweise beendet und speichert sie.
+- Untere physische Taste (`KEY_ESC`): fügt während der Aufzeichnung einen FIT-Lap hinzu; außerhalb einer Aufzeichnung bleibt die normale Zurück-Funktion erhalten.
+- Die Touch-Schaltflächen „RUNDE“ und „ENDE“ bleiben als zusätzliche Bedienmöglichkeit verfügbar.
 - Bootsklasse wird im Startmenü ausgewählt und nicht als Aktivitätsüberschrift angezeigt.
 
 ## 4. Noch offen
@@ -38,7 +39,7 @@ Die KAJO-Web-App speichert geplante Einheiten mit den Feldern `id`, `date`, `nam
 - Darstellung strukturierter Intervalle, sobald ein entsprechendes Datenmodell in KAJO existiert.
 - Freies Anordnen und individuelles Bearbeiten einzelner Kennzahlen innerhalb einer Datenseite.
 - Herzfrequenzzonen aus dem KAJO-Athletenprofil.
-- Hardware-Tastensteuerung für Start/Stop und Runde.
+- Hardware-Tastensteuerung ist im Branch implementiert; die tatsächliche Tastenbelegung muss noch auf Venu 3S und Venu 2 Plus geprüft werden.
 - Automatischer Upload nach KAJO, Pairing und Offline-Queue.
 
 ## 5. Test
