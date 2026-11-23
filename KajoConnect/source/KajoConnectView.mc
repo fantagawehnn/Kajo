@@ -284,10 +284,16 @@ class KajoConnectView extends WatchUi.View {
     // Zeigt vor dem Aufzeichnen die Detailansicht der ausgewaehlten Einheit.
     function showWorkoutDetails(workout as Lang.Dictionary) as Void {
         WatchUi.pushView(
-            new KajoConnectWorkoutView(workout),
-            new KajoConnectWorkoutDelegate(),
+            new KajoConnectWorkoutView(workout, self),
+            new KajoConnectWorkoutDelegate(null),
             WatchUi.SLIDE_UP
         );
+    }
+
+    // Startet die ausgewaehlte Einheit direkt aus ihrer Vorschau.
+    function beginWorkout(workout as Lang.Dictionary) as Void {
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
+        openActivityView(workout);
     }
 
     // Wird von der Auswahlansicht aufgerufen, nachdem eine Einheit angetippt wurde.
