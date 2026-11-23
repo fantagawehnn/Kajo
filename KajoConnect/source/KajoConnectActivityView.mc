@@ -18,12 +18,30 @@ class KajoConnectActivityView extends WatchUi.View {
     var mScreenHeight = 0;
     var mPage = 0;
     var mPageCount = 5;
+    var mEnabledPageIds as Lang.Array<Lang.Number> = [0, 1, 2, 3, 4];
+    var mCurrentPageId = 0;
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
         mBoatClass = boatClass;
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
+        loadDisplayPages();
+    }
+
+    function loadDisplayPages() as Void {
+        mEnabledPageIds = [];
+        for (var i = 0; i < 5; i += 1) {
+            var savedValue = getApp().getProperty("kajoDisplayPage" + i.toString());
+            if (savedValue == null || (savedValue as Lang.Boolean)) {
+                mEnabledPageIds.add(i);
+            }
+        }
+        if (mEnabledPageIds.size() == 0) {
+            mEnabledPageIds = [0];
+        }
+        mPageCount = mEnabledPageIds.size();
+        mPage = 0;
     }
 
     function startRecording() as Void {
@@ -198,6 +216,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mScreenHeight = dc.getHeight();
 
         var centerX = mScreenWidth / 2;
+        mCurrentPageId = mEnabledPageIds[mPage] as Lang.Number;
         var activityInfo = null;
 
         if (mStatus == "AUFZEICHNUNG") {
@@ -272,7 +291,7 @@ class KajoConnectActivityView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
             dc.drawText(centerX, mScreenHeight * 0.47, Graphics.FONT_SMALL, "Aufzeichnung starten", Graphics.TEXT_JUSTIFY_CENTER);
             dc.drawText(centerX, mScreenHeight * 0.58, Graphics.FONT_TINY, "Bootsklasse im Startmenue gewaehlt", Graphics.TEXT_JUSTIFY_CENTER);
-        } else if (mPage == 0) {
+        } else if (mCurrentPageId == 0) {
             drawPageHeader(dc, "ÜBERSICHT");
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
             dc.drawText(centerX, mScreenHeight * 0.23, Graphics.FONT_NUMBER_HOT, speedNow, Graphics.TEXT_JUSTIFY_CENTER);
@@ -280,17 +299,17 @@ class KajoConnectActivityView extends WatchUi.View {
             dc.drawText(centerX, mScreenHeight * 0.41, Graphics.FONT_SMALL, "KM/H  ·  GESCHWINDIGKEIT", Graphics.TEXT_JUSTIFY_CENTER);
             drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.55, "HERZFREQUENZ", hrNow, "BPM");
             drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.55, "ZEIT", elapsed, "");
-        } else if (mPage == 1) {
+        } else if (mCurrentPageId == 1) {
             drawPageHeader(dc, "GESCHWINDIGKEIT");
             drawMetric(dc, centerX, mScreenHeight * 0.25, "AKTUELL", speedNow, "KM/H");
             drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.57, "DURCHSCHNITT", speedAvg, "KM/H");
             drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.57, "MAXIMUM", speedMax, "KM/H");
-        } else if (mPage == 2) {
+        } else if (mCurrentPageId == 2) {
             drawPageHeader(dc, "HERZFREQUENZ");
             drawMetric(dc, centerX, mScreenHeight * 0.25, "AKTUELL", hrNow, "BPM");
             drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.57, "DURCHSCHNITT", hrAvg, "BPM");
             drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.57, "MAXIMUM", hrMax, "BPM");
-        } else if (mPage == 3) {
+        } else if (mCurrentPageId == 3) {
             drawPageHeader(dc, "DISTANZ & ZEIT");
             drawMetric(dc, centerX, mScreenHeight * 0.25, "DISTANZ", distance, "KM");
             drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.57, "ZEIT", elapsed, "");
