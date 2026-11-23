@@ -69,6 +69,9 @@ Use a dedicated test account first. Do not test with production user data until 
 5. [ ] The KAJO web app lists the paired watch.
 6. [ ] Revoking the watch prevents subsequent sync requests.
 7. [ ] A sixth active device is rejected for the same account.
+8. [ ] A pending pairing is resumed after closing and reopening the pairing view or restarting the app.
+9. [ ] If the app is reopened during an active FIT recording, the existing Garmin session is reused rather than discarded or replaced.
+10. [ ] If FIT saving fails after stopping, the activity view blocks accidental exit and allows a save retry.
 
 A successful deployment or compilation alone is not proof of these behaviors.
 
