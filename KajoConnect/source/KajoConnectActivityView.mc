@@ -32,6 +32,9 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCustomMetricSizes0 as Lang.Dictionary = {};
     var mCustomMetricSizes1 as Lang.Dictionary = {};
     var mCustomMetricSizes2 as Lang.Dictionary = {};
+    var mCustomMetricPositions0 as Lang.Dictionary = {};
+    var mCustomMetricPositions1 as Lang.Dictionary = {};
+    var mCustomMetricPositions2 as Lang.Dictionary = {};
     var mCustomPageCount as Lang.Number = 0;
     // KAJO liefert die vier oberen Zonengrenzen; die Uhr berechnet keine eigenen Zonen.
     var mHeartRateZones as Lang.Array<Lang.Number> = [];
@@ -62,6 +65,9 @@ class KajoConnectActivityView extends WatchUi.View {
         mCustomMetricSizes0 = loadMetricSizes(0, mCustomMetricIds, mLargeMetricId);
         mCustomMetricSizes1 = loadMetricSizes(1, mCustomMetricIds1, mLargeMetricId1);
         mCustomMetricSizes2 = loadMetricSizes(2, mCustomMetricIds2, mLargeMetricId2);
+        mCustomMetricPositions0 = loadMetricPositions(0, mCustomMetricIds);
+        mCustomMetricPositions1 = loadMetricPositions(1, mCustomMetricIds1);
+        mCustomMetricPositions2 = loadMetricPositions(2, mCustomMetricIds2);
         mCustomPageCount = 0;
         if (mCustomMetricIds.size() > 0) { mCustomPageCount += 1; }
         if (mCustomMetricIds1.size() > 0) { mCustomPageCount += 1; }
@@ -77,6 +83,37 @@ class KajoConnectActivityView extends WatchUi.View {
         }
         if (savedMetrics == null) { return []; }
         return savedMetrics as Lang.Array<Lang.String>;
+    }
+
+    function loadMetricPositions(layoutIndex as Lang.Number, metrics as Lang.Array<Lang.String>) as Lang.Dictionary {
+        var saved = Storage.getValue("kajoMetricPositions" + layoutIndex.toString());
+        var positions = {};
+        if (saved != null) { positions = saved as Lang.Dictionary; }
+        var defaults = metrics.size() == 1 ? [4]
+            : metrics.size() == 2 ? [0, 1]
+            : metrics.size() == 3 ? [0, 1, 4] : [0, 1, 2, 3];
+        var used = [];
+        for (var i = 0; i < metrics.size() && i < 4; i += 1) {
+            var metricId = metrics[i];
+            var position = positions[metricId];
+            if (position == null || position < 0 || position > 4 || used.indexOf(position) >= 0) {
+                position = defaults[i];
+            }
+            if (used.indexOf(position) >= 0) {
+                for (var candidate = 0; candidate <= 4; candidate += 1) {
+                    if (used.indexOf(candidate) < 0) { position = candidate; break; }
+                }
+            }
+            positions[metricId] = position;
+            used.add(position);
+        }
+        return positions;
+    }
+
+    function getCustomMetricPositions(layoutIndex as Lang.Number) as Lang.Dictionary {
+        if (layoutIndex == 0) { return mCustomMetricPositions0; }
+        if (layoutIndex == 1) { return mCustomMetricPositions1; }
+        return mCustomMetricPositions2;
     }
 
     function loadLargeMetricId(layoutIndex as Lang.Number, metrics as Lang.Array<Lang.String>) as Lang.String {
@@ -216,27 +253,23 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawCustomMetricPage(dc as Dc, cx, values as Lang.Dictionary,
-        metricIds as Lang.Array<Lang.String>, metricSizes as Lang.Dictionary, pageTitle as Lang.String) as Void {
+        metricIds as Lang.Array<Lang.String>, metricSizes as Lang.Dictionary,
+        metricPositions as Lang.Dictionary, pageTitle as Lang.String) as Void {
         drawPageHeader(dc, pageTitle);
-        var count = metricIds.size();
-        for (var i = 0; i < count && i < 4; i += 1) {
-            var x = cx;
-            var y = mUnit * 0.40;
-            var width = mUnit * 0.68;
-            if (count == 2) {
-                x = mScreenWidth * (i == 0 ? 0.30 : 0.70);
-                width = mUnit * 0.39;
-                y = mUnit * 0.44;
-            } else if (count == 3 && i == 2) {
-                x = cx;
-                width = mUnit * 0.68;
-                y = mUnit * 0.56;
-            } else if (count >= 3) {
-                x = mScreenWidth * ((i % 2) == 0 ? 0.30 : 0.70);
-                width = mUnit * 0.39;
-                y = mUnit * (i < 2 ? 0.32 : 0.56);
-            }
+        for (var i = 0; i < metricIds.size() && i < 4; i += 1) {
             var metricId = metricIds[i];
+            var position = metricPositions[metricId];
+            if (position == null) { position = i; }
+            var x = mScreenWidth * 0.30;
+            var y = mUnit * 0.32;
+            var width = mUnit * 0.39;
+            if (position == 1 || position == 3) { x = mScreenWidth * 0.70; }
+            if (position == 2 || position == 3) { y = mUnit * 0.56; }
+            if (position == 4) {
+                x = cx;
+                y = mUnit * 0.56;
+                width = mUnit * 0.68;
+            }
             var fieldSize = getMetricSize(metricId, metricSizes);
             var valueFont = getMetricFont(fieldSize);
             drawCustomMetric(dc, cx, metricId, values, x, y, width, valueFont);
@@ -565,7 +598,8 @@ class KajoConnectActivityView extends WatchUi.View {
             var customLayoutIndex = mCurrentPageId - 5;
             var customPageTitle = "MEINE DATEN " + (customLayoutIndex + 1).toString();
             drawCustomMetricPage(dc, cx, customMetricValues,
-                getCustomMetricIds(customLayoutIndex), getCustomMetricSizes(customLayoutIndex), customPageTitle);
+                getCustomMetricIds(customLayoutIndex), getCustomMetricSizes(customLayoutIndex),
+                getCustomMetricPositions(customLayoutIndex), customPageTitle);
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.245, "KADENZ", cadenceNow, "RPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
