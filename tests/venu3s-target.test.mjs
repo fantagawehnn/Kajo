@@ -7,6 +7,7 @@ const buildScript = readFileSync(new URL("../KajoConnect/build.ps1", import.meta
 const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityDelegate.mc", import.meta.url), "utf8");
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
+const homeView = readFileSync(new URL("../KajoConnect/source/KajoConnectView.mc", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -81,4 +82,26 @@ test("Activity screen avoids status text overlapping the bottom touch controls",
   assert.doesNotMatch(activityView, /mUnit \* 0\.805, mStatus/);
   assert.match(activityView, /mStatus == "START FEHLGESCHLAGEN" \? "START FEHLGESCHLAGEN" : "BEREIT"/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
+});
+
+
+test("home screen shows only today's non-rest-day sessions and has separate planned/free activity actions", () => {
+  assert.match(homeView, /function getTodaysSessions\(\)/);
+  assert.match(homeView, /sessionDate\.toString\(\) == today/);
+  assert.match(homeView, /sessionType\.toString\(\) != "RestDay"/);
+  assert.match(homeView, /var todaySessions = getTodaysSessions\(\)/);
+  assert.match(homeView, /"TRAINING STARTEN"/);
+  assert.match(homeView, /"TRAINING AUSWAEHLEN"/);
+  assert.match(homeView, /"FREIE AKTIVITAET"/);
+  assert.match(homeView, /"AKTIVITAET STARTEN"/);
+  assert.doesNotMatch(homeView, /Noch keine Einheit angezeigt/);
+  assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
+});
+
+test("home screen uses compact conditional layout with a single primary action", () => {
+  assert.match(homeView, /if \(hasTrainingToday\)/);
+  assert.match(homeView, /mStartTop = startY/);
+  assert.match(homeView, /mFreeTop = mUnit \* 0\.80/);
+  assert.match(homeView, /mFreeTop = -1/);
+  assert.match(homeView, /drawCentered\(dc, cx, mUnit \* 0\.93, "MENUE"/);
 });
