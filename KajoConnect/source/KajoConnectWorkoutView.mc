@@ -5,14 +5,14 @@ import Toybox.WatchUi;
 
 class KajoConnectWorkoutView extends WatchUi.View {
 
-    var mLayout as KajoLayout;
+    var mKajoLayout as KajoLayout;
 
     var mWorkout as Lang.Dictionary;
     var mParent as KajoConnectView;
 
     function initialize(workout as Lang.Dictionary, parent as KajoConnectView) {
         View.initialize();
-        mLayout = new KajoLayout();
+        mKajoLayout = new KajoLayout();
         mWorkout = workout;
         mParent = parent;
     }
@@ -47,15 +47,15 @@ class KajoConnectWorkoutView extends WatchUi.View {
     }
 
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
+        var font = mKajoLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
         while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
         if (displayText == "" || safeWidth <= 0) { return; }
-        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
+        var safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(x.toNumber(), safeY.toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -70,7 +70,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var height = dc.getHeight();
         var unit = width;
         if (height < unit) { unit = height; }
-        mLayout.configure(width, height);
+        mKajoLayout.configure(width, height);
         var center = width / 2;
         var contentWidth = unit * 0.78;
 
@@ -106,7 +106,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
 
         var cardTop = unit * 0.17;
         var cardHeight = unit * 0.14;
-        var cardWidth = mLayout.safeRectWidth(cardTop, cardHeight, unit * 0.76);
+        var cardWidth = mKajoLayout.safeRectWidth(cardTop, cardHeight, unit * 0.76);
         var cardLeft = center - (cardWidth / 2);
         dc.setColor(0x05181C, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(cardLeft.toNumber(),
@@ -182,7 +182,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
         mStartTop = (unit * 0.78).toNumber();
         mStartBottom = (unit * 0.87).toNumber();
         var startHeight = mStartBottom - mStartTop;
-        var startWidth = mLayout.safeRectWidth(mStartTop, startHeight, unit * 0.62);
+        var startWidth = mKajoLayout.safeRectWidth(mStartTop, startHeight, unit * 0.62);
         var startLeft = center - (startWidth / 2);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(startLeft.toNumber(),
