@@ -35,20 +35,28 @@ class KajoLayout {
         return 0.028;
     }
 
-    function fontForPercent(dc as Dc, percent as Lang.Float) {
-        // Einheitliche, kleine UI-Schrift fuer alle Beschriftungen.
-        // Garmin-Fontgroessen sind auf dem Venu 3S deutlich hoeher als
-        // die Prozentwerte vermuten lassen. Deshalb keine dynamische
-        // Auswahl grosser Fonts mehr fuer normale Textzeilen.
-        if (percent >= 0.060) { return Graphics.FONT_SMALL; }
-        return Graphics.FONT_XTINY;
-    }
-
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        var font = fontForPercent(dc, fontPercent(preferredFont));
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        // Immer mit der angeforderten Schrift beginnen und nur kleiner werden.
+        // Die vorherige Logik konnte von XTINY auf SMALL vergroessern, wenn
+        // eine Zeile zu breit war. Das war kontraproduktiv und beguenstigte
+        // Ueberlagerungen in den kompakten Bereichen des runden Displays.
+        var font = preferredFont;
+        if (dc.getTextWidthInPixels(text, font) <= maxWidth) { return font; }
+
+        if (font == Graphics.FONT_NUMBER_HOT ||
+            font == Graphics.FONT_NUMBER_MEDIUM ||
+            font == Graphics.FONT_LARGE ||
+            font == Graphics.FONT_MEDIUM) {
+            font = Graphics.FONT_SMALL;
+            if (dc.getTextWidthInPixels(text, font) <= maxWidth) { return font; }
+        }
+
+        if (font != Graphics.FONT_TINY && font != Graphics.FONT_XTINY) {
+            font = Graphics.FONT_TINY;
+            if (dc.getTextWidthInPixels(text, font) <= maxWidth) { return font; }
+        }
+
+        font = Graphics.FONT_XTINY;
         return font;
     }
 
