@@ -238,7 +238,7 @@ Deno.serve(async (request) => {
       const user = await authenticatedUser(request);
       if (!user) return json(401, { error: "An authenticated KAJO account is required." });
       const code = typeof body.code === "string" ? body.code.replace(/\s/g, "") : "";
-      if (!/^\\d{12}$/.test(code)) return json(400, { error: "The pairing code must contain twelve digits." });
+      if (!/^\d{12}$/.test(code)) return json(400, { error: "The pairing code must contain twelve digits." });
 
       const { data: pairing, error: lookupError } = await admin
         .from("kajo_connect_pairing_requests")
@@ -288,7 +288,7 @@ Deno.serve(async (request) => {
     if (action === "poll-pairing") {
       const code = typeof body.code === "string" ? body.code.replace(/\s/g, "") : "";
       const pollSecret = typeof body.pollSecret === "string" ? body.pollSecret : "";
-      if (!/^\\d{12}$/.test(code) || !/^[a-f0-9]{64}$/.test(pollSecret)) {
+      if (!/^\d{12}$/.test(code) || !/^[a-f0-9]{64}$/.test(pollSecret)) {
         return json(400, { error: "Invalid pairing credentials." });
       }
 
