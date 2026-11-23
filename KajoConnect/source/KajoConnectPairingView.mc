@@ -193,6 +193,25 @@ class KajoConnectPairingView extends WatchUi.View {
         return mCode.substring(0, 4) + " " + mCode.substring(4, 8) + " " + mCode.substring(8, 12);
     }
 
+    function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
+        var font = preferredFont;
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        var displayText = text;
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+            if (displayText.length() <= 4) { displayText = ""; }
+            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
+        }
+        if (displayText == "") { return; }
+        var safeY = y;
+        var textHeight = dc.getFontHeight(font);
+        if (safeY < 2) { safeY = 2; }
+        if (safeY + textHeight > dc.getHeight() - 2) { safeY = dc.getHeight() - textHeight - 2; }
+        dc.setColor(color, Graphics.COLOR_BLACK);
+        dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
     function onUpdate(dc as Dc) as Void {
         dc.clear();
         var width = dc.getWidth();
@@ -202,26 +221,27 @@ class KajoConnectPairingView extends WatchUi.View {
         var center = width / 2;
         var contentWidth = unit * 0.78;
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(center, unit * 0.13, Graphics.FONT_LARGE, "KAJO", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(center, unit * 0.25, Graphics.FONT_SMALL, "UHR KOPPELN", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, center, unit * 0.13, "KAJO", contentWidth, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+        drawFit(dc, center, unit * 0.25, "UHR KOPPELN", contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
 
         if (mCode.length() > 0 && !mPaired) {
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            var codeFont = Graphics.FONT_MEDIUM;
             var codeText = formatCode();
-            if (dc.getTextWidthInPixels(codeText, codeFont) > contentWidth) { codeFont = Graphics.FONT_SMALL; }
-            dc.drawText(center, unit * 0.39, codeFont, codeText, Graphics.TEXT_JUSTIFY_CENTER);
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawText(center, unit * 0.52, Graphics.FONT_XTINY, "KAJO APP OEFFNEN UND CODE EINGEBEN", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.setColor(0x07151D, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle((center - unit * 0.37).toNumber(),
+                (unit * 0.345).toNumber(), (unit * 0.74).toNumber(),
+                (unit * 0.13).toNumber(), (unit * 0.03).toNumber());
+            drawFit(dc, center, unit * 0.38, codeText, contentWidth * 0.90,
+                Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, center, unit * 0.53, "CODE IN DER KAJO APP EINGEBEN",
+                contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         } else if (mPaired) {
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawText(center, unit * 0.42, Graphics.FONT_MEDIUM, "VERBUNDEN", Graphics.TEXT_JUSTIFY_CENTER);
+            drawFit(dc, center, unit * 0.42, "VERBUNDEN",
+                contentWidth, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         }
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(center, unit * 0.68, Graphics.FONT_XTINY, mStatus, Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(center, unit * 0.89, Graphics.FONT_SMALL, "ZURUECK", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, center, unit * 0.68, mStatus,
+            contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, center, unit * 0.89, "ZURUECK",
+            unit * 0.55, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
     }
 }
