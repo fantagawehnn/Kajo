@@ -603,12 +603,23 @@ class KajoConnectActivityView extends WatchUi.View {
     function onPosition(positionInfo as Position.Info) as Void { WatchUi.requestUpdate(); }
 
     function finishRecording() as Void {
-        mTimer.stop();
-        Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
         if (mEngine.finish()) {
+            mTimer.stop();
+            Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
             mStatus = "GESPEICHERT";
+        } else if (mEngine.isRecording()) {
+            // Wenn Garmin das Stoppen ablehnt, läuft die Aufzeichnung weiter.
+            // Timer, GPS und Rundenmarkierungen bleiben deshalb aktiv.
+            mStatus = "AUFZEICHNUNG";
+            WatchUi.showToast("Stoppen fehlgeschlagen – bitte erneut versuchen", null);
         } else {
+            // Die Session wurde bereits gestoppt, aber FIT konnte nicht
+            // gespeichert werden. Timer und GPS werden beendet; ein erneuter
+            // Tastendruck versucht ausschließlich das Speichern erneut.
+            mTimer.stop();
+            Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
             mStatus = "SPEICHERN FEHLGESCHLAGEN";
+            WatchUi.showToast("Speichern fehlgeschlagen – erneut versuchen", null);
         }
         WatchUi.requestUpdate();
     }
