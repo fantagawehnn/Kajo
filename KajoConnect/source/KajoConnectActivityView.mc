@@ -660,14 +660,16 @@ class KajoConnectActivityView extends WatchUi.View {
         }
         if (mStatus == "AUFZEICHNUNG") {
             if (mCurrentPageId == 8 && mWorkoutSteps.size() > 0) {
-                if (x < mScreenWidth / 2) {
-                    if (mWorkoutSequenceComplete) {
-                        mWorkoutSequenceComplete = false;
-                        mWorkoutStepIndex = mWorkoutSteps.size() - 1;
-                        mWorkoutStepElapsedSeconds = 0;
+                if (mWorkoutSequenceComplete) {
+                    if (x < mScreenWidth / 2) {
+                        if (mWorkoutStepIndex > 0) { mWorkoutStepIndex -= 1; }
                     } else {
-                        moveWorkoutStep(-1);
+                        mWorkoutStepIndex = 0;
                     }
+                    mWorkoutSequenceComplete = false;
+                    mWorkoutStepElapsedSeconds = 0;
+                } else if (x < mScreenWidth / 2) {
+                    moveWorkoutStep(-1);
                 } else {
                     moveWorkoutStep(1);
                 }
@@ -993,7 +995,8 @@ class KajoConnectActivityView extends WatchUi.View {
         } else if (mStatus == "AUFZEICHNUNG") {
             if (mCurrentPageId == 8 && mWorkoutSteps.size() > 0) {
                 drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "ZURUECK");
-                drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "WEITER");
+                drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25,
+                    mWorkoutSequenceComplete ? "NEUSTART" : "WEITER");
             } else {
                 drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "RUNDE");
                 drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "ENDE");
