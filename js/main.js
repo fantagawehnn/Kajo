@@ -37,7 +37,7 @@ import { applyCanoeDateRange, applyCustomDateRange, renderMainLoadChart, renderH
 import { closeCSVDetailsModal, deleteSelectedActivity, inferCategory, inferSport, openCSVDetailsModal, saveManualSportCorrection, saveActivityWaterConditions, saveActivityTrainingPartner, toggleActivityCanoeFields, toggleActivityEdit, updateActivityRPE, focusActivityLap, addActivityStrengthSet, removeActivityStrengthSet, updateActivityStrengthSet, updateActivityStrengthExerciseName, toggleActivityStrengthSection } from './activities.js?v=24';
 import { closeDailyCheckinModal, discardDailyCheckin, openDailyCheckinModal, closeHealthLogModal, loadCheckinInputs, openHealthLogForDate, openHealthLogModal, saveCheckin, saveRetroactiveHealthLog, renderManagedPeriods, editPeriodRange, cancelPeriodEdit, saveManagedPeriod, deleteManagedPeriod, toggleCheckinOptionalFields, toggleCycleFields, updateCheckin } from './health.js?v=80';
 import { closeIntervalsSyncModal, handleMultipleFileSelect, initializeImportDropZone, openIntervalsSyncModal, performIntervalsLiveSync, renderImportHistory, deactivateIntervalsActivities } from './import.js?v=3';
-import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, renderPlannedWorkouts, savePlannedWorkout, setPlannedWorkoutKind } from './planning.js?v=4';
+import { addPlannedWorkoutStep, closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal, removePlannedWorkoutStep, renderPlannedWorkoutSteps, renderPlannedWorkouts, savePlannedWorkout, setPlannedWorkoutKind } from './planning.js?v=5';
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=3';
 import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActivity, attachDailyHrSeriesToActivity, invalidateDailyHrActivityPreview } from './daily-hr-activity.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
@@ -3389,6 +3389,9 @@ Object.assign(window, {
     openHealthLogModal,
     openIntervalsSyncModal,
     openPlannedWorkoutModal,
+    addPlannedWorkoutStep,
+    removePlannedWorkoutStep,
+    renderPlannedWorkoutSteps,
     setPlannedWorkoutKind,
     addSeasonPlanPhase,
     removeSeasonPlanPhase,
