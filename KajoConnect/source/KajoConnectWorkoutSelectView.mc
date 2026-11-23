@@ -114,7 +114,7 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
                 cue = cue == "" ? intensity.toString() : intensity.toString() + " · " + cue;
             }
             if (cue != "") {
-                drawCentered(dc, cx, y + (mUnit * 0.12), compactText(cue, 42), cardWidth * 0.88,
+                drawCentered(dc, cx, y + (mUnit * 0.112), compactText(cue, 42), cardWidth * 0.88,
                     Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
             }
         }
