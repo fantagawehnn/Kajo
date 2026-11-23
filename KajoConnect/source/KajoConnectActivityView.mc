@@ -141,6 +141,21 @@ class KajoConnectActivityView extends WatchUi.View {
         loadDisplayPages();
     }
 
+    function setFreeActivity() as Void {
+        mCurrentWorkoutState = "FREE";
+        mCurrentWorkoutName = "FREIE AKTIVITAET";
+        mCurrentWorkoutType = "";
+        mCurrentWorkoutDuration = "";
+        mCurrentWorkoutDescription = "";
+        mCurrentWorkoutIntensity = "";
+        mCurrentWorkoutObjective = "";
+        mCurrentWorkoutWarmup = "";
+        mCurrentWorkoutMainSet = "";
+        mCurrentWorkoutCooldown = "";
+        loadWorkoutSteps(null);
+        loadDisplayPages();
+    }
+
     function loadCurrentWorkout() as Void {
         var sessions = Storage.getValue("kajoPlannedSessions");
         mCurrentWorkoutState = "FREE";
