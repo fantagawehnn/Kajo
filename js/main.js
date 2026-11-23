@@ -2349,10 +2349,9 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             applyReconciledCloudSnapshot(appliedSnapshot);
             try { await saveCloudSyncBaseline(merged.snapshot); }
             catch (error) { console.warn('Synchronisierungs-Basisstand konnte nicht lokal gespeichert werden:', error); }
-            const knownIds = new Set([
-                ...(Array.isArray(cloud.data.activityIds) ? cloud.data.activityIds.map(String) : []),
-                ...(Array.isArray(activityRows) ? activityRows.map(row => String(row?.record_id || '')).filter(Boolean) : [])
-            ]);
+            const knownIds = new Set(
+                Array.isArray(activityRows) ? activityRows.map(row => String(row?.record_id || '')).filter(Boolean) : []
+            );
             if (getCloudActivityIds(userId, mergedActivities).some(id => !knownIds.has(String(id)))) scheduleCloudSync(userId);
             return { ok: true, version: cloud.version, snapshot: appliedSnapshot, uploaded: false };
         }
@@ -2370,10 +2369,9 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             applyReconciledCloudSnapshot(appliedSnapshot);
             try { await saveCloudSyncBaseline(merged.snapshot); }
             catch (error) { console.warn('Synchronisierungs-Basisstand konnte nicht lokal gespeichert werden:', error); }
-            const knownIds = new Set([
-                ...(Array.isArray(cloud.data.activityIds) ? cloud.data.activityIds.map(String) : []),
-                ...(Array.isArray(activityRows) ? activityRows.map(row => String(row?.record_id || '')).filter(Boolean) : [])
-            ]);
+            const knownIds = new Set(
+                Array.isArray(activityRows) ? activityRows.map(row => String(row?.record_id || '')).filter(Boolean) : []
+            );
             if (getCloudActivityIds(userId, mergedActivities).some(id => !knownIds.has(String(id)))) scheduleCloudSync(userId);
             return { ok: true, version: saved.currentVersion, snapshot: appliedSnapshot, uploaded: true };
         }
@@ -2719,6 +2717,8 @@ async function performCloudInitialTransfer() {
         cloudSyncUserId = userId;
         cloudSyncVersion = result.currentVersion;
         cloudSyncBlocked = false;
+        try { await saveCloudSyncBaseline(getCloudMergeableSnapshot(initialSnapshot)); }
+        catch (baselineError) { console.warn('Erstupload erfolgreich, aber Synchronisierungs-Basisstand konnte nicht lokal gespeichert werden:', baselineError); }
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
