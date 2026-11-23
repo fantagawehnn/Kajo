@@ -95,7 +95,7 @@ Diese Werte gehören ausschließlich in die Supabase-Function-Secrets. Sie dürf
 - Die Pairing-Oberfläche in der KAJO-Web-App zum Eingeben und Bestätigen des Codes ist im Branch ergänzt.
 - Die Pairing-Ansicht auf der Uhr einschließlich Code-Anzeige, Polling und lokaler Token-Speicherung ist im Branch ergänzt; sie ist noch nicht kompiliert oder am Gerät getestet.
 - Der lesende Sync der geplanten Einheiten in die Startansicht, der Offline-Cache und die Übergabe der aktuellen KAJO-Zonen an die Aktivitätsansicht sind im Branch ergänzt; sie sind noch nicht kompiliert oder end-to-end getestet.
-- Die KAJO-Web-App enthält einen Editor für drei eigene Datenseiten. Je Seite können bis zu vier Kennzahlen ausgewählt, sortiert und in den Größen klein/mittel/groß eingestellt werden. Die Einstellungen werden in `state.settings.kajoConnectDisplayLayouts` gespeichert und über den bestehenden versionierten Cloud-Snapshot synchronisiert.
+- Die KAJO-Web-App enthält einen Editor für drei eigene Datenseiten. Je Seite können bis zu vier Kennzahlen ausgewählt, sortiert, in den Größen klein/mittel/groß eingestellt und auf fünf Rasterpositionen verteilt werden. Die Einstellungen werden in `state.settings.kajoConnectDisplayLayouts` gespeichert und über den bestehenden versionierten Cloud-Snapshot synchronisiert.
 - Die Edge Function validiert diese Layouts und liefert sie in der `sync`-Antwort aus. Die Garmin-Startansicht speichert sie nach erfolgreicher Antwort in `Application.Storage`; die Aktivitätsansicht liest sie beim Öffnen ein.
 - Geräteverwaltung und Widerruf in der KAJO-Web-App sind als UI und Backend-Aktionen ergänzt; die Funktion ist noch nicht gegen eine bereitgestellte Datenbank getestet.
 - Die Datenbanktabellen; das SQL ist bislang nur ein Entwurf.
@@ -121,7 +121,7 @@ Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden
 - Benutzerwechsel und Zugriffstrennung zwischen Konten;
 - fehlender oder ungültiger Zonen-/Profilwert;
 - Offline-Betrieb, Wiederholungsversuche und Versionswechsel des Cloud-Snapshots.
-- Web-Konfiguration mit drei Layouts, jeweils null bis vier erlaubten Kennzahlen, gültigen Größenwerten und erfolgreicher Übernahme auf beiden Garmin-Modellen.
+- Web-Konfiguration mit drei Layouts, jeweils null bis vier erlaubten Kennzahlen, gültigen Größen- und Positionswerten, kollisionsfreien Positionen und erfolgreicher Übernahme auf beiden Garmin-Modellen.
 
 Es wurden keine produktiven Tabellen verändert und keine Edge Function deployed. Der Quellcode ist daher als vorbereitete Implementierung, nicht als betriebsbereite Verbindung zu verstehen.
 
