@@ -19,10 +19,10 @@ class KajoConnectWorkoutView extends WatchUi.View {
         return font;
     }
 
-    function drawFit(dc as Dc, cx as Lang.Number, y as Lang.Number, text as Lang.String, maxWidth as Lang.Number, preferredFont, color as Lang.Number) as Void {
+    function drawFit(dc as Dc, cx, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = fitFont(dc, text, maxWidth, preferredFont);
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(cx, y, font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(cx), Math.round(y), font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function onUpdate(dc as Dc) {
@@ -38,7 +38,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
         drawFit(dc, center, unit * 0.24, "GEPLANTE EINHEIT", contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(center - unit * 0.34, unit * 0.32, unit * 0.68, unit * 0.17, unit * 0.035);
+        dc.fillRoundedRectangle(Math.round(center - unit * 0.34), Math.round(unit * 0.32), Math.round(unit * 0.68), Math.round(unit * 0.17), Math.round(unit * 0.035));
         drawFit(dc, center, unit * 0.375, mWorkoutName, unit * 0.60, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
 
         drawFit(dc, center, unit * 0.58, "Trainingsdetails werden angezeigt,", contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
