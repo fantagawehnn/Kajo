@@ -31,12 +31,13 @@ class KajoConnectRecordingEngine {
 
         var started = mSession.start();
         if (!started) {
-            // Einen fehlgeschlagenen Start sauber verwerfen, damit kein
-            // zweites Session-Objekt neben dem ersten angelegt wird.
-            mSession.discard();
-            mSession = null;
+            // Nicht verwerfen: createSession() kann eine bereits offene,
+            // zuvor pausierte FIT-Session zurueckgegeben haben. Ein discard()
+            // koennte in diesem Fall vorhandene Aufzeichnungsdaten loeschen.
+            // Die Session bleibt fuer einen erneuten Startversuch erhalten.
+            return false;
         }
-        return started;
+        return true;
     }
 
     function isRecording() as Lang.Boolean {
