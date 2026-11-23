@@ -104,14 +104,18 @@ class KajoConnectWorkoutView extends WatchUi.View {
         drawCentered(dc, center, unit * 0.075, "GEPLANTES TRAINING", contentWidth, Graphics.FONT_SMALL, 0x00E5CC);
         drawCentered(dc, center, unit * 0.12, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
+        var cardTop = unit * 0.17;
+        var cardHeight = unit * 0.14;
+        var cardWidth = mLayout.safeRectWidth(cardTop, cardHeight, unit * 0.76);
+        var cardLeft = center - (cardWidth / 2);
         dc.setColor(0x05181C, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((center - unit * 0.38).toNumber(),
-            (unit * 0.17).toNumber(), (unit * 0.76).toNumber(),
-            (unit * 0.14).toNumber(), (unit * 0.035).toNumber());
+        dc.fillRoundedRectangle(cardLeft.toNumber(),
+            cardTop.toNumber(), cardWidth.toNumber(),
+            cardHeight.toNumber(), (unit * 0.035).toNumber());
         dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle((center - unit * 0.38).toNumber(),
-            (unit * 0.17).toNumber(), (unit * 0.76).toNumber(),
-            (unit * 0.14).toNumber(), (unit * 0.035).toNumber());
+        dc.drawRoundedRectangle(cardLeft.toNumber(),
+            cardTop.toNumber(), cardWidth.toNumber(),
+            cardHeight.toNumber(), (unit * 0.035).toNumber());
         drawCentered(dc, center, unit * 0.205, compactText(name, 38),
             unit * 0.68, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         drawCentered(dc, center, unit * 0.26, compactText(type, 30),
