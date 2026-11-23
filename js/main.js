@@ -2366,7 +2366,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                     .map(row => [String(row.record_id), row.payload])
             );
             const readableConflicts = merged.conflicts.map(conflict => {
-                const match = conflict.match(/activities\\[(?:id:)?([^\\]]+)\\]/);
+                const match = conflict.match(/activities\[(?:id:)?([^\]]+)\]/);
                 if (!match) return conflict;
                 const activityId = match[1];
                 const activity = localActivitiesById.get(activityId) || cloudActivitiesById.get(activityId);
