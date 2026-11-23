@@ -39,7 +39,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
                 WatchUi.showToast("Mindestens eine Seite muss aktiv bleiben", null);
             }
             WatchUi.requestUpdate();
-        } else if (y > mUnit * 0.82) {
+        } else if (y > mUnit * 0.75) {
             saveConfig();
         }
     }
