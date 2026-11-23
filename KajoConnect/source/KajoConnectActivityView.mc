@@ -914,29 +914,9 @@ class KajoConnectActivityView extends WatchUi.View {
         return mKajoLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        // Erst die tatsaechliche vertikale Textposition innerhalb des runden
-        // Displays bestimmen, danach die dort verfuegbare Kreisbreite messen.
-        var font = mKajoLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
-        var safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), safeY, font, maxWidth.toNumber());
-
-        // Falls die Kreisform weniger Platz bietet, Schrift weiter verkleinern.
-        var fittedFont = mKajoLayout.fitFont(dc, text, safeWidth, preferredFont);
-        if (fittedFont != font) {
-            font = fittedFont;
-            safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
-            safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), safeY, font, maxWidth.toNumber());
-        }
-
-        var displayText = text;
-        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
-            if (displayText.length() <= 4) { displayText = ""; }
-            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
-        }
-        if (displayText == "" || safeWidth <= 0) { return; }
-        dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
+        mKajoLayout.drawTextFit(dc, x, y, text, maxWidth, preferredFont, color);
     }
+
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
         var cx = mScreenWidth / 2;
         drawFit(dc, cx, mUnit * 0.16, title, mUnit * 0.58, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
