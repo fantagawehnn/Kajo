@@ -483,6 +483,7 @@ class KajoConnectActivityView extends WatchUi.View {
             }
 
             var tileTop = y - (mUnit * 0.055);
+            tileWidth = mLayout.safeRectWidthAt(x, tileTop, tileHeight, tileWidth);
             drawDashboardPanel(dc, x - (tileWidth / 2), tileTop, tileWidth, tileHeight);
 
             var label = getCustomMetricLabel(metricId);
