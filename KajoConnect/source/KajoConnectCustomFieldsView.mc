@@ -25,7 +25,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     var mPage as Lang.Number = 0;
     var mPageCount as Lang.Number = 4;
     var mSelectedRow as Lang.Number = -1;
-    var mRowTop as Lang.Float = 0.0;
+    var mRowTop as Lang.Number = 0;
     var mRowHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
     var mWidth as Lang.Number = 0;
