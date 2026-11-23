@@ -25,7 +25,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     var mPage as Lang.Number = 0;
     var mPageCount as Lang.Number = 4;
     var mSelectedRow as Lang.Number = -1;
-    var mRowTop as Lang.Number = 0;
+    var mRowTop as Lang.Float = 0.0;
     var mRowHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
     var mWidth as Lang.Number = 0;
@@ -176,8 +176,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.215).toNumber(),
             Graphics.FONT_XTINY, "Links AN/AUS · Rechts auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
-        mRowTop = mUnit * 0.235;
-        mRowHeight = mUnit * 0.125;
+        mRowTop = Math.round(mUnit * 0.235).toNumber();
+        mRowHeight = Math.round(mUnit * 0.125).toNumber();
         var cardWidth = mUnit * 0.70;
         var cardX = cx - (cardWidth / 2);
         var cardHeight = mRowHeight * 0.82;
@@ -206,8 +206,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 Graphics.FONT_TINY, stateText, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        mControlTop = mUnit * 0.755;
-        mControlBottom = mUnit * 0.82;
+        mControlTop = Math.round(mUnit * 0.755).toNumber();
+        mControlBottom = Math.round(mUnit * 0.82).toNumber();
         var controlWidth = mUnit * 0.20;
         var controlHeight = mControlBottom - mControlTop;
         var centers = [cx - (mUnit * 0.25), cx, cx + (mUnit * 0.25)];
@@ -222,8 +222,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 Graphics.FONT_XTINY, labels[b], Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        mSaveTop = mUnit * 0.85;
-        mSaveBottom = mUnit * 0.91;
+        mSaveTop = Math.round(mUnit * 0.85).toNumber();
+        mSaveBottom = (mUnit * 91 / 100).toNumber();
         var saveWidth = mUnit * 0.48;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
