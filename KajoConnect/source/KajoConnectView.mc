@@ -101,6 +101,46 @@ class KajoConnectView extends WatchUi.View {
             cacheSaved = false;
         }
 
+        var displayLayouts = data["displayLayouts"];
+        if (displayLayouts != null) {
+            var layouts = displayLayouts as Lang.Array<Lang.Dictionary>;
+            for (var layoutIndex = 0; layoutIndex < layouts.size() && layoutIndex < 3; layoutIndex += 1) {
+                var layout = layouts[layoutIndex] as Lang.Dictionary;
+                var receivedMetrics = layout["metrics"];
+                var metricIds = [];
+                var metricSizes = {};
+                var largeMetricId = "";
+                if (receivedMetrics != null) {
+                    var metrics = receivedMetrics as Lang.Array<Lang.Dictionary>;
+                    for (var metricIndex = 0; metricIndex < metrics.size() && metricIndex < 4; metricIndex += 1) {
+                        var metric = metrics[metricIndex] as Lang.Dictionary;
+                        var metricIdValue = metric["id"];
+                        if (metricIdValue == null) { continue; }
+                        var metricId = metricIdValue.toString();
+                        if (metricIds.indexOf(metricId) >= 0) { continue; }
+                        var sizeValue = metric["size"];
+                        var sizeText = sizeValue == null ? "medium" : sizeValue.toString();
+                        var numericSize = sizeText == "small" ? 0 : sizeText == "large" ? 2 : 1;
+                        metricIds.add(metricId);
+                        metricSizes[metricId] = numericSize;
+                        if (numericSize == 2) { largeMetricId = metricId; }
+                    }
+                }
+                try {
+                    Storage.setValue("kajoCustomMetrics" + layoutIndex.toString(), metricIds);
+                    Storage.setValue("kajoMetricSizes" + layoutIndex.toString(), metricSizes);
+                    Storage.setValue("kajoLargeMetricId" + layoutIndex.toString(), largeMetricId);
+                    if (layoutIndex == 0) {
+                        Storage.setValue("kajoCustomMetrics", metricIds);
+                        Storage.setValue("kajoMetricSizes", metricSizes);
+                        Storage.setValue("kajoLargeMetricId", largeMetricId);
+                    }
+                } catch (error) {
+                    cacheSaved = false;
+                }
+            }
+        }
+
         var zoneInfo = data["heartRateZones"];
         var zoneValues = [];
         if (zoneInfo != null) {
