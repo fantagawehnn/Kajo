@@ -2389,7 +2389,18 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             return { ok: false, empty: true, version: cloud.version, conflicts: [] };
         }
 
-        const local = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const localData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        // activityIds ist ein abgeleitetes Cloud-Metadatum und gehört nicht zum
+        // lokalen Storage-Snapshot. Vor dem Drei-Wege-Abgleich muss es aus den
+        // lokalen Aktivitäten rekonstruiert werden, sonst erscheint das fehlende
+        // Feld fälschlich als Löschung gegen eine Cloud-Änderung.
+        const local = {
+            ...localData,
+            activityIds: getCloudActivityIds(
+                userId,
+                Array.isArray(localData.activities) ? localData.activities : []
+            )
+        };
         const legacyActivities = (Array.isArray(cloud.data.activities) ? cloud.data.activities : []).map(activity => {
             if (!activity || typeof activity !== 'object') return activity;
             const compact = { ...activity };
@@ -2494,7 +2505,14 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         };
 
         if (cloudSnapshotsEqual(cloudPayload, cloud.data)) {
-            const latestLocal = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            const latestLocal = {
+                ...latestLocalData,
+                activityIds: getCloudActivityIds(
+                    userId,
+                    Array.isArray(latestLocalData.activities) ? latestLocalData.activities : []
+                )
+            };
             if (!cloudSnapshotsEqual(latestLocal, local)) {
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
