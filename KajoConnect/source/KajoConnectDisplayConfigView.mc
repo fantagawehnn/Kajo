@@ -79,6 +79,14 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
         var cx = mWidth / 2;
+        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
+            (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
+        dc.drawLine((unit * 0.12).toNumber(), (unit * 0.075).toNumber(),
+            (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
+        dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
+            (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
 
         drawFit(dc, cx, mUnit * 0.095, "ANZEIGEN", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         drawFit(dc, cx, mUnit * 0.16, "DATENSEITEN AUSWAEHLEN", mUnit * 0.74, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
@@ -93,7 +101,11 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
-            dc.setColor(0x0A1A1E, Graphics.COLOR_BLACK);
+            dc.setColor(0x091417, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
+                Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
+                Math.round(mUnit * 0.025).toNumber());
+            dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(), Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(), Math.round(mUnit * 0.025).toNumber());
 
             var state = mEnabled[i] ? "AN" : "AUS";
