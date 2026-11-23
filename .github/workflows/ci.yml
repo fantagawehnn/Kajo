@@ -8,6 +8,7 @@ on:
       - feat/garmin-data-quality-v2
       - feature/coach-v2-integration
       - garmin-full-export-import
+      - feature/kajo-connect
   pull_request:
     branches:
       - v2
@@ -55,6 +56,8 @@ jobs:
           node --check js/season-planning.js
           node --check js/adaptive-week-review.js
           node --check js/season-plan-editor.js
+          node --check js/weekly-plan-calendar.js
+          node --check js/kajo-connect.js
           node --check worker.js
           node --check js/profile.js
           node --check js/settings.js
