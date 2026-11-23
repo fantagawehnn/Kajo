@@ -40,7 +40,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCustomPageCount as Lang.Number = 0;
     // KAJO liefert die vier oberen Zonengrenzen; die Uhr berechnet keine eigenen Zonen.
     var mHeartRateZones as Lang.Array<Lang.Number> = [];
-    var mCurrentWorkoutName as Lang.String = "TRAINING";
+    var mCurrentWorkoutState as Lang.String = "FREE";
+    var mCurrentWorkoutName as Lang.String = "FREIES TRAINING";
     var mCurrentWorkoutType as Lang.String = "";
     var mCurrentWorkoutDuration as Lang.String = "";
     var mCurrentWorkoutDescription as Lang.String = "";
@@ -58,25 +59,47 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function loadCurrentWorkout() as Void {
         var sessions = Storage.getValue("kajoPlannedSessions");
+        mCurrentWorkoutState = "FREE";
+        mCurrentWorkoutName = "FREIES TRAINING";
+        mCurrentWorkoutType = "";
+        mCurrentWorkoutDuration = "";
+        mCurrentWorkoutDescription = "";
+        mCurrentWorkoutIntensity = "";
+        mCurrentWorkoutMainSet = "";
         if (sessions == null) { return; }
+
         var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
         var today = info.year.toString() + "-" +
             (info.month < 10 ? "0" : "") + info.month.toString() + "-" +
             (info.day < 10 ? "0" : "") + info.day.toString();
         var planned = sessions as Lang.Array<Lang.Dictionary>;
+        var todaysSession = null;
+        var todayCount = 0;
+
         for (var i = 0; i < planned.size(); i += 1) {
             var session = planned[i] as Lang.Dictionary;
             var sessionDate = session["date"];
             if (sessionDate != null && sessionDate.toString() == today) {
-                if (session["name"] != null) { mCurrentWorkoutName = session["name"].toString(); }
-                if (session["type"] != null) { mCurrentWorkoutType = session["type"].toString(); }
-                if (session["duration"] != null) { mCurrentWorkoutDuration = session["duration"].toString(); }
-                if (session["desc"] != null) { mCurrentWorkoutDescription = session["desc"].toString(); }
-                if (session["intensity"] != null) { mCurrentWorkoutIntensity = session["intensity"].toString(); }
-                if (session["mainSet"] != null) { mCurrentWorkoutMainSet = session["mainSet"].toString(); }
-                return;
+                todayCount += 1;
+                todaysSession = session;
             }
         }
+
+        if (todayCount == 0) { return; }
+        if (todayCount > 1) {
+            mCurrentWorkoutState = "MULTIPLE";
+            mCurrentWorkoutName = "MEHRERE EINHEITEN";
+            return;
+        }
+
+        mCurrentWorkoutState = "PLANNED";
+        var selected = todaysSession as Lang.Dictionary;
+        if (selected["name"] != null) { mCurrentWorkoutName = selected["name"].toString(); }
+        if (selected["type"] != null) { mCurrentWorkoutType = selected["type"].toString(); }
+        if (selected["duration"] != null) { mCurrentWorkoutDuration = selected["duration"].toString(); }
+        if (selected["desc"] != null) { mCurrentWorkoutDescription = selected["desc"].toString(); }
+        if (selected["intensity"] != null) { mCurrentWorkoutIntensity = selected["intensity"].toString(); }
+        if (selected["mainSet"] != null) { mCurrentWorkoutMainSet = selected["mainSet"].toString(); }
     }
 
     function loadDisplayPages() as Void {
@@ -378,11 +401,17 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(dc, cx, mUnit * 0.105, mCurrentWorkoutName, mUnit * 0.68,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         var workoutSubline = mCurrentWorkoutType;
-        if (mCurrentWorkoutDuration != "") {
-            if (workoutSubline != "") { workoutSubline += "  ·  "; }
-            workoutSubline += mCurrentWorkoutDuration + " MIN";
+        if (mCurrentWorkoutState == "MULTIPLE") {
+            workoutSubline = "BITTE TRAININGSPLAN PRUEFEN";
+        } else if (mCurrentWorkoutState == "FREE") {
+            workoutSubline = "KEINE EINHEIT GEPLANT";
+        } else {
+            if (mCurrentWorkoutDuration != "") {
+                if (workoutSubline != "") { workoutSubline += "  ·  "; }
+                workoutSubline += mCurrentWorkoutDuration + " MIN";
+            }
+            if (workoutSubline == "") { workoutSubline = "GEPLANTE EINHEIT"; }
         }
-        if (workoutSubline == "") { workoutSubline = "AKTUELLES TRAINING"; }
         drawFit(dc, cx, mUnit * 0.155, workoutSubline, mUnit * 0.68,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         // Kompakte Trainingsvorgabe: Hauptteil hat Vorrang, Intensitaet bleibt als Kontext sichtbar.
