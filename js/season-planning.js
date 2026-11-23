@@ -53,7 +53,14 @@ export function normalizeWeeklySession(session = {}) {
         warmup: cleanText(session.warmup, 1000),
         mainSet: cleanText(session.mainSet, 2000),
         cooldown: cleanText(session.cooldown, 1000),
-        notes: cleanText(session.notes, 1000)
+        notes: cleanText(session.notes, 1000),
+        steps: Array.isArray(session.steps) ? session.steps.slice(0, 40).filter(step => step && typeof step === 'object').map((step, index) => ({
+            id: cleanText(step.id, 80) || 'step-' + (index + 1),
+            type: ['warmup', 'work', 'recovery', 'cooldown', 'other'].includes(step.type) ? step.type : 'other',
+            label: cleanText(step.label, 80),
+            durationSeconds: Number.isInteger(Number(step.durationSeconds)) && Number(step.durationSeconds) > 0 && Number(step.durationSeconds) <= 21600 ? Number(step.durationSeconds) : null,
+            target: cleanText(step.target, 120)
+        })).filter(step => step.label && step.durationSeconds) : []
     };
 }
 
