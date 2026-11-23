@@ -35,7 +35,7 @@ try {
         $outputFile = Join-Path $outputDirectory ("KajoConnect-" + $device + ".prg")
         Write-Host "Building KAJO Connect for $device ..."
 
-        & $compiler -f $jungleFile -d $device -o $outputFile -y $DeveloperKeyPath
+        & $compiler -f $jungleFile -d $device -o $outputFile -y $DeveloperKeyPath -r -w
 
         if ($LASTEXITCODE -ne 0) {
             throw "Monkey C build failed for $device (exit code $LASTEXITCODE)."
@@ -45,7 +45,12 @@ try {
             throw "Compiler returned success but output file is missing: $outputFile"
         }
 
-        Write-Host "Created: $outputFile"
+        $outputInfo = Get-Item -LiteralPath $outputFile
+        if ($outputInfo.Length -le 0) {
+            throw "Compiler created an empty output file: $outputFile"
+        }
+
+        Write-Host ("Created: {0} ({1:N0} bytes)" -f $outputFile, $outputInfo.Length)
     }
 }
 finally {
