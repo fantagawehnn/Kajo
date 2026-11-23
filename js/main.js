@@ -21,6 +21,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { fetchCloudActivities, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
@@ -2364,9 +2365,12 @@ async function flushCloudSync() {
             console.warn('Garmin-Telemetrie konnte nicht separat in der Cloud gesichert werden; lokale Daten bleiben erhalten:', telemetryError);
         }
 
-        // Der versionierte user_data-Snapshot enthält bewusst keine großen
-        // Garmin-Rohzeitreihen mehr.
+        // Vollständige Aktivitäten einschließlich FIT-Daten werden einzeln
+        // übertragen. Erst nach bestätigtem Readback wird die Sammlung aus dem
+        // großen versionierten user_data-Snapshot herausgenommen.
+        const activityUpload = await syncCloudActivities(supabase, userId, state.rawActivities || []);
         const snapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        snapshot.activities = [];
         const result = await saveCloudSnapshot(snapshot, cloudSyncVersion, userId);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
 
@@ -2382,8 +2386,8 @@ async function flushCloudSync() {
         cloudSyncVersion = result.currentVersion;
         saveSucceeded = true;
         setCloudSyncStatus(telemetryUpload.failed
-            ? 'App-Daten in Cloud gespeichert; Garmin-Telemetrie wartet auf erneuten Versuch.'
-            : 'In Cloud gespeichert (Version ' + cloudSyncVersion + ')' + (telemetryUpload.uploaded ? ' · ' + telemetryUpload.uploaded + ' neue Telemetrie-Datensätze' : ''));
+            ? 'App-Daten und ' + activityUpload.uploaded + ' Aktivitäten in Cloud gespeichert; Garmin-Telemetrie wartet auf erneuten Versuch.'
+            : 'In Cloud gespeichert (Version ' + cloudSyncVersion + ')' + (activityUpload.uploaded ? ' · ' + activityUpload.uploaded + ' Aktivitäten geprüft' : '') + (telemetryUpload.uploaded ? ' · ' + telemetryUpload.uploaded + ' neue Telemetrie-Datensätze' : ''));
         if (cloudInitialTransferState === 'empty') {
             cloudInitialTransferState = 'exists';
             setCloudTransferMessage('Deine Daten wurden automatisch erstmals in der Cloud gespeichert (Version ' + cloudSyncVersion + ').');
@@ -2542,7 +2546,12 @@ async function performCloudInitialTransfer() {
             setCloudTransferMessage('Der Cloud-Datensatz ist inzwischen vorhanden. Zur Sicherheit wurde kein Upload ausgeführt.');
             return;
         }
-        const result = await saveCloudSnapshot(getUserDataSnapshot(), 0, userId);
+        // Aktivitäten zuerst separat und vollständig sichern. Der alte
+        // user_data-Snapshot bleibt unangetastet, falls ein Paket fehlschlägt.
+        const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const activityUpload = await syncCloudActivities(supabase, userId, initialSnapshot.activities || []);
+        initialSnapshot.activities = [];
+        const result = await saveCloudSnapshot(initialSnapshot, 0, userId);
         if (!result.saved) {
             cloudInitialTransferState = 'exists';
             closeCloudInitialTransferConfirmation();
@@ -2554,7 +2563,7 @@ async function performCloudInitialTransfer() {
         cloudSyncVersion = result.currentVersion;
         cloudSyncBlocked = false;
         closeCloudInitialTransferConfirmation();
-        setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). Die lokalen Daten und die separaten Garmin-Speicher wurden nicht gelöscht oder verändert.');
+        setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Erstübertragung fehlgeschlagen. Der Cloud-Status wird zur Sicherheit erneut geprüft. ' + error.message);
@@ -2963,9 +2972,10 @@ async function handleAuthSession(session) {
             // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
             // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
             // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
-            const [loadedUserId, cloudSnapshot] = await Promise.all([
+            const [loadedUserId, cloudSnapshot, cloudActivities] = await Promise.all([
                 withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000),
-                withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000)
+                withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
+                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000)
             ]);
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             if (loadedUserId !== userId) {
@@ -2988,9 +2998,15 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
-                applyCloudDataSnapshot(cloudSnapshot.data);
+                const mergedSnapshot = {
+                    ...cloudSnapshot.data,
+                    activities: mergeCloudActivities(cloudSnapshot.data.activities, cloudActivities)
+                };
+                applyCloudDataSnapshot(mergedSnapshot);
                 const indicator = document.getElementById('sync-status-indicator');
-                if (indicator) indicator.textContent = 'Cloud-Daten geladen (Version ' + cloudSnapshot.version + ')';
+                if (indicator) indicator.textContent = 'Cloud-Daten geladen (Version ' + cloudSnapshot.version + ', ' + mergedSnapshot.activities.length + ' Aktivitäten)';
+            } else if (cloudActivities.length) {
+                throw new Error('Es liegen einzelne Cloud-Aktivitäten ohne zugehörigen Hauptdatensatz vor. Der lokale Zustand wurde nicht überschrieben; bitte den Cloud-Transfer erneut prüfen.');
             }
 
             try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
