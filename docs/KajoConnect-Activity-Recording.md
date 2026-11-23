@@ -31,9 +31,9 @@ Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
 - Distanz & Zeit: Distanz, Zeit und Kalorien
 - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich kann eine eigene Datenseite mit bis zu vier Kennzahlen aktiviert werden. Dafür stehen 17 Kennzahlen zur Auswahl, darunter die aktuelle Herzfrequenzzone. Aktivierte Felder lassen sich innerhalb der Auswahl nach oben oder unten sortieren. Ein ausgewähltes Feld kann als großes Feld hervorgehoben werden; die übrigen Felder werden abhängig von der Anzahl im verfügbaren Raster angeordnet. Ohne manuelle Größenwahl passt sich die Darstellung automatisch an (ein Feld groß, zwei nebeneinander, drei oder vier im Raster).
+Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich kann eine eigene Datenseite mit bis zu vier Kennzahlen aktiviert werden. Dafür stehen 17 Kennzahlen zur Auswahl, darunter die aktuelle Herzfrequenzzone. Aktivierte Felder lassen sich innerhalb der Auswahl nach oben oder unten sortieren. Ein ausgewähltes Feld kann als großes Feld hervorgehoben werden; die übrigen Felder werden abhängig von der Anzahl im verfügbaren Raster angeordnet. Die Auswahl und Sortierung erfolgen direkt auf der Uhr: links am Eintrag wird ein Feld aktiviert/deaktiviert, rechts wird es für die Sortierung ausgewählt; „HOCH“ und „RUNTER“ ändern die Reihenfolge, „GROSS“ hebt das ausgewählte Feld hervor. Ohne manuelle Größenwahl passt sich die Darstellung automatisch an (ein Feld groß, zwei nebeneinander, drei oder vier im Raster).
 
-**Noch nicht umgesetzt:** Kennzahlen frei auf mehrere selbst angelegte Seiten verteilen, mehr als vier Kennzahlen gleichzeitig anzeigen und für mehrere Felder unabhängig voneinander unterschiedliche Größen festlegen. Derzeit kann ein Feld als groß hervorgehoben werden.
+**Noch nicht umgesetzt:** Kennzahlen frei auf mehrere selbst angelegte Seiten verteilen, mehr als vier Kennzahlen gleichzeitig anzeigen, für mehrere Felder unabhängig voneinander unterschiedliche Größen festlegen und die Konfiguration direkt in der KAJO-Web-App statt auf der Uhr bearbeiten. Derzeit kann ein Feld als groß hervorgehoben werden.
 
 ## 4. Trainingsplan-Synchronisierung
 
@@ -62,7 +62,7 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 
 ## 6. Noch offen
 
-- Erweiterung des Layout-Editors: mehrere eigene Seiten, mehr als vier Felder und unabhängige Größensteuerung für jedes Feld.
+- Erweiterung des Layout-Editors: mehrere eigene Seiten, mehr als vier Felder, unabhängige Größensteuerung für jedes Feld und Konfiguration aus der KAJO-Web-App.
 - Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
 - End-to-end-Test von Pairing, Trainingsplan-Synchronisierung und Herzfrequenzzonen.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
