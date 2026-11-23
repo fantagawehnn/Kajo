@@ -40,7 +40,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         }
     }
 
-    function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
+    function fitFont(dc as Dc, text as Lang.String, maxWidth, preferredFont) {
         var font = preferredFont;
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
@@ -82,7 +82,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
             dc.drawRoundedRectangle(cardX, y, cardWidth, cardHeight, mUnit * 0.025);
 
             var state = mEnabled[i] ? "AN" : "AUS";
-            var labelWidth = cardWidth * 0.62;
+            var labelWidth = Math.floor(cardWidth * 0.62);
             var font = fitFont(dc, labels[i], labelWidth, Graphics.FONT_SMALL);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
             dc.drawText(cardX + (labelWidth / 2) + (mUnit * 0.015),

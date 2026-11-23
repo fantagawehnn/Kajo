@@ -1,4 +1,6 @@
 import Toybox.Activity;
+import Toybox.Application;
+import Toybox.Application.Properties;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -33,7 +35,7 @@ class KajoConnectActivityView extends WatchUi.View {
     function loadDisplayPages() as Void {
         mEnabledPageIds = [];
         for (var i = 0; i < 5; i += 1) {
-            var savedValue = getApp().getProperty("kajoDisplayPage" + i.toString());
+            var savedValue = Application.Properties.getValue("kajoDisplayPage" + i.toString());
             if (savedValue == null || (savedValue as Lang.Boolean)) {
                 mEnabledPageIds.add(i);
             }
@@ -169,12 +171,17 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawButton(dc as Dc, centerX as Lang.Number, top as Lang.Number, width as Lang.Number, label as Lang.String) as Void {
-        var height = mButtonBottom - mButtonTop;
-        var left = centerX - (width / 2);
+        var height = (mButtonBottom - mButtonTop).toNumber();
+        var left = (centerX - (width / 2)).toNumber();
+        var topNumber = top.toNumber();
+        var widthNumber = width.toNumber();
+        var centerXNumber = centerX.toNumber();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(left, top, width, height, mUnit * 0.025);
-        drawFit(dc, centerX, top + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
-            label, width * 0.86, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        dc.drawRoundedRectangle(left, topNumber, widthNumber, height, 2 as Lang.Number);
+        var textY = (topNumber + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2).toNumber();
+        var textWidth = (widthNumber * 0.86).toNumber();
+        drawFit(dc, centerXNumber, textY,
+            label, textWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
     }
 
     function onUpdate(dc as Dc) {
