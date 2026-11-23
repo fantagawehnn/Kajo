@@ -51,6 +51,65 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCurrentWorkoutMainSet as Lang.String = "";
     var mCurrentWorkoutCooldown as Lang.String = "";
     var mHasWorkoutInstructions as Lang.Boolean = false;
+    var mWorkoutSteps as Lang.Array<Lang.Dictionary> = [];
+    var mWorkoutStepIndex as Lang.Number = 0;
+    var mWorkoutStepElapsedSeconds as Lang.Number = 0;
+    var mWorkoutSequenceComplete as Lang.Boolean = false;
+    var mCurrentPageId as Lang.Number = 0;
+
+    function loadWorkoutSteps(value) as Void {
+        mWorkoutSteps = [];
+        mWorkoutStepIndex = 0;
+        mWorkoutStepElapsedSeconds = 0;
+        mWorkoutSequenceComplete = false;
+        if (value == null) { return; }
+        var source = value as Lang.Array<Lang.Dictionary>;
+        for (var i = 0; i < source.size() && i < 40; i += 1) {
+            var rawStep = source[i] as Lang.Dictionary;
+            var label = rawStep["label"];
+            var durationValue = rawStep["durationSeconds"];
+            if (label == null || durationValue == null) { continue; }
+            var duration = durationValue as Lang.Number;
+            if (duration < 1 || duration > 21600) { continue; }
+            var safeStep = {};
+            safeStep["label"] = compactWorkoutText(label.toString(), 80);
+            safeStep["durationSeconds"] = duration.toNumber();
+            safeStep["type"] = rawStep["type"] == null ? "other" : rawStep["type"].toString();
+            safeStep["target"] = rawStep["target"] == null ? "" : compactWorkoutText(rawStep["target"].toString(), 120);
+            mWorkoutSteps.add(safeStep);
+        }
+    }
+
+    function moveWorkoutStep(direction as Lang.Number) as Void {
+        if (mWorkoutSteps.size() == 0) { return; }
+        var nextIndex = mWorkoutStepIndex + direction;
+        if (nextIndex < 0) { return; }
+        if (nextIndex >= mWorkoutSteps.size()) {
+            mWorkoutSequenceComplete = true;
+            mWorkoutStepElapsedSeconds = 0;
+            return;
+        }
+        mWorkoutStepIndex = nextIndex;
+        mWorkoutStepElapsedSeconds = 0;
+        mWorkoutSequenceComplete = false;
+    }
+
+    function updateWorkoutStepTimer() as Void {
+        if (mWorkoutSteps.size() == 0 || mWorkoutSequenceComplete) { return; }
+        var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+        var duration = step["durationSeconds"] as Lang.Number;
+        mWorkoutStepElapsedSeconds += 1;
+        if (mWorkoutStepElapsedSeconds >= duration) {
+            if (mWorkoutStepIndex + 1 < mWorkoutSteps.size()) {
+                mWorkoutStepIndex += 1;
+                mWorkoutStepElapsedSeconds = 0;
+                WatchUi.showToast("Naechster Trainingsschritt", null);
+            } else {
+                mWorkoutSequenceComplete = true;
+                WatchUi.showToast("Trainingsablauf abgeschlossen", null);
+            }
+        }
+    }
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
@@ -78,6 +137,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mCurrentWorkoutWarmup = workout["warmup"] == null ? "" : workout["warmup"].toString();
         mCurrentWorkoutMainSet = workout["mainSet"] == null ? "" : workout["mainSet"].toString();
         mCurrentWorkoutCooldown = workout["cooldown"] == null ? "" : workout["cooldown"].toString();
+        loadWorkoutSteps(workout["steps"]);
         loadDisplayPages();
     }
 
@@ -93,6 +153,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mCurrentWorkoutWarmup = "";
         mCurrentWorkoutMainSet = "";
         mCurrentWorkoutCooldown = "";
+        loadWorkoutSteps(null);
         if (sessions == null) { return; }
 
         var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
@@ -130,6 +191,7 @@ class KajoConnectActivityView extends WatchUi.View {
         if (selected["warmup"] != null) { mCurrentWorkoutWarmup = selected["warmup"].toString(); }
         if (selected["mainSet"] != null) { mCurrentWorkoutMainSet = selected["mainSet"].toString(); }
         if (selected["cooldown"] != null) { mCurrentWorkoutCooldown = selected["cooldown"].toString(); }
+        loadWorkoutSteps(selected["steps"]);
     }
 
     function loadDisplayPages() as Void {
@@ -161,7 +223,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mCurrentWorkoutType != "RestDay" &&
             (mCurrentWorkoutObjective != "" || mCurrentWorkoutIntensity != "" ||
              mCurrentWorkoutWarmup != "" || mCurrentWorkoutMainSet != "" ||
-             mCurrentWorkoutCooldown != "");
+             mCurrentWorkoutCooldown != "" || mWorkoutSteps.size() > 0);
         mPageCount = mEnabledPageIds.size() + mCustomPageCount;
         if (mHasWorkoutInstructions) { mPageCount += 1; }
         mPage = 0;
@@ -523,6 +585,9 @@ class KajoConnectActivityView extends WatchUi.View {
         var started = mEngine.start(mBoatClass);
         if (started) {
             mStatus = "AUFZEICHNUNG";
+            mWorkoutStepIndex = 0;
+            mWorkoutStepElapsedSeconds = 0;
+            mWorkoutSequenceComplete = false;
             Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mTimer.start(method(:onTimer), 1000, true);
         } else {
@@ -531,7 +596,10 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
-    function onTimer() as Void { WatchUi.requestUpdate(); }
+    function onTimer() as Void {
+        if (mStatus == "AUFZEICHNUNG") { updateWorkoutStepTimer(); }
+        WatchUi.requestUpdate();
+    }
     function onPosition(positionInfo as Position.Info) as Void { WatchUi.requestUpdate(); }
 
     function finishRecording() as Void {
@@ -591,11 +659,24 @@ class KajoConnectActivityView extends WatchUi.View {
             return;
         }
         if (mStatus == "AUFZEICHNUNG") {
-            if (x < mScreenWidth / 2) {
+            if (mCurrentPageId == 8 && mWorkoutSteps.size() > 0) {
+                if (x < mScreenWidth / 2) {
+                    if (mWorkoutSequenceComplete) {
+                        mWorkoutSequenceComplete = false;
+                        mWorkoutStepIndex = mWorkoutSteps.size() - 1;
+                        mWorkoutStepElapsedSeconds = 0;
+                    } else {
+                        moveWorkoutStep(-1);
+                    }
+                } else {
+                    moveWorkoutStep(1);
+                }
+            } else if (x < mScreenWidth / 2) {
                 if (mEngine.addLap()) { WatchUi.showToast("Runde gespeichert", null); }
             } else {
                 finishRecording();
             }
+            WatchUi.requestUpdate();
             return;
         }
         if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
@@ -830,7 +911,32 @@ class KajoConnectActivityView extends WatchUi.View {
                 getCustomMetricIds(customLayoutIndex), getCustomMetricSizes(customLayoutIndex),
                 getCustomMetricPositions(customLayoutIndex), customPageTitle);
         } else if (mCurrentPageId == 8) {
-            drawPageHeader(dc, "TRAININGSANWEISUNG");
+            if (mWorkoutSteps.size() > 0) {
+                drawPageHeader(dc, "TRAININGSABLAUF");
+                if (mWorkoutSequenceComplete) {
+                    drawFit(dc, cx, mUnit * 0.34, "ABGESCHLOSSEN", mUnit * 0.78, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+                    drawFit(dc, cx, mUnit * 0.47, mWorkoutSteps.size().toString() + " SCHRITTE ERLEDIGT", mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+                } else {
+                    var currentStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+                    var stepType = currentStep["type"].toString();
+                    var stepTypeLabel = "TRAINING";
+                    if (stepType == "warmup") { stepTypeLabel = "AUFWAERMEN"; }
+                    else if (stepType == "work") { stepTypeLabel = "BELASTUNG"; }
+                    else if (stepType == "recovery") { stepTypeLabel = "ERHOLUNG"; }
+                    else if (stepType == "cooldown") { stepTypeLabel = "ABWAERMEN"; }
+                    drawFit(dc, cx, mUnit * 0.235, "SCHRITT " + (mWorkoutStepIndex + 1).toString() + " / " + mWorkoutSteps.size().toString() + " · " + stepTypeLabel, mUnit * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                    drawFit(dc, cx, mUnit * 0.34, compactWorkoutText(currentStep["label"].toString(), 42), mUnit * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+                    var stepDuration = currentStep["durationSeconds"] as Lang.Number;
+                    var remaining = stepDuration - mWorkoutStepElapsedSeconds;
+                    if (remaining < 0) { remaining = 0; }
+                    drawFit(dc, cx, mUnit * 0.47, formatTime(remaining * 1000), mUnit * 0.82, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+                    if (currentStep["target"] != null && currentStep["target"].toString() != "") {
+                        drawFit(dc, cx, mUnit * 0.60, compactWorkoutText(currentStep["target"].toString(), 58), mUnit * 0.82, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+                    }
+                    drawFit(dc, cx, mUnit * 0.72, "Links: zurueck  ·  Rechts: weiter", mUnit * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                }
+            } else {
+                drawPageHeader(dc, "TRAININGSANWEISUNG");
             if (mCurrentWorkoutIntensity != "") {
                 drawFit(dc, cx, mUnit * 0.215,
                     "INTENSITAET - " + compactWorkoutText(mCurrentWorkoutIntensity, 34),
@@ -860,6 +966,7 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawFit(dc, cx, mUnit * 0.735, compactWorkoutText(mCurrentWorkoutCooldown, 58),
                     mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             }
+            }
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.245, "KADENZ", cadenceNow, "RPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
@@ -877,8 +984,13 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawButton(dc, cx, mButtonTop, mUnit * 0.58, "STARTEN");
         } else if (mStatus == "AUFZEICHNUNG") {
-            drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "RUNDE");
-            drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "ENDE");
+            if (mCurrentPageId == 8 && mWorkoutSteps.size() > 0) {
+                drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "ZURUECK");
+                drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "WEITER");
+            } else {
+                drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "RUNDE");
+                drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "ENDE");
+            }
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             drawButton(dc, cx, mButtonTop, mUnit * 0.72, "ERNEUT SPEICHERN");
         } else {
