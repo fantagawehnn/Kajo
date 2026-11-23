@@ -179,7 +179,18 @@ function adaptiveZones(
   };
 }
 
-function safePlannedSession(value: unknown) {
+type PlannedSession = {
+  id: string | number | null;
+  date: string;
+  name: string;
+  type: string;
+  duration: unknown;
+  targetTss: unknown;
+  category: string | null;
+  desc: string | null;
+};
+
+function safePlannedSession(value: unknown): PlannedSession | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const session = value as JsonRecord;
   if (!validDate(session.date)) return null;
@@ -219,7 +230,9 @@ Deno.serve(async (request) => {
       const code = (BigInt("0x" + randomHex(8)) % 1000000000000n).toString().padStart(12, "0");
       const pollSecret = randomHex(32);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-      await admin.from("kajo_connect_pairing_requests").delete().lt("expires_at", new Date().toISOString());
+      const { error: cleanupError } = await admin.from("kajo_connect_pairing_requests")
+        .delete().lt("expires_at", new Date().toISOString());
+      if (cleanupError) throw cleanupError;
       const deviceLabel = typeof body.deviceLabel === "string"
         ? body.deviceLabel.trim().slice(0, 80)
         : "KAJO Connect";
@@ -356,7 +369,7 @@ Deno.serve(async (request) => {
       const plannedRaw = Array.isArray(data.planned) ? data.planned : [];
       const plannedSessions = plannedRaw
         .map(safePlannedSession)
-        .filter((session): session is NonNullable<ReturnType<typeof safePlannedSession>> => session !== null)
+        .filter((session): session is PlannedSession => session !== null)
         .filter((session) => session.date >= addDays(localDate, -1) && session.date <= addDays(localDate, 14))
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 40);
