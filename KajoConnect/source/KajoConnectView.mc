@@ -349,7 +349,7 @@ class KajoConnectView extends WatchUi.View {
             if (index == 0) {
                 openActivityView(null);
             } else if (index == 1) {
-                var listView = new KajoConnectWorkoutListView();
+                var listView = new KajoConnectWorkoutListView(self);
                 WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
             } else if (index == 2) {
                 WatchUi.showToast("Trainingshistorie ist noch nicht verfuegbar", null);
