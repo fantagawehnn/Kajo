@@ -68,7 +68,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function getCurrentHeartRateZone(heartRate) as Lang.Number {
-        if (heartRate == null || mHeartRateZones.size() != 4) {
+        if (heartRate == null || heartRate <= 0 || mHeartRateZones.size() != 4) {
             return 0;
         }
 
