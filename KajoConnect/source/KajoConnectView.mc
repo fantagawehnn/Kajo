@@ -275,16 +275,25 @@ class KajoConnectView extends WatchUi.View {
             var selector = new KajoConnectWorkoutSelectView(todaysSessions, self);
             WatchUi.pushView(selector, new KajoConnectWorkoutSelectDelegate(selector), WatchUi.SLIDE_UP);
         } else if (todaysSessions.size() == 1) {
-            openActivityView(todaysSessions[0] as Lang.Dictionary);
+            showWorkoutDetails(todaysSessions[0] as Lang.Dictionary);
         } else {
             openActivityView(null);
         }
     }
 
+    // Zeigt vor dem Aufzeichnen die Detailansicht der ausgewaehlten Einheit.
+    function showWorkoutDetails(workout as Lang.Dictionary) as Void {
+        WatchUi.pushView(
+            new KajoConnectWorkoutView(workout),
+            new KajoConnectWorkoutDelegate(),
+            WatchUi.SLIDE_UP
+        );
+    }
+
     // Wird von der Auswahlansicht aufgerufen, nachdem eine Einheit angetippt wurde.
     function startActivityWithWorkout(workout as Lang.Dictionary) as Void {
         WatchUi.popView(WatchUi.SLIDE_DOWN);
-        openActivityView(workout);
+        showWorkoutDetails(workout);
     }
 
     function getTodaysSessions() as Lang.Array<Lang.Dictionary> {
