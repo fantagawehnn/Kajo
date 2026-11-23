@@ -158,6 +158,7 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mCustomMetricIds1.size() > 0) { mCustomPageCount += 1; }
         if (mCustomMetricIds2.size() > 0) { mCustomPageCount += 1; }
         mHasWorkoutInstructions = mCurrentWorkoutState == "PLANNED" &&
+            mCurrentWorkoutType != "RestDay" &&
             (mCurrentWorkoutObjective != "" || mCurrentWorkoutIntensity != "" ||
              mCurrentWorkoutWarmup != "" || mCurrentWorkoutMainSet != "" ||
              mCurrentWorkoutCooldown != "");
