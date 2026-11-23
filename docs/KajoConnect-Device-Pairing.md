@@ -46,7 +46,7 @@ Für die erste Version liest KAJO Connect geplante Einheiten aus dem bereits ver
 
 1. KAJO Connect zeigt eine Kopplungsansicht.
 2. Die Nutzerin gibt den Code auf der Uhr ein.
-3. Die Uhr sendet den Code über HTTPS an den Kopplungs-Endpunkt.
+3. Die Uhr sendet den Code über HTTPS an den Kopplungs-Endpunkt. Connect-IQ-Webrequests benötigen eine verfügbare Netzwerkverbindung über WLAN oder ein per Bluetooth verbundenes Mobilgerät; auf der Venu 3S planen wir zunächst mit der Verbindung über Garmin Connect Mobile.
 4. Der Server prüft Ablaufzeit, Einmaligkeit und Versuchslimit und verbraucht den Code atomar.
 5. Der Server erzeugt eine gerätespezifische zufällige Zugangsinformation und gibt sie genau einmal an die Uhr zurück.
 6. Die Uhr speichert das Token lokal über die Connect-IQ-Speicher-API.
@@ -113,7 +113,7 @@ Für Aktivitätsuploads ist die vorhandene `public.activities`-Struktur mit `use
 
 ## 7. Connect-IQ-Umsetzung
 
-Für die Watch-App werden die offiziellen Connect-IQ-APIs für HTTPS-Anfragen und persistenten App-Speicher geprüft und verwendet. Die Watch-App erhält keine Supabase-Client-Bibliothek und keine Zugangsdaten aus dem Web-Frontend.
+Für HTTPS-Anfragen ist `Communications.makeWebRequest()` vorgesehen. Garmin dokumentiert die API ab Connect-IQ API-Level 1.3.0; die Venu 3S ist als unterstütztes Gerät aufgeführt. Die Funktion benötigt die Communications-Berechtigung und eine Verbindung über WLAN oder ein per Bluetooth verbundenes Mobilgerät. Deshalb muss vor dem ersten Netzwerk-Build das aktuelle `minApiLevel` (derzeit 1.2.0) mindestens auf 1.3.0 geprüft und die Berechtigung im Manifest ergänzt werden. Für persistenten App-Speicher wird die passende Speicher-API anhand des tatsächlich benötigten API-Levels ausgewählt. Die Watch-App erhält keine Supabase-Client-Bibliothek und keine Zugangsdaten aus dem Web-Frontend.
 
 Die Venu 3S bleibt das erste Build- und Testziel. Unterstützte API-Level, Produktkompatibilität, Speicherlimits, Netzwerkanforderungen und Verhalten bei unterbrochener Verbindung werden gegen das installierte SDK und die offiziellen Garmin-Dokumente validiert.
 
