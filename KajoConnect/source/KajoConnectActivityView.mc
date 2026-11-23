@@ -151,7 +151,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
         var cx = mScreenWidth / 2;
-        drawFit(dc, cx, mUnit * 0.105, title, mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.105, title, mUnit * 0.58, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         drawFit(dc, cx, mUnit * 0.17,
             (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  ↑ ↓",
             mUnit * 0.65, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
@@ -274,8 +274,8 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawButton(dc, cx, mButtonTop, mUnit * 0.58, "STARTEN");
         } else if (mStatus == "AUFZEICHNUNG") {
-            drawButton(dc, mScreenWidth * 0.30, mButtonTop, mUnit * 0.32, "RUNDE");
-            drawButton(dc, mScreenWidth * 0.70, mButtonTop, mUnit * 0.32, "ENDE");
+            drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "RUNDE");
+            drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "ENDE");
         } else {
             drawButton(dc, cx, mButtonTop, mUnit * 0.58, "ZURUECK");
         }
