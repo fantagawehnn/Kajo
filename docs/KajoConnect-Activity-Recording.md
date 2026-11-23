@@ -31,9 +31,9 @@ Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
 - Distanz & Zeit: Distanz, Zeit und Kalorien
 - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich kann eine eigene Datenseite mit bis zu vier Kennzahlen aktiviert werden. Dafür stehen 16 Kennzahlen zur Auswahl; aktivierte Felder lassen sich innerhalb der Auswahl nach oben oder unten sortieren. Die eigene Seite passt die Darstellung automatisch an die Anzahl der gewählten Felder an (ein Feld groß, zwei nebeneinander, drei oder vier im Raster).
+Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich kann eine eigene Datenseite mit bis zu vier Kennzahlen aktiviert werden. Dafür stehen 17 Kennzahlen zur Auswahl, darunter die aktuelle Herzfrequenzzone. Aktivierte Felder lassen sich innerhalb der Auswahl nach oben oder unten sortieren. Ein ausgewähltes Feld kann als großes Feld hervorgehoben werden; die übrigen Felder werden abhängig von der Anzahl im verfügbaren Raster angeordnet. Ohne manuelle Größenwahl passt sich die Darstellung automatisch an (ein Feld groß, zwei nebeneinander, drei oder vier im Raster).
 
-**Noch nicht umgesetzt:** Kennzahlen frei auf mehrere selbst angelegte Seiten verteilen, mehr als vier Kennzahlen gleichzeitig anzeigen und die Größe einzelner Felder unabhängig voneinander manuell einstellen. Die automatische Größenanpassung richtet sich derzeit ausschließlich nach der Anzahl der ausgewählten Felder.
+**Noch nicht umgesetzt:** Kennzahlen frei auf mehrere selbst angelegte Seiten verteilen, mehr als vier Kennzahlen gleichzeitig anzeigen und für mehrere Felder unabhängig voneinander unterschiedliche Größen festlegen. Derzeit kann ein Feld als groß hervorgehoben werden.
 
 ## 4. Trainingsplan-Synchronisierung
 
@@ -62,7 +62,7 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 
 ## 6. Noch offen
 
-- Erweiterung des Layout-Editors: mehrere eigene Seiten, mehr als vier Felder und manuelle Größensteuerung pro Kennzahl.
+- Erweiterung des Layout-Editors: mehrere eigene Seiten, mehr als vier Felder und unabhängige Größensteuerung für jedes Feld.
 - Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
 - End-to-end-Test von Pairing, Trainingsplan-Synchronisierung und Herzfrequenzzonen.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
