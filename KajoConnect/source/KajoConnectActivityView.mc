@@ -44,6 +44,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCurrentWorkoutType as Lang.String = "";
     var mCurrentWorkoutDuration as Lang.String = "";
     var mCurrentWorkoutDescription as Lang.String = "";
+    var mCurrentWorkoutIntensity as Lang.String = "";
+    var mCurrentWorkoutMainSet as Lang.String = "";
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
@@ -70,6 +72,8 @@ class KajoConnectActivityView extends WatchUi.View {
                 if (session["type"] != null) { mCurrentWorkoutType = session["type"].toString(); }
                 if (session["duration"] != null) { mCurrentWorkoutDuration = session["duration"].toString(); }
                 if (session["desc"] != null) { mCurrentWorkoutDescription = session["desc"].toString(); }
+                if (session["intensity"] != null) { mCurrentWorkoutIntensity = session["intensity"].toString(); }
+                if (session["mainSet"] != null) { mCurrentWorkoutMainSet = session["mainSet"].toString(); }
                 return;
             }
         }
@@ -381,9 +385,17 @@ class KajoConnectActivityView extends WatchUi.View {
         if (workoutSubline == "") { workoutSubline = "AKTUELLES TRAINING"; }
         drawFit(dc, cx, mUnit * 0.155, workoutSubline, mUnit * 0.68,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        if (mCurrentWorkoutDescription != "") {
-            drawFit(dc, cx, mUnit * 0.19, mCurrentWorkoutDescription, mUnit * 0.68,
-                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        // Kompakte Trainingsvorgabe: Hauptteil hat Vorrang, Intensitaet bleibt als Kontext sichtbar.
+        var workoutCue = mCurrentWorkoutMainSet;
+        if (mCurrentWorkoutIntensity != "") {
+            workoutCue = workoutCue != ""
+                ? mCurrentWorkoutIntensity + "  ·  " + workoutCue
+                : mCurrentWorkoutIntensity;
+        }
+        if (workoutCue == "") { workoutCue = mCurrentWorkoutDescription; }
+        if (workoutCue != "") {
+            drawFit(dc, cx, mUnit * 0.19, workoutCue, mUnit * 0.68,
+                Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
 
         var panelX = mUnit * 0.145;
