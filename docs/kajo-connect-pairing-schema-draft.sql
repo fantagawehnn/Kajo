@@ -60,8 +60,7 @@ grant all on public.kajo_connect_pairing_requests to service_role;
 
 create table if not exists public.kajo_connect_rate_limits (
   bucket_key text primary key
-    check (bucket_key ~ '^[a-f0-9]{64}
-),
+    check (bucket_key ~ '^[a-f0-9]{64}$'),
   window_started_at timestamptz not null,
   request_count integer not null check (request_count >= 1),
   updated_at timestamptz not null default now()
@@ -81,12 +80,11 @@ create or replace function public.kajo_connect_consume_rate_limit(
 returns boolean
 language plpgsql
 set search_path = public, pg_temp
-as $
+as $$
 declare
   allowed boolean;
 begin
-  if p_bucket_key !~ '^[a-f0-9]{64}
- or p_limit < 1 or p_window_seconds < 1 then
+  if p_bucket_key !~ '^[a-f0-9]{64}$' or p_limit < 1 or p_window_seconds < 1 then
     raise exception 'Invalid rate limit parameters';
   end if;
 
@@ -110,7 +108,7 @@ begin
 
   return allowed;
 end;
-$;
+$$;
 
 revoke all on function public.kajo_connect_consume_rate_limit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.kajo_connect_consume_rate_limit(text, integer, integer) to service_role;
