@@ -198,6 +198,18 @@ class KajoConnectView extends WatchUi.View {
         return font;
     }
 
+    function compactSyncStatus() as Lang.String {
+        if (mSyncStatus == "KAJO SYNCHRONISIERT …") { return "SYNC …"; }
+        if (mSyncStatus == "KAJO AKTUALISIERT") { return "SYNC OK"; }
+        if (mSyncStatus == "KAJO AKTUALISIERT · CACHE FEHLER") { return "SYNC-FEHLER"; }
+        if (mSyncStatus == "ZUGRIFF WIDERRUFEN – NEU KOPPELN") { return "NEU KOPPELN"; }
+        if (mSyncStatus == "KAJO NICHT ERREICHBAR" ||
+            mSyncStatus == "OFFLINE · GESPEICHERTER PLAN") { return "OFFLINE"; }
+        if (mSyncStatus == "GESPEICHERTER TRAININGSPLAN") { return "OFFLINE"; }
+        if (mSyncStatus == "NICHT MIT KAJO VERBUNDEN") { return "NICHT VERBUNDEN"; }
+        return "KAJO";
+    }
+
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
         dc.setColor(color, Graphics.COLOR_BLACK);
@@ -332,7 +344,7 @@ class KajoConnectView extends WatchUi.View {
         // Kompakter Kopfbereich: Status ist bewusst nachrangig.
         drawCentered(dc, cx, mUnit * 0.075, "KAJO",
             mUnit * 0.68, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.145, mSyncStatus,
+        drawCentered(dc, cx, mUnit * 0.145, compactSyncStatus(),
             mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         var boatLabelY = mUnit * 0.43;
