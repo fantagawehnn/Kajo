@@ -9,29 +9,29 @@ const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectR
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
-  const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
+  const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\\s*\\/>/g)].map((match) => match[1]);
   assert.deepEqual(products, ["venu3s"]);
-  assert.match(manifest, /minApiLevel="4\.1\.6"/);
+  assert.match(manifest, /minApiLevel="4\\.1\\.6"/);
 });
 
 test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compiles only the Venu 3S", () => {
-  assert.match(buildScript, /bin\\monkeyc\.bat/);
-  assert.doesNotMatch(buildScript, /monkeyc\.exe/);
-  assert.match(buildScript, /\$devices\s*=\s*@\("venu3s"\)/);
+  assert.match(buildScript, /\\$compiler\\s*=\\s*Join-Path \\$SdkPath "bin\\\\monkeyc\\.bat"/);
+  assert.doesNotMatch(buildScript, /\\$compiler\\s*=.*monkeyc\\.exe/);
+  assert.match(buildScript, /\\$devices\\s*=\\s*@\\("venu3s"\\)/);
   assert.doesNotMatch(buildScript, /venu2plus/);
-  assert.match(buildScript, /KajoConnect-.*\.prg/);
+  assert.match(buildScript, /KajoConnect-.*\\.prg/);
   assert.match(buildScript, /-r -w/);
-  assert.match(buildScript, /outputInfo\.Length -le 0/);
+  assert.match(buildScript, /outputInfo\\.Length -le 0/);
 });
 
 test("Activity controls retain the intended Venu 3S button mapping", () => {
-  assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
-  assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
+  assert.match(activityDelegate, /key == WatchUi\\.KEY_ENTER \\|\\| key == WatchUi\\.KEY_START/);
+  assert.match(activityDelegate, /key == WatchUi\\.KEY_ESC && mView\\.handleLapButton\\(\\)/);
 });
 
 test("Recording uses Garmin kayaking with whitewater subsport", () => {
-  assert.match(recordingEngine, /:sport\s*=>\s*Activity\.SPORT_KAYAKING/);
-  assert.match(recordingEngine, /:subSport\s*=>\s*Activity\.SUB_SPORT_WHITEWATER/);
+  assert.match(recordingEngine, /:sport\\s*=>\\s*Activity\\.SPORT_KAYAKING/);
+  assert.match(recordingEngine, /:subSport\\s*=>\\s*Activity\\.SUB_SPORT_WHITEWATER/);
 });
 
 test("Monkey C source has no duplicate class-level member declarations", () => {
@@ -40,21 +40,21 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 
   for (const fileName of sourceFiles) {
     const source = readFileSync(new URL(fileName, sourceDirectory), "utf8");
-    const lines = source.split("\n");
+    const lines = source.split("\\n");
     let className = null;
     let depth = 0;
     let members = new Set();
 
     for (let index = 0; index < lines.length; index += 1) {
       const line = lines[index];
-      const classMatch = line.match(/^\s*class\s+([A-Za-z0-9_]+)/);
+      const classMatch = line.match(/^\\s*class\\s+([A-Za-z0-9_]+)/);
       if (classMatch) {
         className = classMatch[1];
         members = new Set();
       }
 
       if (className && depth === 1) {
-        const memberMatch = line.match(/^\s*var\s+([A-Za-z0-9_]+)\b/);
+        const memberMatch = line.match(/^\\s*var\\s+([A-Za-z0-9_]+)\\b/);
         if (memberMatch) {
           assert.equal(
             members.has(memberMatch[1]),
@@ -78,7 +78,7 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 
 
 test("Activity screen avoids status text overlapping the bottom touch controls", () => {
-  assert.doesNotMatch(activityView, /mUnit \* 0\.805, mStatus/);
-  assert.match(activityView, /mStatus == "START FEHLGESCHLAGEN" \? "START FEHLGESCHLAGEN" : "BEREIT"/);
+  assert.doesNotMatch(activityView, /mUnit \\* 0\\.805, mStatus/);
+  assert.match(activityView, /mStatus == "START FEHLGESCHLAGEN" \\? "START FEHLGESCHLAGEN" : "BEREIT"/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
