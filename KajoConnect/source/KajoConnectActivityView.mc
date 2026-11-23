@@ -55,6 +55,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mWorkoutStepElapsedSeconds as Lang.Number = 0;
     var mWorkoutSequenceComplete as Lang.Boolean = false;
     var mCurrentPageId as Lang.Number = 0;
+    var mGpsQuality as Lang.Number = Position.QUALITY_NOT_AVAILABLE;
 
     function loadWorkoutSteps(value) as Void {
         mWorkoutSteps = [];
@@ -599,7 +600,14 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mStatus == "AUFZEICHNUNG") { updateWorkoutStepTimer(); }
         WatchUi.requestUpdate();
     }
-    function onPosition(positionInfo as Position.Info) as Void { WatchUi.requestUpdate(); }
+    function onPosition(positionInfo as Position.Info) as Void {
+        if (positionInfo != null) {
+            mGpsQuality = positionInfo.accuracy;
+        } else {
+            mGpsQuality = Position.QUALITY_NOT_AVAILABLE;
+        }
+        WatchUi.requestUpdate();
+    }
 
     function finishRecording() as Void {
         if (mEngine.finish()) {
@@ -872,6 +880,9 @@ class KajoConnectActivityView extends WatchUi.View {
             descent = valueOrDash(activityInfo.totalDescent);
             gpsText = activityInfo.currentLocation != null ? "GPS AKTIV" : "GPS SUCHT";
             gpsAccuracy = gpsQualityText(activityInfo.currentLocationAccuracy);
+            if (activityInfo.currentLocationAccuracy == null) {
+                gpsAccuracy = gpsQualityText(mGpsQuality);
+            }
         }
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
