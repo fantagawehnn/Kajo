@@ -356,7 +356,7 @@ class KajoConnectView extends WatchUi.View {
             } else if (index == 3) {
                 WatchUi.pushView(
                     new Rez.Menus.MainMenu(),
-                    new KajoConnectMenuDelegate(),
+                    new KajoConnectMenuDelegate(self),
                     WatchUi.SLIDE_UP
                 );
             }
