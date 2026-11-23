@@ -10,20 +10,19 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
     var mRowHeight = 0;
     var mWidth = 0;
     var mHeight = 0;
-    var mSaved = false;
+    var mUnit = 0;
 
     function initialize() {
         View.initialize();
         for (var i = 0; i < 5; i += 1) {
             var key = "kajoDisplayPage" + i.toString();
             var savedValue = getApp().getProperty(key);
-            if (savedValue != null) {
-                mEnabled[i] = savedValue as Lang.Boolean;
-            }
+            if (savedValue != null) { mEnabled[i] = savedValue as Lang.Boolean; }
         }
     }
 
     function toggleAt(y as Lang.Number) as Void {
+        if (mRowHeight <= 0) { return; }
         var row = Math.floor((y - mRowTop) / mRowHeight);
         if (row >= 0 && row < 5) {
             mEnabled[row] = !mEnabled[row];
@@ -36,16 +35,23 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
                 WatchUi.showToast("Mindestens eine Seite muss aktiv bleiben", null);
             }
             WatchUi.requestUpdate();
-        } else if (y > mHeight * 0.82) {
+        } else if (y > mUnit * 0.82) {
             saveConfig();
         }
+    }
+
+    function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
+        var font = preferredFont;
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        return font;
     }
 
     function saveConfig() as Void {
         for (var i = 0; i < 5; i += 1) {
             getApp().setProperty("kajoDisplayPage" + i.toString(), mEnabled[i]);
         }
-        mSaved = true;
         WatchUi.popView(WatchUi.SLIDE_DOWN);
     }
 
@@ -53,30 +59,49 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         dc.clear();
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
-        var center = mWidth / 2;
+        mUnit = mWidth;
+        if (mHeight < mUnit) { mUnit = mHeight; }
+        var cx = mWidth / 2;
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(center, mHeight * 0.08, Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, mUnit * 0.095, Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(center, mHeight * 0.15, Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, mUnit * 0.16, Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
         var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
-        mRowTop = mHeight * 0.23;
-        mRowHeight = mHeight * 0.105;
+        mRowTop = mUnit * 0.235;
+        mRowHeight = mUnit * 0.108;
+
+        var cardWidth = mUnit * 0.68;
+        var cardX = cx - (cardWidth / 2);
+        var cardHeight = mRowHeight * 0.82;
 
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(mWidth * 0.12, y, mWidth * 0.76, mRowHeight * 0.82, 7);
+            dc.drawRoundedRectangle(cardX, y, cardWidth, cardHeight, mUnit * 0.025);
+
+            var state = mEnabled[i] ? "AN" : "AUS";
+            var labelWidth = cardWidth * 0.62;
+            var font = fitFont(dc, labels[i], labelWidth, Graphics.FONT_SMALL);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawText(mWidth * 0.43, y + 7, Graphics.FONT_TINY, labels[i], Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cardX + (labelWidth / 2) + (mUnit * 0.015),
+                y + (cardHeight - dc.getFontHeight(font)) / 2,
+                font, labels[i], Graphics.TEXT_JUSTIFY_CENTER);
+
             dc.setColor(mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawText(mWidth * 0.76, y + 7, Graphics.FONT_SMALL, mEnabled[i] ? "AN" : "AUS", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cardX + cardWidth * 0.84,
+                y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+                Graphics.FONT_TINY, state, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
+        var saveWidth = mUnit * 0.54;
+        var saveHeight = mUnit * 0.085;
+        var saveY = mUnit * 0.825;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(mWidth * 0.25, mHeight * 0.83, mWidth * 0.50, mHeight * 0.08, 8);
+        dc.fillRoundedRectangle(cx - saveWidth / 2, saveY, saveWidth, saveHeight, mUnit * 0.03);
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
-        dc.drawText(center, mHeight * 0.845, Graphics.FONT_TINY, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
+            Graphics.FONT_SMALL, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
     }
 }
