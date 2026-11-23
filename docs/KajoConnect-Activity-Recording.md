@@ -20,10 +20,11 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät ges
 ## 2. Trainingsübersicht
 
 - Ein Eintrag aus der Trainingsliste auf dem Startbildschirm öffnet eine eigene Trainingsübersicht.
-- Über das Uhrenmenü ist die Trainingsübersicht ebenfalls erreichbar.
-- Derzeit kann die Uhr aus der bestehenden lokalen Anzeige nur den Namen der ausgewählten Einheit übernehmen.
+- Die Detailansicht ist für vollständige Einheits-Dictionaries mit den KAJO-Feldern `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc vorbereitet.
+- Die Detailansicht zeigt Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
+- Der Menüeintrag „Trainingsübersicht“ öffnet derzeit eine Platzhalteransicht und keine echte Liste geplanter Einheiten.
 
-Die KAJO-Web-App speichert geplante Einheiten mit den Feldern `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc`. Die geplanten Einheiten werden aktuell aber noch nicht an KAJO Connect übertragen. Daher zeigt die neue Uhrenansicht noch keine echten Dauer-, Belastungs- oder Beschreibungswerte an. Eine strukturierte Intervall-/Schrittfolge ist im geprüften Planungsmodul nicht vorhanden und wird nicht erfunden.
+**Wichtige Abgrenzung:** Die geplanten Einheiten werden noch nicht an KAJO Connect übertragen. Die Trainingsübersicht ist daher noch nicht mit echten KAJO-Trainingsdaten befüllt. Die Anzeige der Felder ist vorbereitet, die Datenübergabe fehlt. Eine strukturierte Intervall-/Schrittfolge ist im geprüften Planungsmodul nicht belegt und wird nicht erfunden.
 
 ## 3. Bedienung und Aufzeichnung
 
@@ -38,7 +39,7 @@ Die KAJO-Web-App speichert geplante Einheiten mit den Feldern `id`, `date`, `nam
 - Synchronisierung der geplanten KAJO-Einheit samt Metadaten zur Uhr.
 - Darstellung strukturierter Intervalle, sobald ein entsprechendes Datenmodell in KAJO existiert.
 - Freies Anordnen und individuelles Bearbeiten einzelner Kennzahlen innerhalb einer Datenseite.
-- Herzfrequenzzonen aus dem KAJO-Athletenprofil.
+- Übergabe der in KAJO berechneten Herzfrequenzzonen an die Uhr (Anzeige und Zonenzuordnung sind vorbereitet, die Datenübergabe fehlt).
 - Hardware-Tastensteuerung ist im Branch implementiert; die tatsächliche Tastenbelegung muss noch auf Venu 3S und Venu 2 Plus geprüft werden.
 - Automatischer Upload nach KAJO, Pairing und Offline-Queue.
 
