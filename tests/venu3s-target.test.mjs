@@ -133,5 +133,5 @@ test("home screen uses compact conditional layout with a single primary action",
   assert.match(homeView, /mStartTop = startY/);
   assert.match(homeView, /mFreeTop = mUnit \* 0\.80/);
   assert.match(homeView, /mFreeTop = -1/);
-  assert.match(homeView, /drawCentered\(dc, cx, menuY \+ \(menuHeight \* 0\.22\), "MENUE"/);
+  assert.match(homeView, /drawCentered\(dc, cx, menuY \+ \(menuHeight \* 0\.18\), "MENUE"/);
 });
