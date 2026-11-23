@@ -309,8 +309,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 labels[b], controlWidth * 0.92, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
 
-        mSaveTop = Math.round(mUnit * 0.815).toNumber();
-        mSaveBottom = (mUnit * 89 / 100).toNumber();
+        mSaveTop = Math.round(mUnit * 0.78).toNumber();
+        mSaveBottom = (mUnit * 0.865).toNumber();
         var saveWidth = mUnit * 0.48;
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
