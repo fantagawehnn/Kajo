@@ -64,9 +64,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         var cx = mWidth / 2;
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx), Math.round(mUnit * 0.095), Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.095).toNumber(), Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx), Math.round(mUnit * 0.16), Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.16).toNumber(), Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
         var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.235;
@@ -99,9 +99,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         var saveHeight = mUnit * 0.085;
         var saveY = mUnit * 0.825;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2), Math.round(saveY), Math.round(saveWidth), Math.round(saveHeight), Math.round(mUnit * 0.03));
+        dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
-        dc.drawText(Math.round(cx), Math.round(saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2),
+        dc.drawText(Math.round(cx).toNumber(), Math.round(saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2).toNumber(),
             Graphics.FONT_SMALL, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
     }
 }
