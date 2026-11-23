@@ -14,7 +14,9 @@ test("Venu 3S is the only Connect IQ product target", () => {
   assert.match(manifest, /minApiLevel="4\.1\.6"/);
 });
 
-test("PowerShell build helper compiles only the Venu 3S", () => {
+test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compiles only the Venu 3S", () => {
+  assert.match(buildScript, /bin\\monkeyc\.bat/);
+  assert.doesNotMatch(buildScript, /monkeyc\.exe/);
   assert.match(buildScript, /\$devices\s*=\s*@\("venu3s"\)/);
   assert.doesNotMatch(buildScript, /venu2plus/);
   assert.match(buildScript, /KajoConnect-.*\.prg/);
