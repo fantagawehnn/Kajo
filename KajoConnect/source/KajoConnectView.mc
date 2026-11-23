@@ -480,7 +480,7 @@ class KajoConnectView extends WatchUi.View {
             var rowX = cx - (rowWidth / 2);
             dc.setColor(0x091417, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
-                rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.045).toNumber());
+                rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.032).toNumber());
             dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
                 rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.045).toNumber());
