@@ -112,6 +112,18 @@ test('erhält doppelte Eintragsidentitäten, statt sie still zu überschreiben',
     assert.equal(result.snapshot.planned.length, 2);
 });
 
+test('führt unabhängige Änderungen derselben Aktivität konfliktfrei zusammen', () => {
+    const result = merge(
+        { activities: [{ id: 'garmin-25171453189', name: 'Paddeln', duration: 60, distance: 8000 }] },
+        { activities: [{ id: 'garmin-25171453189', name: 'Paddeln', duration: 65, distance: 8000 }] },
+        { activities: [{ id: 'garmin-25171453189', name: 'Paddeln', duration: 60, distance: 8200 }] }
+    );
+    assert.deepEqual(plain(result.conflicts), []);
+    assert.deepEqual(plain(result.snapshot.activities), [
+        { id: 'garmin-25171453189', name: 'Paddeln', duration: 65, distance: 8200 }
+    ]);
+});
+
 test('erkennt identische Snapshots unabhängig von Objektschlüssel-Reihenfolge', () => {
     assert.equal(cloudSnapshotsEqual({ a: 1, b: { x: 2, y: 3 } }, { b: { y: 3, x: 2 }, a: 1 }), true);
 });
