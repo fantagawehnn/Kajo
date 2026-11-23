@@ -105,7 +105,7 @@ async function consumeRateLimit(
   limit: number,
   windowSeconds: number,
 ): Promise<boolean> {
-  const bucketKey = await sha256(scope + ":" + identity);
+  const bucketKey = await pairingCodeHash(scope + ":" + identity);
   const { data, error } = await admin.rpc("kajo_connect_consume_rate_limit", {
     p_bucket_key: bucketKey,
     p_limit: limit,
