@@ -1,10 +1,9 @@
 /**
  * cloud-sync.js
  *
- * Explizite, versionsgeschützte Supabase-Synchronisierung.
- * Dieses Modul wird zunächst nur vorbereitet und NICHT automatisch gestartet.
- * Erst nach Ausführung der Datenbankmigration und einem kontrollierten
- * Erstabgleich darf es in den App-Lebenszyklus eingebunden werden.
+ * Versionsgeschützte Supabase-Snapshot-Synchronisierung.
+ * Der Abgleich und die Konfliktbehandlung liegen in main.js / cloud-merge.js;
+ * dieses Modul kapselt ausschließlich den authentifizierten Lese- und Schreibzugriff.
  */
 
 import { supabase } from './supabase-client.js';
