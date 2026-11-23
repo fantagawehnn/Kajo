@@ -541,7 +541,6 @@ class KajoConnectActivityView extends WatchUi.View {
         activityInfo) as Void {
         var cyan = 0x00E5CC;
         var muted = 0xA0AAB2;
-        var orange = 0xFF9100;
         var left = mUnit * 0.105;
         var right = mUnit * 0.895;
 
@@ -611,9 +610,9 @@ class KajoConnectActivityView extends WatchUi.View {
         var ringRadius = mUnit * 0.245;
         dc.setColor(cyan, Graphics.COLOR_BLACK);
         dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
-            205, 335, Graphics.ARC_CLOCKWISE);
+            Graphics.ARC_CLOCKWISE, 205, 335);
         dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
-            25, 155, Graphics.ARC_CLOCKWISE);
+            Graphics.ARC_CLOCKWISE, 25, 155);
         drawFit(dc, cx, mUnit * 0.285, timerText, mUnit * 0.66,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
         drawFit(dc, cx + (mUnit * 0.275), mUnit * 0.305, "min",
