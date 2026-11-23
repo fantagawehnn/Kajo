@@ -27,7 +27,7 @@ create table if not exists public.kajo_connect_pairing_requests (
   device_label text not null default 'KAJO Connect'
     check (char_length(device_label) between 1 and 80),
   user_id uuid references auth.users(id) on delete cascade,
-  device_id uuid references public.kajo_connect_devices(id) on delete set null,
+  device_id uuid references public.kajo_connect_devices(id) on delete cascade,
   token_ciphertext text,
   token_iv text,
   expires_at timestamptz not null,
