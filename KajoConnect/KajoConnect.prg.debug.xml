@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<debugInfo>
+    <manifest filename="F:\Dokumente\Kajo\garmin developer\KajoConnect\manifest.xml"/>
+    <pcToLineNum>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="1" lineNum="5" parent="globals/KajoConnectView" pc="268435460" symbol="&lt;init&gt;"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="1" lineNum="8" parent="globals/KajoConnectView" pc="268435471" symbol="&lt;init&gt;"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="2" lineNum="25" parent="globals" pc="268435481" symbol="getApp"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="2" lineNum="26" parent="globals" pc="268435491" symbol="getApp"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="3" lineNum="686" parent="globals/Rez" pc="268435502" symbol="&lt;init&gt;"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="4" lineNum="4" parent="globals/KajoConnectDelegate" pc="268435522" symbol="&lt;init&gt;"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="5" lineNum="5" parent="globals/KajoConnectApp" pc="268435534" symbol="&lt;init&gt;"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="6" lineNum="5" parent="globals/KajoConnectMenuDelegate" pc="268435546" symbol="&lt;init&gt;"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="49" parent="globals/KajoConnectView" pc="268435558" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="51" parent="globals/KajoConnectView" pc="268435561" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="53" parent="globals/KajoConnectView" pc="268435574" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="54" parent="globals/KajoConnectView" pc="268435582" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="57" parent="globals/KajoConnectView" pc="268435586" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="59" parent="globals/KajoConnectView" pc="268435601" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="60" parent="globals/KajoConnectView" pc="268435611" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="63" parent="globals/KajoConnectView" pc="268435622" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="64" parent="globals/KajoConnectView" pc="268435636" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="7" lineNum="67" parent="globals/KajoConnectView" pc="268435651" symbol="scrollPlan"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="8" lineNum="43" parent="globals/KajoConnectView" pc="268435663" symbol="setPlannedSessions"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="8" lineNum="44" parent="globals/KajoConnectView" pc="268435665" symbol="setPlannedSessions"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="8" lineNum="45" parent="globals/KajoConnectView" pc="268435674" symbol="setPlannedSessions"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="8" lineNum="46" parent="globals/KajoConnectView" pc="268435682" symbol="setPlannedSessions"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="70" parent="globals/KajoConnectView" pc="268435694" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="73" parent="globals/KajoConnectView" pc="268435697" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="77" parent="globals/KajoConnectView" pc="268435744" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="79" parent="globals/KajoConnectView" pc="268435747" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="80" parent="globals/KajoConnectView" pc="268435764" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="83" parent="globals/KajoConnectView" pc="268435771" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="85" parent="globals/KajoConnectView" pc="268435781" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="86" parent="globals/KajoConnectView" pc="268435798" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="87" parent="globals/KajoConnectView" pc="268435808" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="92" parent="globals/KajoConnectView" pc="268435830" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="97" parent="globals/KajoConnectView" pc="268435837" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="102" parent="globals/KajoConnectView" pc="268435893" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="103" parent="globals/KajoConnectView" pc="268435910" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="104" parent="globals/KajoConnectView" pc="268435925" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="105" parent="globals/KajoConnectView" pc="268435942" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="107" parent="globals/KajoConnectView" pc="268435957" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="110" parent="globals/KajoConnectView" pc="268435969" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="9" lineNum="112" parent="globals/KajoConnectView" pc="268435980" symbol="handleTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="24" parent="globals/KajoConnectView" pc="268436009" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="25" parent="globals/KajoConnectView" pc="268436012" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="27" parent="globals/KajoConnectView" pc="268436016" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="30" parent="globals/KajoConnectView" pc="268436051" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="32" parent="globals/KajoConnectView" pc="268436079" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="33" parent="globals/KajoConnectView" pc="268436098" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="35" parent="globals/KajoConnectView" pc="268436123" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="36" parent="globals/KajoConnectView" pc="268436127" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="10" lineNum="40" parent="globals/KajoConnectView" pc="268436133" symbol="fitLabel"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="11" lineNum="20" parent="globals/KajoConnectView" pc="268436136" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="11" lineNum="21" parent="globals/KajoConnectView" pc="268436138" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="119" parent="globals/KajoConnectView" pc="268436151" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="121" parent="globals/KajoConnectView" pc="268436154" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="123" parent="globals/KajoConnectView" pc="268436162" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="124" parent="globals/KajoConnectView" pc="268436176" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="126" parent="globals/KajoConnectView" pc="268436190" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="128" parent="globals/KajoConnectView" pc="268436200" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="129" parent="globals/KajoConnectView" pc="268436203" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="132" parent="globals/KajoConnectView" pc="268436207" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="137" parent="globals/KajoConnectView" pc="268436223" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="145" parent="globals/KajoConnectView" pc="268436255" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="150" parent="globals/KajoConnectView" pc="268436271" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="159" parent="globals/KajoConnectView" pc="268436303" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="161" parent="globals/KajoConnectView" pc="268436316" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="163" parent="globals/KajoConnectView" pc="268436329" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="165" parent="globals/KajoConnectView" pc="268436336" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="170" parent="globals/KajoConnectView" pc="268436352" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="178" parent="globals/KajoConnectView" pc="268436384" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="179" parent="globals/KajoConnectView" pc="268436402" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="181" parent="globals/KajoConnectView" pc="268436420" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="183" parent="globals/KajoConnectView" pc="268436424" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="184" parent="globals/KajoConnectView" pc="268436432" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="187" parent="globals/KajoConnectView" pc="268436439" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="189" parent="globals/KajoConnectView" pc="268436450" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="191" parent="globals/KajoConnectView" pc="268436460" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="193" parent="globals/KajoConnectView" pc="268436468" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="196" parent="globals/KajoConnectView" pc="268436484" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="197" parent="globals/KajoConnectView" pc="268436497" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="198" parent="globals/KajoConnectView" pc="268436510" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="200" parent="globals/KajoConnectView" pc="268436523" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="205" parent="globals/KajoConnectView" pc="268436538" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="213" parent="globals/KajoConnectView" pc="268436558" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="218" parent="globals/KajoConnectView" pc="268436577" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="225" parent="globals/KajoConnectView" pc="268436604" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="228" parent="globals/KajoConnectView" pc="268436626" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="238" parent="globals/KajoConnectView" pc="268436659" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="240" parent="globals/KajoConnectView" pc="268436667" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="245" parent="globals/KajoConnectView" pc="268436683" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="254" parent="globals/KajoConnectView" pc="268436721" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="255" parent="globals/KajoConnectView" pc="268436729" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="257" parent="globals/KajoConnectView" pc="268436745" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="262" parent="globals/KajoConnectView" pc="268436761" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="267" parent="globals/KajoConnectView" pc="268436777" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="275" parent="globals/KajoConnectView" pc="268436800" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="276" parent="globals/KajoConnectView" pc="268436816" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="277" parent="globals/KajoConnectView" pc="268436829" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="279" parent="globals/KajoConnectView" pc="268436842" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="280" parent="globals/KajoConnectView" pc="268436851" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="282" parent="globals/KajoConnectView" pc="268436863" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="286" parent="globals/KajoConnectView" pc="268436885" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="287" parent="globals/KajoConnectView" pc="268436898" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="289" parent="globals/KajoConnectView" pc="268436908" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="291" parent="globals/KajoConnectView" pc="268436922" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="296" parent="globals/KajoConnectView" pc="268436938" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="304" parent="globals/KajoConnectView" pc="268436958" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="311" parent="globals/KajoConnectView" pc="268436977" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="316" parent="globals/KajoConnectView" pc="268436993" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="324" parent="globals/KajoConnectView" pc="268437013" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="330" parent="globals/KajoConnectView" pc="268437029" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="339" parent="globals/KajoConnectView" pc="268437052" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="340" parent="globals/KajoConnectView" pc="268437065" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="342" parent="globals/KajoConnectView" pc="268437075" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="344" parent="globals/KajoConnectView" pc="268437089" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="349" parent="globals/KajoConnectView" pc="268437105" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="357" parent="globals/KajoConnectView" pc="268437125" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="364" parent="globals/KajoConnectView" pc="268437144" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="369" parent="globals/KajoConnectView" pc="268437160" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="377" parent="globals/KajoConnectView" pc="268437180" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="383" parent="globals/KajoConnectView" pc="268437196" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="392" parent="globals/KajoConnectView" pc="268437219" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="393" parent="globals/KajoConnectView" pc="268437232" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="395" parent="globals/KajoConnectView" pc="268437242" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="397" parent="globals/KajoConnectView" pc="268437256" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="402" parent="globals/KajoConnectView" pc="268437272" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="410" parent="globals/KajoConnectView" pc="268437292" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="417" parent="globals/KajoConnectView" pc="268437311" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="422" parent="globals/KajoConnectView" pc="268437327" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="430" parent="globals/KajoConnectView" pc="268437347" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="436" parent="globals/KajoConnectView" pc="268437363" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="445" parent="globals/KajoConnectView" pc="268437386" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectView.mc" id="12" lineNum="450" parent="globals/KajoConnectView" pc="268437402" symbol="onUpdate"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="13" lineNum="30" parent="globals/KajoConnectDelegate" pc="268437435" symbol="onPreviousPage"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="13" lineNum="31" parent="globals/KajoConnectDelegate" pc="268437437" symbol="onPreviousPage"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="13" lineNum="32" parent="globals/KajoConnectDelegate" pc="268437453" symbol="onPreviousPage"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="14" lineNum="35" parent="globals/KajoConnectDelegate" pc="268437455" symbol="onMenu"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="14" lineNum="37" parent="globals/KajoConnectDelegate" pc="268437457" symbol="onMenu"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="14" lineNum="43" parent="globals/KajoConnectDelegate" pc="268437522" symbol="onMenu"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="15" lineNum="8" parent="globals/KajoConnectDelegate" pc="268437524" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="15" lineNum="9" parent="globals/KajoConnectDelegate" pc="268437526" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="15" lineNum="10" parent="globals/KajoConnectDelegate" pc="268437538" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="16" lineNum="13" parent="globals/KajoConnectDelegate" pc="268437548" symbol="onTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="16" lineNum="15" parent="globals/KajoConnectDelegate" pc="268437551" symbol="onTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="16" lineNum="17" parent="globals/KajoConnectDelegate" pc="268437560" symbol="onTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="16" lineNum="18" parent="globals/KajoConnectDelegate" pc="268437566" symbol="onTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="16" lineNum="20" parent="globals/KajoConnectDelegate" pc="268437573" symbol="onTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="16" lineNum="22" parent="globals/KajoConnectDelegate" pc="268437591" symbol="onTap"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="17" lineNum="25" parent="globals/KajoConnectDelegate" pc="268437593" symbol="onNextPage"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="17" lineNum="26" parent="globals/KajoConnectDelegate" pc="268437595" symbol="onNextPage"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectDelegate.mc" id="17" lineNum="27" parent="globals/KajoConnectDelegate" pc="268437611" symbol="onNextPage"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="18" lineNum="11" parent="globals/KajoConnectApp" pc="268437613" symbol="onStart"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="19" lineNum="17" parent="globals/KajoConnectApp" pc="268437616" symbol="getInitialView"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="19" lineNum="19" parent="globals/KajoConnectApp" pc="268437619" symbol="getInitialView"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="19" lineNum="21" parent="globals/KajoConnectApp" pc="268437639" symbol="getInitialView"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="20" lineNum="7" parent="globals/KajoConnectApp" pc="268437672" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="20" lineNum="8" parent="globals/KajoConnectApp" pc="268437674" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectApp.mc" id="21" lineNum="14" parent="globals/KajoConnectApp" pc="268437687" symbol="onStop"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="22" lineNum="11" parent="globals/KajoConnectMenuDelegate" pc="268437690" symbol="onMenuItem"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="22" lineNum="12" parent="globals/KajoConnectMenuDelegate" pc="268437692" symbol="onMenuItem"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="22" lineNum="13" parent="globals/KajoConnectMenuDelegate" pc="268437703" symbol="onMenuItem"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="22" lineNum="14" parent="globals/KajoConnectMenuDelegate" pc="268437724" symbol="onMenuItem"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="22" lineNum="15" parent="globals/KajoConnectMenuDelegate" pc="268437735" symbol="onMenuItem"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="23" lineNum="7" parent="globals/KajoConnectMenuDelegate" pc="268437757" symbol="initialize"/>
+        <entry filename="F:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\source\\KajoConnectMenuDelegate.mc" id="23" lineNum="8" parent="globals/KajoConnectMenuDelegate" pc="268437759" symbol="initialize"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="24" lineNum="693" parent="globals/Rez/Layouts" pc="268437772" symbol="MainLayout"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="24" lineNum="694" parent="globals/Rez/Layouts" pc="268437783" symbol="MainLayout"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="24" lineNum="696" parent="globals/Rez/Layouts" pc="268437792" symbol="MainLayout"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="24" lineNum="698" parent="globals/Rez/Layouts" pc="268437895" symbol="MainLayout"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="24" lineNum="699" parent="globals/Rez/Layouts" pc="268437979" symbol="MainLayout"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="24" lineNum="701" parent="globals/Rez/Layouts" pc="268438010" symbol="MainLayout"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="25" lineNum="706" parent="globals/Rez/Menus/MainMenu" pc="268438025" symbol="&lt;init&gt;"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="26" lineNum="707" parent="globals/Rez/Menus/MainMenu" pc="268438037" symbol="initialize"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="26" lineNum="708" parent="globals/Rez/Menus/MainMenu" pc="268438039" symbol="initialize"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="26" lineNum="709" parent="globals/Rez/Menus/MainMenu" pc="268438051" symbol="initialize"/>
+        <entry filename="f:\\Dokumente\\Kajo\\garmin developer\\KajoConnect\\gen\\006-B4261-00\\source\\Rez.mcgen" id="26" lineNum="710" parent="globals/Rez/Menus/MainMenu" pc="268438096" symbol="initialize"/>
+    </pcToLineNum>
+    <symbolTable>
+        <entry id="8388639" module="true" symbol="Graphics"/>
+        <entry field="true" id="8389346" symbol="text"/>
+        <entry field="true" id="8389546" symbol="mHeight"/>
+        <entry id="8388632" method="true" symbol="&lt;init&gt;"/>
+        <entry id="5" module="true" symbol="globals/Rez/Menus"/>
+        <entry field="true" id="13" symbol="mBoatBottom"/>
+        <entry id="27" method="true" symbol="MainLayout"/>
+        <entry field="true" id="18" symbol="mPlannedSessions"/>
+        <entry field="true" id="8388611" module="true" symbol="Toybox"/>
+        <entry id="11" method="true" symbol="fitLabel"/>
+        <entry field="true" id="24" symbol="mView"/>
+        <entry field="true" id="29" symbol="AppName"/>
+        <entry id="21" method="true" symbol="setPlannedSessions"/>
+        <entry id="6" module="true" symbol="globals/Rez/Strings"/>
+        <entry field="true" id="8389545" symbol="mWidth"/>
+        <entry id="8389080" method="true" symbol="onMenu"/>
+        <entry id="12" method="true" symbol="handleTap"/>
+        <entry id="8389345" symbol="rezId"/>
+        <entry field="true" id="19" symbol="mSelectedBoat"/>
+        <entry id="8388648" module="true" symbol="WatchUi"/>
+        <entry id="2" module="true" symbol="globals/Rez"/>
+        <entry field="true" id="32" symbol="prompt"/>
+        <entry field="true" id="26" symbol="id_monkey"/>
+        <entry id="8389124" method="true" symbol="onUpdate"/>
+        <entry field="true" id="8389065" symbol="locY"/>
+        <entry field="true" id="8389064" symbol="locX"/>
+        <entry field="true" id="15" symbol="mPlanRowHeight"/>
+        <entry id="8388771" module="true" object="true" symbol="Drawables"/>
+        <entry id="8389348" symbol="font"/>
+        <entry id="34" symbol="item_2"/>
+        <entry id="33" symbol="item_1"/>
+        <entry id="8389079" method="true" symbol="onPreviousPage"/>
+        <entry id="23" module="true" symbol="Menus"/>
+        <entry id="8389275" method="true" symbol="getApp"/>
+        <entry id="4" module="true" symbol="globals/Rez/Layouts"/>
+        <entry field="true" id="8389063" symbol="identifier"/>
+        <entry field="true" id="14" symbol="mBoatTop"/>
+        <entry id="8389349" symbol="justification"/>
+        <entry id="8389098" method="true" symbol="onTap"/>
+        <entry id="3" module="true" symbol="globals/Rez/Drawables"/>
+        <entry field="true" id="16" symbol="mPlanStartIndex"/>
+        <entry id="28" object="true" symbol="MainMenu"/>
+        <entry id="7" object="true" symbol="KajoConnectApp"/>
+        <entry field="true" id="17" symbol="mPlanStartY"/>
+        <entry id="8388644" module="true" symbol="System"/>
+        <entry id="8388769" module="true" object="true" symbol="Rez"/>
+        <entry id="8" object="true" symbol="KajoConnectDelegate"/>
+        <entry id="8388640" module="true" symbol="Lang"/>
+        <entry field="true" id="25" symbol="LauncherIcon"/>
+        <entry id="8388610" symbol="statics"/>
+        <entry id="8389350" module="true" symbol="globals"/>
+        <entry id="8388770" module="true" object="true" symbol="Strings"/>
+        <entry id="8388702" method="true" symbol="initialize"/>
+        <entry id="8389279" method="true" symbol="onStart"/>
+        <entry id="10" object="true" symbol="KajoConnectView"/>
+        <entry id="8389280" method="true" symbol="getInitialView"/>
+        <entry id="8389281" method="true" symbol="onStop"/>
+        <entry id="8389109" method="true" symbol="onMenuItem"/>
+        <entry field="true" id="8389347" symbol="color"/>
+        <entry id="22" module="true" symbol="Layouts"/>
+        <entry id="20" method="true" symbol="scrollPlan"/>
+        <entry id="9" object="true" symbol="KajoConnectMenuDelegate"/>
+        <entry id="8389078" method="true" symbol="onNextPage"/>
+        <entry id="8388635" module="true" symbol="Application"/>
+        <entry field="true" id="31" symbol="menu_label_2"/>
+        <entry field="true" id="30" symbol="menu_label_1"/>
+    </symbolTable>
+    <localVars>
+        <entry arg="true" endPc="268435662" name="direction" stackId="1" startPc="268435558"/>
+        <entry endPc="268435661" name="count" stackId="2" startPc="268435561"/>
+        <entry arg="true" endPc="268435693" name="sessions" stackId="1" startPc="268435663"/>
+        <entry arg="true" endPc="268436008" name="x" stackId="1" startPc="268435694"/>
+        <entry arg="true" endPc="268436008" name="y" stackId="2" startPc="268435694"/>
+        <entry endPc="268435833" name="row" stackId="3" startPc="268435744"/>
+        <entry endPc="268435833" name="index" stackId="4" startPc="268435744"/>
+        <entry endPc="268435830" name="selectedSession" stackId="5" startPc="268435798"/>
+        <entry arg="true" endPc="268436135" name="dc" stackId="1" startPc="268436009"/>
+        <entry arg="true" endPc="268436135" name="text" stackId="2" startPc="268436009"/>
+        <entry arg="true" endPc="268436135" name="font" stackId="3" startPc="268436009"/>
+        <entry arg="true" endPc="268436135" name="maxWidth" stackId="4" startPc="268436009"/>
+        <entry endPc="268436135" name="result" stackId="5" startPc="268436012"/>
+        <entry endPc="268436129" name="candidate" stackId="6" startPc="268436051"/>
+        <entry arg="true" endPc="268437434" name="dc" stackId="1" startPc="268436151"/>
+        <entry endPc="268437433" name="centerX" stackId="2" startPc="268436154"/>
+        <entry endPc="268437433" name="fontTiny" stackId="3" startPc="268436154"/>
+        <entry endPc="268437433" name="fontSmall" stackId="4" startPc="268436154"/>
+        <entry endPc="268437433" name="sessionCount" stackId="5" startPc="268436154"/>
+        <entry endPc="268437433" name="activityY" stackId="6" startPc="268436154"/>
+        <entry endPc="268436757" name="visibleCount" stackId="7" startPc="268436336"/>
+        <entry endPc="268436658" name="i" stackId="8" startPc="268436450"/>
+        <entry endPc="268436648" name="index" stackId="9" startPc="268436450"/>
+        <entry endPc="268436645" name="rowY" stackId="10" startPc="268436468"/>
+        <entry endPc="268436645" name="cardX" stackId="11" startPc="268436468"/>
+        <entry endPc="268436645" name="cardWidth" stackId="12" startPc="268436468"/>
+        <entry endPc="268436645" name="cardHeight" stackId="13" startPc="268436468"/>
+        <entry endPc="268436645" name="sessionText" stackId="14" startPc="268436468"/>
+        <entry endPc="268436645" name="textY" stackId="15" startPc="268436468"/>
+        <entry endPc="268437433" name="buttonY" stackId="16" startPc="268436154"/>
+        <entry endPc="268437433" name="buttonHeight" stackId="17" startPc="268436154"/>
+        <entry endPc="268437433" name="buttonWidth" stackId="18" startPc="268436154"/>
+        <entry endPc="268437433" name="boatTextY" stackId="19" startPc="268436154"/>
+        <entry endPc="268437433" name="k1CenterX" stackId="20" startPc="268436154"/>
+        <entry endPc="268437433" name="k1X" stackId="21" startPc="268436154"/>
+        <entry endPc="268437433" name="c1CenterX" stackId="22" startPc="268436154"/>
+        <entry endPc="268437433" name="c1X" stackId="23" startPc="268436154"/>
+        <entry endPc="268437433" name="c2CenterX" stackId="24" startPc="268436154"/>
+        <entry endPc="268437433" name="c2X" stackId="25" startPc="268436154"/>
+        <entry arg="true" endPc="268437547" name="view" stackId="1" startPc="268437524"/>
+        <entry arg="true" endPc="268437592" name="clickEvent" stackId="1" startPc="268437548"/>
+        <entry endPc="268437592" name="coordinates" stackId="2" startPc="268437551"/>
+        <entry endPc="268437592" name="x" stackId="3" startPc="268437551"/>
+        <entry endPc="268437592" name="y" stackId="4" startPc="268437551"/>
+        <entry endPc="268437671" name="view" stackId="1" startPc="268437619"/>
+        <entry arg="true" endPc="268437756" name="item" stackId="1" startPc="268437690"/>
+        <entry arg="true" endPc="268438024" name="dc" stackId="1" startPc="268437772"/>
+        <entry endPc="268438024" name="rez_cmp_local_var_dc_getWidth" stackId="2" startPc="268437783"/>
+        <entry endPc="268438024" name="rez_cmp_local_text_1193959466" stackId="3" startPc="268437783"/>
+        <entry endPc="268438024" name="rez_cmp_local_bitmap_id_monkey" stackId="4" startPc="268437783"/>
+    </localVars>
+    <deviceInfo deviceVersion="3d0fb192a2cf01699aefd0f384af3f527e5885bd" partNumber="006-B4261-00"/>
+    <annotations>
+        <annotationEntry annotation="initialized" class="Drawables" module="globals/Rez" symbol="LauncherIcon"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="menu_label_2"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="menu_label_1"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="prompt"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="AppName"/>
+        <annotationEntry annotation="initialized" class="Drawables" module="globals/Rez" symbol="id_monkey"/>
+    </annotations>
+    <dataEntryOffsetMappings>
+        <dataEntry label="globals" offset="67" parentId="" symbolId="globals" type="module"/>
+        <dataEntry label="globals/KajoConnectView" offset="152" parentId="globals" symbolId="KajoConnectView" type="class"/>
+        <dataEntry label="globals/Rez" offset="322" parentId="globals" symbolId="Rez" type="module"/>
+        <dataEntry label="globals/KajoConnectDelegate" offset="384" parentId="globals" symbolId="KajoConnectDelegate" type="class"/>
+        <dataEntry label="globals/KajoConnectApp" offset="473" parentId="globals" symbolId="KajoConnectApp" type="class"/>
+        <dataEntry label="globals/KajoConnectMenuDelegate" offset="544" parentId="globals" symbolId="KajoConnectMenuDelegate" type="class"/>
+        <dataEntry label="globals/Rez/Drawables" offset="597" parentId="Rez" symbolId="Drawables" type="module"/>
+        <dataEntry label="globals/Rez/Layouts" offset="641" parentId="Rez" symbolId="Layouts" type="module"/>
+        <dataEntry label="globals/Rez/Menus" offset="676" parentId="Rez" symbolId="Menus" type="module"/>
+        <dataEntry label="globals/Rez/Strings" offset="711" parentId="Rez" symbolId="Strings" type="module"/>
+        <dataEntry label="globals/Rez/Menus/MainMenu" offset="773" parentId="Menus" symbolId="MainMenu" type="class"/>
+    </dataEntryOffsetMappings>
+    <functions>
+        <functionEntry accessMode="public" endPc="268435480" name="&lt;init&gt;" parent="KajoConnectView" startPc="268435460">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435501" name="getApp" startPc="268435481">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435521" name="&lt;init&gt;" parent="Rez" startPc="268435502">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435533" name="&lt;init&gt;" parent="KajoConnectDelegate" startPc="268435522">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435545" name="&lt;init&gt;" parent="KajoConnectApp" startPc="268435534">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435557" name="&lt;init&gt;" parent="KajoConnectMenuDelegate" startPc="268435546">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435662" name="scrollPlan" parent="KajoConnectView" startPc="268435558">
+            <param id="direction"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435693" name="setPlannedSessions" parent="KajoConnectView" startPc="268435663">
+            <param id="sessions"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436008" name="handleTap" parent="KajoConnectView" startPc="268435694">
+            <param id="x"/>
+            <param id="y"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436135" name="fitLabel" parent="KajoConnectView" startPc="268436009">
+            <param id="dc"/>
+            <param id="text"/>
+            <param id="font"/>
+            <param id="maxWidth"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436150" name="initialize" parent="KajoConnectView" startPc="268436136">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437434" name="onUpdate" parent="KajoConnectView" startPc="268436151">
+            <param id="dc"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Drawables">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Layouts">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Menus">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Strings">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437454" name="onPreviousPage" parent="KajoConnectDelegate" startPc="268437435">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437523" name="onMenu" parent="KajoConnectDelegate" startPc="268437455">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437547" name="initialize" parent="KajoConnectDelegate" startPc="268437524">
+            <param id="view"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437592" name="onTap" parent="KajoConnectDelegate" startPc="268437548">
+            <param id="clickEvent"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437612" name="onNextPage" parent="KajoConnectDelegate" startPc="268437593">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437615" name="onStart" parent="KajoConnectApp" startPc="268437613">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437671" name="getInitialView" parent="KajoConnectApp" startPc="268437616">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437686" name="initialize" parent="KajoConnectApp" startPc="268437672">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437689" name="onStop" parent="KajoConnectApp" startPc="268437687">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437756" name="onMenuItem" parent="KajoConnectMenuDelegate" startPc="268437690">
+            <param id="item"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437771" name="initialize" parent="KajoConnectMenuDelegate" startPc="268437757">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438024" name="MainLayout" parent="Layouts" startPc="268437772">
+            <param id="dc"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438036" name="&lt;init&gt;" parent="MainMenu" startPc="268438025">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438141" name="initialize" parent="MainMenu" startPc="268438037">
+            <documentation/>
+        </functionEntry>
+    </functions>
+</debugInfo>

@@ -1,0 +1,7 @@
+<svg width="70" height="70" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="70" height="70" fill="#000000"/>
+  <rect x="9" y="9" width="22" height="22" rx="3" fill="#F4F4F4"/>
+  <rect x="39" y="9" width="22" height="22" rx="3" fill="#F4F4F4"/>
+  <rect x="9" y="39" width="22" height="22" rx="3" fill="#F4F4F4"/>
+  <path d="M39 39H61V61H39V39ZM43 43V57H57V43H43Z" fill="#F4F4F4" fill-rule="evenodd"/>
+</svg>

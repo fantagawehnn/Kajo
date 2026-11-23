@@ -1,0 +1,1576 @@
+[ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Graphics,1,14,22]; ]
+import Toybox.Graphics;
+[ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Lang,2,14,18]; ]
+import Toybox.Lang;
+[ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 3; @symbol_importdef<0> = [Toybox,3,7,13]; @symbol_importdef<1> = [WatchUi,3,14,21]; ]
+import Toybox.WatchUi;
+[ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 5; @symbol_classdef = [KajoConnectView,5,6,21]; @symbol_extends<0> = [WatchUi,5,30,37]; @symbol_extends<1> = [View,5,38,42]; ]
+class KajoConnectView extends WatchUi.View {
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 5; ]
+    <init> {
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 8 8 ]
+        %tmp.1 = newa 0;
+        putv self :mPlannedSessions %tmp.1;
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 5; ]
+    static
+    <init> {
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 7; @position = 8; @symbol_vardef = [mSelectedBoat,7,8,21]; ]
+    var mSelectedBoat = "K1";
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 8; @position = 8; @symbol_vardef = [mPlannedSessions,8,8,24]; @symbol_type<0> = [Lang,8,28,32]; @symbol_type<1> = [Array,8,33,38]; @symbol_type<2> = [Lang,8,39,43]; @symbol_type<3> = [String,8,44,50]; ]
+    var mPlannedSessions as Lang.Array<Lang.String>;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 10; @position = 8; @symbol_vardef = [mWidth,10,8,14]; ]
+    var mWidth = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 11; @position = 8; @symbol_vardef = [mHeight,11,8,15]; ]
+    var mHeight = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 13; @position = 8; @symbol_vardef = [mBoatTop,13,8,16]; ]
+    var mBoatTop = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 14; @position = 8; @symbol_vardef = [mBoatBottom,14,8,19]; ]
+    var mBoatBottom = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 16; @position = 8; @symbol_vardef = [mPlanStartY,16,8,19]; ]
+    var mPlanStartY = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 17; @position = 8; @symbol_vardef = [mPlanRowHeight,17,8,22]; ]
+    var mPlanRowHeight = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 18; @position = 8; @symbol_vardef = [mPlanStartIndex,18,8,23]; ]
+    var mPlanStartIndex = 0;
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 20; @symbol_functiondef = [initialize,20,13,23]; ]
+    function initialize() as Void {
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_20_26_22_4_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 21 8 ]
+        symbol [ View %tmp.2 21 8 12 ];
+        %tmp.2 = getv ? :View;
+        symbol [ initialize %tmp.3 21 13 23 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_20_26_22_4_stop:
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 24; @symbol_functiondef = [fitLabel,24,13,21]; @symbol_param<0> = [dc,24,22,24]; @symbol_param<1> = [text,24,26,30]; @symbol_param<2> = [font,24,32,36]; @symbol_param<3> = [maxWidth,24,38,46]; ]
+    function fitLabel(dc, text, font, maxWidth) {
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_24_48_41_4_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 25 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_24_48_41_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_24_48_41_4_stop" ]
+        %result.1 = local;
+        symbol [ result %result.1 25 12 18 ];
+        %tmp.1 = lgetv %text;
+        symbol [ text %tmp.1 25 21 25 ];
+        lputv %result.1 %tmp.1;
+        symbol [ result %result.1 25 12 18 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 27 8 ]
+        while @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_test @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_test:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_15_28_55_begin:
+        %tmp.2 = lgetv %result.1;
+        symbol [ result %tmp.2 27 15 21 ];
+        symbol [ length %tmp.3 27 22 28 ];
+        %tmp.3 = getv function %tmp.2 :length;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        %tmp.5 = 3;
+        %tmp.6 = gt %tmp.4 %tmp.5;
+        %tmp.7 = dup %tmp.6;
+        bf %tmp.7 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_15_28_55_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_15_28_55_true:
+        %tmp.8 = lgetv %dc;
+        symbol [ dc %tmp.8 28 15 17 ];
+        symbol [ getTextWidthInPixels %tmp.9 28 18 38 ];
+        %tmp.9 = getv function %tmp.8 :getTextWidthInPixels;
+        %tmp.10 = lgetv %result.1;
+        symbol [ result %tmp.10 28 39 45 ];
+        %tmp.11 = lgetv %font;
+        symbol [ font %tmp.11 28 47 51 ];
+        %tmp.12 = invoke %tmp.8 %tmp.9(%tmp.10, %tmp.11);
+        %tmp.13 = lgetv %maxWidth;
+        symbol [ maxWidth %tmp.13 28 55 63 ];
+        %tmp.14 = gt %tmp.12 %tmp.13;
+        %tmp.15 = and %tmp.6 %tmp.14;
+        push %tmp.15;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_15_28_55_end:
+        %tmp.16 = phi [%tmp.7 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_15_28_55_begin] [%tmp.15 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_15_28_55_true] [%tmp.16 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_15_28_55_end];
+        bf %tmp.16 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_begin:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_65_38_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 30 12 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_65_38_8_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_65_38_8_stop" ]
+        %candidate.2 = local;
+        symbol [ candidate %candidate.2 30 16 25 ];
+        %tmp.17 = lgetv %result.1;
+        symbol [ result %tmp.17 30 28 34 ];
+        symbol [ substring %tmp.18 30 35 44 ];
+        %tmp.18 = getv function %tmp.17 :substring;
+        %tmp.19 = 0;
+        %tmp.20 = lgetv %result.1;
+        symbol [ result %tmp.20 30 48 54 ];
+        symbol [ length %tmp.21 30 55 61 ];
+        %tmp.21 = getv function %tmp.20 :length;
+        %tmp.22 = invoke %tmp.20 %tmp.21();
+        %tmp.23 = 1;
+        %tmp.24 = sub %tmp.22 %tmp.23;
+        %tmp.25 = invoke %tmp.17 %tmp.18(%tmp.19, %tmp.24);
+        %tmp.26 = "..";
+        %tmp.27 = add %tmp.25 %tmp.26;
+        lputv %candidate.2 %tmp.27;
+        symbol [ candidate %candidate.2 30 16 25 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 32 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_12_37_12_if_stmt:
+        %tmp.28 = lgetv %dc;
+        symbol [ dc %tmp.28 32 16 18 ];
+        symbol [ getTextWidthInPixels %tmp.29 32 19 39 ];
+        %tmp.29 = getv function %tmp.28 :getTextWidthInPixels;
+        %tmp.30 = lgetv %candidate.2;
+        symbol [ candidate %tmp.30 32 40 49 ];
+        %tmp.31 = lgetv %font;
+        symbol [ font %tmp.31 32 51 55 ];
+        %tmp.32 = invoke %tmp.28 %tmp.29(%tmp.30, %tmp.31);
+        %tmp.33 = lgetv %maxWidth;
+        symbol [ maxWidth %tmp.33 32 59 67 ];
+        %tmp.34 = gt %tmp.32 %tmp.33;
+        bf %tmp.34 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_12_37_12_if_else_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_12_37_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_69_34_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 33 16 ]
+        %tmp.35 = lgetv %result.1;
+        symbol [ result %tmp.35 33 25 31 ];
+        symbol [ substring %tmp.36 33 32 41 ];
+        %tmp.36 = getv function %tmp.35 :substring;
+        %tmp.37 = 0;
+        %tmp.38 = lgetv %result.1;
+        symbol [ result %tmp.38 33 45 51 ];
+        symbol [ length %tmp.39 33 52 58 ];
+        %tmp.39 = getv function %tmp.38 :length;
+        %tmp.40 = invoke %tmp.38 %tmp.39();
+        %tmp.41 = 1;
+        %tmp.42 = sub %tmp.40 %tmp.41;
+        %tmp.43 = invoke %tmp.35 %tmp.36(%tmp.37, %tmp.42);
+        lputv %result.1 %tmp.43;
+        symbol [ result %result.1 33 16 22 ];
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_69_34_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_12_37_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_12_37_12_if_else_false:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_34_19_37_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 35 16 ]
+        %tmp.44 = lgetv %candidate.2;
+        symbol [ candidate %tmp.44 35 25 34 ];
+        lputv %result.1 %tmp.44;
+        symbol [ result %result.1 35 16 22 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 36 16 ]
+        goto break @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_34_19_37_12_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_32_12_37_12_if_end:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_28_65_38_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_test;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_27_8_38_8_while_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 40 8 ]
+        %tmp.45 = lgetv %result.1;
+        symbol [ result %tmp.45 40 15 21 ];
+        ret %tmp.45;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_24_48_41_4_stop:
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 43; @symbol_functiondef = [setPlannedSessions,43,13,31]; @symbol_param<0> = [sessions,43,32,40]; ]
+    function setPlannedSessions(sessions) {
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_43_42_47_4_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 44 8 ]
+        %tmp.1 = lgetv %sessions;
+        symbol [ sessions %tmp.1 44 27 35 ];
+        symbol [ mPlannedSessions ? 44 8 24 ];
+        putv self :mPlannedSessions %tmp.1;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 45 8 ]
+        %tmp.2 = 0;
+        symbol [ mPlanStartIndex ? 45 8 23 ];
+        putv self :mPlanStartIndex %tmp.2;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 46 8 ]
+        symbol [ WatchUi %tmp.3 46 8 15 ];
+        %tmp.3 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.4 46 16 29 ];
+        %tmp.4 = getv function %tmp.3 :requestUpdate;
+        invoke %tmp.3 %tmp.4();
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_43_42_47_4_stop:
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 49; @symbol_functiondef = [scrollPlan,49,13,23]; @symbol_param<0> = [direction,49,24,33]; ]
+    function scrollPlan(direction) {
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_49_35_68_4_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 51 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_49_35_68_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_49_35_68_4_stop" ]
+        %count.1 = local;
+        symbol [ count %count.1 51 12 17 ];
+        symbol [ mPlannedSessions %tmp.2 51 20 36 ];
+        %tmp.2 = getv ? :mPlannedSessions;
+        symbol [ size %tmp.3 51 37 41 ];
+        %tmp.3 = getv function %tmp.2 :size;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        lputv %count.1 %tmp.4;
+        symbol [ count %count.1 51 12 17 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 53 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_8_55_8_if_stmt:
+        %tmp.5 = lgetv %count.1;
+        symbol [ count %tmp.5 53 12 17 ];
+        %tmp.6 = 2;
+        %tmp.7 = lte %tmp.5 %tmp.6;
+        bf %tmp.7 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_8_55_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_8_55_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_24_55_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 54 12 ]
+        ret ?;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_24_55_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_8_55_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_53_8_55_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 57 8 ]
+        symbol [ mPlanStartIndex %tmp.8 57 8 23 ];
+        %tmp.8 = getv self :mPlanStartIndex;
+        %tmp.9 = lgetv %direction;
+        symbol [ direction %tmp.9 57 27 36 ];
+        %tmp.10 = add %tmp.8 %tmp.9;
+        symbol [ mPlanStartIndex ? 57 8 23 ];
+        putv self :mPlanStartIndex dup %tmp.10;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 59 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_8_61_8_if_stmt:
+        symbol [ mPlanStartIndex %tmp.12 59 12 27 ];
+        %tmp.12 = getv ? :mPlanStartIndex;
+        %tmp.13 = 0;
+        %tmp.14 = lt %tmp.12 %tmp.13;
+        bf %tmp.14 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_8_61_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_8_61_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_33_61_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 60 12 ]
+        %tmp.15 = 0;
+        symbol [ mPlanStartIndex ? 60 12 27 ];
+        putv self :mPlanStartIndex %tmp.15;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_33_61_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_8_61_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_59_8_61_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 63 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_8_65_8_if_stmt:
+        symbol [ mPlanStartIndex %tmp.17 63 12 27 ];
+        %tmp.17 = getv ? :mPlanStartIndex;
+        %tmp.18 = lgetv %count.1;
+        symbol [ count %tmp.18 63 30 35 ];
+        %tmp.19 = 2;
+        %tmp.20 = sub %tmp.18 %tmp.19;
+        %tmp.21 = gt %tmp.17 %tmp.20;
+        bf %tmp.21 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_8_65_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_8_65_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_41_65_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 64 12 ]
+        %tmp.22 = lgetv %count.1;
+        symbol [ count %tmp.22 64 30 35 ];
+        %tmp.23 = 2;
+        %tmp.24 = sub %tmp.22 %tmp.23;
+        symbol [ mPlanStartIndex ? 64 12 27 ];
+        putv self :mPlanStartIndex %tmp.24;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_41_65_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_8_65_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_63_8_65_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 67 8 ]
+        symbol [ WatchUi %tmp.25 67 8 15 ];
+        %tmp.25 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.26 67 16 29 ];
+        %tmp.26 = getv function %tmp.25 :requestUpdate;
+        invoke %tmp.25 %tmp.26();
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_49_35_68_4_stop:
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 70; @symbol_functiondef = [handleTap,70,13,22]; @symbol_param<0> = [x,70,23,24]; @symbol_param<1> = [y,70,26,27]; ]
+    function handleTap(x, y) {
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_70_29_117_4_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 73 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_stmt:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_12_75_49_begin:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_12_74_17_begin:
+        symbol [ mPlannedSessions %tmp.2 73 12 28 ];
+        %tmp.2 = getv ? :mPlannedSessions;
+        symbol [ size %tmp.3 73 29 33 ];
+        %tmp.3 = getv function %tmp.2 :size;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        %tmp.5 = 0;
+        %tmp.6 = gt %tmp.4 %tmp.5;
+        bf %tmp.6 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_74_12_74_17_true:
+        %tmp.7 = lgetv %y;
+        symbol [ y %tmp.7 74 12 13 ];
+        symbol [ mPlanStartY %tmp.9 74 17 28 ];
+        %tmp.9 = getv ? :mPlanStartY;
+        %tmp.10 = gte %tmp.7 %tmp.9;
+        push %tmp.10;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_74_12_74_17_end:
+        %tmp.11 = phi [%tmp.6 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_12_74_17_begin] [%tmp.10 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_74_12_74_17_true] [%tmp.11 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_74_12_74_17_end];
+        bf %tmp.11 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_12_75_49_true:
+        %tmp.12 = lgetv %y;
+        symbol [ y %tmp.12 75 12 13 ];
+        symbol [ mPlanStartY %tmp.14 75 16 27 ];
+        %tmp.14 = getv ? :mPlanStartY;
+        symbol [ mPlanRowHeight %tmp.16 75 31 45 ];
+        %tmp.16 = getv ? :mPlanRowHeight;
+        %tmp.17 = 2;
+        %tmp.18 = mul %tmp.16 %tmp.17;
+        %tmp.19 = add %tmp.14 %tmp.18;
+        %tmp.20 = lt %tmp.12 %tmp.19;
+        push %tmp.20;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_12_75_49_end:
+        %tmp.21 = phi [%tmp.11 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_12_75_49_begin] [%tmp.20 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_12_75_49_true] [%tmp.21 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_12_75_49_end];
+        bf %tmp.21 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_52_94_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 77 12 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_52_94_8_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_52_94_8_stop" ]
+        %row.1 = local;
+        symbol [ row %row.1 77 16 19 ];
+        %tmp.22 = 0;
+        lputv %row.1 %tmp.22;
+        symbol [ row %row.1 77 16 19 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 79 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_12_81_12_if_stmt:
+        %tmp.23 = lgetv %y;
+        symbol [ y %tmp.23 79 16 17 ];
+        symbol [ mPlanStartY %tmp.25 79 21 32 ];
+        %tmp.25 = getv ? :mPlanStartY;
+        symbol [ mPlanRowHeight %tmp.27 79 35 49 ];
+        %tmp.27 = getv ? :mPlanRowHeight;
+        %tmp.28 = add %tmp.25 %tmp.27;
+        %tmp.29 = gte %tmp.23 %tmp.28;
+        bf %tmp.29 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_12_81_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_12_81_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_51_81_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 80 16 ]
+        %tmp.30 = 1;
+        lputv %row.1 %tmp.30;
+        symbol [ row %row.1 80 16 19 ];
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_51_81_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_12_81_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_79_12_81_12_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 83 12 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_52_94_8_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_52_94_8_stop" ]
+        %index.2 = local;
+        symbol [ index %index.2 83 16 21 ];
+        symbol [ mPlanStartIndex %tmp.32 83 24 39 ];
+        %tmp.32 = getv ? :mPlanStartIndex;
+        %tmp.33 = lgetv %row.1;
+        symbol [ row %tmp.33 83 42 45 ];
+        %tmp.34 = add %tmp.32 %tmp.33;
+        lputv %index.2 %tmp.34;
+        symbol [ index %index.2 83 16 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 85 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_12_93_12_if_stmt:
+        %tmp.35 = lgetv %index.2;
+        symbol [ index %tmp.35 85 16 21 ];
+        symbol [ mPlannedSessions %tmp.37 85 24 40 ];
+        %tmp.37 = getv ? :mPlannedSessions;
+        symbol [ size %tmp.38 85 41 45 ];
+        %tmp.38 = getv function %tmp.37 :size;
+        %tmp.39 = invoke %tmp.37 %tmp.38();
+        %tmp.40 = lt %tmp.35 %tmp.39;
+        bf %tmp.40 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_12_93_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_12_93_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_49_93_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 86 16 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_49_93_12_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_49_93_12_stop" ]
+        %selectedSession.3 = local;
+        symbol [ selectedSession %selectedSession.3 86 20 35 ];
+        symbol [ mPlannedSessions %tmp.42 86 38 54 ];
+        %tmp.42 = getv ? :mPlannedSessions;
+        %tmp.43 = lgetv %index.2;
+        symbol [ index %tmp.43 86 55 60 ];
+        %tmp.44 = agetv %tmp.42 %tmp.43;
+        %tmp.45 = as %tmp.44 String;
+        symbol [ String %tmp.45 86 65 71 ];
+        lputv %selectedSession.3 %tmp.45;
+        symbol [ selectedSession %selectedSession.3 86 20 35 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 87 16 ]
+        symbol [ WatchUi %tmp.46 87 16 23 ];
+        %tmp.46 = getm $.Toybox.WatchUi;
+        symbol [ showToast %tmp.47 87 24 33 ];
+        %tmp.47 = getv function %tmp.46 :showToast;
+        %tmp.48 = lgetv %selectedSession.3;
+        symbol [ selectedSession %tmp.48 88 20 35 ];
+        %tmp.49 = " ausgewählt";
+        %tmp.50 = add %tmp.48 %tmp.49;
+        %tmp.51 = null;
+        invoke %tmp.46 %tmp.47(%tmp.50, %tmp.51);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 92 16 ]
+        ret ?;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_49_93_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_12_93_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_85_12_93_12_if_end:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_75_52_94_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_73_8_94_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 97 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_stmt:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_12_100_26_begin:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_12_99_26_begin:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_12_98_17_begin:
+        %tmp.52 = lgetv %y;
+        symbol [ y %tmp.52 97 12 13 ];
+        symbol [ mBoatTop %tmp.54 97 17 25 ];
+        %tmp.54 = getv ? :mBoatTop;
+        %tmp.55 = gte %tmp.52 %tmp.54;
+        bf %tmp.55 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_98_12_98_17_true:
+        %tmp.56 = lgetv %y;
+        symbol [ y %tmp.56 98 12 13 ];
+        symbol [ mBoatBottom %tmp.58 98 17 28 ];
+        %tmp.58 = getv ? :mBoatBottom;
+        %tmp.59 = lte %tmp.56 %tmp.58;
+        push %tmp.59;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_98_12_98_17_end:
+        %tmp.60 = phi [%tmp.55 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_12_98_17_begin] [%tmp.59 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_98_12_98_17_true] [%tmp.60 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_98_12_98_17_end];
+        bf %tmp.60 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_99_12_99_26_true:
+        %tmp.61 = lgetv %x;
+        symbol [ x %tmp.61 99 12 13 ];
+        symbol [ mWidth %tmp.63 99 17 23 ];
+        %tmp.63 = getv ? :mWidth;
+        %tmp.64 = 0.20;
+        %tmp.65 = mul %tmp.63 %tmp.64;
+        %tmp.66 = gte %tmp.61 %tmp.65;
+        push %tmp.66;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_99_12_99_26_end:
+        %tmp.67 = phi [%tmp.60 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_12_99_26_begin] [%tmp.66 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_99_12_99_26_true] [%tmp.67 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_99_12_99_26_end];
+        bf %tmp.67 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_100_12_100_26_true:
+        %tmp.68 = lgetv %x;
+        symbol [ x %tmp.68 100 12 13 ];
+        symbol [ mWidth %tmp.70 100 17 23 ];
+        %tmp.70 = getv ? :mWidth;
+        %tmp.71 = 0.80;
+        %tmp.72 = mul %tmp.70 %tmp.71;
+        %tmp.73 = lte %tmp.68 %tmp.72;
+        push %tmp.73;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_100_12_100_26_end:
+        %tmp.74 = phi [%tmp.67 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_12_100_26_begin] [%tmp.73 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_100_12_100_26_true] [%tmp.74 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_100_12_100_26_end];
+        bf %tmp.74 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_100_32_116_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 102 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_12_108_12_if_stmt:
+        %tmp.75 = lgetv %x;
+        symbol [ x %tmp.75 102 16 17 ];
+        symbol [ mWidth %tmp.77 102 20 26 ];
+        %tmp.77 = getv ? :mWidth;
+        %tmp.78 = 0.40;
+        %tmp.79 = mul %tmp.77 %tmp.78;
+        %tmp.80 = lt %tmp.75 %tmp.79;
+        bf %tmp.80 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_12_108_12_if_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_12_108_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_35_104_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 103 16 ]
+        %tmp.81 = "K1";
+        symbol [ mSelectedBoat ? 103 16 29 ];
+        putv self :mSelectedBoat %tmp.81;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_35_104_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_12_108_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_12_108_12_if_false:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 104 19 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_19_108_12_if_stmt:
+        %tmp.82 = lgetv %x;
+        symbol [ x %tmp.82 104 23 24 ];
+        symbol [ mWidth %tmp.84 104 27 33 ];
+        %tmp.84 = getv ? :mWidth;
+        %tmp.85 = 0.60;
+        %tmp.86 = mul %tmp.84 %tmp.85;
+        %tmp.87 = lt %tmp.82 %tmp.86;
+        bf %tmp.87 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_19_108_12_if_else_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_19_108_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_42_106_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 105 16 ]
+        %tmp.88 = "C1";
+        symbol [ mSelectedBoat ? 105 16 29 ];
+        putv self :mSelectedBoat %tmp.88;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_42_106_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_19_108_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_19_108_12_if_else_false:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_106_19_108_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 107 16 ]
+        %tmp.89 = "C2";
+        symbol [ mSelectedBoat ? 107 16 29 ];
+        putv self :mSelectedBoat %tmp.89;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_106_19_108_12_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_104_19_108_12_if_end:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_102_12_108_12_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 110 12 ]
+        symbol [ WatchUi %tmp.90 110 12 19 ];
+        %tmp.90 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.91 110 20 33 ];
+        %tmp.91 = getv function %tmp.90 :requestUpdate;
+        invoke %tmp.90 %tmp.91();
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 112 12 ]
+        symbol [ WatchUi %tmp.92 112 12 19 ];
+        %tmp.92 = getm $.Toybox.WatchUi;
+        symbol [ showToast %tmp.93 112 20 29 ];
+        %tmp.93 = getv function %tmp.92 :showToast;
+        symbol [ mSelectedBoat %tmp.95 113 16 29 ];
+        %tmp.95 = getv ? :mSelectedBoat;
+        %tmp.96 = " ausgewählt";
+        %tmp.97 = add %tmp.95 %tmp.96;
+        %tmp.98 = null;
+        invoke %tmp.92 %tmp.93(%tmp.97, %tmp.98);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_100_32_116_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_97_8_116_8_if_end:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_70_29_117_4_stop:
+    }
+    [ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 119; @symbol_functiondef = [onUpdate,119,13,21]; @symbol_param<0> = [dc,119,22,24]; @symbol_param<0>_type<0> = [Dc,119,28,30]; ]
+    function onUpdate(dc as Dc) {
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 121 8 ]
+        %tmp.1 = lgetv %dc;
+        symbol [ dc %tmp.1 121 8 10 ];
+        symbol [ clear %tmp.2 121 11 16 ];
+        %tmp.2 = getv function %tmp.1 :clear;
+        invoke %tmp.1 %tmp.2();
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 123 8 ]
+        %tmp.3 = lgetv %dc;
+        symbol [ dc %tmp.3 123 17 19 ];
+        symbol [ getWidth %tmp.4 123 20 28 ];
+        %tmp.4 = getv function %tmp.3 :getWidth;
+        %tmp.5 = invoke %tmp.3 %tmp.4();
+        symbol [ mWidth ? 123 8 14 ];
+        putv self :mWidth %tmp.5;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 124 8 ]
+        %tmp.6 = lgetv %dc;
+        symbol [ dc %tmp.6 124 18 20 ];
+        symbol [ getHeight %tmp.7 124 21 30 ];
+        %tmp.7 = getv function %tmp.6 :getHeight;
+        %tmp.8 = invoke %tmp.6 %tmp.7();
+        symbol [ mHeight ? 124 8 15 ];
+        putv self :mHeight %tmp.8;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 126 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %centerX.1 = local;
+        symbol [ centerX %centerX.1 126 12 19 ];
+        symbol [ mWidth %tmp.10 126 22 28 ];
+        %tmp.10 = getv ? :mWidth;
+        %tmp.11 = 2;
+        %tmp.12 = div %tmp.10 %tmp.11;
+        lputv %centerX.1 %tmp.12;
+        symbol [ centerX %centerX.1 126 12 19 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 128 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %fontTiny.2 = local;
+        symbol [ fontTiny %fontTiny.2 128 12 20 ];
+        symbol [ Graphics %tmp.13 128 23 31 ];
+        %tmp.13 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.14 128 32 42 ];
+        %tmp.14 = getv %tmp.13 :FONT_XTINY;
+        lputv %fontTiny.2 %tmp.14;
+        symbol [ fontTiny %fontTiny.2 128 12 20 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 129 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %fontSmall.3 = local;
+        symbol [ fontSmall %fontSmall.3 129 12 21 ];
+        symbol [ Graphics %tmp.15 129 24 32 ];
+        %tmp.15 = getm $.Toybox.Graphics;
+        symbol [ FONT_TINY %tmp.16 129 33 42 ];
+        %tmp.16 = getv %tmp.15 :FONT_TINY;
+        lputv %fontSmall.3 %tmp.16;
+        symbol [ fontSmall %fontSmall.3 129 12 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 132 8 ]
+        %tmp.17 = lgetv %dc;
+        symbol [ dc %tmp.17 132 8 10 ];
+        symbol [ setColor %tmp.18 132 11 19 ];
+        %tmp.18 = getv function %tmp.17 :setColor;
+        symbol [ Graphics %tmp.19 133 12 20 ];
+        %tmp.19 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.20 133 21 32 ];
+        %tmp.20 = getv %tmp.19 :COLOR_WHITE;
+        symbol [ Graphics %tmp.21 134 12 20 ];
+        %tmp.21 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.22 134 21 32 ];
+        %tmp.22 = getv %tmp.21 :COLOR_BLACK;
+        invoke %tmp.17 %tmp.18(%tmp.20, %tmp.22);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 137 8 ]
+        %tmp.23 = lgetv %dc;
+        symbol [ dc %tmp.23 137 8 10 ];
+        symbol [ drawText %tmp.24 137 11 19 ];
+        %tmp.24 = getv function %tmp.23 :drawText;
+        %tmp.25 = lgetv %centerX.1;
+        symbol [ centerX %tmp.25 138 12 19 ];
+        symbol [ mHeight %tmp.27 139 12 19 ];
+        %tmp.27 = getv ? :mHeight;
+        %tmp.28 = 0.10;
+        %tmp.29 = mul %tmp.27 %tmp.28;
+        symbol [ Graphics %tmp.30 140 12 20 ];
+        %tmp.30 = getm $.Toybox.Graphics;
+        symbol [ FONT_SMALL %tmp.31 140 21 31 ];
+        %tmp.31 = getv %tmp.30 :FONT_SMALL;
+        %tmp.32 = "KAJO";
+        symbol [ Graphics %tmp.33 142 12 20 ];
+        %tmp.33 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.34 142 21 40 ];
+        %tmp.34 = getv %tmp.33 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.23 %tmp.24(%tmp.25, %tmp.29, %tmp.31, %tmp.32, %tmp.34);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 145 8 ]
+        %tmp.35 = lgetv %dc;
+        symbol [ dc %tmp.35 145 8 10 ];
+        symbol [ setColor %tmp.36 145 11 19 ];
+        %tmp.36 = getv function %tmp.35 :setColor;
+        symbol [ Graphics %tmp.37 146 12 20 ];
+        %tmp.37 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.38 146 21 34 ];
+        %tmp.38 = getv %tmp.37 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.39 147 12 20 ];
+        %tmp.39 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.40 147 21 32 ];
+        %tmp.40 = getv %tmp.39 :COLOR_BLACK;
+        invoke %tmp.35 %tmp.36(%tmp.38, %tmp.40);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 150 8 ]
+        %tmp.41 = lgetv %dc;
+        symbol [ dc %tmp.41 150 8 10 ];
+        symbol [ drawText %tmp.42 150 11 19 ];
+        %tmp.42 = getv function %tmp.41 :drawText;
+        %tmp.43 = lgetv %centerX.1;
+        symbol [ centerX %tmp.43 151 12 19 ];
+        symbol [ mHeight %tmp.45 152 12 19 ];
+        %tmp.45 = getv ? :mHeight;
+        %tmp.46 = 0.19;
+        %tmp.47 = mul %tmp.45 %tmp.46;
+        %tmp.48 = lgetv %fontTiny.2;
+        symbol [ fontTiny %tmp.48 153 12 20 ];
+        %tmp.49 = "HEUTE";
+        symbol [ Graphics %tmp.50 155 12 20 ];
+        %tmp.50 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.51 155 21 40 ];
+        %tmp.51 = getv %tmp.50 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.41 %tmp.42(%tmp.43, %tmp.47, %tmp.48, %tmp.49, %tmp.51);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 159 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %sessionCount.4 = local;
+        symbol [ sessionCount %sessionCount.4 159 12 24 ];
+        symbol [ mPlannedSessions %tmp.53 159 27 43 ];
+        %tmp.53 = getv ? :mPlannedSessions;
+        symbol [ size %tmp.54 159 44 48 ];
+        %tmp.54 = getv function %tmp.53 :size;
+        %tmp.55 = invoke %tmp.53 %tmp.54();
+        lputv %sessionCount.4 %tmp.55;
+        symbol [ sessionCount %sessionCount.4 159 12 24 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 161 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %activityY.5 = local;
+        symbol [ activityY %activityY.5 161 12 21 ];
+        symbol [ mHeight %tmp.57 161 24 31 ];
+        %tmp.57 = getv ? :mHeight;
+        %tmp.58 = 0.43;
+        %tmp.59 = mul %tmp.57 %tmp.58;
+        lputv %activityY.5 %tmp.59;
+        symbol [ activityY %activityY.5 161 12 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 163 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_8_259_8_if_stmt:
+        %tmp.60 = lgetv %sessionCount.4;
+        symbol [ sessionCount %tmp.60 163 12 24 ];
+        %tmp.61 = 0;
+        %tmp.62 = gt %tmp.60 %tmp.61;
+        bf %tmp.62 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_8_259_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_8_259_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_30_259_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 165 12 ]
+        %tmp.63 = lgetv %dc;
+        symbol [ dc %tmp.63 165 12 14 ];
+        symbol [ setColor %tmp.64 165 15 23 ];
+        %tmp.64 = getv function %tmp.63 :setColor;
+        symbol [ Graphics %tmp.65 166 16 24 ];
+        %tmp.65 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.66 166 25 36 ];
+        %tmp.66 = getv %tmp.65 :COLOR_WHITE;
+        symbol [ Graphics %tmp.67 167 16 24 ];
+        %tmp.67 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.68 167 25 36 ];
+        %tmp.68 = getv %tmp.67 :COLOR_BLACK;
+        invoke %tmp.63 %tmp.64(%tmp.66, %tmp.68);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 170 12 ]
+        %tmp.69 = lgetv %dc;
+        symbol [ dc %tmp.69 170 12 14 ];
+        symbol [ drawText %tmp.70 170 15 23 ];
+        %tmp.70 = getv function %tmp.69 :drawText;
+        %tmp.71 = lgetv %centerX.1;
+        symbol [ centerX %tmp.71 171 16 23 ];
+        symbol [ mHeight %tmp.73 172 16 23 ];
+        %tmp.73 = getv ? :mHeight;
+        %tmp.74 = 0.26;
+        %tmp.75 = mul %tmp.73 %tmp.74;
+        %tmp.76 = lgetv %fontTiny.2;
+        symbol [ fontTiny %tmp.76 173 16 24 ];
+        %tmp.77 = "TRAININGSPLAN";
+        symbol [ Graphics %tmp.78 175 16 24 ];
+        %tmp.78 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.79 175 25 44 ];
+        %tmp.79 = getv %tmp.78 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.69 %tmp.70(%tmp.71, %tmp.75, %tmp.76, %tmp.77, %tmp.79);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 178 12 ]
+        symbol [ mHeight %tmp.81 178 26 33 ];
+        %tmp.81 = getv ? :mHeight;
+        %tmp.82 = 0.32;
+        %tmp.83 = mul %tmp.81 %tmp.82;
+        symbol [ mPlanStartY ? 178 12 23 ];
+        putv self :mPlanStartY %tmp.83;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 179 12 ]
+        symbol [ mHeight %tmp.85 179 29 36 ];
+        %tmp.85 = getv ? :mHeight;
+        %tmp.86 = 0.085;
+        %tmp.87 = mul %tmp.85 %tmp.86;
+        symbol [ mPlanRowHeight ? 179 12 26 ];
+        putv self :mPlanRowHeight %tmp.87;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 181 12 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_30_259_8_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_30_259_8_stop" ]
+        %visibleCount.6 = local;
+        symbol [ visibleCount %visibleCount.6 181 16 28 ];
+        %tmp.88 = 2;
+        lputv %visibleCount.6 %tmp.88;
+        symbol [ visibleCount %visibleCount.6 181 16 28 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 183 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_12_185_12_if_stmt:
+        %tmp.89 = lgetv %sessionCount.4;
+        symbol [ sessionCount %tmp.89 183 16 28 ];
+        %tmp.90 = 1;
+        %tmp.91 = eq %tmp.89 %tmp.90;
+        bf %tmp.91 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_12_185_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_12_185_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_35_185_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 184 16 ]
+        %tmp.92 = 1;
+        lputv %visibleCount.6 %tmp.92;
+        symbol [ visibleCount %visibleCount.6 184 16 28 ];
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_35_185_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_12_185_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_183_12_185_12_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 187 12 ]
+        for @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_test @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_incr @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_init:
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_begin" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_end" ]
+        %i.7 = local;
+        symbol [ i %i.7 187 21 22 ];
+        %tmp.93 = 0;
+        lputv %i.7 %tmp.93;
+        symbol [ i %i.7 187 21 22 ];
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_test:
+        %tmp.94 = lgetv %i.7;
+        symbol [ i %tmp.94 187 28 29 ];
+        %tmp.95 = lgetv %visibleCount.6;
+        symbol [ visibleCount %tmp.95 187 32 44 ];
+        %tmp.96 = lt %tmp.94 %tmp.95;
+        bf %tmp.96 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_begin:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_54_236_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 189 16 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_54_236_12_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_54_236_12_stop" ]
+        %index.8 = local;
+        symbol [ index %index.8 189 20 25 ];
+        symbol [ mPlanStartIndex %tmp.98 189 28 43 ];
+        %tmp.98 = getv ? :mPlanStartIndex;
+        %tmp.99 = lgetv %i.7;
+        symbol [ i %tmp.99 189 46 47 ];
+        %tmp.100 = add %tmp.98 %tmp.99;
+        lputv %index.8 %tmp.100;
+        symbol [ index %index.8 189 20 25 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 191 16 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_16_235_16_if_stmt:
+        %tmp.101 = lgetv %index.8;
+        symbol [ index %tmp.101 191 20 25 ];
+        %tmp.102 = lgetv %sessionCount.4;
+        symbol [ sessionCount %tmp.102 191 28 40 ];
+        %tmp.103 = lt %tmp.101 %tmp.102;
+        bf %tmp.103 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_16_235_16_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_16_235_16_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 193 20 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop" ]
+        %rowY.9 = local;
+        symbol [ rowY %rowY.9 193 24 28 ];
+        symbol [ mPlanStartY %tmp.105 193 31 42 ];
+        %tmp.105 = getv ? :mPlanStartY;
+        %tmp.106 = lgetv %i.7;
+        symbol [ i %tmp.106 194 25 26 ];
+        symbol [ mPlanRowHeight %tmp.108 194 29 43 ];
+        %tmp.108 = getv ? :mPlanRowHeight;
+        %tmp.109 = mul %tmp.106 %tmp.108;
+        %tmp.110 = add %tmp.105 %tmp.109;
+        lputv %rowY.9 %tmp.110;
+        symbol [ rowY %rowY.9 193 24 28 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 196 20 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop" ]
+        %cardX.10 = local;
+        symbol [ cardX %cardX.10 196 24 29 ];
+        symbol [ mWidth %tmp.112 196 32 38 ];
+        %tmp.112 = getv ? :mWidth;
+        %tmp.113 = 0.20;
+        %tmp.114 = mul %tmp.112 %tmp.113;
+        lputv %cardX.10 %tmp.114;
+        symbol [ cardX %cardX.10 196 24 29 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 197 20 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop" ]
+        %cardWidth.11 = local;
+        symbol [ cardWidth %cardWidth.11 197 24 33 ];
+        symbol [ mWidth %tmp.116 197 36 42 ];
+        %tmp.116 = getv ? :mWidth;
+        %tmp.117 = 0.60;
+        %tmp.118 = mul %tmp.116 %tmp.117;
+        lputv %cardWidth.11 %tmp.118;
+        symbol [ cardWidth %cardWidth.11 197 24 33 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 198 20 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop" ]
+        %cardHeight.12 = local;
+        symbol [ cardHeight %cardHeight.12 198 24 34 ];
+        symbol [ mHeight %tmp.120 198 37 44 ];
+        %tmp.120 = getv ? :mHeight;
+        %tmp.121 = 0.075;
+        %tmp.122 = mul %tmp.120 %tmp.121;
+        lputv %cardHeight.12 %tmp.122;
+        symbol [ cardHeight %cardHeight.12 198 24 34 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 200 20 ]
+        %tmp.123 = lgetv %dc;
+        symbol [ dc %tmp.123 200 20 22 ];
+        symbol [ setColor %tmp.124 200 23 31 ];
+        %tmp.124 = getv function %tmp.123 :setColor;
+        symbol [ Graphics %tmp.125 201 24 32 ];
+        %tmp.125 = getm $.Toybox.Graphics;
+        symbol [ COLOR_DK_GRAY %tmp.126 201 33 46 ];
+        %tmp.126 = getv %tmp.125 :COLOR_DK_GRAY;
+        symbol [ Graphics %tmp.127 202 24 32 ];
+        %tmp.127 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.128 202 33 44 ];
+        %tmp.128 = getv %tmp.127 :COLOR_BLACK;
+        invoke %tmp.123 %tmp.124(%tmp.126, %tmp.128);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 205 20 ]
+        %tmp.129 = lgetv %dc;
+        symbol [ dc %tmp.129 205 20 22 ];
+        symbol [ fillRoundedRectangle %tmp.130 205 23 43 ];
+        %tmp.130 = getv function %tmp.129 :fillRoundedRectangle;
+        %tmp.131 = lgetv %cardX.10;
+        symbol [ cardX %tmp.131 206 24 29 ];
+        %tmp.132 = lgetv %rowY.9;
+        symbol [ rowY %tmp.132 207 24 28 ];
+        %tmp.133 = lgetv %cardWidth.11;
+        symbol [ cardWidth %tmp.133 208 24 33 ];
+        %tmp.134 = lgetv %cardHeight.12;
+        symbol [ cardHeight %tmp.134 209 24 34 ];
+        %tmp.135 = 7;
+        invoke %tmp.129 %tmp.130(%tmp.131, %tmp.132, %tmp.133, %tmp.134, %tmp.135);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 213 20 ]
+        %tmp.136 = lgetv %dc;
+        symbol [ dc %tmp.136 213 20 22 ];
+        symbol [ setColor %tmp.137 213 23 31 ];
+        %tmp.137 = getv function %tmp.136 :setColor;
+        symbol [ Graphics %tmp.138 214 24 32 ];
+        %tmp.138 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.139 214 33 44 ];
+        %tmp.139 = getv %tmp.138 :COLOR_WHITE;
+        symbol [ Graphics %tmp.140 215 24 32 ];
+        %tmp.140 = getm $.Toybox.Graphics;
+        symbol [ COLOR_DK_GRAY %tmp.141 215 33 46 ];
+        %tmp.141 = getv %tmp.140 :COLOR_DK_GRAY;
+        invoke %tmp.136 %tmp.137(%tmp.139, %tmp.141);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 218 20 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop" ]
+        %sessionText.13 = local;
+        symbol [ sessionText %sessionText.13 218 24 35 ];
+        %tmp.142 = self;
+        symbol [ fitLabel %tmp.143 218 38 46 ];
+        %tmp.143 = getv function %tmp.142 :fitLabel;
+        %tmp.144 = lgetv %dc;
+        symbol [ dc %tmp.144 219 24 26 ];
+        symbol [ mPlannedSessions %tmp.146 220 24 40 ];
+        %tmp.146 = getv ? :mPlannedSessions;
+        %tmp.147 = lgetv %index.8;
+        symbol [ index %tmp.147 220 41 46 ];
+        %tmp.148 = agetv %tmp.146 %tmp.147;
+        %tmp.149 = as %tmp.148 String;
+        symbol [ String %tmp.149 220 51 57 ];
+        %tmp.150 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.150 221 24 33 ];
+        %tmp.151 = lgetv %cardWidth.11;
+        symbol [ cardWidth %tmp.151 222 24 33 ];
+        %tmp.152 = 16;
+        %tmp.153 = sub %tmp.151 %tmp.152;
+        %tmp.154 = invoke %tmp.142 %tmp.143(%tmp.144, %tmp.149, %tmp.150, %tmp.153);
+        lputv %sessionText.13 %tmp.154;
+        symbol [ sessionText %sessionText.13 218 24 35 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 225 20 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop" ]
+        %textY.14 = local;
+        symbol [ textY %textY.14 225 24 29 ];
+        %tmp.155 = lgetv %rowY.9;
+        symbol [ rowY %tmp.155 225 32 36 ];
+        %tmp.156 = lgetv %cardHeight.12;
+        symbol [ cardHeight %tmp.156 226 25 35 ];
+        %tmp.157 = lgetv %dc;
+        symbol [ dc %tmp.157 226 38 40 ];
+        symbol [ getFontHeight %tmp.158 226 41 54 ];
+        %tmp.158 = getv function %tmp.157 :getFontHeight;
+        %tmp.159 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.159 226 55 64 ];
+        %tmp.160 = invoke %tmp.157 %tmp.158(%tmp.159);
+        %tmp.161 = sub %tmp.156 %tmp.160;
+        %tmp.162 = 2;
+        %tmp.163 = div %tmp.161 %tmp.162;
+        %tmp.164 = add %tmp.155 %tmp.163;
+        lputv %textY.14 %tmp.164;
+        symbol [ textY %textY.14 225 24 29 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 228 20 ]
+        %tmp.165 = lgetv %dc;
+        symbol [ dc %tmp.165 228 20 22 ];
+        symbol [ drawText %tmp.166 228 23 31 ];
+        %tmp.166 = getv function %tmp.165 :drawText;
+        %tmp.167 = lgetv %centerX.1;
+        symbol [ centerX %tmp.167 229 24 31 ];
+        %tmp.168 = lgetv %textY.14;
+        symbol [ textY %tmp.168 230 24 29 ];
+        %tmp.169 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.169 231 24 33 ];
+        %tmp.170 = lgetv %sessionText.13;
+        symbol [ sessionText %tmp.170 232 24 35 ];
+        symbol [ Graphics %tmp.171 233 24 32 ];
+        %tmp.171 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.172 233 33 52 ];
+        %tmp.172 = getv %tmp.171 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.165 %tmp.166(%tmp.167, %tmp.168, %tmp.169, %tmp.170, %tmp.172);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_42_235_16_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_16_235_16_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_191_16_235_16_if_end:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_54_236_12_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_incr:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 187 ]
+        %tmp.173 = lgetv %i.7;
+        symbol [ i %tmp.173 187 46 47 ];
+        %tmp.174 = 1;
+        %tmp.175 = add %tmp.173 %tmp.174;
+        lputv %i.7 %tmp.175;
+        symbol [ i %i.7 187 46 47 ];
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_test;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_187_12_236_12_for_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 238 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_12_252_12_if_stmt:
+        %tmp.176 = lgetv %sessionCount.4;
+        symbol [ sessionCount %tmp.176 238 16 28 ];
+        %tmp.177 = 2;
+        %tmp.178 = gt %tmp.176 %tmp.177;
+        bf %tmp.178 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_12_252_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_12_252_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_34_252_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 240 16 ]
+        %tmp.179 = lgetv %dc;
+        symbol [ dc %tmp.179 240 16 18 ];
+        symbol [ setColor %tmp.180 240 19 27 ];
+        %tmp.180 = getv function %tmp.179 :setColor;
+        symbol [ Graphics %tmp.181 241 20 28 ];
+        %tmp.181 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.182 241 29 42 ];
+        %tmp.182 = getv %tmp.181 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.183 242 20 28 ];
+        %tmp.183 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.184 242 29 40 ];
+        %tmp.184 = getv %tmp.183 :COLOR_BLACK;
+        invoke %tmp.179 %tmp.180(%tmp.182, %tmp.184);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 245 16 ]
+        %tmp.185 = lgetv %dc;
+        symbol [ dc %tmp.185 245 16 18 ];
+        symbol [ drawText %tmp.186 245 19 27 ];
+        %tmp.186 = getv function %tmp.185 :drawText;
+        %tmp.187 = lgetv %centerX.1;
+        symbol [ centerX %tmp.187 246 20 27 ];
+        symbol [ mPlanStartY %tmp.189 247 20 31 ];
+        %tmp.189 = getv ? :mPlanStartY;
+        %tmp.190 = 2;
+        symbol [ mPlanRowHeight %tmp.192 247 39 53 ];
+        %tmp.192 = getv ? :mPlanRowHeight;
+        %tmp.193 = mul %tmp.190 %tmp.192;
+        %tmp.194 = add %tmp.189 %tmp.193;
+        %tmp.195 = lgetv %fontTiny.2;
+        symbol [ fontTiny %tmp.195 248 20 28 ];
+        %tmp.196 = "WISCHEN FÜR WEITERE";
+        symbol [ Graphics %tmp.197 250 20 28 ];
+        %tmp.197 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.198 250 29 48 ];
+        %tmp.198 = getv %tmp.197 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.185 %tmp.186(%tmp.187, %tmp.194, %tmp.195, %tmp.196, %tmp.198);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_34_252_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_12_252_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_238_12_252_12_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 254 12 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_12_258_12_if_stmt:
+        %tmp.199 = lgetv %sessionCount.4;
+        symbol [ sessionCount %tmp.199 254 16 28 ];
+        %tmp.200 = 1;
+        %tmp.201 = eq %tmp.199 %tmp.200;
+        bf %tmp.201 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_12_258_12_if_else_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_12_258_12_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_35_256_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 255 16 ]
+        symbol [ mHeight %tmp.203 255 28 35 ];
+        %tmp.203 = getv ? :mHeight;
+        %tmp.204 = 0.53;
+        %tmp.205 = mul %tmp.203 %tmp.204;
+        lputv %activityY.5 %tmp.205;
+        symbol [ activityY %activityY.5 255 16 25 ];
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_35_256_12_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_12_258_12_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_12_258_12_if_else_false:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_256_19_258_12_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 257 16 ]
+        symbol [ mHeight %tmp.207 257 28 35 ];
+        %tmp.207 = getv ? :mHeight;
+        %tmp.208 = 0.59;
+        %tmp.209 = mul %tmp.207 %tmp.208;
+        lputv %activityY.5 %tmp.209;
+        symbol [ activityY %activityY.5 257 16 25 ];
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_256_19_258_12_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_254_12_258_12_if_end:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_30_259_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_8_259_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_163_8_259_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 262 8 ]
+        %tmp.210 = lgetv %dc;
+        symbol [ dc %tmp.210 262 8 10 ];
+        symbol [ setColor %tmp.211 262 11 19 ];
+        %tmp.211 = getv function %tmp.210 :setColor;
+        symbol [ Graphics %tmp.212 263 12 20 ];
+        %tmp.212 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.213 263 21 32 ];
+        %tmp.213 = getv %tmp.212 :COLOR_WHITE;
+        symbol [ Graphics %tmp.214 264 12 20 ];
+        %tmp.214 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.215 264 21 32 ];
+        %tmp.215 = getv %tmp.214 :COLOR_BLACK;
+        invoke %tmp.210 %tmp.211(%tmp.213, %tmp.215);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 267 8 ]
+        %tmp.216 = lgetv %dc;
+        symbol [ dc %tmp.216 267 8 10 ];
+        symbol [ drawText %tmp.217 267 11 19 ];
+        %tmp.217 = getv function %tmp.216 :drawText;
+        %tmp.218 = lgetv %centerX.1;
+        symbol [ centerX %tmp.218 268 12 19 ];
+        %tmp.219 = lgetv %activityY.5;
+        symbol [ activityY %tmp.219 269 12 21 ];
+        %tmp.220 = lgetv %fontTiny.2;
+        symbol [ fontTiny %tmp.220 270 12 20 ];
+        %tmp.221 = "AKTIVITÄT STARTEN";
+        symbol [ Graphics %tmp.222 272 12 20 ];
+        %tmp.222 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.223 272 21 40 ];
+        %tmp.223 = getv %tmp.222 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.216 %tmp.217(%tmp.218, %tmp.219, %tmp.220, %tmp.221, %tmp.223);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 275 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %buttonY.15 = local;
+        symbol [ buttonY %buttonY.15 275 12 19 ];
+        %tmp.224 = lgetv %activityY.5;
+        symbol [ activityY %tmp.224 275 22 31 ];
+        symbol [ mHeight %tmp.226 275 35 42 ];
+        %tmp.226 = getv ? :mHeight;
+        %tmp.227 = 0.07;
+        %tmp.228 = mul %tmp.226 %tmp.227;
+        %tmp.229 = add %tmp.224 %tmp.228;
+        lputv %buttonY.15 %tmp.229;
+        symbol [ buttonY %buttonY.15 275 12 19 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 276 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %buttonHeight.16 = local;
+        symbol [ buttonHeight %buttonHeight.16 276 12 24 ];
+        symbol [ mHeight %tmp.231 276 27 34 ];
+        %tmp.231 = getv ? :mHeight;
+        %tmp.232 = 0.075;
+        %tmp.233 = mul %tmp.231 %tmp.232;
+        lputv %buttonHeight.16 %tmp.233;
+        symbol [ buttonHeight %buttonHeight.16 276 12 24 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 277 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %buttonWidth.17 = local;
+        symbol [ buttonWidth %buttonWidth.17 277 12 23 ];
+        symbol [ mWidth %tmp.235 277 26 32 ];
+        %tmp.235 = getv ? :mWidth;
+        %tmp.236 = 0.19;
+        %tmp.237 = mul %tmp.235 %tmp.236;
+        lputv %buttonWidth.17 %tmp.237;
+        symbol [ buttonWidth %buttonWidth.17 277 12 23 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 279 8 ]
+        %tmp.238 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.238 279 19 26 ];
+        symbol [ mBoatTop ? 279 8 16 ];
+        putv self :mBoatTop %tmp.238;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 280 8 ]
+        %tmp.239 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.239 280 22 29 ];
+        %tmp.240 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.240 280 32 44 ];
+        %tmp.241 = add %tmp.239 %tmp.240;
+        symbol [ mBoatBottom ? 280 8 19 ];
+        putv self :mBoatBottom %tmp.241;
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 282 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %boatTextY.18 = local;
+        symbol [ boatTextY %boatTextY.18 282 12 21 ];
+        %tmp.242 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.242 282 24 31 ];
+        %tmp.243 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.243 283 13 25 ];
+        %tmp.244 = lgetv %dc;
+        symbol [ dc %tmp.244 283 28 30 ];
+        symbol [ getFontHeight %tmp.245 283 31 44 ];
+        %tmp.245 = getv function %tmp.244 :getFontHeight;
+        %tmp.246 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.246 283 45 54 ];
+        %tmp.247 = invoke %tmp.244 %tmp.245(%tmp.246);
+        %tmp.248 = sub %tmp.243 %tmp.247;
+        %tmp.249 = 2;
+        %tmp.250 = div %tmp.248 %tmp.249;
+        %tmp.251 = add %tmp.242 %tmp.250;
+        lputv %boatTextY.18 %tmp.251;
+        symbol [ boatTextY %boatTextY.18 282 12 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 286 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %k1CenterX.19 = local;
+        symbol [ k1CenterX %k1CenterX.19 286 12 21 ];
+        symbol [ mWidth %tmp.253 286 24 30 ];
+        %tmp.253 = getv ? :mWidth;
+        %tmp.254 = 0.30;
+        %tmp.255 = mul %tmp.253 %tmp.254;
+        lputv %k1CenterX.19 %tmp.255;
+        symbol [ k1CenterX %k1CenterX.19 286 12 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 287 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %k1X.20 = local;
+        symbol [ k1X %k1X.20 287 12 15 ];
+        %tmp.256 = lgetv %k1CenterX.19;
+        symbol [ k1CenterX %tmp.256 287 18 27 ];
+        %tmp.257 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.257 287 31 42 ];
+        %tmp.258 = 2;
+        %tmp.259 = div %tmp.257 %tmp.258;
+        %tmp.260 = sub %tmp.256 %tmp.259;
+        lputv %k1X.20 %tmp.260;
+        symbol [ k1X %k1X.20 287 12 15 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 289 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_8_328_8_if_stmt:
+        symbol [ mSelectedBoat %tmp.262 289 12 25 ];
+        %tmp.262 = getv ? :mSelectedBoat;
+        %tmp.263 = "K1";
+        %tmp.264 = eq %tmp.262 %tmp.263;
+        bf %tmp.264 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_8_328_8_if_else_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_8_328_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_35_309_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 291 12 ]
+        %tmp.265 = lgetv %dc;
+        symbol [ dc %tmp.265 291 12 14 ];
+        symbol [ setColor %tmp.266 291 15 23 ];
+        %tmp.266 = getv function %tmp.265 :setColor;
+        symbol [ Graphics %tmp.267 292 16 24 ];
+        %tmp.267 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.268 292 25 36 ];
+        %tmp.268 = getv %tmp.267 :COLOR_WHITE;
+        symbol [ Graphics %tmp.269 293 16 24 ];
+        %tmp.269 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.270 293 25 36 ];
+        %tmp.270 = getv %tmp.269 :COLOR_BLACK;
+        invoke %tmp.265 %tmp.266(%tmp.268, %tmp.270);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 296 12 ]
+        %tmp.271 = lgetv %dc;
+        symbol [ dc %tmp.271 296 12 14 ];
+        symbol [ fillRoundedRectangle %tmp.272 296 15 35 ];
+        %tmp.272 = getv function %tmp.271 :fillRoundedRectangle;
+        %tmp.273 = lgetv %k1X.20;
+        symbol [ k1X %tmp.273 297 16 19 ];
+        %tmp.274 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.274 298 16 23 ];
+        %tmp.275 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.275 299 16 27 ];
+        %tmp.276 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.276 300 16 28 ];
+        %tmp.277 = 7;
+        invoke %tmp.271 %tmp.272(%tmp.273, %tmp.274, %tmp.275, %tmp.276, %tmp.277);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 304 12 ]
+        %tmp.278 = lgetv %dc;
+        symbol [ dc %tmp.278 304 12 14 ];
+        symbol [ setColor %tmp.279 304 15 23 ];
+        %tmp.279 = getv function %tmp.278 :setColor;
+        symbol [ Graphics %tmp.280 305 16 24 ];
+        %tmp.280 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.281 305 25 36 ];
+        %tmp.281 = getv %tmp.280 :COLOR_BLACK;
+        symbol [ Graphics %tmp.282 306 16 24 ];
+        %tmp.282 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.283 306 25 36 ];
+        %tmp.283 = getv %tmp.282 :COLOR_WHITE;
+        invoke %tmp.278 %tmp.279(%tmp.281, %tmp.283);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_35_309_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_8_328_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_8_328_8_if_else_false:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_309_15_328_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 311 12 ]
+        %tmp.284 = lgetv %dc;
+        symbol [ dc %tmp.284 311 12 14 ];
+        symbol [ setColor %tmp.285 311 15 23 ];
+        %tmp.285 = getv function %tmp.284 :setColor;
+        symbol [ Graphics %tmp.286 312 16 24 ];
+        %tmp.286 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.287 312 25 38 ];
+        %tmp.287 = getv %tmp.286 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.288 313 16 24 ];
+        %tmp.288 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.289 313 25 36 ];
+        %tmp.289 = getv %tmp.288 :COLOR_BLACK;
+        invoke %tmp.284 %tmp.285(%tmp.287, %tmp.289);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 316 12 ]
+        %tmp.290 = lgetv %dc;
+        symbol [ dc %tmp.290 316 12 14 ];
+        symbol [ drawRoundedRectangle %tmp.291 316 15 35 ];
+        %tmp.291 = getv function %tmp.290 :drawRoundedRectangle;
+        %tmp.292 = lgetv %k1X.20;
+        symbol [ k1X %tmp.292 317 16 19 ];
+        %tmp.293 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.293 318 16 23 ];
+        %tmp.294 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.294 319 16 27 ];
+        %tmp.295 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.295 320 16 28 ];
+        %tmp.296 = 7;
+        invoke %tmp.290 %tmp.291(%tmp.292, %tmp.293, %tmp.294, %tmp.295, %tmp.296);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 324 12 ]
+        %tmp.297 = lgetv %dc;
+        symbol [ dc %tmp.297 324 12 14 ];
+        symbol [ setColor %tmp.298 324 15 23 ];
+        %tmp.298 = getv function %tmp.297 :setColor;
+        symbol [ Graphics %tmp.299 325 16 24 ];
+        %tmp.299 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.300 325 25 36 ];
+        %tmp.300 = getv %tmp.299 :COLOR_WHITE;
+        symbol [ Graphics %tmp.301 326 16 24 ];
+        %tmp.301 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.302 326 25 36 ];
+        %tmp.302 = getv %tmp.301 :COLOR_BLACK;
+        invoke %tmp.297 %tmp.298(%tmp.300, %tmp.302);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_309_15_328_8_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_289_8_328_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 330 8 ]
+        %tmp.303 = lgetv %dc;
+        symbol [ dc %tmp.303 330 8 10 ];
+        symbol [ drawText %tmp.304 330 11 19 ];
+        %tmp.304 = getv function %tmp.303 :drawText;
+        %tmp.305 = lgetv %k1CenterX.19;
+        symbol [ k1CenterX %tmp.305 331 12 21 ];
+        %tmp.306 = lgetv %boatTextY.18;
+        symbol [ boatTextY %tmp.306 332 12 21 ];
+        %tmp.307 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.307 333 12 21 ];
+        %tmp.308 = "K1";
+        symbol [ Graphics %tmp.309 335 12 20 ];
+        %tmp.309 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.310 335 21 40 ];
+        %tmp.310 = getv %tmp.309 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.303 %tmp.304(%tmp.305, %tmp.306, %tmp.307, %tmp.308, %tmp.310);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 339 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %c1CenterX.21 = local;
+        symbol [ c1CenterX %c1CenterX.21 339 12 21 ];
+        symbol [ mWidth %tmp.312 339 24 30 ];
+        %tmp.312 = getv ? :mWidth;
+        %tmp.313 = 0.50;
+        %tmp.314 = mul %tmp.312 %tmp.313;
+        lputv %c1CenterX.21 %tmp.314;
+        symbol [ c1CenterX %c1CenterX.21 339 12 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 340 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %c1X.22 = local;
+        symbol [ c1X %c1X.22 340 12 15 ];
+        %tmp.315 = lgetv %c1CenterX.21;
+        symbol [ c1CenterX %tmp.315 340 18 27 ];
+        %tmp.316 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.316 340 31 42 ];
+        %tmp.317 = 2;
+        %tmp.318 = div %tmp.316 %tmp.317;
+        %tmp.319 = sub %tmp.315 %tmp.318;
+        lputv %c1X.22 %tmp.319;
+        symbol [ c1X %c1X.22 340 12 15 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 342 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_8_381_8_if_stmt:
+        symbol [ mSelectedBoat %tmp.321 342 12 25 ];
+        %tmp.321 = getv ? :mSelectedBoat;
+        %tmp.322 = "C1";
+        %tmp.323 = eq %tmp.321 %tmp.322;
+        bf %tmp.323 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_8_381_8_if_else_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_8_381_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_35_362_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 344 12 ]
+        %tmp.324 = lgetv %dc;
+        symbol [ dc %tmp.324 344 12 14 ];
+        symbol [ setColor %tmp.325 344 15 23 ];
+        %tmp.325 = getv function %tmp.324 :setColor;
+        symbol [ Graphics %tmp.326 345 16 24 ];
+        %tmp.326 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.327 345 25 36 ];
+        %tmp.327 = getv %tmp.326 :COLOR_WHITE;
+        symbol [ Graphics %tmp.328 346 16 24 ];
+        %tmp.328 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.329 346 25 36 ];
+        %tmp.329 = getv %tmp.328 :COLOR_BLACK;
+        invoke %tmp.324 %tmp.325(%tmp.327, %tmp.329);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 349 12 ]
+        %tmp.330 = lgetv %dc;
+        symbol [ dc %tmp.330 349 12 14 ];
+        symbol [ fillRoundedRectangle %tmp.331 349 15 35 ];
+        %tmp.331 = getv function %tmp.330 :fillRoundedRectangle;
+        %tmp.332 = lgetv %c1X.22;
+        symbol [ c1X %tmp.332 350 16 19 ];
+        %tmp.333 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.333 351 16 23 ];
+        %tmp.334 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.334 352 16 27 ];
+        %tmp.335 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.335 353 16 28 ];
+        %tmp.336 = 7;
+        invoke %tmp.330 %tmp.331(%tmp.332, %tmp.333, %tmp.334, %tmp.335, %tmp.336);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 357 12 ]
+        %tmp.337 = lgetv %dc;
+        symbol [ dc %tmp.337 357 12 14 ];
+        symbol [ setColor %tmp.338 357 15 23 ];
+        %tmp.338 = getv function %tmp.337 :setColor;
+        symbol [ Graphics %tmp.339 358 16 24 ];
+        %tmp.339 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.340 358 25 36 ];
+        %tmp.340 = getv %tmp.339 :COLOR_BLACK;
+        symbol [ Graphics %tmp.341 359 16 24 ];
+        %tmp.341 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.342 359 25 36 ];
+        %tmp.342 = getv %tmp.341 :COLOR_WHITE;
+        invoke %tmp.337 %tmp.338(%tmp.340, %tmp.342);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_35_362_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_8_381_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_8_381_8_if_else_false:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_362_15_381_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 364 12 ]
+        %tmp.343 = lgetv %dc;
+        symbol [ dc %tmp.343 364 12 14 ];
+        symbol [ setColor %tmp.344 364 15 23 ];
+        %tmp.344 = getv function %tmp.343 :setColor;
+        symbol [ Graphics %tmp.345 365 16 24 ];
+        %tmp.345 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.346 365 25 38 ];
+        %tmp.346 = getv %tmp.345 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.347 366 16 24 ];
+        %tmp.347 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.348 366 25 36 ];
+        %tmp.348 = getv %tmp.347 :COLOR_BLACK;
+        invoke %tmp.343 %tmp.344(%tmp.346, %tmp.348);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 369 12 ]
+        %tmp.349 = lgetv %dc;
+        symbol [ dc %tmp.349 369 12 14 ];
+        symbol [ drawRoundedRectangle %tmp.350 369 15 35 ];
+        %tmp.350 = getv function %tmp.349 :drawRoundedRectangle;
+        %tmp.351 = lgetv %c1X.22;
+        symbol [ c1X %tmp.351 370 16 19 ];
+        %tmp.352 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.352 371 16 23 ];
+        %tmp.353 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.353 372 16 27 ];
+        %tmp.354 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.354 373 16 28 ];
+        %tmp.355 = 7;
+        invoke %tmp.349 %tmp.350(%tmp.351, %tmp.352, %tmp.353, %tmp.354, %tmp.355);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 377 12 ]
+        %tmp.356 = lgetv %dc;
+        symbol [ dc %tmp.356 377 12 14 ];
+        symbol [ setColor %tmp.357 377 15 23 ];
+        %tmp.357 = getv function %tmp.356 :setColor;
+        symbol [ Graphics %tmp.358 378 16 24 ];
+        %tmp.358 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.359 378 25 36 ];
+        %tmp.359 = getv %tmp.358 :COLOR_WHITE;
+        symbol [ Graphics %tmp.360 379 16 24 ];
+        %tmp.360 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.361 379 25 36 ];
+        %tmp.361 = getv %tmp.360 :COLOR_BLACK;
+        invoke %tmp.356 %tmp.357(%tmp.359, %tmp.361);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_362_15_381_8_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_342_8_381_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 383 8 ]
+        %tmp.362 = lgetv %dc;
+        symbol [ dc %tmp.362 383 8 10 ];
+        symbol [ drawText %tmp.363 383 11 19 ];
+        %tmp.363 = getv function %tmp.362 :drawText;
+        %tmp.364 = lgetv %c1CenterX.21;
+        symbol [ c1CenterX %tmp.364 384 12 21 ];
+        %tmp.365 = lgetv %boatTextY.18;
+        symbol [ boatTextY %tmp.365 385 12 21 ];
+        %tmp.366 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.366 386 12 21 ];
+        %tmp.367 = "C1";
+        symbol [ Graphics %tmp.368 388 12 20 ];
+        %tmp.368 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.369 388 21 40 ];
+        %tmp.369 = getv %tmp.368 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.362 %tmp.363(%tmp.364, %tmp.365, %tmp.366, %tmp.367, %tmp.369);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 392 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %c2CenterX.23 = local;
+        symbol [ c2CenterX %c2CenterX.23 392 12 21 ];
+        symbol [ mWidth %tmp.371 392 24 30 ];
+        %tmp.371 = getv ? :mWidth;
+        %tmp.372 = 0.70;
+        %tmp.373 = mul %tmp.371 %tmp.372;
+        lputv %c2CenterX.23 %tmp.373;
+        symbol [ c2CenterX %c2CenterX.23 392 12 21 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 393 8 ]
+        [ "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_start" "F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop" ]
+        %c2X.24 = local;
+        symbol [ c2X %c2X.24 393 12 15 ];
+        %tmp.374 = lgetv %c2CenterX.23;
+        symbol [ c2CenterX %tmp.374 393 18 27 ];
+        %tmp.375 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.375 393 31 42 ];
+        %tmp.376 = 2;
+        %tmp.377 = div %tmp.375 %tmp.376;
+        %tmp.378 = sub %tmp.374 %tmp.377;
+        lputv %c2X.24 %tmp.378;
+        symbol [ c2X %c2X.24 393 12 15 ];
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 395 8 ]
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_8_434_8_if_stmt:
+        symbol [ mSelectedBoat %tmp.380 395 12 25 ];
+        %tmp.380 = getv ? :mSelectedBoat;
+        %tmp.381 = "C2";
+        %tmp.382 = eq %tmp.380 %tmp.381;
+        bf %tmp.382 @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_8_434_8_if_else_false;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_8_434_8_if_true:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_35_415_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 397 12 ]
+        %tmp.383 = lgetv %dc;
+        symbol [ dc %tmp.383 397 12 14 ];
+        symbol [ setColor %tmp.384 397 15 23 ];
+        %tmp.384 = getv function %tmp.383 :setColor;
+        symbol [ Graphics %tmp.385 398 16 24 ];
+        %tmp.385 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.386 398 25 36 ];
+        %tmp.386 = getv %tmp.385 :COLOR_WHITE;
+        symbol [ Graphics %tmp.387 399 16 24 ];
+        %tmp.387 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.388 399 25 36 ];
+        %tmp.388 = getv %tmp.387 :COLOR_BLACK;
+        invoke %tmp.383 %tmp.384(%tmp.386, %tmp.388);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 402 12 ]
+        %tmp.389 = lgetv %dc;
+        symbol [ dc %tmp.389 402 12 14 ];
+        symbol [ fillRoundedRectangle %tmp.390 402 15 35 ];
+        %tmp.390 = getv function %tmp.389 :fillRoundedRectangle;
+        %tmp.391 = lgetv %c2X.24;
+        symbol [ c2X %tmp.391 403 16 19 ];
+        %tmp.392 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.392 404 16 23 ];
+        %tmp.393 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.393 405 16 27 ];
+        %tmp.394 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.394 406 16 28 ];
+        %tmp.395 = 7;
+        invoke %tmp.389 %tmp.390(%tmp.391, %tmp.392, %tmp.393, %tmp.394, %tmp.395);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 410 12 ]
+        %tmp.396 = lgetv %dc;
+        symbol [ dc %tmp.396 410 12 14 ];
+        symbol [ setColor %tmp.397 410 15 23 ];
+        %tmp.397 = getv function %tmp.396 :setColor;
+        symbol [ Graphics %tmp.398 411 16 24 ];
+        %tmp.398 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.399 411 25 36 ];
+        %tmp.399 = getv %tmp.398 :COLOR_BLACK;
+        symbol [ Graphics %tmp.400 412 16 24 ];
+        %tmp.400 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.401 412 25 36 ];
+        %tmp.401 = getv %tmp.400 :COLOR_WHITE;
+        invoke %tmp.396 %tmp.397(%tmp.399, %tmp.401);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_35_415_8_stop:
+        goto @F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_8_434_8_if_end;
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_8_434_8_if_else_false:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_415_15_434_8_start:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 417 12 ]
+        %tmp.402 = lgetv %dc;
+        symbol [ dc %tmp.402 417 12 14 ];
+        symbol [ setColor %tmp.403 417 15 23 ];
+        %tmp.403 = getv function %tmp.402 :setColor;
+        symbol [ Graphics %tmp.404 418 16 24 ];
+        %tmp.404 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.405 418 25 38 ];
+        %tmp.405 = getv %tmp.404 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.406 419 16 24 ];
+        %tmp.406 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.407 419 25 36 ];
+        %tmp.407 = getv %tmp.406 :COLOR_BLACK;
+        invoke %tmp.402 %tmp.403(%tmp.405, %tmp.407);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 422 12 ]
+        %tmp.408 = lgetv %dc;
+        symbol [ dc %tmp.408 422 12 14 ];
+        symbol [ drawRoundedRectangle %tmp.409 422 15 35 ];
+        %tmp.409 = getv function %tmp.408 :drawRoundedRectangle;
+        %tmp.410 = lgetv %c2X.24;
+        symbol [ c2X %tmp.410 423 16 19 ];
+        %tmp.411 = lgetv %buttonY.15;
+        symbol [ buttonY %tmp.411 424 16 23 ];
+        %tmp.412 = lgetv %buttonWidth.17;
+        symbol [ buttonWidth %tmp.412 425 16 27 ];
+        %tmp.413 = lgetv %buttonHeight.16;
+        symbol [ buttonHeight %tmp.413 426 16 28 ];
+        %tmp.414 = 7;
+        invoke %tmp.408 %tmp.409(%tmp.410, %tmp.411, %tmp.412, %tmp.413, %tmp.414);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 430 12 ]
+        %tmp.415 = lgetv %dc;
+        symbol [ dc %tmp.415 430 12 14 ];
+        symbol [ setColor %tmp.416 430 15 23 ];
+        %tmp.416 = getv function %tmp.415 :setColor;
+        symbol [ Graphics %tmp.417 431 16 24 ];
+        %tmp.417 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.418 431 25 36 ];
+        %tmp.418 = getv %tmp.417 :COLOR_WHITE;
+        symbol [ Graphics %tmp.419 432 16 24 ];
+        %tmp.419 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.420 432 25 36 ];
+        %tmp.420 = getv %tmp.419 :COLOR_BLACK;
+        invoke %tmp.415 %tmp.416(%tmp.418, %tmp.420);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_415_15_434_8_stop:
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_395_8_434_8_if_end:
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 436 8 ]
+        %tmp.421 = lgetv %dc;
+        symbol [ dc %tmp.421 436 8 10 ];
+        symbol [ drawText %tmp.422 436 11 19 ];
+        %tmp.422 = getv function %tmp.421 :drawText;
+        %tmp.423 = lgetv %c2CenterX.23;
+        symbol [ c2CenterX %tmp.423 437 12 21 ];
+        %tmp.424 = lgetv %boatTextY.18;
+        symbol [ boatTextY %tmp.424 438 12 21 ];
+        %tmp.425 = lgetv %fontSmall.3;
+        symbol [ fontSmall %tmp.425 439 12 21 ];
+        %tmp.426 = "C2";
+        symbol [ Graphics %tmp.427 441 12 20 ];
+        %tmp.427 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.428 441 21 40 ];
+        %tmp.428 = getv %tmp.427 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.421 %tmp.422(%tmp.423, %tmp.424, %tmp.425, %tmp.426, %tmp.428);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 445 8 ]
+        %tmp.429 = lgetv %dc;
+        symbol [ dc %tmp.429 445 8 10 ];
+        symbol [ setColor %tmp.430 445 11 19 ];
+        %tmp.430 = getv function %tmp.429 :setColor;
+        symbol [ Graphics %tmp.431 446 12 20 ];
+        %tmp.431 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.432 446 21 34 ];
+        %tmp.432 = getv %tmp.431 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.433 447 12 20 ];
+        %tmp.433 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.434 447 21 32 ];
+        %tmp.434 = getv %tmp.433 :COLOR_BLACK;
+        invoke %tmp.429 %tmp.430(%tmp.432, %tmp.434);
+[ "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc" 450 8 ]
+        %tmp.435 = lgetv %dc;
+        symbol [ dc %tmp.435 450 8 10 ];
+        symbol [ drawText %tmp.436 450 11 19 ];
+        %tmp.436 = getv function %tmp.435 :drawText;
+        %tmp.437 = lgetv %centerX.1;
+        symbol [ centerX %tmp.437 451 12 19 ];
+        symbol [ mHeight %tmp.439 452 12 19 ];
+        %tmp.439 = getv ? :mHeight;
+        %tmp.440 = 0.87;
+        %tmp.441 = mul %tmp.439 %tmp.440;
+        %tmp.442 = lgetv %fontTiny.2;
+        symbol [ fontTiny %tmp.442 453 12 20 ];
+        %tmp.443 = "MENÜ";
+        symbol [ Graphics %tmp.444 455 12 20 ];
+        %tmp.444 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.445 455 21 40 ];
+        %tmp.445 = getv %tmp.444 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.435 %tmp.436(%tmp.437, %tmp.441, %tmp.442, %tmp.443, %tmp.445);
+F__Dokumente_Kajo_garmin_developer_KajoConnect_source_KajoConnectView_mc_119_32_457_4_stop:
+    }
+}
+[ @file = "F:\Dokumente\Kajo\garmin developer\KajoConnect\source\KajoConnectView.mc"; @line = 1; ]
+<init> {
+}
