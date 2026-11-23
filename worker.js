@@ -228,10 +228,11 @@ VERBINDLICHE REGELN:
     "Gib für jede zukünftige Einheit eine Entscheidung aus, damit klar ist, ob sie beibehalten oder angepasst werden soll. Ändere nur, was die Datenlage begründet."
   ].join("\\n") : payload?.task === "weekly_plan_proposal" ? [
     "AUFGABE: Erstelle einen konkreten, individuell begründeten Trainingswochen-Vorschlag für genau den übermittelten Montag-bis-Sonntag-Zeitraum. Gib ausschließlich gültiges JSON zurück.",
-    "JSON-SCHEMA: { status: ready|needs_input, rationale: string, openQuestions: string[], objective: string, focus: string[], sessions: [{ date: YYYY-MM-DD, name, type, category, discipline, raceFormat, waterType, durationMinutes, intensity, objective, warmup, mainSet, cooldown, notes }] }",
+    "JSON-SCHEMA: { status: ready|needs_input, rationale: string, openQuestions: string[], objective: string, focus: string[], sessions: [{ date: YYYY-MM-DD, name, type, category, discipline, raceFormat, waterType, durationMinutes, intensity, objective, warmup, mainSet, cooldown, notes, steps: [{ type: warmup|work|recovery|cooldown|other, label: string, durationSeconds: positive integer, target: string }] }] }",
     "Plane Ruhetage ausdrücklich als Teil der Wochenstruktur ein, wenn sie zur Regeneration und zum realistischen Wochenumfang passen. Kennzeichne sie mit type: RestDay, category: rest, name: Ruhetag; durationMinutes und Belastungs-/Load-Werte bleiben null. Ein Ruhetag bedeutet keine geplante Trainingseinheit an diesem Datum. Erfinde keine Ruhetage aus fehlenden Verfügbarkeitsangaben; wenn Trainingsverfügbarkeit unklar ist, frage nach.",
     "Voraussetzung: ein freigegebener Saisonplan und eine Saisonphase, in der alle sieben Tage der Zielwoche liegen. Nutze die bestätigte Phase, Saisonziel, Profil, Wettkämpfe, tatsächliche Trainingshistorie, aktuelle Belastung, Regeneration, Gesundheit, Verfügbarkeit und bestehende Planung.",
     "Keine Trainingsstunden, Trainingstage, Einheiten pro Tag, Trainingsmöglichkeiten oder Intensitätszonen erfinden. Wenn verfügbare Tage/Stunden oder entscheidende Trainingsmöglichkeiten fehlen, stelle präzise Rückfragen und setze status auf needs_input.",
+    "Strukturierte Schritte: Wenn die Trainingsvorgabe konkrete, eindeutig geordnete Belastungs- und Erholungsabschnitte mit expliziten Dauern enthält, gib sie zusätzlich als steps aus. Jeder Schritt enthält type, label, durationSeconds und optional target. Wiederholungen werden als einzelne Schritte in Reihenfolge ausgeschrieben. Erfinde keine Dauer und leite keine Zeitangaben aus bloßen Intensitäts- oder Distanzangaben ab. Wenn der Ablauf nicht eindeutig zeitlich strukturiert ist, gib steps: [] aus und bewahre die Vorgabe in warmup/mainSet/cooldown als Text.",
     "Plane nur die ausgewählte Woche. Erzeuge keine Einheiten außerhalb des Zeitraums und keine zusätzlichen Einheiten, die bestehende geplante Einheiten duplizieren.",
     "Für Kanusport Bootsklasse, Classic/Sprint und Wasserart getrennt behandeln. K1 ist nicht automatisch Kanu allgemein. C1-Einheiten höchstens 75 Minuten; längere Paddel-Einheiten nur in K1. C2-Einheit ersetzt eine geplante Einheit und wird nicht zusätzlich eingeplant.",
     "Flachwasser ersetzt kein Wildwassertraining. Plane Wildwasser nur, wenn die Verfügbarkeit für die Zielwoche bestätigt ist. Gym/Kraft, Lauf-, Rad-, Schwimm-, Ergometer-, Mobilitäts- oder Präventionseinheiten nur bei bestätigter Verfügbarkeit.",
@@ -425,7 +426,21 @@ VERBINDLICHE REGELN:
       warmup: typeof session?.warmup === "string" ? session.warmup.slice(0, 1000) : "",
       mainSet: typeof session?.mainSet === "string" ? session.mainSet.slice(0, 2000) : "",
       cooldown: typeof session?.cooldown === "string" ? session.cooldown.slice(0, 1000) : "",
-      notes: typeof session?.notes === "string" ? session.notes.slice(0, 1000) : ""
+      notes: typeof session?.notes === "string" ? session.notes.slice(0, 1000) : "",
+      steps: Array.isArray(session?.steps) ? session.steps.slice(0, 40).flatMap((step, stepIndex) => {
+        if (!step || typeof step !== "object" || Array.isArray(step)) return [];
+        const label = typeof step.label === "string" ? step.label.trim().slice(0, 80) : "";
+        const durationSeconds = Number(step.durationSeconds);
+        const allowedTypes = ["warmup", "work", "recovery", "cooldown", "other"];
+        if (!label || !Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 21600) return [];
+        return [{
+          id: typeof step.id === "string" ? step.id.slice(0, 80) : "ai-step-" + (stepIndex + 1),
+          type: allowedTypes.includes(step.type) ? step.type : "other",
+          label,
+          durationSeconds,
+          target: typeof step.target === "string" ? step.target.slice(0, 120) : ""
+        }];
+      }) : []
     }));
     const weeklyPlan = {
       id: "week-" + target.weekStartDate,
