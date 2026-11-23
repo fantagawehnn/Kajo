@@ -82,6 +82,9 @@ jobs:
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
 
+      - name: Run cloud merge regression tests
+        run: node --test tests/cloud-merge.test.mjs
+
       - name: Run season planning tests
         run: node --experimental-default-type=module --test tests/season-planning.test.mjs
 
