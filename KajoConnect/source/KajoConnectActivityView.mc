@@ -528,101 +528,177 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
+    function formatPace(speedKmh) as Lang.String {
+        if (speedKmh == null || speedKmh <= 0.1) { return "--:--"; }
+        var totalSeconds = Math.round(3600.0 / speedKmh).toNumber();
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = totalSeconds - (minutes * 60);
+        return minutes.toString() + ":" + (seconds < 10 ? "0" : "") + seconds.toString();
+    }
+
     function drawActivityDashboard(dc as Dc, cx, hrNow as Lang.String, elapsed as Lang.String,
-        distance as Lang.String, speedNow as Lang.String, zone as Lang.Number) as Void {
-        // KAJO AMOLED dashboard: compact brand header, speed hero, paired metrics.
+        distance as Lang.String, speedNow as Lang.String, zone as Lang.Number,
+        activityInfo) as Void {
         var cyan = 0x00E5CC;
-        var muted = 0xB0B8C0;
-        var left = mUnit * 0.115;
-        var right = mUnit * 0.885;
+        var muted = 0xA0AAB2;
+        var orange = 0xFF9100;
+        var left = mUnit * 0.105;
+        var right = mUnit * 0.895;
 
-        // Wave mark and wordmark.
+        // Feiner Fortschrittsakzent am oberen linken Rand.
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawLine((mUnit * 0.17).toNumber(), (mUnit * 0.075).toNumber(),
-            (mUnit * 0.225).toNumber(), (mUnit * 0.075).toNumber());
-        dc.drawLine((mUnit * 0.18).toNumber(), (mUnit * 0.095).toNumber(),
-            (mUnit * 0.215).toNumber(), (mUnit * 0.095).toNumber());
-        drawFit(dc, mUnit * 0.36, mUnit * 0.045, "KAJO", mUnit * 0.28,
-            Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, mUnit * 0.39, mUnit * 0.105, mBoatClass + "  •  WILDWASSER",
-            mUnit * 0.48, Graphics.FONT_XTINY, muted);
+        dc.drawLine((mUnit * 0.105).toNumber(), (mUnit * 0.12).toNumber(),
+            (mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber());
+        dc.drawLine((mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber(),
+            (mUnit * 0.155).toNumber(), (mUnit * 0.045).toNumber());
 
-        // GPS signal indicator (green bars only when a usable fix is present).
+        // Intervallstatus: nur echte Trainingsschritte als Intervallzaehler darstellen.
+        var stepCount = mWorkoutSteps.size();
+        var stepNumber = mWorkoutStepIndex + 1;
+        var stepLabel = mCurrentWorkoutState == "PLANNED" ? "TRAINING" : "FREIES TRAINING";
+        var target = "";
+        var nextLabel = "";
+        var remainingText = "";
+        if (stepCount > 0 && !mWorkoutSequenceComplete) {
+            var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+            stepLabel = step["label"] == null ? "PADDELN" : step["label"].toString();
+            target = step["target"] == null ? "" : step["target"].toString();
+            var remaining = (step["durationSeconds"] as Lang.Number) - mWorkoutStepElapsedSeconds;
+            if (remaining < 0) { remaining = 0; }
+            remainingText = formatTime(remaining * 1000);
+            if (mWorkoutStepIndex + 1 < stepCount) {
+                var nextStep = mWorkoutSteps[mWorkoutStepIndex + 1] as Lang.Dictionary;
+                var nextDuration = nextStep["durationSeconds"] as Lang.Number;
+                nextLabel = "NAECHSTES: " + formatTime(nextDuration * 1000) + " " +
+                    (nextStep["label"] == null ? "" : nextStep["label"].toString());
+            }
+        } else if (mWorkoutSequenceComplete) {
+            stepLabel = "ABGESCHLOSSEN";
+        }
+
+        var statusText = stepCount > 0
+            ? "INTERVALL " + stepNumber.toString() + "/" + stepCount.toString() + "  •  " + compactWorkoutText(stepLabel, 18)
+            : compactWorkoutText(stepLabel, 34);
+        var statusX = mUnit * 0.105;
+        var statusY = mUnit * 0.075;
+        var statusW = mUnit * 0.79;
+        var statusH = mUnit * 0.105;
+        dc.setColor(0x041216, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(statusX.toNumber(), statusY.toNumber(), statusW.toNumber(),
+            statusH.toNumber(), (mUnit * 0.035).toNumber());
+        dc.setColor(cyan, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle(statusX.toNumber(), statusY.toNumber(), statusW.toNumber(),
+            statusH.toNumber(), (mUnit * 0.035).toNumber());
+        drawFit(dc, cx, statusY + (mUnit * 0.027), statusText,
+            statusW * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+
+        // GPS-Empfang: drei Balken, nur bei nutzbarem Fix gruen.
         var gpsActive = mGpsQuality >= Position.QUALITY_USABLE;
         var gpsColor = gpsActive ? 0x39FF14 : 0x555555;
-        for (var bar = 0; bar < 5; bar += 1) {
-            var barHeight = mUnit * (0.018 + (bar * 0.009));
-            var bx = (mUnit * 0.735) + (bar * mUnit * 0.025);
-            var by = mUnit * 0.125 - barHeight;
+        for (var bar = 0; bar < 3; bar += 1) {
+            var bh = mUnit * (0.018 + (bar * 0.012));
             dc.setColor(gpsColor, Graphics.COLOR_BLACK);
-            dc.fillRectangle(bx.toNumber(), by.toNumber(),
-                (mUnit * 0.014).toNumber(), barHeight.toNumber());
-        }
-        drawFit(dc, mUnit * 0.785, mUnit * 0.132, "GPS", mUnit * 0.18,
-            Graphics.FONT_XTINY, gpsColor);
-
-        // Speed hero.
-        drawFit(dc, cx, mUnit * 0.205, "GESCHWINDIGKEIT", mUnit * 0.72,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, cx, mUnit * 0.255, speedNow, mUnit * 0.72,
-            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.385, "km/h", mUnit * 0.40,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        dc.setColor(0x333333, Graphics.COLOR_BLACK);
-        dc.drawLine((left).toNumber(), (mUnit * 0.445).toNumber(),
-            (right).toNumber(), (mUnit * 0.445).toNumber());
-
-        // Heart rate and elapsed time.
-        var cardTop = mUnit * 0.475;
-        var cardHeight = mUnit * 0.205;
-        var cardWidth = mUnit * 0.37;
-        var leftCenter = mUnit * 0.305;
-        var rightCenter = mUnit * 0.695;
-        drawDashboardPanel(dc, mUnit * 0.12, cardTop, cardWidth, cardHeight);
-        drawDashboardPanel(dc, mUnit * 0.51, cardTop, cardWidth, cardHeight);
-        dc.setColor(0x555555, Graphics.COLOR_BLACK);
-        dc.drawLine(cx.toNumber(), (cardTop + mUnit * 0.035).toNumber(),
-            cx.toNumber(), (cardTop + cardHeight - mUnit * 0.035).toNumber());
-        drawFit(dc, leftCenter, mUnit * 0.495, "♥  HERZFREQUENZ", cardWidth * 0.90,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, leftCenter, mUnit * 0.545, hrNow, cardWidth * 0.82,
-            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, leftCenter, mUnit * 0.625, "BPM", cardWidth * 0.72,
-            Graphics.FONT_XTINY, muted);
-        var zoneLabel = zone > 0 ? "ZONE " + zone.toString() : "ZONE --";
-        drawFit(dc, leftCenter, mUnit * 0.652, zoneLabel, cardWidth * 0.82,
-            Graphics.FONT_XTINY, zone >= 4 ? 0xFFFFA000 : cyan);
-        drawFit(dc, rightCenter, mUnit * 0.495, "ZEIT", cardWidth * 0.82,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, rightCenter, mUnit * 0.565, elapsed, cardWidth * 0.88,
-            Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-
-        // Six-segment HR zone strip. Garmin zone values are supplied by KAJO.
-        var zoneColors = [0x20D98A, 0x8BE34A, 0xC8E64A, 0xF2D33B, 0xFF9F1C, 0xF04455];
-        var stripLeft = mUnit * 0.19;
-        var stripWidth = mUnit * 0.62;
-        var stripGap = mUnit * 0.012;
-        var segmentWidth = (stripWidth - (stripGap * 5)) / 6;
-        for (var seg = 0; seg < 6; seg += 1) {
-            var segX = stripLeft + (seg * (segmentWidth + stripGap));
-            var segColor = zoneColors[seg];
-            if (zone == seg) { segColor = Graphics.COLOR_WHITE; }
-            dc.setColor(segColor, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(segX.toNumber(), (mUnit * 0.695).toNumber(),
-                segmentWidth.toNumber(), (mUnit * 0.012).toNumber(),
-                (mUnit * 0.006).toNumber());
+            dc.fillRectangle((mUnit * (0.83 + (bar * 0.018))).toNumber(),
+                (mUnit * 0.066 - bh).toNumber(), (mUnit * 0.011).toNumber(), bh.toNumber());
         }
 
-        // Distance and current speed summary; no pace is fabricated because it is not supplied.
-        drawDashboardPanel(dc, mUnit * 0.16, mUnit * 0.73, mUnit * 0.68, mUnit * 0.105);
-        drawFit(dc, mUnit * 0.37, mUnit * 0.745, "DISTANZ", mUnit * 0.30,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, mUnit * 0.37, mUnit * 0.775, distance + " km", mUnit * 0.30,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, mUnit * 0.68, mUnit * 0.745, "GESCHW.", mUnit * 0.27,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, mUnit * 0.68, mUnit * 0.775, speedNow + " km/h", mUnit * 0.30,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        // Grosser Timer mit offenem, tuerkisem Kreisbogen.
+        var timerText = remainingText != "" ? remainingText :
+            (activityInfo != null && activityInfo.timerTime != null
+                ? formatTime(activityInfo.timerTime) : elapsed);
+        var ringCx = cx;
+        var ringCy = mUnit * 0.365;
+        var ringRadius = mUnit * 0.245;
+        dc.setColor(cyan, Graphics.COLOR_BLACK);
+        dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
+            205, 335, Graphics.ARC_CLOCKWISE);
+        dc.drawArc(ringCx.toNumber(), ringCy.toNumber(), ringRadius.toNumber(),
+            25, 155, Graphics.ARC_CLOCKWISE);
+        drawFit(dc, cx, mUnit * 0.285, timerText, mUnit * 0.66,
+            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+        drawFit(dc, cx + (mUnit * 0.275), mUnit * 0.305, "min",
+            mUnit * 0.10, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.435,
+            target == "" ? "INTERVALL" : compactWorkoutText(target, 30),
+            mUnit * 0.62, Graphics.FONT_SMALL, cyan);
+
+        if (nextLabel != "") {
+            drawFit(dc, cx, mUnit * 0.535, compactWorkoutText(nextLabel, 42),
+                mUnit * 0.78, Graphics.FONT_XTINY, muted);
+        } else {
+            drawFit(dc, cx, mUnit * 0.535, "TRAINING LAEUFT",
+                mUnit * 0.78, Graphics.FONT_XTINY, muted);
+        }
+
+        // Pace wird aus der aktuellen Geschwindigkeit abgeleitet. Keine erfundene
+        // Intervall-Distanz: die Anzeige verwendet die verfuegbare Gesamtdistanz.
+        var pace = "--:--";
+        if (activityInfo != null && activityInfo.currentSpeed != null) {
+            pace = formatPace(activityInfo.currentSpeed * 3.6);
+        }
+        var distanceMeters = "--";
+        if (activityInfo != null && activityInfo.elapsedDistance != null) {
+            distanceMeters = numberText(activityInfo.elapsedDistance, 0);
+        }
+
+        var metricTop = mUnit * 0.59;
+        dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
+        dc.drawLine(cx.toNumber(), (metricTop - mUnit * 0.005).toNumber(),
+            cx.toNumber(), (mUnit * 0.765).toNumber());
+        drawFit(dc, cx - (mUnit * 0.205), metricTop,
+            "min/km", mUnit * 0.34, Graphics.FONT_XTINY, muted);
+        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.635,
+            pace, mUnit * 0.36, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawFit(dc, cx - (mUnit * 0.205), mUnit * 0.715,
+            "PACE", mUnit * 0.34, Graphics.FONT_XTINY, muted);
+
+        drawFit(dc, cx + (mUnit * 0.205), metricTop,
+            "m", mUnit * 0.34, Graphics.FONT_XTINY, muted);
+        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.635,
+            distanceMeters, mUnit * 0.36, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.715,
+            "DISTANZ", mUnit * 0.34, Graphics.FONT_XTINY, muted);
+        dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
+        dc.drawLine(left.toNumber(), (mUnit * 0.765).toNumber(),
+            right.toNumber(), (mUnit * 0.765).toNumber());
+
+        // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
+        dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
+        dc.drawText((mUnit * 0.16).toNumber(), (mUnit * 0.79).toNumber(),
+            Graphics.FONT_SMALL, "♥", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, mUnit * 0.34, mUnit * 0.785, hrNow,
+            mUnit * 0.25, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawFit(dc, mUnit * 0.43, mUnit * 0.80, "bpm",
+            mUnit * 0.16, Graphics.FONT_XTINY, muted);
+
+        var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
+        var barLeft = mUnit * 0.13;
+        var barWidth = mUnit * 0.47;
+        var gap = mUnit * 0.012;
+        var segmentWidth = (barWidth - (gap * 4)) / 5;
+        for (var z = 0; z < 5; z += 1) {
+            var zx = barLeft + (z * (segmentWidth + gap));
+            dc.setColor(zoneColors[z], Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(zx.toNumber(), (mUnit * 0.855).toNumber(),
+                segmentWidth.toNumber(), (mUnit * 0.018).toNumber(),
+                (mUnit * 0.009).toNumber());
+        }
+        if (zone > 0 && zone <= 5) {
+            drawFit(dc, mUnit * 0.36, mUnit * 0.88, "ZONE " + zone.toString(),
+                mUnit * 0.35, Graphics.FONT_XTINY, zoneColors[zone - 1]);
+        } else {
+            drawFit(dc, mUnit * 0.36, mUnit * 0.88, "ZONE --",
+                mUnit * 0.35, Graphics.FONT_XTINY, muted);
+        }
+
+        dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
+        dc.drawLine((mUnit * 0.64).toNumber(), (mUnit * 0.79).toNumber(),
+            (mUnit * 0.64).toNumber(), (mUnit * 0.925).toNumber());
+        drawFit(dc, mUnit * 0.77, mUnit * 0.815, "› PAUSE",
+            mUnit * 0.27, Graphics.FONT_XTINY, muted);
+        drawFit(dc, mUnit * 0.77, mUnit * 0.865,
+            nextLabel == "" ? "--:--" : compactWorkoutText(nextLabel, 15),
+            mUnit * 0.27, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
@@ -997,7 +1073,7 @@ class KajoConnectActivityView extends WatchUi.View {
                     mUnit * 0.76, Graphics.FONT_XTINY, 0xFFFF7043);
             }
         } else if (mCurrentPageId == 0) {
-            drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, currentHeartRateZone);
+            drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, currentHeartRateZone, activityInfo);
         } else if (mCurrentPageId == 1) {
             drawPageHeader(dc, "GESCHWINDIGKEIT");
             drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", speedNow, "KM/H", mUnit * 0.68, Graphics.FONT_LARGE);
