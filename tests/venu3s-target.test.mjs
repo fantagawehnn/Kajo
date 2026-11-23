@@ -115,6 +115,12 @@ test("custom field editor keeps header, four rows, controls and save action in d
   assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.815\)/);
 });
 
+test("custom metric layouts relocate the wide center tile when a lower side tile would overlap it", () => {
+  assert.match(activityView, /var centerMetric = ""/);
+  assert.match(activityView, /var hasLowerSideMetric = false/);
+  assert.match(activityView, /if \(centerMetric != "" && hasLowerSideMetric\)/);
+});
+
 test("home screen shows only today's non-rest-day sessions and has separate planned/free activity actions", () => {
   assert.match(homeView, /function getTodaysSessions\(\)/);
   assert.match(homeView, /sessionDate\.toString\(\) == today/);
