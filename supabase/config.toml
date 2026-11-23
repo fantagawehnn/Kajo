@@ -1,2 +1,7 @@
 [functions.kajo-push-scheduler]
 verify_jwt = false
+
+[functions.kajo-connect]
+# This endpoint accepts both a one-time pairing code and a device bearer token.
+# Each action validates its own credential in the function.
+verify_jwt = false
