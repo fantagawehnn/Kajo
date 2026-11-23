@@ -21,7 +21,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
-import { mergeCloudSnapshots, cloudSnapshotsEqual } from './cloud-merge.js?v=1';
+import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } from './cloud-merge.js?v=1';
 import { fetchCloudActivities, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
@@ -2565,17 +2565,12 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         const localData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
-        // activityIds ist ein abgeleitetes Cloud-Metadatum und gehört nicht zum
-        // lokalen Storage-Snapshot. Vor dem Drei-Wege-Abgleich muss es aus den
-        // lokalen Aktivitäten rekonstruiert werden, sonst erscheint das fehlende
-        // Feld fälschlich als Löschung gegen eine Cloud-Änderung.
-        const local = {
-            ...localData,
-            activityIds: getCloudActivityIds(
-                userId,
-                Array.isArray(localData.activities) ? localData.activities : []
-            )
-        };
+        // activityIds ist abgeleitetes Cloud-Metadatum und wird für jeden
+        // Snapshot-Vergleich einheitlich aus den lokalen Aktivitäten ergänzt.
+        const local = withCloudActivityIds(
+            localData,
+            getCloudActivityIds(userId, Array.isArray(localData.activities) ? localData.activities : [])
+        );
         const legacyActivities = (Array.isArray(cloud.data.activities) ? cloud.data.activities : []).map(activity => {
             if (!activity || typeof activity !== 'object') return activity;
             const compact = { ...activity };
@@ -2681,13 +2676,10 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
 
         if (cloudSnapshotsEqual(cloudPayload, cloud.data)) {
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
-            const latestLocal = {
-                ...latestLocalData,
-                activityIds: getCloudActivityIds(
-                    userId,
-                    Array.isArray(latestLocalData.activities) ? latestLocalData.activities : []
-                )
-            };
+            const latestLocal = withCloudActivityIds(
+                latestLocalData,
+                getCloudActivityIds(userId, Array.isArray(latestLocalData.activities) ? latestLocalData.activities : [])
+            );
             if (!cloudSnapshotsEqual(latestLocal, local)) {
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
@@ -2707,7 +2699,11 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
 
         const saved = await saveCloudSnapshot(cloudPayload, cloud.version, userId);
         if (saved.saved) {
-            const latestLocal = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            const latestLocal = withCloudActivityIds(
+                latestLocalData,
+                getCloudActivityIds(userId, Array.isArray(latestLocalData.activities) ? latestLocalData.activities : [])
+            );
             if (!cloudSnapshotsEqual(latestLocal, local)) {
                 baselineSnapshot = mergedSnapshot;
                 try { await saveCloudSyncBaseline(mergedSnapshot); }
@@ -2825,9 +2821,15 @@ async function flushCloudSync(options = {}) {
             const details = reconciliation.conflicts?.length
                 ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 5).join('; ') + (reconciliation.conflicts.length > 5 ? ' …' : '')
                 : '';
-            setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
-            setCloudTransferMessage('KAJO hat abweichende Änderungen erkannt und keine davon automatisch überschrieben.' + details);
-            console.warn('Cloud-Abgleich benötigt eine Konfliktentscheidung:', reconciliation);
+            if (reconciliation.retryLimit) {
+                setCloudSyncStatus('Synchronisierung pausiert – der Datenstand hat sich während mehrerer Abgleichversuche verändert. Bitte erneut versuchen.');
+                setCloudTransferMessage('Der Cloud-Abgleich konnte nach mehreren Versuchen nicht abgeschlossen werden. Lokale und zentrale Daten wurden nicht automatisch überschrieben.');
+                console.warn('Cloud-Abgleich nach ausgeschöpften Wiederholungsversuchen pausiert:', reconciliation);
+            } else {
+                setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
+                setCloudTransferMessage('KAJO hat abweichende Änderungen erkannt und keine davon automatisch überschrieben.' + details);
+                console.warn('Cloud-Abgleich benötigt eine Konfliktentscheidung:', reconciliation);
+            }
             return;
         }
 
@@ -3483,9 +3485,15 @@ async function handleAuthSession(session) {
                     const details = reconciliation.conflicts?.length
                         ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 5).join('; ') + (reconciliation.conflicts.length > 5 ? ' …' : '')
                         : '';
-                    setCloudSyncStatus('Synchronisierung pausiert – lokale und zentrale Änderungen müssen geprüft werden.');
-                    setCloudTransferMessage('KAJO hat unterschiedliche Datenstände erkannt. Der lokale Datenbestand wurde nicht durch die Cloud ersetzt.' + details);
-                    console.warn('Cloud-Abgleich bei Kontoaktivierung benötigt eine Konfliktentscheidung:', reconciliation);
+                    if (reconciliation.retryLimit) {
+                        setCloudSyncStatus('Synchronisierung pausiert – der Datenstand hat sich während mehrerer Abgleichversuche verändert. Bitte erneut versuchen.');
+                        setCloudTransferMessage('Der Cloud-Abgleich konnte nach mehreren Versuchen nicht abgeschlossen werden. Der lokale Datenbestand wurde nicht durch die Cloud ersetzt.');
+                        console.warn('Cloud-Abgleich bei Kontoaktivierung nach ausgeschöpften Wiederholungsversuchen pausiert:', reconciliation);
+                    } else {
+                        setCloudSyncStatus('Synchronisierung pausiert – lokale und zentrale Änderungen müssen geprüft werden.');
+                        setCloudTransferMessage('KAJO hat unterschiedliche Datenstände erkannt. Der lokale Datenbestand wurde nicht durch die Cloud ersetzt.' + details);
+                        console.warn('Cloud-Abgleich bei Kontoaktivierung benötigt eine Konfliktentscheidung:', reconciliation);
+                    }
                 } else {
                     cloudSyncVersion = reconciliation.version;
                     const indicator = document.getElementById('sync-status-indicator');
