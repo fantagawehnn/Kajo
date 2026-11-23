@@ -1555,6 +1555,13 @@
                     <input type="date" id="plan-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div>
+                    <label class="block text-slate-400 mb-1">Planungstyp</label>
+                    <select id="plan-kind" onchange="setPlannedWorkoutKind(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                        <option value="training">Trainingseinheit</option>
+                        <option value="rest">Ruhetag</option>
+                    </select>
+                </div>
+                <div id="plan-sport-field">
                     <label class="block text-slate-400 mb-1">Sportart</label>
                     <select id="plan-sport" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                         <option value="Kayaking">K1</option>
@@ -1566,19 +1573,19 @@
                         <option value="WeightTraining">Krafttraining</option>
                     </select>
                 </div>
-                <div>
+                <div id="plan-name-field">
                     <label class="block text-slate-400 mb-1">Titel / Name</label>
                     <input type="text" id="plan-name" placeholder="z. B. Intervall 5x1000m" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
-                <div>
+                <div id="plan-duration-field">
                     <label class="block text-slate-400 mb-1">Ziel-Dauer (Min)</label>
                     <input type="number" id="plan-duration" value="60" placeholder="Optional" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
-                <div>
+                <div id="plan-tss-field">
                     <label class="block text-slate-400 mb-1">Ziel-Belastung (Load)</label>
                     <input type="number" id="plan-tss" value="70" placeholder="Optional" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
-                <div>
+                <div id="plan-category-field">
                     <label class="block text-slate-400 mb-1">Trainingskategorie</label>
                     <select id="plan-category" onchange="if(this.value.startsWith('diagnostic-')){document.getElementById('plan-duration').value='';document.getElementById('plan-tss').value='';}" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                         <option value="ga">GA Ausdauer</option>
@@ -1591,7 +1598,7 @@
                     </select>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-500">Bei Leistungsdiagnostik werden Dauer und Ziel-Load nicht als reguläre Trainingsbelastung verbucht.</p>
+            <p class="text-[10px] text-slate-500">Ruhetage werden ohne Dauer und Ziel-Load gespeichert und nicht als Trainingseinheit oder Trainingsbelastung gezählt. Bei Leistungsdiagnostik werden Dauer und Ziel-Load ebenfalls nicht als reguläre Trainingsbelastung verbucht.</p>
             <div>
                 <label class="block text-slate-400 mb-1 text-xs">Beschreibung & Inhalte</label>
                 <textarea id="plan-desc" rows="2" placeholder="Intervalle im Schwellenbereich..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
