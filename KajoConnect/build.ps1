@@ -9,12 +9,14 @@ param(
 $ErrorActionPreference = "Stop"
 
 $projectRoot = $PSScriptRoot
-$compiler = Join-Path $SdkPath "bin\monkeyc.exe"
+# Garmin's Windows SDK ships the Monkey C compiler launcher as monkeyc.bat,
+# not monkeyc.exe. Keep the launcher path explicit for PowerShell.
+$compiler = Join-Path $SdkPath "bin\monkeyc.bat"
 $jungleFile = Join-Path $projectRoot "monkey.jungle"
 $outputDirectory = Join-Path $projectRoot "bin"
 
 if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) {
-    throw "Monkey C compiler not found: $compiler"
+    throw "Monkey C compiler launcher not found: $compiler"
 }
 
 if (-not (Test-Path -LiteralPath $jungleFile -PathType Leaf)) {
