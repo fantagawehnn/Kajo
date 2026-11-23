@@ -21,6 +21,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { mergeCloudSnapshots, cloudSnapshotsEqual } from './cloud-merge.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
@@ -41,7 +42,7 @@ import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActi
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache, loadCloudSyncBaseline, saveCloudSyncBaseline } from './storage.js?v=5';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds, loadGarminTelemetryMetadataForActivityIds } from './garmin-cloud-telemetry.js?v=6';
@@ -2296,6 +2297,58 @@ let cloudSyncWaiters = [];
 // Änderungen, die während der Kontoaktivierung gespeichert werden, werden
 // vorgemerkt und nach dem Ereignis endurance:user-ready erneut synchronisiert.
 let cloudSyncAwaitingReadyUserId = null;
+
+/**
+ * Führt lokale und zentrale Daten anhand des letzten gemeinsamen Stands
+ * zusammen. Bei konkurrierenden Änderungen desselben Feldes wird nichts
+ * überschrieben; der Konflikt wird zur manuellen Klärung gemeldet.
+ */
+async function reconcileCloudState(userId, initialCloudSnapshot, localSnapshot, baselineSnapshot = null) {
+    let cloud = initialCloudSnapshot;
+    let local = localSnapshot;
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+        if (!cloud || cloud.userId !== userId) {
+            throw new Error('Der Cloud-Datenstand gehört nicht zum aktuell angemeldeten Konto.');
+        }
+        if (cloud.data === null) {
+            return { ok: false, empty: true, version: cloud.version, conflicts: [] };
+        }
+
+        const merged = mergeCloudSnapshots(baselineSnapshot, local, cloud.data);
+        if (merged.conflicts.length) {
+            return {
+                ok: false,
+                conflict: true,
+                version: cloud.version,
+                conflicts: merged.conflicts
+            };
+        }
+
+        if (cloudSnapshotsEqual(merged.snapshot, cloud.data)) {
+            applyCloudDataSnapshot(merged.snapshot);
+            await saveCloudSyncBaseline(merged.snapshot);
+            return { ok: true, version: cloud.version, snapshot: merged.snapshot, uploaded: false };
+        }
+
+        const saved = await saveCloudSnapshot(merged.snapshot, cloud.version, userId);
+        if (saved.saved) {
+            applyCloudDataSnapshot(merged.snapshot);
+            await saveCloudSyncBaseline(merged.snapshot);
+            return { ok: true, version: saved.currentVersion, snapshot: merged.snapshot, uploaded: true };
+        }
+
+        // Ein anderes Gerät hat während unseres Abgleichs gespeichert.
+        // Den neuesten Cloud-Stand laden und den Drei-Wege-Abgleich wiederholen.
+        cloud = await fetchCloudSnapshot();
+        if (cloud.userId !== userId) {
+            throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
+        }
+        local = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+    }
+
+    return { ok: false, retryLimit: true, version: cloud?.version || 0, conflicts: [] };
+}
 
 function setCloudSyncStatus(message) {
     const indicator = document.getElementById('cloud-sync-status');
