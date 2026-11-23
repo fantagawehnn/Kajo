@@ -205,6 +205,14 @@ function adaptiveZones(
   };
 }
 
+type PlannedWorkoutStep = {
+  id: string;
+  type: "warmup" | "work" | "recovery" | "cooldown" | "other";
+  label: string;
+  durationSeconds: number;
+  target: string | null;
+};
+
 type PlannedSession = {
   id: string | number | null;
   date: string;
@@ -223,7 +231,28 @@ type PlannedSession = {
   mainSet: string | null;
   cooldown: string | null;
   notes: string | null;
+  steps: PlannedWorkoutStep[];
 };
+
+function safeWorkoutSteps(value: unknown): PlannedWorkoutStep[] {
+  if (!Array.isArray(value)) return [];
+  const allowedTypes = new Set(["warmup", "work", "recovery", "cooldown", "other"]);
+  const steps: PlannedWorkoutStep[] = [];
+  for (const [index, raw] of value.slice(0, 40).entries()) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
+    const step = raw as JsonRecord;
+    const label = typeof step.label === "string" ? step.label.trim().slice(0, 80) : "";
+    const durationSeconds = Number(step.durationSeconds);
+    const type = typeof step.type === "string" && allowedTypes.has(step.type) ? step.type as PlannedWorkoutStep["type"] : "other";
+    if (!label || !Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 21600) continue;
+    steps.push({
+      id: typeof step.id === "string" ? step.id.slice(0, 80) : "step-" + (index + 1),
+      type, label, durationSeconds,
+      target: typeof step.target === "string" ? step.target.trim().slice(0, 120) || null : null,
+    });
+  }
+  return steps;
+}
 
 const ALLOWED_DISPLAY_METRICS = new Set([
   "speedNow", "speedAvg", "speedMax", "heartRate", "heartRateZone",
@@ -295,6 +324,7 @@ function safePlannedSession(value: unknown): PlannedSession | null {
     mainSet: typeof session.mainSet === "string" ? session.mainSet.slice(0, 500) : null,
     cooldown: typeof session.cooldown === "string" ? session.cooldown.slice(0, 300) : null,
     notes: typeof session.notes === "string" ? session.notes.slice(0, 300) : null,
+    steps: safeWorkoutSteps(session.steps),
   };
 }
 
