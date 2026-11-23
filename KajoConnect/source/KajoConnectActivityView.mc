@@ -12,7 +12,7 @@ import Toybox.WatchUi;
 
 class KajoConnectActivityView extends WatchUi.View {
 
-    var mLayout;
+    var mLayout as KajoLayout;
 
     var mBoatClass as Lang.String;
     var mEngine;
