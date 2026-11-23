@@ -21,6 +21,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { mergeCloudSnapshots, cloudSnapshotsEqual } from './cloud-merge.js';
 import { fetchCloudActivities, getCloudActivityIds, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
@@ -42,7 +43,7 @@ import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActi
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=5';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds, loadGarminTelemetryMetadataForActivityIds } from './garmin-cloud-telemetry.js?v=6';
@@ -2293,10 +2294,118 @@ let cloudSyncTimer = null;
 let cloudSyncInFlight = false;
 let cloudSyncPending = false;
 let cloudSyncBlocked = false;
+let cloudSyncApplyingRemote = false;
 let cloudSyncWaiters = [];
 // Änderungen, die während der Kontoaktivierung gespeichert werden, werden
 // vorgemerkt und nach dem Ereignis endurance:user-ready erneut synchronisiert.
 let cloudSyncAwaitingReadyUserId = null;
+
+/**
+ * Übernimmt einen abgeglichenen Datenstand, ohne dadurch einen erneuten
+ * Cloud-Upload auszulösen.
+ */
+function applyReconciledCloudSnapshot(snapshot) {
+    cloudSyncApplyingRemote = true;
+    try {
+        applyCloudDataSnapshot(snapshot);
+    } finally {
+        cloudSyncApplyingRemote = false;
+    }
+}
+
+/**
+ * Führt lokale und zentrale Datenstände zusammen. Aktivitäten bleiben in der
+ * separaten activities-Tabelle; der user_data-Snapshot enthält nur ihre IDs.
+ * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
+ * derselbe Drei-Wege-Abgleich wiederholt.
+ */
+async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null) {
+    let cloud = initialCloudSnapshot;
+    let cloudActivities = initialCloudActivities;
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+        if (!cloud || cloud.userId !== userId) {
+            throw new Error('Der Cloud-Datenstand gehört nicht zum aktuell angemeldeten Konto.');
+        }
+        if (cloud.data === null) {
+            return { ok: false, empty: true, version: cloud.version, conflicts: [] };
+        }
+
+        const local = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const expandedCloud = {
+            ...cloud.data,
+            activities: mergeCloudActivities(
+                cloud.data.activities,
+                cloudActivities,
+                Array.isArray(cloud.data.activityIds) ? cloud.data.activityIds : null
+            )
+        };
+        const merged = mergeCloudSnapshots(baselineSnapshot, local, expandedCloud);
+        if (merged.conflicts.length) {
+            return { ok: false, conflict: true, version: cloud.version, conflicts: merged.conflicts };
+        }
+
+        const mergedSnapshot = merged.snapshot;
+        const mergedActivities = Array.isArray(mergedSnapshot.activities) ? mergedSnapshot.activities : [];
+        // Zuerst die vollständigen Aktivitätsdatensätze sichern. Der Snapshot
+        // wird erst danach mit der bestätigten ID-Liste geschrieben.
+        const activityUpload = await syncCloudActivities(supabase, userId, mergedActivities);
+        const cloudPayload = {
+            ...mergedSnapshot,
+            activityIds: getCloudActivityIds(userId, mergedActivities),
+            activities: []
+        };
+
+        if (cloudSnapshotsEqual(cloudPayload, cloud.data)) {
+            const latestLocal = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            if (!cloudSnapshotsEqual(latestLocal, local)) {
+                baselineSnapshot = mergedSnapshot;
+                cloud = await fetchCloudSnapshot();
+                cloudActivities = await fetchCloudActivities(supabase, userId);
+                continue;
+            }
+            applyReconciledCloudSnapshot(mergedSnapshot);
+            await saveCloudSyncBaseline(mergedSnapshot);
+            return {
+                ok: true,
+                version: cloud.version,
+                snapshot: mergedSnapshot,
+                activityUpload,
+                uploaded: false
+            };
+        }
+
+        const saved = await saveCloudSnapshot(cloudPayload, cloud.version, userId);
+        if (saved.saved) {
+            const latestLocal = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            if (!cloudSnapshotsEqual(latestLocal, local)) {
+                baselineSnapshot = mergedSnapshot;
+                try { await saveCloudSyncBaseline(mergedSnapshot); }
+                catch (error) { console.warn('Synchronisierungsbasis konnte nicht aktualisiert werden:', error); }
+                cloud = await fetchCloudSnapshot();
+                cloudActivities = await fetchCloudActivities(supabase, userId);
+                continue;
+            }
+            applyReconciledCloudSnapshot(mergedSnapshot);
+            await saveCloudSyncBaseline(mergedSnapshot);
+            return {
+                ok: true,
+                version: saved.currentVersion,
+                snapshot: mergedSnapshot,
+                activityUpload,
+                uploaded: true
+            };
+        }
+
+        cloud = await fetchCloudSnapshot();
+        if (cloud.userId !== userId) {
+            throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
+        }
+        cloudActivities = await fetchCloudActivities(supabase, userId);
+    }
+
+    return { ok: false, retryLimit: true, version: cloud?.version || 0, conflicts: [] };
+}
 
 function setCloudSyncStatus(message) {
     const indicator = document.getElementById('cloud-sync-status');
@@ -2338,6 +2447,7 @@ function scheduleCloudSync(userId) {
 }
 
 async function flushCloudSync() {
+    if (cloudSyncApplyingRemote) return false;
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId || cloudSyncBlocked) return false;
     if (cloudSyncInFlight) {
         cloudSyncPending = true;
@@ -2365,33 +2475,39 @@ async function flushCloudSync() {
             console.warn('Garmin-Telemetrie konnte nicht separat in der Cloud gesichert werden; lokale Daten bleiben erhalten:', telemetryError);
         }
 
-        // Vollständige Aktivitäten einschließlich FIT-Daten werden einzeln
-        // übertragen. Erst nach bestätigtem Readback wird die Sammlung aus dem
-        // großen versionierten user_data-Snapshot herausgenommen.
-        const snapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
-        const activityUpload = await syncCloudActivities(supabase, userId, snapshot.activities || []);
-        snapshot.activityIds = getCloudActivityIds(userId, snapshot.activities || []);
-        snapshot.activities = [];
-        const result = await saveCloudSnapshot(snapshot, cloudSyncVersion, userId);
+        const [latestCloud, latestActivities, baseline] = await Promise.all([
+            fetchCloudSnapshot(),
+            fetchCloudActivities(supabase, userId),
+            loadCloudSyncBaseline()
+        ]);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
-
-        if (!result.saved) {
+        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline);
+        if (!reconciliation.ok) {
+            if (reconciliation.empty) {
+                cloudSyncBlocked = true;
+                setCloudSyncStatus('Synchronisierung pausiert: Der zentrale Cloud-Datensatz fehlt. Bitte prüfe den Ersttransfer.');
+                return;
+            }
             cloudSyncBlocked = true;
             cloudInitialTransferState = 'exists';
-            setCloudSyncStatus('Synchronisationskonflikt – Cloud-Daten sind geschützt; es wurde nichts überschrieben.');
-            setCloudTransferMessage('Ein anderer Speicherstand wurde zwischenzeitlich geändert. Die automatische Synchronisierung wurde angehalten, damit keine Daten überschrieben werden.');
-            console.warn('Cloud-Synchronisierung wegen Versionskonflikt angehalten.', result);
+            const details = reconciliation.conflicts?.length
+                ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 5).join('; ') + (reconciliation.conflicts.length > 5 ? ' …' : '')
+                : '';
+            setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
+            setCloudTransferMessage('KAJO hat abweichende Änderungen erkannt und keine davon automatisch überschrieben.' + details);
+            console.warn('Cloud-Abgleich benötigt eine Konfliktentscheidung:', reconciliation);
             return;
         }
 
-        cloudSyncVersion = result.currentVersion;
+        cloudSyncVersion = reconciliation.version;
+        cloudSyncBlocked = false;
         saveSucceeded = true;
+        const activityUpload = reconciliation.activityUpload || { uploaded: 0 };
         setCloudSyncStatus(telemetryUpload.failed
-            ? 'App-Daten und ' + activityUpload.uploaded + ' Aktivitäten in Cloud gespeichert; Garmin-Telemetrie wartet auf erneuten Versuch.'
-            : 'In Cloud gespeichert (Version ' + cloudSyncVersion + ')' + (activityUpload.uploaded ? ' · ' + activityUpload.uploaded + ' Aktivitäten geprüft' : '') + (telemetryUpload.uploaded ? ' · ' + telemetryUpload.uploaded + ' neue Telemetrie-Datensätze' : ''));
-        if (cloudInitialTransferState === 'empty') {
-            cloudInitialTransferState = 'exists';
-            setCloudTransferMessage('Deine Daten wurden automatisch erstmals in der Cloud gespeichert (Version ' + cloudSyncVersion + ').');
+            ? 'App-Daten abgeglichen; Garmin-Telemetrie wartet auf erneuten Versuch.'
+            : 'Geräte abgeglichen (Cloud-Version ' + cloudSyncVersion + ')' + (activityUpload.uploaded ? ' · ' + activityUpload.uploaded + ' Aktivitäten geprüft' : '') + (telemetryUpload.uploaded ? ' · ' + telemetryUpload.uploaded + ' neue Telemetrie-Datensätze' : ''));
+        if (reconciliation.uploaded) {
+            setCloudTransferMessage('Lokale und Cloud-Daten wurden automatisch abgeglichen. Neue Einträge wurden ergänzt; widersprüchliche Änderungen wurden nicht überschrieben.');
         }
     } catch (error) {
         if (activeAppUserId === userId) {
@@ -2412,6 +2528,7 @@ async function flushCloudSync() {
 }
 
 window.addEventListener('endurance:data-saved', event => {
+    if (cloudSyncApplyingRemote) return;
     scheduleCloudSync(event.detail?.userId || null);
 });
 
@@ -3000,15 +3117,23 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
-                const mergedSnapshot = {
-                    ...cloudSnapshot.data,
-                    activities: mergeCloudActivities(cloudSnapshot.data.activities, cloudActivities, Array.isArray(cloudSnapshot.data.activityIds) ? cloudSnapshot.data.activityIds : null)
-                };
-                applyCloudDataSnapshot(mergedSnapshot);
-                const indicator = document.getElementById('sync-status-indicator');
-                if (indicator) indicator.textContent = 'Cloud-Daten geladen (Version ' + cloudSnapshot.version + ', ' + mergedSnapshot.activities.length + ' Aktivitäten)';
+                const baseline = await loadCloudSyncBaseline();
+                const reconciliation = await reconcileCloudState(userId, cloudSnapshot, cloudActivities, baseline);
+                if (!reconciliation.ok) {
+                    cloudSyncBlocked = true;
+                    const details = reconciliation.conflicts?.length
+                        ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 5).join('; ') + (reconciliation.conflicts.length > 5 ? ' …' : '')
+                        : '';
+                    setCloudSyncStatus('Synchronisierung pausiert – lokale und zentrale Änderungen müssen geprüft werden.');
+                    setCloudTransferMessage('KAJO hat unterschiedliche Datenstände erkannt. Der lokale Datenbestand wurde nicht durch die Cloud ersetzt.' + details);
+                    console.warn('Cloud-Abgleich bei Kontoaktivierung benötigt eine Konfliktentscheidung:', reconciliation);
+                } else {
+                    cloudSyncVersion = reconciliation.version;
+                    const indicator = document.getElementById('sync-status-indicator');
+                    if (indicator) indicator.textContent = 'Cloud-Daten abgeglichen (Version ' + cloudSnapshot.version + ')';
+                }
             } else if (cloudActivities.length) {
-                throw new Error('Es liegen einzelne Cloud-Aktivitäten ohne zugehörigen Hauptdatensatz vor. Der lokale Zustand wurde nicht überschrieben; bitte den Cloud-Transfer erneut prüfen.');
+                throw new Error('Es liegen einzelne Cloud-Aktivitäten ohne zugehörigen Hauptdatensatz vor. Der lokale Zustand wurde nicht überschrieben; der Cloud-Transfer muss geprüft werden.');
             }
 
             try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
