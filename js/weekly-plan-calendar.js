@@ -15,7 +15,7 @@ export function calendarTypeForSession(session = {}) {
 }
 
 export function calendarCategoryForSession(session = {}) {
-    const raw = String(session.category || '').toLowerCase();
+    const raw = String(session.category || session.type || '').toLowerCase();
     if (raw.includes('rest') || raw.includes('ruhetag')) return 'rest';
     if (raw.includes('interval') || raw.includes('intervall') || raw.includes('lz') || raw.includes('hz')) return 'interval';
     if (raw.includes('strength') || raw.includes('kraft')) return 'strength';
