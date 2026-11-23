@@ -1182,6 +1182,15 @@
                 <p id="garmin-archive-parts-status" class="text-xs text-slate-400" role="status" aria-live="polite"></p>
                 <ul id="garmin-archive-parts-links" class="space-y-2"></ul>
             </div>
+            <div class="border-t border-slate-800 pt-3 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h3 class="text-xs font-bold text-white">Garmin-Aktivitäten abgleichen</h3>
+                    <button id="garmin-summary-diagnose-button" type="button" onclick="diagnoseGarminSummaryJson()" class="rounded-lg border border-cyan-800 bg-cyan-950/50 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-cyan-900 disabled:opacity-50">Zusammenfassungsdateien prüfen</button>
+                </div>
+                <p class="text-[11px] text-slate-400">Liest die gespeicherten Garmin-Zusammenfassungen und vergleicht deren Aktivitäts-IDs mit den aktuell in KAJO geladenen Aktivitäten. Es werden keine Daten importiert oder verändert.</p>
+                <p id="garmin-summary-diagnose-status" class="text-xs text-slate-400" role="status" aria-live="polite"></p>
+                <div id="garmin-summary-diagnose-results" class="hidden space-y-2"></div>
+            </div>
             <div class="border-t border-slate-800 pt-3"><h3 class="mb-2 text-xs font-bold text-white">Gesicherte Garmin-Archive</h3><div id="garmin-archive-history" class="space-y-2 text-xs text-slate-400">Wird geladen …</div></div>
         </div>
 </section>
