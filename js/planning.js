@@ -3,7 +3,7 @@
  * ============================================================ */
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js';
+import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js?v=2';
 import { renderCalendar } from './calendar.js';
 
 let editingPlannedWorkoutId = null;
@@ -54,6 +54,7 @@ export function setPlannedWorkoutKind(kind){
     ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
     const name=document.getElementById('plan-name');
     if(restDay&&name&&!name.value.trim())name.value='Ruhetag';
+    if(!restDay&&name&&name.value==='Ruhetag')name.value='';
     const note=document.getElementById('plan-desc');
     if(note)note.placeholder=restDay?'Optionaler Hinweis, z. B. vollständige Trainingspause':'Intervalle im Schwellenbereich...';
     const save=document.getElementById('planned-workout-save-button');
@@ -74,9 +75,9 @@ export function openPlannedWorkoutModal(id=null){
     setPlanField('plan-desc',item?.desc||'');
     setPlannedWorkoutKind(item?.type==='RestDay'?'rest':'training');
     const title=document.getElementById('planned-workout-modal-title');
-    if(title)title.textContent=item?'Trainingseinheit bearbeiten':'Trainingseinheit planen';
+    if(title)title.textContent=item?(item.type==='RestDay'?'Ruhetag bearbeiten':'Trainingseinheit bearbeiten'):(document.getElementById('plan-kind')?.value==='rest'?'Ruhetag planen':'Trainingseinheit planen');
     const button=document.getElementById('planned-workout-save-button');
-    if(button)button.textContent=item?'Änderungen speichern':'Einheit speichern';
+    if(button)button.textContent=document.getElementById('plan-kind')?.value==='rest'?'Ruhetag speichern':item?'Änderungen speichern':'Einheit speichern';
     document.getElementById('planned-workout-modal')?.classList.remove('hidden');
     globalThis.lucide?.createIcons?.();
 }
