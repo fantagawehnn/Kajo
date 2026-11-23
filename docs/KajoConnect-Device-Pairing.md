@@ -123,8 +123,14 @@ Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden
 Es wurden keine produktiven Tabellen verändert und keine Edge Function deployed. Der Quellcode ist daher als vorbereitete Implementierung, nicht als betriebsbereite Verbindung zu verstehen.
 
 
-## 7. Offene Punkte
+## 11. Deployment-Voraussetzungen
 
-- Vor einem Deployment die Erreichbarkeit der neuen Tabellen über die Data API prüfen; RLS und SQL-Grants allein garantieren keine API-Exposition.
-- Die korrigierte SQL-Datei ist weiterhin nur ein Entwurf und wurde nicht gegen die Live-Datenbank ausgeführt.
+Vor einer Bereitstellung müssen folgende Punkte in einer Testumgebung geprüft werden:
+
+- Die SQL-Datei ist weiterhin nur ein Entwurf und wurde nicht gegen die Live-Datenbank ausgeführt. Eine echte Migration muss mit der vorhandenen Migrationshistorie abgeglichen und regulär erstellt werden.
+- Die Edge Function verwendet für die drei neuen Tabellen `supabase-js`-Abfragen über die Supabase Data API. Es muss daher geprüft werden, ob diese Tabellen in den Data-API-Einstellungen des Projekts erreichbar sind. Seit dem 30. Oktober 2026 werden neu angelegte Tabellen nicht mehr automatisch für die Data API freigegeben. Das ist getrennt von RLS und SQL-Grants zu prüfen.
+- Zusätzlich zu den von Supabase bereitgestellten Standardvariablen benötigt die Edge Function die beiden Secrets `KAJO_CONNECT_PAIRING_PEPPER` (mindestens 32 Zeichen) und `KAJO_CONNECT_TOKEN_ENCRYPTION_KEY` (Base64-kodierter 32-Byte-Schlüssel).
+- Die Funktion muss mit `verify_jwt = false` bereitgestellt werden, da die Uhr vor dem Pairing noch kein Benutzer-JWT besitzt. Die Funktion prüft die Credentials jeder Aktion selbst.
+- Die konfigurierte CORS-Origin muss mit der tatsächlich verwendeten KAJO-Web-App-Domain übereinstimmen.
+- Erst nach erfolgreicher Schema- und Secret-Prüfung darf die Edge Function in einer Testumgebung bereitgestellt und mit getrennten Testkonten geprüft werden.
 
