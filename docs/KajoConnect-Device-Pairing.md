@@ -62,7 +62,7 @@ Alle Aktionen werden als JSON-POST an `/functions/v1/kajo-connect` gesendet.
 | `revoke-device` | bestehender Supabase-User-JWT | ein Gerät des eigenen Kontos widerrufen |
 
 Die `sync`-Antwort enthält nur:
-- geplante Einheiten von gestern bis 14 Tage in die Zukunft, begrenzt auf 30 Einträge und die oben genannten Felder;
+- geplante Einheiten von gestern bis 14 Tage in die Zukunft, begrenzt auf 30 Einträge und die oben genannten Felder; Beschreibungen und Textfelder werden für die begrenzte Watch-Speichergröße gekürzt;
 - die Herzfrequenz-Zonengrenzen für das lokale Datum der Uhr;
 - Versions- und Aktualisierungsinformationen des Cloud-Snapshots.
 
