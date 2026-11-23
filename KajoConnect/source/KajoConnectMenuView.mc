@@ -20,14 +20,14 @@ class KajoConnectMenuView extends WatchUi.View {
     function initialize(homeView as KajoConnectView) {
         View.initialize();
         mHomeView = homeView;
-        mLayout = new KajoLayout();
+        mKajoLayout = new KajoLayout();
     }
 
     function drawLabel(dc as Dc, x as Lang.Number, y as Lang.Number,
         label as Lang.String, width as Lang.Number) as Void {
-        var font = mLayout.fitFont(dc, label, width, Graphics.FONT_SMALL);
-        var safeY = mLayout.safeTextY(y, dc.getFontHeight(font));
-        var safeWidth = mLayout.safeTextWidth(dc, x, safeY, font, width);
+        var font = mKajoLayout.fitFont(dc, label, width, Graphics.FONT_SMALL);
+        var safeY = mKajoLayout.safeTextY(y, dc.getFontHeight(font));
+        var safeWidth = mKajoLayout.safeTextWidth(dc, x, safeY, font, width);
         while (label.length() > 0 && dc.getTextWidthInPixels(label, font) > safeWidth) {
             if (label.length() <= 4) { label = ""; }
             else { label = label.substring(0, label.length() - 4) + "..."; }
@@ -63,7 +63,7 @@ class KajoConnectMenuView extends WatchUi.View {
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
         mUnit = mWidth < mHeight ? mWidth : mHeight;
-        mLayout.configure(mWidth, mHeight);
+        mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
 
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
@@ -75,7 +75,7 @@ class KajoConnectMenuView extends WatchUi.View {
         for (var i = 0; i < 4; i += 1) {
             var top = mUnit * (0.245 + (i * 0.145));
             var height = mUnit * 0.095;
-            var width = mLayout.safeRectWidth(top, height, mUnit * 0.76);
+            var width = mKajoLayout.safeRectWidth(top, height, mUnit * 0.76);
             var left = cx - (width / 2);
             dc.setColor(0x091417, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(left.toNumber(), top.toNumber(), width.toNumber(),
