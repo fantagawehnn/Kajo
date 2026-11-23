@@ -123,7 +123,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var multiplier = 1;
         if (decimals == 1) { multiplier = 10; }
         if (decimals == 2) { multiplier = 100; }
-        var rounded = Math.round(value * multiplier);
+        var rounded = Math.round(value * multiplier).toNumber();
         if (decimals == 0) { return rounded.toString(); }
         var whole = Math.floor(rounded / multiplier);
         var fraction = rounded - (whole * multiplier);
@@ -146,7 +146,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = fitFont(dc, text, maxWidth, preferredFont);
+        var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(y).toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -164,7 +164,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var valueY = y + (mUnit * 0.065);
         var font = fitFont(dc, value, maxWidth, valueFont);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x) as Lang.Number, Math.round(valueY).toNumber(), font, value, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x).toNumber(), Math.round(valueY).toNumber(), font, value, Graphics.TEXT_JUSTIFY_CENTER);
         if (unit != "") {
             drawFit(dc, x, valueY + (mUnit * 0.065), unit, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
