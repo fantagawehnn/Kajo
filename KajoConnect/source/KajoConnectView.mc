@@ -396,7 +396,7 @@ class KajoConnectView extends WatchUi.View {
             (cx + mUnit * 0.282).toNumber(), (mUnit * 0.207).toNumber());
         dc.drawLine((cx + mUnit * 0.282).toNumber(), (mUnit * 0.207).toNumber(),
             (cx + mUnit * 0.272).toNumber(), (mUnit * 0.215).toNumber());
-        drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.222, "ZULETZT AKTIV",
+        drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.222, "AKTIV",
             mUnit * 0.25, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         // Hero-Kachel: Inhalte stammen aus dem synchronisierten Tagesplan.
