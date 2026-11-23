@@ -277,6 +277,23 @@ export function loadStateFromStorage() {
     deactivateUserStorage();
 }
 
+/** Lädt den letzten gemeinsamen Cloud-Synchronisierungsstand aus dem Kontospeicher. */
+export async function loadCloudSyncBaseline() {
+    if (!activeUserStorage || !activeUserId) return null;
+    const value = await activeUserStorage.getCollection('cloudSyncBaseline');
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+}
+
+/** Speichert die Synchronisierungsbasis getrennt von den fachlichen App-Daten. */
+export async function saveCloudSyncBaseline(snapshot) {
+    if (!activeUserStorage || !activeUserId) throw new Error('Kein aktiver Benutzer-Speicher für die Synchronisierungsbasis.');
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+        throw new Error('Die Synchronisierungsbasis ist ungültig.');
+    }
+    await activeUserStorage.saveCollections({ cloudSyncBaseline: snapshot });
+    return true;
+}
+
 export function getUserLocalSetting(key) {
     return activeUserStorage ? activeUserStorage.getItem(key) : null;
 }
