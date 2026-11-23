@@ -488,32 +488,33 @@ class KajoConnectView extends WatchUi.View {
             // Kleine, cyanfarbene Funktionssymbole links.
             var iconX = rowX + (rowWidth * 0.12);
             var iconY = rowY + (rowH / 2);
+            var iconUnit = mUnit * 0.018;
             dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
             if (itemIndex == 0) {
-                dc.drawLine((iconX - 7).toNumber(), (iconY + 2).toNumber(),
-                    (iconX - 1).toNumber(), (iconY - 2).toNumber());
-                dc.drawLine((iconX - 1).toNumber(), (iconY - 2).toNumber(),
-                    (iconX + 5).toNumber(), (iconY + 2).toNumber());
-                dc.drawLine((iconX - 5).toNumber(), (iconY + 7).toNumber(),
-                    (iconX + 5).toNumber(), (iconY + 7).toNumber());
+                dc.drawLine((iconX - iconUnit).toNumber(), (iconY + iconUnit * 0.3).toNumber(),
+                    (iconX - iconUnit * 0.15).toNumber(), (iconY - iconUnit * 0.3).toNumber());
+                dc.drawLine((iconX - iconUnit * 0.15).toNumber(), (iconY - iconUnit * 0.3).toNumber(),
+                    (iconX + iconUnit * 0.75).toNumber(), (iconY + iconUnit * 0.3).toNumber());
+                dc.drawLine((iconX - iconUnit * 0.7).toNumber(), (iconY + iconUnit).toNumber(),
+                    (iconX + iconUnit * 0.7).toNumber(), (iconY + iconUnit).toNumber());
             } else if (itemIndex == 1) {
-                dc.drawRoundedRectangle((iconX - 7).toNumber(), (iconY - 7).toNumber(),
-                    14, 14, 2);
-                dc.drawLine((iconX - 7).toNumber(), (iconY - 2).toNumber(),
-                    (iconX + 7).toNumber(), (iconY - 2).toNumber());
-                dc.drawLine((iconX - 3).toNumber(), (iconY - 10).toNumber(),
-                    (iconX - 3).toNumber(), (iconY - 5).toNumber());
-                dc.drawLine((iconX + 3).toNumber(), (iconY - 10).toNumber(),
-                    (iconX + 3).toNumber(), (iconY - 5).toNumber());
+                dc.drawRoundedRectangle((iconX - iconUnit).toNumber(), (iconY - iconUnit).toNumber(),
+                    (iconUnit * 2).toNumber(), (iconUnit * 2).toNumber(), (iconUnit * 0.25).toNumber());
+                dc.drawLine((iconX - iconUnit).toNumber(), (iconY - iconUnit * 0.25).toNumber(),
+                    (iconX + iconUnit).toNumber(), (iconY - iconUnit * 0.25).toNumber());
+                dc.drawLine((iconX - iconUnit * 0.4).toNumber(), (iconY - iconUnit * 1.4).toNumber(),
+                    (iconX - iconUnit * 0.4).toNumber(), (iconY - iconUnit * 0.7).toNumber());
+                dc.drawLine((iconX + iconUnit * 0.4).toNumber(), (iconY - iconUnit * 1.4).toNumber(),
+                    (iconX + iconUnit * 0.4).toNumber(), (iconY - iconUnit * 0.7).toNumber());
             } else if (itemIndex == 2) {
-                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), 7);
+                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), iconUnit.toNumber());
                 dc.drawLine(iconX.toNumber(), iconY.toNumber(),
-                    iconX.toNumber(), (iconY - 4).toNumber());
+                    iconX.toNumber(), (iconY - iconUnit * 0.55).toNumber());
                 dc.drawLine(iconX.toNumber(), iconY.toNumber(),
-                    (iconX + 4).toNumber(), (iconY + 2).toNumber());
+                    (iconX + iconUnit * 0.55).toNumber(), (iconY + iconUnit * 0.25).toNumber());
             } else {
-                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), 6);
-                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), 2);
+                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), (iconUnit * 0.85).toNumber());
+                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), (iconUnit * 0.28).toNumber());
             }
 
             drawCentered(dc, mUnit * 0.49, rowY + (rowH * 0.27),
