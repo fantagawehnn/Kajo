@@ -16,6 +16,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mButtonBottom = 0;
     var mScreenWidth = 0;
     var mScreenHeight = 0;
+    var mPage = 0;
+    var mPageCount = 5;
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
@@ -62,6 +64,22 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function nextDisplayPage(direction as Lang.Number) as Void {
+        if (mStatus != "AUFZEICHNUNG") {
+            return;
+        }
+
+        mPage += direction;
+
+        if (mPage < 0) {
+            mPage = mPageCount - 1;
+        } else if (mPage >= mPageCount) {
+            mPage = 0;
+        }
+
+        WatchUi.requestUpdate();
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y < mButtonTop || y > mButtonBottom) {
             return;
@@ -90,21 +108,87 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function formatTime(milliseconds as Lang.Number) as Lang.String {
         var totalSeconds = Math.floor(milliseconds / 1000);
-        var minutes = Math.floor(totalSeconds / 60);
-        var seconds = totalSeconds - (minutes * 60);
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds - (hours * 3600)) / 60);
+        var seconds = totalSeconds - (hours * 3600) - (minutes * 60);
 
         var minuteText = minutes.toString();
         var secondText = seconds.toString();
 
-        if (minutes < 10) {
-            minuteText = "0" + minuteText;
+        if (hours > 0) {
+            if (minutes < 10) { minuteText = "0" + minuteText; }
+            if (seconds < 10) { secondText = "0" + secondText; }
+            return hours.toString() + ":" + minuteText + ":" + secondText;
         }
 
-        if (seconds < 10) {
-            secondText = "0" + secondText;
-        }
-
+        if (minutes < 10) { minuteText = "0" + minuteText; }
+        if (seconds < 10) { secondText = "0" + secondText; }
         return minuteText + ":" + secondText;
+    }
+
+    function numberText(value, decimals as Lang.Number) as Lang.String {
+        if (value == null) {
+            return "--";
+        }
+
+        var multiplier = 1;
+        if (decimals == 1) { multiplier = 10; }
+        if (decimals == 2) { multiplier = 100; }
+
+        var rounded = Math.round(value * multiplier);
+        if (decimals == 0) {
+            return rounded.toString();
+        }
+
+        var whole = Math.floor(rounded / multiplier);
+        var fraction = rounded - (whole * multiplier);
+        var fractionText = fraction.toString();
+
+        if (decimals == 2 && fraction < 10) {
+            fractionText = "0" + fractionText;
+        }
+
+        return whole.toString() + "." + fractionText;
+    }
+
+    function valueOrDash(value) as Lang.String {
+        if (value == null) {
+            return "--";
+        }
+        return value.toString();
+    }
+
+    function drawMetric(dc as Dc, x as Lang.Number, y as Lang.Number, label as Lang.String, value as Lang.String, unit as Lang.String) as Void {
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+        dc.drawText(x, y, Graphics.FONT_TINY, label, Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawText(x, y + 22, Graphics.FONT_MEDIUM, value, Graphics.TEXT_JUSTIFY_CENTER);
+
+        if (unit != "") {
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+            dc.drawText(x, y + 48, Graphics.FONT_XTINY, unit, Graphics.TEXT_JUSTIFY_CENTER);
+        }
+    }
+
+    function drawPageHeader(dc as Dc, title as Lang.String) as Void {
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawText(
+            mScreenWidth / 2,
+            mScreenHeight * 0.09,
+            Graphics.FONT_SMALL,
+            title,
+            Graphics.TEXT_JUSTIFY_CENTER
+        );
+
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+        dc.drawText(
+            mScreenWidth / 2,
+            mScreenHeight * 0.16,
+            Graphics.FONT_XTINY,
+            (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  ↑ ↓",
+            Graphics.TEXT_JUSTIFY_CENTER
+        );
     }
 
     function onUpdate(dc as Dc) {
@@ -114,138 +198,119 @@ class KajoConnectActivityView extends WatchUi.View {
         mScreenHeight = dc.getHeight();
 
         var centerX = mScreenWidth / 2;
-        var smallFont = Graphics.FONT_TINY;
-        var labelFont = Graphics.FONT_SMALL;
-
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(
-            centerX,
-            mScreenHeight * 0.07,
-            Graphics.FONT_SMALL,
-            "KAJO",
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(
-            centerX,
-            mScreenHeight * 0.15,
-            smallFont,
-            mBoatClass + " · WILDWASSER",
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        var speedText = "--";
-        var heartRateText = "--";
-        var elapsedText = "00:00";
-        var gpsText = "GPS AUS";
+        var activityInfo = null;
 
         if (mStatus == "AUFZEICHNUNG") {
-            var activityInfo = Activity.getActivityInfo();
-
-            if (activityInfo != null) {
-                if (activityInfo.currentSpeed != null) {
-                    var speedKmh = Math.round(activityInfo.currentSpeed * 3.6);
-                    speedText = speedKmh.toString();
-                }
-
-                if (activityInfo.currentHeartRate != null) {
-                    heartRateText = activityInfo.currentHeartRate.toString();
-                }
-
-                if (activityInfo.timerTime != null) {
-                    elapsedText = formatTime(activityInfo.timerTime);
-                } else if (activityInfo.elapsedTime != null) {
-                    elapsedText = formatTime(activityInfo.elapsedTime);
-                }
-
-                if (activityInfo.currentLocation != null) {
-                    gpsText = "GPS AKTIV";
-                } else {
-                    gpsText = "GPS SUCHT";
-                }
-            }
+            activityInfo = Activity.getActivityInfo();
         }
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(
-            centerX,
-            mScreenHeight * 0.24,
-            Graphics.FONT_NUMBER_HOT,
-            speedText,
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
+        var speedNow = "--";
+        var speedAvg = "--";
+        var speedMax = "--";
+        var hrNow = "--";
+        var hrAvg = "--";
+        var hrMax = "--";
+        var distance = "--";
+        var elapsed = "00:00";
+        var calories = "--";
+        var cadenceNow = "--";
+        var cadenceAvg = "--";
+        var powerNow = "--";
+        var powerAvg = "--";
+        var trainingEffect = "--";
+        var altitude = "--";
+        var ascent = "--";
+        var descent = "--";
+        var gpsText = "GPS AUS";
+        var gpsAccuracy = "--";
+
+        if (activityInfo != null) {
+            if (activityInfo.currentSpeed != null) {
+                speedNow = numberText(activityInfo.currentSpeed * 3.6, 1);
+            }
+            if (activityInfo.averageSpeed != null) {
+                speedAvg = numberText(activityInfo.averageSpeed * 3.6, 1);
+            }
+            if (activityInfo.maxSpeed != null) {
+                speedMax = numberText(activityInfo.maxSpeed * 3.6, 1);
+            }
+            hrNow = valueOrDash(activityInfo.currentHeartRate);
+            hrAvg = valueOrDash(activityInfo.averageHeartRate);
+            hrMax = valueOrDash(activityInfo.maxHeartRate);
+
+            if (activityInfo.elapsedDistance != null) {
+                distance = numberText(activityInfo.elapsedDistance / 1000.0, 2);
+            }
+            if (activityInfo.timerTime != null) {
+                elapsed = formatTime(activityInfo.timerTime);
+            } else if (activityInfo.elapsedTime != null) {
+                elapsed = formatTime(activityInfo.elapsedTime);
+            }
+
+            calories = valueOrDash(activityInfo.calories);
+            cadenceNow = valueOrDash(activityInfo.currentCadence);
+            cadenceAvg = valueOrDash(activityInfo.averageCadence);
+            powerNow = valueOrDash(activityInfo.currentPower);
+            powerAvg = valueOrDash(activityInfo.averagePower);
+            trainingEffect = numberText(activityInfo.trainingEffect, 1);
+            altitude = numberText(activityInfo.altitude, 0);
+            ascent = valueOrDash(activityInfo.totalAscent);
+            descent = valueOrDash(activityInfo.totalDescent);
+
+            if (activityInfo.currentLocation != null) {
+                gpsText = "GPS AKTIV";
+            } else {
+                gpsText = "GPS SUCHT";
+            }
+            gpsAccuracy = valueOrDash(activityInfo.currentLocationAccuracy);
+        }
+
+        if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
+            drawPageHeader(dc, "AKTIVITAET");
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+            dc.drawText(centerX, mScreenHeight * 0.34, Graphics.FONT_LARGE, "BEREIT", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+            dc.drawText(centerX, mScreenHeight * 0.47, Graphics.FONT_SMALL, "Aufzeichnung starten", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(centerX, mScreenHeight * 0.58, Graphics.FONT_TINY, "Bootsklasse im Startmenue gewaehlt", Graphics.TEXT_JUSTIFY_CENTER);
+        } else if (mPage == 0) {
+            drawPageHeader(dc, "ÜBERSICHT");
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+            dc.drawText(centerX, mScreenHeight * 0.23, Graphics.FONT_NUMBER_HOT, speedNow, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+            dc.drawText(centerX, mScreenHeight * 0.41, Graphics.FONT_SMALL, "KM/H  ·  GESCHWINDIGKEIT", Graphics.TEXT_JUSTIFY_CENTER);
+            drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.55, "HERZFREQUENZ", hrNow, "BPM");
+            drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.55, "ZEIT", elapsed, "");
+        } else if (mPage == 1) {
+            drawPageHeader(dc, "GESCHWINDIGKEIT");
+            drawMetric(dc, centerX, mScreenHeight * 0.25, "AKTUELL", speedNow, "KM/H");
+            drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.57, "DURCHSCHNITT", speedAvg, "KM/H");
+            drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.57, "MAXIMUM", speedMax, "KM/H");
+        } else if (mPage == 2) {
+            drawPageHeader(dc, "HERZFREQUENZ");
+            drawMetric(dc, centerX, mScreenHeight * 0.25, "AKTUELL", hrNow, "BPM");
+            drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.57, "DURCHSCHNITT", hrAvg, "BPM");
+            drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.57, "MAXIMUM", hrMax, "BPM");
+        } else if (mPage == 3) {
+            drawPageHeader(dc, "DISTANZ & ZEIT");
+            drawMetric(dc, centerX, mScreenHeight * 0.25, "DISTANZ", distance, "KM");
+            drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.57, "ZEIT", elapsed, "");
+            drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.57, "KALORIEN", calories, "KCAL");
+        } else {
+            drawPageHeader(dc, "WEITERE DATEN");
+            drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.23, "KADENZ", cadenceNow, "RPM");
+            drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.23, "LEISTUNG", powerNow, "W");
+            drawMetric(dc, mScreenWidth * 0.29, mScreenHeight * 0.48, "HOEHE", altitude, "M");
+            drawMetric(dc, mScreenWidth * 0.71, mScreenHeight * 0.48, "TRAINING EFFECT", trainingEffect, "");
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+            dc.drawText(centerX, mScreenHeight * 0.72, Graphics.FONT_TINY, gpsText + "  ·  GPS-QUALITAET " + gpsAccuracy, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(centerX, mScreenHeight * 0.77, Graphics.FONT_XTINY, "Anstieg " + ascent + " m  ·  Abstieg " + descent + " m", Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(
-            centerX,
-            mScreenHeight * 0.43,
-            labelFont,
-            "KM/H",
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
+        dc.drawText(centerX, mScreenHeight * 0.81, Graphics.FONT_XTINY, mStatus, Graphics.TEXT_JUSTIFY_CENTER);
 
-        dc.drawLine(
-            mScreenWidth * 0.16,
-            mScreenHeight * 0.52,
-            mScreenWidth * 0.84,
-            mScreenHeight * 0.52
-        );
-
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(
-            mScreenWidth * 0.30,
-            mScreenHeight * 0.56,
-            smallFont,
-            "HERZFREQUENZ",
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        dc.drawText(
-            mScreenWidth * 0.30,
-            mScreenHeight * 0.63,
-            Graphics.FONT_MEDIUM,
-            heartRateText,
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        dc.drawText(
-            mScreenWidth * 0.70,
-            mScreenHeight * 0.56,
-            smallFont,
-            "ZEIT",
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(
-            mScreenWidth * 0.70,
-            mScreenHeight * 0.63,
-            Graphics.FONT_MEDIUM,
-            elapsedText,
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(
-            centerX,
-            mScreenHeight * 0.72,
-            smallFont,
-            gpsText,
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(
-            centerX,
-            mScreenHeight * 0.77,
-            smallFont,
-            mStatus,
-            Graphics.TEXT_JUSTIFY_CENTER
-        );
-
-        mButtonTop = mScreenHeight * 0.83;
-        mButtonBottom = mScreenHeight * 0.93;
+        mButtonTop = mScreenHeight * 0.85;
+        mButtonBottom = mScreenHeight * 0.94;
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawButton(dc, centerX, mButtonTop, mScreenWidth * 0.58, "STARTEN");
