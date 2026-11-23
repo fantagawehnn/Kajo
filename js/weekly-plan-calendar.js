@@ -61,6 +61,15 @@ export function buildWeeklyPlanCalendarEntries(plan, existingEntries = []) {
             targetTss: null,
             category: calendarCategoryForSession(session),
             desc: description,
+            discipline: session.discipline || '',
+            raceFormat: session.raceFormat || '',
+            waterType: session.waterType || '',
+            intensity: session.intensity || '',
+            objective: session.objective || '',
+            warmup: session.warmup || '',
+            mainSet: session.mainSet || '',
+            cooldown: session.cooldown || '',
+            notes: session.notes || '',
             sourceWeeklyPlanId: plan.id,
             sourceWeeklySessionId: session.id
         });
