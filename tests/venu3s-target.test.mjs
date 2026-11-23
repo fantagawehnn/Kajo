@@ -129,6 +129,8 @@ test("home screen shows only today's non-rest-day sessions and has separate plan
   assert.match(homeView, /"TRAINING STARTEN"/);
   assert.match(homeView, /"TRAINING AUSWAEHLEN"/);
   assert.match(homeView, /"FREIE AKTIVITAET"/);
+  assert.match(homeView, /activityView\.setFreeActivity\(\)/);
+  assert.match(activityView, /function setFreeActivity\(\)/);
   assert.match(homeView, /"AKTIVITAET STARTEN"/);
   assert.doesNotMatch(homeView, /Noch keine Einheit angezeigt/);
   assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
