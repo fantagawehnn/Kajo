@@ -43,6 +43,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCurrentWorkoutName as Lang.String = "TRAINING";
     var mCurrentWorkoutType as Lang.String = "";
     var mCurrentWorkoutDuration as Lang.String = "";
+    var mCurrentWorkoutDescription as Lang.String = "";
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
@@ -64,11 +65,11 @@ class KajoConnectActivityView extends WatchUi.View {
         for (var i = 0; i < planned.size(); i += 1) {
             var session = planned[i] as Lang.Dictionary;
             var sessionDate = session["date"];
-            if (sessionDate != null && sessionDate.toString().length() >= 10 &&
-                sessionDate.toString().substring(0, 10) == today) {
+            if (sessionDate != null && sessionDate.toString() == today) {
                 if (session["name"] != null) { mCurrentWorkoutName = session["name"].toString(); }
                 if (session["type"] != null) { mCurrentWorkoutType = session["type"].toString(); }
                 if (session["duration"] != null) { mCurrentWorkoutDuration = session["duration"].toString(); }
+                if (session["desc"] != null) { mCurrentWorkoutDescription = session["desc"].toString(); }
                 return;
             }
         }
@@ -315,7 +316,8 @@ class KajoConnectActivityView extends WatchUi.View {
         var colors = [0x20D98A, 0x8BE34A, 0xE3E84A, 0xFFB52E, 0xF04455];
         var startAngle = -132.0;
         for (var segment = 0; segment < 5; segment += 1) {
-            var segmentColor = [0x155A43, 0x426A2B, 0x777A28, 0x80551D, 0x762A35][segment];
+            var dimColors = [0x155A43, 0x426A2B, 0x777A28, 0x80551D, 0x762A35];
+            var segmentColor = dimColors[segment];
             if (zone == segment + 1) { segmentColor = colors[segment]; }
             dc.setColor(segmentColor, Graphics.COLOR_BLACK);
             var previousX = centerX + (Math.cos(startAngle * 0.0174533) * radius);
@@ -349,6 +351,10 @@ class KajoConnectActivityView extends WatchUi.View {
         if (workoutSubline == "") { workoutSubline = "AKTUELLES TRAINING"; }
         drawFit(dc, cx, mUnit * 0.155, workoutSubline, mUnit * 0.68,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        if (mCurrentWorkoutDescription != "") {
+            drawFit(dc, cx, mUnit * 0.19, mCurrentWorkoutDescription, mUnit * 0.68,
+                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        }
 
         var panelX = mUnit * 0.145;
         var panelWidth = mUnit * 0.71;
