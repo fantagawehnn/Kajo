@@ -62,59 +62,53 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         dc.clear();
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
-        mUnit = mWidth;
-        if (mHeight < mUnit) { mUnit = mHeight; }
+        mUnit = mWidth < mHeight ? mWidth : mHeight;
         mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
-        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawLine((mUnit * 0.105).toNumber(), (mUnit * 0.105).toNumber(),
-            (mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber());
-        dc.drawLine((mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber(),
-            (mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber());
-        dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
-            (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
 
-        drawFit(dc, cx, mUnit * 0.095, "ANZEIGEN", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.16, "DATENSEITEN AUSWAEHLEN", mUnit * 0.74, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.075, "ANZEIGE",
+            mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.13, "DATENSEITEN EIN- ODER AUSBLENDEN",
+            mUnit * 0.76, Graphics.FONT_XTINY, 0x00E5CC);
 
         var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
-        mRowTop = mUnit * 0.235;
-        mRowHeight = mUnit * 0.108;
-
+        mRowTop = mUnit * 0.205;
+        mRowHeight = mUnit * 0.105;
         var cardHeight = mRowHeight * 0.82;
-        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.68);
+        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.76);
         var cardX = cx - (cardWidth / 2);
 
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
-            dc.setColor(0x091417, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
-                Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
-                Math.round(mUnit * 0.025).toNumber());
-            dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(), Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(), Math.round(mUnit * 0.025).toNumber());
-
+            dc.setColor(0x071619, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
+                cardHeight.toNumber(), (mUnit * 0.022).toNumber());
+            dc.setColor(0x17343A, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
+                cardHeight.toNumber(), (mUnit * 0.022).toNumber());
+            if (mEnabled[i]) {
+                dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+                dc.fillRoundedRectangle((cardX + mUnit * 0.015).toNumber(),
+                    (y + mUnit * 0.016).toNumber(), (mUnit * 0.009).toNumber(),
+                    (cardHeight - mUnit * 0.032).toNumber(), (mUnit * 0.004).toNumber());
+            }
             var state = mEnabled[i] ? "AN" : "AUS";
-            var labelWidth = Math.floor(cardWidth * 0.62).toNumber();
-            var font = fitFont(dc, labels[i], labelWidth, Graphics.FONT_SMALL);
-            drawFit(dc, cardX + (labelWidth / 2) + (mUnit * 0.015),
-                Math.round(y + (cardHeight - dc.getFontHeight(font)) / 2).toNumber(),
-                labels[i], labelWidth * 0.96, font, Graphics.COLOR_WHITE);
-
-            drawFit(dc, cardX + cardWidth * 0.84,
-                Math.round(y + (cardHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.045))) / 2).toNumber(),
-                state, cardWidth * 0.22, Graphics.FONT_TINY,
-                mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
+            var labelWidth = cardWidth * 0.68;
+            drawFit(dc, cardX + (labelWidth / 2) + (mUnit * 0.035),
+                y + (cardHeight * 0.27), labels[i], labelWidth * 0.94,
+                Graphics.FONT_TINY, Graphics.COLOR_WHITE);
+            drawFit(dc, cardX + cardWidth * 0.86,
+                y + (cardHeight * 0.30), state, cardWidth * 0.22,
+                Graphics.FONT_XTINY, mEnabled[i] ? 0x00E5CC : Graphics.COLOR_LT_GRAY);
         }
 
-        var saveHeight = mUnit * 0.085;
-        var saveY = mUnit * 0.78;
-        var saveWidth = mKajoLayout.safeRectWidth(saveY, saveHeight, mUnit * 0.46);
+        var saveHeight = mUnit * 0.08;
+        var saveY = mUnit * 0.77;
+        var saveWidth = mKajoLayout.safeRectWidth(saveY, saveHeight, mUnit * 0.54);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        drawFit(dc, cx, Math.round(saveY + (saveHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.055))) / 2).toNumber(),
-            "SPEICHERN", saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle((cx - saveWidth / 2).toNumber(), saveY.toNumber(),
+            saveWidth.toNumber(), saveHeight.toNumber(), (mUnit * 0.025).toNumber());
+        drawFit(dc, cx, saveY + (mUnit * 0.022), "SPEICHERN",
+            saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
     }
 }
