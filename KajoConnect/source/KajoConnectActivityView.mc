@@ -95,8 +95,9 @@ class KajoConnectActivityView extends WatchUi.View {
         var used = [];
         for (var i = 0; i < metrics.size() && i < 4; i += 1) {
             var metricId = metrics[i];
-            var position = positions[metricId];
-            if (position == null || position < 0 || position > 4 || used.indexOf(position) >= 0) {
+            var savedPosition = positions[metricId];
+            var position = savedPosition == null ? defaults[i] : savedPosition as Lang.Number;
+            if (position < 0 || position > 4 || used.indexOf(position) >= 0) {
                 position = defaults[i];
             }
             if (used.indexOf(position) >= 0) {
