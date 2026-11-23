@@ -1,6 +1,6 @@
 # KAJO Connect – Aktivitätsanzeigen und Trainingsübersicht
 
-**Status:** UI-Grundlage im Branch `feature/kajo-connect`; lokaler Garmin-Build und Gerätetest dieser Änderungen stehen noch aus.  
+**Status:** Aktivitätsaufzeichnung, KAJO-Plan-Synchronisierung, Herzfrequenzzonen und Pairing-UI im Branch `feature/kajo-connect` vorbereitet; lokaler Garmin-Build, Backend-Deployment und Gerätetest stehen noch aus.  
 **Zielgerät:** Garmin Venu 3S.
 
 ## 1. Individuelle Aktivitätsseiten
