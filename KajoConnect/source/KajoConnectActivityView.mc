@@ -658,6 +658,13 @@ class KajoConnectActivityView extends WatchUi.View {
     // Aktion der unteren physischen Taste. true bedeutet: Taste wurde
     // als Rundenmarkierung verarbeitet; false lässt die Zurück-Funktion zu.
     function handleLapButton() as Lang.Boolean {
+        // Eine gestoppte, aber noch nicht gespeicherte FIT-Session darf
+        // nicht versehentlich über die Zurück-Taste verlassen werden.
+        if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+            WatchUi.showToast("Bitte zuerst erneut speichern", null);
+            return true;
+        }
+
         if (mStatus != "AUFZEICHNUNG") {
             return false;
         }
