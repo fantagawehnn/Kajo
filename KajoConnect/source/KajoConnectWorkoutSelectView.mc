@@ -5,7 +5,7 @@ import Toybox.WatchUi;
 
 class KajoConnectWorkoutSelectView extends WatchUi.View {
 
-    var mLayout;
+    var mLayout as KajoLayout;
 
     var mSessions as Lang.Array<Lang.Dictionary>;
     var mHomeView as KajoConnectView;
