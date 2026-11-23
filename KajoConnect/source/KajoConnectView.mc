@@ -351,7 +351,12 @@ class KajoConnectView extends WatchUi.View {
         var hasTrainingToday = todaySessions.size() > 0;
 
         // Kompakter Kopfbereich: Status ist bewusst nachrangig.
-        drawCentered(dc, cx, mUnit * 0.075, "KAJO",
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawLine((mUnit * 0.32).toNumber(), (mUnit * 0.105).toNumber(),
+            (mUnit * 0.39).toNumber(), (mUnit * 0.105).toNumber());
+        dc.drawLine((mUnit * 0.335).toNumber(), (mUnit * 0.122).toNumber(),
+            (mUnit * 0.375).toNumber(), (mUnit * 0.122).toNumber());
+        drawCentered(dc, cx, mUnit * 0.045, "KAJO",
             mUnit * 0.68, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
         drawCentered(dc, cx, mUnit * 0.145, compactSyncStatus(),
             mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
@@ -367,10 +372,10 @@ class KajoConnectView extends WatchUi.View {
             var cardY = mUnit * 0.205;
             var cardWidth = mUnit * 0.74;
             var cardHeight = mUnit * 0.185;
-            dc.setColor(0x07151D, Graphics.COLOR_BLACK);
+            dc.setColor(0x040D12, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
                 cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.035).toNumber());
-            dc.setColor(0x12485A, Graphics.COLOR_BLACK);
+            dc.setColor(0x0A3A4A, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
                 cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.035).toNumber());
 
@@ -455,7 +460,7 @@ class KajoConnectView extends WatchUi.View {
             var bx = left + (b * (buttonWidth + buttonGap));
             var selected = (labels[b] == mSelectedBoat);
             if (selected) {
-                dc.setColor(0x20C6B4, Graphics.COLOR_BLACK);
+                dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
                 dc.fillRoundedRectangle(bx.toNumber(), buttonY.toNumber(),
                     buttonWidth.toNumber(), buttonHeight.toNumber(),
                     (mUnit * 0.03).toNumber());
@@ -479,7 +484,7 @@ class KajoConnectView extends WatchUi.View {
         mStartTop = startY;
         mStartBottom = startY + startHeight;
 
-        dc.setColor(0x20C6B4, Graphics.COLOR_BLACK);
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(startX.toNumber(), startY.toNumber(),
             startWidth.toNumber(), startHeight.toNumber(), (mUnit * 0.035).toNumber());
         drawCentered(dc, cx,
