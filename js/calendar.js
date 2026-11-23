@@ -9,7 +9,7 @@ import { getTrainingLoadData } from './training-load.js?v=5';
 import { getGarminTelemetry } from './data-source.js';
 import { calculateReadiness } from './dashboard.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=5';
-import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js';
+import { formatDateDDMMYY, sportsCatalog, typeColorMap, toLocalDateString, escapeHtml, formatKm, getSportsCatalog, getEnabledSportsCatalog, getTypeColorMap } from './utils.js?v=2';
 
 
 function dayCycleInfo(dateStr) {
