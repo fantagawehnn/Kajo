@@ -2744,6 +2744,7 @@ async function performCloudInitialTransfer() {
         // Aktivitäten zuerst separat und vollständig sichern. Der alte
         // user_data-Snapshot bleibt unangetastet, falls ein Paket fehlschlägt.
         const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const initialBaseline = JSON.parse(JSON.stringify(initialSnapshot));
         const activityUpload = await syncCloudActivities(supabase, userId, initialSnapshot.activities || []);
         initialSnapshot.activityIds = getCloudActivityIds(userId, initialSnapshot.activities || []);
         initialSnapshot.activities = [];
@@ -2758,6 +2759,11 @@ async function performCloudInitialTransfer() {
         cloudSyncUserId = userId;
         cloudSyncVersion = result.currentVersion;
         cloudSyncBlocked = false;
+        try {
+            await saveCloudSyncBaseline(initialBaseline);
+        } catch (baselineError) {
+            console.warn('Erstübertragung erfolgreich, aber die lokale Synchronisierungsbasis konnte nicht gespeichert werden:', baselineError);
+        }
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
