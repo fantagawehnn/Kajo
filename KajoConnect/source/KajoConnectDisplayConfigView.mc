@@ -6,6 +6,8 @@ import Toybox.WatchUi;
 
 class KajoConnectDisplayConfigView extends WatchUi.View {
 
+    var mLayout;
+
     var mEnabled as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
     var mRowTop = 0;
     var mRowHeight = 0;
@@ -15,6 +17,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
+        mLayout = new KajoLayout();
         for (var i = 0; i < 5; i += 1) {
             var key = "kajoDisplayPage" + i.toString();
             var savedValue = Storage.getValue(key);
@@ -41,30 +44,22 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         }
     }
 
-    function fitFont(dc as Dc, text as Lang.String, maxWidth, preferredFont) {
-        var font = preferredFont;
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
-        return font;
+    function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
+        return mLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
-
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = fitFont(dc, text, maxWidth, preferredFont);
+        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
-        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
-        if (displayText == "") { return; }
-        var safeY = y;
-        var textHeight = dc.getFontHeight(font);
-        if (safeY < 2) { safeY = 2; }
-        if (safeY + textHeight > mHeight - 2) { safeY = mHeight - textHeight - 2; }
+        if (displayText == "" || safeWidth <= 0) { return; }
+        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
-
     function saveConfig() as Void {
         for (var i = 0; i < 5; i += 1) {
             Storage.setValue("kajoDisplayPage" + i.toString(), mEnabled[i]);
@@ -78,6 +73,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         mHeight = dc.getHeight();
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
+        mLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
         // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
