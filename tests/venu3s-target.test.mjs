@@ -86,17 +86,17 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 
 
 test("Activity screen uses shared bounded text and reserves a separate bottom control area", () => {
-  assert.match(activityView, /function drawFit\\(/);
-  assert.match(activityView, /mKajoLayout\\.drawTextFit/);
-  assert.match(activityView, /mButtonTop = mUnit \\* 0\\.82/);
-  assert.match(activityView, /mButtonBottom = mUnit \\* 0\\.90/);
-  assert.match(activityView, /drawFit\\(dc, cx, mUnit \\* 0\\.335/);
+  assert.match(activityView, /function drawFit\(/);
+  assert.match(activityView, /mKajoLayout\.drawTextFit/);
+  assert.match(activityView, /mButtonTop = mUnit \* 0\.82/);
+  assert.match(activityView, /mButtonBottom = mUnit \* 0\.90/);
+  assert.match(activityView, /drawFit\(dc, cx, mUnit \* 0\.335/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
 
 test("all custom Garmin screens use the shared measured-width text layout", () => {
-  assert.match(layoutView, /displayText\\.substring/);
-  assert.match(layoutView, /getTextWidthInPixels\\(displayText, font\\)/);
+  assert.match(layoutView, /displayText\.substring/);
+  assert.match(layoutView, /getTextWidthInPixels\(displayText, font\)/);
   for (const [name, source] of [
     ["home", homeView],
     ["activity", activityView],
@@ -107,7 +107,7 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
     ["display config", displayConfigView],
     ["pairing", pairingView],
   ]) {
-    assert.match(source, /mKajoLayout\\.drawTextFit/, name + " must use the shared text layout");
+    assert.match(source, /mKajoLayout\.drawTextFit/, name + " must use the shared text layout");
   }
 });
 
@@ -118,27 +118,27 @@ test("custom metric layouts relocate the wide center tile when a lower side tile
 });
 
 test("home screen filters today's sessions and separates planned and free training actions", () => {
-  assert.match(homeView, /function getTodaysSessions\\(\\)/);
-  assert.match(homeView, /sessionDate\\.toString\\(\\) == today/);
-  assert.match(homeView, /sessionType\\.toString\\(\\) != "RestDay"/);
-  assert.match(homeView, /var todaySessions = getTodaysSessions\\(\\)/);
-  assert.match(homeView, /todaySessions\\.size\\(\\) == 1/);
-  assert.match(homeView, /todaySessions\\.size\\(\\) > 1/);
+  assert.match(homeView, /function getTodaysSessions\(\)/);
+  assert.match(homeView, /sessionDate\.toString\(\) == today/);
+  assert.match(homeView, /sessionType\.toString\(\) != "RestDay"/);
+  assert.match(homeView, /var todaySessions = getTodaysSessions\(\)/);
+  assert.match(homeView, /todaySessions\.size\(\) == 1/);
+  assert.match(homeView, /todaySessions\.size\(\) > 1/);
   assert.match(homeView, /"FREIES TRAINING"/);
-  assert.match(homeView, /openActivityView\\(null\\)/);
-  assert.match(homeView, /if \\(y >= mStartTop && y <= mStartBottom\\)/);
-  assert.match(homeView, /startActivity\\(\\)/);
+  assert.match(homeView, /openActivityView\(null\)/);
+  assert.match(homeView, /if \(y >= mStartTop && y <= mStartBottom\)/);
+  assert.match(homeView, /startActivity\(\)/);
   assert.doesNotMatch(homeView, /Noch keine Einheit angezeigt/);
   assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
 });
 
 test("home screen keeps the hero card, scrollable menu and lower controls in distinct bands", () => {
-  assert.match(homeView, /var cardY = mUnit \\* 0\\.255/);
-  assert.match(homeView, /var cardHeight = mUnit \\* 0\\.18/);
-  assert.match(homeView, /var dividerY = mUnit \\* 0\\.52/);
-  assert.match(homeView, /mFreeTop = mUnit \\* 0\\.56/);
-  assert.match(homeView, /mFreeBottom = mUnit \\* 0\\.85/);
-  assert.match(homeView, /var rowHeight = mUnit \\* 0\\.073/);
+  assert.match(homeView, /var cardY = mUnit \* 0\.255/);
+  assert.match(homeView, /var cardHeight = mUnit \* 0\.18/);
+  assert.match(homeView, /var dividerY = mUnit \* 0\.52/);
+  assert.match(homeView, /mFreeTop = mUnit \* 0\.56/);
+  assert.match(homeView, /mFreeBottom = mUnit \* 0\.85/);
+  assert.match(homeView, /var rowHeight = mUnit \* 0\.073/);
   assert.match(homeView, /"GEPLANTE TRAININGS"/);
   assert.match(homeView, /"EINSTELLUNGEN"/);
 });
