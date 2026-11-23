@@ -347,26 +347,24 @@ Deno.serve(async (request) => {
       if (lookupError) throw lookupError;
       if (!pairing) return json(404, { error: "The pairing code is invalid or has expired." });
 
-      const { count: activeDeviceCount, error: countError } = await admin
-        .from("kajo_connect_devices")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .is("revoked_at", null);
-      if (countError) throw countError;
-      if ((activeDeviceCount ?? 0) >= 5) {
-        return json(409, { error: "This KAJO account already has the maximum of five active devices." });
-      }
-
       const deviceToken = randomHex(32);
       const encrypted = await encryptToken(deviceToken);
       const deviceId = crypto.randomUUID();
-      const { error: deviceError } = await admin.from("kajo_connect_devices").insert({
-        id: deviceId,
-        user_id: user.id,
-        device_label: pairing.device_label,
-        token_hash: await sha256(deviceToken),
-      });
-      if (deviceError) throw deviceError;
+      const tokenHash = await sha256(deviceToken);
+      const { data: deviceRegistered, error: registerError } = await admin.rpc(
+        "kajo_connect_register_device",
+        {
+          p_device_id: deviceId,
+          p_user_id: user.id,
+          p_device_label: pairing.device_label,
+          p_token_hash: tokenHash,
+          p_max_devices: 5,
+        },
+      );
+      if (registerError) throw registerError;
+      if (deviceRegistered !== true) {
+        return json(409, { error: "This KAJO account already has the maximum of five active devices." });
+      }
 
       const { data: claimed, error: claimError } = await admin
         .from("kajo_connect_pairing_requests")
@@ -384,7 +382,9 @@ Deno.serve(async (request) => {
         .maybeSingle();
 
       if (claimError || !claimed) {
-        await admin.from("kajo_connect_devices").delete().eq("id", deviceId);
+        const { error: cleanupDeviceError } = await admin.from("kajo_connect_devices")
+          .delete().eq("id", deviceId);
+        if (cleanupDeviceError) throw cleanupDeviceError;
         if (claimError) throw claimError;
         return json(409, { error: "The pairing code has already been claimed." });
       }
