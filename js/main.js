@@ -433,6 +433,64 @@ async function callGarminFunction(body) {
     return result.data;
 }
 
+async function createGarminArchivePartLinks() {
+    const button = document.getElementById('garmin-archive-parts-button');
+    const status = document.getElementById('garmin-archive-parts-status');
+    const list = document.getElementById('garmin-archive-parts-links');
+    if (!button || !status || !list) return;
+
+    button.disabled = true;
+    button.textContent = 'Links werden erstellt …';
+    status.textContent = 'Prüfe Anmeldung und Archivzugriff …';
+    status.className = 'text-xs text-slate-400';
+    list.replaceChildren();
+
+    try {
+        const result = await callGarminFunction({ action: 'read-export-archive-parts' });
+        if (!Array.isArray(result.parts) || result.parts.length !== 6) {
+            throw new Error('Die Serverfunktion hat nicht genau sechs Archivteile zurückgegeben.');
+        }
+
+        const fragment = document.createDocumentFragment();
+        for (const part of [...result.parts].sort((a, b) => Number(a.part) - Number(b.part))) {
+            const url = new URL(part.signedUrl);
+            if (url.protocol !== 'https:'
+                || url.hostname !== 'zgvargkfzgekokuisarv.supabase.co'
+                || !url.pathname.startsWith('/storage/v1/object/sign/garmin-exports/')) {
+                throw new Error('Ein Archiv-Link hat ein unerwartetes URL-Format und wurde nicht angezeigt.');
+            }
+
+            const row = document.createElement('li');
+            row.className = 'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2';
+            const label = document.createElement('span');
+            label.className = 'text-xs text-slate-300';
+            label.textContent = `Archivteil ${String(part.part).padStart(2, '0')} · ${(Number(part.sizeBytes) / 1024 / 1024).toFixed(1)} MB`;
+
+            const link = document.createElement('a');
+            link.href = part.signedUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'text-xs font-semibold text-cyan-300 underline underline-offset-2';
+            link.textContent = 'Herunterladen';
+
+            row.append(label, link);
+            fragment.append(row);
+        }
+
+        list.replaceChildren(fragment);
+        const minutes = Math.max(1, Math.round(Number(result.expiresInSeconds || 300) / 60));
+        status.textContent = `Sechs Download-Links erstellt. Sie sind ungefähr ${minutes} Minuten gültig. Die sechs Archivteile werden einzeln heruntergeladen.`;
+        status.className = 'text-xs text-emerald-300';
+    } catch (error) {
+        list.replaceChildren();
+        status.textContent = error?.message || 'Die Archiv-Links konnten nicht erstellt werden.';
+        status.className = 'text-xs text-rose-300';
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Sechs Archiv-Download-Links erzeugen';
+    }
+}
+
 async function loadGarminActivitiesFromCloud() {
     const userId = activeAppUserId;
     if (!userId) throw new Error('Für den Garmin-Aktivitätsabgleich ist kein aktiver Benutzer angemeldet.');
@@ -3518,6 +3576,7 @@ Object.assign(window, {
     saveAthleteProfileSection,
     restoreDatabaseBackup,
     uploadGarminExportArchive,
+    createGarminArchivePartLinks,
     analyzeGarminExportArchive,
     importGarminExportArchive,
     closeBackupPreview,
