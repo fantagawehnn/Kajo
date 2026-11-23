@@ -6,7 +6,7 @@ import Toybox.WatchUi;
 
 class KajoConnectCustomFieldsView extends WatchUi.View {
 
-    var mLayout;
+    var mLayout as KajoLayout;
 
     var mMetricIds as Lang.Array<Lang.String> = [
         "speedNow", "speedAvg", "speedMax", "heartRate", "heartRateZone",
