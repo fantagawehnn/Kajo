@@ -6,7 +6,7 @@ import Toybox.WatchUi;
 
 class KajoConnectDisplayConfigView extends WatchUi.View {
 
-    var mLayout as KajoLayout;
+    var mKajoLayout as KajoLayout;
 
     var mEnabled as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
     var mRowTop = 0;
@@ -17,7 +17,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
-        mLayout = new KajoLayout();
+        mKajoLayout = new KajoLayout();
         for (var i = 0; i < 5; i += 1) {
             var key = "kajoDisplayPage" + i.toString();
             var savedValue = Storage.getValue(key);
@@ -45,18 +45,18 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        return mLayout.fitFont(dc, text, maxWidth, preferredFont);
+        return mKajoLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
+        var font = mKajoLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
         while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
         if (displayText == "" || safeWidth <= 0) { return; }
-        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
+        var safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -73,7 +73,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         mHeight = dc.getHeight();
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
-        mLayout.configure(mWidth, mHeight);
+        mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
         // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
@@ -92,7 +92,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         mRowHeight = mUnit * 0.108;
 
         var cardHeight = mRowHeight * 0.82;
-        var cardWidth = mLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.68);
+        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.68);
         var cardX = cx - (cardWidth / 2);
 
         for (var i = 0; i < 5; i += 1) {
@@ -112,18 +112,18 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
                 labels[i], labelWidth * 0.96, font, Graphics.COLOR_WHITE);
 
             drawFit(dc, cardX + cardWidth * 0.84,
-                y + (cardHeight - dc.getFontHeight(mLayout.fontForPercent(dc, 0.045))) / 2,
+                y + (cardHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.045))) / 2,
                 state, cardWidth * 0.22, Graphics.FONT_TINY,
                 mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
         }
 
         var saveHeight = mUnit * 0.085;
         var saveY = mUnit * 0.78;
-        var saveWidth = mLayout.safeRectWidth(saveY, saveHeight, mUnit * 0.46);
+        var saveWidth = mKajoLayout.safeRectWidth(saveY, saveHeight, mUnit * 0.46);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        drawFit(dc, cx, saveY + (saveHeight - dc.getFontHeight(mLayout.fontForPercent(dc, 0.055))) / 2,
+        drawFit(dc, cx, saveY + (saveHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.055))) / 2,
             "SPEICHERN", saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
     }
 }
