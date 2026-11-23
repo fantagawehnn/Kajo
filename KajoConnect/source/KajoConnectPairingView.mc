@@ -226,7 +226,7 @@ class KajoConnectPairingView extends WatchUi.View {
 
         if (mCode.length() > 0 && !mPaired) {
             var codeText = formatCode();
-            dc.setColor(0x07151D, Graphics.COLOR_BLACK);
+            dc.setColor(0x05181C, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle((center - unit * 0.37).toNumber(),
                 (unit * 0.345).toNumber(), (unit * 0.74).toNumber(),
                 (unit * 0.13).toNumber(), (unit * 0.03).toNumber());
