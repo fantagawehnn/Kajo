@@ -19,6 +19,16 @@ class KajoConnectWorkoutView extends WatchUi.View {
         return value.toString();
     }
 
+    function compactText(value as Lang.String, maxLength as Lang.Number) as Lang.String {
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        if (maxLength <= 3) {
+            return value.substring(0, maxLength);
+        }
+        return value.substring(0, maxLength - 3) + "...";
+    }
+
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = preferredFont;
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
@@ -26,6 +36,10 @@ class KajoConnectWorkoutView extends WatchUi.View {
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(x.toNumber(), y.toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
+    function drawSectionLabel(dc as Dc, x, y, text as Lang.String, maxWidth) as Void {
+        drawCentered(dc, x, y, text, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 
     function onUpdate(dc as Dc) {
@@ -36,93 +50,105 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var unit = width;
         if (height < unit) { unit = height; }
         var center = width / 2;
-        var contentWidth = unit * 0.76;
+        var contentWidth = unit * 0.78;
 
         var name = valueText("name", "Geplante Einheit");
         var date = valueText("date", "Datum offen");
         var type = valueText("type", "Training");
         var duration = valueText("duration", "—");
         var targetLoad = valueText("targetTss", "—");
-        var category = valueText("category", "Keine Kategorie");
+        var category = valueText("category", "");
         var description = valueText("desc", "");
         var isRestDay = (type == "RestDay");
-
-        drawCentered(dc, center, unit * 0.085, "TRAININGSUEBERSICHT", contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, center, unit * 0.17, isRestDay ? "GEPLANTER RUHETAG" : "GEPLANTE EINHEIT", contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
-
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(
-            (center - unit * 0.36).toNumber(),
-            (unit * 0.235).toNumber(),
-            (unit * 0.72).toNumber(),
-            (unit * 0.17).toNumber(),
-            (unit * 0.035).toNumber()
-        );
-        drawCentered(dc, center, unit * 0.285, name, unit * 0.66, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-
-        drawCentered(dc, center, unit * 0.445, date, contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
-        drawCentered(dc, center, unit * 0.50, type, contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        var raceFormat = valueText("raceFormat", "");
-        var waterType = valueText("waterType", "");
-        var sportContext = raceFormat;
-        if (waterType.length() > 0) {
-            sportContext = sportContext.length() > 0 ? sportContext + " · " + waterType : waterType;
-        }
-        if (sportContext.length() > 48) { sportContext = sportContext.substring(0, 45) + "..."; }
-        if (sportContext.length() > 0) {
-            drawCentered(dc, center, unit * 0.545, sportContext, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        }
-
-        if (!isRestDay) {
-            var leftX = center - unit * 0.19;
-            var rightX = center + unit * 0.19;
-            drawCentered(dc, leftX, unit * 0.60, "DAUER", unit * 0.34, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawCentered(dc, leftX, unit * 0.655, duration == "—" ? "—" : duration + " min", unit * 0.34, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawCentered(dc, rightX, unit * 0.60, "ZIEL-LOAD", unit * 0.34, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawCentered(dc, rightX, unit * 0.655, targetLoad, unit * 0.34, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawCentered(dc, center, unit * 0.735, category, contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
-        } else {
-            drawCentered(dc, center, unit * 0.64, "Keine geplante Trainingsbelastung", contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
-        }
 
         var objective = valueText("objective", "");
         var intensity = valueText("intensity", "");
         var mainSet = valueText("mainSet", "");
         var warmup = valueText("warmup", "");
         var cooldown = valueText("cooldown", "");
-        var hasStructuredDetails = objective.length() > 0 || intensity.length() > 0
-            || mainSet.length() > 0 || warmup.length() > 0 || cooldown.length() > 0;
+        var notes = valueText("notes", "");
 
-        if (hasStructuredDetails && !isRestDay) {
-            var lineOne = objective.length() > 0 ? "ZIEL: " + objective : "";
+        var raceFormat = valueText("raceFormat", "");
+        var waterType = valueText("waterType", "");
+        var sportContext = raceFormat;
+        if (waterType.length() > 0) {
+            sportContext = sportContext.length() > 0 ? sportContext + " · " + waterType : waterType;
+        }
+
+        drawCentered(dc, center, unit * 0.075, "TRAINING", contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, unit * 0.125, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+
+        // Hauptkarte: Name der Einheit und sportartspezifischer Kontext.
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(
+            (center - unit * 0.38).toNumber(),
+            (unit * 0.18).toNumber(),
+            (unit * 0.76).toNumber(),
+            (unit * 0.145).toNumber(),
+            (unit * 0.035).toNumber()
+        );
+        drawCentered(dc, center, unit * 0.215, compactText(name, 42), unit * 0.69, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, unit * 0.27, compactText(type, 32), unit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+
+        if (sportContext.length() > 0) {
+            drawCentered(dc, center, unit * 0.345, compactText(sportContext, 38), contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        }
+
+        if (isRestDay) {
+            drawCentered(dc, center, unit * 0.49, "RUHETAG", contentWidth, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+            drawCentered(dc, center, unit * 0.57, "Keine geplante Trainingsbelastung", contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
+        } else {
+            // Zwei kompakte Kennzahlen, ähnlich der klaren Zielanzeige bei Garmin.
+            var leftX = center - unit * 0.19;
+            var rightX = center + unit * 0.19;
+            drawSectionLabel(dc, leftX, unit * 0.395, "DAUER", unit * 0.34);
+            drawCentered(dc, leftX, unit * 0.435, duration == "—" ? "—" : duration + " min", unit * 0.34, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawSectionLabel(dc, rightX, unit * 0.395, "ZIEL-LOAD", unit * 0.34);
+            drawCentered(dc, rightX, unit * 0.435, targetLoad, unit * 0.34, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+
+            if (category.length() > 0) {
+                drawCentered(dc, center, unit * 0.49, compactText(category, 38), contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            }
+
+            // Intensitaet und Trainingsziel werden nur angezeigt, wenn im Plan vorhanden.
             if (intensity.length() > 0) {
-                lineOne = lineOne.length() > 0 ? lineOne + " · " + intensity : "INTENSITAET: " + intensity;
-            }
-            if (lineOne.length() > 72) { lineOne = lineOne.substring(0, 69) + "..."; }
-            if (lineOne.length() > 0) {
-                drawCentered(dc, center, unit * 0.765, lineOne, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+                drawSectionLabel(dc, center, unit * 0.545, "INTENSITAET", contentWidth);
+                drawCentered(dc, center, unit * 0.58, compactText(intensity, 46), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             }
 
-            var lineTwo = mainSet.length() > 0 ? "HAUPTTEIL: " + mainSet : "";
-            if (lineTwo.length() > 78) { lineTwo = lineTwo.substring(0, 75) + "..."; }
-            if (lineTwo.length() > 0) {
-                drawCentered(dc, center, unit * 0.805, lineTwo, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            if (objective.length() > 0) {
+                drawSectionLabel(dc, center, unit * 0.635, "TRAININGSZIEL", contentWidth);
+                drawCentered(dc, center, unit * 0.67, compactText(objective, 48), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             }
 
-            var lineThree = warmup.length() > 0 ? "AUFW.: " + warmup : "";
-            if (lineThree.length() > 72) { lineThree = lineThree.substring(0, 69) + "..."; }
-            if (lineThree.length() > 0) {
-                drawCentered(dc, center, unit * 0.845, lineThree, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            // Der Hauptteil bekommt die groesste Aufmerksamkeit.
+            if (mainSet.length() > 0) {
+                dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+                dc.fillRoundedRectangle(
+                    (center - unit * 0.37).toNumber(),
+                    (unit * 0.715).toNumber(),
+                    (unit * 0.74).toNumber(),
+                    (unit * 0.105).toNumber(),
+                    (unit * 0.025).toNumber()
+                );
+                drawSectionLabel(dc, center, unit * 0.735, "HAUPTTEIL", contentWidth);
+                drawCentered(dc, center, unit * 0.775, compactText(mainSet, 48), unit * 0.68, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            } else if (description.length() > 0) {
+                drawSectionLabel(dc, center, unit * 0.735, "TRAININGSINFO", contentWidth);
+                drawCentered(dc, center, unit * 0.775, compactText(description, 48), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             }
 
-            var lineFour = cooldown.length() > 0 ? "ABW.: " + cooldown : "";
-            if (lineFour.length() > 72) { lineFour = lineFour.substring(0, 69) + "..."; }
-            if (lineFour.length() > 0) {
-                drawCentered(dc, center, unit * 0.885, lineFour, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            var preparation = warmup.length() > 0 ? "EIN: " + compactText(warmup, 25) : "";
+            var finish = cooldown.length() > 0 ? "AUS: " + compactText(cooldown, 25) : "";
+            var bottomInfo = preparation;
+            if (finish.length() > 0) {
+                bottomInfo = bottomInfo.length() > 0 ? bottomInfo + "  ·  " + finish : finish;
             }
-        } else if (description.length() > 0) {
-            if (description.length() > 72) { description = description.substring(0, 69) + "..."; }
-            drawCentered(dc, center, unit * 0.825, description, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            if (bottomInfo.length() > 0) {
+                drawCentered(dc, center, unit * 0.855, bottomInfo, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            } else if (notes.length() > 0) {
+                drawCentered(dc, center, unit * 0.855, compactText(notes, 48), contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            }
         }
 
         drawCentered(dc, center, unit * 0.94, "ZURUECK", unit * 0.55, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
