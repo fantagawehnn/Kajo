@@ -1,11 +1,12 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.Math;
 import Toybox.WatchUi;
 
 class KajoConnectMenuView extends WatchUi.View {
 
     var mHomeView as KajoConnectView;
-    var mLayout as KajoLayout;
+    var mKajoLayout as KajoLayout;
     var mWidth as Lang.Number = 0;
     var mHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
