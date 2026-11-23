@@ -105,29 +105,9 @@ class KajoConnectActivityView extends WatchUi.View {
         return "GPS-GENAUIGKEIT";
     }
 
-    function getCustomMetricValue(metricId as Lang.String,
-        speedNow as Lang.String, speedAvg as Lang.String, speedMax as Lang.String,
-        hrNow as Lang.String, hrAvg as Lang.String, hrMax as Lang.String,
-        distance as Lang.String, elapsed as Lang.String, calories as Lang.String,
-        cadence as Lang.String, power as Lang.String, trainingEffect as Lang.String,
-        altitude as Lang.String, ascent as Lang.String, descent as Lang.String,
-        gpsAccuracy as Lang.String) as Lang.String {
-        if (metricId == "speedNow") { return speedNow; }
-        if (metricId == "speedAvg") { return speedAvg; }
-        if (metricId == "speedMax") { return speedMax; }
-        if (metricId == "heartRate") { return hrNow; }
-        if (metricId == "heartRateAvg") { return hrAvg; }
-        if (metricId == "heartRateMax") { return hrMax; }
-        if (metricId == "distance") { return distance; }
-        if (metricId == "elapsed") { return elapsed; }
-        if (metricId == "calories") { return calories; }
-        if (metricId == "cadence") { return cadence; }
-        if (metricId == "power") { return power; }
-        if (metricId == "trainingEffect") { return trainingEffect; }
-        if (metricId == "altitude") { return altitude; }
-        if (metricId == "ascent") { return ascent; }
-        if (metricId == "descent") { return descent; }
-        return gpsAccuracy;
+    function getCustomMetricValue(metricId as Lang.String, values as Lang.Dictionary) as Lang.String {
+        var value = values[metricId];
+        return value == null ? "--" : value.toString();
     }
 
     function getCustomMetricUnit(metricId as Lang.String) as Lang.String {
@@ -142,20 +122,13 @@ class KajoConnectActivityView extends WatchUi.View {
         return "";
     }
 
-    function drawCustomMetricPage(dc as Dc, cx, speedNow as Lang.String,
-        speedAvg as Lang.String, speedMax as Lang.String, hrNow as Lang.String,
-        hrAvg as Lang.String, hrMax as Lang.String, distance as Lang.String,
-        elapsed as Lang.String, calories as Lang.String, cadence as Lang.String,
-        power as Lang.String, trainingEffect as Lang.String, altitude as Lang.String,
-        ascent as Lang.String, descent as Lang.String, gpsAccuracy as Lang.String) as Void {
+    function drawCustomMetricPage(dc as Dc, cx, values as Lang.Dictionary) as Void {
         drawPageHeader(dc, "MEINE DATEN");
         var count = mCustomMetricIds.size();
         for (var i = 0; i < count && i < 4; i += 1) {
             var metricId = mCustomMetricIds[i];
             var label = getCustomMetricLabel(metricId);
-            var value = getCustomMetricValue(metricId, speedNow, speedAvg, speedMax,
-                hrNow, hrAvg, hrMax, distance, elapsed, calories, cadence, power,
-                trainingEffect, altitude, ascent, descent, gpsAccuracy);
+            var value = getCustomMetricValue(metricId, values);
             var unit = getCustomMetricUnit(metricId);
             var x = cx;
             var y = mUnit * 0.40;
@@ -467,9 +440,25 @@ class KajoConnectActivityView extends WatchUi.View {
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "ZEIT", elapsed, "", mUnit * 0.39, Graphics.FONT_MEDIUM);
             drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "KALORIEN", calories, "KCAL", mUnit * 0.39, Graphics.FONT_MEDIUM);
         } else if (mCurrentPageId == 5) {
-            drawCustomMetricPage(dc, cx, speedNow, speedAvg, speedMax, hrNow,
-                hrAvg, hrMax, distance, elapsed, calories, cadenceNow, powerNow,
-                trainingEffect, altitude, ascent, descent, gpsAccuracy);
+            var customMetricValues = {
+                "speedNow" => speedNow,
+                "speedAvg" => speedAvg,
+                "speedMax" => speedMax,
+                "heartRate" => hrNow,
+                "heartRateAvg" => hrAvg,
+                "heartRateMax" => hrMax,
+                "distance" => distance,
+                "elapsed" => elapsed,
+                "calories" => calories,
+                "cadence" => cadenceNow,
+                "power" => powerNow,
+                "trainingEffect" => trainingEffect,
+                "altitude" => altitude,
+                "ascent" => ascent,
+                "descent" => descent,
+                "gpsAccuracy" => gpsAccuracy
+            };
+            drawCustomMetricPage(dc, cx, customMetricValues);
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.245, "KADENZ", cadenceNow, "RPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
