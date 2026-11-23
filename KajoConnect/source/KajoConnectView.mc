@@ -303,31 +303,22 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) {
-        // Die Sportart-/Bootsklasse bleibt direkt im Header waehlbar.
         if (y >= mBoatTop && y <= mBoatBottom &&
             x >= mBoatLeft && x <= mBoatRight) {
             var relativeX = x - mBoatLeft;
             var third = (mBoatRight - mBoatLeft) / 3;
-            if (relativeX < third) {
-                mSelectedBoat = "K1";
-            } else if (relativeX < (third * 2)) {
-                mSelectedBoat = "C1";
-            } else {
-                mSelectedBoat = "C2";
-            }
+            if (relativeX < third) { mSelectedBoat = "K1"; }
+            else if (relativeX < (third * 2)) { mSelectedBoat = "C1"; }
+            else { mSelectedBoat = "C2"; }
             WatchUi.requestUpdate();
             return;
         }
-
-        // Die gesamte Trainingskachel oeffnet den heutigen Trainingseinstieg.
         if (y >= mStartTop && y <= mStartBottom) {
             startActivity();
             return;
         }
-
-        // Scrollbare Trainingsliste: Freies Training, Plan, Historie, Einstellungen.
         if (y >= mFreeTop && y <= mFreeBottom) {
-            var row = Math.floor((y - mFreeTop) / (mUnit * 0.067)).toNumber();
+            var row = Math.floor((y - mFreeTop) / (mUnit * 0.073)).toNumber();
             var index = mMenuStartIndex + row;
             if (index == 0) {
                 openActivityView(null);
@@ -338,11 +329,7 @@ class KajoConnectView extends WatchUi.View {
                 WatchUi.showToast("Trainingshistorie ist noch nicht verfuegbar", null);
             } else if (index == 3) {
                 var menuView = new KajoConnectMenuView(self);
-                WatchUi.pushView(
-                    menuView,
-                    new KajoConnectMenuViewDelegate(menuView),
-                    WatchUi.SLIDE_UP
-                );
+                WatchUi.pushView(menuView, new KajoConnectMenuViewDelegate(menuView), WatchUi.SLIDE_UP);
             }
         }
     }
