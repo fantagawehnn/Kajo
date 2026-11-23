@@ -141,7 +141,7 @@ class KajoConnectPairingView extends WatchUi.View {
         var width = dc.getWidth();
         var height = dc.getHeight();
         var unit = width;
-        if (height < unit) unit = height;
+        if (height < unit) { unit = height; }
         var center = width / 2;
         var contentWidth = unit * 0.78;
 
@@ -154,7 +154,7 @@ class KajoConnectPairingView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
             var codeFont = Graphics.FONT_MEDIUM;
             var codeText = formatCode();
-            if (dc.getTextWidthInPixels(codeText, codeFont) > contentWidth) codeFont = Graphics.FONT_SMALL;
+            if (dc.getTextWidthInPixels(codeText, codeFont) > contentWidth) { codeFont = Graphics.FONT_SMALL; }
             dc.drawText(center, unit * 0.39, codeFont, codeText, Graphics.TEXT_JUSTIFY_CENTER);
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
             dc.drawText(center, unit * 0.52, Graphics.FONT_XTINY, "KAJO APP OEFFNEN UND CODE EINGEBEN", Graphics.TEXT_JUSTIFY_CENTER);
