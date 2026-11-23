@@ -315,7 +315,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var colors = [0x20D98A, 0x8BE34A, 0xE3E84A, 0xFFB52E, 0xF04455];
         var startAngle = -132.0;
         for (var segment = 0; segment < 5; segment += 1) {
-            var segmentColor = 0x39434A;
+            var segmentColor = [0x155A43, 0x426A2B, 0x777A28, 0x80551D, 0x762A35][segment];
             if (zone == segment + 1) { segmentColor = colors[segment]; }
             dc.setColor(segmentColor, Graphics.COLOR_BLACK);
             var previousX = centerX + (Math.cos(startAngle * 0.0174533) * radius);
