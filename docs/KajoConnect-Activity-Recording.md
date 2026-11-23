@@ -27,7 +27,11 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät ges
 
 **Wichtige Abgrenzung:** Die Intervall-/Schrittstruktur wird nicht übertragen, solange sie nicht in tatsächlich gespeicherten Planobjekten belegt ist. Die Kopplungs- und Synchronisierungslogik ist im Branch vorbereitet, aber noch nicht kompiliert, deployed oder am Gerät getestet.
 
-## 3. Bedienung und Aufzeichnung
+## 3. Sportklassifizierung in der FIT-Aufzeichnung
+
+Die FIT-Session wird mit `Activity.SPORT_KAYAKING` und `Activity.SUB_SPORT_WHITEWATER` angelegt. Die gewählte Bootsklasse bleibt im Session-Profilnamen `KAJO K1`, `KAJO C1` oder `KAJO C2` enthalten. Garmin stellt Kayaking und Whitewater als eigene Sport-/Subsportwerte bereit. Die sichtbare Aktivitätsüberschrift in Garmin Connect kann dennoch von dessen Aktivitätsbenennung abhängen und muss mit einer echten Synchronisierung geprüft werden.
+
+## 4. Bedienung und Aufzeichnung
 
 - Datenseiten während der Aufzeichnung vertikal nach oben/unten wechseln.
 - Obere physische Taste (`KEY_ENTER` bzw. `KEY_START`): startet die Aufzeichnung beziehungsweise beendet und speichert sie.
@@ -35,7 +39,7 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät ges
 - Die Touch-Schaltflächen „RUNDE“ und „ENDE“ bleiben als zusätzliche Bedienmöglichkeit verfügbar.
 - Bootsklasse wird im Startmenü ausgewählt und nicht als Aktivitätsüberschrift angezeigt.
 
-## 4. Noch offen
+## 5. Noch offen
 
 - Automatische Aktualisierung des Trainingsplans beim Anzeigen der Startseite ist im Branch vorbereitet; Verbindung und Offline-Cache sind noch nicht end-to-end getestet.
 - Darstellung strukturierter Intervalle, sobald ein entsprechendes Datenmodell in KAJO existiert.
@@ -44,7 +48,7 @@ Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät ges
 - Hardware-Tastensteuerung ist im Branch implementiert; die tatsächliche Tastenbelegung muss noch auf Venu 3S und Venu 2 Plus geprüft werden.
 - Direkter Upload von FIT-Daten zur KAJO-API und eine Upload-Queue sind nicht implementiert. Pairing und lesende Synchronisierung sind im Branch vorbereitet.
 
-## 5. Test
+## 6. Test
 
 1. `git pull origin feature/kajo-connect`
 2. Build mit `Monkey C: Build for Device` für `venu3s`.
