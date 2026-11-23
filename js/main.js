@@ -503,7 +503,7 @@ function collectGarminSummaryActivityIds(value, ids, audit, depth = 0) {
                 if (!activity || typeof activity !== 'object' || Array.isArray(activity)) continue;
                 audit.records++;
                 const id = activity.activityId ?? activity.id;
-                if (id !== null && id !== undefined && /^\\d+$/.test(String(id))) {
+                if (id !== null && id !== undefined && /^\d+$/.test(String(id))) {
                     ids.add(String(id));
                     audit.withValidId++;
                 } else {
@@ -524,11 +524,11 @@ function getKajoGarminActivityId(activity) {
     const explicit = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
     if (explicit !== null && explicit !== undefined) {
         const id = String(explicit).replace(/^garmin-/, '');
-        return /^\\d+$/.test(id) ? id : null;
+        return /^\d+$/.test(id) ? id : null;
     }
     if (activity?.source === 'garmin' || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'))) {
         const id = String(activity?.id ?? '').replace(/^garmin-/, '');
-        return /^\\d+$/.test(id) ? id : null;
+        return /^\d+$/.test(id) ? id : null;
     }
     return null;
 }
