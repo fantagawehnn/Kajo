@@ -91,6 +91,49 @@ class KajoLayout {
         return Math.round(y).toNumber();
     }
 
+    function drawTextFit(dc as Dc, x, y, text as Lang.String,
+        maxWidth, preferredFont, color as Lang.Number) as Void {
+        if (text.length() == 0 || maxWidth <= 0) { return; }
+
+        // Texte werden innerhalb ihrer vorgesehenen Zeile gehalten.
+        // Vertikale Positionen werden nicht verschoben, da das sonst
+        // benachbarte Zeilen uebereinander schieben koennte.
+        var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var textHeight = dc.getFontHeight(font);
+        var textY = Math.round(y).toNumber();
+        if (textY < 0 || textY + textHeight > dc.getHeight()) { return; }
+
+        var availableWidth = safeTextWidth(
+            dc, x.toNumber(), textY, font, maxWidth.toNumber()
+        );
+        font = fitFont(dc, text, availableWidth, font);
+        textHeight = dc.getFontHeight(font);
+        if (textY + textHeight > dc.getHeight()) { return; }
+        availableWidth = safeTextWidth(
+            dc, x.toNumber(), textY, font, maxWidth.toNumber()
+        );
+
+        var displayText = text;
+        while (displayText.length() > 0 &&
+            dc.getTextWidthInPixels(displayText, font) > availableWidth) {
+            if (displayText.length() <= 4) {
+                displayText = "";
+            } else {
+                displayText = displayText.substring(0, displayText.length() - 4) + "...";
+            }
+        }
+
+        if (displayText.length() == 0 || availableWidth <= 0) { return; }
+        dc.setColor(color, Graphics.COLOR_BLACK);
+        dc.drawText(
+            Math.round(x).toNumber(),
+            textY,
+            font,
+            displayText,
+            Graphics.TEXT_JUSTIFY_CENTER
+        );
+    }
+
     function safeRectWidthAt(x, top, height,
         requestedWidth) as Lang.Number {
         var margin = mUnit * 0.01;
