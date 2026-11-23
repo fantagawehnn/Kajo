@@ -38,3 +38,12 @@ test('merges split rows while retaining legacy-only activities', () => {
     assert.equal(merged.find(item => item.id === 'b').name, 'legacy B');
     assert.equal(merged.find(item => item.id === 'c').name, 'cloud C');
 });
+
+
+test('activity manifest prevents deleted cloud rows from reappearing', () => {
+    const merged = mergeCloudActivities([], [
+        { record_id: 'kept', payload: { id: 'kept' } },
+        { record_id: 'deleted', payload: { id: 'deleted' } }
+    ], ['kept']);
+    assert.deepEqual(merged, [{ id: 'kept' }]);
+});
