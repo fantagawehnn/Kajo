@@ -31,8 +31,19 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        var displayText = text;
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+            if (displayText.length() <= 4) { displayText = ""; }
+            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
+        }
+        if (displayText == "") { return; }
+        var safeY = y;
+        var textHeight = dc.getFontHeight(font);
+        var maxHeight = dc.getHeight();
+        if (safeY < 2) { safeY = 2; }
+        if (safeY + textHeight > maxHeight - 2) { safeY = maxHeight - textHeight - 2; }
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x).toNumber(), Math.round(y).toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
