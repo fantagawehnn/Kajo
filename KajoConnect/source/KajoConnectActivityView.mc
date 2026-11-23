@@ -664,16 +664,17 @@ class KajoConnectActivityView extends WatchUi.View {
             "DISTANZ", mUnit * 0.34, Graphics.FONT_XTINY, muted);
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
         dc.drawLine(left.toNumber(), (mUnit * 0.655).toNumber(),
-            right.toNumber(), (mUnit * 0.715).toNumber());
+            right.toNumber(), (mUnit * 0.655).toNumber());
 
-        // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
+        // Herzfrequenz als klar getrennte Dreiergruppe: Symbol, Messwert,
+        // Einheit. Die Textbereiche ueberlappen sich nicht mehr.
         dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
-        drawFit(dc, mUnit * 0.16, mUnit * 0.665, "♥",
-            mUnit * 0.10, Graphics.FONT_SMALL, 0xFFFF2A2A);
-        drawFit(dc, mUnit * 0.34, mUnit * 0.665, hrNow,
-            mUnit * 0.25, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, mUnit * 0.43, mUnit * 0.68, "bpm", 
-            mUnit * 0.16, Graphics.FONT_XTINY, muted);
+        drawFit(dc, mUnit * 0.20, mUnit * 0.665, "♥",
+            mUnit * 0.085, Graphics.FONT_SMALL, 0xFFFF2A2A);
+        drawFit(dc, mUnit * 0.39, mUnit * 0.665, hrNow,
+            mUnit * 0.18, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawFit(dc, mUnit * 0.56, mUnit * 0.68, "bpm",
+            mUnit * 0.12, Graphics.FONT_XTINY, muted);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
         var barLeft = mUnit * 0.16;
