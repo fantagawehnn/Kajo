@@ -1,0 +1,100 @@
+import Toybox.Graphics;
+import Toybox.Lang;
+import Toybox.Math;
+
+class KajoLayout {
+
+    var mWidth as Lang.Number = 0;
+    var mHeight as Lang.Number = 0;
+    var mUnit as Lang.Number = 0;
+    var mCenterX as Lang.Number = 0;
+    var mCenterY as Lang.Number = 0;
+    var mRadius as Lang.Number = 0;
+
+    function initialize() {
+    }
+
+    function configure(width as Lang.Number, height as Lang.Number) as Void {
+        mWidth = width;
+        mHeight = height;
+        mUnit = width < height ? width : height;
+        mCenterX = width / 2;
+        mCenterY = height / 2;
+        mRadius = mUnit * 0.465;
+    }
+
+    function fontPercent(preferredFont) as Lang.Number {
+        if (preferredFont == Graphics.FONT_NUMBER_HOT) { return 0.105; }
+        if (preferredFont == Graphics.FONT_NUMBER_MEDIUM) { return 0.085; }
+        if (preferredFont == Graphics.FONT_LARGE) { return 0.075; }
+        if (preferredFont == Graphics.FONT_MEDIUM) { return 0.065; }
+        if (preferredFont == Graphics.FONT_SMALL) { return 0.055; }
+        if (preferredFont == Graphics.FONT_TINY) { return 0.045; }
+        return 0.035;
+    }
+
+    function fontForPercent(dc as Dc, percent as Lang.Number) {
+        var targetHeight = mUnit * percent;
+        var fonts = [
+            Graphics.FONT_XTINY,
+            Graphics.FONT_TINY,
+            Graphics.FONT_SMALL,
+            Graphics.FONT_MEDIUM,
+            Graphics.FONT_LARGE,
+            Graphics.FONT_NUMBER_MEDIUM,
+            Graphics.FONT_NUMBER_HOT
+        ];
+        var selected = Graphics.FONT_XTINY;
+        for (var i = 0; i < fonts.size(); i += 1) {
+            var candidate = fonts[i];
+            if (dc.getFontHeight(candidate) <= targetHeight) { selected = candidate; }
+        }
+        return selected;
+    }
+
+    function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
+        var font = fontForPercent(dc, fontPercent(preferredFont));
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        return font;
+    }
+
+    function safeWidthAt(x as Lang.Number, y as Lang.Number, requestedWidth as Lang.Number) as Lang.Number {
+        var dy = y - mCenterY;
+        var remaining = (mRadius * mRadius) - (dy * dy);
+        if (remaining <= 0) { return 0; }
+        var halfChord = Math.sqrt(remaining);
+        var margin = mUnit * 0.035;
+        var left = mCenterX - halfChord + margin;
+        var right = mCenterX + halfChord - margin;
+        var availableLeft = x - left;
+        var availableRight = right - x;
+        var available = availableLeft < availableRight ? availableLeft : availableRight;
+        available = available * 2;
+        if (available < 0) { return 0; }
+        return available < requestedWidth ? available : requestedWidth;
+    }
+
+    function safeTextWidth(dc as Dc, x as Lang.Number, y as Lang.Number,
+        font, requestedWidth as Lang.Number) as Lang.Number {
+        return safeWidthAt(x, y + (dc.getFontHeight(font) / 2), requestedWidth);
+    }
+
+    function safeTextY(y as Lang.Number, textHeight as Lang.Number) as Lang.Number {
+        var margin = mUnit * 0.035;
+        var top = mCenterY - mRadius + margin;
+        var bottom = mCenterY + mRadius - margin - textHeight;
+        if (y < top) { return top; }
+        if (y > bottom) { return bottom; }
+        return y;
+    }
+
+    function safeRectWidth(top as Lang.Number, height as Lang.Number,
+        requestedWidth as Lang.Number) as Lang.Number {
+        var margin = mUnit * 0.01;
+        var topWidth = safeWidthAt(mCenterX, top + margin, requestedWidth);
+        var bottomWidth = safeWidthAt(mCenterX, top + height - margin, requestedWidth);
+        return topWidth < bottomWidth ? topWidth : bottomWidth;
+    }
+}
