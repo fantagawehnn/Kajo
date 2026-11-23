@@ -70,6 +70,7 @@ export function buildWeeklyPlanCalendarEntries(plan, existingEntries = []) {
             mainSet: session.mainSet || '',
             cooldown: session.cooldown || '',
             notes: session.notes || '',
+            steps: Array.isArray(session.steps) ? session.steps.map(step => ({...step})) : [],
             sourceWeeklyPlanId: plan.id,
             sourceWeeklySessionId: session.id
         });
