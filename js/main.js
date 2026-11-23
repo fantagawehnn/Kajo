@@ -2332,13 +2332,24 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         const local = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        const legacyActivities = (Array.isArray(cloud.data.activities) ? cloud.data.activities : []).map(activity => {
+            if (!activity || typeof activity !== 'object') return activity;
+            const compact = { ...activity };
+            delete compact.garminTelemetry;
+            return compact;
+        });
         const expandedCloud = {
             ...cloud.data,
             activities: mergeCloudActivities(
-                cloud.data.activities,
+                legacyActivities,
                 cloudActivities,
                 Array.isArray(cloud.data.activityIds) ? cloud.data.activityIds : null
-            )
+            ).map(activity => {
+                if (!activity || typeof activity !== 'object') return activity;
+                const compact = { ...activity };
+                delete compact.garminTelemetry;
+                return compact;
+            })
         };
         const merged = mergeCloudSnapshots(baselineSnapshot, local, expandedCloud);
         if (merged.conflicts.length) {
