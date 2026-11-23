@@ -1,6 +1,7 @@
 -- DRAFT ONLY — NOT APPLIED TO THE LIVE SUPABASE PROJECT.
 -- These tables are accessed exclusively by the kajo-connect Edge Function
--- using the service-role key. No client-side Supabase access is required.
+-- using the service-role key. Pairing code hashes are HMAC-SHA-256 with a server pepper.
+-- No client-side Supabase access is required.
 
 create table if not exists public.kajo_connect_devices (
   id uuid primary key default gen_random_uuid(),
