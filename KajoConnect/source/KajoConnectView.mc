@@ -395,33 +395,33 @@ class KajoConnectView extends WatchUi.View {
             (cx - mUnit * 0.025).toNumber(), (mUnit * 0.09).toNumber());
         dc.drawLine((cx - mUnit * 0.09).toNumber(), (mUnit * 0.105).toNumber(),
             (cx - mUnit * 0.055).toNumber(), (mUnit * 0.095).toNumber());
-        drawCentered(dc, cx + (mUnit * 0.045), mUnit * 0.105, "KAJO",
+        drawCentered(dc, cx + (mUnit * 0.045), mUnit * 0.085, "KAJO",
             mUnit * 0.45, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.165, "SPORTART:",
+        drawCentered(dc, cx, mUnit * 0.135, "SPORTART:",
             mUnit * 0.55, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         var sportLabel = mSelectedBoat + "  •  WILDWASSER";
-        mBoatTop = mUnit * 0.205;
-        mBoatBottom = mUnit * 0.275;
+        mBoatTop = mUnit * 0.17;
+        mBoatBottom = mUnit * 0.235;
         mBoatLeft = cx - (mUnit * 0.36);
         mBoatRight = cx + (mUnit * 0.36);
-        drawCentered(dc, cx, mUnit * 0.205, sportLabel,
+        drawCentered(dc, cx, mUnit * 0.17, sportLabel,
             mUnit * 0.70, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawCircle((cx + mUnit * 0.275).toNumber(), (mUnit * 0.235).toNumber(),
+        dc.drawCircle((cx + mUnit * 0.275).toNumber(), (mUnit * 0.20).toNumber(),
             (mUnit * 0.014).toNumber());
-        dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.227).toNumber(),
+        dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.192).toNumber(),
             (cx + mUnit * 0.272).toNumber(), (mUnit * 0.255).toNumber());
         dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.227).toNumber(),
             (cx + mUnit * 0.282).toNumber(), (mUnit * 0.247).toNumber());
         dc.drawLine((cx + mUnit * 0.282).toNumber(), (mUnit * 0.235).toNumber(),
             (cx + mUnit * 0.272).toNumber(), (mUnit * 0.255).toNumber());
-        drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.252, "AKTIV",
+        drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.218, "AKTIV",
             mUnit * 0.25, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         // Hero-Kachel: Inhalte stammen aus dem synchronisierten Tagesplan.
         var cardX = cx - (mUnit * 0.405);
-        var cardY = mUnit * 0.30;
+        var cardY = mUnit * 0.255;
         var cardHeight = mUnit * 0.18;
         var cardWidth = mKajoLayout.safeRectWidth(cardY, cardHeight, mUnit * 0.81);
         cardX = cx - (cardWidth / 2);
@@ -465,7 +465,7 @@ class KajoConnectView extends WatchUi.View {
         mStartBottom = cardY + cardHeight;
 
         // Trenner und Scroll-Hinweis.
-        var dividerY = mUnit * 0.525;
+        var dividerY = mUnit * 0.52;
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
         dc.drawLine((mUnit * 0.12).toNumber(), dividerY.toNumber(),
             (mUnit * 0.88).toNumber(), dividerY.toNumber());
