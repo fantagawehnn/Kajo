@@ -36,7 +36,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (mSessions.size() == 0) {
+        if (mSessions.size() == 0 || y > mUnit * 0.82) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
@@ -46,14 +46,8 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             if (index < mSessions.size()) {
                 var selected = mSessions[index] as Lang.Dictionary;
                 var workoutView = new KajoConnectWorkoutView(selected, mHomeView);
-                WatchUi.pushView(
-                    workoutView,
-                    new KajoConnectWorkoutDelegate(workoutView),
-                    WatchUi.SLIDE_UP
-                );
+                WatchUi.pushView(workoutView, new KajoConnectWorkoutDelegate(workoutView), WatchUi.SLIDE_UP);
             }
-        } else if (y > mUnit * 0.86) {
-            WatchUi.popView(WatchUi.SLIDE_DOWN);
         }
     }
 
