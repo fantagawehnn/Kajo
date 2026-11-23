@@ -19,7 +19,7 @@ const KAJO_CONNECT_METRICS = [
     ['altitude', 'Höhe'],
     ['ascent', 'Anstieg'],
     ['descent', 'Abstieg'],
-    ['gpsAccuracy', 'GPS-Genauigkeit']
+    ['gpsAccuracy', 'GPS-Qualitaet']
 ];
 
 let displayLayoutsDraft = null;
