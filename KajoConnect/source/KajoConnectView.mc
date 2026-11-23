@@ -31,6 +31,13 @@ class KajoConnectView extends WatchUi.View {
     function initialize() {
         View.initialize();
         mApi = new KajoConnectApi();
+        var cachedSessions = Storage.getValue("kajoPlannedSessions");
+        if (cachedSessions != null) {
+            mPlannedSessions = cachedSessions as Lang.Array<Lang.Dictionary>;
+            if (mPlannedSessions.size() > 0) {
+                mSyncStatus = "GESPEICHERTER TRAININGSPLAN";
+            }
+        }
     }
 
     function onShow() as Void {
@@ -49,7 +56,9 @@ class KajoConnectView extends WatchUi.View {
     function syncFromKajo() as Void {
         var token = Storage.getValue("kajoDeviceToken");
         if (token == null || token.toString().length() == 0) {
-            mSyncStatus = "NICHT MIT KAJO VERBUNDEN";
+            mSyncStatus = mPlannedSessions.size() > 0
+                ? "GESPEICHERTER TRAININGSPLAN"
+                : "NICHT MIT KAJO VERBUNDEN";
             WatchUi.requestUpdate();
             return;
         }
@@ -66,7 +75,9 @@ class KajoConnectView extends WatchUi.View {
 
     function onSyncResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
         if (responseCode != 200 || data == null) {
-            mSyncStatus = responseCode == 401 ? "GERAET NICHT AUTORISIERT" : "KAJO NICHT ERREICHBAR";
+            mSyncStatus = mPlannedSessions.size() > 0
+                ? "OFFLINE · GESPEICHERTER PLAN"
+                : responseCode == 401 ? "GERAET NICHT AUTORISIERT" : "KAJO NICHT ERREICHBAR";
             WatchUi.requestUpdate();
             return;
         }
@@ -78,6 +89,7 @@ class KajoConnectView extends WatchUi.View {
         } else {
             mPlannedSessions = [];
         }
+        Storage.setValue("kajoPlannedSessions", mPlannedSessions);
 
         var zoneInfo = data["heartRateZones"];
         var zoneValues as Lang.Array<Lang.Number> = [];
