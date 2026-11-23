@@ -82,6 +82,32 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    // Aktion der oberen physischen Taste.
+    function handlePrimaryButton() as Void {
+        if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
+            startRecording();
+        } else if (mStatus == "AUFZEICHNUNG") {
+            finishRecording();
+        } else if (mStatus == "GESPEICHERT" || mStatus == "SPEICHERN FEHLGESCHLAGEN") {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+        }
+    }
+
+    // Aktion der unteren physischen Taste. true bedeutet: Taste wurde
+    // als Rundenmarkierung verarbeitet; false lässt die Zurück-Funktion zu.
+    function handleLapButton() as Lang.Boolean {
+        if (mStatus != "AUFZEICHNUNG") {
+            return false;
+        }
+
+        if (mEngine.addLap()) {
+            WatchUi.showToast("Runde gespeichert", null);
+        } else {
+            WatchUi.showToast("Runde konnte nicht gespeichert werden", null);
+        }
+        return true;
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y < mButtonTop || y > mButtonBottom) { return; }
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
