@@ -101,8 +101,8 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             (mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber());
         dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
             (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
-        drawCentered(dc, cx, mUnit * 0.09, "TRAININGSPLAN", mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.16,
+        drawCentered(dc, cx, mUnit * 0.075, "TRAININGSPLAN", mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawCentered(dc, cx, mUnit * 0.135,
             mSessions.size().toString() + " GEPLANTE EINHEITEN",
             mUnit * 0.70, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
