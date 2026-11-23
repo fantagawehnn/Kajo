@@ -2385,8 +2385,14 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 continue;
             }
             if (cloudActivityRowsById.has(activityId)) {
+                // Der Drei-Wege-Abgleich oben hat bereits geprüft, ob lokale und
+                // Cloud-Änderungen auf denselben Feldern kollidieren. Wenn er eine
+                // konfliktfreie kombinierte Aktivität liefert, muss genau diese
+                // Version auch in die separate activities-Tabelle geschrieben
+                // werden. Ein zweiter Vollobjektvergleich würde selbst harmlose,
+                // unabhängige Änderungen fälschlich als Konflikt blockieren.
                 if (!cloudSnapshotsEqual(activity, cloudActivityRowsById.get(activityId))) {
-                    activityConflicts.push('activities[' + activityId + '] (lokale Änderung an bestehender Cloud-Aktivität)');
+                    activitiesToUpload.push(activity);
                 }
             } else {
                 activitiesToUpload.push(activity);
