@@ -2424,15 +2424,42 @@ async function flushCloudSync() {
         if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
 
         if (!result.saved) {
-            cloudSyncBlocked = true;
+            const baseline = await loadCloudSyncBaseline();
+            const latestCloud = await fetchCloudSnapshot();
+            if (activeAppUserId !== userId || latestCloud.userId !== userId) return;
+            const reconciliation = await reconcileCloudState(
+                userId,
+                latestCloud,
+                JSON.parse(JSON.stringify(getUserDataSnapshot())),
+                baseline
+            );
+            if (!reconciliation.ok) {
+                cloudSyncBlocked = true;
+                cloudInitialTransferState = 'exists';
+                const details = reconciliation.conflicts?.length
+                    ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 4).join('; ') + (reconciliation.conflicts.length > 4 ? ' …' : '')
+                    : '';
+                setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
+                setCloudTransferMessage('KAJO hat abweichende Änderungen erkannt und keine davon automatisch überschrieben.' + details);
+                console.warn('Cloud-Abgleich benötigt eine Konfliktentscheidung:', reconciliation);
+                return;
+            }
+            cloudSyncVersion = reconciliation.version;
+            cloudSyncBlocked = false;
             cloudInitialTransferState = 'exists';
-            setCloudSyncStatus('Synchronisationskonflikt – Cloud-Daten sind geschützt; es wurde nichts überschrieben.');
-            setCloudTransferMessage('Ein anderer Speicherstand wurde zwischenzeitlich geändert. Die automatische Synchronisierung wurde angehalten, damit keine Daten überschrieben werden.');
-            console.warn('Cloud-Synchronisierung wegen Versionskonflikt angehalten.', result);
+            saveSucceeded = true;
+            setCloudSyncStatus('Geräte abgeglichen (Cloud-Version ' + cloudSyncVersion + ').');
+            setCloudTransferMessage('Lokale und Cloud-Daten wurden automatisch abgeglichen. Neue Einträge wurden ergänzt; widersprüchliche Änderungen wurden nicht überschrieben.');
+            initEngine();
             return;
         }
 
         cloudSyncVersion = result.currentVersion;
+        try {
+            await saveCloudSyncBaseline(snapshot);
+        } catch (baselineError) {
+            console.warn('Cloud-Daten wurden gespeichert, aber der lokale Synchronisierungs-Basisstand konnte nicht aktualisiert werden:', baselineError);
+        }
         saveSucceeded = true;
         setCloudSyncStatus(telemetryUpload.failed
             ? 'App-Daten in Cloud gespeichert; Garmin-Telemetrie wartet auf erneuten Versuch.'
