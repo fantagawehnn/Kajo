@@ -23,6 +23,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mPageCount = 5;
     var mEnabledPageIds as Lang.Array<Lang.Number> = [0, 1, 2, 3, 4];
     var mCurrentPageId = 0;
+    var mCustomMetricIds as Lang.Array<Lang.String> = [];
     // KAJO liefert die vier oberen Zonengrenzen; die Uhr berechnet keine eigenen Zonen.
     var mHeartRateZones as Lang.Array<Lang.Number> = [];
 
@@ -43,7 +44,12 @@ class KajoConnectActivityView extends WatchUi.View {
             }
         }
         if (mEnabledPageIds.size() == 0) { mEnabledPageIds = [0]; }
-        mPageCount = mEnabledPageIds.size();
+        var savedMetrics = Storage.getValue("kajoCustomMetrics");
+        mCustomMetricIds = [];
+        if (savedMetrics != null) {
+            mCustomMetricIds = savedMetrics as Lang.Array<Lang.String>;
+        }
+        mPageCount = mEnabledPageIds.size() + (mCustomMetricIds.size() > 0 ? 1 : 0);
         mPage = 0;
     }
 
@@ -78,6 +84,100 @@ class KajoConnectActivityView extends WatchUi.View {
             }
         }
         return 5;
+    }
+
+    function getCustomMetricLabel(metricId as Lang.String) as Lang.String {
+        if (metricId == "speedNow") { return "GESCHWINDIGKEIT"; }
+        if (metricId == "speedAvg") { return "DURCHSCHNITTSTEMPO"; }
+        if (metricId == "speedMax") { return "MAXIMALGESCHWINDIGKEIT"; }
+        if (metricId == "heartRate") { return "HERZFREQUENZ"; }
+        if (metricId == "heartRateAvg") { return "HF DURCHSCHNITT"; }
+        if (metricId == "heartRateMax") { return "HF MAXIMUM"; }
+        if (metricId == "distance") { return "DISTANZ"; }
+        if (metricId == "elapsed") { return "ZEIT"; }
+        if (metricId == "calories") { return "KALORIEN"; }
+        if (metricId == "cadence") { return "KADENZ"; }
+        if (metricId == "power") { return "LEISTUNG"; }
+        if (metricId == "trainingEffect") { return "TRAINING EFFECT"; }
+        if (metricId == "altitude") { return "HOEHE"; }
+        if (metricId == "ascent") { return "ANSTIEG"; }
+        if (metricId == "descent") { return "ABSTIEG"; }
+        return "GPS-GENAUIGKEIT";
+    }
+
+    function getCustomMetricValue(metricId as Lang.String,
+        speedNow as Lang.String, speedAvg as Lang.String, speedMax as Lang.String,
+        hrNow as Lang.String, hrAvg as Lang.String, hrMax as Lang.String,
+        distance as Lang.String, elapsed as Lang.String, calories as Lang.String,
+        cadence as Lang.String, power as Lang.String, trainingEffect as Lang.String,
+        altitude as Lang.String, ascent as Lang.String, descent as Lang.String,
+        gpsAccuracy as Lang.String) as Lang.String {
+        if (metricId == "speedNow") { return speedNow; }
+        if (metricId == "speedAvg") { return speedAvg; }
+        if (metricId == "speedMax") { return speedMax; }
+        if (metricId == "heartRate") { return hrNow; }
+        if (metricId == "heartRateAvg") { return hrAvg; }
+        if (metricId == "heartRateMax") { return hrMax; }
+        if (metricId == "distance") { return distance; }
+        if (metricId == "elapsed") { return elapsed; }
+        if (metricId == "calories") { return calories; }
+        if (metricId == "cadence") { return cadence; }
+        if (metricId == "power") { return power; }
+        if (metricId == "trainingEffect") { return trainingEffect; }
+        if (metricId == "altitude") { return altitude; }
+        if (metricId == "ascent") { return ascent; }
+        if (metricId == "descent") { return descent; }
+        return gpsAccuracy;
+    }
+
+    function getCustomMetricUnit(metricId as Lang.String) as Lang.String {
+        if (metricId == "speedNow" || metricId == "speedAvg" || metricId == "speedMax") { return "KM/H"; }
+        if (metricId == "heartRate" || metricId == "heartRateAvg" || metricId == "heartRateMax") { return "BPM"; }
+        if (metricId == "distance") { return "KM"; }
+        if (metricId == "calories") { return "KCAL"; }
+        if (metricId == "cadence") { return "RPM"; }
+        if (metricId == "power") { return "W"; }
+        if (metricId == "altitude" || metricId == "ascent" || metricId == "descent") { return "M"; }
+        if (metricId == "gpsAccuracy") { return "M"; }
+        return "";
+    }
+
+    function drawCustomMetricPage(dc as Dc, cx, speedNow as Lang.String,
+        speedAvg as Lang.String, speedMax as Lang.String, hrNow as Lang.String,
+        hrAvg as Lang.String, hrMax as Lang.String, distance as Lang.String,
+        elapsed as Lang.String, calories as Lang.String, cadence as Lang.String,
+        power as Lang.String, trainingEffect as Lang.String, altitude as Lang.String,
+        ascent as Lang.String, descent as Lang.String, gpsAccuracy as Lang.String) as Void {
+        drawPageHeader(dc, "MEINE DATEN");
+        var count = mCustomMetricIds.size();
+        for (var i = 0; i < count && i < 4; i += 1) {
+            var metricId = mCustomMetricIds[i];
+            var label = getCustomMetricLabel(metricId);
+            var value = getCustomMetricValue(metricId, speedNow, speedAvg, speedMax,
+                hrNow, hrAvg, hrMax, distance, elapsed, calories, cadence, power,
+                trainingEffect, altitude, ascent, descent, gpsAccuracy);
+            var unit = getCustomMetricUnit(metricId);
+            var x = cx;
+            var y = mUnit * 0.40;
+            var width = mUnit * 0.68;
+            var font = Graphics.FONT_LARGE;
+            if (count == 2) {
+                x = mScreenWidth * (i == 0 ? 0.30 : 0.70);
+                width = mUnit * 0.39;
+                y = mUnit * 0.44;
+                font = Graphics.FONT_MEDIUM;
+            } else if (count >= 3) {
+                x = mScreenWidth * ((i % 2) == 0 ? 0.30 : 0.70);
+                width = mUnit * 0.39;
+                y = mUnit * (i < 2 ? 0.32 : 0.56);
+                font = Graphics.FONT_MEDIUM;
+            }
+            drawMetric(dc, x, y, label, value, unit, width, font);
+        }
+        if (count == 0) {
+            drawFit(dc, cx, mUnit * 0.43, "KEINE DATENFELDER", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            drawFit(dc, cx, mUnit * 0.51, "IN KAJO AUSWAEHLEN", mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        }
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
@@ -288,7 +388,7 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mScreenHeight < mUnit) { mUnit = mScreenHeight; }
 
         var cx = mScreenWidth / 2;
-        mCurrentPageId = mEnabledPageIds[mPage] as Lang.Number;
+        mCurrentPageId = mPage < mEnabledPageIds.size() ? mEnabledPageIds[mPage] as Lang.Number : 5;
         var activityInfo = null;
         if (mStatus == "AUFZEICHNUNG") { activityInfo = Activity.getActivityInfo(); }
 
@@ -366,6 +466,10 @@ class KajoConnectActivityView extends WatchUi.View {
             drawMetric(dc, cx, mUnit * 0.25, "DISTANZ", distance, "KM", mUnit * 0.68, Graphics.FONT_LARGE);
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "ZEIT", elapsed, "", mUnit * 0.39, Graphics.FONT_MEDIUM);
             drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "KALORIEN", calories, "KCAL", mUnit * 0.39, Graphics.FONT_MEDIUM);
+        } else if (mCurrentPageId == 5) {
+            drawCustomMetricPage(dc, cx, speedNow, speedAvg, speedMax, hrNow,
+                hrAvg, hrMax, distance, elapsed, calories, cadenceNow, powerNow,
+                trainingEffect, altitude, ascent, descent, gpsAccuracy);
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.245, "KADENZ", cadenceNow, "RPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
