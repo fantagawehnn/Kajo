@@ -111,6 +111,13 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
   }
 });
 
+test("custom field editor keeps header, four rows, controls and save action in distinct vertical bands", () => {
+  assert.match(customFieldsView, /mRowTop = Math\.round\(mUnit \* 0\.245\)/);
+  assert.match(customFieldsView, /mRowHeight = Math\.round\(mUnit \* 0\.108\)/);
+  assert.match(customFieldsView, /mControlTop = Math\.round\(mUnit \* 0\.70\)/);
+  assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.78\)/);
+});
+
 test("custom metric layouts relocate the wide center tile when a lower side tile would overlap it", () => {
   assert.match(activityView, /var centerMetric = ""/);
   assert.match(activityView, /var hasLowerSideMetric = false/);
