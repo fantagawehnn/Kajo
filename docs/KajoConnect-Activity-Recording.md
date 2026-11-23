@@ -1,6 +1,6 @@
 # KAJO Connect – Aktivitätsaufzeichnung und Trainingsdaten
 
-**Stand:** Quellcode im Branch `feature/kajo-connect` vorbereitet. Venu-3S-Build, Backend-Deployment und Gerätetest stehen noch aus.  
+**Stand:** Quellcode und statische Regressionstests im Branch `feature/kajo-connect` vorhanden. Ein echter Venu-3S-Build mit Garmin-SDK und privatem Developer-Key sowie Gerätetests stehen noch aus.  
 **Aktuelles Entwicklungsziel:** Garmin Venu 3S (390 × 390 px, Connect IQ API 5.2). Venu 2 Plus ist vorerst nicht Teil des Build-Ziels.
 
 ## 1. Aktivitätsaufzeichnung
@@ -21,7 +21,7 @@ Die Session wird lokal als Garmin-FIT-Aktivität gespeichert. Das ist kein direk
 - Datenseiten können während der Aufzeichnung vertikal nach oben/unten gewechselt werden.
 - Die Bootsklasse wird vor dem Start im Startmenü ausgewählt und nicht als Überschrift in der Aktivitätsansicht angezeigt.
 
-Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
+Die genaue Tastenbelegung muss noch auf einer echten Garmin Venu 3S validiert werden.
 
 ## 3. Aktivitätsseiten
 
@@ -74,28 +74,41 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 - End-to-end-Test von Pairing, Trainingsplan-Synchronisierung, strukturierten Trainingsschritten und Herzfrequenzzonen.
 - Prüfung der Schritt-Timer, automatischen Übergänge und manuellen Vor-/Zurücksteuerung auf der Garmin Venu 3S.
 - Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
-- Prüfung der physischen Tasten, GPS-Aufzeichnung, Datenseiten und Offline-Cache auf Venu 3S und Venu 2 Plus.
+- Prüfung der physischen Tasten, GPS-Aufzeichnung, Datenseiten und Offline-Cache auf der Garmin Venu 3S.
 - Ein direkter FIT-Upload an KAJO und eine Upload-Queue sind nicht implementiert.
 
-## 7. Build- und Gerätetest – erst nach Abschluss der Implementierung
+## 7. Build und Installation auf der Garmin Venu 3S
 
-Für einen lokalen Windows-Build liegt unter `KajoConnect/build.ps1` ein PowerShell-Skript. Es kompiliert beide in der Manifestdatei eingetragenen Geräteprofile. Der Garmin-SDK-Ordner und der private Developer-Key werden als Parameter übergeben; der Key bleibt außerhalb des Repositorys.
+Für einen lokalen Windows-Build liegt unter `KajoConnect/build.ps1` ein PowerShell-Skript. Es ist ausschließlich auf das Produktprofil `venu3s` eingestellt und erzeugt eine signierte Release-PRG-Datei. Compiler-Warnungen werden ausgegeben. Der Garmin-SDK-Ordner und der private Developer-Key werden als Parameter übergeben; der Key bleibt außerhalb des Repositorys.
 
-Beispiel aus dem Projektordner:
+Im Ordner `KajoConnect` ausführen:
 
 ```powershell
 .\build.ps1 -SdkPath "C:\Pfad\zum\ConnectIQ-SDK" -DeveloperKeyPath "F:\Pfad\zum\developer_key"
 ```
 
-Das Skript erzeugt `bin\KajoConnect-venu2plus.prg` und `bin\KajoConnect-venu3s.prg`. Es prüft Compiler-Aufruf, Exit-Code und Vorhandensein beider Ausgabedateien. Das Skript wurde im aktuellen Entwicklungscontainer nicht ausgeführt; ein erfolgreicher Build ist daher noch nicht bestätigt.
+Das Skript erzeugt `bin\KajoConnect-venu3s.prg`. Es prüft, ob Compiler, Projektdatei und Developer-Key vorhanden sind, ob der Compiler erfolgreich beendet wurde und ob eine nicht leere Ausgabedatei entstanden ist. Der Build wurde in dieser Entwicklungsumgebung noch nicht ausgeführt, da Garmin-SDK und privater Developer-Key nur auf dem lokalen Windows-Rechner verfügbar sind. Ein installationsfähiges PRG liegt daher noch nicht vor.
 
+### PRG auf der Venu 3S installieren
 
-1. Branch `feature/kajo-connect` lokal aktualisieren.
-2. Garmin-Build für `venu3s` und `venu2plus` ausführen.
-3. Pairing mit einem Testkonto und einer bereitgestellten Backend-Umgebung durchführen.
-4. Trainingsplan online synchronisieren, anschließend Verbindung trennen und Offline-Anzeige prüfen.
-5. Zonenwerte mit den in KAJO angezeigten Grenzen vergleichen.
-6. FIT-Aktivität aufzeichnen, speichern und in Garmin Connect sowie anschließend in KAJO prüfen.
+1. Build erfolgreich ausführen und die Datei `KajoConnect/bin/KajoConnect-venu3s.prg` kontrollieren.
+2. Venu 3S per USB-Datenkabel mit dem PC verbinden.
+3. Im Gerätespeicher den Ordner `GARMIN/APPS` öffnen.
+4. Die PRG-Datei in diesen Ordner kopieren.
+5. Uhr sicher vom PC trennen und die App auf der Uhr unter Aktivitäten/Apps öffnen.
+
+Garmin beschreibt dieses Sideload-Verfahren für Connect-IQ-Entwicklungsbuilds in der offiziellen Developer-FAQ: https://forums.garmin.com/developer/connect-iq/w/wiki/4/new-developer-faq.
+
+### Was vor einer vollständigen Freigabe noch geprüft werden muss
+
+1. Erfolgreiche Kompilierung mit dem installierten Connect-IQ-SDK 9.3.0.
+2. Start, Bedienung und Speichern einer FIT-Aktivität auf der echten Venu 3S.
+3. GPS-Verhalten bei gutem, schwachem und fehlendem Empfang.
+4. Physische Tasten, Touch-Steuerung, Datenseiten und strukturierte Trainingsschritte.
+5. Offline-Verhalten und Wiederöffnung der App nach Unterbrechung.
+6. Pairing und Trainingsplansynchronisierung erst nach Bereitstellung und Test des KAJO-Connect-Backends.
+
+Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Er ersetzt keine Simulator- und Gerätetests.
 
 Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persistenz, Tasten, FIT-Datei und Synchronisierung müssen zusätzlich im Simulator und auf den echten Geräten geprüft werden.
 
