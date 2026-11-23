@@ -18,6 +18,8 @@ test("PowerShell build helper compiles only the Venu 3S", () => {
   assert.match(buildScript, /\$devices\s*=\s*@\("venu3s"\)/);
   assert.doesNotMatch(buildScript, /venu2plus/);
   assert.match(buildScript, /KajoConnect-.*\.prg/);
+  assert.match(buildScript, /-r -w/);
+  assert.match(buildScript, /outputInfo\.Length -le 0/);
 });
 
 test("Activity controls retain the intended Venu 3S button mapping", () => {
