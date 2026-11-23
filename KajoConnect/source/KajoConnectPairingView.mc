@@ -132,7 +132,7 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function formatCode() as Lang.String {
-        if (mCode.length() != 12) return mCode;
+        if (mCode.length() != 12) { return mCode; }
         return mCode.substring(0, 4) + " " + mCode.substring(4, 8) + " " + mCode.substring(8, 12);
     }
 
