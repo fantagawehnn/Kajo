@@ -16,7 +16,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         "Geschwindigkeit", "Tempo Durchschnitt", "Tempo Maximum", "Herzfrequenz", "HF-Zone",
         "HF Durchschnitt", "HF Maximum", "Distanz", "Zeit",
         "Kalorien", "Kadenz", "Leistung", "Training Effect",
-        "Hoehe", "Anstieg", "Abstieg", "GPS-Genauigkeit"
+        "Hoehe", "Anstieg", "Abstieg", "GPS-Qualitaet"
     ];
     var mSelected as Lang.Array<Lang.String> = [];
     var mLargeMetricId as Lang.String = "";
