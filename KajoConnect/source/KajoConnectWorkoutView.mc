@@ -179,15 +179,15 @@ class KajoConnectWorkoutView extends WatchUi.View {
         }
 
         // Startaktion liegt als große, klar erkennbare Fläche am unteren Rand.
-        mStartTop = (unit * 0.82).toNumber();
-        mStartBottom = (unit * 0.93).toNumber();
+        mStartTop = (unit * 0.78).toNumber();
+        mStartBottom = (unit * 0.87).toNumber();
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle((center - unit * 0.31).toNumber(),
             mStartTop.toNumber(), (unit * 0.62).toNumber(),
             (mStartBottom - mStartTop).toNumber(), (unit * 0.055).toNumber());
-        drawCentered(dc, center, unit * 0.855, "TRAINING STARTEN",
+        drawCentered(dc, center, unit * 0.805, "TRAINING STARTEN",
             unit * 0.56, Graphics.FONT_SMALL, 0x00E5CC);
-        drawCentered(dc, center, unit * 0.95, "ZURUECK",
+        drawCentered(dc, center, unit * 0.90, "ZURUECK",
             unit * 0.45, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
