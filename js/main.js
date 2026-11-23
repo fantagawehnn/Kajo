@@ -491,6 +491,181 @@ async function createGarminArchivePartLinks() {
     }
 }
 
+function collectGarminSummaryActivityIds(value, ids, audit, depth = 0) {
+    if (!value || typeof value !== 'object' || depth > 12) return;
+    if (Array.isArray(value)) {
+        for (const item of value) collectGarminSummaryActivityIds(item, ids, audit, depth + 1);
+        return;
+    }
+    for (const [key, item] of Object.entries(value)) {
+        if (key.toLowerCase() === 'summarizedactivitiesexport' && Array.isArray(item)) {
+            for (const activity of item) {
+                if (!activity || typeof activity !== 'object' || Array.isArray(activity)) continue;
+                audit.records++;
+                const id = activity.activityId ?? activity.id;
+                if (id !== null && id !== undefined && /^\\d+$/.test(String(id))) {
+                    ids.add(String(id));
+                    audit.withValidId++;
+                } else {
+                    audit.withoutValidId++;
+                }
+                if (activity.startTimeGmt != null || activity.startTimeGMT != null || activity.startTimeLocal != null) audit.withStart++;
+                if (activity.duration != null || activity.elapsedDuration != null) audit.withDuration++;
+                if (activity.distance != null) audit.withDistance++;
+                if (Array.isArray(activity.splits) && activity.splits.length) audit.withSplits++;
+            }
+        } else if (item && typeof item === 'object') {
+            collectGarminSummaryActivityIds(item, ids, audit, depth + 1);
+        }
+    }
+}
+
+function getKajoGarminActivityId(activity) {
+    const explicit = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
+    if (explicit !== null && explicit !== undefined) {
+        const id = String(explicit).replace(/^garmin-/, '');
+        return /^\\d+$/.test(id) ? id : null;
+    }
+    if (activity?.source === 'garmin' || (Array.isArray(activity?.sources) && activity.sources.includes('garmin'))) {
+        const id = String(activity?.id ?? '').replace(/^garmin-/, '');
+        return /^\\d+$/.test(id) ? id : null;
+    }
+    return null;
+}
+
+async function diagnoseGarminSummaryJson() {
+    const button = document.getElementById('garmin-summary-diagnose-button');
+    const status = document.getElementById('garmin-summary-diagnose-status');
+    const results = document.getElementById('garmin-summary-diagnose-results');
+    if (!button || !status || !results) return;
+
+    button.disabled = true;
+    button.textContent = 'Zusammenfassungen werden gelesen …';
+    status.textContent = 'Prüfe Anmeldung und suche gespeicherte Garmin-JSON-Dateien …';
+    status.className = 'text-xs text-slate-400';
+    results.replaceChildren();
+    results.classList.add('hidden');
+
+    try {
+        if (!Array.isArray(state.rawActivities)) {
+            throw new Error('Die KAJO-Aktivitäten sind noch nicht geladen. Bitte lade die App neu und versuche es erneut.');
+        }
+        const listed = await callGarminFunction({ action: 'list-export-summary-json' });
+        if (!Array.isArray(listed.files) || !listed.files.length) {
+            throw new Error('Im Garmin-Archiv wurden keine lesbaren summarizedActivities-JSON-Dateien gefunden.');
+        }
+
+        const archiveIds = new Set();
+        const audit = { records: 0, withValidId: 0, withoutValidId: 0, withStart: 0, withDuration: 0, withDistance: 0, withSplits: 0 };
+        const fileSummaries = [];
+
+        for (let index = 0; index < listed.files.length; index++) {
+            const file = listed.files[index];
+            status.textContent = 'Lese Datei ' + (index + 1) + ' von ' + listed.files.length + ': ' + String(file.name || 'Garmin-Zusammenfassung');
+            const response = await callGarminFunction({ action: 'read-export-summary-json', fileId: file.id });
+            if (typeof response.content !== 'string') {
+                throw new Error('Die Datei ' + String(file.name || '') + ' wurde nicht als JSON-Text zurückgegeben.');
+            }
+            let parsed;
+            try {
+                parsed = JSON.parse(response.content);
+            } catch (_) {
+                throw new Error('Die Datei ' + String(file.name || '') + ' enthält kein gültiges JSON.');
+            }
+            const beforeRecords = audit.records;
+            const beforeIds = archiveIds.size;
+            const beforeValid = audit.withValidId;
+            collectGarminSummaryActivityIds(parsed, archiveIds, audit);
+            fileSummaries.push({
+                name: String(response.file?.name || file.name || 'Garmin-Zusammenfassung'),
+                records: audit.records - beforeRecords,
+                uniqueIdsAdded: archiveIds.size - beforeIds,
+                validIds: audit.withValidId - beforeValid,
+                dateFrom: response.file?.dateFrom || file.dateFrom || null,
+                dateTo: response.file?.dateTo || file.dateTo || null
+            });
+            parsed = null;
+        }
+
+        const kajoIds = new Set();
+        for (const activity of state.rawActivities) {
+            const id = getKajoGarminActivityId(activity);
+            if (id) kajoIds.add(id);
+        }
+        let matched = 0;
+        for (const id of archiveIds) if (kajoIds.has(id)) matched++;
+        const archiveOnly = [...archiveIds].filter(id => !kajoIds.has(id));
+        const kajoOnly = [...kajoIds].filter(id => !archiveIds.has(id));
+
+        const summary = document.createElement('div');
+        summary.className = 'rounded-lg border border-slate-700 bg-slate-950/60 p-3 space-y-2';
+        const heading = document.createElement('p');
+        heading.className = 'text-xs font-semibold text-slate-200';
+        heading.textContent = 'Abgleich abgeschlossen – ausschließlich lesend';
+        const stats = document.createElement('div');
+        stats.className = 'grid grid-cols-2 gap-2 sm:grid-cols-3';
+        const statItems = [
+            ['JSON-Dateien', String(fileSummaries.length)],
+            ['Aktivitätsdatensätze', audit.records.toLocaleString('de-DE')],
+            ['Eindeutige Garmin-IDs', archiveIds.size.toLocaleString('de-DE')],
+            ['In KAJO gefunden', matched.toLocaleString('de-DE')],
+            ['Nicht in KAJO gefunden', archiveOnly.length.toLocaleString('de-DE')],
+            ['KAJO-Garmin-IDs ohne Archivtreffer', kajoOnly.length.toLocaleString('de-DE')]
+        ];
+        for (const [label, value] of statItems) {
+            const cell = document.createElement('div');
+            cell.className = 'rounded-md bg-slate-900 p-2';
+            const valueNode = document.createElement('div');
+            valueNode.className = 'text-base font-bold text-cyan-200';
+            valueNode.textContent = value;
+            const labelNode = document.createElement('div');
+            labelNode.className = 'text-[10px] text-slate-400';
+            labelNode.textContent = label;
+            cell.append(valueNode, labelNode);
+            stats.append(cell);
+        }
+        const detail = document.createElement('p');
+        detail.className = 'text-[11px] text-slate-400';
+        detail.textContent = 'Zusätzlich erkannte Felder: Startzeit ' + audit.withStart.toLocaleString('de-DE')
+            + ', Dauer ' + audit.withDuration.toLocaleString('de-DE')
+            + ', Distanz ' + audit.withDistance.toLocaleString('de-DE')
+            + ', Splits ' + audit.withSplits.toLocaleString('de-DE')
+            + '. Datensätze ohne numerische Aktivitäts-ID: ' + audit.withoutValidId.toLocaleString('de-DE') + '.';
+        const fileList = document.createElement('ul');
+        fileList.className = 'space-y-1 text-[10px] text-slate-400';
+        for (const file of fileSummaries) {
+            const item = document.createElement('li');
+            item.textContent = file.name + ' · ' + file.records.toLocaleString('de-DE') + ' Datensätze · '
+                + file.uniqueIdsAdded.toLocaleString('de-DE') + ' neue eindeutige IDs'
+                + (file.dateFrom || file.dateTo ? ' · ' + (file.dateFrom || '—') + ' bis ' + (file.dateTo || '—') : '');
+            fileList.append(item);
+        }
+        summary.append(heading, stats, detail, fileList);
+
+        if (archiveOnly.length) {
+            const examplesTitle = document.createElement('p');
+            examplesTitle.className = 'text-[11px] font-semibold text-slate-300';
+            examplesTitle.textContent = 'Beispiele für IDs, die aktuell nicht in KAJO gefunden wurden';
+            const examples = document.createElement('p');
+            examples.className = 'break-all text-[10px] text-slate-400';
+            examples.textContent = archiveOnly.slice(0, 15).join(', ') + (archiveOnly.length > 15 ? ' …' : '');
+            summary.append(examplesTitle, examples);
+        }
+        results.replaceChildren(summary);
+        results.classList.remove('hidden');
+        status.textContent = 'Abgleich erfolgreich. Es wurden ' + archiveIds.size.toLocaleString('de-DE')
+            + ' eindeutige Garmin-Aktivitäts-IDs mit ' + kajoIds.size.toLocaleString('de-DE')
+            + ' in KAJO geladenen Garmin-Aktivitäts-IDs verglichen.';
+        status.className = 'text-xs text-emerald-300';
+    } catch (error) {
+        status.textContent = error?.message || 'Die Garmin-Zusammenfassungen konnten nicht geprüft werden.';
+        status.className = 'text-xs text-rose-300';
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Zusammenfassungsdateien prüfen';
+    }
+}
+
 async function loadGarminActivitiesFromCloud() {
     const userId = activeAppUserId;
     if (!userId) throw new Error('Für den Garmin-Aktivitätsabgleich ist kein aktiver Benutzer angemeldet.');
@@ -3595,6 +3770,7 @@ Object.assign(window, {
     restoreDatabaseBackup,
     uploadGarminExportArchive,
     createGarminArchivePartLinks,
+    diagnoseGarminSummaryJson,
     analyzeGarminExportArchive,
     importGarminExportArchive,
     closeBackupPreview,
