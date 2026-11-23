@@ -6,7 +6,7 @@ import Toybox.WatchUi;
 class KajoConnectView extends WatchUi.View {
 
     var mSelectedBoat = "K1";
-    var mPlannedSessions as Lang.Array<Lang.String> = [];
+    var mPlannedSessions as Lang.Array<Lang.Dictionary> = [];
     var mWidth = 0;
     var mHeight = 0;
     var mUnit = 0;
@@ -46,7 +46,7 @@ class KajoConnectView extends WatchUi.View {
         dc.drawText(x.toNumber(), y.toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    function setPlannedSessions(sessions) {
+    function setPlannedSessions(sessions as Lang.Array<Lang.Dictionary>) {
         mPlannedSessions = sessions;
         mPlanStartIndex = 0;
         WatchUi.requestUpdate();
@@ -79,7 +79,7 @@ class KajoConnectView extends WatchUi.View {
             if (y >= mPlanStartY + mPlanRowHeight) { row = 1; }
             var index = mPlanStartIndex + row;
             if (index < mPlannedSessions.size()) {
-                var selectedSession = mPlannedSessions[index] as String;
+                var selectedSession = mPlannedSessions[index] as Lang.Dictionary;
                 WatchUi.pushView(
                     new KajoConnectWorkoutView(selectedSession),
                     new KajoConnectWorkoutDelegate(),
@@ -149,7 +149,8 @@ class KajoConnectView extends WatchUi.View {
                     var cardX = cx - (cardWidth / 2);
                     dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
                     dc.fillRoundedRectangle(cardX.toNumber(), rowY.toNumber(), cardWidth.toNumber(), cardHeight.toNumber(), (scale * 0.025).toNumber());
-                    var sessionText = mPlannedSessions[index] as String;
+                    var session = mPlannedSessions[index] as Lang.Dictionary;
+                    var sessionText = session["name"] == null ? "Geplante Einheit" : session["name"].toString();
                     drawCentered(
                         dc, cx,
                         rowY + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
