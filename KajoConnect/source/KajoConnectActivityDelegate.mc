@@ -15,4 +15,15 @@ class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
         mView.handleTap(coordinates[0], coordinates[1]);
         return true;
     }
+
+    // Vertikales Wischen wechselt zwischen den Datenansichten.
+    function onNextPage() {
+        mView.nextDisplayPage(1);
+        return true;
+    }
+
+    function onPreviousPage() {
+        mView.nextDisplayPage(-1);
+        return true;
+    }
 }
