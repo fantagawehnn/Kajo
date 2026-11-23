@@ -57,6 +57,12 @@ class KajoConnectActivityView extends WatchUi.View {
         loadCurrentWorkout();
     }
 
+    function compactWorkoutText(value as Lang.String, maxLength as Lang.Number) as Lang.String {
+        if (value.length() <= maxLength) { return value; }
+        if (maxLength <= 3) { return value.substring(0, maxLength); }
+        return value.substring(0, maxLength - 3) + "...";
+    }
+
     function setSelectedWorkout(workout as Lang.Dictionary) as Void {
         mCurrentWorkoutState = "PLANNED";
         mCurrentWorkoutName = workout["name"] == null ? "GEPLANTE EINHEIT" : workout["name"].toString();
@@ -408,7 +414,7 @@ class KajoConnectActivityView extends WatchUi.View {
         distance as Lang.String, speedNow as Lang.String, zone as Lang.Number) as Void {
         drawHeartRateRing(dc, cx, mUnit * 0.49, mUnit * 0.465, zone);
 
-        drawFit(dc, cx, mUnit * 0.105, mCurrentWorkoutName, mUnit * 0.68,
+        drawFit(dc, cx, mUnit * 0.105, compactWorkoutText(mCurrentWorkoutName, 32), mUnit * 0.68,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         var workoutSubline = mCurrentWorkoutType;
         if (mCurrentWorkoutState == "MULTIPLE") {
@@ -425,13 +431,13 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(dc, cx, mUnit * 0.155, workoutSubline, mUnit * 0.68,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         // Kompakte Trainingsvorgabe: Hauptteil hat Vorrang, Intensitaet bleibt als Kontext sichtbar.
-        var workoutCue = mCurrentWorkoutMainSet;
+        var workoutCue = compactWorkoutText(mCurrentWorkoutMainSet, 34);
         if (mCurrentWorkoutIntensity != "") {
             workoutCue = workoutCue != ""
                 ? mCurrentWorkoutIntensity + "  ·  " + workoutCue
-                : mCurrentWorkoutIntensity;
+                 : compactWorkoutText(mCurrentWorkoutIntensity, 34);
         }
-        if (workoutCue == "") { workoutCue = mCurrentWorkoutDescription; }
+        if (workoutCue == "") { workoutCue = compactWorkoutText(mCurrentWorkoutDescription, 42); }
         if (workoutCue != "") {
             drawFit(dc, cx, mUnit * 0.19, workoutCue, mUnit * 0.68,
                 Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
