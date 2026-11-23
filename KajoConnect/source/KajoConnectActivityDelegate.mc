@@ -3,9 +3,9 @@ import Toybox.WatchUi;
 
 class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
 
-    var mView;
+    var mView as KajoConnectActivityView;
 
-    function initialize(view) {
+    function initialize(view as KajoConnectActivityView) {
         BehaviorDelegate.initialize();
         mView = view;
     }
