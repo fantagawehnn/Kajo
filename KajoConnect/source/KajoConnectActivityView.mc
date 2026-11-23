@@ -91,6 +91,7 @@ class KajoConnectActivityView extends WatchUi.View {
         if (metricId == "speedAvg") { return "DURCHSCHNITTSTEMPO"; }
         if (metricId == "speedMax") { return "MAXIMALGESCHWINDIGKEIT"; }
         if (metricId == "heartRate") { return "HERZFREQUENZ"; }
+        if (metricId == "heartRateZone") { return "HF-ZONE"; }
         if (metricId == "heartRateAvg") { return "HF DURCHSCHNITT"; }
         if (metricId == "heartRateMax") { return "HF MAXIMUM"; }
         if (metricId == "distance") { return "DISTANZ"; }
@@ -445,6 +446,7 @@ class KajoConnectActivityView extends WatchUi.View {
                 "speedAvg" => speedAvg,
                 "speedMax" => speedMax,
                 "heartRate" => hrNow,
+                "heartRateZone" => currentHeartRateZone > 0 ? "Z" + currentHeartRateZone.toString() : "--",
                 "heartRateAvg" => hrAvg,
                 "heartRateMax" => hrMax,
                 "distance" => distance,
