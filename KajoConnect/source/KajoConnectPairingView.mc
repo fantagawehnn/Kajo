@@ -15,6 +15,7 @@ class KajoConnectPairingView extends WatchUi.View {
     var mStatus as Lang.String = "VERBINDUNG WIRD GESTARTET";
     var mPaired as Lang.Boolean = false;
     var mStarted as Lang.Boolean = false;
+    var mPollInFlight as Lang.Boolean = false;
 
     function initialize() {
         View.initialize();
@@ -32,6 +33,10 @@ class KajoConnectPairingView extends WatchUi.View {
         if (!mStarted) {
             mStarted = true;
             createPairing();
+        } else if (mCode.length() == 12 && mPollSecret.length() == 64 && !mPaired) {
+            mStatus = "WARTE AUF KAJO";
+            pollPairing();
+            mTimer.start(method(:pollPairing), 10000, true);
         }
     }
 
@@ -67,8 +72,13 @@ class KajoConnectPairingView extends WatchUi.View {
 
         mCode = codeValue.toString();
         mPollSecret = secretValue.toString();
-        Storage.setValue("kajoPairingCode", mCode);
-        Storage.setValue("kajoPairingPollSecret", mPollSecret);
+        try {
+            Storage.setValue("kajoPairingCode", mCode);
+            Storage.setValue("kajoPairingPollSecret", mPollSecret);
+        } catch (error) {
+            // Die Kopplung kann in dieser Sitzung fortgesetzt werden; bei einem
+            // Neustart muss andernfalls ein neuer Code angefordert werden.
+        }
         mStatus = "CODE IN KAJO EINGEBEN";
         WatchUi.requestUpdate();
 
@@ -77,21 +87,34 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function pollPairing() as Void {
-        if (mPaired || mCode.length() == 0 || mPollSecret.length() == 0) {
+        if (mPaired || mPollInFlight || mCode.length() != 12 || mPollSecret.length() != 64) {
             return;
         }
-        mApi.postJson(
-            mEndpoint,
-            { "action" => "poll-pairing", "code" => mCode, "pollSecret" => mPollSecret },
-            null,
-            method(:onPollResponse)
-        );
+        mPollInFlight = true;
+        try {
+            mApi.postJson(
+                mEndpoint,
+                { "action" => "poll-pairing", "code" => mCode, "pollSecret" => mPollSecret },
+                null,
+                method(:onPollResponse)
+            );
+        } catch (error) {
+            mPollInFlight = false;
+            mStatus = "VERBINDUNG FEHLGESCHLAGEN";
+            WatchUi.requestUpdate();
+        }
     }
 
     function onPollResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
+        mPollInFlight = false;
         if (responseCode == 404) {
             mStatus = "KOPPLUNG ABGELAUFEN";
             mTimer.stop();
+            try {
+                Storage.setValue("kajoPairingCode", "");
+                Storage.setValue("kajoPairingPollSecret", "");
+            } catch (error) {
+            }
             WatchUi.requestUpdate();
             return;
         }
@@ -116,9 +139,18 @@ class KajoConnectPairingView extends WatchUi.View {
                 WatchUi.requestUpdate();
                 return;
             }
-            Storage.setValue("kajoDeviceToken", tokenValue.toString());
-            Storage.setValue("kajoPairingCode", "");
-            Storage.setValue("kajoPairingPollSecret", "");
+            try {
+                Storage.setValue("kajoDeviceToken", tokenValue.toString());
+            } catch (error) {
+                mStatus = "TOKEN KANN NICHT GESPEICHERT WERDEN";
+                WatchUi.requestUpdate();
+                return;
+            }
+            try {
+                Storage.setValue("kajoPairingCode", "");
+                Storage.setValue("kajoPairingPollSecret", "");
+            } catch (error) {
+            }
             mPaired = true;
             mTimer.stop();
             mStatus = "ERFOLGREICH VERBUNDEN";
