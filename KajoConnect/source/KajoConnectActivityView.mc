@@ -832,7 +832,7 @@ class KajoConnectActivityView extends WatchUi.View {
             drawPageHeader(dc, "TRAININGSANWEISUNG");
             if (mCurrentWorkoutIntensity != "") {
                 drawFit(dc, cx, mUnit * 0.215,
-                    "INTENSITAET · " + compactWorkoutText(mCurrentWorkoutIntensity, 34),
+                    "INTENSITAET - " + compactWorkoutText(mCurrentWorkoutIntensity, 34),
                     mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             }
             if (mCurrentWorkoutObjective != "") {
@@ -842,7 +842,7 @@ class KajoConnectActivityView extends WatchUi.View {
                     mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             }
             if (mCurrentWorkoutWarmup != "") {
-                drawFit(dc, cx, mUnit * 0.415, "AUFWÄRMEN", mUnit * 0.72,
+                drawFit(dc, cx, mUnit * 0.415, "AUFWAERMEN", mUnit * 0.72,
                     Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
                 drawFit(dc, cx, mUnit * 0.455, compactWorkoutText(mCurrentWorkoutWarmup, 58),
                     mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
@@ -854,7 +854,7 @@ class KajoConnectActivityView extends WatchUi.View {
                     mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             }
             if (mCurrentWorkoutCooldown != "") {
-                drawFit(dc, cx, mUnit * 0.695, "ABWÄRMEN", mUnit * 0.72,
+                drawFit(dc, cx, mUnit * 0.695, "ABWAERMEN", mUnit * 0.72,
                     Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
                 drawFit(dc, cx, mUnit * 0.735, compactWorkoutText(mCurrentWorkoutCooldown, 58),
                     mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
