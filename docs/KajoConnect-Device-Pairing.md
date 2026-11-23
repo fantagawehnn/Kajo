@@ -1,6 +1,6 @@
 # KAJO Connect – Geräte-Kopplung und Synchronisierung
 
-**Stand:** Backend-Entwurf im Branch vorbereitet; noch nicht deployed oder end-to-end getestet  
+**Stand:** Pairing-UI, Backend-Quellcode und lesende Watch-Synchronisierung im Branch vorbereitet; noch nicht deployed oder end-to-end getestet  
 **Branch:** `feature/kajo-connect`  
 **Erstes Zielgerät:** Garmin Venu 3S; zusätzlich Venu 2 Plus
 
