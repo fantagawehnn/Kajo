@@ -5,6 +5,15 @@
  * inflate the versioned user_data JSON document.
  */
 
+const cloudActivityHashes = new Map();
+
+async function hashActivityPayload(payload) {
+    if (!globalThis.crypto?.subtle?.digest) return null;
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 function requireClient(client) {
     if (!client?.from) throw new Error('Supabase ist für die Aktivitätssynchronisierung nicht verfügbar.');
 }
@@ -87,7 +96,15 @@ function splitIntoBatches(rows, maxBytes = 750000) {
 export async function syncCloudActivities(client, userId, activities) {
     requireClient(client);
     const rows = prepareCloudActivityRows(userId, activities);
-    const batches = splitIntoBatches(rows);
+    const baseline = cloudActivityHashes.get(userId) || new Map();
+    const changedRows = [];
+    const nextHashes = new Map();
+    for (const row of rows) {
+        const hash = await hashActivityPayload(row.payload);
+        if (hash) nextHashes.set(row.record_id, hash);
+        if (!hash || baseline.get(row.record_id) !== hash) changedRows.push(row);
+    }
+    const batches = splitIntoBatches(changedRows);
     let uploaded = 0;
 
     for (const batch of batches) {
@@ -106,7 +123,11 @@ export async function syncCloudActivities(client, userId, activities) {
         uploaded += returned.size;
     }
 
-    return { uploaded, total: rows.length, batches: batches.length };
+    if (nextHashes.size) {
+        for (const [id, hash] of nextHashes) baseline.set(id, hash);
+        cloudActivityHashes.set(userId, baseline);
+    }
+    return { uploaded, total: rows.length, changed: changedRows.length, batches: batches.length };
 }
 
 /** Loads all activity rows in bounded pages; RLS restricts results to the user. */
@@ -128,6 +149,12 @@ export async function fetchCloudActivities(client, userId) {
         records.push(...page);
         if (page.length < pageSize) break;
     }
+    const hashes = new Map();
+    for (const row of records) {
+        const hash = await hashActivityPayload(row.payload);
+        if (hash) hashes.set(String(row.record_id), hash);
+    }
+    if (hashes.size) cloudActivityHashes.set(userId, hashes);
     return records;
 }
 
