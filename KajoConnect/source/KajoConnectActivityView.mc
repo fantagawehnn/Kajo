@@ -951,12 +951,13 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function drawButton(dc as Dc, centerX, top, width, label as Lang.String) as Void {
         var height = mButtonBottom - mButtonTop;
-        var left = centerX - (width / 2);
+        var safeWidth = mLayout.safeRectWidth(top, height, width);
+        var left = centerX - (safeWidth / 2);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(
             Math.round(left).toNumber(),
             Math.round(top).toNumber(),
-            Math.round(width).toNumber(),
+            Math.round(safeWidth).toNumber(),
             Math.round(height).toNumber(),
             Math.round(mUnit * 0.025).toNumber()
         );
@@ -965,7 +966,7 @@ class KajoConnectActivityView extends WatchUi.View {
             centerX,
             top + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             label,
-            width * 0.86,
+            safeWidth * 0.86,
             Graphics.FONT_SMALL,
             Graphics.COLOR_WHITE
         );
