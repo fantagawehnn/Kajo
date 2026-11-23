@@ -200,10 +200,10 @@ function safePlannedSession(value: unknown): PlannedSession | null {
     date: session.date,
     name: typeof session.name === "string" ? session.name.slice(0, 120) : "Geplante Einheit",
     type: typeof session.type === "string" ? session.type.slice(0, 60) : "Training",
-    duration: typeof session.duration === "number" || typeof session.duration === "string" ? session.duration : null,
-    targetTss: typeof session.targetTss === "number" || typeof session.targetTss === "string" ? session.targetTss : null,
+    duration: typeof session.duration === "number" ? session.duration : typeof session.duration === "string" ? session.duration.slice(0, 30) : null,
+    targetTss: typeof session.targetTss === "number" ? session.targetTss : typeof session.targetTss === "string" ? session.targetTss.slice(0, 30) : null,
     category: typeof session.category === "string" ? session.category.slice(0, 80) : null,
-    desc: typeof session.desc === "string" ? session.desc.slice(0, 500) : null,
+    desc: typeof session.desc === "string" ? session.desc.slice(0, 200) : null,
   };
 }
 
