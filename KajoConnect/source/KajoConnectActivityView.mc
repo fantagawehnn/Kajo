@@ -933,7 +933,14 @@ class KajoConnectActivityView extends WatchUi.View {
                     if (currentStep["target"] != null && currentStep["target"].toString() != "") {
                         drawFit(dc, cx, mUnit * 0.60, compactWorkoutText(currentStep["target"].toString(), 58), mUnit * 0.82, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
                     }
-                    drawFit(dc, cx, mUnit * 0.72, "Links: zurueck  ·  Rechts: weiter", mUnit * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                    if (mWorkoutStepIndex + 1 < mWorkoutSteps.size()) {
+                        var nextStep = mWorkoutSteps[mWorkoutStepIndex + 1] as Lang.Dictionary;
+                        drawFit(dc, cx, mUnit * 0.705, "ALS NAECHSTES: " + compactWorkoutText(nextStep["label"].toString(), 32),
+                            mUnit * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                    } else {
+                        drawFit(dc, cx, mUnit * 0.705, "LETZTER SCHRITT", mUnit * 0.82,
+                            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                    }
                 }
             } else {
                 drawPageHeader(dc, "TRAININGSANWEISUNG");
