@@ -60,7 +60,7 @@ class KajoLayout {
         return font;
     }
 
-    function safeWidthAt(x as Lang.Number, y as Lang.Number, requestedWidth as Lang.Number) as Lang.Number {
+    function safeWidthAt(x, y, requestedWidth) as Lang.Number {
         var dy = y - mCenterY;
         var remaining = (mRadius * mRadius) - (dy * dy);
         if (remaining <= 0) { return 0; }
@@ -76,12 +76,12 @@ class KajoLayout {
         return available < requestedWidth ? available : requestedWidth;
     }
 
-    function safeTextWidth(dc as Dc, x as Lang.Number, y as Lang.Number,
-        font, requestedWidth as Lang.Number) as Lang.Number {
+    function safeTextWidth(dc as Dc, x, y,
+        font, requestedWidth) as Lang.Number {
         return safeWidthAt(x, y + (dc.getFontHeight(font) / 2), requestedWidth);
     }
 
-    function safeTextY(y as Lang.Number, textHeight as Lang.Number) as Lang.Number {
+    function safeTextY(y, textHeight) as Lang.Number {
         var margin = mUnit * 0.035;
         var top = mCenterY - mRadius + margin;
         var bottom = mCenterY + mRadius - margin - textHeight;
@@ -90,16 +90,16 @@ class KajoLayout {
         return y;
     }
 
-    function safeRectWidthAt(x as Lang.Number, top as Lang.Number, height as Lang.Number,
-        requestedWidth as Lang.Number) as Lang.Number {
+    function safeRectWidthAt(x, top, height,
+        requestedWidth) as Lang.Number {
         var margin = mUnit * 0.01;
         var topWidth = safeWidthAt(x, top + margin, requestedWidth);
         var bottomWidth = safeWidthAt(x, top + height - margin, requestedWidth);
         return topWidth < bottomWidth ? topWidth : bottomWidth;
     }
 
-    function safeRectWidth(top as Lang.Number, height as Lang.Number,
-        requestedWidth as Lang.Number) as Lang.Number {
+    function safeRectWidth(top, height,
+        requestedWidth) as Lang.Number {
         var margin = mUnit * 0.01;
         var topWidth = safeWidthAt(mCenterX, top + margin, requestedWidth);
         var bottomWidth = safeWidthAt(mCenterX, top + height - margin, requestedWidth);
