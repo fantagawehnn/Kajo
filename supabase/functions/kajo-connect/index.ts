@@ -216,6 +216,38 @@ type PlannedSession = {
   desc: string | null;
 };
 
+const ALLOWED_DISPLAY_METRICS = new Set([
+  "speedNow", "speedAvg", "speedMax", "heartRate", "heartRateZone",
+  "heartRateAvg", "heartRateMax", "distance", "elapsed", "calories",
+  "cadence", "power", "trainingEffect", "altitude", "ascent", "descent", "gpsAccuracy",
+]);
+
+function safeDisplayLayouts(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 3).map((raw, index) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return { id: "layout-" + (index + 1), name: "Datenseite " + (index + 1), metrics: [] };
+    }
+    const source = raw as JsonRecord;
+    const seen = new Set<string>();
+    const metrics = (Array.isArray(source.metrics) ? source.metrics : [])
+      .filter((metric): metric is JsonRecord => Boolean(metric) && typeof metric === "object" && !Array.isArray(metric))
+      .filter((metric) => typeof metric.id === "string" && ALLOWED_DISPLAY_METRICS.has(metric.id))
+      .filter((metric) => {
+        const id = metric.id as string;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .slice(0, 4)
+      .map((metric) => ({
+        id: metric.id,
+        size: ["small", "medium", "large"].includes(String(metric.size)) ? metric.size : "medium",
+      }));
+    return { id: "layout-" + (index + 1), name: "Datenseite " + (index + 1), metrics };
+  });
+}
+
 function safePlannedSession(value: unknown): PlannedSession | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const session = value as JsonRecord;
@@ -452,7 +484,7 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (snapshotError) throw snapshotError;
       if (!snapshot?.data || typeof snapshot.data !== "object") {
-        return json(200, { ok: true, schemaVersion: 1, plannedSessions: [], heartRateZones: null, snapshotVersion: 0 });
+        return json(200, { ok: true, schemaVersion: 1, plannedSessions: [], heartRateZones: null, displayLayouts: [], snapshotVersion: 0 });
       }
 
       const data = snapshot.data as JsonRecord;
@@ -469,6 +501,7 @@ Deno.serve(async (request) => {
       const settings = data.settings && typeof data.settings === "object" ? data.settings as JsonRecord : {};
       const checkins = data.checkins && typeof data.checkins === "object" ? data.checkins as JsonRecord : {};
       const heartRateZones = adaptiveZones(localDate, profile, settings, checkins);
+      const displayLayouts = safeDisplayLayouts(settings.kajoConnectDisplayLayouts);
 
       return json(200, {
         ok: true,
@@ -478,6 +511,7 @@ Deno.serve(async (request) => {
         snapshotUpdatedAt: snapshot.updated_at ?? null,
         plannedSessions,
         heartRateZones,
+        displayLayouts,
       });
     }
 
