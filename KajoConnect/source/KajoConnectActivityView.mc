@@ -23,6 +23,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mPageCount = 5;
     var mEnabledPageIds as Lang.Array<Lang.Number> = [0, 1, 2, 3, 4];
     var mCurrentPageId = 0;
+    // KAJO liefert die vier oberen Zonengrenzen; die Uhr berechnet keine eigenen Zonen.
+    var mHeartRateZones as Lang.Array<Lang.Number> = [];
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
@@ -43,6 +45,66 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mEnabledPageIds.size() == 0) { mEnabledPageIds = [0]; }
         mPageCount = mEnabledPageIds.size();
         mPage = 0;
+    }
+
+    // Übernimmt die von KAJO berechneten Grenzen (obere Grenze Z1 bis Z4).
+    function setHeartRateZones(zones as Lang.Array<Lang.Number>) as Void {
+        if (zones.size() != 4) {
+            mHeartRateZones = [];
+            WatchUi.requestUpdate();
+            return;
+        }
+
+        for (var i = 1; i < zones.size(); i += 1) {
+            if (zones[i] <= zones[i - 1]) {
+                mHeartRateZones = [];
+                WatchUi.requestUpdate();
+                return;
+            }
+        }
+
+        mHeartRateZones = zones;
+        WatchUi.requestUpdate();
+    }
+
+    function getCurrentHeartRateZone(heartRate) as Lang.Number {
+        if (heartRate == null || mHeartRateZones.size() != 4) {
+            return 0;
+        }
+
+        for (var i = 0; i < 4; i += 1) {
+            if (heartRate <= mHeartRateZones[i]) {
+                return i + 1;
+            }
+        }
+        return 5;
+    }
+
+    function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
+        if (zone == 0) {
+            drawFit(dc, centerX, top, "ZONE --", width, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            return;
+        }
+
+        drawFit(dc, centerX, top, "HERZFREQUENZZONE  Z" + zone.toString(), width, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+
+        var segmentGap = mUnit * 0.012;
+        var segmentWidth = (width - (segmentGap * 4)) / 5;
+        var barTop = top + (mUnit * 0.045);
+        var barHeight = mUnit * 0.022;
+        var left = centerX - (width / 2);
+
+        for (var i = 0; i < 5; i += 1) {
+            var x = left + (i * (segmentWidth + segmentGap));
+            dc.setColor((i + 1) == zone ? Graphics.COLOR_WHITE : Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(
+                x.toNumber(),
+                barTop.toNumber(),
+                segmentWidth.toNumber(),
+                barHeight.toNumber(),
+                (barHeight / 2).toNumber()
+            );
+        }
     }
 
     function startRecording() as Void {
@@ -234,6 +296,8 @@ class KajoConnectActivityView extends WatchUi.View {
         var speedAvg = "--";
         var speedMax = "--";
         var hrNow = "--";
+        var currentHeartRate = null;
+        var currentHeartRateZone = 0;
         var hrAvg = "--";
         var hrMax = "--";
         var distance = "--";
@@ -252,7 +316,9 @@ class KajoConnectActivityView extends WatchUi.View {
             if (activityInfo.currentSpeed != null) { speedNow = numberText(activityInfo.currentSpeed * 3.6, 1); }
             if (activityInfo.averageSpeed != null) { speedAvg = numberText(activityInfo.averageSpeed * 3.6, 1); }
             if (activityInfo.maxSpeed != null) { speedMax = numberText(activityInfo.maxSpeed * 3.6, 1); }
-            hrNow = valueOrDash(activityInfo.currentHeartRate);
+            currentHeartRate = activityInfo.currentHeartRate;
+            hrNow = valueOrDash(currentHeartRate);
+            currentHeartRateZone = getCurrentHeartRateZone(currentHeartRate);
             hrAvg = valueOrDash(activityInfo.averageHeartRate);
             hrMax = valueOrDash(activityInfo.maxHeartRate);
             if (activityInfo.elapsedDistance != null) { distance = numberText(activityInfo.elapsedDistance / 1000.0, 2); }
@@ -283,6 +349,7 @@ class KajoConnectActivityView extends WatchUi.View {
             drawFit(dc, cx, mUnit * 0.405, "KM/H  ·  GESCHWINDIGKEIT", mUnit * 0.76, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.55, "HERZFREQUENZ", hrNow, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
             drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.55, "ZEIT", elapsed, "", mUnit * 0.39, Graphics.FONT_MEDIUM);
+            drawHeartRateZone(dc, cx, mUnit * 0.715, mUnit * 0.62, currentHeartRateZone);
         } else if (mCurrentPageId == 1) {
             drawPageHeader(dc, "GESCHWINDIGKEIT");
             drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", speedNow, "KM/H", mUnit * 0.68, Graphics.FONT_LARGE);
@@ -293,6 +360,7 @@ class KajoConnectActivityView extends WatchUi.View {
             drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", hrNow, "BPM", mUnit * 0.68, Graphics.FONT_LARGE);
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "DURCHSCHNITT", hrAvg, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
             drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "MAXIMUM", hrMax, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
+            drawHeartRateZone(dc, cx, mUnit * 0.715, mUnit * 0.62, currentHeartRateZone);
         } else if (mCurrentPageId == 3) {
             drawPageHeader(dc, "DISTANZ & ZEIT");
             drawMetric(dc, cx, mUnit * 0.25, "DISTANZ", distance, "KM", mUnit * 0.68, Graphics.FONT_LARGE);
