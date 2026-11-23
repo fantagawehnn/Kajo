@@ -1,6 +1,9 @@
+import Toybox.Application.Storage;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.Time;
+import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
 
 class KajoConnectView extends WatchUi.View {
@@ -21,9 +24,85 @@ class KajoConnectView extends WatchUi.View {
     var mPlanStartY = 0;
     var mPlanRowHeight = 0;
     var mPlanStartIndex = 0;
+    var mApi as KajoConnectApi;
+    var mSyncStarted as Lang.Boolean = false;
+    var mSyncStatus as Lang.String = "NICHT MIT KAJO VERBUNDEN";
+    var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
 
     function initialize() {
         View.initialize();
+        mApi = new KajoConnectApi();
+    }
+
+    function onShow() as Void {
+        if (!mSyncStarted) {
+            mSyncStarted = true;
+            syncFromKajo();
+        }
+    }
+
+    function padDatePart(value as Lang.Number) as Lang.String {
+        return value < 10 ? "0" + value.toString() : value.toString();
+    }
+
+    function getLocalDate() as Lang.String {
+        var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+        return info.year.toString() + "-" + padDatePart(info.month) + "-" + padDatePart(info.day);
+    }
+
+    function syncFromKajo() as Void {
+        var token = Storage.getValue("kajoDeviceToken");
+        if (token == null || token.toString().length() == 0) {
+            mSyncStatus = "NICHT MIT KAJO VERBUNDEN";
+            WatchUi.requestUpdate();
+            return;
+        }
+
+        mSyncStatus = "KAJO SYNCHRONISIERT …";
+        WatchUi.requestUpdate();
+        mApi.postJson(
+            mEndpoint,
+            { "action" => "sync", "localDate" => getLocalDate() },
+            token.toString(),
+            method(:onSyncResponse)
+        );
+    }
+
+    function onSyncResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
+        if (responseCode != 200 || data == null) {
+            mSyncStatus = responseCode == 401 ? "GERAET NICHT AUTORISIERT" : "KAJO NICHT ERREICHBAR";
+            WatchUi.requestUpdate();
+            return;
+        }
+
+        var sessions = data["plannedSessions"];
+        if (sessions != null) {
+            mPlannedSessions = sessions as Lang.Array<Lang.Dictionary>;
+            mPlanStartIndex = 0;
+        } else {
+            mPlannedSessions = [];
+        }
+
+        var zoneInfo = data["heartRateZones"];
+        var zones = null;
+        if (zoneInfo != null) {
+            zones = (zoneInfo as Lang.Dictionary)["zones"];
+        }
+        if (zones != null && (zones as Lang.Array<Lang.Number>).size() == 4) {
+            var zoneValues = zones as Lang.Array<Lang.Number>;
+            for (var i = 0; i < 4; i += 1) {
+                Storage.setValue("kajoHeartRateZone" + i.toString(), zoneValues[i]);
+            }
+            Storage.setValue("kajoHeartRateZoneDate", getLocalDate());
+        } else {
+            for (var i = 0; i < 4; i += 1) {
+                Storage.setValue("kajoHeartRateZone" + i.toString(), 0);
+            }
+            Storage.setValue("kajoHeartRateZoneDate", "");
+        }
+
+        mSyncStatus = "KAJO AKTUALISIERT";
+        WatchUi.requestUpdate();
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
@@ -128,6 +207,7 @@ class KajoConnectView extends WatchUi.View {
         // Die Inhalte bleiben in der zentralen, kreisförmig sicheren Displayzone.
         drawCentered(dc, cx, scale * 0.105, "KAJO", scale * 0.72, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
         drawCentered(dc, cx, scale * 0.185, "HEUTE", scale * 0.68, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, cx, scale * 0.215, mSyncStatus, scale * 0.74, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         var sessionCount = mPlannedSessions.size();
         var activityLabelY = scale * 0.49;
