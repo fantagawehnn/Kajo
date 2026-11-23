@@ -49,6 +49,22 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         return font;
     }
 
+    function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
+        var font = fitFont(dc, text, maxWidth, preferredFont);
+        var displayText = text;
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+            if (displayText.length() <= 4) { displayText = ""; }
+            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
+        }
+        if (displayText == "") { return; }
+        var safeY = y;
+        var textHeight = dc.getFontHeight(font);
+        if (safeY < 2) { safeY = 2; }
+        if (safeY + textHeight > mHeight - 2) { safeY = mHeight - textHeight - 2; }
+        dc.setColor(color, Graphics.COLOR_BLACK);
+        dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
     function saveConfig() as Void {
         for (var i = 0; i < 5; i += 1) {
             Storage.setValue("kajoDisplayPage" + i.toString(), mEnabled[i]);
@@ -64,10 +80,8 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         if (mHeight < mUnit) { mUnit = mHeight; }
         var cx = mWidth / 2;
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.095).toNumber(), Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.16).toNumber(), Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, cx, mUnit * 0.095, "ANZEIGEN", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.16, "DATENSEITEN AUSWAEHLEN", mUnit * 0.74, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.235;
@@ -85,15 +99,14 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
             var state = mEnabled[i] ? "AN" : "AUS";
             var labelWidth = Math.floor(cardWidth * 0.62).toNumber();
             var font = fitFont(dc, labels[i], labelWidth, Graphics.FONT_SMALL);
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawText(Math.round(cardX + (labelWidth / 2) + (mUnit * 0.015)).toNumber(),
-                Math.round(y + (cardHeight - dc.getFontHeight(font)) / 2).toNumber(),
-                font, labels[i], Graphics.TEXT_JUSTIFY_CENTER);
+            drawFit(dc, cardX + (labelWidth / 2) + (mUnit * 0.015),
+                y + (cardHeight - dc.getFontHeight(font)) / 2,
+                labels[i], labelWidth * 0.96, font, Graphics.COLOR_WHITE);
 
-            dc.setColor(mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawText(Math.round(cardX + cardWidth * 0.84).toNumber(),
-                Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2).toNumber(),
-                Graphics.FONT_TINY, state, Graphics.TEXT_JUSTIFY_CENTER);
+            drawFit(dc, cardX + cardWidth * 0.84,
+                y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+                state, cardWidth * 0.22, Graphics.FONT_TINY,
+                mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
         }
 
         var saveWidth = mUnit * 0.54;
@@ -102,7 +115,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(), Math.round(saveY).toNumber(), Math.round(saveWidth).toNumber(), Math.round(saveHeight).toNumber(), Math.round(mUnit * 0.03).toNumber());
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2).toNumber(),
-            Graphics.FONT_SMALL, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, cx, saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
+            "SPEICHERN", saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
     }
 }
