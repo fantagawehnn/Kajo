@@ -167,7 +167,9 @@ class KajoConnectActivityView extends WatchUi.View {
         for (var i = 0; i < planned.size(); i += 1) {
             var session = planned[i] as Lang.Dictionary;
             var sessionDate = session["date"];
-            if (sessionDate != null && sessionDate.toString() == today) {
+            var sessionType = session["type"];
+            if (sessionDate != null && sessionDate.toString() == today &&
+                (sessionType == null || sessionType.toString() != "RestDay")) {
                 todayCount += 1;
                 todayIndex = i;
             }
@@ -784,9 +786,7 @@ class KajoConnectActivityView extends WatchUi.View {
     function drawMetric(dc as Dc, x, y, label as Lang.String, value as Lang.String, unit as Lang.String, maxWidth, valueFont) as Void {
         drawFit(dc, x, y, label, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         var valueY = y + (mUnit * 0.065);
-        var font = fitFont(dc, value, maxWidth, valueFont);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x).toNumber(), Math.round(valueY).toNumber(), font, value, Graphics.TEXT_JUSTIFY_CENTER);
+        drawFit(dc, x, valueY, value, maxWidth, valueFont, Graphics.COLOR_WHITE);
         if (unit != "") {
             drawFit(dc, x, valueY + (mUnit * 0.065), unit, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
