@@ -410,8 +410,9 @@ class KajoConnectView extends WatchUi.View {
         // Hero-Kachel: Inhalte stammen aus dem synchronisierten Tagesplan.
         var cardX = cx - (mUnit * 0.405);
         var cardY = mUnit * 0.31;
-        var cardWidth = mLayout.safeRectWidth(cardY, cardHeight, mUnit * 0.81);
         var cardHeight = mUnit * 0.19;
+        var cardWidth = mLayout.safeRectWidth(cardY, cardHeight, mUnit * 0.81);
+        cardX = cx - (cardWidth / 2);
         dc.setColor(0x05181C, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
             cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.055).toNumber());
