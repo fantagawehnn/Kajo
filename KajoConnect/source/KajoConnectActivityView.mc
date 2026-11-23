@@ -269,8 +269,8 @@ class KajoConnectActivityView extends WatchUi.View {
 
         drawFit(dc, cx, mUnit * 0.805, mStatus, mUnit * 0.70, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        mButtonTop = mUnit * 0.835;
-        mButtonBottom = mUnit * 0.925;
+        mButtonTop = mUnit * 0.82;
+        mButtonBottom = mUnit * 0.90;
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawButton(dc, cx, mButtonTop, mUnit * 0.58, "STARTEN");
         } else if (mStatus == "AUFZEICHNUNG") {
