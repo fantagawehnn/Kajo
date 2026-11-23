@@ -51,7 +51,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         var metricId = mMetricIds[index];
         var existing = selectedIndex(metricId);
         if (existing >= 0) {
-            mSelected.remove(existing);
+            mSelected.remove(metricId);
             if (mSelectedRow == index) { mSelectedRow = -1; }
         } else {
             if (mSelected.size() >= 4) {
