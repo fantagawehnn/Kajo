@@ -87,16 +87,10 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 
 test("shared Garmin layout provides the percentage-based font selector used by compact controls", () => {
   assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
-  assert.match(layoutView, /dc\\.getFontHeight\\(candidate\\)/);
-  for (const [name, source] of [
-    ["activity", activityView],
-    ["custom fields", customFieldsView],
-    ["display config", displayConfigView],
-  ]) {
-    if (source.includes("fontForPercent")) {
-  assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
-    }
-  }
+  assert.ok(layoutView.includes("dc.getFontHeight(candidate)"));
+  assert.ok(activityView.includes("fontForPercent"));
+  assert.ok(customFieldsView.includes("fontForPercent"));
+  assert.ok(displayConfigView.includes("fontForPercent"));
 });
 
 test("Activity screen uses shared bounded text and reserves a separate bottom control area", () => {
