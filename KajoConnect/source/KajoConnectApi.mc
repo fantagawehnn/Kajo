@@ -2,7 +2,7 @@ import Toybox.Communications;
 import Toybox.Lang;
 
 // Zentrale HTTPS-Transportebene für KAJO-Connect.
-// Die konkreten Endpunkte werden erst nach Backend-Implementierung angebunden.
+// Gemeinsame Transportebene für den KAJO-Connect-Pairing-Endpunkt und spätere Sync-Aktionen.
 class KajoConnectApi {
 
     function initialize() {
