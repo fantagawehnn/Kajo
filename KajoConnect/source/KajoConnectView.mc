@@ -248,15 +248,7 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function startActivity() as Void {
-        var today = getLocalDate();
-        var todaysSessions = [];
-        for (var i = 0; i < mPlannedSessions.size(); i += 1) {
-            var session = mPlannedSessions[i] as Lang.Dictionary;
-            var sessionDate = session["date"];
-            if (sessionDate != null && sessionDate.toString() == today) {
-                todaysSessions.add(session);
-            }
-        }
+        var todaysSessions = getTodaysSessions();
 
         if (todaysSessions.size() > 1) {
             var selector = new KajoConnectWorkoutSelectView(todaysSessions, self);
