@@ -494,64 +494,45 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function drawActivityDashboard(dc as Dc, cx, hrNow as Lang.String, elapsed as Lang.String,
         distance as Lang.String, speedNow as Lang.String, zone as Lang.Number) as Void {
-        drawHeartRateRing(dc, cx, mUnit * 0.49, mUnit * 0.465, zone);
-
-        drawFit(dc, cx, mUnit * 0.105, compactWorkoutText(mCurrentWorkoutName, 32), mUnit * 0.68,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        var workoutSubline = mCurrentWorkoutType;
-        if (mCurrentWorkoutState == "MULTIPLE") {
-            workoutSubline = "BITTE TRAININGSPLAN PRUEFEN";
-        } else if (mCurrentWorkoutState == "FREE") {
-            workoutSubline = "KEINE EINHEIT GEPLANT";
-        } else {
-            if (mCurrentWorkoutDuration != "") {
-                if (workoutSubline != "") { workoutSubline += "  ·  "; }
-                workoutSubline += mCurrentWorkoutDuration + " MIN";
-            }
-            if (workoutSubline == "") { workoutSubline = "GEPLANTE EINHEIT"; }
-        }
-        drawFit(dc, cx, mUnit * 0.155, workoutSubline, mUnit * 0.68,
+        // Klare Garmin-inspirierte Hierarchie: eine Hauptkennzahl, zwei Sekundaerwerte.
+        drawFit(dc, cx, mUnit * 0.105, compactWorkoutText(mCurrentWorkoutName, 30),
+            mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        var subtitle = mBoatClass;
+        if (mCurrentWorkoutDuration != "") { subtitle += "  ·  " + mCurrentWorkoutDuration + " MIN"; }
+        drawFit(dc, cx, mUnit * 0.155, subtitle, mUnit * 0.68,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        // Kompakte Trainingsvorgabe: Hauptteil hat Vorrang, Intensitaet bleibt als Kontext sichtbar.
-        var workoutCue = compactWorkoutText(mCurrentWorkoutMainSet, 34);
-        if (mCurrentWorkoutIntensity != "") {
-            workoutCue = workoutCue != ""
-                ? compactWorkoutText(mCurrentWorkoutIntensity, 12) + "  ·  " + workoutCue
-                : compactWorkoutText(mCurrentWorkoutIntensity, 34);
-        }
-        if (workoutCue == "") { workoutCue = compactWorkoutText(mCurrentWorkoutDescription, 42); }
-        if (workoutCue != "") {
-            drawFit(dc, cx, mUnit * 0.19, workoutCue, mUnit * 0.68,
-                Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-        }
 
-        var panelX = mUnit * 0.145;
-        var panelWidth = mUnit * 0.71;
-        drawDashboardPanel(dc, panelX, mUnit * 0.215, panelWidth, mUnit * 0.245);
-        drawFit(dc, cx, mUnit * 0.245, "HERZFREQUENZ", panelWidth * 0.84,
+        var panelX = mUnit * 0.14;
+        var panelWidth = mUnit * 0.72;
+        drawDashboardPanel(dc, panelX, mUnit * 0.225, panelWidth, mUnit * 0.285);
+        drawFit(dc, cx, mUnit * 0.255, "HERZFREQUENZ", panelWidth * 0.84,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawFit(dc, cx, mUnit * 0.285, hrNow, panelWidth * 0.80,
+        drawFit(dc, cx, mUnit * 0.315, hrNow, panelWidth * 0.80,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.375, "BPM  ·  " + (zone > 0 ? "ZONE " + zone.toString() : "ZONE --"),
-            panelWidth * 0.84, Graphics.FONT_SMALL, zone > 0 ? 0xFFB52E : Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.425,
+            "BPM  ·  " + (zone > 0 ? "ZONE " + zone.toString() : "ZONE --"),
+            panelWidth * 0.84, Graphics.FONT_SMALL,
+            zone > 0 ? 0xFFB52E : Graphics.COLOR_LT_GRAY);
 
-        var splitGap = mUnit * 0.018;
-        var halfWidth = (panelWidth - splitGap) / 2;
-        drawDashboardPanel(dc, panelX, mUnit * 0.48, halfWidth, mUnit * 0.155);
-        drawDashboardPanel(dc, panelX + halfWidth + splitGap, mUnit * 0.48, halfWidth, mUnit * 0.155);
-        drawFit(dc, panelX + halfWidth / 2, mUnit * 0.505, "ZEIT", halfWidth * 0.84,
+        var gap = mUnit * 0.025;
+        var halfWidth = (panelWidth - gap) / 2;
+        var leftCenter = panelX + halfWidth / 2;
+        var rightCenter = panelX + halfWidth + gap + halfWidth / 2;
+        drawDashboardPanel(dc, panelX, mUnit * 0.545, halfWidth, mUnit * 0.19);
+        drawDashboardPanel(dc, panelX + halfWidth + gap, mUnit * 0.545, halfWidth, mUnit * 0.19);
+        drawFit(dc, leftCenter, mUnit * 0.575, "ZEIT", halfWidth * 0.82,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawFit(dc, panelX + halfWidth / 2, mUnit * 0.545, elapsed, halfWidth * 0.88,
+        drawFit(dc, leftCenter, mUnit * 0.625, elapsed, halfWidth * 0.86,
             Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawFit(dc, panelX + halfWidth + splitGap + halfWidth / 2, mUnit * 0.505,
-            "DISTANZ", halfWidth * 0.84, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawFit(dc, panelX + halfWidth + splitGap + halfWidth / 2, mUnit * 0.545,
-            distance, halfWidth * 0.88, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.665, "KM", mUnit * 0.24, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, rightCenter, mUnit * 0.575, "DISTANZ", halfWidth * 0.82,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, rightCenter, mUnit * 0.625, distance, halfWidth * 0.86,
+            Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+        drawFit(dc, rightCenter, mUnit * 0.69, "KM", halfWidth * 0.72,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        drawDashboardPanel(dc, mUnit * 0.29, mUnit * 0.715, mUnit * 0.42, mUnit * 0.075);
-        drawFit(dc, cx, mUnit * 0.735, "GESCHWINDIGKEIT  " + speedNow + " KM/H",
-            mUnit * 0.38, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.765, "GESCHWINDIGKEIT  " + speedNow + " KM/H",
+            mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
@@ -771,9 +752,25 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var font = preferredFont;
+        var displayText = text;
+        if (dc.getTextWidthInPixels(displayText, font) > maxWidth) { font = Graphics.FONT_SMALL; }
+        if (dc.getTextWidthInPixels(displayText, font) > maxWidth) { font = Graphics.FONT_TINY; }
+        if (dc.getTextWidthInPixels(displayText, font) > maxWidth) { font = Graphics.FONT_XTINY; }
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+            if (displayText.length() <= 4) {
+                displayText = "";
+            } else {
+                displayText = displayText.substring(0, displayText.length() - 4) + "...";
+            }
+        }
+        if (displayText == "") { return; }
+        var safeY = y;
+        var textHeight = dc.getFontHeight(font);
+        if (safeY < 2) { safeY = 2; }
+        if (safeY + textHeight > mScreenHeight - 2) { safeY = mScreenHeight - textHeight - 2; }
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(x).toNumber(), Math.round(y).toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
@@ -893,10 +890,22 @@ class KajoConnectActivityView extends WatchUi.View {
         }
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
-            drawPageHeader(dc, "AKTIVITAET");
-            drawFit(dc, cx, mUnit * 0.34, mStatus == "START FEHLGESCHLAGEN" ? "START FEHLGESCHLAGEN" : "BEREIT", mUnit * 0.72, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-            drawFit(dc, cx, mUnit * 0.47, "Aufzeichnung starten", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
-            drawFit(dc, cx, mUnit * 0.57, "Bootsklasse im Startmenue gewaehlt", mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawPageHeader(dc, "BEREIT");
+            var readyPanelX = mUnit * 0.14;
+            var readyPanelWidth = mUnit * 0.72;
+            drawDashboardPanel(dc, readyPanelX, mUnit * 0.29, readyPanelWidth, mUnit * 0.24);
+            drawFit(dc, cx, mUnit * 0.335, compactWorkoutText(mCurrentWorkoutName, 30),
+                readyPanelWidth * 0.86, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, cx, mUnit * 0.405, mBoatClass,
+                readyPanelWidth * 0.82, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            if (mCurrentWorkoutDuration != "") {
+                drawFit(dc, cx, mUnit * 0.465, mCurrentWorkoutDuration + " MIN",
+                    readyPanelWidth * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            }
+            if (mStatus == "START FEHLGESCHLAGEN") {
+                drawFit(dc, cx, mUnit * 0.62, "START NICHT MOEGLICH",
+                    mUnit * 0.76, Graphics.FONT_XTINY, 0xFFFF7043);
+            }
         } else if (mCurrentPageId == 0) {
             drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, currentHeartRateZone);
         } else if (mCurrentPageId == 1) {
