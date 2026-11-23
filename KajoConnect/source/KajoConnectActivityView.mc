@@ -46,15 +46,19 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCurrentWorkoutDuration as Lang.String = "";
     var mCurrentWorkoutDescription as Lang.String = "";
     var mCurrentWorkoutIntensity as Lang.String = "";
+    var mCurrentWorkoutObjective as Lang.String = "";
+    var mCurrentWorkoutWarmup as Lang.String = "";
     var mCurrentWorkoutMainSet as Lang.String = "";
+    var mCurrentWorkoutCooldown as Lang.String = "";
+    var mHasWorkoutInstructions as Lang.Boolean = false;
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
         mBoatClass = boatClass;
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
-        loadDisplayPages();
         loadCurrentWorkout();
+        loadDisplayPages();
     }
 
     function compactWorkoutText(value as Lang.String, maxLength as Lang.Number) as Lang.String {
@@ -70,7 +74,11 @@ class KajoConnectActivityView extends WatchUi.View {
         mCurrentWorkoutDuration = workout["duration"] == null ? "" : workout["duration"].toString();
         mCurrentWorkoutDescription = workout["desc"] == null ? "" : workout["desc"].toString();
         mCurrentWorkoutIntensity = workout["intensity"] == null ? "" : workout["intensity"].toString();
+        mCurrentWorkoutObjective = workout["objective"] == null ? "" : workout["objective"].toString();
+        mCurrentWorkoutWarmup = workout["warmup"] == null ? "" : workout["warmup"].toString();
         mCurrentWorkoutMainSet = workout["mainSet"] == null ? "" : workout["mainSet"].toString();
+        mCurrentWorkoutCooldown = workout["cooldown"] == null ? "" : workout["cooldown"].toString();
+        loadDisplayPages();
     }
 
     function loadCurrentWorkout() as Void {
@@ -81,7 +89,10 @@ class KajoConnectActivityView extends WatchUi.View {
         mCurrentWorkoutDuration = "";
         mCurrentWorkoutDescription = "";
         mCurrentWorkoutIntensity = "";
+        mCurrentWorkoutObjective = "";
+        mCurrentWorkoutWarmup = "";
         mCurrentWorkoutMainSet = "";
+        mCurrentWorkoutCooldown = "";
         if (sessions == null) { return; }
 
         var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
@@ -115,7 +126,10 @@ class KajoConnectActivityView extends WatchUi.View {
         if (selected["duration"] != null) { mCurrentWorkoutDuration = selected["duration"].toString(); }
         if (selected["desc"] != null) { mCurrentWorkoutDescription = selected["desc"].toString(); }
         if (selected["intensity"] != null) { mCurrentWorkoutIntensity = selected["intensity"].toString(); }
+        if (selected["objective"] != null) { mCurrentWorkoutObjective = selected["objective"].toString(); }
+        if (selected["warmup"] != null) { mCurrentWorkoutWarmup = selected["warmup"].toString(); }
         if (selected["mainSet"] != null) { mCurrentWorkoutMainSet = selected["mainSet"].toString(); }
+        if (selected["cooldown"] != null) { mCurrentWorkoutCooldown = selected["cooldown"].toString(); }
     }
 
     function loadDisplayPages() as Void {
@@ -143,7 +157,12 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mCustomMetricIds.size() > 0) { mCustomPageCount += 1; }
         if (mCustomMetricIds1.size() > 0) { mCustomPageCount += 1; }
         if (mCustomMetricIds2.size() > 0) { mCustomPageCount += 1; }
+        mHasWorkoutInstructions = mCurrentWorkoutState == "PLANNED" &&
+            (mCurrentWorkoutObjective != "" || mCurrentWorkoutIntensity != "" ||
+             mCurrentWorkoutWarmup != "" || mCurrentWorkoutMainSet != "" ||
+             mCurrentWorkoutCooldown != "");
         mPageCount = mEnabledPageIds.size() + mCustomPageCount;
+        if (mHasWorkoutInstructions) { mPageCount += 1; }
         mPage = 0;
     }
 
@@ -701,6 +720,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mCurrentPageId = mEnabledPageIds[mPage] as Lang.Number;
         } else {
             var customIndex = mPage - mEnabledPageIds.size();
+            mCurrentPageId = 8;
             for (var i = 0; i < 3; i += 1) {
                 if (getCustomMetricIds(i).size() > 0) {
                     if (customIndex == 0) {
@@ -808,6 +828,37 @@ class KajoConnectActivityView extends WatchUi.View {
             drawCustomMetricPage(dc, cx, customMetricValues,
                 getCustomMetricIds(customLayoutIndex), getCustomMetricSizes(customLayoutIndex),
                 getCustomMetricPositions(customLayoutIndex), customPageTitle);
+        } else if (mCurrentPageId == 8) {
+            drawPageHeader(dc, "TRAININGSANWEISUNG");
+            if (mCurrentWorkoutIntensity != "") {
+                drawFit(dc, cx, mUnit * 0.215,
+                    "INTENSITAET · " + compactWorkoutText(mCurrentWorkoutIntensity, 34),
+                    mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            }
+            if (mCurrentWorkoutObjective != "") {
+                drawFit(dc, cx, mUnit * 0.285, "ZIEL", mUnit * 0.72,
+                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                drawFit(dc, cx, mUnit * 0.325, compactWorkoutText(mCurrentWorkoutObjective, 58),
+                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            }
+            if (mCurrentWorkoutWarmup != "") {
+                drawFit(dc, cx, mUnit * 0.415, "AUFWÄRMEN", mUnit * 0.72,
+                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                drawFit(dc, cx, mUnit * 0.455, compactWorkoutText(mCurrentWorkoutWarmup, 58),
+                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            }
+            if (mCurrentWorkoutMainSet != "") {
+                drawFit(dc, cx, mUnit * 0.545, "HAUPTTEIL", mUnit * 0.72,
+                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                drawFit(dc, cx, mUnit * 0.585, compactWorkoutText(mCurrentWorkoutMainSet, 72),
+                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            }
+            if (mCurrentWorkoutCooldown != "") {
+                drawFit(dc, cx, mUnit * 0.695, "ABWÄRMEN", mUnit * 0.72,
+                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                drawFit(dc, cx, mUnit * 0.735, compactWorkoutText(mCurrentWorkoutCooldown, 58),
+                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            }
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.245, "KADENZ", cadenceNow, "RPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
