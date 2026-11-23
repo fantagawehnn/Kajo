@@ -663,7 +663,7 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(dc, cx + (mUnit * 0.205), mUnit * 0.615,
             "DISTANZ", mUnit * 0.34, Graphics.FONT_XTINY, muted);
         dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
-        dc.drawLine(left.toNumber(), (mUnit * 0.715).toNumber(),
+        dc.drawLine(left.toNumber(), (mUnit * 0.655).toNumber(),
             right.toNumber(), (mUnit * 0.715).toNumber());
 
         // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
