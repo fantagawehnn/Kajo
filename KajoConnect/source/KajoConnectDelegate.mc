@@ -34,9 +34,10 @@ class KajoConnectDelegate extends WatchUi.BehaviorDelegate {
 
     function onMenu() {
 
+        var menuView = new KajoConnectMenuView(mView);
         WatchUi.pushView(
-            new Rez.Menus.MainMenu(),
-            new KajoConnectMenuDelegate(mView),
+            menuView,
+            new KajoConnectMenuViewDelegate(menuView),
             WatchUi.SLIDE_UP
         );
 
