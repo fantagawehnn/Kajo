@@ -517,8 +517,8 @@ class KajoConnectView extends WatchUi.View {
                 dc.drawCircle(iconX.toNumber(), iconY.toNumber(), (iconUnit * 0.28).toNumber());
             }
 
-            drawCentered(dc, rowX + (rowWidth * 0.55), rowY + (rowH * 0.27),
-                labels[itemIndex], rowWidth * 0.62, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawCentered(dc, rowX + (rowWidth * 0.54), rowY + (rowH * 0.27),
+                labels[itemIndex], rowWidth * 0.56, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             drawCentered(dc, rowX + (rowWidth * 0.89), rowY + (rowH * 0.23),
                 ">", rowWidth * 0.12, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         }
