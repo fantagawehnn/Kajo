@@ -38,6 +38,10 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
+        if (y > mUnit * 0.87) {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            return;
+        }
         if (y >= mRowTop && y < mRowTop + (mRowHeight * 3)) {
             var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
             var index = (mPage * 3) + row;
@@ -111,7 +115,7 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         drawCentered(dc, cx, mUnit * 0.84,
             (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  WISCHEN",
             mUnit * 0.70, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawCentered(dc, cx, mUnit * 0.91, "EINHEIT ANTIPPEN",
+        drawCentered(dc, cx, mUnit * 0.91, "ZURUECK",
             mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
     }
 }
