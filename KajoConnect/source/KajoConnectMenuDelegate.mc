@@ -17,6 +17,9 @@ class KajoConnectMenuDelegate extends WatchUi.MenuInputDelegate {
         } else if (item == :item_3) {
             var view = new KajoConnectPairingView();
             WatchUi.pushView(view, new KajoConnectPairingDelegate(), WatchUi.SLIDE_UP);
+        } else if (item == :item_4) {
+            var view = new KajoConnectCustomFieldsView();
+            WatchUi.pushView(view, new KajoConnectCustomFieldsDelegate(view), WatchUi.SLIDE_UP);
         }
     }
 }
