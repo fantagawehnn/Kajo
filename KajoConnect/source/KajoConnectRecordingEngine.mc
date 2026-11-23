@@ -7,7 +7,7 @@ import Toybox.Lang;
 // nicht verifizierte Garmin-Sportklassifizierung vorgetäuscht wird.
 class KajoConnectRecordingEngine {
 
-    var mSession = null;
+    var mSession as ActivityRecording.Session? = null;
 
     function initialize() {
     }
