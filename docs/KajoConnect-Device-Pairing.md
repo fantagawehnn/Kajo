@@ -88,10 +88,10 @@ Diese Werte gehören ausschließlich in die Supabase-Function-Secrets. Sie dürf
 
 ## 8. Noch nicht umgesetzt
 
-- Die Pairing-Oberfläche in der KAJO-Web-App zum Eingeben und Bestätigen des Codes.
-- Die Pairing-Ansicht auf der Uhr, einschließlich Anzeige des Codes, Polling und lokaler Token-Speicherung.
+- Die Pairing-Oberfläche in der KAJO-Web-App zum Eingeben und Bestätigen des Codes ist im Branch ergänzt.
+- Die Pairing-Ansicht auf der Uhr einschließlich Code-Anzeige, Polling und lokaler Token-Speicherung ist im Branch ergänzt; sie ist noch nicht kompiliert oder am Gerät getestet.
 - Das Anwenden des zurückgegebenen Trainingsplans und der Herzfrequenzzonen in der laufenden Watch-App.
-- Geräteverwaltung und Widerruf in der KAJO-Web-App.
+- Geräteverwaltung und Widerruf in der KAJO-Web-App sind als UI und Backend-Aktionen ergänzt; die Funktion ist noch nicht gegen eine bereitgestellte Datenbank getestet.
 - Die Datenbanktabellen; das SQL ist bislang nur ein Entwurf.
 - Deployment der Edge Function und Setzen der Secrets.
 - End-to-end-Tests und Garmin-Gerätetests.
