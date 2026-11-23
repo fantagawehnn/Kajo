@@ -6,7 +6,7 @@ import Toybox.WatchUi;
 
 class KajoConnectCustomFieldsView extends WatchUi.View {
 
-    var mLayout as KajoLayout;
+    var mKajoLayout as KajoLayout;
 
     var mMetricIds as Lang.Array<Lang.String> = [
         "speedNow", "speedAvg", "speedMax", "heartRate", "heartRateZone",
@@ -40,7 +40,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
-        mLayout = new KajoLayout();
+        mKajoLayout = new KajoLayout();
         mPageCount = Math.floor(mMetricIds.size() / 4).toNumber();
         if ((mMetricIds.size() % 4) > 0) { mPageCount += 1; }
         loadLayout(0);
@@ -223,15 +223,15 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     }
 
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
+        var font = mKajoLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
         while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
         if (displayText == "" || safeWidth <= 0) { return; }
-        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
+        var safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -241,7 +241,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         mHeight = dc.getHeight();
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
-        mLayout.configure(mWidth, mHeight);
+        mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
         // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
@@ -260,7 +260,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         mRowTop = Math.round(mUnit * 0.245).toNumber();
         mRowHeight = Math.round(mUnit * 0.108).toNumber();
         var cardHeight = mRowHeight * 0.82;
-        var cardWidth = mLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.70);
+        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.70);
         var cardX = cx - (cardWidth / 2);
 
         for (var row = 0; row < 4; row += 1) {
@@ -288,7 +288,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
                 Math.round(mUnit * 0.02).toNumber());
 
-            drawFit(dc, cardX + cardWidth * 0.36, y + (cardHeight - dc.getFontHeight(mLayout.fontForPercent(dc, 0.045))) / 2,
+            drawFit(dc, cardX + cardWidth * 0.36, y + (cardHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.045))) / 2,
                 mMetricLabels[index], cardWidth * 0.62, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
             drawFit(dc, cardX + cardWidth * 0.83, y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
                 stateText, cardWidth * 0.25, Graphics.FONT_TINY, isEnabled ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY);
@@ -305,7 +305,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             dc.drawRoundedRectangle(Math.round(centers[b] - controlWidth / 2).toNumber(),
                 Math.round(mControlTop).toNumber(), Math.round(controlWidth).toNumber(),
                 Math.round(controlHeight).toNumber(), Math.round(mUnit * 0.02).toNumber());
-            drawFit(dc, centers[b], mControlTop + (controlHeight - dc.getFontHeight(mLayout.fontForPercent(dc, 0.035))) / 2,
+            drawFit(dc, centers[b], mControlTop + (controlHeight - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.035))) / 2,
                 labels[b], controlWidth * 0.92, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
 
@@ -316,7 +316,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
             Math.round(mSaveTop).toNumber(), Math.round(saveWidth).toNumber(),
             Math.round((mSaveBottom - mSaveTop)).toNumber(), Math.round(mUnit * 0.02).toNumber());
-        drawFit(dc, cx, mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(mLayout.fontForPercent(dc, 0.035))) / 2,
+        drawFit(dc, cx, mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.035))) / 2,
             "SPEICHERN", saveWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
     }
 }
