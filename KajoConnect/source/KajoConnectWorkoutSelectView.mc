@@ -22,6 +22,12 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         if (mPageCount < 1) { mPageCount = 1; }
     }
 
+    function compactText(value as Lang.String, maxLength as Lang.Number) as Lang.String {
+        if (value.length() <= maxLength) { return value; }
+        if (maxLength <= 3) { return value.substring(0, maxLength); }
+        return value.substring(0, maxLength - 3) + "...";
+    }
+
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = preferredFont;
         if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
@@ -84,7 +90,7 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
             dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
                 cardHeight.toNumber(), (mUnit * 0.03).toNumber());
 
-            drawCentered(dc, cx, y + (mUnit * 0.025), name, cardWidth * 0.88,
+            drawCentered(dc, cx, y + (mUnit * 0.025), compactText(name, 34), cardWidth * 0.88,
                 Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             var detail = type;
             if (duration != "") { detail += "  ·  " + duration + " MIN"; }
@@ -97,7 +103,7 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
                 cue = cue == "" ? intensity.toString() : intensity.toString() + " · " + cue;
             }
             if (cue != "") {
-                drawCentered(dc, cx, y + (mUnit * 0.12), cue, cardWidth * 0.88,
+                drawCentered(dc, cx, y + (mUnit * 0.12), compactText(cue, 42), cardWidth * 0.88,
                     Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
             }
         }
