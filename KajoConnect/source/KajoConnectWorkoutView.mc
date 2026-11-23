@@ -86,11 +86,11 @@ class KajoConnectWorkoutView extends WatchUi.View {
             sportContext = sportContext.length() > 0 ? sportContext + " · " + waterType : waterType;
         }
 
-        drawCentered(dc, center, unit * 0.075, "TRAINING", contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, unit * 0.075, "GEPLANTES TRAINING", contentWidth, Graphics.FONT_SMALL, 0x00E5CC);
         drawCentered(dc, center, unit * 0.125, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         // Hauptkarte: Name der Einheit und sportartspezifischer Kontext.
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+        dc.setColor(0x05181C, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(
             (center - unit * 0.38).toNumber(),
             (unit * 0.18).toNumber(),
@@ -134,7 +134,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
 
             // Der Hauptteil bekommt die groesste Aufmerksamkeit.
             if (mainSet.length() > 0) {
-                dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+                dc.setColor(0x05181C, Graphics.COLOR_BLACK);
                 dc.fillRoundedRectangle(
                     (center - unit * 0.35).toNumber(),
                     (unit * 0.715).toNumber(),
