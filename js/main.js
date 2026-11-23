@@ -22,7 +22,7 @@ import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { mergeCloudSnapshots, cloudSnapshotsEqual } from './cloud-merge.js?v=1';
-import { fetchCloudActivities, getCloudActivityIds, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
+import { fetchCloudActivities, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=1';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
@@ -2353,7 +2353,26 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         };
         const merged = mergeCloudSnapshots(baselineSnapshot, local, expandedCloud);
         if (merged.conflicts.length) {
-            return { ok: false, conflict: true, version: cloud.version, conflicts: merged.conflicts };
+            const localActivitiesById = new Map(
+                (Array.isArray(local.activities) ? local.activities : []).map(activity => {
+                    const id = activity?.id ?? activity?.activityId
+                        ?? activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
+                    return id == null ? null : [String(id), activity];
+                }).filter(Boolean)
+            );
+            const cloudActivitiesById = new Map(
+                (Array.isArray(cloudActivities) ? cloudActivities : [])
+                    .filter(row => row?.record_id != null && row?.payload && typeof row.payload === 'object')
+                    .map(row => [String(row.record_id), row.payload])
+            );
+            const readableConflicts = merged.conflicts.map(conflict => {
+                const match = conflict.match(/activities\[(?:id:)?([^\]]+)\]/);
+                if (!match) return conflict;
+                const activityId = match[1];
+                const activity = localActivitiesById.get(activityId) || cloudActivitiesById.get(activityId);
+                return getActivityConflictLabel(activity) + ' – ' + conflict;
+            });
+            return { ok: false, conflict: true, version: cloud.version, conflicts: readableConflicts };
         }
 
         const mergedSnapshot = merged.snapshot;
@@ -2385,8 +2404,14 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 continue;
             }
             if (cloudActivityRowsById.has(activityId)) {
+                // Der Drei-Wege-Abgleich oben hat bereits geprüft, ob lokale und
+                // Cloud-Änderungen auf denselben Feldern kollidieren. Wenn er eine
+                // konfliktfreie kombinierte Aktivität liefert, muss genau diese
+                // Version auch in die separate activities-Tabelle geschrieben
+                // werden. Ein zweiter Vollobjektvergleich würde selbst harmlose,
+                // unabhängige Änderungen fälschlich als Konflikt blockieren.
                 if (!cloudSnapshotsEqual(activity, cloudActivityRowsById.get(activityId))) {
-                    activityConflicts.push('activities[' + activityId + '] (lokale Änderung an bestehender Cloud-Aktivität)');
+                    activitiesToUpload.push(activity);
                 }
             } else {
                 activitiesToUpload.push(activity);

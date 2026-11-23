@@ -48,6 +48,16 @@ function getActivityDate(activity) {
     return null;
 }
 
+export function getActivityConflictLabel(activity) {
+    if (!activity || typeof activity !== 'object') return 'Trainingseinheit';
+    const date = getActivityDate(activity);
+    const dateLabel = date
+        ? new Date(date + 'T12:00:00').toLocaleDateString('de-DE')
+        : 'Datum nicht verfügbar';
+    const name = activity.name || activity.title || activity.sport || activity.type || 'Trainingseinheit';
+    return name + ' · ' + dateLabel;
+}
+
 export function prepareCloudActivityRows(userId, activities) {
     if (!userId) throw new Error('Für die Aktivitätssynchronisierung fehlt die Benutzer-ID.');
     if (!Array.isArray(activities)) throw new Error('Aktivitäten müssen als Liste übergeben werden.');

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mergeCloudActivities, prepareCloudActivityRows } from '../js/cloud-activities.js';
+import { getActivityConflictLabel, mergeCloudActivities, prepareCloudActivityRows } from '../js/cloud-activities.js';
 
 test('prepares one stable user-scoped row per activity', () => {
     const rows = prepareCloudActivityRows('user-1', [
@@ -13,6 +13,17 @@ test('prepares one stable user-scoped row per activity', () => {
     assert.equal(rows[0].activity_date, '2026-11-23');
     assert.equal(rows[0].payload.name, 'K1');
     assert.equal(rows[1].record_id, '42');
+});
+
+test('formats a useful activity label with its date for conflict messages', () => {
+    assert.equal(
+        getActivityConflictLabel({ name: 'K1 Sprint', startTimeLocal: '2026-11-23T08:15:00' }),
+        'K1 Sprint · 23.11.2026'
+    );
+    assert.equal(
+        getActivityConflictLabel({ name: 'Training ohne Datum' }),
+        'Training ohne Datum · Datum nicht verfügbar'
+    );
 });
 
 test('rejects activities without stable IDs and duplicate IDs', () => {
