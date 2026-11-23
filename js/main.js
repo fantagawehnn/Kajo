@@ -2593,7 +2593,7 @@ async function startManualCloudSync() {
         return;
     }
     if (cloudSyncBlocked) {
-        setCloudSyncStatus('Manuelle Synchronisierung angehalten: Bitte lade KAJO neu, damit der aktuelle Cloud-Stand erneut geladen und geprüft wird. Es wurde nichts überschrieben.');
+        setCloudSyncStatus('Manuelle Synchronisierung pausiert: KAJO hat widersprüchliche Änderungen erkannt. Beide Datenstände bleiben erhalten; eine automatische Entscheidung wäre nicht sicher.');
         return;
     }
 
