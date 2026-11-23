@@ -27,7 +27,7 @@ test('führt unabhängige Änderungen in unterschiedlichen Bereichen zusammen', 
         { checkins: { '2026-11-23': { sleepQuality: 80 } }, planned: [] },
         { checkins: {}, planned: [{ id: 'plan-1', title: 'Training' }] }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.deepEqual(plain(result.snapshot), {
         checkins: { '2026-11-23': { sleepQuality: 80 } },
         planned: [{ id: 'plan-1', title: 'Training' }]
@@ -40,7 +40,7 @@ test('führt Ergänzungen beider Geräte in derselben Liste zusammen', () => {
         { planned: [{ id: 'existing', title: 'Alt' }, { id: 'phone', title: 'Telefon' }] },
         { planned: [{ id: 'existing', title: 'Alt' }, { id: 'desktop', title: 'Computer' }] }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.deepEqual(plain(result.snapshot.planned).map(item => item.id), ['existing', 'phone', 'desktop']);
 });
 
@@ -50,7 +50,7 @@ test('kombiniert Änderungen an unterschiedlichen Feldern desselben Eintrags', (
         { planned: [{ id: 'p1', title: 'Neu', duration: 60 }] },
         { planned: [{ id: 'p1', title: 'Alt', duration: 75 }] }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.deepEqual(plain(result.snapshot.planned), [{ id: 'p1', title: 'Neu', duration: 75 }]);
 });
 
@@ -78,7 +78,7 @@ test('überträgt eine Löschung, wenn die Gegenseite den Eintrag nicht geänder
         { planned: [{ id: 'p2', title: 'Bleibt' }] },
         { planned: [{ id: 'p1', title: 'Alt' }, { id: 'p2', title: 'Bleibt' }] }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.deepEqual(plain(result.snapshot.planned), [{ id: 'p2', title: 'Bleibt' }]);
 });
 
@@ -88,7 +88,7 @@ test('behandelt null ohne Basisstand nicht als sichere Löschung', () => {
         { seasonPlan: null },
         { seasonPlan: { focus: 'Classic' } }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.deepEqual(plain(result.snapshot), { seasonPlan: { focus: 'Classic' } });
 });
 
@@ -98,7 +98,7 @@ test('führt unabhängige Ergänzungen in primitiven Listen zusammen', () => {
         { symptoms: ['fatigue', 'headache'] },
         { symptoms: ['fatigue', 'soreness'] }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.deepEqual(plain(result.snapshot.symptoms).sort(), ['headache', 'soreness']);
 });
 
@@ -108,7 +108,7 @@ test('erhält doppelte Eintragsidentitäten, statt sie still zu überschreiben',
         { planned: [{ id: 'same', title: 'A' }, { id: 'same', title: 'B' }] },
         { planned: [{ id: 'same', title: 'A' }, { id: 'same', title: 'B' }] }
     );
-    assert.deepEqual(result.conflicts, []);
+    assert.deepEqual(plain(result.conflicts), []);
     assert.equal(result.snapshot.planned.length, 2);
 });
 
