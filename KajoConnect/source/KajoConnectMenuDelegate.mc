@@ -1,5 +1,4 @@
 import Toybox.Lang;
-import Toybox.System;
 import Toybox.WatchUi;
 
 class KajoConnectMenuDelegate extends WatchUi.MenuInputDelegate {
@@ -10,10 +9,11 @@ class KajoConnectMenuDelegate extends WatchUi.MenuInputDelegate {
 
     function onMenuItem(item as Symbol) as Void {
         if (item == :item_1) {
-            System.println("item 1");
+            var view = new KajoConnectDisplayConfigView();
+            WatchUi.pushView(view, new KajoConnectDisplayConfigDelegate(view), WatchUi.SLIDE_UP);
         } else if (item == :item_2) {
-            System.println("item 2");
+            var view = new KajoConnectWorkoutView("Trainingsplan");
+            WatchUi.pushView(view, new KajoConnectWorkoutDelegate(), WatchUi.SLIDE_UP);
         }
     }
-
 }
