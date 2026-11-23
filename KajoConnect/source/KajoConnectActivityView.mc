@@ -285,23 +285,53 @@ class KajoConnectActivityView extends WatchUi.View {
         metricIds as Lang.Array<Lang.String>, metricSizes as Lang.Dictionary,
         metricPositions as Lang.Dictionary, pageTitle as Lang.String) as Void {
         drawPageHeader(dc, pageTitle);
+
         for (var i = 0; i < metricIds.size() && i < 4; i += 1) {
             var metricId = metricIds[i];
             var position = metricPositions[metricId];
             if (position == null) { position = i; }
-            var x = mScreenWidth * 0.30;
-            var y = mUnit * 0.32;
-            var width = mUnit * 0.39;
-            if (position == 1 || position == 3) { x = mScreenWidth * 0.70; }
-            if (position == 2 || position == 3) { y = mUnit * 0.56; }
+
+            var x = mScreenWidth * 0.29;
+            var y = mUnit * 0.33;
+            var slotWidth = mUnit * 0.39;
+
+            if (position == 1 || position == 3) { x = mScreenWidth * 0.71; }
+            if (position == 2 || position == 3) { y = mUnit * 0.59; }
             if (position == 4) {
                 x = cx;
-                y = mUnit * 0.56;
-                width = mUnit * 0.68;
+                y = mUnit * 0.59;
+                slotWidth = mUnit * 0.68;
             }
+
             var fieldSize = getMetricSize(metricId, metricSizes);
-            var valueFont = getMetricFont(fieldSize);
-            drawCustomMetric(dc, cx, metricId, values, x, y, width, valueFont);
+            var tileWidth = slotWidth;
+            var tileHeight = mUnit * 0.22;
+            var valueFont = Graphics.FONT_MEDIUM;
+
+            if (fieldSize == 0) {
+                tileWidth = slotWidth * 0.86;
+                tileHeight = mUnit * 0.18;
+                valueFont = Graphics.FONT_SMALL;
+            } else if (fieldSize == 2) {
+                tileWidth = position == 4 ? slotWidth : slotWidth * 1.08;
+                tileHeight = mUnit * 0.24;
+                valueFont = Graphics.FONT_LARGE;
+            }
+
+            var tileTop = y - (mUnit * 0.055);
+            drawDashboardPanel(dc, x - (tileWidth / 2), tileTop, tileWidth, tileHeight);
+
+            var label = getCustomMetricLabel(metricId);
+            var value = getCustomMetricValue(metricId, values);
+            var unit = getCustomMetricUnit(metricId);
+            drawFit(dc, x, tileTop + (mUnit * 0.018), label, tileWidth * 0.88,
+                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawFit(dc, x, tileTop + (mUnit * 0.065), value, tileWidth * 0.88,
+                valueFont, Graphics.COLOR_WHITE);
+            if (unit != "") {
+                drawFit(dc, x, tileTop + (mUnit * 0.145), unit, tileWidth * 0.88,
+                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            }
         }
     }
 
