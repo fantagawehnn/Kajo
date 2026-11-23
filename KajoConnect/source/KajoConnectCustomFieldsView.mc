@@ -247,12 +247,12 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         var cx = mWidth / 2;
         // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
-            (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
-        dc.drawLine((unit * 0.12).toNumber(), (unit * 0.075).toNumber(),
-            (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
-        dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
-            (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
+        dc.drawLine((mUnit * 0.105).toNumber(), (mUnit * 0.105).toNumber(),
+            (mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber());
+        dc.drawLine((mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber(),
+            (mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber());
+        dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
+            (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
 
         drawFit(dc, cx, mUnit * 0.075, "DATENFELDER", mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         drawFit(dc, cx, mUnit * 0.13, "K / M / G = KLEIN / MITTEL / GROSS", mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
