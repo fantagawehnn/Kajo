@@ -8,7 +8,7 @@ import Toybox.WatchUi;
 
 class KajoConnectView extends WatchUi.View {
 
-    var mLayout;
+    var mLayout as KajoLayout;
 
     var mSelectedBoat = "K1";
     var mPlannedSessions as Lang.Array<Lang.Dictionary> = [];
