@@ -25,14 +25,6 @@ const KAJO_CONNECT_METRICS = [
 let displayLayoutsDraft = null;
 let activeDisplayLayout = 0;
 
-function defaultDisplayLayouts() {
-    return [0, 1, 2].map(index => ({
-        id: 'layout-' + (index + 1),
-        name: 'Datenseite ' + (index + 1),
-        metrics: []
-    }));
-}
-
 function normalizeDisplayLayouts(value) {
     const source = Array.isArray(value) ? value : [];
     const allowed = new Set(KAJO_CONNECT_METRICS.map(([id]) => id));
@@ -40,7 +32,11 @@ function normalizeDisplayLayouts(value) {
         const layout = source[index] && typeof source[index] === 'object' ? source[index] : {};
         const seen = new Set();
         const metrics = (Array.isArray(layout.metrics) ? layout.metrics : [])
-            .filter(metric => metric && typeof metric.id === 'string' && allowed.has(metric.id) && !seen.has(metric.id) && seen.add(metric.id))
+            .filter(metric => {
+                if (!metric || typeof metric.id !== 'string' || !allowed.has(metric.id) || seen.has(metric.id)) return false;
+                seen.add(metric.id);
+                return true;
+            })
             .slice(0, 4)
             .map(metric => ({
                 id: metric.id,
