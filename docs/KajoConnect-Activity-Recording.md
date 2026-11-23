@@ -61,3 +61,10 @@ Die Startansicht kann vollständige geplante Einheiten als `Lang.Dictionary` ent
 - `duration`, `targetTss`, `category`, `desc`
 
 Beim Öffnen einer Einheit zeigt die Detailansicht Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und Beschreibung an. Ruhetage werden gesondert dargestellt. Die Datenzufuhr über die noch zu implementierende Geräte-Kopplung ist davon getrennt und noch nicht aktiv.
+
+
+## Herzfrequenzzonen während der Aktivität
+
+Die Aktivitätsansicht kann die vier oberen Herzfrequenzgrenzen aus KAJO übernehmen. Die Uhr ordnet den aktuellen Garmin-Herzfrequenzwert anhand dieser Grenzen Z1 bis Z5 zu und zeigt Zone sowie eine fünfteilige Balkenanzeige auf der Übersichts- und Herzfrequenzseite.
+
+Die Uhr berechnet weder eine eigene HFmax noch eine eigene Ruhe-HF oder ein alternatives Zonenmodell. KAJO bleibt für die adaptive Ruhe-HF (Median gültiger Garmin-Ruhe-HF-Tageswerte im konfigurierten Rückblick, mit Profil-Ruhe-HF als gekennzeichnetem Fallback) und die Karvonen-Grenzen bei 60/70/80/90 % der Herzfrequenzreserve verantwortlich. Die Datenübergabe über die Geräte-Synchronisierung ist noch nicht angebunden; ohne gültige Grenzen wird „ZONE --“ angezeigt.
