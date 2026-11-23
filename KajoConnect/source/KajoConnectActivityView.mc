@@ -24,7 +24,6 @@ class KajoConnectActivityView extends WatchUi.View {
     var mPage = 0;
     var mPageCount = 5;
     var mEnabledPageIds as Lang.Array<Lang.Number> = [0, 1, 2, 3, 4];
-    var mCurrentPageId = 0;
     var mCustomMetricIds as Lang.Array<Lang.String> = [];
     var mCustomMetricIds1 as Lang.Array<Lang.String> = [];
     var mCustomMetricIds2 as Lang.Array<Lang.String> = [];
