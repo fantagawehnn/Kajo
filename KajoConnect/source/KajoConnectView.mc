@@ -186,15 +186,9 @@ class KajoConnectView extends WatchUi.View {
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
         var font = preferredFont;
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) {
-            font = Graphics.FONT_SMALL;
-        }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) {
-            font = Graphics.FONT_TINY;
-        }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) {
-            font = Graphics.FONT_XTINY;
-        }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
+        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
         return font;
     }
 
@@ -212,8 +206,21 @@ class KajoConnectView extends WatchUi.View {
 
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var displayText = text;
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
+            if (displayText.length() <= 4) {
+                displayText = "";
+            } else {
+                displayText = displayText.substring(0, displayText.length() - 4) + "...";
+            }
+        }
+        if (displayText == "") { return; }
+        var safeY = y;
+        var textHeight = dc.getFontHeight(font);
+        if (safeY < 2) { safeY = 2; }
+        if (safeY + textHeight > mHeight - 2) { safeY = mHeight - textHeight - 2; }
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(x.toNumber(), y.toNumber(), font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x.toNumber(), safeY.toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function setPlannedSessions(sessions as Lang.Array<Lang.Dictionary>) {
@@ -402,8 +409,15 @@ class KajoConnectView extends WatchUi.View {
                 ? "TRAINING AUSWAEHLEN" : "TRAINING STARTEN";
             mFreeTop = mUnit * 0.80;
             mFreeBottom = mUnit * 0.875;
-            drawCentered(dc, cx, mUnit * 0.815, "FREIE AKTIVITAET",
-                mUnit * 0.66, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            var freeWidth = mUnit * 0.58;
+            var freeHeight = mUnit * 0.075;
+            var freeX = cx - (freeWidth / 2);
+            var freeY = mUnit * 0.80;
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(freeX.toNumber(), freeY.toNumber(),
+                freeWidth.toNumber(), freeHeight.toNumber(), (mUnit * 0.025).toNumber());
+            drawCentered(dc, cx, freeY + (freeHeight * 0.29), "FREIE AKTIVITAET",
+                freeWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         } else {
             // Ohne heutiges Training gibt es keine leere Trainingskarte und keinen Hinweistext.
             drawCentered(dc, cx, mUnit * 0.285, "BEREIT ZUM PADDELN?",
@@ -467,9 +481,16 @@ class KajoConnectView extends WatchUi.View {
             startY + (startHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             startLabel, startWidth * 0.90, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
 
-        mMenuTop = mUnit * 0.91;
-        mMenuBottom = mUnit * 0.985;
-        drawCentered(dc, cx, mUnit * 0.93, "MENUE",
-            mUnit * 0.48, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        var menuWidth = mUnit * 0.38;
+        var menuHeight = mUnit * 0.065;
+        var menuX = cx - (menuWidth / 2);
+        var menuY = mUnit * 0.91;
+        mMenuTop = menuY;
+        mMenuBottom = menuY + menuHeight;
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle(menuX.toNumber(), menuY.toNumber(),
+            menuWidth.toNumber(), menuHeight.toNumber(), (mUnit * 0.02).toNumber());
+        drawCentered(dc, cx, menuY + (menuHeight * 0.22), "MENUE",
+            menuWidth * 0.84, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
