@@ -876,7 +876,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawPageHeader(dc, "AKTIVITAET");
-            drawFit(dc, cx, mUnit * 0.34, "BEREIT", mUnit * 0.72, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+            drawFit(dc, cx, mUnit * 0.34, mStatus == "START FEHLGESCHLAGEN" ? "START FEHLGESCHLAGEN" : "BEREIT", mUnit * 0.72, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
             drawFit(dc, cx, mUnit * 0.47, "Aufzeichnung starten", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
             drawFit(dc, cx, mUnit * 0.57, "Bootsklasse im Startmenue gewaehlt", mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         } else if (mCurrentPageId == 0) {
@@ -995,8 +995,6 @@ class KajoConnectActivityView extends WatchUi.View {
             drawFit(dc, cx, mUnit * 0.72, gpsText + " · GPS " + gpsAccuracy, mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             drawFit(dc, cx, mUnit * 0.765, "Anstieg " + ascent + " m · Abstieg " + descent + " m", mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
-
-        drawFit(dc, cx, mUnit * 0.805, mStatus, mUnit * 0.70, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         mButtonTop = mUnit * 0.82;
         mButtonBottom = mUnit * 0.90;
