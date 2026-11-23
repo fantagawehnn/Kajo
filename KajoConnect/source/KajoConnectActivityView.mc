@@ -5,6 +5,8 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
 import Toybox.Position;
+import Toybox.Time;
+import Toybox.Time.Gregorian;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
@@ -38,6 +40,9 @@ class KajoConnectActivityView extends WatchUi.View {
     var mCustomPageCount as Lang.Number = 0;
     // KAJO liefert die vier oberen Zonengrenzen; die Uhr berechnet keine eigenen Zonen.
     var mHeartRateZones as Lang.Array<Lang.Number> = [];
+    var mCurrentWorkoutName as Lang.String = "TRAINING";
+    var mCurrentWorkoutType as Lang.String = "";
+    var mCurrentWorkoutDuration as Lang.String = "";
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
@@ -45,6 +50,28 @@ class KajoConnectActivityView extends WatchUi.View {
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
         loadDisplayPages();
+        loadCurrentWorkout();
+    }
+
+    function loadCurrentWorkout() as Void {
+        var sessions = Storage.getValue("kajoPlannedSessions");
+        if (sessions == null) { return; }
+        var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+        var today = info.year.toString() + "-" +
+            (info.month < 10 ? "0" : "") + info.month.toString() + "-" +
+            (info.day < 10 ? "0" : "") + info.day.toString();
+        var planned = sessions as Lang.Array<Lang.Dictionary>;
+        for (var i = 0; i < planned.size(); i += 1) {
+            var session = planned[i] as Lang.Dictionary;
+            var sessionDate = session["date"];
+            if (sessionDate != null && sessionDate.toString().length() >= 10 &&
+                sessionDate.toString().substring(0, 10) == today) {
+                if (session["name"] != null) { mCurrentWorkoutName = session["name"].toString(); }
+                if (session["type"] != null) { mCurrentWorkoutType = session["type"].toString(); }
+                if (session["duration"] != null) { mCurrentWorkoutDuration = session["duration"].toString(); }
+                return;
+            }
+        }
     }
 
     function loadDisplayPages() as Void {
@@ -275,6 +302,81 @@ class KajoConnectActivityView extends WatchUi.View {
             var valueFont = getMetricFont(fieldSize);
             drawCustomMetric(dc, cx, metricId, values, x, y, width, valueFont);
         }
+    }
+
+    function drawDashboardPanel(dc as Dc, x, y, width, height) as Void {
+        dc.setColor(0x07151D, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber(), (mUnit * 0.045).toNumber());
+        dc.setColor(0x12485A, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber(), (mUnit * 0.045).toNumber());
+    }
+
+    function drawHeartRateRing(dc as Dc, centerX, centerY, radius, zone as Lang.Number) as Void {
+        var colors = [0x20D98A, 0x8BE34A, 0xE3E84A, 0xFFB52E, 0xF04455];
+        var startAngle = -132.0;
+        for (var segment = 0; segment < 5; segment += 1) {
+            var segmentColor = 0x39434A;
+            if (zone == segment + 1) { segmentColor = colors[segment]; }
+            dc.setColor(segmentColor, Graphics.COLOR_BLACK);
+            var previousX = centerX + (Math.cos(startAngle * 0.0174533) * radius);
+            var previousY = centerY + (Math.sin(startAngle * 0.0174533) * radius);
+            for (var step = 1; step <= 12; step += 1) {
+                var angle = startAngle + (step * 6.0);
+                var nextX = centerX + (Math.cos(angle * 0.0174533) * radius);
+                var nextY = centerY + (Math.sin(angle * 0.0174533) * radius);
+                dc.drawLine(
+                    Math.round(previousX).toNumber(), Math.round(previousY).toNumber(),
+                    Math.round(nextX).toNumber(), Math.round(nextY).toNumber()
+                );
+                previousX = nextX;
+                previousY = nextY;
+            }
+            startAngle += 74.0;
+        }
+    }
+
+    function drawActivityDashboard(dc as Dc, cx, hrNow as Lang.String, elapsed as Lang.String,
+        distance as Lang.String, speedNow as Lang.String, zone as Lang.Number) as Void {
+        drawHeartRateRing(dc, cx, mUnit * 0.49, mUnit * 0.465, zone);
+
+        drawFit(dc, cx, mUnit * 0.105, mCurrentWorkoutName, mUnit * 0.68,
+            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        var workoutSubline = mCurrentWorkoutType;
+        if (mCurrentWorkoutDuration != "") {
+            if (workoutSubline != "") { workoutSubline += "  ·  "; }
+            workoutSubline += mCurrentWorkoutDuration + " MIN";
+        }
+        if (workoutSubline == "") { workoutSubline = "AKTUELLES TRAINING"; }
+        drawFit(dc, cx, mUnit * 0.155, workoutSubline, mUnit * 0.68,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+
+        var panelX = mUnit * 0.145;
+        var panelWidth = mUnit * 0.71;
+        drawDashboardPanel(dc, panelX, mUnit * 0.215, panelWidth, mUnit * 0.245);
+        drawFit(dc, cx, mUnit * 0.245, "HERZFREQUENZ", panelWidth * 0.84,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, cx, mUnit * 0.285, hrNow, panelWidth * 0.80,
+            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.375, "BPM  ·  " + (zone > 0 ? "ZONE " + zone.toString() : "ZONE --"),
+            panelWidth * 0.84, Graphics.FONT_SMALL, zone > 0 ? 0xFFB52E : Graphics.COLOR_LT_GRAY);
+
+        var splitGap = mUnit * 0.018;
+        var halfWidth = (panelWidth - splitGap) / 2;
+        drawDashboardPanel(dc, panelX, mUnit * 0.48, halfWidth, mUnit * 0.155);
+        drawDashboardPanel(dc, panelX + halfWidth + splitGap, mUnit * 0.48, halfWidth, mUnit * 0.155);
+        drawFit(dc, panelX + halfWidth / 2, mUnit * 0.505, "ZEIT", halfWidth * 0.84,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, panelX + halfWidth / 2, mUnit * 0.545, elapsed, halfWidth * 0.88,
+            Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+        drawFit(dc, panelX + halfWidth + splitGap + halfWidth / 2, mUnit * 0.505,
+            "DISTANZ", halfWidth * 0.84, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, panelX + halfWidth + splitGap + halfWidth / 2, mUnit * 0.545,
+            distance, halfWidth * 0.88, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mUnit * 0.665, "KM", mUnit * 0.24, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+
+        drawDashboardPanel(dc, mUnit * 0.29, mUnit * 0.715, mUnit * 0.42, mUnit * 0.075);
+        drawFit(dc, cx, mUnit * 0.735, "GESCHWINDIGKEIT  " + speedNow + " KM/H",
+            mUnit * 0.38, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
@@ -554,12 +656,7 @@ class KajoConnectActivityView extends WatchUi.View {
             drawFit(dc, cx, mUnit * 0.47, "Aufzeichnung starten", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
             drawFit(dc, cx, mUnit * 0.57, "Bootsklasse im Startmenue gewaehlt", mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         } else if (mCurrentPageId == 0) {
-            drawPageHeader(dc, "UEBERSICHT");
-            drawFit(dc, cx, mUnit * 0.245, speedNow, mUnit * 0.70, Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-            drawFit(dc, cx, mUnit * 0.405, "KM/H  ·  GESCHWINDIGKEIT", mUnit * 0.76, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.55, "HERZFREQUENZ", hrNow, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.55, "ZEIT", elapsed, "", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawHeartRateZone(dc, cx, mUnit * 0.715, mUnit * 0.62, currentHeartRateZone);
+            drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, currentHeartRateZone);
         } else if (mCurrentPageId == 1) {
             drawPageHeader(dc, "GESCHWINDIGKEIT");
             drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", speedNow, "KM/H", mUnit * 0.68, Graphics.FONT_LARGE);
