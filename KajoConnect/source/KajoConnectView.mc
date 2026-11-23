@@ -26,6 +26,7 @@ class KajoConnectView extends WatchUi.View {
     var mPlanStartY = 0;
     var mPlanRowHeight = 0;
     var mPlanStartIndex = 0;
+    var mMenuStartIndex = 0;
     var mApi as KajoConnectApi;
     var mSyncStatus as Lang.String = "NICHT MIT KAJO VERBUNDEN";
     var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
@@ -304,15 +305,7 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) {
-        if (y >= mMenuTop && y <= mMenuBottom) {
-            WatchUi.pushView(
-                new Rez.Menus.MainMenu(),
-                new KajoConnectMenuDelegate(),
-                WatchUi.SLIDE_UP
-            );
-            return;
-        }
-
+        // Die Sportart-/Bootsklasse bleibt direkt im Header waehlbar.
         if (y >= mBoatTop && y <= mBoatBottom &&
             x >= mBoatLeft && x <= mBoatRight) {
             var relativeX = x - mBoatLeft;
@@ -325,17 +318,33 @@ class KajoConnectView extends WatchUi.View {
                 mSelectedBoat = "C2";
             }
             WatchUi.requestUpdate();
-            WatchUi.showToast(mSelectedBoat + " ausgewaehlt", null);
             return;
         }
 
-        if (y >= mFreeTop && y <= mFreeBottom) {
-            openActivityView(null);
-            return;
-        }
-
+        // Die gesamte Trainingskachel oeffnet den heutigen Trainingseinstieg.
         if (y >= mStartTop && y <= mStartBottom) {
             startActivity();
+            return;
+        }
+
+        // Scrollbare Trainingsliste: Freies Training, Plan, Historie, Einstellungen.
+        if (y >= mFreeTop && y <= mFreeBottom) {
+            var row = Math.floor((y - mFreeTop) / (mUnit * 0.105)).toNumber();
+            var index = mMenuStartIndex + row;
+            if (index == 0) {
+                openActivityView(null);
+            } else if (index == 1) {
+                var listView = new KajoConnectWorkoutListView();
+                WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
+            } else if (index == 2) {
+                WatchUi.showToast("Trainingshistorie ist noch nicht verfuegbar", null);
+            } else if (index == 3) {
+                WatchUi.pushView(
+                    new Rez.Menus.MainMenu(),
+                    new KajoConnectMenuDelegate(),
+                    WatchUi.SLIDE_UP
+                );
+            }
         }
     }
 
@@ -350,157 +359,150 @@ class KajoConnectView extends WatchUi.View {
         var todaySessions = getTodaysSessions();
         var hasTrainingToday = todaySessions.size() > 0;
 
-        // Kompakter Kopfbereich: Status ist bewusst nachrangig.
+        // Feiner cyanfarbener Randbogen oben links als AMOLED-Detail.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawLine((mUnit * 0.32).toNumber(), (mUnit * 0.105).toNumber(),
-            (mUnit * 0.39).toNumber(), (mUnit * 0.105).toNumber());
-        dc.drawLine((mUnit * 0.335).toNumber(), (mUnit * 0.122).toNumber(),
-            (mUnit * 0.375).toNumber(), (mUnit * 0.122).toNumber());
-        drawCentered(dc, cx, mUnit * 0.045, "KAJO",
-            mUnit * 0.68, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.145, compactSyncStatus(),
-            mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        dc.drawArc((cx - mUnit * 0.455).toNumber(), (mUnit * 0.455).toNumber(),
+            (mUnit * 0.455).toNumber(), 205, 250, Graphics.ARC_CLOCKWISE);
 
-        var boatLabelY = mUnit * 0.43;
-        var buttonY = mUnit * 0.49;
-        var startY = mUnit * 0.665;
-        var startLabel = "AKTIVITAET STARTEN";
+        // Header: Marke und aktuell ausgewaehlte Bootsklasse.
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawLine((cx - mUnit * 0.105).toNumber(), (mUnit * 0.085).toNumber(),
+            (cx - mUnit * 0.065).toNumber(), (mUnit * 0.075).toNumber());
+        dc.drawLine((cx - mUnit * 0.065).toNumber(), (mUnit * 0.075).toNumber(),
+            (cx - mUnit * 0.025).toNumber(), (mUnit * 0.09).toNumber());
+        dc.drawLine((cx - mUnit * 0.09).toNumber(), (mUnit * 0.105).toNumber(),
+            (cx - mUnit * 0.055).toNumber(), (mUnit * 0.095).toNumber());
+        drawCentered(dc, cx + (mUnit * 0.045), mUnit * 0.055, "KAJO",
+            mUnit * 0.45, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+        drawCentered(dc, cx, mUnit * 0.145, "SPORTART:",
+            mUnit * 0.55, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        if (hasTrainingToday) {
-            // Nur heutige Einheiten erscheinen auf dem Startbildschirm.
-            var cardX = cx - (mUnit * 0.37);
-            var cardY = mUnit * 0.205;
-            var cardWidth = mUnit * 0.74;
-            var cardHeight = mUnit * 0.185;
-            dc.setColor(0x040D12, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
-                cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.035).toNumber());
-            dc.setColor(0x0A3A4A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
-                cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.035).toNumber());
+        var sportLabel = mSelectedBoat + "  •  WILDWASSER";
+        mBoatTop = mUnit * 0.17;
+        mBoatBottom = mUnit * 0.235;
+        mBoatLeft = cx - (mUnit * 0.36);
+        mBoatRight = cx + (mUnit * 0.36);
+        drawCentered(dc, cx, mUnit * 0.18, sportLabel,
+            mUnit * 0.70, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.fillCircle((cx + mUnit * 0.275).toNumber(), (mUnit * 0.207).toNumber(),
+            (mUnit * 0.012).toNumber());
+        drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.222, "ZULETZT AKTIV",
+            mUnit * 0.25, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-            drawCentered(dc, cx, cardY + (mUnit * 0.022), "HEUTE GEPLANT",
-                cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        // Hero-Kachel: Inhalte stammen aus dem synchronisierten Tagesplan.
+        var cardX = cx - (mUnit * 0.405);
+        var cardY = mUnit * 0.275;
+        var cardWidth = mUnit * 0.81;
+        var cardHeight = mUnit * 0.225;
+        dc.setColor(0x05181C, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
+            cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.055).toNumber());
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
+            cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.055).toNumber());
 
-            if (todaySessions.size() == 1) {
-                var todayWorkout = todaySessions[0] as Lang.Dictionary;
-                var workoutName = todayWorkout["name"] == null
-                    ? "Geplantes Training" : todayWorkout["name"].toString();
-                var workoutType = todayWorkout["type"] == null
-                    ? "" : todayWorkout["type"].toString();
-                var workoutDuration = todayWorkout["duration"] == null
-                    ? "" : todayWorkout["duration"].toString();
+        // Unterbrechung der oberen Kontur fuer das Label.
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillRectangle((cx - mUnit * 0.205).toNumber(), (cardY - 2).toNumber(),
+            (mUnit * 0.41).toNumber(), (mUnit * 0.035).toNumber());
+        drawCentered(dc, cx, cardY - (mUnit * 0.006), "TRAINING FUER HEUTE",
+            mUnit * 0.43, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-                drawCentered(dc, cx, cardY + (mUnit * 0.072), workoutName,
-                    cardWidth * 0.88, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        var heroName = "KEIN TRAINING GEPLANT";
+        var heroDetails = "Freies Training jederzeit moeglich";
+        if (todaySessions.size() == 1) {
+            var todayWorkout = todaySessions[0] as Lang.Dictionary;
+            heroName = todayWorkout["name"] == null
+                ? "GEPLANTES TRAINING" : todayWorkout["name"].toString().toUpper();
+            var durationText = todayWorkout["duration"] == null
+                ? "" : todayWorkout["duration"].toString() + " MIN";
+            var typeText = todayWorkout["type"] == null
+                ? "Training" : todayWorkout["type"].toString();
+            heroDetails = durationText == "" ? typeText : durationText + "  •  " + typeText;
+        } else if (todaySessions.size() > 1) {
+            heroName = todaySessions.size().toString() + " TRAININGSEINHEITEN";
+            heroDetails = "Antippen und Einheit auswaehlen";
+        }
+        drawCentered(dc, cx - (mUnit * 0.015), cardY + (mUnit * 0.075),
+            heroName, cardWidth * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawCentered(dc, cx - (mUnit * 0.015), cardY + (mUnit * 0.145),
+            heroDetails, cardWidth * 0.82, Graphics.FONT_XTINY, 0x00E5CC);
+        drawCentered(dc, cx + (mUnit * 0.34), cardY + (mUnit * 0.095),
+            ">", mUnit * 0.08, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
 
-                var detail = workoutType;
-                if (workoutDuration != "") {
-                    detail = detail == "" ? workoutDuration + " MIN"
-                        : detail + "  ·  " + workoutDuration + " MIN";
-                }
-                if (detail != "") {
-                    drawCentered(dc, cx, cardY + (mUnit * 0.132), detail,
-                        cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                }
+        mStartTop = cardY;
+        mStartBottom = cardY + cardHeight;
+
+        // Trenner und Scroll-Hinweis.
+        var dividerY = mUnit * 0.55;
+        dc.setColor(0x2A3236, Graphics.COLOR_BLACK);
+        dc.drawLine((mUnit * 0.12).toNumber(), dividerY.toNumber(),
+            (mUnit * 0.88).toNumber(), dividerY.toNumber());
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillRectangle((mUnit * 0.12).toNumber(), (dividerY - mUnit * 0.018).toNumber(),
+            (mUnit * 0.76).toNumber(), (mUnit * 0.04).toNumber());
+        drawCentered(dc, mUnit * 0.32, dividerY - (mUnit * 0.017),
+            "TRAININGS", mUnit * 0.28, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, mUnit * 0.70, dividerY - (mUnit * 0.017),
+            "SCROLLEN  v", mUnit * 0.32, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+
+        // Liste: ein sichtbarer Ausschnitt; per Wischgeste wird weitergescrollt.
+        mFreeTop = mUnit * 0.59;
+        mFreeBottom = mUnit * 0.94;
+        var rowHeight = mUnit * 0.105;
+        var labels = ["FREIES TRAINING", "GEPLANTE TRAININGS",
+            "VERGANGENE TRAININGS", "EINSTELLUNGEN"];
+        for (var visibleRow = 0; visibleRow < 4; visibleRow += 1) {
+            var itemIndex = mMenuStartIndex + visibleRow;
+            if (itemIndex >= labels.size()) { continue; }
+            var rowY = mFreeTop + (visibleRow * rowHeight);
+            var rowX = mUnit * 0.145;
+            var rowWidth = mUnit * 0.71;
+            var rowH = mUnit * 0.082;
+            dc.setColor(0x091417, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
+                rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.045).toNumber());
+            dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
+                rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.045).toNumber());
+
+            // Kleine, cyanfarbene Funktionssymbole links.
+            var iconX = mUnit * 0.205;
+            var iconY = rowY + (rowH / 2);
+            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+            if (itemIndex == 0) {
+                dc.drawLine((iconX - 7).toNumber(), (iconY + 2).toNumber(),
+                    (iconX - 1).toNumber(), (iconY - 2).toNumber());
+                dc.drawLine((iconX - 1).toNumber(), (iconY - 2).toNumber(),
+                    (iconX + 5).toNumber(), (iconY + 2).toNumber());
+                dc.drawLine((iconX - 5).toNumber(), (iconY + 7).toNumber(),
+                    (iconX + 5).toNumber(), (iconY + 7).toNumber());
+            } else if (itemIndex == 1) {
+                dc.drawRoundedRectangle((iconX - 7).toNumber(), (iconY - 7).toNumber(),
+                    14, 14, 2);
+                dc.drawLine((iconX - 7).toNumber(), (iconY - 2).toNumber(),
+                    (iconX + 7).toNumber(), (iconY - 2).toNumber());
+                dc.drawLine((iconX - 3).toNumber(), (iconY - 10).toNumber(),
+                    (iconX - 3).toNumber(), (iconY - 5).toNumber());
+                dc.drawLine((iconX + 3).toNumber(), (iconY - 10).toNumber(),
+                    (iconX + 3).toNumber(), (iconY - 5).toNumber());
+            } else if (itemIndex == 2) {
+                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), 7);
+                dc.drawLine(iconX.toNumber(), iconY.toNumber(),
+                    iconX.toNumber(), (iconY - 4).toNumber());
+                dc.drawLine(iconX.toNumber(), iconY.toNumber(),
+                    (iconX + 4).toNumber(), (iconY + 2).toNumber());
             } else {
-                drawCentered(dc, cx, cardY + (mUnit * 0.082),
-                    todaySessions.size().toString() + " EINHEITEN",
-                    cardWidth * 0.88, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-                drawCentered(dc, cx, cardY + (mUnit * 0.135),
-                    "TRAINING AUSWAEHLEN",
-                    cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), 6);
+                dc.drawCircle(iconX.toNumber(), iconY.toNumber(), 2);
             }
 
-            boatLabelY = mUnit * 0.455;
-            buttonY = mUnit * 0.51;
-            startY = mUnit * 0.665;
-            startLabel = todaySessions.size() > 1
-                ? "TRAINING AUSWAEHLEN" : "TRAINING STARTEN";
-            mFreeTop = mUnit * 0.79;
-            mFreeBottom = mUnit * 0.865;
-            var freeWidth = mUnit * 0.58;
-            var freeHeight = mUnit * 0.075;
-            var freeX = cx - (freeWidth / 2);
-            var freeY = mUnit * 0.79;
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(freeX.toNumber(), freeY.toNumber(),
-                freeWidth.toNumber(), freeHeight.toNumber(), (mUnit * 0.025).toNumber());
-            drawCentered(dc, cx, freeY + (freeHeight * 0.29), "FREIE AKTIVITAET",
-                freeWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-        } else {
-            // Ohne heutiges Training gibt es keine leere Trainingskarte und keinen Hinweistext.
-            drawCentered(dc, cx, mUnit * 0.285, "BEREIT ZUM PADDELN?",
-                mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            boatLabelY = mUnit * 0.395;
-            buttonY = mUnit * 0.455;
-            startY = mUnit * 0.625;
-            startLabel = "AKTIVITAET STARTEN";
-            mFreeTop = -1;
-            mFreeBottom = -1;
+            drawCentered(dc, mUnit * 0.49, rowY + (rowH * 0.27),
+                labels[itemIndex], mUnit * 0.49, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawCentered(dc, mUnit * 0.80, rowY + (rowH * 0.23),
+                ">", mUnit * 0.07, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         }
-
-        drawCentered(dc, cx, boatLabelY, "BOOTSKLASSE",
-            mUnit * 0.58, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-
-        // Drei klar getrennte, gleich breite Bootsauswahlfelder.
-        var buttonGap = mUnit * 0.025;
-        var buttonWidth = mUnit * 0.235;
-        var buttonHeight = mUnit * 0.115;
-        var totalWidth = (buttonWidth * 3) + (buttonGap * 2);
-        var left = cx - (totalWidth / 2);
-
-        mBoatTop = buttonY;
-        mBoatBottom = buttonY + buttonHeight;
-        mBoatLeft = left;
-        mBoatRight = left + totalWidth;
-
-        var labels = ["K1", "C1", "C2"];
-        for (var b = 0; b < 3; b += 1) {
-            var bx = left + (b * (buttonWidth + buttonGap));
-            var selected = (labels[b] == mSelectedBoat);
-            if (selected) {
-                dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle(bx.toNumber(), buttonY.toNumber(),
-                    buttonWidth.toNumber(), buttonHeight.toNumber(),
-                    (mUnit * 0.03).toNumber());
-                drawCentered(dc, bx + buttonWidth / 2,
-                    buttonY + (buttonHeight - dc.getFontHeight(Graphics.FONT_MEDIUM)) / 2,
-                    labels[b], buttonWidth * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
-            } else {
-                dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-                dc.drawRoundedRectangle(bx.toNumber(), buttonY.toNumber(),
-                    buttonWidth.toNumber(), buttonHeight.toNumber(),
-                    (mUnit * 0.03).toNumber());
-                drawCentered(dc, bx + buttonWidth / 2,
-                    buttonY + (buttonHeight - dc.getFontHeight(Graphics.FONT_MEDIUM)) / 2,
-                    labels[b], buttonWidth * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            }
-        }
-
-        var startWidth = mUnit * 0.66;
-        var startHeight = mUnit * 0.105;
-        var startX = cx - (startWidth / 2);
-        mStartTop = startY;
-        mStartBottom = startY + startHeight;
-
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(startX.toNumber(), startY.toNumber(),
-            startWidth.toNumber(), startHeight.toNumber(), (mUnit * 0.035).toNumber());
-        drawCentered(dc, cx,
-            startY + (startHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
-            startLabel, startWidth * 0.90, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
-
-        var menuWidth = mUnit * 0.34;
-        var menuHeight = mUnit * 0.055;
-        var menuX = cx - (menuWidth / 2);
-        var menuY = mUnit * 0.885;
-        mMenuTop = menuY;
-        mMenuBottom = menuY + menuHeight;
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(menuX.toNumber(), menuY.toNumber(),
-            menuWidth.toNumber(), menuHeight.toNumber(), (mUnit * 0.02).toNumber());
-        drawCentered(dc, cx, menuY + (menuHeight * 0.18), "MENUE",
-            menuWidth * 0.84, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
+
 }
