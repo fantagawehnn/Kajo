@@ -131,6 +131,31 @@ test('normalizes and validates a weekly draft only inside an approved season pha
     assert.equal(validateWeeklyPlan(validWeek, validPlan).valid, false);
 });
 
+test('accepts an explicit rest day without duration or load and rejects training on the same day', () => {
+    const withRestDay = structuredClone(validWeek);
+    withRestDay.sessions.push({
+        id: 'rest-2', date: '2027-01-05', name: 'Ruhetag',
+        type: 'RestDay', category: 'rest', durationMinutes: null, targetLoad: null
+    });
+    assert.equal(validateWeeklyPlan(withRestDay, approvedSeason).valid, true);
+
+    const conflicting = structuredClone(withRestDay);
+    conflicting.sessions.push({
+        id: 'session-3', date: '2027-01-05', name: 'Zusätzliche Einheit',
+        type: 'Kayaking', durationMinutes: 45
+    });
+    const result = validateWeeklyPlan(conflicting, approvedSeason);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(error => error.includes('Ruhetag nicht mit weiteren geplanten Einheiten')));
+
+    const loadedRestDay = structuredClone(validWeek);
+    loadedRestDay.sessions[0] = {
+        id: 'rest-loaded', date: '2027-01-04', name: 'Ruhetag',
+        type: 'RestDay', category: 'rest', durationMinutes: 30
+    };
+    assert.ok(validateWeeklyPlan(loadedRestDay, approvedSeason).errors.some(error => error.includes('Ruhetag darf keine geplante Dauer')));
+});
+
 test('rejects weekly plans with invalid week boundaries, phase placement or session dates', () => {
     const invalid = structuredClone(validWeek);
     invalid.weekEndDate = '2027-01-09';
