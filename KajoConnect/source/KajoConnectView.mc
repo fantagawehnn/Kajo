@@ -86,9 +86,11 @@ class KajoConnectView extends WatchUi.View {
 
             if (index < mPlannedSessions.size()) {
                 var selectedSession = mPlannedSessions[index] as String;
-                WatchUi.showToast(
-                    selectedSession + " ausgewählt",
-                    null
+                var workoutView = new KajoConnectWorkoutView(selectedSession);
+                WatchUi.pushView(
+                    workoutView,
+                    new KajoConnectWorkoutDelegate(),
+                    WatchUi.SLIDE_UP
                 );
 
                 return;
