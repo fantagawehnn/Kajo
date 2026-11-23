@@ -123,7 +123,7 @@ class KajoConnectView extends WatchUi.View {
                         var sizeText = sizeValue == null ? "medium" : sizeValue.toString();
                         var numericSize = sizeText == "small" ? 0 : sizeText == "large" ? 2 : 1;
                         var positionValue = metric["position"];
-                        var positionNumber = positionValue == null ? metricIndex : positionValue.toNumber();
+                        var positionNumber = positionValue == null ? metricIndex : positionValue as Lang.Number;
                         if (positionNumber < 0 || positionNumber > 4) { positionNumber = metricIndex; }
                         metricIds.add(metricId);
                         metricSizes[metricId] = numericSize;
