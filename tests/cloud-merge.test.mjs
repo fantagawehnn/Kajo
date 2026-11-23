@@ -99,7 +99,7 @@ test('führt unabhängige Ergänzungen in primitiven Listen zusammen', () => {
         { symptoms: ['fatigue', 'soreness'] }
     );
     assert.deepEqual(plain(result.conflicts), []);
-    assert.deepEqual(plain(result.snapshot.symptoms).sort(), ['headache', 'soreness']);
+    assert.deepEqual(plain(result.snapshot.symptoms).sort(), ['fatigue', 'headache', 'soreness']);
 });
 
 test('erhält doppelte Eintragsidentitäten, statt sie still zu überschreiben', () => {
