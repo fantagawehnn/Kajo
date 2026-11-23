@@ -112,11 +112,22 @@ export function validateWeeklyPlan(input, seasonInput) {
     if (!weekly.objective) errors.push('Ein Wochenziel fehlt.');
     if (!weekly.sessions.length) errors.push('Der Wochenplan enthält keine Trainingseinheiten.');
     const sessionIds = new Set();
+    const sessionsByDate = new Map();
     weekly.sessions.forEach((session, index) => {
         const label = session.name || 'Einheit ' + (index + 1);
         if (!session.id) errors.push(label + ': eindeutige ID fehlt.');
         if (session.id && sessionIds.has(session.id)) errors.push(label + ': ID ist doppelt vergeben.');
         sessionIds.add(session.id);
+        if (session.date) {
+            const sameDay = sessionsByDate.get(session.date) || [];
+            sameDay.push(session);
+            sessionsByDate.set(session.date, sameDay);
+        }
+        const isRestDay = ['restday', 'rest', 'ruhetag'].includes(String(session.type || '').toLowerCase())
+            || String(session.category || '').toLowerCase() === 'rest';
+        if (isRestDay && (session.durationMinutes != null || session.targetLoad != null)) {
+            errors.push(label + ': ein Ruhetag darf keine geplante Dauer oder Zielbelastung enthalten.');
+        }
         if (!session.date || !weekly.weekStartDate || !weekly.weekEndDate
             || session.date < weekly.weekStartDate || session.date > weekly.weekEndDate) {
             errors.push(label + ': Datum liegt außerhalb der geplanten Woche.');
@@ -129,6 +140,15 @@ export function validateWeeklyPlan(input, seasonInput) {
             errors.push(label + ': Zielbelastung muss eine nicht-negative Zahl sein.');
         }
     });
+    for (const [date, daySessions] of sessionsByDate) {
+        const hasRestDay = daySessions.some(session =>
+            ['restday', 'rest', 'ruhetag'].includes(String(session.type || '').toLowerCase())
+            || String(session.category || '').toLowerCase() === 'rest'
+        );
+        if (hasRestDay && daySessions.length > 1) {
+            errors.push('Am ' + date + ' kann ein Ruhetag nicht mit weiteren geplanten Einheiten kombiniert werden.');
+        }
+    }
     return { valid: errors.length === 0, errors, weeklyPlan: weekly };
 }
 
