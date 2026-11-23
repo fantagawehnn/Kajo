@@ -1599,9 +1599,32 @@
                 </div>
             </div>
             <p class="text-[10px] text-slate-500">Ruhetage werden ohne Dauer und Ziel-Load gespeichert und nicht als Trainingseinheit oder Trainingsbelastung gezählt. Bei Leistungsdiagnostik werden Dauer und Ziel-Load ebenfalls nicht als reguläre Trainingsbelastung verbucht.</p>
+            <div id="plan-instructions-field" class="space-y-3 border-t border-slate-800 pt-3">
+                <p class="text-[10px] font-bold tracking-wider text-cyan-300">TRAININGSANWEISUNGEN FÜR KAJO CONNECT</p>
+                <div>
+                    <label class="block text-slate-400 mb-1 text-xs">Intensität</label>
+                    <input type="text" id="plan-intensity" maxlength="120" placeholder="z. B. GA1, Schwelle, hohe Intensität" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 text-xs">Trainingsziel</label>
+                    <textarea id="plan-objective" rows="2" maxlength="300" placeholder="Was soll in dieser Einheit trainiert werden?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 text-xs">Aufwärmen</label>
+                    <textarea id="plan-warmup" rows="2" maxlength="300" placeholder="Vorbereitung und Einfahren" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 text-xs">Hauptteil</label>
+                    <textarea id="plan-main-set" rows="3" maxlength="500" placeholder="Belastungen, Wiederholungen und Pausen beschreiben" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 text-xs">Abwärmen</label>
+                    <textarea id="plan-cooldown" rows="2" maxlength="300" placeholder="Ausfahren und lockerer Abschluss" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
+                </div>
+            </div>
             <div>
-                <label class="block text-slate-400 mb-1 text-xs">Beschreibung & Inhalte</label>
-                <textarea id="plan-desc" rows="2" placeholder="Intervalle im Schwellenbereich..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
+                <label class="block text-slate-400 mb-1 text-xs">Zusätzliche Beschreibung / Hinweise</label>
+                <textarea id="plan-desc" rows="2" placeholder="Weitere Hinweise zur Einheit..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
             </div>
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
                 <button type="button" onclick="closePlannedWorkoutModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button>
