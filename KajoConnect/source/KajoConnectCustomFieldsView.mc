@@ -273,7 +273,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 sizeText = fieldSize == 0 ? "K" : fieldSize == 2 ? "G" : "M";
             }
             var stateText = isEnabled ? (orderIndex + 1).toString() + " " + sizeText : "AUS";
-            dc.setColor(isFocused ? Graphics.COLOR_WHITE : Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+            dc.setColor(isFocused ? Graphics.COLOR_WHITE : 0x0A1A1E, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
                 Math.round(mUnit * 0.02).toNumber());
@@ -291,7 +291,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         var centers = [cx - (mUnit * 0.25), cx, cx + (mUnit * 0.25)];
         var labels = ["HOCH", "GROESSE", "RUNTER"];
         for (var b = 0; b < 3; b += 1) {
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(centers[b] - controlWidth / 2).toNumber(),
                 Math.round(mControlTop).toNumber(), Math.round(controlWidth).toNumber(),
                 Math.round(controlHeight).toNumber(), Math.round(mUnit * 0.02).toNumber());
@@ -302,7 +302,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         mSaveTop = Math.round(mUnit * 0.815).toNumber();
         mSaveBottom = (mUnit * 89 / 100).toNumber();
         var saveWidth = mUnit * 0.48;
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
             Math.round(mSaveTop).toNumber(), Math.round(saveWidth).toNumber(),
             Math.round((mSaveBottom - mSaveTop)).toNumber(), Math.round(mUnit * 0.02).toNumber());
