@@ -336,7 +336,7 @@ class KajoConnectView extends WatchUi.View {
 
         // Scrollbare Trainingsliste: Freies Training, Plan, Historie, Einstellungen.
         if (y >= mFreeTop && y <= mFreeBottom) {
-            var row = Math.floor((y - mFreeTop) / (mUnit * 0.078)).toNumber();
+            var row = Math.floor((y - mFreeTop) / (mUnit * 0.067)).toNumber();
             var index = mMenuStartIndex + row;
             if (index == 0) {
                 openActivityView(null);
@@ -466,21 +466,21 @@ class KajoConnectView extends WatchUi.View {
             "SCROLLEN  v", mUnit * 0.32, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
 
         // Liste: ein sichtbarer Ausschnitt; per Wischgeste wird weitergescrollt.
-        mFreeTop = mUnit * 0.59;
-        mFreeBottom = mUnit * 0.90;
-        var rowHeight = mUnit * 0.078;
+        mFreeTop = mUnit * 0.575;
+        mFreeBottom = mUnit * 0.84;
+        var rowHeight = mUnit * 0.067;
         var labels = ["FREIES TRAINING", "GEPLANTE TRAININGS",
             "VERGANGENE TRAININGS", "EINSTELLUNGEN"];
         for (var visibleRow = 0; visibleRow < 4; visibleRow += 1) {
             var itemIndex = mMenuStartIndex + visibleRow;
             if (itemIndex >= labels.size()) { continue; }
             var rowY = mFreeTop + (visibleRow * rowHeight);
-            var rowH = mUnit * 0.064;
+            var rowH = mUnit * 0.057;
             var rowWidth = mLayout.safeRectWidth(rowY, rowH, mUnit * 0.71);
             var rowX = cx - (rowWidth / 2);
             dc.setColor(0x091417, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
-                rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.032).toNumber());
+                rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.028).toNumber());
             dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
                 rowWidth.toNumber(), rowH.toNumber(), (mUnit * 0.045).toNumber());
@@ -517,10 +517,10 @@ class KajoConnectView extends WatchUi.View {
                 dc.drawCircle(iconX.toNumber(), iconY.toNumber(), (iconUnit * 0.28).toNumber());
             }
 
-            drawCentered(dc, mUnit * 0.49, rowY + (rowH * 0.27),
-                labels[itemIndex], mUnit * 0.49, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawCentered(dc, mUnit * 0.80, rowY + (rowH * 0.23),
-                ">", mUnit * 0.07, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawCentered(dc, rowX + (rowWidth * 0.55), rowY + (rowH * 0.27),
+                labels[itemIndex], rowWidth * 0.62, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawCentered(dc, rowX + (rowWidth * 0.89), rowY + (rowH * 0.23),
+                ">", rowWidth * 0.12, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         }
     }
 
