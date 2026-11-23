@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { state } from './state.js';
-import { saveDataToLocalStorage } from './storage.js';
+import { saveDataToLocalStorage } from './storage.js?v=5';
 
 const KAJO_CONNECT_METRICS = [
     ['speedNow', 'Aktuelle Geschwindigkeit'],
