@@ -231,11 +231,10 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function scrollPlan(direction) {
-        var count = mPlannedSessions.size();
-        if (count <= 2) { return; }
-        mPlanStartIndex += direction;
-        if (mPlanStartIndex < 0) { mPlanStartIndex = 0; }
-        if (mPlanStartIndex > count - 2) { mPlanStartIndex = count - 2; }
+        // Auf dem Startbildschirm wird die Trainingsliste vertikal weitergeschoben.
+        mMenuStartIndex += direction;
+        if (mMenuStartIndex < 0) { mMenuStartIndex = 0; }
+        if (mMenuStartIndex > 1) { mMenuStartIndex = 1; }
         WatchUi.requestUpdate();
     }
 
@@ -361,8 +360,12 @@ class KajoConnectView extends WatchUi.View {
 
         // Feiner cyanfarbener Randbogen oben links als AMOLED-Detail.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawArc((cx - mUnit * 0.455).toNumber(), (mUnit * 0.455).toNumber(),
-            (mUnit * 0.455).toNumber(), 205, 250, Graphics.ARC_CLOCKWISE);
+        dc.drawLine((mUnit * 0.105).toNumber(), (mUnit * 0.105).toNumber(),
+            (mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber());
+        dc.drawLine((mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber(),
+            (mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber());
+        dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
+            (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
 
         // Header: Marke und aktuell ausgewaehlte Bootsklasse.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
@@ -385,8 +388,14 @@ class KajoConnectView extends WatchUi.View {
         drawCentered(dc, cx, mUnit * 0.18, sportLabel,
             mUnit * 0.70, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillCircle((cx + mUnit * 0.275).toNumber(), (mUnit * 0.207).toNumber(),
-            (mUnit * 0.012).toNumber());
+        dc.drawCircle((cx + mUnit * 0.275).toNumber(), (mUnit * 0.207).toNumber(),
+            (mUnit * 0.014).toNumber());
+        dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.199).toNumber(),
+            (cx + mUnit * 0.272).toNumber(), (mUnit * 0.215).toNumber());
+        dc.drawLine((cx + mUnit * 0.272).toNumber(), (mUnit * 0.199).toNumber(),
+            (cx + mUnit * 0.282).toNumber(), (mUnit * 0.207).toNumber());
+        dc.drawLine((cx + mUnit * 0.282).toNumber(), (mUnit * 0.207).toNumber(),
+            (cx + mUnit * 0.272).toNumber(), (mUnit * 0.215).toNumber());
         drawCentered(dc, cx + (mUnit * 0.275), mUnit * 0.222, "ZULETZT AKTIV",
             mUnit * 0.25, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
@@ -414,7 +423,7 @@ class KajoConnectView extends WatchUi.View {
         if (todaySessions.size() == 1) {
             var todayWorkout = todaySessions[0] as Lang.Dictionary;
             heroName = todayWorkout["name"] == null
-                ? "GEPLANTES TRAINING" : todayWorkout["name"].toString().toUpper();
+                ? "GEPLANTES TRAINING" : todayWorkout["name"].toString();
             var durationText = todayWorkout["duration"] == null
                 ? "" : todayWorkout["duration"].toString() + " MIN";
             var typeText = todayWorkout["type"] == null
