@@ -10,6 +10,7 @@ const calendar = readFileSync('js/calendar.js', 'utf8').replace(/\r\n/g, '\n');
 const state = readFileSync('js/state.js', 'utf8').replace(/\r\n/g, '\n');
 const analysisUI = readFileSync('js/analysis-ui.js', 'utf8').replace(/\r\n/g, '\n');
 const analysisOverview = readFileSync('js/analysis-overview.js', 'utf8').replace(/\r\n/g, '\n');
+const planning = readFileSync('js/planning.js', 'utf8').replace(/\r\n/g, '\n');
 const analysisInsights = readFileSync('js/analysis-insights.js', 'utf8').replace(/\r\n/g, '\n');
 const charts = readFileSync('js/charts.js', 'utf8').replace(/\r\n/g, '\n');
 const dashboard = readFileSync('js/dashboard.js', 'utf8').replace(/\r\n/g, '\n');
@@ -470,3 +471,8 @@ assert.ok(analysisOverview.includes('day.loadMode !== loadMode || day.loadUnit !
 assert.ok(analysisOverview.includes('Fehlende Tage werden nicht aufgefüllt'), 'trend observations do not impute missing measurements');
 assert.ok(analysisOverview.includes('keine Trainingsempfehlung') && analysisOverview.includes('keine Diagnose'), 'trend observations remain descriptive and do not diagnose or recommend training');
 assert.ok(analysisOverview.includes('Garmin-Form und TSB bleiben getrennte Indikatoren'), 'Garmin form and TSB are not conflated in trend observations');
+
+assert.ok(html.includes('id="plan-kind"') && html.includes('value="rest">Ruhetag</option>'), 'manual training planning offers a dedicated rest-day type');
+assert.ok(html.includes('id="plan-duration-field"') && planning.includes("const isRestDay=document.getElementById('plan-kind')?.value==='rest'"), 'rest-day planning hides workout-specific fields and stores a separate day type');
+assert.ok(planning.includes('duration=isRestDay||isAssessment||durationRaw===\'\'?null') && planning.includes('targetTss=isRestDay||isAssessment||targetTssRaw===\'\'?null'), 'rest days carry no planned duration or target load');
+assert.ok(calendar.includes("activity.type==='RestDay'") && calendar.includes('Keine Trainingseinheit geplant'), 'calendar identifies planned rest days without presenting them as workouts');
