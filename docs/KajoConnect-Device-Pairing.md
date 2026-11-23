@@ -27,13 +27,13 @@ Eine Intervall-/Schrittstruktur wird nicht übertragen, solange sie nicht in tat
 Der implementierte Backend-Vertrag nutzt einen vom Gerät gestarteten Kopplungsvorgang:
 
 1. Die Uhr fordert über `create-pairing` einen Kopplungscode und ein zusätzliches geheimes Polling-Secret an.
-2. Die Uhr zeigt den achtstelligen Code an und fragt den Status mit Code plus Polling-Secret ab.
+2. Die Uhr zeigt den zwölfstelligen Code an und fragt den Status mit Code plus Polling-Secret ab.
 3. Die Nutzerin meldet sich in der KAJO-Web-App an und gibt den Code dort ein. Die Web-App ruft `claim-pairing` mit dem bestehenden Supabase-User-JWT auf.
 4. Der Server prüft den JWT über Supabase Auth, registriert ein Gerät für genau diese Benutzer-ID und erzeugt ein zufälliges Geräte-Token.
 5. Das Geräte-Token wird serverseitig verschlüsselt in der kurzlebigen Pairing-Anfrage zwischengespeichert. Die Uhr kann es nur mit Code und Polling-Secret abholen.
 6. Die Uhr speichert das Geräte-Token lokal. Danach verwendet sie für Synchronisierungen ausschließlich dieses Token.
 
-Der Code läuft nach zehn Minuten ab. Der Code wird serverseitig nicht im Klartext gespeichert; sein Hash wird mit einem serverseitigen HMAC-Pepper gebildet. Das Polling-Secret und das Geräte-Token sind jeweils kryptografisch zufällig.
+Der Code läuft nach zehn Minuten ab. Der Code wird serverseitig nicht im Klartext gespeichert; sein Hash wird mit einem serverseitigen HMAC-Pepper gebildet. Der zwölfstellige Zahlencode besitzt 40 Bit Suchraum. Das Polling-Secret und das Geräte-Token sind jeweils kryptografisch zufällig.
 
 ## 4. Backend-Implementierung im Branch
 
@@ -56,7 +56,7 @@ Alle Aktionen werden als JSON-POST an `/functions/v1/kajo-connect` gesendet.
 |---|---|---|
 | `create-pairing` | Pairing wird durch zufälliges Polling-Secret geschützt | Anfrage von der Uhr erzeugen |
 | `claim-pairing` | bestehender Supabase-User-JWT | Code dem angemeldeten Konto zuordnen |
-| `poll-pairing` | achtstelliger Code plus Polling-Secret | Status prüfen und Gerätetoken abholen |
+| `poll-pairing` | zwölfstelliger Code plus Polling-Secret | Status prüfen und Gerätetoken abholen |
 | `sync` | Geräte-Bearer-Token | geplante Einheiten und Herzfrequenzzonen abrufen |
 
 Die `sync`-Antwort enthält nur:
@@ -79,7 +79,7 @@ Vor dem Erstellen einer echten Migration muss die bestehende Abweichung zwischen
 ## 7. Erforderliche Edge-Function-Secrets
 
 Vor einem Deployment müssen zusätzlich zu den von Supabase bereitgestellten Variablen folgende Secrets erzeugt und gesetzt werden:
-- `KAJO_CONNECT_PAIRING_PEPPER`: zufälliger, mindestens 32 Zeichen langer serverseitiger HMAC-Pepper für die achtstelligen Codes.
+- `KAJO_CONNECT_PAIRING_PEPPER`: zufälliger, mindestens 32 Zeichen langer serverseitiger HMAC-Pepper für die zwölfstelligen Codes.
 - `KAJO_CONNECT_TOKEN_ENCRYPTION_KEY`: Base64-kodierte 32-Byte-Schlüssel für AES-GCM-Verschlüsselung des noch nicht abgeholten Geräte-Tokens.
 
 Diese Werte gehören ausschließlich in die Supabase-Function-Secrets. Sie dürfen nicht in GitHub, im Web-Frontend oder in der Watch-App liegen.
