@@ -345,7 +345,7 @@ class KajoConnectView extends WatchUi.View {
 
         // KAJO home: one clear header, one primary training action, four compact routes.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((mUnit * 0.105).toNumber(), (mUnit * 0.075).toNumber(),
+        dc.fillRoundedRectangle((mUnit * 0.285).toNumber(), (mUnit * 0.075).toNumber(),
             (mUnit * 0.035).toNumber(), (mUnit * 0.035).toNumber(), (mUnit * 0.012).toNumber());
         drawCentered(dc, cx, mUnit * 0.075, "KAJO", mUnit * 0.54,
             Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
