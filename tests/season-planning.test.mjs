@@ -124,6 +124,22 @@ const validWeek = {
     }]
 };
 
+test('normalizes structured workout steps and filters invalid entries', () => {
+    const plan = normalizeWeeklyPlan({
+        ...validWeek,
+        sessions: [{
+            ...validWeek.sessions[0],
+            steps: [
+                { id: 'step-a', type: 'work', label: 'Belastung', durationSeconds: 180, target: 'Schwelle' },
+                { id: 'step-b', type: 'recovery', label: 'Erholung', durationSeconds: 120, target: 'Locker' },
+                { id: 'step-c', type: 'work', label: '', durationSeconds: 120 }
+            ]
+        }]
+    });
+    assert.deepEqual(plan.sessions[0].steps.map(step => step.label), ['Belastung', 'Erholung']);
+    assert.equal(plan.sessions[0].steps[0].durationSeconds, 180);
+});
+
 test('normalizes and validates a weekly draft only inside an approved season phase', () => {
     const normalized = normalizeWeeklyPlan(validWeek);
     assert.equal(normalized.sessions[0].durationMinutes, 75);
