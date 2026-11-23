@@ -62,7 +62,7 @@ Alle Aktionen werden als JSON-POST an `/functions/v1/kajo-connect` gesendet.
 | `revoke-device` | bestehender Supabase-User-JWT | ein Gerät des eigenen Kontos widerrufen |
 
 Die `sync`-Antwort enthält nur:
-- geplante Einheiten von gestern bis 14 Tage in die Zukunft, begrenzt auf 40 Einträge und die oben genannten Felder;
+- geplante Einheiten von gestern bis 14 Tage in die Zukunft, begrenzt auf 30 Einträge und die oben genannten Felder;
 - die Herzfrequenz-Zonengrenzen für das lokale Datum der Uhr;
 - Versions- und Aktualisierungsinformationen des Cloud-Snapshots.
 
@@ -90,7 +90,7 @@ Diese Werte gehören ausschließlich in die Supabase-Function-Secrets. Sie dürf
 
 - Die Pairing-Oberfläche in der KAJO-Web-App zum Eingeben und Bestätigen des Codes ist im Branch ergänzt.
 - Die Pairing-Ansicht auf der Uhr einschließlich Code-Anzeige, Polling und lokaler Token-Speicherung ist im Branch ergänzt; sie ist noch nicht kompiliert oder am Gerät getestet.
-- Das Anwenden des zurückgegebenen Trainingsplans und der Herzfrequenzzonen in der laufenden Watch-App.
+- Der lesende Sync der geplanten Einheiten in die Startansicht, der Offline-Cache und die Übergabe der aktuellen KAJO-Zonen an die Aktivitätsansicht sind im Branch ergänzt; sie sind noch nicht kompiliert oder end-to-end getestet.
 - Geräteverwaltung und Widerruf in der KAJO-Web-App sind als UI und Backend-Aktionen ergänzt; die Funktion ist noch nicht gegen eine bereitgestellte Datenbank getestet.
 - Die Datenbanktabellen; das SQL ist bislang nur ein Entwurf.
 - Deployment der Edge Function und Setzen der Secrets.
