@@ -1,6 +1,6 @@
 import Toybox.Activity;
 import Toybox.Application;
-import Toybox.Application.Properties;
+import Toybox.Application.Storage;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -35,7 +35,7 @@ class KajoConnectActivityView extends WatchUi.View {
     function loadDisplayPages() as Void {
         mEnabledPageIds = [];
         for (var i = 0; i < 5; i += 1) {
-            var savedValue = Application.Properties.getValue("kajoDisplayPage" + i.toString());
+            var savedValue = Storage.getValue("kajoDisplayPage" + i.toString());
             if (savedValue == null || (savedValue as Lang.Boolean)) {
                 mEnabledPageIds.add(i);
             }
