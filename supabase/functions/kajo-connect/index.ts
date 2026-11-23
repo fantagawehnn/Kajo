@@ -107,8 +107,9 @@ async function authenticatedUser(request: Request) {
 }
 
 function validDate(value: unknown): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
-    && !Number.isNaN(Date.parse(value + "T00:00:00Z"));
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(value + "T00:00:00Z");
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 function addDays(date: string, amount: number): string {
@@ -195,12 +196,12 @@ function safePlannedSession(value: unknown): PlannedSession | null {
   const session = value as JsonRecord;
   if (!validDate(session.date)) return null;
   return {
-    id: typeof session.id === "string" || typeof session.id === "number" ? session.id : null,
+    id: typeof session.id === "string" ? session.id.slice(0, 80) : typeof session.id === "number" ? session.id : null,
     date: session.date,
     name: typeof session.name === "string" ? session.name.slice(0, 120) : "Geplante Einheit",
     type: typeof session.type === "string" ? session.type.slice(0, 60) : "Training",
-    duration: session.duration ?? null,
-    targetTss: session.targetTss ?? null,
+    duration: typeof session.duration === "number" || typeof session.duration === "string" ? session.duration : null,
+    targetTss: typeof session.targetTss === "number" || typeof session.targetTss === "string" ? session.targetTss : null,
     category: typeof session.category === "string" ? session.category.slice(0, 80) : null,
     desc: typeof session.desc === "string" ? session.desc.slice(0, 1000) : null,
   };
