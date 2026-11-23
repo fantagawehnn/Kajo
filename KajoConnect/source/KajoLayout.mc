@@ -35,6 +35,59 @@ class KajoLayout {
         return 0.028;
     }
 
+    function fontForPercent(dc as Dc, targetPercent as Lang.Float) {
+        // Waehlt die groesste Garmin-Schrift, deren reale Pixelhoehe
+        // innerhalb des angeforderten Anteils der Displayhoehe liegt.
+        // So bleiben Hoehenberechnungen und die tatsaechlich gezeichnete
+        // Schrift auf dem Venu 3S konsistent.
+        var targetHeight = mUnit * targetPercent;
+        var selectedFont = Graphics.FONT_XTINY;
+        var selectedHeight = dc.getFontHeight(selectedFont);
+
+        var candidate = Graphics.FONT_TINY;
+        var candidateHeight = dc.getFontHeight(candidate);
+        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
+            selectedFont = candidate;
+            selectedHeight = candidateHeight;
+        }
+
+        candidate = Graphics.FONT_SMALL;
+        candidateHeight = dc.getFontHeight(candidate);
+        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
+            selectedFont = candidate;
+            selectedHeight = candidateHeight;
+        }
+
+        candidate = Graphics.FONT_MEDIUM;
+        candidateHeight = dc.getFontHeight(candidate);
+        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
+            selectedFont = candidate;
+            selectedHeight = candidateHeight;
+        }
+
+        candidate = Graphics.FONT_LARGE;
+        candidateHeight = dc.getFontHeight(candidate);
+        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
+            selectedFont = candidate;
+            selectedHeight = candidateHeight;
+        }
+
+        candidate = Graphics.FONT_NUMBER_MEDIUM;
+        candidateHeight = dc.getFontHeight(candidate);
+        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
+            selectedFont = candidate;
+            selectedHeight = candidateHeight;
+        }
+
+        candidate = Graphics.FONT_NUMBER_HOT;
+        candidateHeight = dc.getFontHeight(candidate);
+        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
+            selectedFont = candidate;
+        }
+
+        return selectedFont;
+    }
+
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
         // Immer mit der angeforderten Schrift beginnen und nur kleiner werden.
         // Die vorherige Logik konnte von XTINY auf SMALL vergroessern, wenn
