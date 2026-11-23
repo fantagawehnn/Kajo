@@ -385,8 +385,11 @@ class KajoConnectView extends WatchUi.View {
         mBoatBottom = mUnit * 0.235;
         mBoatLeft = cx - (mUnit * 0.36);
         mBoatRight = cx + (mUnit * 0.36);
-        drawCentered(dc, cx, mUnit * 0.17, sportLabel,
-            mUnit * 0.70, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        // Die Sportart bekommt einen eigenen linken Textbereich. So kann
+        // das Statussymbol rechts nicht mit der Bootsklassen-Bezeichnung
+        // kollidieren, auch wenn die Schrift auf dem Venu 3S breiter ausfaellt.
+        drawCentered(dc, cx - (mUnit * 0.055), mUnit * 0.17, sportLabel,
+            mUnit * 0.50, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawCircle((cx + mUnit * 0.275).toNumber(), (mUnit * 0.20).toNumber(),
             (mUnit * 0.014).toNumber());
