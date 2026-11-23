@@ -98,10 +98,10 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
             var type = session["type"] == null ? "Training" : session["type"].toString();
             var duration = session["duration"] == null ? "" : session["duration"].toString();
 
-            dc.setColor(0x07151D, Graphics.COLOR_BLACK);
+            dc.setColor(0x05181C, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
                 cardHeight.toNumber(), (mUnit * 0.03).toNumber());
-            dc.setColor(0x12485A, Graphics.COLOR_BLACK);
+            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
                 cardHeight.toNumber(), (mUnit * 0.03).toNumber());
 
