@@ -1,3 +1,4 @@
+import Toybox.Application.Storage;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -5,7 +6,7 @@ import Toybox.WatchUi;
 
 class KajoConnectDisplayConfigView extends WatchUi.View {
 
-    var mEnabled = [true, true, true, true, true];
+    var mEnabled as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
     var mRowTop = 0;
     var mRowHeight = 0;
     var mWidth = 0;
@@ -16,14 +17,14 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         View.initialize();
         for (var i = 0; i < 5; i += 1) {
             var key = "kajoDisplayPage" + i.toString();
-            var savedValue = getApp().getProperty(key);
+            var savedValue = Storage.getValue(key);
             if (savedValue != null) { mEnabled[i] = savedValue as Lang.Boolean; }
         }
     }
 
     function toggleAt(y as Lang.Number) as Void {
         if (mRowHeight <= 0) { return; }
-        var row = Math.floor((y - mRowTop) / mRowHeight);
+        var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
         if (row >= 0 && row < 5) {
             mEnabled[row] = !mEnabled[row];
             var active = 0;
@@ -50,7 +51,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
     function saveConfig() as Void {
         for (var i = 0; i < 5; i += 1) {
-            getApp().setProperty("kajoDisplayPage" + i.toString(), mEnabled[i]);
+            Storage.setValue("kajoDisplayPage" + i.toString(), mEnabled[i]);
         }
         WatchUi.popView(WatchUi.SLIDE_DOWN);
     }
@@ -68,7 +69,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.16).toNumber(), Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
-        var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
+        var labels as Lang.Array<Lang.String> = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.235;
         mRowHeight = mUnit * 0.108;
 
