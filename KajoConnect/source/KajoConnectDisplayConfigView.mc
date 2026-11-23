@@ -64,9 +64,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         var cx = mWidth / 2;
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(cx, mUnit * 0.095, Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(cx), Math.round(mUnit * 0.095), Graphics.FONT_SMALL, "ANZEIGEN", Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(cx, mUnit * 0.16, Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(cx), Math.round(mUnit * 0.16), Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
         var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.235;
@@ -79,19 +79,19 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardX, y, cardWidth, cardHeight, mUnit * 0.025);
+            dc.drawRoundedRectangle(Math.round(cardX), Math.round(y), Math.round(cardWidth), Math.round(cardHeight), Math.round(mUnit * 0.025));
 
             var state = mEnabled[i] ? "AN" : "AUS";
             var labelWidth = Math.floor(cardWidth * 0.62);
             var font = fitFont(dc, labels[i], labelWidth, Graphics.FONT_SMALL);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawText(cardX + (labelWidth / 2) + (mUnit * 0.015),
-                y + (cardHeight - dc.getFontHeight(font)) / 2,
+            dc.drawText(Math.round(cardX + (labelWidth / 2) + (mUnit * 0.015)),
+                Math.round(y + (cardHeight - dc.getFontHeight(font)) / 2),
                 font, labels[i], Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(mEnabled[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-            dc.drawText(cardX + cardWidth * 0.84,
-                y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2,
+            dc.drawText(Math.round(cardX + cardWidth * 0.84),
+                Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2),
                 Graphics.FONT_TINY, state, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
@@ -99,9 +99,9 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         var saveHeight = mUnit * 0.085;
         var saveY = mUnit * 0.825;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(cx - saveWidth / 2, saveY, saveWidth, saveHeight, mUnit * 0.03);
+        dc.fillRoundedRectangle(Math.round(cx - saveWidth / 2), Math.round(saveY), Math.round(saveWidth), Math.round(saveHeight), Math.round(mUnit * 0.03));
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
-        dc.drawText(cx, saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
+        dc.drawText(Math.round(cx), Math.round(saveY + (saveHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2),
             Graphics.FONT_SMALL, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
     }
 }
