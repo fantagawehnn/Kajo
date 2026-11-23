@@ -155,8 +155,10 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             if (index >= mMetricIds.size()) { continue; }
             var y = mRowTop + (row * mRowHeight);
             var metricId = mMetricIds[index];
-            var isEnabled = selectedIndex(metricId) >= 0;
+            var orderIndex = selectedIndex(metricId);
+            var isEnabled = orderIndex >= 0;
             var isFocused = mSelectedRow == index;
+            var stateText = isEnabled ? (orderIndex + 1).toString() + " AN" : "AUS";
             dc.setColor(isFocused ? Graphics.COLOR_WHITE : Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(Math.round(cardX).toNumber(), Math.round(y).toNumber(),
                 Math.round(cardWidth).toNumber(), Math.round(cardHeight).toNumber(),
@@ -169,7 +171,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             dc.setColor(isEnabled ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
             dc.drawText(Math.round(cardX + cardWidth * 0.83).toNumber(),
                 Math.round(y + (cardHeight - dc.getFontHeight(Graphics.FONT_TINY)) / 2).toNumber(),
-                Graphics.FONT_TINY, isEnabled ? "AN" : "AUS", Graphics.TEXT_JUSTIFY_CENTER);
+                Graphics.FONT_TINY, stateText, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         mSaveTop = mUnit * 0.765;
