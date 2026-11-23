@@ -200,7 +200,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             WatchUi.showToast("Datenfeld zuerst aktivieren", null);
             return;
         }
-        var currentSize as Lang.Number = 1;
+        var currentSize = 1;
         var savedSize = mMetricSizes[metricId];
         if (savedSize != null) { currentSize = savedSize as Lang.Number; }
         var nextSize = (currentSize + 1) % 3;
@@ -254,7 +254,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             var isFocused = mSelectedRow == index;
             var sizeText = "M";
             if (isEnabled) {
-                var fieldSize as Lang.Number = 1;
+                var fieldSize = 1;
                 var savedFieldSize = mMetricSizes[metricId];
                 if (savedFieldSize != null) { fieldSize = savedFieldSize as Lang.Number; }
                 sizeText = fieldSize == 0 ? "K" : fieldSize == 2 ? "G" : "M";
