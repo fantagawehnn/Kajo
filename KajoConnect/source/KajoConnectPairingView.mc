@@ -8,6 +8,7 @@ class KajoConnectPairingView extends WatchUi.View {
 
     var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
 
+    var mKajoLayout as KajoLayout;
     var mApi as KajoConnectApi;
     var mTimer as Timer.Timer;
     var mCode as Lang.String = "";
@@ -19,6 +20,7 @@ class KajoConnectPairingView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
+        mKajoLayout = new KajoLayout();
         mApi = new KajoConnectApi();
         mTimer = new Timer.Timer();
     }
@@ -204,6 +206,7 @@ class KajoConnectPairingView extends WatchUi.View {
         var unit = width;
         if (height < unit) { unit = height; }
         var center = width / 2;
+        mKajoLayout.configure(width, height);
         // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
