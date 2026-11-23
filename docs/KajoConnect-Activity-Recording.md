@@ -31,7 +31,7 @@ Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
 - Distanz & Zeit: Distanz, Zeit und Kalorien
 - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Standardseite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich können bis zu drei eigene Datenseiten konfiguriert werden. Jede eigene Seite kann bis zu vier Kennzahlen enthalten; insgesamt stehen 17 Kennzahlen zur Auswahl, darunter die aktuelle Herzfrequenzzone. Die drei Layouts werden unabhängig voneinander gespeichert. Im Editor wechselt ein Tippen links bzw. rechts in der Layout-Kopfzeile zwischen den eigenen Datenseiten; vertikales Wischen blättert weiterhin durch die Kennzahlenliste. Links am Eintrag wird ein Feld aktiviert/deaktiviert, rechts wird es für die Sortierung ausgewählt; „HOCH“ und „RUNTER“ ändern die Reihenfolge, „GROSS“ hebt das ausgewählte Feld hervor. Jede eigene Datenseite besitzt ihre eigene Sortierung und individuelle Größenstufen pro Kennzahl: klein, mittel oder groß. Im Editor wird die Größe des rechts ausgewählten Feldes über die mittlere Schaltfläche „GROESSE“ zyklisch geändert; die Kennzahlzeile zeigt K, M oder G. Die Größe wird unabhängig für jede Kennzahl und jede Datenseite gespeichert. Die Größenstufe verändert die Schriftgröße des Werts; die Positionen der Felder folgen weiterhin dem automatisch gewählten Raster (ein Feld zentriert, zwei nebeneinander, drei oder vier im Raster). Bestehende Einstellungen der bisherigen einzelnen eigenen Datenseite werden als erste eigene Datenseite weiterverwendet; ein bisheriges großes Feld wird als Größenstufe „groß“ übernommen.
+Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Standardseite bleibt aktiv. Die Reihenfolge der fünf Standardseiten ist festgelegt. Zusätzlich können bis zu drei eigene Datenseiten konfiguriert werden. Jede eigene Seite kann bis zu vier Kennzahlen enthalten; insgesamt stehen 17 Kennzahlen zur Auswahl, darunter die aktuelle Herzfrequenzzone. Die drei Layouts werden unabhängig voneinander gespeichert. Im Editor wechselt ein Tippen links bzw. rechts in der Layout-Kopfzeile zwischen den eigenen Datenseiten; vertikales Wischen blättert weiterhin durch die Kennzahlenliste. Links am Eintrag wird ein Feld aktiviert/deaktiviert, rechts wird es für die Sortierung ausgewählt; „HOCH“ und „RUNTER“ ändern die Reihenfolge, „GROSS“ hebt das ausgewählte Feld hervor. Jede eigene Datenseite besitzt ihre eigene Sortierung und individuelle Größenstufen pro Kennzahl: klein, mittel oder groß. Im Editor wird die Größe des rechts ausgewählten Feldes über die mittlere Schaltfläche „GROESSE“ zyklisch geändert; die Kennzahlzeile zeigt K, M oder G. Die Größe wird unabhängig für jede Kennzahl und jede Datenseite gespeichert. Die Größenstufe verändert sowohl die Schriftgröße als auch Breite und Höhe der jeweiligen Kachel. Die Positionen folgen den fünf gespeicherten Rasterplätzen (oben links/rechts, unten links/rechts oder unten mittig); größere Kacheln nutzen innerhalb ihres Platzes mehr Fläche. Bestehende Einstellungen der bisherigen einzelnen eigenen Datenseite werden als erste eigene Datenseite weiterverwendet; ein bisheriges großes Feld wird als Größenstufe „groß“ übernommen.
 
 **Noch nicht umgesetzt:** Mehr als vier Kennzahlen gleichzeitig auf einer eigenen Seite anzeigen, die Feldpositionen frei auf der Uhr anordnen und die Konfiguration direkt in der KAJO-Web-App statt auf der Uhr bearbeiten.
 
@@ -73,6 +73,17 @@ Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuel
 - Ein direkter FIT-Upload an KAJO und eine Upload-Queue sind nicht implementiert.
 
 ## 7. Build- und Gerätetest – erst nach Abschluss der Implementierung
+
+Für einen lokalen Windows-Build liegt unter `KajoConnect/build.ps1` ein PowerShell-Skript. Es kompiliert beide in der Manifestdatei eingetragenen Geräteprofile. Der Garmin-SDK-Ordner und der private Developer-Key werden als Parameter übergeben; der Key bleibt außerhalb des Repositorys.
+
+Beispiel aus dem Projektordner:
+
+```powershell
+.\build.ps1 -SdkPath "C:\Pfad\zum\ConnectIQ-SDK" -DeveloperKeyPath "F:\Pfad\zum\developer_key"
+```
+
+Das Skript erzeugt `bin\KajoConnect-venu2plus.prg` und `bin\KajoConnect-venu3s.prg`. Es prüft Compiler-Aufruf, Exit-Code und Vorhandensein beider Ausgabedateien. Das Skript wurde im aktuellen Entwicklungscontainer nicht ausgeführt; ein erfolgreicher Build ist daher noch nicht bestätigt.
+
 
 1. Branch `feature/kajo-connect` lokal aktualisieren.
 2. Garmin-Build für `venu3s` und `venu2plus` ausführen.
