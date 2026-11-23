@@ -24,6 +24,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mEnabledPageIds as Lang.Array<Lang.Number> = [0, 1, 2, 3, 4];
     var mCurrentPageId = 0;
     var mCustomMetricIds as Lang.Array<Lang.String> = [];
+    var mLargeMetricId as Lang.String = "";
     // KAJO liefert die vier oberen Zonengrenzen; die Uhr berechnet keine eigenen Zonen.
     var mHeartRateZones as Lang.Array<Lang.Number> = [];
 
@@ -48,6 +49,10 @@ class KajoConnectActivityView extends WatchUi.View {
         mCustomMetricIds = [];
         if (savedMetrics != null) {
             mCustomMetricIds = savedMetrics as Lang.Array<Lang.String>;
+        }
+        var largeMetric = Storage.getValue("kajoLargeMetricId");
+        if (largeMetric != null && mCustomMetricIds.indexOf(largeMetric.toString()) >= 0) {
+            mLargeMetricId = largeMetric.toString();
         }
         mPageCount = mEnabledPageIds.size() + (mCustomMetricIds.size() > 0 ? 1 : 0);
         mPage = 0;
@@ -123,14 +128,51 @@ class KajoConnectActivityView extends WatchUi.View {
         return "";
     }
 
+    function drawCustomMetric(dc as Dc, cx, metricId as Lang.String, values as Lang.Dictionary,
+        x, y, width, valueFont) as Void {
+        var label = getCustomMetricLabel(metricId);
+        var value = getCustomMetricValue(metricId, values);
+        var unit = getCustomMetricUnit(metricId);
+        drawMetric(dc, x, y, label, value, unit, width, valueFont);
+    }
+
     function drawCustomMetricPage(dc as Dc, cx, values as Lang.Dictionary) as Void {
         drawPageHeader(dc, "MEINE DATEN");
         var count = mCustomMetricIds.size();
+        var largeIndex = mCustomMetricIds.indexOf(mLargeMetricId);
+
+        if (count == 1) {
+            drawCustomMetric(dc, cx, mCustomMetricIds[0], values,
+                cx, mUnit * 0.40, mUnit * 0.68, Graphics.FONT_LARGE);
+            return;
+        }
+
+        if (largeIndex >= 0) {
+            drawCustomMetric(dc, cx, mCustomMetricIds[largeIndex], values,
+                cx, mUnit * 0.29, mUnit * 0.68, Graphics.FONT_LARGE);
+            var smallIndex = 0;
+            for (var i = 0; i < count; i += 1) {
+                if (i == largeIndex) { continue; }
+                var smallX = cx;
+                var smallWidth = mUnit * 0.68;
+                var smallY = mUnit * 0.56;
+                var smallFont = Graphics.FONT_MEDIUM;
+                if (count == 3) {
+                    smallX = mScreenWidth * (smallIndex == 0 ? 0.30 : 0.70);
+                    smallWidth = mUnit * 0.39;
+                } else if (count == 4) {
+                    smallX = mScreenWidth * (smallIndex == 0 ? 0.22 : smallIndex == 1 ? 0.50 : 0.78);
+                    smallWidth = mUnit * 0.25;
+                    smallFont = Graphics.FONT_SMALL;
+                }
+                drawCustomMetric(dc, cx, mCustomMetricIds[i], values,
+                    smallX, smallY, smallWidth, smallFont);
+                smallIndex += 1;
+            }
+            return;
+        }
+
         for (var i = 0; i < count && i < 4; i += 1) {
-            var metricId = mCustomMetricIds[i];
-            var label = getCustomMetricLabel(metricId);
-            var value = getCustomMetricValue(metricId, values);
-            var unit = getCustomMetricUnit(metricId);
             var x = cx;
             var y = mUnit * 0.40;
             var width = mUnit * 0.68;
@@ -140,17 +182,18 @@ class KajoConnectActivityView extends WatchUi.View {
                 width = mUnit * 0.39;
                 y = mUnit * 0.44;
                 font = Graphics.FONT_MEDIUM;
+            } else if (count == 3 && i == 2) {
+                x = cx;
+                width = mUnit * 0.68;
+                y = mUnit * 0.56;
+                font = Graphics.FONT_MEDIUM;
             } else if (count >= 3) {
                 x = mScreenWidth * ((i % 2) == 0 ? 0.30 : 0.70);
                 width = mUnit * 0.39;
                 y = mUnit * (i < 2 ? 0.32 : 0.56);
                 font = Graphics.FONT_MEDIUM;
             }
-            drawMetric(dc, x, y, label, value, unit, width, font);
-        }
-        if (count == 0) {
-            drawFit(dc, cx, mUnit * 0.43, "KEINE DATENFELDER", mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
-            drawFit(dc, cx, mUnit * 0.51, "IN KAJO AUSWAEHLEN", mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawCustomMetric(dc, cx, mCustomMetricIds[i], values, x, y, width, font);
         }
     }
 
