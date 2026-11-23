@@ -175,7 +175,7 @@ export function saveKajoConnectDisplayConfig() {
             throw new Error('Der angemeldete Kontospeicher ist nicht verfügbar.');
         }
         displayLayoutsDraft = layouts;
-        setConfigStatus('Konfiguration gespeichert. Die Änderung wird mit deiner KAJO-Cloud synchronisiert.');
+        setConfigStatus('Konfiguration lokal gespeichert. Bei aktiver Cloud-Synchronisierung wird sie auch in deinem KAJO-Konto gesichert.');
     } catch (error) {
         setConfigStatus(error?.message || 'Konfiguration konnte nicht gespeichert werden.', true);
     }
