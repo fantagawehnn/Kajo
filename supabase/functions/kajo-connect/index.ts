@@ -90,6 +90,31 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+function requestIdentity(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return request.headers.get("cf-connecting-ip")
+    || request.headers.get("x-real-ip")
+    || forwarded
+    || "unknown";
+}
+
+async function consumeRateLimit(
+  admin: ReturnType<typeof createClient>,
+  scope: string,
+  identity: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  const bucketKey = await sha256(scope + ":" + identity);
+  const { data, error } = await admin.rpc("kajo_connect_consume_rate_limit", {
+    p_bucket_key: bucketKey,
+    p_limit: limit,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) throw error;
+  return data === true;
+}
+
 async function authenticatedUser(request: Request) {
   const authorization = request.headers.get("Authorization") || "";
   const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -228,12 +253,19 @@ Deno.serve(async (request) => {
 
     // The watch creates a short-lived pairing request and retains the poll secret.
     if (action === "create-pairing") {
+      if (!await consumeRateLimit(admin, "pairing-create", requestIdentity(request), 5, 600)) {
+        return json(429, { error: "Too many pairing requests. Wait a few minutes and try again." });
+      }
       const code = (BigInt("0x" + randomHex(8)) % 1000000000000n).toString().padStart(12, "0");
       const pollSecret = randomHex(32);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const { error: cleanupError } = await admin.from("kajo_connect_pairing_requests")
         .delete().lt("expires_at", new Date().toISOString());
       if (cleanupError) throw cleanupError;
+      const oldRateLimitCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { error: rateCleanupError } = await admin.from("kajo_connect_rate_limits")
+        .delete().lt("updated_at", oldRateLimitCutoff);
+      if (rateCleanupError) throw rateCleanupError;
       const deviceLabel = typeof body.deviceLabel === "string"
         ? body.deviceLabel.trim().slice(0, 80)
         : "KAJO Connect";
@@ -251,6 +283,9 @@ Deno.serve(async (request) => {
     if (action === "claim-pairing") {
       const user = await authenticatedUser(request);
       if (!user) return json(401, { error: "An authenticated KAJO account is required." });
+      if (!await consumeRateLimit(admin, "pairing-claim", user.id, 5, 600)) {
+        return json(429, { error: "Too many code attempts. Wait a few minutes and try again." });
+      }
       const code = typeof body.code === "string" ? body.code.replace(/\s/g, "") : "";
       if (!/^\d{12}$/.test(code)) return json(400, { error: "The pairing code must contain twelve digits." });
 
@@ -305,6 +340,9 @@ Deno.serve(async (request) => {
       if (!/^\d{12}$/.test(code) || !/^[a-f0-9]{64}$/.test(pollSecret)) {
         return json(400, { error: "Invalid pairing credentials." });
       }
+      if (!await consumeRateLimit(admin, "pairing-poll", code + ":" + pollSecret, 15, 120)) {
+        return json(429, { error: "Pairing polling is temporarily rate limited." });
+      }
 
       const { data: pairing, error: lookupError } = await admin
         .from("kajo_connect_pairing_requests")
@@ -339,6 +377,9 @@ Deno.serve(async (request) => {
     if (action === "list-devices") {
       const user = await authenticatedUser(request);
       if (!user) return json(401, { error: "An authenticated KAJO account is required." });
+      if (!await consumeRateLimit(admin, "device-list", user.id, 30, 60)) {
+        return json(429, { error: "Too many device-list requests." });
+      }
       const { data, error } = await admin
         .from("kajo_connect_devices")
         .select("id,device_label,created_at,last_seen_at,revoked_at")
@@ -351,6 +392,9 @@ Deno.serve(async (request) => {
     if (action === "revoke-device") {
       const user = await authenticatedUser(request);
       if (!user) return json(401, { error: "An authenticated KAJO account is required." });
+      if (!await consumeRateLimit(admin, "device-revoke", user.id, 10, 60)) {
+        return json(429, { error: "Too many device-revocation requests." });
+      }
       const deviceId = typeof body.deviceId === "string" ? body.deviceId : "";
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(deviceId)) {
         return json(400, { error: "Invalid device ID." });
@@ -382,6 +426,9 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (deviceError) throw deviceError;
       if (!device) return json(401, { error: "This device is not paired or has been revoked." });
+      if (!await consumeRateLimit(admin, "device-sync", device.id, 30, 60)) {
+        return json(429, { error: "Device sync is temporarily rate limited." });
+      }
 
       const now = new Date().toISOString();
       const { error: touchError } = await admin.from("kajo_connect_devices")
