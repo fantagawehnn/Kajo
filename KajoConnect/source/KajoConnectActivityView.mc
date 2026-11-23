@@ -501,10 +501,16 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawDashboardPanel(dc as Dc, x, y, width, height) as Void {
-        dc.setColor(0x040D12, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber(), (mUnit * 0.045).toNumber());
-        dc.setColor(0x0A3A4A, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber(), (mUnit * 0.045).toNumber());
+        dc.setColor(0x071619, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(),
+            height.toNumber(), (mUnit * 0.028).toNumber());
+        dc.setColor(0x17343A, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(),
+            height.toNumber(), (mUnit * 0.028).toNumber());
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle((x + mUnit * 0.012).toNumber(),
+            (y + mUnit * 0.025).toNumber(), (mUnit * 0.008).toNumber(),
+            (height - mUnit * 0.05).toNumber(), (mUnit * 0.004).toNumber());
     }
 
     function drawHeartRateRing(dc as Dc, centerX, centerY, radius, zone as Lang.Number) as Void {
@@ -887,11 +893,16 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function drawMetric(dc as Dc, x, y, label as Lang.String, value as Lang.String,
         unit as Lang.String, maxWidth, valueFont) as Void {
-        drawFit(dc, x, y, label, maxWidth, Graphics.FONT_XTINY, 0xA0AAB2);
-        var valueY = y + (mUnit * 0.055);
-        drawFit(dc, x, valueY, value, maxWidth, valueFont, Graphics.COLOR_WHITE);
+        var panelTop = y - (mUnit * 0.025);
+        var panelHeight = mUnit * 0.19;
+        var panelWidth = mKajoLayout.safeRectWidthAt(x, panelTop, panelHeight, maxWidth);
+        drawDashboardPanel(dc, x - (panelWidth / 2), panelTop, panelWidth, panelHeight);
+        drawFit(dc, x, y, label, panelWidth * 0.86,
+            Graphics.FONT_XTINY, 0xA0AAB2);
+        drawFit(dc, x, y + (mUnit * 0.055), value, panelWidth * 0.86,
+            valueFont, Graphics.COLOR_WHITE);
         if (unit != "") {
-            drawFit(dc, x, valueY + (mUnit * 0.075), unit, maxWidth,
+            drawFit(dc, x, y + (mUnit * 0.13), unit, panelWidth * 0.86,
                 Graphics.FONT_XTINY, 0xA0AAB2);
         }
     }
