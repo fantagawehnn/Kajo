@@ -2,6 +2,7 @@ import Toybox.Activity;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.Position;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
@@ -28,6 +29,10 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (started) {
             mStatus = "AUFZEICHNUNG";
+            Position.enableLocationEvents(
+                Position.LOCATION_CONTINUOUS,
+                method(:onPosition)
+            );
             mTimer.start(method(:onTimer), 1000, true);
         } else {
             mStatus = "START FEHLGESCHLAGEN";
@@ -40,8 +45,13 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function onPosition(positionInfo as Position.Info) as Void {
+        WatchUi.requestUpdate();
+    }
+
     function finishRecording() as Void {
         mTimer.stop();
+        Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
 
         if (mEngine.finish()) {
             mStatus = "GESPEICHERT";
