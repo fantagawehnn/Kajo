@@ -770,7 +770,8 @@ class KajoConnectActivityView extends WatchUi.View {
                     moveWorkoutStep(1);
                 }
             } else if (x < mScreenWidth / 2) {
-                if (mEngine.addLap()) { WatchUi.showToast("Runde gespeichert", null); }
+                mPage -= 1;
+                if (mPage < 0) { mPage = mPageCount - 1; }
             } else {
                 mPage += 1;
                 if (mPage >= mPageCount) { mPage = 0; }
