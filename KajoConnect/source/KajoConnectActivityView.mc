@@ -170,28 +170,27 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
-<<<<<<< HEAD
-    function drawButton(dc as Dc, centerX as Lang.Number, top as Lang.Number, width as Lang.Number, label as Lang.String) as Void {
-        var height = (mButtonBottom - mButtonTop).toNumber();
-        var left = (centerX - (width / 2)).toNumber();
-        var topNumber = top.toNumber();
-        var widthNumber = width.toNumber();
-        var centerXNumber = centerX.toNumber();
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(left, topNumber, widthNumber, height, 2 as Lang.Number);
-        var textY = (topNumber + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2).toNumber();
-        var textWidth = (widthNumber * 0.86).toNumber();
-        drawFit(dc, centerXNumber, textY,
-            label, textWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-=======
     function drawButton(dc as Dc, centerX, top, width, label as Lang.String) as Void {
         var height = mButtonBottom - mButtonTop;
         var left = centerX - (width / 2);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(Math.round(left), Math.round(top), Math.round(width), Math.round(height), Math.round(mUnit * 0.025));
-        drawFit(dc, centerX, top + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
-            label, width * 0.86, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
->>>>>>> ca879062be0d8a2ebf80babf4c5943885780c9c2
+        dc.drawRoundedRectangle(
+            Math.round(left),
+            Math.round(top),
+            Math.round(width),
+            Math.round(height),
+            Math.round(mUnit * 0.025)
+        );
+        drawFit(
+            dc,
+            centerX,
+            top + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
+            label,
+            width * 0.86,
+            Graphics.FONT_SMALL,
+            Graphics.COLOR_WHITE
+        );
+    }
     }
 
     function onUpdate(dc as Dc) {
