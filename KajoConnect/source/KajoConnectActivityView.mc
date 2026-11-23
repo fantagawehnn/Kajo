@@ -599,10 +599,10 @@ class KajoConnectActivityView extends WatchUi.View {
         var gpsActive = mGpsQuality >= Position.QUALITY_USABLE;
         var gpsColor = gpsActive ? 0x39FF14 : 0x555555;
         for (var bar = 0; bar < 3; bar += 1) {
-            var bh = mUnit * (0.018 + (bar * 0.012));
+            var bh = mUnit * (0.012 + (bar * 0.008));
             dc.setColor(gpsColor, Graphics.COLOR_BLACK);
-            dc.fillRectangle((mUnit * (0.83 + (bar * 0.018))).toNumber(),
-                (mUnit * 0.066 - bh).toNumber(), (mUnit * 0.011).toNumber(), bh.toNumber());
+            dc.fillRectangle((statusX + statusW - (mUnit * 0.055) + (bar * mUnit * 0.014)).toNumber(),
+                (statusY + (statusH / 2) - (bh / 2)).toNumber(), (mUnit * 0.009).toNumber(), bh.toNumber());
         }
 
         // Grosser Timer mit offenem, tuerkisem Kreisbogen.
@@ -667,8 +667,10 @@ class KajoConnectActivityView extends WatchUi.View {
 
         // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
         dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
-        dc.drawText((mUnit * 0.16).toNumber(), (mUnit * 0.735).toNumber(),
-            Graphics.FONT_SMALL, "♥", Graphics.TEXT_JUSTIFY_CENTER);
+        var heartFont = mLayout.fontForPercent(dc, 0.055);
+        var heartY = mLayout.safeTextY(mUnit * 0.735, dc.getFontHeight(heartFont));
+        dc.drawText((mUnit * 0.16).toNumber(), heartY.toNumber(),
+            heartFont, "♥", Graphics.TEXT_JUSTIFY_CENTER);
         drawFit(dc, mUnit * 0.34, mUnit * 0.73, hrNow,
             mUnit * 0.25, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         drawFit(dc, mUnit * 0.43, mUnit * 0.745, "bpm",
