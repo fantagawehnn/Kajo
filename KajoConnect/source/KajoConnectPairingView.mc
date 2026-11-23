@@ -88,6 +88,12 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function onPollResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
+        if (responseCode == 404) {
+            mStatus = "KOPPLUNG ABGELAUFEN";
+            mTimer.stop();
+            WatchUi.requestUpdate();
+            return;
+        }
         if (responseCode != 200 || data == null) {
             mStatus = "WARTE AUF VERBINDUNG";
             WatchUi.requestUpdate();
