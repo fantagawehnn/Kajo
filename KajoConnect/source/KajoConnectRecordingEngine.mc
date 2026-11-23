@@ -22,6 +22,13 @@ class KajoConnectRecordingEngine {
             :subSport => Activity.SUB_SPORT_WHITEWATER
         });
 
+        // Garmin gibt bei einer noch offenen FIT-Session dasselbe Session-
+        // Objekt zurueck. Nach einem App-Neustart darf eine laufende Aufnahme
+        // deshalb nicht durch einen zweiten start()-Aufruf verworfen werden.
+        if (mSession.isRecording()) {
+            return true;
+        }
+
         var started = mSession.start();
         if (!started) {
             // Einen fehlgeschlagenen Start sauber verwerfen, damit kein
