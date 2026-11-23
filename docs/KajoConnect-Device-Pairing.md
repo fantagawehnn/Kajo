@@ -70,9 +70,11 @@ Die Herzfrequenzzonen folgen der bestehenden KAJO-Logik aus `js/training-load.js
 
 ## 6. Datenbankentwurf – noch nicht angewendet
 
-Die SQL-Datei unter `docs/kajo-connect-pairing-schema-draft.sql` ist ausdrücklich ein Entwurf und keine Migration. Sie beschreibt zwei Tabellen:
+Die SQL-Datei unter `docs/kajo-connect-pairing-schema-draft.sql` ist ausdrücklich ein Entwurf und keine Migration. Sie beschreibt drei Tabellen und eine serverseitige SQL-Funktion:
 - `public.kajo_connect_pairing_requests`: Code-Hash, Polling-Secret-Hash, Ablauf, Claim-Status und kurzzeitig verschlüsseltes Geräte-Token.
 - `public.kajo_connect_devices`: Benutzer-ID, Gerätebezeichnung, Token-Hash, letzte Nutzung und Widerrufszeitpunkt.
+- `public.kajo_connect_rate_limits`: gehashte Rate-Limit-Buckets mit Zeitfenster und Zähler.
+- `public.kajo_connect_consume_rate_limit(...)`: atomare, transaktionssichere Zählerfunktion; Ausführung ist nur für `service_role` vorgesehen.
 
 Beide Tabellen aktivieren RLS und erhalten keine Client-Policies. Zugriff ist ausschließlich über die Edge Function mit serverseitigem Service-Role-Key vorgesehen. Die tatsächlichen Datenbankänderungen sind nicht freigegeben und wurden nicht ausgeführt.
 
@@ -104,7 +106,7 @@ Die Uhr speichert Aktivitäten derzeit über `ActivityRecording.Session` als Gar
 
 ## 10. Sicherheits- und Testanforderungen vor Freigabe
 
-Ein separates serverseitiges Rate-Limit für Code-Erzeugung und ungültige Code-Eingaben ist noch nicht implementiert. Der zwölfstellige Code, HMAC-Pepper und die kurze Ablaufzeit erhöhen die Hürde, ersetzen aber kein Rate-Limit.
+Rate-Limits sind im Edge-Function-Code und im SQL-Schemaentwurf vorgesehen: Code-Erzeugung, Code-Claims, Polling, Geräte-Sync und Geräteverwaltung erhalten getrennte Zeitfenster und Zähler. Diese Begrenzungen sind erst aktiv, wenn die Tabellen und die SQL-Funktion in einer Testdatenbank angelegt und verifiziert wurden.
 
 Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden:
 - abgelaufener, ungültiger und bereits beanspruchter Code;
