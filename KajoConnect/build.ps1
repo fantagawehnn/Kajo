@@ -52,4 +52,4 @@ finally {
     Pop-Location
 }
 
-Write-Host "Both KAJO Connect device builds completed successfully."
+Write-Host "KAJO Connect Venu 3S build completed successfully."
