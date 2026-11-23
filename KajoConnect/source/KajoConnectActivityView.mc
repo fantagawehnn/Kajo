@@ -143,10 +143,10 @@ class KajoConnectActivityView extends WatchUi.View {
         return font;
     }
 
-    function drawFit(dc as Dc, x as Lang.Number, y as Lang.Number, text as Lang.String, maxWidth as Lang.Number, preferredFont, color as Lang.Number) as Void {
+    function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
         var font = fitFont(dc, text, maxWidth, preferredFont);
         dc.setColor(color, Graphics.COLOR_BLACK);
-        dc.drawText(x, y, font, text, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x), Math.round(y), font, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
@@ -157,22 +157,22 @@ class KajoConnectActivityView extends WatchUi.View {
             mUnit * 0.65, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 
-    function drawMetric(dc as Dc, x as Lang.Number, y as Lang.Number, label as Lang.String, value as Lang.String, unit as Lang.String, maxWidth as Lang.Number, valueFont) as Void {
+    function drawMetric(dc as Dc, x, y, label as Lang.String, value as Lang.String, unit as Lang.String, maxWidth, valueFont) as Void {
         drawFit(dc, x, y, label, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         var valueY = y + (mUnit * 0.065);
         var font = fitFont(dc, value, maxWidth, valueFont);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(x, valueY, font, value, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(Math.round(x), Math.round(valueY), font, value, Graphics.TEXT_JUSTIFY_CENTER);
         if (unit != "") {
             drawFit(dc, x, valueY + (mUnit * 0.065), unit, maxWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
     }
 
-    function drawButton(dc as Dc, centerX as Lang.Number, top as Lang.Number, width as Lang.Number, label as Lang.String) as Void {
+    function drawButton(dc as Dc, centerX, top, width, label as Lang.String) as Void {
         var height = mButtonBottom - mButtonTop;
         var left = centerX - (width / 2);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(left, top, width, height, mUnit * 0.025);
+        dc.drawRoundedRectangle(Math.round(left), Math.round(top), Math.round(width), Math.round(height), Math.round(mUnit * 0.025));
         drawFit(dc, centerX, top + (height - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             label, width * 0.86, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
     }
