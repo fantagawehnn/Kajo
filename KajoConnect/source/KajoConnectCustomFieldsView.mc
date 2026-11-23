@@ -19,6 +19,9 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         "Hoehe", "Anstieg", "Abstieg", "GPS-Genauigkeit"
     ];
     var mSelected as Lang.Array<Lang.String> = [];
+    var mLargeMetricId as Lang.String = "";
+    var mControlTop as Lang.Number = 0;
+    var mControlBottom as Lang.Number = 0;
     var mPage as Lang.Number = 0;
     var mPageCount as Lang.Number = 4;
     var mSelectedRow as Lang.Number = -1;
@@ -43,6 +46,10 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 }
             }
         }
+        var largeSaved = Storage.getValue("kajoLargeMetricId");
+        if (largeSaved != null && selectedIndex(largeSaved.toString()) >= 0) {
+            mLargeMetricId = largeSaved.toString();
+        }
     }
 
     function selectedIndex(metricId as Lang.String) as Lang.Number {
@@ -55,6 +62,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         var existing = selectedIndex(metricId);
         if (existing >= 0) {
             mSelected.remove(metricId);
+            if (metricId == mLargeMetricId) { mLargeMetricId = ""; }
             if (mSelectedRow == index) { mSelectedRow = -1; }
         } else {
             if (mSelected.size() >= 4) {
@@ -101,14 +109,18 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
             return;
         }
 
-        if (y >= mSaveTop && y <= mSaveBottom) {
-            if (x < mWidth * 0.34) {
+        if (y >= mControlTop && y <= mControlBottom) {
+            if (x < mWidth * 0.375) {
                 moveSelected(-1);
-            } else if (x > mWidth * 0.66) {
-                moveSelected(1);
+            } else if (x < mWidth * 0.625) {
+                toggleLargeMetric();
             } else {
-                saveConfig();
+                moveSelected(1);
             }
+            return;
+        }
+        if (y >= mSaveTop && y <= mSaveBottom) {
+            saveConfig();
         }
     }
 
@@ -120,9 +132,24 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function toggleLargeMetric() as Void {
+        if (mSelectedRow < 0 || mSelectedRow >= mMetricIds.size()) {
+            WatchUi.showToast("Zuerst rechts ein Datenfeld auswaehlen", null);
+            return;
+        }
+        var metricId = mMetricIds[mSelectedRow];
+        if (selectedIndex(metricId) < 0) {
+            WatchUi.showToast("Datenfeld zuerst aktivieren", null);
+            return;
+        }
+        mLargeMetricId = mLargeMetricId == metricId ? "" : metricId;
+        WatchUi.requestUpdate();
+    }
+
     function saveConfig() as Void {
         try {
             Storage.setValue("kajoCustomMetrics", mSelected);
+            Storage.setValue("kajoLargeMetricId", mLargeMetricId);
             WatchUi.showToast("Eigene Datenfelder gespeichert", null);
             WatchUi.popView(WatchUi.SLIDE_DOWN);
         } catch (error) {
@@ -177,25 +204,31 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 Graphics.FONT_TINY, stateText, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        mSaveTop = mUnit * 0.765;
-        mSaveBottom = mUnit * 0.865;
-        var controlWidth = mUnit * 0.18;
-        var controlHeight = mSaveBottom - mSaveTop;
-        var centers = [cx - (mUnit * 0.21), cx, cx + (mUnit * 0.21)];
-        var labels = ["HOCH", "SPEICHERN", "RUNTER"];
+        mControlTop = mUnit * 0.755;
+        mControlBottom = mUnit * 0.82;
+        var controlWidth = mUnit * 0.20;
+        var controlHeight = mControlBottom - mControlTop;
+        var centers = [cx - (mUnit * 0.25), cx, cx + (mUnit * 0.25)];
+        var labels = ["HOCH", "GROSS", "RUNTER"];
         for (var b = 0; b < 3; b += 1) {
-            var width = b == 1 ? mUnit * 0.30 : controlWidth;
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(Math.round(centers[b] - width / 2).toNumber(),
-                Math.round(mSaveTop).toNumber(), Math.round(width).toNumber(),
+            dc.drawRoundedRectangle(Math.round(centers[b] - controlWidth / 2).toNumber(),
+                Math.round(mControlTop).toNumber(), Math.round(controlWidth).toNumber(),
                 Math.round(controlHeight).toNumber(), Math.round(mUnit * 0.02).toNumber());
             dc.drawText(Math.round(centers[b]).toNumber(),
-                Math.round(mSaveTop + (controlHeight - dc.getFontHeight(Graphics.FONT_XTINY)) / 2).toNumber(),
+                Math.round(mControlTop + (controlHeight - dc.getFontHeight(Graphics.FONT_XTINY)) / 2).toNumber(),
                 Graphics.FONT_XTINY, labels[b], Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.91).toNumber(),
-            Graphics.FONT_XTINY, "Links AN/AUS · Rechts Reihenfolge", Graphics.TEXT_JUSTIFY_CENTER);
+        mSaveTop = mUnit * 0.85;
+        mSaveBottom = mUnit * 0.91;
+        var saveWidth = mUnit * 0.48;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle(Math.round(cx - saveWidth / 2).toNumber(),
+            Math.round(mSaveTop).toNumber(), Math.round(saveWidth).toNumber(),
+            Math.round((mSaveBottom - mSaveTop)).toNumber(), Math.round(mUnit * 0.02).toNumber());
+        dc.drawText(Math.round(cx).toNumber(),
+            Math.round(mSaveTop + ((mSaveBottom - mSaveTop) - dc.getFontHeight(Graphics.FONT_XTINY)) / 2).toNumber(),
+            Graphics.FONT_XTINY, "SPEICHERN", Graphics.TEXT_JUSTIFY_CENTER);
     }
 }
