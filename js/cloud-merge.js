@@ -95,6 +95,11 @@ function mergeNode(base, local, cloud, hasBase, path, conflicts) {
     } else {
         if (local === MISSING) return clone(cloud);
         if (cloud === MISSING) return clone(local);
+        // Ohne gespeicherten gemeinsamen Basisstand lässt sich null nicht sicher
+        // als bewusste Löschung interpretieren. Der vorhandene Inhalt bleibt daher
+        // erhalten; spätere Löschungen werden mit dem Basisstand eindeutig erkannt.
+        if (local === null && cloud !== null) return clone(cloud);
+        if (cloud === null && local !== null) return clone(local);
         if (equal(local, cloud)) return clone(local);
     }
 
