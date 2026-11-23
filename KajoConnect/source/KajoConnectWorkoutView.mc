@@ -5,11 +5,24 @@ import Toybox.WatchUi;
 class KajoConnectWorkoutView extends WatchUi.View {
 
     var mWorkout as Lang.Dictionary;
+    var mParent as KajoConnectView;
 
-    function initialize(workout as Lang.Dictionary) {
+    function initialize(workout as Lang.Dictionary, parent as KajoConnectView) {
         View.initialize();
         mWorkout = workout;
+        mParent = parent;
     }
+
+    function handleTap(x as Lang.Number, y as Lang.Number) as Void {
+        if (y >= mStartTop && y <= mStartBottom) {
+            mParent.beginWorkout(mWorkout);
+        } else {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+        }
+    }
+
+    var mStartTop as Lang.Number = 0;
+    var mStartBottom as Lang.Number = 0;
 
     function valueText(key as Lang.String, fallback as Lang.String) as Lang.String {
         var value = mWorkout[key];
@@ -61,7 +74,9 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var unit = width;
         if (height < unit) { unit = height; }
         var center = width / 2;
-        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
+        var contentWidth = unit * 0.78;
+
+        // Einheitlicher KAJO-Randakzent.
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
         dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
             (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
@@ -69,107 +84,109 @@ class KajoConnectWorkoutView extends WatchUi.View {
             (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
         dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
             (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
-        var contentWidth = unit * 0.78;
 
         var name = valueText("name", "Geplante Einheit");
         var date = valueText("date", "Datum offen");
         var type = valueText("type", "Training");
-        var duration = valueText("duration", "—");
-        var targetLoad = valueText("targetTss", "—");
-        var category = valueText("category", "");
-        var description = valueText("desc", "");
-        var isRestDay = (type == "RestDay");
-
-        var objective = valueText("objective", "");
-        var intensity = valueText("intensity", "");
-        var mainSet = valueText("mainSet", "");
-        var warmup = valueText("warmup", "");
-        var cooldown = valueText("cooldown", "");
-        var notes = valueText("notes", "");
-
-        var raceFormat = valueText("raceFormat", "");
-        var waterType = valueText("waterType", "");
-        var sportContext = raceFormat;
-        if (waterType.length() > 0) {
-            sportContext = sportContext.length() > 0 ? sportContext + " · " + waterType : waterType;
+        var duration = valueText("duration", "");
+        var targetLoad = valueText("targetTss", "");
+        var stepsValue = mWorkout["steps"];
+        var steps = stepsValue == null ? [] : stepsValue as Lang.Array<Lang.Dictionary>;
+        var stepCount = steps.size();
+        var target = "";
+        if (stepCount > 0) {
+            var firstStep = steps[0] as Lang.Dictionary;
+            if (firstStep["target"] != null) {
+                target = firstStep["target"].toString();
+            }
+        }
+        if (target.length() == 0 && mWorkout["intensity"] != null) {
+            target = mWorkout["intensity"].toString();
         }
 
         drawCentered(dc, center, unit * 0.075, "GEPLANTES TRAINING", contentWidth, Graphics.FONT_SMALL, 0x00E5CC);
-        drawCentered(dc, center, unit * 0.125, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, center, unit * 0.12, date, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        // Hauptkarte: Name der Einheit und sportartspezifischer Kontext.
         dc.setColor(0x05181C, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(
-            (center - unit * 0.38).toNumber(),
-            (unit * 0.18).toNumber(),
-            (unit * 0.76).toNumber(),
-            (unit * 0.145).toNumber(),
-            (unit * 0.035).toNumber()
-        );
-        drawCentered(dc, center, unit * 0.215, compactText(name, 42), unit * 0.69, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawCentered(dc, center, unit * 0.27, compactText(type, 32), unit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        dc.fillRoundedRectangle((center - unit * 0.38).toNumber(),
+            (unit * 0.17).toNumber(), (unit * 0.76).toNumber(),
+            (unit * 0.14).toNumber(), (unit * 0.035).toNumber());
+        dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle((center - unit * 0.38).toNumber(),
+            (unit * 0.17).toNumber(), (unit * 0.76).toNumber(),
+            (unit * 0.14).toNumber(), (unit * 0.035).toNumber());
+        drawCentered(dc, center, unit * 0.205, compactText(name, 38),
+            unit * 0.68, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, unit * 0.26, compactText(type, 30),
+            unit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        if (sportContext.length() > 0) {
-            drawCentered(dc, center, unit * 0.345, compactText(sportContext, 38), contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        // Drei dynamische Kennzahlen: nur vorhandene Planwerte werden angezeigt.
+        var colX = [center - unit * 0.245, center, center + unit * 0.245];
+        var labels = ["DAUER", "SCHRITTE", "ZIEL"];
+        var values = [
+            duration.length() > 0 ? duration + " MIN" : "—",
+            stepCount > 0 ? stepCount.toString() : "—",
+            target.length() > 0 ? compactText(target, 16) : (targetLoad.length() > 0 ? targetLoad : "—")
+        ];
+        for (var c = 0; c < 3; c += 1) {
+            if (c > 0) {
+                dc.setColor(0x1A4A52, Graphics.COLOR_BLACK);
+                dc.drawLine((colX[c] - unit * 0.122).toNumber(), (unit * 0.365).toNumber(),
+                    (colX[c] - unit * 0.122).toNumber(), (unit * 0.49).toNumber());
+            }
+            drawCentered(dc, colX[c], unit * 0.37, labels[c], unit * 0.22,
+                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawCentered(dc, colX[c], unit * 0.415, values[c], unit * 0.22,
+                Graphics.FONT_SMALL, c == 2 ? 0x00E5CC : Graphics.COLOR_WHITE);
         }
 
-        if (isRestDay) {
-            drawCentered(dc, center, unit * 0.49, "RUHETAG", contentWidth, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-            drawCentered(dc, center, unit * 0.57, "Keine geplante Trainingsbelastung", contentWidth, Graphics.FONT_TINY, Graphics.COLOR_LT_GRAY);
-        } else {
-            // Zwei kompakte Kennzahlen, ähnlich der klaren Zielanzeige bei Garmin.
-            var leftX = center - unit * 0.19;
-            var rightX = center + unit * 0.19;
-            drawSectionLabel(dc, leftX, unit * 0.395, "DAUER", unit * 0.34);
-            drawCentered(dc, leftX, unit * 0.435, duration == "—" ? "—" : duration + " min", unit * 0.34, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            drawSectionLabel(dc, rightX, unit * 0.395, "ZIEL-LOAD", unit * 0.34);
-            drawCentered(dc, rightX, unit * 0.435, targetLoad, unit * 0.34, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawCentered(dc, center, unit * 0.515, "TRAININGSABLAUF", contentWidth,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-            if (category.length() > 0) {
-                drawCentered(dc, center, unit * 0.49, compactText(category, 38), contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        // Maximal drei reale Trainingsschritte; bei mehr Schritten wird die Anzahl genannt.
+        var shownSteps = stepCount < 3 ? stepCount : 3;
+        var y = unit * 0.56;
+        for (var i = 0; i < shownSteps; i += 1) {
+            var step = steps[i] as Lang.Dictionary;
+            var stepLabel = step["label"] == null ? "Trainingsschritt" : step["label"].toString();
+            var stepDuration = step["durationSeconds"] == null ? "" : step["durationSeconds"].toString();
+            var minutes = "";
+            if (stepDuration.length() > 0) {
+                var seconds = step["durationSeconds"] as Lang.Number;
+                minutes = Math.floor(seconds / 60).toString() + " MIN";
             }
-
-            // Intensitaet und Trainingsziel werden nur angezeigt, wenn im Plan vorhanden.
-            if (intensity.length() > 0) {
-                drawSectionLabel(dc, center, unit * 0.545, "INTENSITAET", contentWidth);
-                drawCentered(dc, center, unit * 0.58, compactText(intensity, 46), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-
-            if (objective.length() > 0) {
-                drawSectionLabel(dc, center, unit * 0.635, "TRAININGSZIEL", contentWidth);
-                drawCentered(dc, center, unit * 0.67, compactText(objective, 48), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-
-            // Der Hauptteil bekommt die groesste Aufmerksamkeit.
-            if (mainSet.length() > 0) {
-                dc.setColor(0x05181C, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle(
-                    (center - unit * 0.35).toNumber(),
-                    (unit * 0.715).toNumber(),
-                    (unit * 0.70).toNumber(),
-                    (unit * 0.105).toNumber(),
-                    (unit * 0.025).toNumber()
-                );
-                drawSectionLabel(dc, center, unit * 0.735, "HAUPTTEIL", contentWidth);
-                drawCentered(dc, center, unit * 0.775, compactText(mainSet, 48), unit * 0.64, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            } else if (description.length() > 0) {
-                drawSectionLabel(dc, center, unit * 0.735, "TRAININGSINFO", contentWidth);
-                drawCentered(dc, center, unit * 0.775, compactText(description, 48), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-
-            var preparation = warmup.length() > 0 ? "EIN: " + compactText(warmup, 25) : "";
-            var finish = cooldown.length() > 0 ? "AUS: " + compactText(cooldown, 25) : "";
-            var bottomInfo = preparation;
-            if (finish.length() > 0) {
-                bottomInfo = bottomInfo.length() > 0 ? bottomInfo + "  ·  " + finish : finish;
-            }
-            if (bottomInfo.length() > 0) {
-                drawCentered(dc, center, unit * 0.855, bottomInfo, contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            } else if (notes.length() > 0) {
-                drawCentered(dc, center, unit * 0.855, compactText(notes, 48), contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            var line = compactText(stepLabel, 24);
+            if (minutes.length() > 0) { line += " (" + minutes + ")"; }
+            drawCentered(dc, center, y, line, contentWidth, Graphics.FONT_TINY,
+                i == 0 ? Graphics.COLOR_WHITE : Graphics.COLOR_LT_GRAY);
+            y += unit * 0.052;
+        }
+        if (stepCount > 3) {
+            drawCentered(dc, center, y, "+ " + (stepCount - 3).toString() + " WEITERE SCHRITTE",
+                contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        } else if (stepCount == 0) {
+            var mainSet = valueText("mainSet", "");
+            var description = valueText("desc", "");
+            var detail = mainSet.length() > 0 ? mainSet : description;
+            if (detail.length() > 0) {
+                drawCentered(dc, center, unit * 0.585, compactText(detail, 50),
+                    contentWidth, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
+            } else {
+                drawCentered(dc, center, unit * 0.585, "Keine Schrittfolge hinterlegt",
+                    contentWidth, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             }
         }
 
-        drawCentered(dc, center, unit * 0.94, "ZURUECK", unit * 0.55, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+        // Startaktion liegt als große, klar erkennbare Fläche am unteren Rand.
+        mStartTop = (unit * 0.82).toNumber();
+        mStartBottom = (unit * 0.93).toNumber();
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawRoundedRectangle((center - unit * 0.31).toNumber(),
+            mStartTop.toNumber(), (unit * 0.62).toNumber(),
+            (mStartBottom - mStartTop).toNumber(), (unit * 0.055).toNumber());
+        drawCentered(dc, center, unit * 0.855, "TRAINING STARTEN",
+            unit * 0.56, Graphics.FONT_SMALL, 0x00E5CC);
+        drawCentered(dc, center, unit * 0.95, "ZURUECK",
+            unit * 0.45, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
