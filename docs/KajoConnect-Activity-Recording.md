@@ -19,7 +19,7 @@
 - `KajoConnect/source/KajoConnectActivityView.mc`: Aktivitätsanzeige mit Live-Abfrage von `Activity.getActivityInfo()`, Sekunden-Refresh und GPS-Positionsereignissen.
 - `KajoConnect/source/KajoConnectActivityDelegate.mc`: Touch-Eingaben für die Aktivitätsansicht.
 - `KajoConnect/source/KajoConnectView.mc`: zusätzlicher Start-Einstieg auf dem KAJO-Startbildschirm.
-- `KajoConnect/manifest.xml`: zusätzliche Berechtigungen `Fit`, `Positioning` und `Sensor`; die vorhandene `Communications`-Berechtigung bleibt erhalten.
+- `KajoConnect/manifest.xml`: zusätzliche Berechtigungen `Fit` und `Positioning`; die vorhandene `Communications`-Berechtigung bleibt erhalten.
 
 Die erste FIT-Aufzeichnung verwendet bewusst `Activity.SPORT_GENERIC` und `Activity.SUB_SPORT_GENERIC`. Ein spezifischer Garmin-Sporttyp für Kanu-Wildwasserrennsport wurde hier noch nicht verifiziert. Die Bootsklasse steht im Aktivitätsnamen (zum Beispiel „KAJO K1“), ersetzt aber keine FIT-Sportklassifizierung.
 
