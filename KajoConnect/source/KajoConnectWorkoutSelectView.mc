@@ -61,28 +61,19 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         dc.clear();
         var width = dc.getWidth();
         var height = dc.getHeight();
-        mUnit = width;
-        if (height < mUnit) { mUnit = height; }
+        mUnit = width < height ? width : height;
         mKajoLayout.configure(width, height);
         var cx = width / 2;
-        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.drawLine((mUnit * 0.105).toNumber(), (mUnit * 0.105).toNumber(),
-            (mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber());
-        dc.drawLine((mUnit * 0.12).toNumber(), (mUnit * 0.075).toNumber(),
-            (mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber());
-        dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
-            (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
 
-        drawCentered(dc, cx, mUnit * 0.075, "EINHEIT AUSWAEHLEN", mUnit * 0.78,
+        drawCentered(dc, cx, mUnit * 0.075, "TRAINING STARTEN", mUnit * 0.76,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.135, "WELCHES TRAINING STARTET JETZT?",
-            mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, cx, mUnit * 0.13, "EINHEIT AUSWAEHLEN", mUnit * 0.72,
+            Graphics.FONT_XTINY, 0x00E5CC);
 
-        mRowTop = Math.floor(mUnit * 0.225).toNumber();
-        mRowHeight = Math.floor(mUnit * 0.185).toNumber();
-        var cardHeight = mUnit * 0.155;
-        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.74);
+        mRowTop = Math.floor(mUnit * 0.215).toNumber();
+        mRowHeight = Math.floor(mUnit * 0.178).toNumber();
+        var cardHeight = mUnit * 0.15;
+        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.76);
         var cardX = cx - (cardWidth / 2);
 
         for (var row = 0; row < 3; row += 1) {
@@ -94,35 +85,34 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
             var type = session["type"] == null ? "Training" : session["type"].toString();
             var duration = session["duration"] == null ? "" : session["duration"].toString();
 
-            dc.setColor(0x05181C, Graphics.COLOR_BLACK);
+            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.03).toNumber());
+                cardHeight.toNumber(), (mUnit * 0.028).toNumber());
             dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.03).toNumber());
-
-            drawCentered(dc, cx, y + (mUnit * 0.025), compactText(name, 34), cardWidth * 0.88,
-                Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                cardHeight.toNumber(), (mUnit * 0.028).toNumber());
+            drawCentered(dc, cx, y + mUnit * 0.027, compactText(name, 34),
+                cardWidth * 0.86, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             var detail = type;
-            if (duration != "") { detail += "  ·  " + duration + " MIN"; }
-            drawCentered(dc, cx, y + (mUnit * 0.085), detail, cardWidth * 0.88,
-                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            if (duration != "") { detail += "  /  " + duration + " MIN"; }
+            drawCentered(dc, cx, y + mUnit * 0.077, detail,
+                cardWidth * 0.86, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             var intensity = session["intensity"];
             var mainSet = session["mainSet"];
             var cue = mainSet == null ? "" : mainSet.toString();
             if (intensity != null && intensity.toString() != "") {
-                cue = cue == "" ? intensity.toString() : intensity.toString() + " · " + cue;
+                cue = cue == "" ? intensity.toString() : intensity.toString() + "  /  " + cue;
             }
             if (cue != "") {
-                drawCentered(dc, cx, y + (mUnit * 0.112), compactText(cue, 42), cardWidth * 0.88,
-                    Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+                drawCentered(dc, cx, y + mUnit * 0.112, compactText(cue, 38),
+                    cardWidth * 0.86, Graphics.FONT_XTINY, 0x00E5CC);
             }
         }
 
-        drawCentered(dc, cx, mUnit * 0.84,
+        drawCentered(dc, cx, mUnit * 0.795,
             (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  WISCHEN",
-            mUnit * 0.70, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawCentered(dc, cx, mUnit * 0.91, "ZURUECK",
-            mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            mUnit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawCentered(dc, cx, mUnit * 0.86, "ZURUECK", mUnit * 0.55,
+            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
