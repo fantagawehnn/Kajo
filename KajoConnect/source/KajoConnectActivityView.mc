@@ -669,7 +669,7 @@ class KajoConnectActivityView extends WatchUi.View {
         // Herzfrequenz, fuenf farbige Zonen und Pause-Vorschau.
         dc.setColor(0xFF2A2A, Graphics.COLOR_BLACK);
         var heartFont = mKajoLayout.fontForPercent(dc, 0.055);
-        var heartY = mKajoLayout.safeTextY(mUnit * 0.715, dc.getFontHeight(heartFont));
+        var heartY = Math.round(mKajoLayout.safeTextY(mUnit * 0.715, dc.getFontHeight(heartFont))).toNumber();
         dc.drawText((mUnit * 0.16).toNumber(), heartY.toNumber(),
             heartFont, "♥", Graphics.TEXT_JUSTIFY_CENTER);
         drawFit(dc, mUnit * 0.34, mUnit * 0.71, hrNow,
@@ -965,7 +965,7 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(
             dc,
             centerX,
-            top + (height - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.055))) / 2,
+            Math.round(top + (height - dc.getFontHeight(mKajoLayout.fontForPercent(dc, 0.055))) / 2).toNumber(),
             label,
             safeWidth * 0.86,
             Graphics.FONT_SMALL,
