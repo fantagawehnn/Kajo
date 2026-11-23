@@ -22,7 +22,7 @@ export function renderPlannedWorkouts() {
     const list=[...state.plannedActivities].filter(p=>p.date>=todayKey&&p.date<=end).sort((a,b)=>a.date.localeCompare(b.date));
     section.classList.remove('hidden');
     if(!list.length){
-        el.innerHTML='<p class="rounded-xl border border-dashed border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-400">Für diese Woche sind noch keine Trainingseinheiten geplant. Lege deine nächste Einheit über „+ Einheit planen“ an.</p>';
+        el.innerHTML='<p class="rounded-xl border border-dashed border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-400">Für diese Woche sind noch keine Trainingseinheiten oder Ruhetage geplant. Lege deine nächste Planung über „+ Einheit planen“ an.</p>';
         return;
     }
     list.forEach(p=>{
@@ -59,6 +59,8 @@ export function setPlannedWorkoutKind(kind){
     if(note)note.placeholder=restDay?'Optionaler Hinweis, z. B. vollständige Trainingspause':'Intervalle im Schwellenbereich...';
     const save=document.getElementById('planned-workout-save-button');
     if(save)save.textContent=restDay?'Ruhetag speichern':(editingPlannedWorkoutId?'Änderungen speichern':'Einheit speichern');
+    const title=document.getElementById('planned-workout-modal-title');
+    if(title)title.textContent=restDay?(editingPlannedWorkoutId?'Ruhetag bearbeiten':'Ruhetag planen'):(editingPlannedWorkoutId?'Trainingseinheit bearbeiten':'Trainingseinheit planen');
 }
 export function openPlannedWorkoutModal(id=null){
     const item=id==null?null:state.plannedActivities.find(p=>String(p.id)===decodeURIComponent(String(id)));
