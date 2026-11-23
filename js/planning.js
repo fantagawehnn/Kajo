@@ -103,7 +103,7 @@ export function deletePlannedWorkout(id){
 function setPlanField(id,value){const field=document.getElementById(id);if(field)field.value=value??'';}
 export function setPlannedWorkoutKind(kind){
     const restDay=kind==='rest';
-    ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field','plan-instructions-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
+    ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field','plan-instructions-field','plan-steps-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
     const name=document.getElementById('plan-name');
     if(restDay&&name&&!name.value.trim())name.value='Ruhetag';
     if(!restDay&&name&&name.value==='Ruhetag')name.value='';
@@ -163,7 +163,7 @@ export function savePlannedWorkout(){
     const mainSet=document.getElementById('plan-main-set')?.value.trim()||'';
     const cooldown=document.getElementById('plan-cooldown')?.value.trim()||'';
     const desc=document.getElementById('plan-desc').value;
-    const parsedSteps=readPlannedWorkoutSteps();
+    const parsedSteps=isRestDay?{steps:[],error:null}:readPlannedWorkoutSteps();
     const error=document.getElementById('plan-steps-error');
     if(error)error.textContent=parsedSteps.error||'';
     if(parsedSteps.error)return;
