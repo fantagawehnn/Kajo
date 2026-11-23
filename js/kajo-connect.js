@@ -1,4 +1,195 @@
 import { supabase } from './supabase-client.js';
+import { state } from './state.js';
+import { saveDataToLocalStorage } from './storage.js';
+
+const KAJO_CONNECT_METRICS = [
+    ['speedNow', 'Aktuelle Geschwindigkeit'],
+    ['speedAvg', 'Durchschnittsgeschwindigkeit'],
+    ['speedMax', 'Maximalgeschwindigkeit'],
+    ['heartRate', 'Herzfrequenz'],
+    ['heartRateZone', 'Herzfrequenzzone'],
+    ['heartRateAvg', 'Durchschnittliche Herzfrequenz'],
+    ['heartRateMax', 'Maximale Herzfrequenz'],
+    ['distance', 'Distanz'],
+    ['elapsed', 'Trainingszeit'],
+    ['calories', 'Kalorien'],
+    ['cadence', 'Kadenz'],
+    ['power', 'Leistung'],
+    ['trainingEffect', 'Training Effect'],
+    ['altitude', 'Höhe'],
+    ['ascent', 'Anstieg'],
+    ['descent', 'Abstieg'],
+    ['gpsAccuracy', 'GPS-Genauigkeit']
+];
+
+let displayLayoutsDraft = null;
+let activeDisplayLayout = 0;
+
+function defaultDisplayLayouts() {
+    return [0, 1, 2].map(index => ({
+        id: 'layout-' + (index + 1),
+        name: 'Datenseite ' + (index + 1),
+        metrics: []
+    }));
+}
+
+function normalizeDisplayLayouts(value) {
+    const source = Array.isArray(value) ? value : [];
+    const allowed = new Set(KAJO_CONNECT_METRICS.map(([id]) => id));
+    return [0, 1, 2].map(index => {
+        const layout = source[index] && typeof source[index] === 'object' ? source[index] : {};
+        const seen = new Set();
+        const metrics = (Array.isArray(layout.metrics) ? layout.metrics : [])
+            .filter(metric => metric && typeof metric.id === 'string' && allowed.has(metric.id) && !seen.has(metric.id) && seen.add(metric.id))
+            .slice(0, 4)
+            .map(metric => ({
+                id: metric.id,
+                size: ['small', 'medium', 'large'].includes(metric.size) ? metric.size : 'medium'
+            }));
+        return {
+            id: 'layout-' + (index + 1),
+            name: 'Datenseite ' + (index + 1),
+            metrics
+        };
+    });
+}
+
+function getDisplayLayoutsDraft() {
+    if (!displayLayoutsDraft) {
+        displayLayoutsDraft = normalizeDisplayLayouts(state.settings?.kajoConnectDisplayLayouts);
+    }
+    return displayLayoutsDraft;
+}
+
+function createConfigElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text != null) element.textContent = text;
+    return element;
+}
+
+function setConfigStatus(message, isError = false) {
+    const node = document.getElementById('kajo-connect-layout-status');
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle('text-rose-300', isError);
+    node.classList.toggle('text-emerald-300', !isError);
+}
+
+export function renderKajoConnectDisplayConfig() {
+    const root = document.getElementById('kajo-connect-layout-editor');
+    if (!root) return;
+    const layouts = getDisplayLayoutsDraft();
+    const layout = layouts[activeDisplayLayout];
+    root.replaceChildren();
+
+    const tabs = createConfigElement('div', 'grid grid-cols-3 gap-2');
+    layouts.forEach((item, index) => {
+        const tab = createConfigElement('button',
+            'rounded-lg border px-3 py-2 text-xs font-semibold ' + (index === activeDisplayLayout
+                ? 'border-cyan-500 bg-cyan-950/50 text-cyan-200'
+                : 'border-slate-700 bg-slate-900 text-slate-400'),
+            item.name);
+        tab.type = 'button';
+        tab.addEventListener('click', () => {
+            activeDisplayLayout = index;
+            renderKajoConnectDisplayConfig();
+        });
+        tabs.appendChild(tab);
+    });
+    root.appendChild(tabs);
+
+    const description = createConfigElement('p', 'text-xs leading-relaxed text-slate-400',
+        'Wähle bis zu vier Kennzahlen. Reihenfolge und Größe gelten nur für diese Datenseite.');
+    root.appendChild(description);
+
+    const list = createConfigElement('div', 'space-y-2');
+    KAJO_CONNECT_METRICS.forEach(([id, label]) => {
+        const selectedIndex = layout.metrics.findIndex(metric => metric.id === id);
+        const selected = selectedIndex >= 0;
+        const row = createConfigElement('div',
+            'flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-3');
+        const left = createConfigElement('label', 'flex min-w-0 flex-1 items-center gap-2 text-sm text-slate-200');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = selected;
+        checkbox.disabled = !selected && layout.metrics.length >= 4;
+        checkbox.className = 'h-4 w-4 accent-cyan-500';
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                layout.metrics.push({ id, size: 'medium' });
+            } else {
+                layout.metrics = layout.metrics.filter(metric => metric.id !== id);
+            }
+            renderKajoConnectDisplayConfig();
+        });
+        left.append(checkbox, createConfigElement('span', 'truncate', label));
+        row.appendChild(left);
+
+        if (selected) {
+            const controls = createConfigElement('div', 'flex items-center gap-1');
+            const size = document.createElement('select');
+            size.className = 'min-w-24 rounded-md border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-white';
+            [['small', 'Klein'], ['medium', 'Mittel'], ['large', 'Groß']].forEach(([value, title]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = title;
+                size.appendChild(option);
+            });
+            size.value = layout.metrics[selectedIndex].size;
+            size.setAttribute('aria-label', label + ' – Größe');
+            size.addEventListener('change', () => {
+                layout.metrics[selectedIndex].size = size.value;
+            });
+            controls.appendChild(size);
+
+            [['↑', -1, 'Nach oben'], ['↓', 1, 'Nach unten']].forEach(([symbol, direction, title]) => {
+                const move = createConfigElement('button', 'rounded-md border border-slate-700 px-2.5 py-2 text-xs text-slate-200 hover:bg-slate-800', symbol);
+                move.type = 'button';
+                move.title = title;
+                move.disabled = selectedIndex + direction < 0 || selectedIndex + direction >= layout.metrics.length;
+                move.addEventListener('click', () => {
+                    const target = selectedIndex + direction;
+                    [layout.metrics[selectedIndex], layout.metrics[target]] = [layout.metrics[target], layout.metrics[selectedIndex]];
+                    renderKajoConnectDisplayConfig();
+                });
+                controls.appendChild(move);
+            });
+            row.appendChild(controls);
+        }
+        list.appendChild(row);
+    });
+    root.appendChild(list);
+
+    const footer = createConfigElement('div', 'flex flex-wrap items-center justify-between gap-2');
+    footer.appendChild(createConfigElement('span', 'text-xs text-slate-500',
+        layout.metrics.length + ' / 4 Kennzahlen ausgewählt'));
+    const save = createConfigElement('button', 'kajo-settings-primary', 'Uhr-Konfiguration speichern');
+    save.type = 'button';
+    save.addEventListener('click', saveKajoConnectDisplayConfig);
+    footer.appendChild(save);
+    root.appendChild(footer);
+}
+
+export function saveKajoConnectDisplayConfig() {
+    try {
+        const layouts = normalizeDisplayLayouts(getDisplayLayoutsDraft());
+        state.settings = { ...(state.settings || {}), kajoConnectDisplayLayouts: layouts };
+        if (!saveDataToLocalStorage()) {
+            throw new Error('Der angemeldete Kontospeicher ist nicht verfügbar.');
+        }
+        displayLayoutsDraft = layouts;
+        setConfigStatus('Konfiguration gespeichert. Die Änderung wird mit deiner KAJO-Cloud synchronisiert.');
+    } catch (error) {
+        setConfigStatus(error?.message || 'Konfiguration konnte nicht gespeichert werden.', true);
+    }
+}
+
+window.addEventListener('endurance:user-ready', () => {
+    displayLayoutsDraft = null;
+    activeDisplayLayout = 0;
+    renderKajoConnectDisplayConfig();
+});
 
 function setStatus(message, isError = false) {
     const node = document.getElementById('kajo-connect-device-status');
