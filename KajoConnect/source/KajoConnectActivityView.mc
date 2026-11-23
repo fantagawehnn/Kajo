@@ -533,7 +533,7 @@ class KajoConnectActivityView extends WatchUi.View {
         drawFit(dc, rightCenter, mUnit * 0.705, "KM", halfWidth * 0.72,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
-        drawFit(dc, cx, mUnit * 0.765, "GESCHWINDIGKEIT  " + speedNow + " KM/H",
+        drawFit(dc, cx, mUnit * 0.75, "GESCHWINDIGKEIT  " + speedNow + " KM/H",
             mUnit * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 
@@ -916,8 +916,8 @@ class KajoConnectActivityView extends WatchUi.View {
         } else if (mCurrentPageId == 2) {
             drawPageHeader(dc, "HERZFREQUENZ");
             drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", hrNow, "BPM", mUnit * 0.68, Graphics.FONT_LARGE);
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "DURCHSCHNITT", hrAvg, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "MAXIMUM", hrMax, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
+            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.54, "DURCHSCHNITT", hrAvg, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
+            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.54, "MAXIMUM", hrMax, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
             drawHeartRateZone(dc, cx, mUnit * 0.735, mUnit * 0.62, currentHeartRateZone);
         } else if (mCurrentPageId == 3) {
             drawPageHeader(dc, "DISTANZ & ZEIT");
@@ -1023,10 +1023,10 @@ class KajoConnectActivityView extends WatchUi.View {
             drawFit(dc, cx, mUnit * 0.765, "Anstieg " + ascent + " m · Abstieg " + descent + " m", mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         }
 
-        mButtonTop = mUnit * 0.82;
-        mButtonBottom = mUnit * 0.90;
+        mButtonTop = mUnit * 0.81;
+        mButtonBottom = mUnit * 0.89;
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
-            drawButton(dc, cx, mButtonTop, mUnit * 0.58, "STARTEN");
+            drawButton(dc, cx, mButtonTop, mUnit * 0.54, "STARTEN");
         } else if (mStatus == "AUFZEICHNUNG") {
             if (mCurrentPageId == 8 && mWorkoutSteps.size() > 0) {
                 drawButton(dc, mScreenWidth * 0.33, mButtonTop, mUnit * 0.25, "ZURUECK");
@@ -1037,9 +1037,9 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawButton(dc, mScreenWidth * 0.67, mButtonTop, mUnit * 0.25, "ENDE");
             }
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
-            drawButton(dc, cx, mButtonTop, mUnit * 0.72, "ERNEUT SPEICHERN");
+            drawButton(dc, cx, mButtonTop, mUnit * 0.54, "ERNEUT SPEICHERN");
         } else {
-            drawButton(dc, cx, mButtonTop, mUnit * 0.58, "ZURUECK");
+            drawButton(dc, cx, mButtonTop, mUnit * 0.54, "ZURUECK");
         }
     }
 }
