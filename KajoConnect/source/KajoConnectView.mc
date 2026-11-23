@@ -407,15 +407,15 @@ class KajoConnectView extends WatchUi.View {
 
             boatLabelY = mUnit * 0.455;
             buttonY = mUnit * 0.51;
-            startY = mUnit * 0.68;
+            startY = mUnit * 0.665;
             startLabel = todaySessions.size() > 1
                 ? "TRAINING AUSWAEHLEN" : "TRAINING STARTEN";
-            mFreeTop = mUnit * 0.80;
-            mFreeBottom = mUnit * 0.875;
+            mFreeTop = mUnit * 0.79;
+            mFreeBottom = mUnit * 0.865;
             var freeWidth = mUnit * 0.58;
             var freeHeight = mUnit * 0.075;
             var freeX = cx - (freeWidth / 2);
-            var freeY = mUnit * 0.80;
+            var freeY = mUnit * 0.79;
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(freeX.toNumber(), freeY.toNumber(),
                 freeWidth.toNumber(), freeHeight.toNumber(), (mUnit * 0.025).toNumber());
@@ -484,10 +484,10 @@ class KajoConnectView extends WatchUi.View {
             startY + (startHeight - dc.getFontHeight(Graphics.FONT_SMALL)) / 2,
             startLabel, startWidth * 0.90, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
 
-        var menuWidth = mUnit * 0.38;
+        var menuWidth = mUnit * 0.34;
         var menuHeight = mUnit * 0.055;
         var menuX = cx - (menuWidth / 2);
-        var menuY = mUnit * 0.89;
+        var menuY = mUnit * 0.885;
         mMenuTop = menuY;
         mMenuBottom = menuY + menuHeight;
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
