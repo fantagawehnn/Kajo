@@ -482,15 +482,15 @@ class KajoConnectView extends WatchUi.View {
             startLabel, startWidth * 0.90, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
 
         var menuWidth = mUnit * 0.38;
-        var menuHeight = mUnit * 0.065;
+        var menuHeight = mUnit * 0.055;
         var menuX = cx - (menuWidth / 2);
-        var menuY = mUnit * 0.91;
+        var menuY = mUnit * 0.89;
         mMenuTop = menuY;
         mMenuBottom = menuY + menuHeight;
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(menuX.toNumber(), menuY.toNumber(),
             menuWidth.toNumber(), menuHeight.toNumber(), (mUnit * 0.02).toNumber());
-        drawCentered(dc, cx, menuY + (menuHeight * 0.22), "MENUE",
+        drawCentered(dc, cx, menuY + (menuHeight * 0.18), "MENUE",
             menuWidth * 0.84, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
     }
 }
