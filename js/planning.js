@@ -51,7 +51,7 @@ export function deletePlannedWorkout(id){
 function setPlanField(id,value){const field=document.getElementById(id);if(field)field.value=value??'';}
 export function setPlannedWorkoutKind(kind){
     const restDay=kind==='rest';
-    ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
+    ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field','plan-instructions-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
     const name=document.getElementById('plan-name');
     if(restDay&&name&&!name.value.trim())name.value='Ruhetag';
     if(!restDay&&name&&name.value==='Ruhetag')name.value='';
@@ -74,6 +74,11 @@ export function openPlannedWorkoutModal(id=null){
     setPlanField('plan-duration',isAssessment ? '' : item?.duration??60);
     setPlanField('plan-tss',isAssessment ? '' : item?.targetTss??70);
     setPlanField('plan-category',item?.category||'ga');
+    setPlanField('plan-intensity',item?.intensity||'');
+    setPlanField('plan-objective',item?.objective||'');
+    setPlanField('plan-warmup',item?.warmup||'');
+    setPlanField('plan-main-set',item?.mainSet||'');
+    setPlanField('plan-cooldown',item?.cooldown||'');
     setPlanField('plan-desc',item?.desc||'');
     setPlannedWorkoutKind(item?.type==='RestDay'?'rest':'training');
     const title=document.getElementById('planned-workout-modal-title');
@@ -98,11 +103,17 @@ export function savePlannedWorkout(){
     const isAssessment=String(category).startsWith('diagnostic-');
     const duration=isRestDay||isAssessment||durationRaw===''?null:(parseInt(durationRaw,10)||60);
     const targetTss=isRestDay||isAssessment||targetTssRaw===''?null:(parseInt(targetTssRaw,10)||60);
+    const intensity=document.getElementById('plan-intensity')?.value.trim()||'';
+    const objective=document.getElementById('plan-objective')?.value.trim()||'';
+    const warmup=document.getElementById('plan-warmup')?.value.trim()||'';
+    const mainSet=document.getElementById('plan-main-set')?.value.trim()||'';
+    const cooldown=document.getElementById('plan-cooldown')?.value.trim()||'';
     const desc=document.getElementById('plan-desc').value;
+    const workoutDetails={intensity,objective,warmup,mainSet,cooldown};
     if(editingPlannedWorkoutId!==null){
         const index=state.plannedActivities.findIndex(p=>String(p.id)===editingPlannedWorkoutId);
         if(index<0)return;
-        state.plannedActivities[index]={...state.plannedActivities[index],date,name,type,duration,targetTss,category,desc};
-    }else state.plannedActivities.push({id:'p-'+Date.now(),date,name,type,duration,targetTss,category,desc});
+        state.plannedActivities[index]={...state.plannedActivities[index],date,name,type,duration,targetTss,category,desc,...workoutDetails};
+    }else state.plannedActivities.push({id:'p-'+Date.now(),date,name,type,duration,targetTss,category,desc,...workoutDetails});
     saveDataToLocalStorage();closePlannedWorkoutModal();renderPlannedWorkouts();renderCalendar();
 }
