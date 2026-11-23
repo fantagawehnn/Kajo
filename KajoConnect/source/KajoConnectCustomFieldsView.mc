@@ -7,19 +7,20 @@ import Toybox.WatchUi;
 class KajoConnectCustomFieldsView extends WatchUi.View {
 
     var mMetricIds as Lang.Array<Lang.String> = [
-        "speedNow", "speedAvg", "speedMax", "heartRate",
+        "speedNow", "speedAvg", "speedMax", "heartRate", "heartRateZone",
         "heartRateAvg", "heartRateMax", "distance", "elapsed",
         "calories", "cadence", "power", "trainingEffect",
         "altitude", "ascent", "descent", "gpsAccuracy"
     ];
     var mMetricLabels as Lang.Array<Lang.String> = [
-        "Geschwindigkeit", "Tempo Durchschnitt", "Tempo Maximum", "Herzfrequenz",
+        "Geschwindigkeit", "Tempo Durchschnitt", "Tempo Maximum", "Herzfrequenz", "HF-Zone",
         "HF Durchschnitt", "HF Maximum", "Distanz", "Zeit",
         "Kalorien", "Kadenz", "Leistung", "Training Effect",
         "Hoehe", "Anstieg", "Abstieg", "GPS-Genauigkeit"
     ];
     var mSelected as Lang.Array<Lang.String> = [];
     var mPage as Lang.Number = 0;
+    var mPageCount as Lang.Number = 4;
     var mSelectedRow as Lang.Number = -1;
     var mRowTop as Lang.Number = 0;
     var mRowHeight as Lang.Number = 0;
@@ -31,6 +32,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
+        mPageCount = Math.floor(mMetricIds.size() / 4).toNumber();
+        if ((mMetricIds.size() % 4) > 0) { mPageCount += 1; }
         var saved = Storage.getValue("kajoCustomMetrics");
         if (saved != null) {
             var stored = saved as Lang.Array<Lang.String>;
@@ -111,8 +114,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
     function nextPage(direction as Lang.Number) as Void {
         mPage += direction;
-        if (mPage < 0) { mPage = 3; }
-        if (mPage > 3) { mPage = 0; }
+        if (mPage < 0) { mPage = mPageCount - 1; }
+        if (mPage >= mPageCount) { mPage = 0; }
         mSelectedRow = -1;
         WatchUi.requestUpdate();
     }
@@ -142,7 +145,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.15).toNumber(),
             Graphics.FONT_XTINY, "Bis zu vier Kennzahlen", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.19).toNumber(),
-            Graphics.FONT_XTINY, "Seite " + (mPage + 1).toString() + " / 4 · WISCHEN", Graphics.TEXT_JUSTIFY_CENTER);
+            Graphics.FONT_XTINY, "Seite " + (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN", Graphics.TEXT_JUSTIFY_CENTER);
 
         mRowTop = mUnit * 0.235;
         mRowHeight = mUnit * 0.125;
