@@ -1622,10 +1622,14 @@
                     <textarea id="plan-cooldown" rows="2" maxlength="300" placeholder="Ausfahren und lockerer Abschluss" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
                 </div>
             </div>
-            <div>
-                <label class="block text-slate-400 mb-1 text-xs">Zusätzliche Beschreibung / Hinweise</label>
-                <textarea id="plan-desc" rows="2" placeholder="Weitere Hinweise zur Einheit..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea>
-            </div>
+            <div id="plan-steps-field" class="space-y-3 border-t border-slate-800 pt-3">
+                <div class="flex items-center justify-between gap-2"><div><p class="text-[10px] font-bold tracking-wider text-cyan-300">STRUKTURIERTER TRAININGSABLAUF</p><p class="text-[10px] text-slate-500 mt-1">Schritte werden in der angegebenen Reihenfolge an KAJO Connect übertragen.</p></div>
+                <button type="button" onclick="addPlannedWorkoutStep()" class="shrink-0 rounded-lg bg-cyan-900/50 border border-cyan-700 px-3 py-2 text-[10px] font-semibold text-cyan-200">+ Schritt</button></div>
+                <div id="plan-steps-list" class="space-y-2"><p class="text-[11px] text-slate-500">Noch keine einzelnen Schritte angelegt.</p></div>
+                <p id="plan-steps-error" class="text-[11px] text-rose-300" role="alert"></p>
+                <p class="text-[10px] text-slate-500">Für Wiederholungen legst du Belastung und Erholung jeweils als eigene Schritte an. Maximal 40 Schritte pro Einheit.</p></div>
+            <div><label class="block text-slate-400 mb-1 text-xs">Zusätzliche Beschreibung / Hinweise</label>
+            <textarea id="plan-desc" rows="2" placeholder="Weitere Hinweise zur Einheit..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"></textarea></div>
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
                 <button type="button" onclick="closePlannedWorkoutModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Abbrechen</button>
                 <button type="button" id="planned-workout-save-button" onclick="savePlannedWorkout()" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-xs">Einheit speichern</button>
