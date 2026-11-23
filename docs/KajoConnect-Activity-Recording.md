@@ -13,7 +13,7 @@
 - Distanz & Zeit: Distanz, Zeit und Kalorien
 - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Auswahl wird über die Garmin-App-Properties auf dem Gerät gespeichert und beim nächsten Öffnen der Aktivität wieder geladen. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der aktiven Seiten entspricht vorerst der Reihenfolge in der Liste.
+Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät gespeichert und beim nächsten Öffnen der Aktivität wieder geladen. Die fünf Einstellungen verwenden dynamische Speicher-Schlüssel; dadurch müssen sie nicht als feste App-Properties in einer Ressourcen-XML deklariert werden. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der aktiven Seiten entspricht vorerst der Reihenfolge in der Liste.
 
 **Abgrenzung:** In dieser Stufe können ganze Datenseiten ausgewählt werden. Einzelne Kennzahlen innerhalb einer Seite lassen sich noch nicht frei austauschen, verschieben oder in ihrer Größe verändern. Dafür ist ein weitergehender Layout-Editor erforderlich.
 
