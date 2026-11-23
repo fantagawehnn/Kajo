@@ -214,6 +214,15 @@ type PlannedSession = {
   targetTss: unknown;
   category: string | null;
   desc: string | null;
+  discipline: string | null;
+  raceFormat: string | null;
+  waterType: string | null;
+  intensity: string | null;
+  objective: string | null;
+  warmup: string | null;
+  mainSet: string | null;
+  cooldown: string | null;
+  notes: string | null;
 };
 
 const ALLOWED_DISPLAY_METRICS = new Set([
@@ -277,6 +286,15 @@ function safePlannedSession(value: unknown): PlannedSession | null {
     targetTss: typeof session.targetTss === "number" ? session.targetTss : typeof session.targetTss === "string" ? session.targetTss.slice(0, 30) : null,
     category: typeof session.category === "string" ? session.category.slice(0, 80) : null,
     desc: typeof session.desc === "string" ? session.desc.slice(0, 200) : null,
+    discipline: typeof session.discipline === "string" ? session.discipline.slice(0, 40) : null,
+    raceFormat: typeof session.raceFormat === "string" ? session.raceFormat.slice(0, 40) : null,
+    waterType: typeof session.waterType === "string" ? session.waterType.slice(0, 40) : null,
+    intensity: typeof session.intensity === "string" ? session.intensity.slice(0, 120) : null,
+    objective: typeof session.objective === "string" ? session.objective.slice(0, 300) : null,
+    warmup: typeof session.warmup === "string" ? session.warmup.slice(0, 300) : null,
+    mainSet: typeof session.mainSet === "string" ? session.mainSet.slice(0, 500) : null,
+    cooldown: typeof session.cooldown === "string" ? session.cooldown.slice(0, 300) : null,
+    notes: typeof session.notes === "string" ? session.notes.slice(0, 300) : null,
   };
 }
 
