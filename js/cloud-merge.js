@@ -169,6 +169,18 @@ export function mergeCloudSnapshots(baseSnapshot, localSnapshot, cloudSnapshot) 
     };
 }
 
+/**
+ * Ergänzt das aus Aktivitäten abgeleitete Cloud-Metadatum konsistent.
+ * Der lokale Storage-Snapshot enthält activityIds absichtlich nicht; vor
+ * Vergleichen mit Cloud-Snapshots muss das Feld daher rekonstruiert werden.
+ */
+export function withCloudActivityIds(snapshot, activityIds) {
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+        throw new Error('Der lokale KAJO-Datenstand ist ungültig.');
+    }
+    return { ...snapshot, activityIds: Array.isArray(activityIds) ? [...activityIds] : [] };
+}
+
 export function cloudSnapshotsEqual(left, right) {
     return equal(left, right);
 }
