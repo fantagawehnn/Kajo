@@ -109,6 +109,7 @@ class KajoConnectView extends WatchUi.View {
                 var receivedMetrics = layout["metrics"];
                 var metricIds = [];
                 var metricSizes = {};
+                var metricPositions = {};
                 var largeMetricId = "";
                 if (receivedMetrics != null) {
                     var metrics = receivedMetrics as Lang.Array<Lang.Dictionary>;
@@ -121,14 +122,19 @@ class KajoConnectView extends WatchUi.View {
                         var sizeValue = metric["size"];
                         var sizeText = sizeValue == null ? "medium" : sizeValue.toString();
                         var numericSize = sizeText == "small" ? 0 : sizeText == "large" ? 2 : 1;
+                        var positionValue = metric["position"];
+                        var positionNumber = positionValue == null ? metricIndex : positionValue.toNumber();
+                        if (positionNumber < 0 || positionNumber > 4) { positionNumber = metricIndex; }
                         metricIds.add(metricId);
                         metricSizes[metricId] = numericSize;
+                        metricPositions[metricId] = positionNumber;
                         if (numericSize == 2) { largeMetricId = metricId; }
                     }
                 }
                 try {
                     Storage.setValue("kajoCustomMetrics" + layoutIndex.toString(), metricIds);
                     Storage.setValue("kajoMetricSizes" + layoutIndex.toString(), metricSizes);
+                    Storage.setValue("kajoMetricPositions" + layoutIndex.toString(), metricPositions);
                     Storage.setValue("kajoLargeMetricId" + layoutIndex.toString(), largeMetricId);
                     if (layoutIndex == 0) {
                         Storage.setValue("kajoCustomMetrics", metricIds);
