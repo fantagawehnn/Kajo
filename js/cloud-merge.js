@@ -36,9 +36,12 @@ function itemKey(item) {
     if (item.garmin_activity_id != null) return 'garmin:' + String(item.garmin_activity_id);
     if (item.weekStartDate) return 'week:' + String(item.weekStartDate);
     if (item.startDate && item.endDate) return 'period:' + item.startDate + ':' + item.endDate;
-    if (item.date && (item.name || item.type || item.discipline || item.exercise || item.startTime)) {
-        return 'date:' + [item.date, item.startTime || '', item.name || '', item.type || '',
+    if (item.date && (item.type || item.discipline || item.exercise || item.startTime)) {
+        return 'date:' + [item.date, item.startTime || '', item.type || '',
             item.discipline || '', item.exercise || '', item.format || ''].join('|');
+    }
+    if (item.discipline && item.format) {
+        return 'result:' + [item.discipline, item.format, item.partner || ''].join('|');
     }
     return 'json:' + JSON.stringify(stable(item));
 }
