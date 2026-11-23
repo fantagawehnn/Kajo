@@ -217,6 +217,61 @@ class KajoConnectView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function openActivityView(workout as Lang.Dictionary or Null) as Void {
+        var activityView = new KajoConnectActivityView(mSelectedBoat);
+        if (workout != null) {
+            activityView.setSelectedWorkout(workout as Lang.Dictionary);
+        }
+
+        var storedZoneDate = Storage.getValue("kajoHeartRateZoneDate");
+        if (storedZoneDate != null && storedZoneDate.toString() == getLocalDate()) {
+            var zoneValues = [];
+            var zonesValid = true;
+            for (var zoneIndex = 0; zoneIndex < 4; zoneIndex += 1) {
+                var zoneValue = Storage.getValue("kajoHeartRateZone" + zoneIndex.toString());
+                if (zoneValue == null || (zoneValue as Lang.Number) <= 0) {
+                    zonesValid = false;
+                    break;
+                }
+                zoneValues.add(zoneValue as Lang.Number);
+            }
+            if (zonesValid) { activityView.setHeartRateZones(zoneValues); }
+        }
+
+        WatchUi.pushView(
+            activityView,
+            new KajoConnectActivityDelegate(activityView),
+            WatchUi.SLIDE_UP
+        );
+    }
+
+    function startActivity() as Void {
+        var today = getLocalDate();
+        var todaysSessions = [];
+        for (var i = 0; i < mPlannedSessions.size(); i += 1) {
+            var session = mPlannedSessions[i] as Lang.Dictionary;
+            var sessionDate = session["date"];
+            if (sessionDate != null && sessionDate.toString() == today) {
+                todaysSessions.add(session);
+            }
+        }
+
+        if (todaysSessions.size() > 1) {
+            var selector = new KajoConnectWorkoutSelectView(todaysSessions, this);
+            WatchUi.pushView(selector, new KajoConnectWorkoutSelectDelegate(selector), WatchUi.SLIDE_UP);
+        } else if (todaysSessions.size() == 1) {
+            openActivityView(todaysSessions[0] as Lang.Dictionary);
+        } else {
+            openActivityView(null);
+        }
+    }
+
+    // Wird von der Auswahlansicht aufgerufen, nachdem eine Einheit angetippt wurde.
+    function startActivityWithWorkout(workout as Lang.Dictionary) as Void {
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
+        openActivityView(workout);
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) {
         // Die sichtbare MENUE-Beschriftung ist direkt antippbar.
         if (y >= mMenuTop && y <= mMenuBottom) {
@@ -246,35 +301,7 @@ class KajoConnectView extends WatchUi.View {
         }
 
         if (y >= mStartTop && y <= mStartBottom) {
-            var activityView = new KajoConnectActivityView(mSelectedBoat);
-            var storedZoneDate = Storage.getValue("kajoHeartRateZoneDate");
-            if (storedZoneDate != null) {
-                if (storedZoneDate.toString() == getLocalDate()) {
-                    var zoneValues = [];
-                    var zonesValid = true;
-                    for (var zoneIndex = 0; zoneIndex < 4; zoneIndex += 1) {
-                        var zoneValue = Storage.getValue("kajoHeartRateZone" + zoneIndex.toString());
-                        if (zoneValue == null) {
-                            zonesValid = false;
-                            break;
-                        }
-                        var numericZoneValue = zoneValue as Lang.Number;
-                        if (numericZoneValue <= 0) {
-                            zonesValid = false;
-                            break;
-                        }
-                        zoneValues.add(numericZoneValue);
-                    }
-                    if (zonesValid) {
-                        activityView.setHeartRateZones(zoneValues);
-                    }
-                }
-            }
-            WatchUi.pushView(
-                activityView,
-                new KajoConnectActivityDelegate(activityView),
-                WatchUi.SLIDE_UP
-            );
+            startActivity();
             return;
         }
 
