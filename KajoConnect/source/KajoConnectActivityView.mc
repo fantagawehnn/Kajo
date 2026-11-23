@@ -1077,12 +1077,10 @@ class KajoConnectActivityView extends WatchUi.View {
             // ActivityInfo ist dann leer und die alte Live-Ansicht wirkte
             // wie ein ueberlagertes, abgeschnittenes Dashboard.
             drawPageHeader(dc, "TRAINING GESPEICHERT");
-            drawFit(dc, cx, mUnit * 0.34, "AUFZEICHNUNG BEENDET",
+            drawFit(dc, cx, mUnit * 0.36, "AUFZEICHNUNG BEENDET",
                 mUnit * 0.76, Graphics.FONT_MEDIUM, 0x00E5CC);
-            drawFit(dc, cx, mUnit * 0.45, elapsed,
-                mUnit * 0.62, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawFit(dc, cx, mUnit * 0.55, distance + " KM",
-                mUnit * 0.62, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            drawFit(dc, cx, mUnit * 0.47, "FIT-DATEI GESPEICHERT",
+                mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             drawPageHeader(dc, "SPEICHERFEHLER");
             drawFit(dc, cx, mUnit * 0.38, "BITTE ERNEUT SPEICHERN",
