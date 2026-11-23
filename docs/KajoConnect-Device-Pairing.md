@@ -1,197 +1,115 @@
-# KAJO Connect – Geräte-Kopplung und Synchronisationsarchitektur
+# KAJO Connect – Geräte-Kopplung und Synchronisierung
 
-**Status:** Architekturentwurf, noch nicht implementiert  
+**Stand:** Backend-Entwurf im Branch vorbereitet; noch nicht deployed oder end-to-end getestet  
 **Branch:** `feature/kajo-connect`  
-**Zielgerät für den ersten Entwicklungsschritt:** Garmin Venu 3S
+**Erstes Zielgerät:** Garmin Venu 3S; zusätzlich Venu 2 Plus
 
-## 1. Ziel und Architekturprinzip
+## 1. Grundprinzip
 
-KAJO Connect ist ein zusätzlicher Client des bestehenden KAJO-Systems. Die Garmin-Uhr erhält keinen eigenen Benutzerbestand und führt keine parallelen sportwissenschaftlichen Berechnungen durch.
+KAJO Connect ist ein zusätzlicher Client des bestehenden KAJO-Kontos. Supabase Auth und die vorhandene Benutzer-ID bleiben maßgeblich. Die Uhr erhält einen eigenen widerrufbaren Gerätezugang; sie erhält weder einen Supabase-Refresh-Token noch einen Service-Role-Key oder Garmin-Personal-API-Zugang.
 
-- Supabase Auth und die bestehende KAJO-Benutzer-ID bleiben die zentrale Identität.
-- KAJO bleibt führend für Trainingsplanung, Datenmodell und Berechnungen.
-- Die Uhr erhält ausschließlich einen gerätespezifischen, widerrufbaren Zugriff.
-- Die Uhr speichert nur die für Offline-Nutzung und Synchronisierung notwendigen lokalen Daten.
-- Trainingsplanung und absolvierte Aktivitäten bleiben getrennte Datentypen.
+KAJO bleibt führend für Trainingsplanung und sportwissenschaftliche Berechnungen. Die Uhr zeigt Daten an und zeichnet Aktivitäten auf. Trainingsplanung und absolvierte Aktivitäten bleiben getrennt.
 
-## 2. Befunde aus dem aktuellen Repository und Supabase-Projekt
+## 2. Tatsächlich verwendete Datenquelle
 
-### 2.1 Trainingsplanung
+Die Web-App hält geplante Einheiten in `state.plannedActivities`. `getUserDataSnapshot()` bildet sie auf `planned` ab; der versionierte Cloud-Snapshot speichert diesen Wert in `public.user_data.data.planned`.
 
-Die Web-App verwaltet geplante Einheiten aktuell in `state.plannedActivities`. Das benutzerspezifische Speichermodul bildet diese Sammlung auf `planned` ab. `getUserDataSnapshot()` enthält `planned`; der versionsgeschützte Cloud-Snapshot speichert diesen Datenbestand in `public.user_data.data`.
+Die Live-Tabelle `public.planned_sessions` existiert zwar, ist aber in der geprüften Web-App nicht als führende Datenquelle verwendet. Die erste Watch-Synchronisierung liest deshalb `user_data.data.planned` und führt keine parallele Planungstabelle ein.
 
-Der aktuelle Synchronisierungsablauf in `js/main.js` lädt den Cloud-Snapshot bei der Kontoaktivierung und speichert Änderungen versionsgeschützt zurück. Ein Versionskonflikt blockiert die automatische Synchronisierung, statt einen Datenstand stillschweigend zu überschreiben.
+Die Trainingsfelder, die der Watch-Client verwenden darf, sind:
+- `id`, `date`, `name`, `type`
+- `duration`, `targetTss`, `category`, `desc`
 
-### 2.2 Vorhandene Tabellen
+Eine Intervall-/Schrittstruktur wird nicht übertragen, solange sie nicht in tatsächlich gespeicherten Planobjekten nachgewiesen ist.
 
-Im aktuellen Supabase-Schema existiert außerdem `public.planned_sessions` mit `user_id`, `record_id`, `session_date` und `payload`. Die Tabelle hat RLS-Regeln für Eigentümer und aktive Trainerzugriffe. Im aktuell geprüften KAJO-Branch wurde jedoch keine Verwendung dieser Tabelle in der Web-App gefunden. Sie wird deshalb für die erste Watch-Synchronisierung **nicht ungeprüft als führende Datenquelle vorausgesetzt**.
+## 3. Kopplungsablauf – aktueller Entwurf im Code
 
-Absolvierte Aktivitäten werden in der Web-App bereits separat in `public.activities` gespeichert. Die Synchronisierung verwendet `user_id`, `record_id`, `activity_date` und `payload`, prüft die zurückgegebenen IDs und löscht keine bestehenden Datensätze.
+Der implementierte Backend-Vertrag nutzt einen vom Gerät gestarteten Kopplungsvorgang:
 
-### 2.3 Konsequenz
+1. Die Uhr fordert über `create-pairing` einen Kopplungscode und ein zusätzliches geheimes Polling-Secret an.
+2. Die Uhr zeigt den achtstelligen Code an und fragt den Status mit Code plus Polling-Secret ab.
+3. Die Nutzerin meldet sich in der KAJO-Web-App an und gibt den Code dort ein. Die Web-App ruft `claim-pairing` mit dem bestehenden Supabase-User-JWT auf.
+4. Der Server prüft den JWT über Supabase Auth, registriert ein Gerät für genau diese Benutzer-ID und erzeugt ein zufälliges Geräte-Token.
+5. Das Geräte-Token wird serverseitig verschlüsselt in der kurzlebigen Pairing-Anfrage zwischengespeichert. Die Uhr kann es nur mit Code und Polling-Secret abholen.
+6. Die Uhr speichert das Geräte-Token lokal. Danach verwendet sie für Synchronisierungen ausschließlich dieses Token.
 
-Für die erste Version liest KAJO Connect geplante Einheiten aus dem bereits verwendeten Snapshot-Feld `user_data.data.planned`. Vor einer späteren Umstellung auf `planned_sessions` muss eine separate Migration mit Datenabgleich und eindeutiger Festlegung der führenden Datenquelle erfolgen.
+Der Code läuft nach zehn Minuten ab. Der Code wird serverseitig nicht im Klartext gespeichert; sein Hash wird mit einem serverseitigen HMAC-Pepper gebildet. Das Polling-Secret und das Geräte-Token sind jeweils kryptografisch zufällig.
 
-## 3. Kopplung mit einmaligem Code
+## 4. Backend-Implementierung im Branch
 
-### Schritt A – Code in KAJO erzeugen
+Neu angelegt:
+- `supabase/functions/kajo-connect/index.ts`
+- `docs/kajo-connect-pairing-schema-draft.sql`
 
-1. Die Nutzerin ist in der KAJO-Web-App regulär über Supabase Auth angemeldet.
-2. In den Einstellungen wird „Garmin-Uhr koppeln“ gewählt.
-3. KAJO ruft eine authentifizierte Edge Function auf.
-4. Der Server erzeugt einen zufälligen, einmal verwendbaren Kopplungscode mit kurzer Gültigkeit (vorgeschlagen: 5 Minuten).
-5. In der Datenbank wird nur ein kryptografischer Hash des Codes gespeichert. Der Klartextcode wird nur einmal an die Web-App zurückgegeben.
+In `supabase/config.toml` ist für diese Funktion `verify_jwt = false` gesetzt, weil die Uhr vor dem Pairing noch kein Supabase-JWT besitzt. Die Funktion prüft Credentials deshalb selbst:
+- `claim-pairing`: Supabase-User-JWT wird explizit mit `auth.getUser()` verifiziert.
+- `poll-pairing`: erfordert den Pairing-Code und das separate Polling-Secret.
+- `sync`: erfordert das Geräte-Bearer-Token; serverseitig wird dessen SHA-256-Hash einem nicht widerrufenen Gerät zugeordnet.
 
-### Schritt B – Code auf der Uhr eingeben
+Das Abschalten der vorgeschalteten JWT-Prüfung macht die Funktion nicht zu einem offenen Datenendpunkt. Jede Aktion hat eine eigene Credential-Prüfung. Die Supabase-Dokumentation beschreibt diese Trennung zwischen `verify_jwt` und der Authentifizierung innerhalb der Funktion: https://supabase.com/docs/guides/functions/auth-headers
 
-1. KAJO Connect zeigt eine Kopplungsansicht.
-2. Die Nutzerin gibt den Code auf der Uhr ein.
-3. Die Uhr sendet den Code über HTTPS an den Kopplungs-Endpunkt. Connect-IQ-Webrequests benötigen eine verfügbare Netzwerkverbindung über WLAN oder ein per Bluetooth verbundenes Mobilgerät; auf der Venu 3S planen wir zunächst mit der Verbindung über Garmin Connect Mobile.
-4. Der Server prüft Ablaufzeit, Einmaligkeit und Versuchslimit und verbraucht den Code atomar.
-5. Der Server erzeugt eine gerätespezifische zufällige Zugangsinformation und gibt sie genau einmal an die Uhr zurück.
-6. Die Uhr speichert das Token lokal über die Connect-IQ-Speicher-API.
+## 5. Aktionen und Datenvertrag
 
-### Schritt C – Zugriff und Widerruf
+Alle Aktionen werden als JSON-POST an `/functions/v1/kajo-connect` gesendet.
 
-- Das Gerät sendet sein Token bei späteren Requests als Bearer-Token.
-- Serverseitig wird nur der Token-Hash gespeichert.
-- Jede Anfrage wird einem einzelnen registrierten Gerät und dessen KAJO-Benutzerkonto zugeordnet.
-- Die Nutzerin kann ein Gerät in KAJO widerrufen. Danach werden Requests dieses Geräts abgelehnt.
-- Ein Supabase-Service-Key, ein Garmin-Personal-API-Key oder ein Supabase-Refresh-Token wird niemals auf der Uhr gespeichert.
-
-## 4. Vorgesehene Backend-Bausteine
-
-Die folgenden Namen sind Vorschläge, keine bereits existierenden Funktionen oder Tabellen.
-
-### Edge Functions
-
-| Funktion | Authentifizierung | Aufgabe |
+| Aktion | Authentifizierung | Zweck |
 |---|---|---|
-| `kajo-connect-create-pairing` | bestehender Supabase-User-JWT | Kopplungscode für das angemeldete Konto erzeugen |
-| `kajo-connect-claim-pairing` | kein Supabase-JWT; eigener Code-Check | Einmalcode prüfen, verbrauchen und Gerät registrieren |
-| `kajo-connect-device` | eigener Geräte-Bearer-Token | Erlaubte Geräteaktionen ausführen |
+| `create-pairing` | Pairing wird durch zufälliges Polling-Secret geschützt | Anfrage von der Uhr erzeugen |
+| `claim-pairing` | bestehender Supabase-User-JWT | Code dem angemeldeten Konto zuordnen |
+| `poll-pairing` | achtstelliger Code plus Polling-Secret | Status prüfen und Gerätetoken abholen |
+| `sync` | Geräte-Bearer-Token | geplante Einheiten und Herzfrequenzzonen abrufen |
 
-Die erste und dritte Funktion verwenden die vorhandene Supabase-Authentifizierung beziehungsweise einen eigenen, eng begrenzten Gerätezugriff. Beim öffentlichen Claim-Endpunkt muss die Anwendung selbst alle Prüfungen durchführen; ein Publishable Key ist keine Geräte-Authentifizierung.
+Die `sync`-Antwort enthält nur:
+- geplante Einheiten von gestern bis 14 Tage in die Zukunft, begrenzt auf 40 Einträge und die oben genannten Felder;
+- die Herzfrequenz-Zonengrenzen für das lokale Datum der Uhr;
+- Versions- und Aktualisierungsinformationen des Cloud-Snapshots.
 
-### Datenbank
+Die Herzfrequenzzonen folgen der bestehenden KAJO-Logik aus `js/training-load.js`: adaptive Ruhe-HF als Median gültiger Garmin-Ruhe-HF-Tageswerte im konfigurierten Rückblick; wenn zu wenige Messwerte vorhanden sind, wird eine gültige Profil-Ruhe-HF als ausdrücklich gekennzeichneter Fallback verwendet. Die vier Obergrenzen werden nach Karvonen bei 60/70/80/90 % der Herzfrequenzreserve berechnet. Die Uhr übernimmt die Grenzen und berechnet keine eigenen Zonen.
 
-Vorgeschlagene neue Tabellen liegen in einem nicht öffentlich exponierten Schema und sind nicht direkt über die Data API erreichbar:
+## 6. Datenbankentwurf – noch nicht angewendet
 
-- `kajo_connect_pairing_codes`: Benutzer-ID, Code-Hash, Ablaufzeit, Verbrauchszeitpunkt und Fehlversuche.
-- `kajo_connect_devices`: Benutzer-ID, Geräte-ID, Token-Hash, Anzeigename/Modell, Erstellungszeit, letzte Nutzung und Widerrufszeitpunkt.
+Die SQL-Datei unter `docs/kajo-connect-pairing-schema-draft.sql` ist ausdrücklich ein Entwurf und keine Migration. Sie beschreibt zwei Tabellen:
+- `public.kajo_connect_pairing_requests`: Code-Hash, Polling-Secret-Hash, Ablauf, Claim-Status und kurzzeitig verschlüsseltes Geräte-Token.
+- `public.kajo_connect_devices`: Benutzer-ID, Gerätebezeichnung, Token-Hash, letzte Nutzung und Widerrufszeitpunkt.
 
-Die konkreten Tabellen, Indizes, Berechtigungen, RLS-Regeln und atomaren Datenbankoperationen werden erst nach separater Prüfung als Migration erstellt. Es wurden für diesen Entwurf keine Datenbankänderungen vorgenommen.
+Beide Tabellen aktivieren RLS und erhalten keine Client-Policies. Zugriff ist ausschließlich über die Edge Function mit serverseitigem Service-Role-Key vorgesehen. Die tatsächlichen Datenbankänderungen sind nicht freigegeben und wurden nicht ausgeführt.
 
-## 5. Sicherheitsanforderungen
+Vor dem Erstellen einer echten Migration muss die bestehende Abweichung zwischen Repository-Migrationsdateien und Live-Migrationshistorie bereinigt bzw. reproduzierbar dokumentiert werden. Bestehende Migrationen werden nicht umbenannt, erneut angewendet oder geraten.
 
-- Kopplungscode: zufällig, kurzlebig, einmalig, gehasht gespeichert.
-- Schutz vor Brute Force: begrenzte Fehlversuche und serverseitiges Rate-Limit.
-- Atomarer Verbrauch: zwei parallele Claim-Anfragen dürfen nicht dasselbe Gerätetoken erhalten.
-- Gerätetoken: kryptografisch zufällig, nur gehasht gespeichert, widerrufbar und nur einmal im Klartext ausgegeben.
-- Gerätezugriff: jede Anfrage wird serverseitig einem aktiven Gerät und dessen `user_id` zugeordnet. Eine vom Client übermittelte Benutzer-ID wird niemals als Berechtigungsnachweis verwendet.
-- Endpunkte: feste Aktionsliste und strenge Payload-Validierung; keine frei wählbaren Tabellen- oder SQL-Abfragen.
-- Geheimnisse: Service-Role-/Secret-Keys verbleiben ausschließlich serverseitig.
-- Datenschutz: nur die für die Watch-Funktion erforderlichen Trainingsdaten werden übertragen.
+## 7. Erforderliche Edge-Function-Secrets
 
-## 6. Erste Synchronisierungsverträge
+Vor einem Deployment müssen zusätzlich zu den von Supabase bereitgestellten Variablen folgende Secrets erzeugt und gesetzt werden:
+- `KAJO_CONNECT_PAIRING_PEPPER`: zufälliger, mindestens 32 Zeichen langer serverseitiger HMAC-Pepper für die achtstelligen Codes.
+- `KAJO_CONNECT_TOKEN_ENCRYPTION_KEY`: Base64-kodierte 32-Byte-Schlüssel für AES-GCM-Verschlüsselung des noch nicht abgeholten Geräte-Tokens.
 
-### KAJO → Uhr
+Diese Werte gehören ausschließlich in die Supabase-Function-Secrets. Sie dürfen nicht in GitHub, im Web-Frontend oder in der Watch-App liegen.
 
-Erste Lesefunktion: geplante Einheiten für einen begrenzten Datumsbereich.
+## 8. Noch nicht umgesetzt
 
-Quelle in Version 1: `public.user_data.data.planned`, gelesen anhand der `user_id` aus dem verifizierten Geräte-Datensatz. Die Antwort wird auf die von der Uhr benötigten Felder reduziert. Die Web-App-Felder `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc` sind im aktuellen Planungscode dokumentiert; weitere Workout-Schritt-/Intervallfelder müssen vor ihrer Übertragung anhand der tatsächlichen gespeicherten Objekte geprüft werden.
+- Die Pairing-Oberfläche in der KAJO-Web-App zum Eingeben und Bestätigen des Codes.
+- Die Pairing-Ansicht auf der Uhr, einschließlich Anzeige des Codes, Polling und lokaler Token-Speicherung.
+- Das Anwenden des zurückgegebenen Trainingsplans und der Herzfrequenzzonen in der laufenden Watch-App.
+- Geräteverwaltung und Widerruf in der KAJO-Web-App.
+- Die Datenbanktabellen; das SQL ist bislang nur ein Entwurf.
+- Deployment der Edge Function und Setzen der Secrets.
+- End-to-end-Tests und Garmin-Gerätetests.
 
-### Uhr → KAJO
+Die vorhandene `KajoConnectApi.mc` ist derzeit nur eine generische asynchrone JSON-POST-Transportebene. Sie ist noch nicht mit dem neuen Endpunkt verdrahtet.
 
-Geplante spätere Funktionen:
+## 9. Aktivitätsaufzeichnung
 
-1. Auf der Uhr erstellte Workouts als geplante Einheiten zurücksenden.
-2. Abgeschlossene Aktivitäten als eigene Aktivitätsdatensätze übertragen.
-3. Wiederholungen idempotent behandeln, damit Offline-Retries keine Duplikate erzeugen.
+Die Uhr speichert Aktivitäten derzeit über `ActivityRecording.Session` als Garmin-Aktivität. Das ist nicht gleichbedeutend mit einem direkten Upload der FIT-Datei an KAJO. Ein späterer KAJO-Import kann den bestehenden Garmin-Synchronisationsweg nutzen, muss aber anhand eines echten Testdatensatzes geprüft werden. Ein direkter FIT-Upload von der Uhr ist nicht implementiert.
 
-Für Aktivitätsuploads ist die vorhandene `public.activities`-Struktur mit `user_id`, `record_id` und `payload` ein möglicher Integrationspunkt. Die bestehende Web-Synchronisierung und ihre Duplikat-/Readback-Logik müssen vor Implementierung eines Watch-Writers vollständig berücksichtigt werden.
+## 10. Sicherheits- und Testanforderungen vor Freigabe
 
-## 7. Connect-IQ-Umsetzung
+Vor einem produktiven Einsatz müssen mindestens folgende Fälle geprüft werden:
+- abgelaufener, ungültiger und bereits beanspruchter Code;
+- falsches Polling-Secret;
+- zwei parallele Claim-Versuche;
+- verlorene HTTP-Antwort beim Token-Polling;
+- widerrufenes Gerät und unbekanntes Token;
+- Benutzerwechsel und Zugriffstrennung zwischen Konten;
+- fehlender oder ungültiger Zonen-/Profilwert;
+- Offline-Betrieb, Wiederholungsversuche und Versionswechsel des Cloud-Snapshots.
 
-Für HTTPS-Anfragen ist `Communications.makeWebRequest()` vorgesehen. Garmin dokumentiert die API ab Connect-IQ API-Level 1.3.0; die Venu 3S ist als unterstütztes Gerät aufgeführt. Die Funktion benötigt die Communications-Berechtigung und eine Verbindung über WLAN oder ein per Bluetooth verbundenes Mobilgerät. Im aktuellen Branch ist `minApiLevel="2.4.0"` gesetzt, weil die Anzeigeeinstellungen mit `Toybox.Application.Storage` dauerhaft gespeichert werden. Die Communications-Berechtigung ist für HTTPS-Anfragen ergänzt; für FIT-Aufzeichnung und GPS wurden zusätzlich `Fit` und `Positioning` eingetragen. Die Watch-App erhält keine Supabase-Client-Bibliothek und keine Zugangsdaten aus dem Web-Frontend.
-
-Die Venu 3S bleibt das erste Build- und Testziel. Unterstützte API-Level, Produktkompatibilität, Speicherlimits, Netzwerkanforderungen und Verhalten bei unterbrochener Verbindung werden gegen das installierte SDK und die offiziellen Garmin-Dokumente validiert.
-
-## 8. Implementierungsreihenfolge
-
-1. Architektur und Datenverträge final prüfen.
-2. Kopplungs-Tabellen und sichere atomare Operationen als Migration entwerfen; vor Ausführung separat freigeben.
-3. Authentifizierte Code-Erzeugung in KAJO ergänzen.
-4. Claim- und Geräte-Endpunkte implementieren und lokal testen.
-5. Kopplungsoberfläche und Token-Speicherung auf der Uhr umsetzen.
-6. Nur geplante Einheiten lesend synchronisieren.
-7. Offline-Queue und Konfliktverhalten testen.
-8. Watch-erstellte Workouts und abgeschlossene Aktivitäten ergänzen.
-9. GPS-/Sensoraufzeichnung und FIT-Verarbeitung separat validieren.
-
-## 9. Bewusst noch nicht umgesetzt
-
-- Keine Supabase-Tabellen oder Policies geändert.
-- Keine Edge Function deployed.
-- Keine bestehenden Garmin-Funktionen geändert.
-- Keine neue Trainingsplan-Datenquelle eingeführt.
-- Keine Watch-Tokens oder Zugangsdaten erzeugt.
-- Keine Behauptung, dass die Uhr bereits mit KAJO verbunden ist.
-
-## 10. Offene technische Prüfungen
-
-- Exakte Struktur real gespeicherter Workout-/Intervallobjekte in `planned`.
-- Ursprung und vorgesehene Verwendung von `planned_sessions`; mögliche Überschneidung mit `user_data.data.planned`.
-- Aktuelle Datenbankberechtigungen und Schemaexposition für ein privates Geräte-Schema.
-- Sichere atomare Einmal-Code-Einlösung und Rate-Limit-Strategie.
-- Connect-IQ-Details zur sicheren lokalen Token-Speicherung und HTTPS-Request-Ausführung.
-- Aktivitätsformat und Importpfad für Watch-Aufzeichnungen.
-
-
-## 11. Datenbank- und Migrationsabgleich (Read-only-Prüfung)
-
-Am 23.11.2026 wurden die Migrationsliste des verbundenen Supabase-Projekts, die Dateien unter `supabase/migrations/` im Branch `feature/kajo-connect` sowie die tatsächlichen Tabellen und Policies read-only verglichen.
-
-### Ergebnis
-
-Die Datenbank enthält die Tabellen und Spalten, die zu den vorhandenen Garmin-/Export-Migrationen gehören. Auch die zusätzliche Update-Policy für Garmin-Telemetrie und die Spalte `kajo_notification_schedules.last_sent_local_date` sind im Live-Schema vorhanden. Die Datenbankstruktur ist damit nicht einfach „unvollständig“; das Problem ist die fehlende eindeutige Zuordnung zwischen Repository-Migrationsdateien und registrierter Migrationshistorie.
-
-| Repository-Datei | Beobachtung im Live-Projekt |
-|---|---|
-| `20261115000100_garmin_activity_telemetry.sql` | Tabelle und Basis-Policies sind vorhanden; eine passende Version ist in der Live-Migrationsliste nicht sichtbar. |
-| `202611150001_garmin_activity_sync_days.sql` | Tabelle ist vorhanden; Live-Historie führt stattdessen Version `20261115224846` mit gleichem Namen. |
-| `20261115000200_kajo_push_delivery_tracking.sql` | Die Spalte `last_sent_local_date` ist vorhanden; die Datei ist in der Live-Migrationsliste nicht als Version registriert. |
-| `20261115000300_garmin_activity_telemetry_update_policy.sql` | Update-Policy und Update-Berechtigung sind vorhanden; keine passende Version in der Live-Migrationsliste sichtbar. |
-| `20261118000100_garmin_export_archive_storage.sql` | Tabellen, Bucket und zugehörige Policies sind vorhanden; Live-Historie führt stattdessen Version `20261118105435` mit gleichem Namen. |
-| `20261118191919_garmin_export_data_import.sql` | Version und Name stimmen mit der Live-Migrationsliste überein; zugehörige Tabellen und Policies sind vorhanden. |
-
-Zusätzlich enthält die Live-Migrationshistorie `20261116104737_increase_save_user_data_statement_timeout`; eine entsprechende Datei wurde im geprüften Repository-Verzeichnis nicht gefunden.
-
-### Konsequenz für KAJO Connect
-
-- Keine bestehende Migration wird umbenannt, gelöscht oder erneut angewendet.
-- Keine neue Migration wird auf Basis einer geratenen Versionsnummer angelegt.
-- Vor dem ersten KAJO-Connect-Schema-Change muss die Migrationshistorie mit dem Repository abgeglichen und ein reproduzierbarer Ausgangsstand hergestellt werden.
-- Die vorhandenen Garmin- und Aktivitätsdatenbanken werden nicht für Geräte-Pairing zweckentfremdet.
-- Die Pairing-Tabellen bleiben ein separater, noch nicht angelegter Datenbankbaustein.
-
-Diese Prüfung war ausschließlich lesend. Es wurden weder Tabellen, Policies, Funktionen noch Migrationsdatensätze verändert.
-
-
-## 12. Erste Watch-seitige Kommunikationskomponente
-
-Im Branch wurde `KajoConnect/source/KajoConnectApi.mc` als kleine Transportkomponente ergänzt.
-
-Aktueller Umfang:
-- JSON-POST über `Communications.makeWebRequest()`.
-- HTTPS-Aufrufe sind asynchron; Ergebnisse werden über einen Callback verarbeitet.
-- Optionaler Bearer-Header für spätere Geräteanfragen.
-- JSON als erwartetes Antwortformat.
-
-Bewusste Begrenzung:
-- Es sind noch keine KAJO-Endpunkte fest verdrahtet.
-- Es wird noch kein Pairing-Code gesendet und kein Gerätetoken gespeichert.
-- Es wurde kein Backend-Endpunkt deployed.
-- Die Komponente ist erst nach einem lokalen Garmin-Build als compilergeprüft anzusehen.
-
-Die Umsetzung orientiert sich an der Garmin-API-Dokumentation zu `Communications.makeWebRequest()` (API-Level 1.3.0). Die Methode ist asynchron und benötigt eine Verbindung über WLAN oder ein per Bluetooth verbundenes Mobilgerät.
+Es wurden keine produktiven Tabellen verändert und keine Edge Function deployed. Der Quellcode ist daher als vorbereitete Implementierung, nicht als betriebsbereite Verbindung zu verstehen.
