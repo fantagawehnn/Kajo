@@ -511,7 +511,7 @@ class KajoConnectActivityView extends WatchUi.View {
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         drawFit(dc, cx, mUnit * 0.315, hrNow, panelWidth * 0.80,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.425,
+        drawFit(dc, cx, mUnit * 0.445,
             "BPM  ·  " + (zone > 0 ? "ZONE " + zone.toString() : "ZONE --"),
             panelWidth * 0.84, Graphics.FONT_SMALL,
             zone > 0 ? 0xFFB52E : Graphics.COLOR_LT_GRAY);
@@ -530,7 +530,7 @@ class KajoConnectActivityView extends WatchUi.View {
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
         drawFit(dc, rightCenter, mUnit * 0.625, distance, halfWidth * 0.86,
             Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawFit(dc, rightCenter, mUnit * 0.69, "KM", halfWidth * 0.72,
+        drawFit(dc, rightCenter, mUnit * 0.705, "KM", halfWidth * 0.72,
             Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         drawFit(dc, cx, mUnit * 0.765, "GESCHWINDIGKEIT  " + speedNow + " KM/H",
@@ -918,7 +918,7 @@ class KajoConnectActivityView extends WatchUi.View {
             drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", hrNow, "BPM", mUnit * 0.68, Graphics.FONT_LARGE);
             drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "DURCHSCHNITT", hrAvg, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
             drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "MAXIMUM", hrMax, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawHeartRateZone(dc, cx, mUnit * 0.715, mUnit * 0.62, currentHeartRateZone);
+            drawHeartRateZone(dc, cx, mUnit * 0.735, mUnit * 0.62, currentHeartRateZone);
         } else if (mCurrentPageId == 3) {
             drawPageHeader(dc, "DISTANZ & ZEIT");
             drawMetric(dc, cx, mUnit * 0.25, "DISTANZ", distance, "KM", mUnit * 0.68, Graphics.FONT_LARGE);
