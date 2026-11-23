@@ -574,3 +574,27 @@ export async function importDatabaseBackup(file, options = {}) {
     saveDataToLocalStorage();
     return { importedCategories: validSelected };
 }
+
+
+/**
+ * Der zuletzt erfolgreich abgeglichene Snapshot ist die Basis für den
+ * Drei-Wege-Abgleich. Große Aktivitäten und deren Manifest bleiben bewusst
+ * außerhalb dieser Metadaten-Basis, da sie separat gespeichert werden.
+ */
+export async function loadCloudSyncBaseline() {
+    if (!activeUserStorage) throw new Error('Der lokale Benutzerspeicher ist nicht aktiv.');
+    const baseline = await activeUserStorage.getCollection('cloudSyncBaseline');
+    if (baseline == null) return null;
+    if (typeof baseline !== 'object' || Array.isArray(baseline)) {
+        throw new Error('Der lokale Synchronisierungs-Basisstand ist beschädigt.');
+    }
+    return baseline;
+}
+
+export async function saveCloudSyncBaseline(snapshot) {
+    if (!activeUserStorage) throw new Error('Der lokale Benutzerspeicher ist nicht aktiv.');
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+        throw new Error('Ein ungültiger Synchronisierungs-Basisstand wurde übergeben.');
+    }
+    await activeUserStorage.saveCollections({ cloudSyncBaseline: snapshot });
+}

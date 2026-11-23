@@ -35,6 +35,7 @@ jobs:
         run: |
           node --check js/storage.js
           node --check js/cloud-activities.js
+          node --check js/cloud-merge.js
           node --check js/user-storage.js
           node --check js/local-db.js
           node --check js/garmin-cloud-telemetry.js
@@ -85,6 +86,8 @@ jobs:
 
       - name: Run split cloud activity storage tests
         run: node --experimental-default-type=module --test tests/cloud-activities.test.mjs
+      - name: Run conflict-aware cloud merge tests
+        run: node --test tests/cloud-merge.test.mjs
 
       - name: Run season planning tests
         run: node --experimental-default-type=module --test tests/season-planning.test.mjs
