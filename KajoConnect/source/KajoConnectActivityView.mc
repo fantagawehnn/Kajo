@@ -497,9 +497,9 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawDashboardPanel(dc as Dc, x, y, width, height) as Void {
-        dc.setColor(0x07151D, Graphics.COLOR_BLACK);
+        dc.setColor(0x040D12, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber(), (mUnit * 0.045).toNumber());
-        dc.setColor(0x12485A, Graphics.COLOR_BLACK);
+        dc.setColor(0x0A3A4A, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber(), (mUnit * 0.045).toNumber());
     }
 
