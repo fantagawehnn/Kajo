@@ -25,16 +25,7 @@ class KajoConnectMenuView extends WatchUi.View {
 
     function drawLabel(dc as Dc, x as Lang.Number, y as Lang.Number,
         label as Lang.String, width as Lang.Number) as Void {
-        var font = mKajoLayout.fitFont(dc, label, width, Graphics.FONT_SMALL);
-        var safeY = mKajoLayout.safeTextY(y, dc.getFontHeight(font));
-        var safeWidth = mKajoLayout.safeTextWidth(dc, x, safeY, font, width);
-        while (label.length() > 0 && dc.getTextWidthInPixels(label, font) > safeWidth) {
-            if (label.length() <= 4) { label = ""; }
-            else { label = label.substring(0, label.length() - 4) + "..."; }
-        }
-        if (label == "" || safeWidth <= 0) { return; }
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(x, safeY, font, label, Graphics.TEXT_JUSTIFY_CENTER);
+        mKajoLayout.drawTextFit(dc, x, y, label, width, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
     }
 
     function handleTap(y as Lang.Number) as Void {
