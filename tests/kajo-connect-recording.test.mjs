@@ -47,3 +47,22 @@ test('interval countdown only advances while activity is recording', () => {
     assert.match(stepTimer, /mWorkoutStepElapsedSeconds \+= 1/);
     assert.match(stepTimer, /mWorkoutStepIndex \+= 1/);
 });
+
+
+test('GPS quality updates independently without changing the FIT recording state', () => {
+    const gpsCallback = method(activity, 'onPosition', 'finishRecording');
+    assert.match(activity, /var mGpsQuality as Lang\.Number = Position\.QUALITY_NOT_AVAILABLE/);
+    assert.match(gpsCallback, /mGpsQuality = positionInfo\.accuracy/);
+    assert.match(gpsCallback, /mGpsQuality = Position\.QUALITY_NOT_AVAILABLE/);
+    assert.doesNotMatch(gpsCallback, /mEngine\.(finish|start|discard)\(/);
+    assert.doesNotMatch(gpsCallback, /mTimer\.(stop|start)\(/);
+    assert.doesNotMatch(gpsCallback, /mStatus\s*=/);
+    assert.match(activity, /gpsAccuracy = gpsQualityText\(mGpsQuality\)/);
+});
+
+test('GPS tracking is enabled only after the FIT session starts successfully', () => {
+    const start = method(activity, 'startRecording', 'onTimer');
+    assert.ok(start.indexOf('if (started)') < start.indexOf('Position.enableLocationEvents'));
+    assert.match(start, /Position\.LOCATION_CONTINUOUS/);
+    assert.match(start, /else\s*\{\s*mStatus = "START FEHLGESCHLAGEN"/);
+});
