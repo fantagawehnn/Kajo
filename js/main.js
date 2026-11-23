@@ -2303,6 +2303,17 @@ let cloudSyncAwaitingReadyUserId = null;
  * zusammen. Bei konkurrierenden Änderungen desselben Feldes wird nichts
  * überschrieben; der Konflikt wird zur manuellen Klärung gemeldet.
  */
+let cloudSyncApplyingRemote = false;
+
+function applyReconciledCloudSnapshot(snapshot) {
+    cloudSyncApplyingRemote = true;
+    try {
+        applyCloudDataSnapshot(snapshot);
+    } finally {
+        cloudSyncApplyingRemote = false;
+    }
+}
+
 async function reconcileCloudState(userId, initialCloudSnapshot, localSnapshot, baselineSnapshot = null) {
     let cloud = initialCloudSnapshot;
     let local = localSnapshot;
@@ -2315,6 +2326,9 @@ async function reconcileCloudState(userId, initialCloudSnapshot, localSnapshot, 
             return { ok: false, empty: true, version: cloud.version, conflicts: [] };
         }
 
+        // Während eines Netzwerkrequests können weitere lokale Änderungen entstehen.
+        // Vor jedem Merge wird deshalb immer der aktuelle Gerätestand verwendet.
+        local = JSON.parse(JSON.stringify(getUserDataSnapshot()));
         const merged = mergeCloudSnapshots(baselineSnapshot, local, cloud.data);
         if (merged.conflicts.length) {
             return {
@@ -2326,14 +2340,27 @@ async function reconcileCloudState(userId, initialCloudSnapshot, localSnapshot, 
         }
 
         if (cloudSnapshotsEqual(merged.snapshot, cloud.data)) {
-            applyCloudDataSnapshot(merged.snapshot);
+            const latestLocal = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            if (!cloudSnapshotsEqual(latestLocal, local)) {
+                local = latestLocal;
+                continue;
+            }
+            applyReconciledCloudSnapshot(merged.snapshot);
             await saveCloudSyncBaseline(merged.snapshot);
             return { ok: true, version: cloud.version, snapshot: merged.snapshot, uploaded: false };
         }
 
         const saved = await saveCloudSnapshot(merged.snapshot, cloud.version, userId);
         if (saved.saved) {
-            applyCloudDataSnapshot(merged.snapshot);
+            const latestLocal = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            if (!cloudSnapshotsEqual(latestLocal, local)) {
+                // Ein lokaler Speichervorgang lief parallel zum Upload.
+                // Den gerade gespeicherten Stand erneut einlesen und mit ihm mergen.
+                cloud = await fetchCloudSnapshot();
+                local = latestLocal;
+                continue;
+            }
+            applyReconciledCloudSnapshot(merged.snapshot);
             await saveCloudSyncBaseline(merged.snapshot);
             return { ok: true, version: saved.currentVersion, snapshot: merged.snapshot, uploaded: true };
         }
@@ -2344,7 +2371,6 @@ async function reconcileCloudState(userId, initialCloudSnapshot, localSnapshot, 
         if (cloud.userId !== userId) {
             throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
         }
-        local = JSON.parse(JSON.stringify(getUserDataSnapshot()));
     }
 
     return { ok: false, retryLimit: true, version: cloud?.version || 0, conflicts: [] };
@@ -2356,6 +2382,7 @@ function setCloudSyncStatus(message) {
 }
 
 function scheduleCloudSync(userId) {
+    if (cloudSyncApplyingRemote) return;
     if (!appUserReady) {
         if (userId && userId === activeAppUserId) {
             cloudSyncAwaitingReadyUserId = userId;
