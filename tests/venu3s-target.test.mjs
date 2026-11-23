@@ -6,6 +6,7 @@ const manifest = readFileSync(new URL("../KajoConnect/manifest.xml", import.meta
 const buildScript = readFileSync(new URL("../KajoConnect/build.ps1", import.meta.url), "utf8");
 const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityDelegate.mc", import.meta.url), "utf8");
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
+const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -69,4 +70,11 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
       }
     }
   }
+});
+
+
+test("Activity screen avoids status text overlapping the bottom touch controls", () => {
+  assert.doesNotMatch(activityView, /mUnit \* 0\.805, mStatus/);
+  assert.match(activityView, /mStatus == "START FEHLGESCHLAGEN" \? "START FEHLGESCHLAGEN" : "BEREIT"/);
+  assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
