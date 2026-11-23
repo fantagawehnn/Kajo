@@ -77,6 +77,14 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         mUnit = width;
         if (height < mUnit) { mUnit = height; }
         var cx = width / 2;
+        // Einheitliches KAJO-Detail: dezenter cyanfarbener Randakzent.
+        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
+        dc.drawLine((unit * 0.105).toNumber(), (unit * 0.105).toNumber(),
+            (unit * 0.12).toNumber(), (unit * 0.075).toNumber());
+        dc.drawLine((unit * 0.12).toNumber(), (unit * 0.075).toNumber(),
+            (unit * 0.15).toNumber(), (unit * 0.052).toNumber());
+        dc.drawLine((unit * 0.15).toNumber(), (unit * 0.052).toNumber(),
+            (unit * 0.185).toNumber(), (unit * 0.04).toNumber());
 
         drawCentered(dc, cx, mUnit * 0.09, "EINHEIT AUSWAEHLEN", mUnit * 0.78,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
