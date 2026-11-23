@@ -170,6 +170,22 @@ class KajoConnectView extends WatchUi.View {
 
         if (y >= mStartTop && y <= mStartBottom) {
             var activityView = new KajoConnectActivityView(mSelectedBoat);
+            var storedZoneDate = Storage.getValue("kajoHeartRateZoneDate");
+            if (storedZoneDate != null && storedZoneDate.toString() == getLocalDate()) {
+                var zoneValues as Lang.Array<Lang.Number> = [];
+                var zonesValid = true;
+                for (var zoneIndex = 0; zoneIndex < 4; zoneIndex += 1) {
+                    var zoneValue = Storage.getValue("kajoHeartRateZone" + zoneIndex.toString());
+                    if (zoneValue == null || (zoneValue as Lang.Number) <= 0) {
+                        zonesValid = false;
+                        break;
+                    }
+                    zoneValues.add(zoneValue as Lang.Number);
+                }
+                if (zonesValid && zoneValues.size() == 4) {
+                    activityView.setHeartRateZones(zoneValues);
+                }
+            }
             WatchUi.pushView(
                 activityView,
                 new KajoConnectActivityDelegate(activityView),
