@@ -20,6 +20,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     ];
     var mSelected as Lang.Array<Lang.String> = [];
     var mLargeMetricId as Lang.String = "";
+    var mLayoutIndex as Lang.Number = 0;
+    var mLayoutCount as Lang.Number = 3;
     var mControlTop as Lang.Number = 0;
     var mControlBottom as Lang.Number = 0;
     var mPage as Lang.Number = 0;
@@ -37,18 +39,53 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         View.initialize();
         mPageCount = Math.floor(mMetricIds.size() / 4).toNumber();
         if ((mMetricIds.size() % 4) > 0) { mPageCount += 1; }
-        var saved = Storage.getValue("kajoCustomMetrics");
+        loadLayout(0);
+    }
+
+    function loadLayout(layoutIndex as Lang.Number) as Void {
+        mSelected = [];
+        mLargeMetricId = "";
+        var saved = Storage.getValue("kajoCustomMetrics" + layoutIndex.toString());
+        if (saved == null && layoutIndex == 0) {
+            saved = Storage.getValue("kajoCustomMetrics");
+        }
         if (saved != null) {
             var stored = saved as Lang.Array<Lang.String>;
             for (var i = 0; i < stored.size() && i < 4; i += 1) {
-                if (mMetricIds.indexOf(stored[i]) >= 0) {
+                if (mMetricIds.indexOf(stored[i]) >= 0 && mSelected.indexOf(stored[i]) < 0) {
                     mSelected.add(stored[i]);
                 }
             }
         }
-        var largeSaved = Storage.getValue("kajoLargeMetricId");
+        var largeSaved = Storage.getValue("kajoLargeMetricId" + layoutIndex.toString());
+        if (largeSaved == null && layoutIndex == 0) {
+            largeSaved = Storage.getValue("kajoLargeMetricId");
+        }
         if (largeSaved != null && selectedIndex(largeSaved.toString()) >= 0) {
             mLargeMetricId = largeSaved.toString();
+        }
+    }
+
+    function saveCurrentLayout() as Void {
+        Storage.setValue("kajoCustomMetrics" + mLayoutIndex.toString(), mSelected);
+        Storage.setValue("kajoLargeMetricId" + mLayoutIndex.toString(), mLargeMetricId);
+        if (mLayoutIndex == 0) {
+            Storage.setValue("kajoCustomMetrics", mSelected);
+            Storage.setValue("kajoLargeMetricId", mLargeMetricId);
+        }
+    }
+
+    function changeLayout(direction as Lang.Number) as Void {
+        try {
+            saveCurrentLayout();
+            mLayoutIndex += direction;
+            if (mLayoutIndex < 0) { mLayoutIndex = mLayoutCount - 1; }
+            if (mLayoutIndex >= mLayoutCount) { mLayoutIndex = 0; }
+            loadLayout(mLayoutIndex);
+            mSelectedRow = -1;
+            WatchUi.requestUpdate();
+        } catch (error) {
+            WatchUi.showToast("Seitenwechsel fehlgeschlagen", null);
         }
     }
 
@@ -95,6 +132,14 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
+        if (y >= (mUnit * 0.16) && y < (mUnit * 0.225)) {
+            if (x < (mWidth * 0.36)) {
+                changeLayout(-1);
+            } else if (x > (mWidth * 0.64)) {
+                changeLayout(1);
+            }
+            return;
+        }
         if (mRowHeight > 0 && y >= mRowTop && y < mRowTop + (mRowHeight * 4)) {
             var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
             var index = (mPage * 4) + row;
@@ -148,9 +193,8 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
     function saveConfig() as Void {
         try {
-            Storage.setValue("kajoCustomMetrics", mSelected);
-            Storage.setValue("kajoLargeMetricId", mLargeMetricId);
-            WatchUi.showToast("Eigene Datenfelder gespeichert", null);
+            saveCurrentLayout();
+            WatchUi.showToast("Eigene Datenseiten gespeichert", null);
             WatchUi.popView(WatchUi.SLIDE_DOWN);
         } catch (error) {
             WatchUi.showToast("Speichern fehlgeschlagen", null);
@@ -172,9 +216,9 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.15).toNumber(),
             Graphics.FONT_XTINY, "Bis zu vier Kennzahlen", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.19).toNumber(),
-            Graphics.FONT_XTINY, "Seite " + (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN", Graphics.TEXT_JUSTIFY_CENTER);
+            Graphics.FONT_XTINY, "DATENSEITE " + (mLayoutIndex + 1).toString() + " / " + mLayoutCount.toString() + " · <  >", Graphics.TEXT_JUSTIFY_CENTER);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.215).toNumber(),
-            Graphics.FONT_XTINY, "Links AN/AUS · Rechts auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
+            Graphics.FONT_XTINY, "FELDER " + (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN", Graphics.TEXT_JUSTIFY_CENTER);
 
         mRowTop = Math.round(mUnit * 0.235).toNumber();
         mRowHeight = Math.round(mUnit * 0.125).toNumber();
