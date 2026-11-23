@@ -12,6 +12,8 @@ import Toybox.WatchUi;
 
 class KajoConnectActivityView extends WatchUi.View {
 
+    var mLayout;
+
     var mBoatClass as Lang.String;
     var mEngine;
     var mTimer;
@@ -113,6 +115,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function initialize(boatClass as Lang.String) {
         View.initialize();
+        mLayout = new KajoLayout();
         mBoatClass = boatClass;
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
@@ -911,35 +914,21 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        var font = preferredFont;
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_SMALL; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_TINY; }
-        if (dc.getTextWidthInPixels(text, font) > maxWidth) { font = Graphics.FONT_XTINY; }
-        return font;
+        return mLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
-
     function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = preferredFont;
+        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
-        if (dc.getTextWidthInPixels(displayText, font) > maxWidth) { font = Graphics.FONT_SMALL; }
-        if (dc.getTextWidthInPixels(displayText, font) > maxWidth) { font = Graphics.FONT_TINY; }
-        if (dc.getTextWidthInPixels(displayText, font) > maxWidth) { font = Graphics.FONT_XTINY; }
-        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > maxWidth) {
-            if (displayText.length() <= 4) {
-                displayText = "";
-            } else {
-                displayText = displayText.substring(0, displayText.length() - 4) + "...";
-            }
+        while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
+            if (displayText.length() <= 4) { displayText = ""; }
+            else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
-        if (displayText == "") { return; }
-        var safeY = y;
-        var textHeight = dc.getFontHeight(font);
-        if (safeY < 2) { safeY = 2; }
-        if (safeY + textHeight > mScreenHeight - 2) { safeY = mScreenHeight - textHeight - 2; }
+        if (displayText == "" || safeWidth <= 0) { return; }
+        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(x).toNumber(), Math.round(safeY).toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
-
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
         var cx = mScreenWidth / 2;
         drawFit(dc, cx, mUnit * 0.105, title, mUnit * 0.58, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
@@ -985,6 +974,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mScreenHeight = dc.getHeight();
         mUnit = mScreenWidth;
         if (mScreenHeight < mUnit) { mUnit = mScreenHeight; }
+        mLayout.configure(mScreenWidth, mScreenHeight);
 
         var cx = mScreenWidth / 2;
         if (mPage < mEnabledPageIds.size()) {
