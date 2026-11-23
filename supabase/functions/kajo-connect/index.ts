@@ -288,27 +288,22 @@ Deno.serve(async (request) => {
       if (lookupError) throw lookupError;
       if (!pairing) return json(404, { error: "Pairing request not found or expired." });
       if (!pairing.user_id) return json(200, { ok: true, status: "pending" });
-      if (pairing.token_delivered_at || !pairing.token_ciphertext || !pairing.token_iv) {
-        return json(200, { ok: true, status: "delivered" });
+      if (!pairing.token_ciphertext || !pairing.token_iv) {
+        return json(200, { ok: true, status: "claimed" });
       }
 
-      const { data: delivery, error: deliveryError } = await admin
-        .from("kajo_connect_pairing_requests")
-        .update({
-          token_ciphertext: null,
-          token_iv: null,
-          token_delivered_at: new Date().toISOString(),
-        })
-        .eq("id", pairing.id)
-        .is("token_delivered_at", null)
-        .eq("token_ciphertext", pairing.token_ciphertext)
-        .select("token_ciphertext,token_iv")
-        .maybeSingle();
-      if (deliveryError) throw deliveryError;
-      if (!delivery?.token_ciphertext || !delivery.token_iv) {
-        return json(200, { ok: true, status: "delivered" });
+      // Keep the encrypted token available until the pairing request expires.
+      // This lets the watch safely retry if the first HTTP response is lost.
+      if (!pairing.token_delivered_at) {
+        const { error: markError } = await admin
+          .from("kajo_connect_pairing_requests")
+          .update({ token_delivered_at: new Date().toISOString() })
+          .eq("id", pairing.id)
+          .is("token_delivered_at", null);
+        if (markError) throw markError;
       }
-      const deviceToken = await decryptToken(delivery.token_ciphertext, delivery.token_iv);
+
+      const deviceToken = await decryptToken(pairing.token_ciphertext, pairing.token_iv);
       return json(200, { ok: true, status: "paired", deviceToken });
     }
 
