@@ -12,6 +12,8 @@ class KajoConnectView extends WatchUi.View {
 
     var mBoatTop = 0;
     var mBoatBottom = 0;
+    var mStartTop = 0;
+    var mStartBottom = 0;
 
     var mPlanStartY = 0;
     var mPlanRowHeight = 0;
@@ -91,6 +93,17 @@ class KajoConnectView extends WatchUi.View {
 
                 return;
             }
+        }
+
+        // Aktivität vorbereiten und öffnen
+        if (y >= mStartTop && y <= mStartBottom) {
+            var activityView = new KajoConnectActivityView(mSelectedBoat);
+            WatchUi.pushView(
+                activityView,
+                new KajoConnectActivityDelegate(activityView),
+                WatchUi.SLIDE_UP
+            );
+            return;
         }
 
         // Bootsauswahl
@@ -438,6 +451,24 @@ class KajoConnectView extends WatchUi.View {
             boatTextY,
             fontSmall,
             "C2",
+            Graphics.TEXT_JUSTIFY_CENTER
+        );
+
+        // START-BUTTON
+        mStartTop = mHeight * 0.77;
+        mStartBottom = mHeight * 0.86;
+        var startX = mWidth * 0.25;
+        var startWidth = mWidth * 0.50;
+        var startHeight = mStartBottom - mStartTop;
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(startX, mStartTop, startWidth, startHeight, 10);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
+        dc.drawText(
+            centerX,
+            mStartTop + (startHeight - dc.getFontHeight(fontSmall)) / 2,
+            fontSmall,
+            "STARTEN",
             Graphics.TEXT_JUSTIFY_CENTER
         );
 
