@@ -136,14 +136,14 @@ class KajoConnectWorkoutView extends WatchUi.View {
             if (mainSet.length() > 0) {
                 dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
                 dc.fillRoundedRectangle(
-                    (center - unit * 0.37).toNumber(),
+                    (center - unit * 0.35).toNumber(),
                     (unit * 0.715).toNumber(),
-                    (unit * 0.74).toNumber(),
+                    (unit * 0.70).toNumber(),
                     (unit * 0.105).toNumber(),
                     (unit * 0.025).toNumber()
                 );
                 drawSectionLabel(dc, center, unit * 0.735, "HAUPTTEIL", contentWidth);
-                drawCentered(dc, center, unit * 0.775, compactText(mainSet, 48), unit * 0.68, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                drawCentered(dc, center, unit * 0.775, compactText(mainSet, 48), unit * 0.64, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             } else if (description.length() > 0) {
                 drawSectionLabel(dc, center, unit * 0.735, "TRAININGSINFO", contentWidth);
                 drawCentered(dc, center, unit * 0.775, compactText(description, 48), contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
