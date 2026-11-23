@@ -86,7 +86,7 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 
 
 test("shared Garmin layout provides the percentage-based font selector used by compact controls", () => {
-  assert.match(layoutView, /function fontForPercent\\(dc as Dc, targetPercent as Lang\\.Float\\)/);
+  assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
   assert.match(layoutView, /dc\\.getFontHeight\\(candidate\\)/);
   for (const [name, source] of [
     ["activity", activityView],
@@ -94,7 +94,7 @@ test("shared Garmin layout provides the percentage-based font selector used by c
     ["display config", displayConfigView],
   ]) {
     if (source.includes("fontForPercent")) {
-      assert.match(layoutView, /function fontForPercent\\(/, name + " must resolve its percentage-based font selector");
+  assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
     }
   }
 });
