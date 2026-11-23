@@ -29,7 +29,7 @@ Der implementierte Backend-Vertrag nutzt einen vom Gerät gestarteten Kopplungsv
 1. Die Uhr fordert über `create-pairing` einen Kopplungscode und ein zusätzliches geheimes Polling-Secret an.
 2. Die Uhr zeigt den zwölfstelligen Code an und fragt den Status mit Code plus Polling-Secret ab.
 3. Die Nutzerin meldet sich in der KAJO-Web-App an und gibt den Code dort ein. Die Web-App ruft `claim-pairing` mit dem bestehenden Supabase-User-JWT auf.
-4. Der Server prüft den JWT über Supabase Auth, registriert ein Gerät für genau diese Benutzer-ID und erzeugt ein zufälliges Geräte-Token.
+4. Der Server prüft den JWT über Supabase Auth, registriert ein Gerät für genau diese Benutzer-ID und erzeugt ein zufälliges Geräte-Token. Pro Konto sind maximal fünf aktive Geräte vorgesehen.
 5. Das Geräte-Token wird serverseitig verschlüsselt in der kurzlebigen Pairing-Anfrage zwischengespeichert. Die Uhr kann es nur mit Code und Polling-Secret abholen.
 6. Die Uhr speichert das Geräte-Token lokal. Danach verwendet sie für Synchronisierungen ausschließlich dieses Token.
 
