@@ -2347,9 +2347,48 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
 
         const mergedSnapshot = merged.snapshot;
         const mergedActivities = Array.isArray(mergedSnapshot.activities) ? mergedSnapshot.activities : [];
-        // Zuerst die vollständigen Aktivitätsdatensätze sichern. Der Snapshot
-        // wird erst danach mit der bestätigten ID-Liste geschrieben.
-        const activityUpload = await syncCloudActivities(supabase, userId, mergedActivities);
+
+        // Bereits vorhandene Aktivitätszeilen werden nicht blind überschrieben:
+        // die separate activities-Tabelle besitzt keine Compare-and-Swap-Version.
+        // Abweichende lokale Änderungen an einer bestehenden Aktivität pausieren
+        // deshalb den Abgleich, statt einen parallelen Geräte-Edit zu verlieren.
+        const cloudActivityRowsById = new Map(
+            (Array.isArray(cloudActivities) ? cloudActivities : [])
+                .filter(row => row?.record_id != null && row?.payload && typeof row.payload === 'object')
+                .map(row => [String(row.record_id), row.payload])
+        );
+        const activityConflicts = [];
+        const activitiesToUpload = [];
+        for (const activity of mergedActivities) {
+            const rawId = activity?.id
+                ?? activity?.activityId
+                ?? activity?.sourceRefs?.garminActivityId
+                ?? activity?.garminData?.activityId;
+            const activityId = rawId == null ? null : String(rawId);
+            if (!activityId) {
+                activityConflicts.push('activities (Aktivität ohne stabile ID)');
+                continue;
+            }
+            if (cloudActivityRowsById.has(activityId)) {
+                if (!cloudSnapshotsEqual(activity, cloudActivityRowsById.get(activityId))) {
+                    activityConflicts.push('activities[' + activityId + '] (lokale Änderung an bestehender Cloud-Aktivität)');
+                }
+            } else {
+                activitiesToUpload.push(activity);
+            }
+        }
+        if (activityConflicts.length) {
+            return {
+                ok: false,
+                conflict: true,
+                version: cloud.version,
+                conflicts: activityConflicts
+            };
+        }
+
+        // Nur neue bzw. noch nicht separat gespeicherte Legacy-Aktivitäten
+        // werden hochgeladen. Bestehende Cloud-Zeilen bleiben unverändert.
+        const activityUpload = await syncCloudActivities(supabase, userId, activitiesToUpload);
         const cloudPayload = {
             ...mergedSnapshot,
             activityIds: getCloudActivityIds(userId, mergedActivities),
