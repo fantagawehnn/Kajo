@@ -94,9 +94,9 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         dc.drawLine((mUnit * 0.15).toNumber(), (mUnit * 0.052).toNumber(),
             (mUnit * 0.185).toNumber(), (mUnit * 0.04).toNumber());
 
-        drawCentered(dc, cx, mUnit * 0.09, "EINHEIT AUSWAEHLEN", mUnit * 0.78,
+        drawCentered(dc, cx, mUnit * 0.075, "EINHEIT AUSWAEHLEN", mUnit * 0.78,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.155, "WELCHES TRAINING STARTET JETZT?",
+        drawCentered(dc, cx, mUnit * 0.135, "WELCHES TRAINING STARTET JETZT?",
             mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
 
         mRowTop = Math.floor(mUnit * 0.225).toNumber();
