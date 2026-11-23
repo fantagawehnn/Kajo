@@ -109,7 +109,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             var date = session["date"] == null ? "Datum offen" : session["date"].toString();
             var type = session["type"] == null ? "Training" : session["type"].toString();
             var duration = session["duration"] == null ? "—" : session["duration"].toString();
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
+            dc.setColor(0x0A1A1E, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(), cardHeight.toNumber(), (mUnit * 0.025).toNumber());
             drawCentered(dc, cx, y + (mUnit * 0.025), name, cardWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             drawCentered(dc, cx, y + (mUnit * 0.075), date + " · " + type, cardWidth * 0.88, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
