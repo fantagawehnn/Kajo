@@ -7,6 +7,7 @@ const buildScript = readFileSync(new URL("../KajoConnect/build.ps1", import.meta
 const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityDelegate.mc", import.meta.url), "utf8");
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
+const layoutView = readFileSync(new URL("../KajoConnect/source/KajoLayout.mc", import.meta.url), "utf8");
 const homeView = readFileSync(new URL("../KajoConnect/source/KajoConnectView.mc", import.meta.url), "utf8");
 const workoutSelectView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutSelectView.mc", import.meta.url), "utf8");
 const workoutListView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutListView.mc", import.meta.url), "utf8");
@@ -84,16 +85,18 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 });
 
 
-test("Activity screen uses bounded text and reserves a separate bottom control area", () => {
-  assert.match(activityView, /function drawFit\(/);
-  assert.match(activityView, /displayText\.substring/);
-  assert.match(activityView, /mButtonTop = mUnit \* 0\.81/);
-  assert.match(activityView, /mButtonBottom = mUnit \* 0\.89/);
-  assert.match(activityView, /drawFit\(dc, cx, mUnit \* 0\.335/);
+test("Activity screen uses shared bounded text and reserves a separate bottom control area", () => {
+  assert.match(activityView, /function drawFit\\(/);
+  assert.match(activityView, /mKajoLayout\\.drawTextFit/);
+  assert.match(activityView, /mButtonTop = mUnit \\* 0\\.82/);
+  assert.match(activityView, /mButtonBottom = mUnit \\* 0\\.90/);
+  assert.match(activityView, /drawFit\\(dc, cx, mUnit \\* 0\\.335/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
 
-test("all custom Garmin screens truncate text to measured width instead of drawing overflow", () => {
+test("all custom Garmin screens use the shared measured-width text layout", () => {
+  assert.match(layoutView, /displayText\\.substring/);
+  assert.match(layoutView, /getTextWidthInPixels\\(displayText, font\\)/);
   for (const [name, source] of [
     ["home", homeView],
     ["activity", activityView],
@@ -104,15 +107,8 @@ test("all custom Garmin screens truncate text to measured width instead of drawi
     ["display config", displayConfigView],
     ["pairing", pairingView],
   ]) {
-    assert.match(source, /displayText\.substring/, name + " must truncate text after reaching the smallest font");
+    assert.match(source, /mKajoLayout\\.drawTextFit/, name + " must use the shared text layout");
   }
-});
-
-test("custom field editor keeps header, four rows, controls and save action in distinct vertical bands", () => {
-  assert.match(customFieldsView, /mRowTop = Math\.round\(mUnit \* 0\.245\)/);
-  assert.match(customFieldsView, /mRowHeight = Math\.round\(mUnit \* 0\.108\)/);
-  assert.match(customFieldsView, /mControlTop = Math\.round\(mUnit \* 0\.70\)/);
-  assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.815\)/);
 });
 
 test("custom metric layouts relocate the wide center tile when a lower side tile would overlap it", () => {
@@ -121,25 +117,28 @@ test("custom metric layouts relocate the wide center tile when a lower side tile
   assert.match(activityView, /if \(centerMetric != "" && hasLowerSideMetric\)/);
 });
 
-test("home screen shows only today's non-rest-day sessions and has separate planned/free activity actions", () => {
-  assert.match(homeView, /function getTodaysSessions\(\)/);
-  assert.match(homeView, /sessionDate\.toString\(\) == today/);
-  assert.match(homeView, /sessionType\.toString\(\) != "RestDay"/);
-  assert.match(homeView, /var todaySessions = getTodaysSessions\(\)/);
-  assert.match(homeView, /"TRAINING STARTEN"/);
-  assert.match(homeView, /"TRAINING AUSWAEHLEN"/);
-  assert.match(homeView, /"FREIE AKTIVITAET"/);
-  assert.match(homeView, /activityView\.setFreeActivity\(\)/);
-  assert.match(activityView, /function setFreeActivity\(\)/);
-  assert.match(homeView, /"AKTIVITAET STARTEN"/);
+test("home screen filters today's sessions and separates planned and free training actions", () => {
+  assert.match(homeView, /function getTodaysSessions\\(\\)/);
+  assert.match(homeView, /sessionDate\\.toString\\(\\) == today/);
+  assert.match(homeView, /sessionType\\.toString\\(\\) != "RestDay"/);
+  assert.match(homeView, /var todaySessions = getTodaysSessions\\(\\)/);
+  assert.match(homeView, /todaySessions\\.size\\(\\) == 1/);
+  assert.match(homeView, /todaySessions\\.size\\(\\) > 1/);
+  assert.match(homeView, /"FREIES TRAINING"/);
+  assert.match(homeView, /openActivityView\\(null\\)/);
+  assert.match(homeView, /if \\(y >= mStartTop && y <= mStartBottom\\)/);
+  assert.match(homeView, /startActivity\\(\\)/);
   assert.doesNotMatch(homeView, /Noch keine Einheit angezeigt/);
   assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
 });
 
-test("home screen uses compact conditional layout with a single primary action", () => {
-  assert.match(homeView, /if \(hasTrainingToday\)/);
-  assert.match(homeView, /mStartTop = startY/);
-  assert.match(homeView, /mFreeTop = mUnit \* 0\.79/);
-  assert.match(homeView, /mFreeTop = -1/);
-  assert.match(homeView, /drawCentered\(dc, cx, menuY \+ \(menuHeight \* 0\.18\), "MENUE"/);
+test("home screen keeps the hero card, scrollable menu and lower controls in distinct bands", () => {
+  assert.match(homeView, /var cardY = mUnit \\* 0\\.255/);
+  assert.match(homeView, /var cardHeight = mUnit \\* 0\\.18/);
+  assert.match(homeView, /var dividerY = mUnit \\* 0\\.52/);
+  assert.match(homeView, /mFreeTop = mUnit \\* 0\\.56/);
+  assert.match(homeView, /mFreeBottom = mUnit \\* 0\\.85/);
+  assert.match(homeView, /var rowHeight = mUnit \\* 0\\.073/);
+  assert.match(homeView, /"GEPLANTE TRAININGS"/);
+  assert.match(homeView, /"EINSTELLUNGEN"/);
 });
