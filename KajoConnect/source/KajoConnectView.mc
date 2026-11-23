@@ -8,7 +8,7 @@ import Toybox.WatchUi;
 
 class KajoConnectView extends WatchUi.View {
 
-    var mLayout as KajoLayout;
+    var mKajoLayout as KajoLayout;
 
     var mSelectedBoat = "K1";
     var mPlannedSessions as Lang.Array<Lang.Dictionary> = [];
@@ -35,7 +35,7 @@ class KajoConnectView extends WatchUi.View {
 
     function initialize() {
         View.initialize();
-        mLayout = new KajoLayout();
+        mKajoLayout = new KajoLayout();
         mApi = new KajoConnectApi();
         var cachedSessions = Storage.getValue("kajoPlannedSessions");
         if (cachedSessions != null) {
@@ -189,7 +189,7 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        return mLayout.fitFont(dc, text, maxWidth, preferredFont);
+        return mKajoLayout.fitFont(dc, text, maxWidth, preferredFont);
     }
     function compactSyncStatus() as Lang.String {
         if (mSyncStatus == "KAJO SYNCHRONISIERT …") { return "SYNC …"; }
@@ -204,15 +204,15 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function drawCentered(dc as Dc, x, y, text as Lang.String, maxWidth, preferredFont, color as Lang.Number) as Void {
-        var font = mLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var safeWidth = mLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
+        var font = mKajoLayout.fitFont(dc, text, maxWidth.toNumber(), preferredFont);
+        var safeWidth = mKajoLayout.safeTextWidth(dc, x.toNumber(), y.toNumber(), font, maxWidth.toNumber());
         var displayText = text;
         while (displayText.length() > 0 && dc.getTextWidthInPixels(displayText, font) > safeWidth) {
             if (displayText.length() <= 4) { displayText = ""; }
             else { displayText = displayText.substring(0, displayText.length() - 4) + "..."; }
         }
         if (displayText == "" || safeWidth <= 0) { return; }
-        var safeY = mLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
+        var safeY = mKajoLayout.safeTextY(y.toNumber(), dc.getFontHeight(font));
         dc.setColor(color, Graphics.COLOR_BLACK);
         dc.drawText(x.toNumber(), safeY.toNumber(), font, displayText, Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -361,7 +361,7 @@ class KajoConnectView extends WatchUi.View {
         mHeight = dc.getHeight();
         mUnit = mWidth;
         if (mHeight < mUnit) { mUnit = mHeight; }
-        mLayout.configure(mWidth, mHeight);
+        mKajoLayout.configure(mWidth, mHeight);
 
         var cx = mWidth / 2;
         var todaySessions = getTodaysSessions();
@@ -411,7 +411,7 @@ class KajoConnectView extends WatchUi.View {
         var cardX = cx - (mUnit * 0.405);
         var cardY = mUnit * 0.31;
         var cardHeight = mUnit * 0.19;
-        var cardWidth = mLayout.safeRectWidth(cardY, cardHeight, mUnit * 0.81);
+        var cardWidth = mKajoLayout.safeRectWidth(cardY, cardHeight, mUnit * 0.81);
         cardX = cx - (cardWidth / 2);
         dc.setColor(0x05181C, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(),
@@ -476,7 +476,7 @@ class KajoConnectView extends WatchUi.View {
             if (itemIndex >= labels.size()) { continue; }
             var rowY = mFreeTop + (visibleRow * rowHeight);
             var rowH = mUnit * 0.057;
-            var rowWidth = mLayout.safeRectWidth(rowY, rowH, mUnit * 0.71);
+            var rowWidth = mKajoLayout.safeRectWidth(rowY, rowH, mUnit * 0.71);
             var rowX = cx - (rowWidth / 2);
             dc.setColor(0x091417, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(rowX.toNumber(), rowY.toNumber(),
