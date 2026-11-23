@@ -257,7 +257,7 @@ class KajoConnectView extends WatchUi.View {
         }
 
         if (todaysSessions.size() > 1) {
-            var selector = new KajoConnectWorkoutSelectView(todaysSessions, this);
+            var selector = new KajoConnectWorkoutSelectView(todaysSessions, self);
             WatchUi.pushView(selector, new KajoConnectWorkoutSelectDelegate(selector), WatchUi.SLIDE_UP);
         } else if (todaysSessions.size() == 1) {
             openActivityView(todaysSessions[0] as Lang.Dictionary);
