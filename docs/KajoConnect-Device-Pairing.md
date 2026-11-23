@@ -176,3 +176,22 @@ Zusätzlich enthält die Live-Migrationshistorie `20261116104737_increase_save_u
 - Die Pairing-Tabellen bleiben ein separater, noch nicht angelegter Datenbankbaustein.
 
 Diese Prüfung war ausschließlich lesend. Es wurden weder Tabellen, Policies, Funktionen noch Migrationsdatensätze verändert.
+
+
+## 12. Erste Watch-seitige Kommunikationskomponente
+
+Im Branch wurde `KajoConnect/source/KajoConnectApi.mc` als kleine Transportkomponente ergänzt.
+
+Aktueller Umfang:
+- JSON-POST über `Communications.makeWebRequest()`.
+- HTTPS-Aufrufe sind asynchron; Ergebnisse werden über einen Callback verarbeitet.
+- Optionaler Bearer-Header für spätere Geräteanfragen.
+- JSON als erwartetes Antwortformat.
+
+Bewusste Begrenzung:
+- Es sind noch keine KAJO-Endpunkte fest verdrahtet.
+- Es wird noch kein Pairing-Code gesendet und kein Gerätetoken gespeichert.
+- Es wurde kein Backend-Endpunkt deployed.
+- Die Komponente ist erst nach einem lokalen Garmin-Build als compilergeprüft anzusehen.
+
+Die Umsetzung orientiert sich an der Garmin-API-Dokumentation zu `Communications.makeWebRequest()` (API-Level 1.3.0). Die Methode ist asynchron und benötigt eine Verbindung über WLAN oder ein per Bluetooth verbundenes Mobilgerät.
