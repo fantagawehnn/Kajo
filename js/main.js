@@ -15,7 +15,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
-import { renderKajoConnectDevices, claimKajoConnectPairing, revokeKajoConnectDevice } from './kajo-connect.js?v=1';
+import { renderKajoConnectDevices, claimKajoConnectPairing, revokeKajoConnectDevice } from './kajo-connect.js?v=2';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
