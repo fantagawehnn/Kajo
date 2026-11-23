@@ -3068,9 +3068,32 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
-                applyCloudDataSnapshot(cloudSnapshot.data);
-                const indicator = document.getElementById('sync-status-indicator');
-                if (indicator) indicator.textContent = 'Cloud-Daten geladen (Version ' + cloudSnapshot.version + ')';
+                const localSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+                const baselineSnapshot = await loadCloudSyncBaseline();
+                const reconciliation = await reconcileCloudState(
+                    userId,
+                    cloudSnapshot,
+                    localSnapshot,
+                    baselineSnapshot
+                );
+                if (reconciliation.ok) {
+                    cloudSyncVersion = reconciliation.version;
+                    const indicator = document.getElementById('sync-status-indicator');
+                    if (indicator) indicator.textContent = reconciliation.uploaded
+                        ? 'Lokale und Cloud-Daten wurden abgeglichen (Version ' + reconciliation.version + ').'
+                        : 'Cloud-Daten geladen und lokaler Stand abgeglichen (Version ' + reconciliation.version + ').';
+                    setCloudSyncStatus('Geräte abgeglichen (Cloud-Version ' + reconciliation.version + ').');
+                } else {
+                    cloudSyncVersion = reconciliation.version || cloudSnapshot.version;
+                    cloudSyncBlocked = true;
+                    const details = reconciliation.conflicts?.length
+                        ? ' Betroffene Bereiche: ' + reconciliation.conflicts.slice(0, 4).join('; ') + (reconciliation.conflicts.length > 4 ? ' …' : '')
+                        : '';
+                    setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
+                    setCloudTransferMessage('KAJO hat unterschiedliche Änderungen erkannt. Deine lokalen Daten und die Cloud-Daten wurden nicht automatisch überschrieben.' + details);
+                    const indicator = document.getElementById('sync-status-indicator');
+                    if (indicator) indicator.textContent = 'Cloud-Abgleich benötigt eine Konfliktentscheidung.';
+                }
             }
 
             try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
