@@ -74,7 +74,19 @@ function mergeArray(base, local, cloud, hasBase, path, conflicts) {
         return [...result.values()];
     }
 
-    const toMap = values => new Map(values.map(value => [itemKey(value), value]));
+    const toMap = values => {
+        const map = new Map();
+        const occurrences = new Map();
+        for (const value of values) {
+            const baseKey = itemKey(value);
+            const occurrence = (occurrences.get(baseKey) || 0) + 1;
+            occurrences.set(baseKey, occurrence);
+            // Doppelte Identitäten bleiben als getrennte Einträge erhalten,
+            // statt beim Map-Aufbau unbemerkt überschrieben zu werden.
+            map.set(occurrence === 1 ? baseKey : baseKey + '#duplicate:' + occurrence, value);
+        }
+        return map;
+    };
     const baseMap = toMap(baseArray);
     const localMap = toMap(localArray);
     const cloudMap = toMap(cloudArray);
