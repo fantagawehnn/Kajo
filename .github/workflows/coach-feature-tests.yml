@@ -29,4 +29,4 @@ jobs:
           node --check js/weekly-plan-calendar.js
           node --check worker.js
       - name: Run Coach and structured workout planning tests
-        run: node --experimental-default-type=module --test tests/coach-context.test.mjs tests/season-planning.test.mjs tests/weekly-plan-calendar.test.mjs tests/weekly-plan-proposal-worker.test.mjs
+        run: node --experimental-default-type=module --test tests/coach-context.test.mjs tests/season-planning.test.mjs tests/weekly-plan-calendar.test.mjs tests/weekly-plan-proposal-worker.test.mjs tests/kajo-connect-recording.test.mjs
