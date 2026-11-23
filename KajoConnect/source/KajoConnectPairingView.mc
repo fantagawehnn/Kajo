@@ -23,7 +23,8 @@ class KajoConnectPairingView extends WatchUi.View {
     }
 
     function onShow() as Void {
-        if (Storage.getValue("kajoDeviceToken") != null) {
+        var savedToken = Storage.getValue("kajoDeviceToken");
+        if (savedToken != null && savedToken.toString().length() > 0) {
             mPaired = true;
             mStatus = "BEREITS MIT KAJO VERBUNDEN";
             return;
