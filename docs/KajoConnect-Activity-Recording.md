@@ -1,76 +1,81 @@
-# KAJO Connect – Aktivitätsanzeigen und Trainingsübersicht
+# KAJO Connect – Aktivitätsaufzeichnung und Trainingsdaten
 
-**Status:** Aktivitätsaufzeichnung, KAJO-Plan-Synchronisierung, Herzfrequenzzonen und Pairing-UI im Branch `feature/kajo-connect` vorbereitet; lokaler Garmin-Build, Backend-Deployment und Gerätetest stehen noch aus.  
-**Zielgerät:** Garmin Venu 3S.
+**Stand:** Quellcode im Branch `feature/kajo-connect` vorbereitet. Garmin-Build, Backend-Deployment und Gerätetest stehen noch aus.  
+**Zielgeräte:** Garmin Venu 3S und Venu 2 Plus.
 
-## 1. Individuelle Aktivitätsseiten
+## 1. Aktivitätsaufzeichnung
 
-Über das Uhrenmenü „Anzeigen anpassen“ lassen sich die fünf vorhandenen Datenseiten einzeln aktivieren oder deaktivieren:
+Die Uhr startet eine FIT-Aufzeichnung über `Toybox.ActivityRecording.Session`. Die FIT-Session wird mit `Activity.SPORT_KAYAKING` und `Activity.SUB_SPORT_WHITEWATER` angelegt. Die Bootsklasse wird im Session-Profilnamen als `KAJO K1`, `KAJO C1` oder `KAJO C2` mitgeführt.
 
-- Übersicht: aktuelle Geschwindigkeit, Herzfrequenz und Zeit
+Garmin führt Kayaking und Whitewater als eigene Sport-/Subsportwerte. Die sichtbare Aktivitätsüberschrift in Garmin Connect kann dennoch von dessen Aktivitätsbenennung abhängen und muss mit einer echten Synchronisierung geprüft werden.
+
+Die Session wird lokal als Garmin-FIT-Aktivität gespeichert. Das ist kein direkter Upload einer FIT-Datei an die KAJO-API. Garmin weist darauf hin, dass FIT-Aufzeichnungen von Connect-IQ-Apps mit Garmin Connect synchronisiert werden können; der tatsächliche Import in das bestehende KAJO-Konto muss mit einem realen Testdatensatz geprüft werden.
+
+## 2. Bedienung
+
+- Obere physische Taste (`KEY_ENTER` bzw. `KEY_START`): startet die Aufzeichnung oder beendet und speichert sie.
+- Untere physische Taste (`KEY_ESC`): setzt während der Aufzeichnung eine FIT-Rundenmarkierung; außerhalb einer Aufzeichnung bleibt die Zurück-Funktion erhalten.
+- Touch-Schaltflächen bleiben als zusätzliche Bedienmöglichkeit verfügbar.
+- Datenseiten können während der Aufzeichnung vertikal nach oben/unten gewechselt werden.
+- Die Bootsklasse wird vor dem Start im Startmenü ausgewählt und nicht als Überschrift in der Aktivitätsansicht angezeigt.
+
+Die genaue Tastenbelegung muss noch auf beiden Zielgeräten validiert werden.
+
+## 3. Aktivitätsseiten
+
+Über „Anzeigen anpassen“ lassen sich die fünf vorhandenen Datenseiten aktivieren oder deaktivieren:
+
+- Übersicht: Geschwindigkeit, aktuelle Herzfrequenz, Zeit und Herzfrequenzzone
 - Geschwindigkeit: aktuell, Durchschnitt und Maximum
-- Herzfrequenz: aktuell, Durchschnitt und Maximum
+- Herzfrequenz: aktuell, Durchschnitt, Maximum und Herzfrequenzzone
 - Distanz & Zeit: Distanz, Zeit und Kalorien
 - Weitere Daten: Kadenz, Leistung, Höhe, Training Effect, GPS-Status/-Qualität sowie Auf-/Abstieg
 
-Die Auswahl wird über `Toybox.Application.Storage` dauerhaft auf dem Gerät gespeichert und beim nächsten Öffnen der Aktivität wieder geladen. Die fünf Einstellungen verwenden dynamische Speicher-Schlüssel; dadurch müssen sie nicht als feste App-Properties in einer Ressourcen-XML deklariert werden. Mindestens eine Seite bleibt aktiv. Die Reihenfolge der aktiven Seiten entspricht vorerst der Reihenfolge in der Liste.
+Die Auswahl wird über `Toybox.Application.Storage` dauerhaft gespeichert. Mindestens eine Seite bleibt aktiv. Die Reihenfolge entspricht vorerst der festgelegten Reihenfolge.
 
-**Abgrenzung:** In dieser Stufe können ganze Datenseiten ausgewählt werden. Einzelne Kennzahlen innerhalb einer Seite lassen sich noch nicht frei austauschen, verschieben oder in ihrer Größe verändern. Dafür ist ein weitergehender Layout-Editor erforderlich.
+**Noch nicht umgesetzt:** Einzelne Kennzahlen innerhalb einer Seite frei austauschen, hinzufügen, entfernen, verschieben oder in ihrer Größe verändern. Der aktuelle Editor schaltet ganze Datenseiten an oder aus.
 
-## 2. Trainingsübersicht
+## 4. Trainingsplan-Synchronisierung
 
-- Die Startansicht lädt geplante Einheiten über den gekoppelten Geräte-Endpunkt aus `user_data.data.planned`.
-- Übertragen werden `id`, `date`, `name`, `type`, `duration`, `targetTss`, `category` und `desc`.
-- Die Detailansicht zeigt Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
-- Der Menüeintrag „Trainingsübersicht“ ist weiterhin eine Platzhalteransicht und keine eigenständige Liste geplanter Einheiten.
-- Der zuletzt synchronisierte Trainingsplan wird lokal in `Toybox.Application.Storage` zwischengespeichert und bleibt bei fehlender Verbindung als Offline-Ansicht verfügbar.
+Nach dem Öffnen der Startansicht ruft die Uhr über den gekoppelten Geräte-Endpunkt geplante Einheiten aus `public.user_data.data.planned` ab. Das ist dieselbe Datenquelle, die der bestehende KAJO-Cloud-Snapshot verwendet; die separate Tabelle `planned_sessions` wird nicht als neue führende Quelle eingeführt.
 
-**Wichtige Abgrenzung:** Die Intervall-/Schrittstruktur wird nicht übertragen, solange sie nicht in tatsächlich gespeicherten Planobjekten belegt ist. Die Kopplungs- und Synchronisierungslogik ist im Branch vorbereitet, aber noch nicht kompiliert, deployed oder am Gerät getestet.
-
-## 3. Sportklassifizierung in der FIT-Aufzeichnung
-
-Die FIT-Session wird mit `Activity.SPORT_KAYAKING` und `Activity.SUB_SPORT_WHITEWATER` angelegt. Die gewählte Bootsklasse bleibt im Session-Profilnamen `KAJO K1`, `KAJO C1` oder `KAJO C2` enthalten. Garmin stellt Kayaking und Whitewater als eigene Sport-/Subsportwerte bereit. Die sichtbare Aktivitätsüberschrift in Garmin Connect kann dennoch von dessen Aktivitätsbenennung abhängen und muss mit einer echten Synchronisierung geprüft werden.
-
-## 4. Bedienung und Aufzeichnung
-
-- Datenseiten während der Aufzeichnung vertikal nach oben/unten wechseln.
-- Obere physische Taste (`KEY_ENTER` bzw. `KEY_START`): startet die Aufzeichnung beziehungsweise beendet und speichert sie.
-- Untere physische Taste (`KEY_ESC`): fügt während der Aufzeichnung einen FIT-Lap hinzu; außerhalb einer Aufzeichnung bleibt die normale Zurück-Funktion erhalten.
-- Die Touch-Schaltflächen „RUNDE“ und „ENDE“ bleiben als zusätzliche Bedienmöglichkeit verfügbar.
-- Bootsklasse wird im Startmenü ausgewählt und nicht als Aktivitätsüberschrift angezeigt.
-
-## 5. Noch offen
-
-- Automatische Aktualisierung des Trainingsplans beim Anzeigen der Startseite ist im Branch vorbereitet; Verbindung und Offline-Cache sind noch nicht end-to-end getestet.
-- Darstellung strukturierter Intervalle, sobald ein entsprechendes Datenmodell in KAJO existiert.
-- Freies Anordnen und individuelles Bearbeiten einzelner Kennzahlen innerhalb einer Datenseite.
-- Übergabe der in KAJO berechneten Herzfrequenzzonen an die Uhr ist im Branch angebunden; korrekte Anzeige und Zonenzuordnung müssen noch im Build und am Gerät geprüft werden.
-- Hardware-Tastensteuerung ist im Branch implementiert; die tatsächliche Tastenbelegung muss noch auf Venu 3S und Venu 2 Plus geprüft werden.
-- Direkter Upload von FIT-Daten zur KAJO-API und eine Upload-Queue sind nicht implementiert. Pairing und lesende Synchronisierung sind im Branch vorbereitet.
-
-## 6. Test
-
-1. `git pull origin feature/kajo-connect`
-2. Build mit `Monkey C: Build for Device` für `venu3s`.
-3. Menü „Anzeigen anpassen“ öffnen, Seiten abwählen, speichern, App neu öffnen und Auswahl kontrollieren.
-4. Aktivität starten und prüfen, ob nur die aktivierten Seiten per Wischgeste erreichbar sind.
-5. Trainingsübersicht aus dem Menü und über einen angezeigten Trainingseintrag öffnen.
-
-Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persistenz und Touch-Bedienung müssen zusätzlich im Simulator und auf der Venu 3S geprüft werden.
-
-
-## Trainingsübersicht auf der Uhr
-
-Die Startansicht kann vollständige geplante Einheiten als `Lang.Dictionary` entgegennehmen. Die erwarteten Felder entsprechen dem bestehenden KAJO-Planungsmodell:
-
+Übertragen werden die vorhandenen Felder:
 - `id`, `date`, `name`, `type`
 - `duration`, `targetTss`, `category`, `desc`
 
-Beim Öffnen einer Einheit zeigt die Detailansicht Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und Beschreibung an. Ruhetage werden gesondert dargestellt. Die Datenzufuhr erfolgt über den im Branch vorbereiteten Geräte-Endpunkt. Deployment, Datenbanktabellen und End-to-End-Test stehen noch aus.
+Die Uhr lädt Einheiten von gestern bis 14 Tage in die Zukunft, maximal 30 Einträge. Beschreibungen und Textfelder werden für die begrenzte Watch-Speichergröße gekürzt. Die Trainingsübersicht zeigt Name, Datum, Trainingsart, Dauer, Ziel-Load, Kategorie und – sofern vorhanden – Beschreibung. Ruhetage werden gesondert dargestellt.
 
+Der zuletzt synchronisierte Trainingsplan wird lokal gespeichert und bleibt bei fehlender Verbindung als Offline-Ansicht verfügbar. Die Synchronisierung ist im Branch vorbereitet, aber noch nicht end-to-end getestet.
 
-## Herzfrequenzzonen während der Aktivität
+Eine strukturierte Intervall-/Schrittfolge wird nicht übertragen, solange sie nicht in tatsächlich gespeicherten Planobjekten belegt ist.
 
-Die Aktivitätsansicht kann die vier oberen Herzfrequenzgrenzen aus KAJO übernehmen. Die Uhr ordnet den aktuellen Garmin-Herzfrequenzwert anhand dieser Grenzen Z1 bis Z5 zu und zeigt Zone sowie eine fünfteilige Balkenanzeige auf der Übersichts- und Herzfrequenzseite.
+## 5. Herzfrequenzzonen
 
-Die Uhr berechnet weder eine eigene HFmax noch eine eigene Ruhe-HF oder ein alternatives Zonenmodell. KAJO bleibt für die adaptive Ruhe-HF (Median gültiger Garmin-Ruhe-HF-Tageswerte im konfigurierten Rückblick, mit Profil-Ruhe-HF als gekennzeichnetem Fallback) und die Karvonen-Grenzen bei 60/70/80/90 % der Herzfrequenzreserve verantwortlich. Die Grenzen werden über den im Branch vorbereiteten Geräte-Sync übernommen und für das aktuelle lokale Datum gespeichert. Ohne gültige Grenzen wird „ZONE --“ angezeigt. Build und Gerätetest stehen noch aus.
+KAJO berechnet die Zonen; die Uhr übernimmt die vier oberen Zonengrenzen für Z1 bis Z4. Die Uhr ordnet die aktuelle Garmin-Herzfrequenz Z1 bis Z5 zu und zeigt die Zone mit einem fünfteiligen Balken auf der Übersichts- und Herzfrequenzseite.
+
+Die Berechnung folgt der bestehenden KAJO-Logik in `js/training-load.js`:
+- adaptive Ruhe-HF als Median gültiger Garmin-Ruhe-HF-Tageswerte im konfigurierten Rückblick;
+- wenn mindestens 60 % der Tage (mindestens drei Messwerte) nicht vorliegen, wird eine gültige Profil-Ruhe-HF als gekennzeichneter Fallback verwendet;
+- Karvonen-Grenzen bei 60/70/80/90 % der Herzfrequenzreserve.
+
+Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuellen Grenzwerte werden lokal mit Datum gespeichert; veraltete Tageswerte werden nicht als aktuelle Zonen übernommen. Ohne gültige Grenzen erscheint „ZONE --“.
+
+## 6. Noch offen
+
+- Individueller Layout-Editor für einzelne Kennzahlen (Auswahl, Reihenfolge und Größe).
+- Backend-Tabellen, Edge-Function-Deployment und erforderliche Secrets.
+- End-to-end-Test von Pairing, Trainingsplan-Synchronisierung und Herzfrequenzzonen.
+- Prüfung der FIT-Aktivität in Garmin Connect und des anschließenden Imports über die vorhandene KAJO-Garmin-Verbindung.
+- Prüfung der physischen Tasten, GPS-Aufzeichnung, Datenseiten und Offline-Cache auf Venu 3S und Venu 2 Plus.
+- Ein direkter FIT-Upload an KAJO und eine Upload-Queue sind nicht implementiert.
+
+## 7. Build- und Gerätetest – erst nach Abschluss der Implementierung
+
+1. Branch `feature/kajo-connect` lokal aktualisieren.
+2. Garmin-Build für `venu3s` und `venu2plus` ausführen.
+3. Pairing mit einem Testkonto und einer bereitgestellten Backend-Umgebung durchführen.
+4. Trainingsplan online synchronisieren, anschließend Verbindung trennen und Offline-Anzeige prüfen.
+5. Zonenwerte mit den in KAJO angezeigten Grenzen vergleichen.
+6. FIT-Aktivität aufzeichnen, speichern und in Garmin Connect sowie anschließend in KAJO prüfen.
+
+Ein erfolgreicher Monkey-C-Build bestätigt nur die Kompilierung. Anzeige, Persistenz, Tasten, FIT-Datei und Synchronisierung müssen zusätzlich im Simulator und auf den echten Geräten geprüft werden.
