@@ -69,7 +69,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
         dc.drawText(Math.round(cx).toNumber(), Math.round(mUnit * 0.16).toNumber(), Graphics.FONT_XTINY, "Datenseiten auswaehlen", Graphics.TEXT_JUSTIFY_CENTER);
 
-        var labels as Lang.Array<Lang.String> = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
+        var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.235;
         mRowHeight = mUnit * 0.108;
 
