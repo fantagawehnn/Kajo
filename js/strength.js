@@ -3,6 +3,7 @@
  * ============================================================ */
 
 import { state } from './state.js';
+import { openCSVDetailsModal, toggleActivityEdit } from './activities.js?v=24';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { formatDateDDMMYY, escapeHtml, toLocalDateString } from './utils.js';
 import { extractStrengthRecords, groupStrengthRecords } from './strength-database.js?v=1';
@@ -12,6 +13,17 @@ export function renderStrengthView() {
     if (!grid) return;
     const search = String(document.getElementById('strength-database-search')?.value || '').trim().toLocaleLowerCase('de');
     const records = extractStrengthRecords(state.rawActivities, state.strengthPBs);
+    if (grid.dataset.activityNavigationReady !== 'true') {
+        grid.dataset.activityNavigationReady = 'true';
+        grid.addEventListener('click', event => {
+            const button = event.target.closest('[data-strength-activity-id]');
+            if (!button) return;
+            const activityId = button.dataset.strengthActivityId;
+            if (!activityId) return;
+            openCSVDetailsModal(encodeURIComponent(activityId));
+            toggleActivityEdit();
+        });
+    }
     const groups = groupStrengthRecords(records).filter(group => !search || group.exercise.toLocaleLowerCase('de').includes(search));
     const totalSets = groups.reduce((sum, group) => sum + group.entries.length, 0);
     const summary = document.getElementById('strength-database-summary');
@@ -20,7 +32,7 @@ export function renderStrengthView() {
         : 'Noch keine Krafttrainingsdaten vorhanden';
     if (!groups.length) {
         grid.innerHTML = '<div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 text-sm text-slate-400">' +
-            (search ? 'Keine Übung mit diesem Namen gefunden.' : 'Sobald du ein absolviertes Krafttraining mit Übungen und Sätzen speicherst, erscheinen deine Gewichte hier automatisch.') +
+            (search ? 'Keine Übung mit diesem Namen gefunden.' : 'Öffne eine absolvierte Krafttrainingseinheit, bearbeite dort Übungen und Sätze und speichere sie. Deine Gewichte erscheinen anschließend automatisch hier.') +
             '</div>';
         return;
     }
@@ -30,10 +42,13 @@ export function renderStrengthView() {
         const latest = group.entries[0];
         const history = group.entries.map(entry => {
             const origin = entry.source === 'activity' ? entry.activityName : 'Früherer manueller Eintrag';
+            const activityAction = entry.source === 'activity' && entry.activityId
+                ? '<button type="button" data-strength-activity-id="' + escapeHtml(entry.activityId) + '" class="mt-1 text-[10px] font-semibold text-cyan-300 hover:text-cyan-200">Aktivität bearbeiten</button>'
+                : '';
             return '<div class="flex items-center justify-between gap-3 py-2 border-t border-slate-800 text-[11px]">' +
                 '<div class="min-w-0"><div class="text-slate-300">' + escapeHtml(formatDateDDMMYY(entry.date)) +
                 ' · ' + escapeHtml(origin) + '</div><div class="text-slate-500">' +
-                entry.reps + ' Wdh.</div></div><strong class="shrink-0 text-white">' +
+                entry.reps + ' Wdh.</div>' + activityAction + '</div><strong class="shrink-0 text-white">' +
                 Number(entry.weight).toLocaleString('de-DE') + ' kg</strong></div>';
         }).join('');
         grid.insertAdjacentHTML('beforeend',
