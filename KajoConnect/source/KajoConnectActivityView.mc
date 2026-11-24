@@ -801,14 +801,33 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawHeartRateField(dc, cx, 228, 250, hrNow, zone);
             }
         } else if (mTrainingFieldCount == 4) {
-            var fieldTop = 236;
+            // Standardansicht: vier kompakte Messfelder als 2x2-Raster.
+            // Die HF-Zone ist direkt im Herzfrequenzfeld integriert.
+            var fieldTop4 = 207;
+            var fieldRowHeight4 = 68;
+            var distanceValue4 = stepCount > 0 ? intervalDistanceText(activityInfo) : distance;
+            var pace4 = "--:--";
+            if (activityInfo != null && activityInfo.currentSpeed != null) {
+                pace4 = formatPace(activityInfo.currentSpeed * 3.6);
+            }
+
             dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-            dc.drawLine(195, fieldTop, 195, fieldTop + 72);
+            dc.drawLine(195, fieldTop4, 195, fieldTop4 + (fieldRowHeight4 * 2));
+            dc.drawLine(72, fieldTop4 + fieldRowHeight4, 318, fieldTop4 + fieldRowHeight4);
+
             if (mTrainingShowCadence) {
-                drawDataField(dc, 112, fieldTop, 126, "SCHLÄGE", cadenceNow, "SPM");
+                drawDataField(dc, 112, fieldTop4, 126, "SCHLÄGE", cadenceNow, "SPM");
+            }
+            if (mTrainingShowDistance) {
+                drawDataField(dc, 278, fieldTop4, 126,
+                    stepCount > 0 ? "INTERVALL-DIST." : "DISTANZ", distanceValue4, "KM");
+            }
+            if (mTrainingShowPace) {
+                drawDataField(dc, 112, fieldTop4 + fieldRowHeight4, 126,
+                    "PACE", pace4, "MIN/KM");
             }
             if (mTrainingShowHR) {
-                drawHeartRateField(dc, 278, fieldTop, 126, hrNow, zone);
+                drawHeartRateField(dc, 278, fieldTop4 + fieldRowHeight4, 126, hrNow, zone);
             }
         } else if (mTrainingFieldCount == 6) {
             var fieldTop6 = 207;
