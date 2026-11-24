@@ -959,7 +959,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var hrAvg = "--";
         var hrMax = "--";
         var distance = "--";
-        var elapsed = (mStatus == "AUFZEICHNUNG" || mStatus == "PAUSIERT") ? formatTime(mElapsedSeconds * 1000) : "00:00";
+        var elapsed = (mStatus == "AUFZEICHNUNG" || mStatus == "PAUSIERT" || mStatus == "GESPEICHERT" || mStatus == "SPEICHERN FEHLGESCHLAGEN") ? formatTime(mElapsedSeconds * 1000) : "00:00";
         var calories = "--";
         var cadenceNow = "--";
         var powerNow = "--";
