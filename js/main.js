@@ -2572,11 +2572,15 @@ function applyReconciledCloudSnapshot(snapshot) {
  * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
  * derselbe Drei-Wege-Abgleich wiederholt.
  */
-async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null) {
+async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId) {
+    const ensureCurrent = () => {
+        if (!isCurrent()) throw new Error('Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.');
+    };
     let cloud = initialCloudSnapshot;
     let cloudActivities = initialCloudActivities;
 
     for (let attempt = 0; attempt < 4; attempt += 1) {
+        ensureCurrent();
         if (!cloud || cloud.userId !== userId) {
             throw new Error('Der Cloud-Datenstand gehört nicht zum aktuell angemeldeten Konto.');
         }
@@ -2688,6 +2692,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         // Nur neue bzw. noch nicht separat gespeicherte Legacy-Aktivitäten
         // werden hochgeladen. Bestehende Cloud-Zeilen bleiben unverändert.
         const activityUpload = await syncCloudActivities(supabase, userId, activitiesToUpload);
+        ensureCurrent();
         const cloudPayload = {
             ...mergedSnapshot,
             activityIds: getCloudActivityIds(userId, mergedActivities),
@@ -2703,11 +2708,15 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             if (!cloudSnapshotsEqual(latestLocal, local)) {
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
+                ensureCurrent();
                 cloudActivities = await fetchCloudActivities(supabase, userId);
+                ensureCurrent();
                 continue;
             }
+            ensureCurrent();
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
+            ensureCurrent();
             return {
                 ok: true,
                 version: cloud.version,
@@ -2718,6 +2727,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         const saved = await saveCloudSnapshot(cloudPayload, cloud.version, userId);
+        ensureCurrent();
         if (saved.saved) {
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
             const latestLocal = withCloudActivityIds(
@@ -2728,12 +2738,17 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 baselineSnapshot = mergedSnapshot;
                 try { await saveCloudSyncBaseline(mergedSnapshot); }
                 catch (error) { console.warn('Synchronisierungsbasis konnte nicht aktualisiert werden:', error); }
+                ensureCurrent();
                 cloud = await fetchCloudSnapshot();
+                ensureCurrent();
                 cloudActivities = await fetchCloudActivities(supabase, userId);
+                ensureCurrent();
                 continue;
             }
+            ensureCurrent();
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
+            ensureCurrent();
             return {
                 ok: true,
                 version: saved.currentVersion,
@@ -2744,10 +2759,12 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         cloud = await fetchCloudSnapshot();
+        ensureCurrent();
         if (cloud.userId !== userId) {
             throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
         }
         cloudActivities = await fetchCloudActivities(supabase, userId);
+        ensureCurrent();
     }
 
     return { ok: false, retryLimit: true, version: cloud?.version || 0, conflicts: [] };
@@ -3531,7 +3548,13 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
-                const reconciliation = await reconcileCloudState(userId, cloudSnapshot, cloudActivities, baseline);
+                const reconciliation = await reconcileCloudState(
+                    userId,
+                    cloudSnapshot,
+                    cloudActivities,
+                    baseline,
+                    () => sequence === activationSequence && activeAppUserId === userId
+                );
                 if (!reconciliation.ok) {
                     cloudSyncBlocked = true;
                     const details = reconciliation.conflicts?.length
