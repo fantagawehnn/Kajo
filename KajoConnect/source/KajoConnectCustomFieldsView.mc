@@ -236,12 +236,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
 
         drawFit(dc, cx, mUnit * 0.065, "DATENFELDER",
             mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.115, "MAXIMAL 4 PRO SEITE",
-            mUnit * 0.72, Graphics.FONT_XTINY, 0x00E5CC);
-        drawFit(dc, cx, mUnit * 0.16,
-            "SEITE " + (mLayoutIndex + 1).toString() + "/" + mLayoutCount.toString() +
-            "    LISTE " + (mPage + 1).toString() + "/" + mPageCount.toString(),
-            mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        // Keine Unterueberschriften; die Navigation bleibt ueber die Bedienung erreichbar.
 
         mRowTop = Math.round(mUnit * 0.225).toNumber();
         mRowHeight = Math.round(mUnit * 0.108).toNumber();
