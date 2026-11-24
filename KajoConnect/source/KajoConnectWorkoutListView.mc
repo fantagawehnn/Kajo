@@ -69,9 +69,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
 
         drawCentered(dc, cx, mUnit * 0.075, "TRAININGSPLAN", mUnit * 0.72,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.125,
-            mSessions.size().toString() + " EINHEITEN", mUnit * 0.68,
-            Graphics.FONT_XTINY, 0x00E5CC);
+        // Keine Unterueberschrift unter dem Seitentitel.
 
         if (mSessions.size() == 0) {
             var emptyY = mUnit * 0.34;
