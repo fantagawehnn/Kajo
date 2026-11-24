@@ -10,6 +10,9 @@ class KajoConnectMenuView extends WatchUi.View {
     var mWidth as Lang.Number = 0;
     var mHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
+    var mRowTop as Lang.Number = 82;
+    var mRowStep as Lang.Number = 58;
+    var mRowHeight as Lang.Number = 42;
     var mRows as Lang.Array<Lang.String> = [
         "ANZEIGEN ANPASSEN",
         "TRAININGSUEBERSICHT",
@@ -29,7 +32,12 @@ class KajoConnectMenuView extends WatchUi.View {
     }
 
     function handleTap(y as Lang.Number) as Void {
-        var index = Math.floor((y - (mUnit * 0.225)) / (mUnit * 0.135)).toNumber();
+        if (y >= mUnit * 0.80) {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            return;
+        }
+        if (y < mRowTop || y >= (mRowTop + (mRowStep * 4))) { return; }
+        var index = Math.floor((y - mRowTop) / mRowStep).toNumber();
         if (index < 0 || index >= 4) { return; }
         if (index == 0) {
             var config = new KajoConnectDisplayConfigView();
@@ -54,35 +62,27 @@ class KajoConnectMenuView extends WatchUi.View {
         mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
 
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((mUnit * 0.13).toNumber(), (mUnit * 0.105).toNumber(),
-            (mUnit * 0.035).toNumber(), (mUnit * 0.035).toNumber(), (mUnit * 0.012).toNumber());
-        drawLabel(dc, cx, (mUnit * 0.105).toNumber(), "EINSTELLUNGEN",
-            (mUnit * 0.70).toNumber());
-        mUnit = mWidth < mHeight ? mWidth : mHeight;
+        // Feste, voneinander getrennte Zonen: Titel 28-54, Karten 82-298, Zurueck 320-350.
+        drawLabel(dc, cx, 30, "EINSTELLUNGEN", 270);
 
         for (var i = 0; i < 4; i += 1) {
-            var top = mUnit * (0.225 + (i * 0.135));
-            var height = mUnit * 0.095;
-            var width = mKajoLayout.safeRectWidth(top, height, mUnit * 0.78);
+            var top = mRowTop + (i * mRowStep);
+            var width = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.78);
             var left = cx - (width / 2);
             dc.setColor(0x07191D, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(left.toNumber(), top.toNumber(), width.toNumber(),
-                height.toNumber(), (mUnit * 0.026).toNumber());
+                mRowHeight, 12);
             dc.setColor(0x17343A, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(left.toNumber(), top.toNumber(), width.toNumber(),
-                height.toNumber(), (mUnit * 0.026).toNumber());
+                mRowHeight, 12);
             dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle((left + mUnit * 0.018).toNumber(),
-                (top + mUnit * 0.022).toNumber(), (mUnit * 0.009).toNumber(),
-                (height - mUnit * 0.044).toNumber(), (mUnit * 0.004).toNumber());
-            drawLabel(dc, cx, (top + height * 0.30).toNumber(),
-                mRows[i], (width * 0.84).toNumber());
-            drawLabel(dc, cx, (top + height * 0.64).toNumber(),
-                "OEFFNEN  >", (width * 0.72).toNumber());
+            dc.fillRoundedRectangle((left + 9).toNumber(), (top + 9).toNumber(),
+                4, (mRowHeight - 18).toNumber(), 2);
+            // Pro Karte genau eine Textzeile. Keine zweite "Oeffnen"-Zeile, die
+            // mit der eigentlichen Bezeichnung kollidieren kann.
+            drawLabel(dc, cx, (top + 11).toNumber(), mRows[i], (width * 0.82).toNumber());
         }
 
-        drawLabel(dc, cx, (mUnit * 0.84).toNumber(), "ZURUECK",
-            (mUnit * 0.55).toNumber());
+        drawLabel(dc, cx, 330, "ZURUECK", mUnit * 0.55);
     }
 }
