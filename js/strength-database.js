@@ -2,7 +2,7 @@
 export function extractStrengthRecords(activities = [], legacyRecords = []) {
     const records = [];
     for (const activity of Array.isArray(activities) ? activities : []) {
-        if (activity?.type !== 'WeightTraining' || !Array.isArray(activity.exercises)) continue;
+        if (activity?.type !== 'WeightTraining' || activity?.planned === true || !Array.isArray(activity.exercises)) continue;
         for (const exercise of activity.exercises) {
             const name = String(exercise?.name || '').trim();
             if (!name || !Array.isArray(exercise.sets)) continue;
