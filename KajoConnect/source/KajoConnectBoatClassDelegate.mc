@@ -23,6 +23,11 @@ class KajoConnectBoatClassDelegate extends WatchUi.BehaviorDelegate {
         return false;
     }
 
+    function onMenu() as Lang.Boolean {
+        mView.moveSelection(1);
+        return true;
+    }
+
     function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
         var coordinates = clickEvent.getCoordinates();
         mView.selectAt(coordinates[1]);
