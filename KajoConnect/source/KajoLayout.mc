@@ -187,6 +187,49 @@ class KajoLayout {
         );
     }
 
+
+    // Zeichnet Text nur innerhalb einer expliziten rechteckigen Textzone.
+    // Die Hoehe wird vor dem Zeichnen geprueft; es gibt kein vertikales Clamping.
+    function drawTextBox(dc as Dc, x as Lang.Number, top as Lang.Number,
+        width as Lang.Number, height as Lang.Number, text as Lang.String,
+        preferredFont, color as Lang.Number) as Void {
+        if (text.length() == 0 || width <= 0 || height <= 0) { return; }
+
+        var font = fitFont(dc, text, width, preferredFont);
+        if (dc.getFontHeight(font) > height) {
+            font = Graphics.FONT_XTINY;
+        }
+        if (dc.getFontHeight(font) > height) { return; }
+
+        var textHeight = dc.getFontHeight(font);
+        var centerY = top + ((height - textHeight) / 2);
+        var available = safeWidthAt(x, centerY + (textHeight / 2), width);
+        font = fitFont(dc, text, available, font);
+        textHeight = dc.getFontHeight(font);
+        if (textHeight > height || available <= 0) { return; }
+
+        var displayText = text;
+        while (displayText.length() > 0 &&
+            dc.getTextWidthInPixels(displayText, font) > available) {
+            if (displayText.length() <= 4) {
+                displayText = "";
+            } else {
+                displayText = displayText.substring(0, displayText.length() - 4) + "...";
+            }
+        }
+        if (displayText.length() == 0) { return; }
+
+        centerY = top + ((height - textHeight) / 2);
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(
+            Math.round(x).toNumber(),
+            Math.round(centerY).toNumber(),
+            font,
+            displayText,
+            Graphics.TEXT_JUSTIFY_CENTER
+        );
+    }
+
     function safeRectWidthAt(x, top, height,
         requestedWidth) as Lang.Number {
         var margin = mUnit * 0.01;
