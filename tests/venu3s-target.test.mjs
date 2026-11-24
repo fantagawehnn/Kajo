@@ -49,6 +49,7 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
   assert.match(settingsRootDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
+  assert.match(menuDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
   assert.match(settingsMenu, /extends WatchUi\.Menu2/);
   assert.match(displayConfigView, /extends WatchUi\.CheckboxMenu/);
   assert.match(displayConfigView, /findItemById\(identifier\)/);
