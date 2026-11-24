@@ -5,6 +5,9 @@ import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml } from './utils.js?v=2';
 import { renderCalendar } from './calendar.js';
+import { createPlannedStrengthExercise, normalizePlannedStrengthExercises } from './planned-strength.js';
+
+let plannedStrengthExercises = [];
 
 let editingPlannedWorkoutId = null;
 
@@ -47,6 +50,9 @@ export function deletePlannedWorkout(id){
 function setPlanField(id,value){const field=document.getElementById(id);if(field)field.value=value??'';}
 export function setPlannedWorkoutKind(kind){
     const restDay=kind==='rest';
+    const sport=document.getElementById('plan-sport')?.value;
+    const strengthField=document.getElementById('plan-strength-exercises-field');
+    if(strengthField)strengthField.classList.toggle('hidden',restDay||sport!=='WeightTraining');
     ['plan-sport-field','plan-name-field','plan-duration-field','plan-tss-field','plan-category-field'].forEach(id=>{const field=document.getElementById(id);if(field)field.classList.toggle('hidden',restDay);});
     const name=document.getElementById('plan-name');
     if(restDay&&name&&!name.value.trim())name.value='Ruhetag';
@@ -71,6 +77,9 @@ export function openPlannedWorkoutModal(id=null){
     setPlanField('plan-tss',isAssessment ? '' : item?.targetTss??70);
     setPlanField('plan-category',item?.category||'ga');
     setPlanField('plan-desc',item?.desc||'');
+    plannedStrengthExercises = normalizePlannedStrengthExercises(item?.exercises);
+    ['plan-strength-exercise-name','plan-strength-exercise-sets','plan-strength-exercise-reps','plan-strength-exercise-weight'].forEach(id=>setPlanField(id,id.endsWith('-sets')?'3':id.endsWith('-reps')?'8':''));
+    renderPlannedStrengthExercises();
     setPlannedWorkoutKind(item?.type==='RestDay'?'rest':'training');
     const title=document.getElementById('planned-workout-modal-title');
     if(title)title.textContent=item?(item.type==='RestDay'?'Ruhetag bearbeiten':'Trainingseinheit bearbeiten'):(document.getElementById('plan-kind')?.value==='rest'?'Ruhetag planen':'Trainingseinheit planen');
@@ -82,6 +91,32 @@ export function openPlannedWorkoutModal(id=null){
 export function closePlannedWorkoutModal(){
     document.getElementById('planned-workout-modal')?.classList.add('hidden');
     editingPlannedWorkoutId=null;
+    plannedStrengthExercises=[];
+}
+export function addPlannedStrengthExercise(){
+    const name=document.getElementById('plan-strength-exercise-name')?.value||'';
+    const sets=document.getElementById('plan-strength-exercise-sets')?.value||'';
+    const reps=document.getElementById('plan-strength-exercise-reps')?.value||'';
+    const weight=document.getElementById('plan-strength-exercise-weight')?.value||'';
+    try{
+        if(plannedStrengthExercises.length>=40)throw new Error('Du kannst maximal 40 Übungen pro Trainingseinheit hinterlegen.');
+        plannedStrengthExercises.push(createPlannedStrengthExercise({name,sets,reps,weight}));
+        ['plan-strength-exercise-name','plan-strength-exercise-weight'].forEach(id=>setPlanField(id,''));
+        renderPlannedStrengthExercises();
+    }catch(error){alert(error.message);}
+}
+export function removePlannedStrengthExercise(index){
+    if(!Number.isInteger(Number(index))||Number(index)<0||Number(index)>=plannedStrengthExercises.length)return;
+    plannedStrengthExercises.splice(Number(index),1);
+    renderPlannedStrengthExercises();
+}
+function renderPlannedStrengthExercises(){
+    const target=document.getElementById('plan-strength-exercise-list');
+    if(!target)return;
+    target.innerHTML=plannedStrengthExercises.length?plannedStrengthExercises.map((exercise,index)=>{
+        const load=exercise.weight===null?'':` · ${exercise.weight} kg`;
+        return `<div class="flex items-center justify-between gap-2 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs"><div class="min-w-0"><strong class="block truncate text-white">${escapeHtml(exercise.name)}</strong><span class="text-slate-400">${exercise.sets} Sätze · ${exercise.reps} Wdh.${load}</span></div><button type="button" onclick="removePlannedStrengthExercise(${index})" class="shrink-0 text-rose-300 hover:text-white" aria-label="${escapeHtml(exercise.name)} entfernen">Entfernen</button></div>`;
+    }).join(''):'<p class="text-[11px] text-slate-500">Noch keine Übungen hinterlegt.</p>';
 }
 export function savePlannedWorkout(){
     const date=document.getElementById('plan-date').value||toLocalDateString();
@@ -95,10 +130,11 @@ export function savePlannedWorkout(){
     const duration=isRestDay||isAssessment||durationRaw===''?null:(parseInt(durationRaw,10)||60);
     const targetTss=isRestDay||isAssessment||targetTssRaw===''?null:(parseInt(targetTssRaw,10)||60);
     const desc=document.getElementById('plan-desc').value;
+    const exercises=type==='WeightTraining'?normalizePlannedStrengthExercises(plannedStrengthExercises):[];
     if(editingPlannedWorkoutId!==null){
         const index=state.plannedActivities.findIndex(p=>String(p.id)===editingPlannedWorkoutId);
         if(index<0)return;
-        state.plannedActivities[index]={...state.plannedActivities[index],date,name,type,duration,targetTss,category,desc};
-    }else state.plannedActivities.push({id:'p-'+Date.now(),date,name,type,duration,targetTss,category,desc});
+        state.plannedActivities[index]={...state.plannedActivities[index],date,name,type,duration,targetTss,category,desc,exercises};
+    }else state.plannedActivities.push({id:'p-'+Date.now(),date,name,type,duration,targetTss,category,desc,exercises});
     saveDataToLocalStorage();closePlannedWorkoutModal();renderPlannedWorkouts();renderCalendar();
 }
