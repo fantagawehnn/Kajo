@@ -58,6 +58,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mWorkoutSequenceComplete as Lang.Boolean = false;
     var mCurrentPageId as Lang.Number = 0;
     var mGpsQuality as Lang.Number = Position.QUALITY_NOT_AVAILABLE;
+    // Lokaler Sekundenzaehler als verlaesslicher Fallback, falls Garmin timerTime nicht liefert.
+    var mElapsedSeconds as Lang.Number = 0;
 
     function loadWorkoutSteps(value) as Void {
         mWorkoutSteps = [];
@@ -580,8 +582,11 @@ class KajoConnectActivityView extends WatchUi.View {
         dc.drawArc(195, 164, 54, Graphics.ARC_CLOCKWISE, 205, 335);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
         dc.drawArc(195, 164, 54, Graphics.ARC_CLOCKWISE, 215, 325);
-        drawActivityText(dc, 195, 143, 230, 38, timerText,
-            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+        // Timer bewusst direkt und mit fester Zahlenschrift zeichnen: Er darf nicht
+        // durch die adaptive Textbox-Skalierung auf dem runden Display verschwinden.
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawText(195, 145, Graphics.FONT_NUMBER_MEDIUM, timerText,
+            Graphics.TEXT_JUSTIFY_CENTER);
 
         // Zwei feste Kennzahlenkarten.
         drawDashboardPanel(dc, 45, 228, 145, 68);
@@ -653,6 +658,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var started = mEngine.start(mBoatClass);
         if (started) {
             mStatus = "AUFZEICHNUNG";
+            mElapsedSeconds = 0;
             mWorkoutStepIndex = 0;
             mWorkoutStepElapsedSeconds = 0;
             mWorkoutSequenceComplete = false;
@@ -665,7 +671,10 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function onTimer() as Void {
-        if (mStatus == "AUFZEICHNUNG") { updateWorkoutStepTimer(); }
+        if (mStatus == "AUFZEICHNUNG") {
+            mElapsedSeconds += 1;
+            updateWorkoutStepTimer();
+        }
         WatchUi.requestUpdate();
     }
     function onPosition(positionInfo as Position.Info) as Void {
@@ -928,7 +937,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var hrAvg = "--";
         var hrMax = "--";
         var distance = "--";
-        var elapsed = "00:00";
+        var elapsed = mStatus == "AUFZEICHNUNG" ? formatTime(mElapsedSeconds * 1000) : "00:00";
         var calories = "--";
         var cadenceNow = "--";
         var powerNow = "--";
@@ -949,9 +958,9 @@ class KajoConnectActivityView extends WatchUi.View {
             hrAvg = valueOrDash(activityInfo.averageHeartRate);
             hrMax = valueOrDash(activityInfo.maxHeartRate);
             if (activityInfo.elapsedDistance != null) { distance = numberText(activityInfo.elapsedDistance / 1000.0, 2); }
-            if (activityInfo.timerTime != null) {
+            if (activityInfo.timerTime != null && activityInfo.timerTime > 0) {
                 elapsed = formatTime(activityInfo.timerTime);
-            } else if (activityInfo.elapsedTime != null) {
+            } else if (activityInfo.elapsedTime != null && activityInfo.elapsedTime > 0) {
                 elapsed = formatTime(activityInfo.elapsedTime);
             }
             calories = valueOrDash(activityInfo.calories);
