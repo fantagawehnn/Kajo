@@ -13,7 +13,7 @@ class KajoConnectDisplayConfigDelegate extends WatchUi.BehaviorDelegate {
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
-            mView.saveConfig();
+            mView.toggleSelected();
             return true;
         }
         if (key == WatchUi.KEY_ESC) {
@@ -21,6 +21,11 @@ class KajoConnectDisplayConfigDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
         return false;
+    }
+
+    function onMenu() as Lang.Boolean {
+        mView.moveSelection(1);
+        return true;
     }
 
     function onTap(clickEvent) {
