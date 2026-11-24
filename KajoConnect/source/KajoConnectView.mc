@@ -388,8 +388,8 @@ class KajoConnectView extends WatchUi.View {
         mFreeBottom = 354;
         var labels = ["FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
         var rowYs = [226, 258, 290, 322];
-        var rowXs = [55, 55, 64, 82];
-        var rowWidths = [280, 280, 262, 226];
+        var rowXs = [55, 55, 75, 110];
+        var rowWidths = [280, 280, 240, 170];
         for (var row = 0; row < 4; row += 1) {
             var rowY = rowYs[row];
             var rowX = rowXs[row];
