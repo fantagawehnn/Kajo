@@ -9,6 +9,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
     var mKajoLayout as KajoLayout;
 
     var mEnabled as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
+    var mSelectedRow as Lang.Number = 0;
     var mRowTop = 0;
     var mRowHeight = 0;
     var mWidth = 0;
@@ -25,20 +26,45 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         }
     }
 
+    function moveSelection(direction as Lang.Number) as Void {
+        mSelectedRow += direction;
+        if (mSelectedRow < 0) { mSelectedRow = 4; }
+        if (mSelectedRow > 4) { mSelectedRow = 0; }
+        WatchUi.requestUpdate();
+    }
+
+    function persistConfig() as Void {
+        for (var i = 0; i < 5; i += 1) {
+            Storage.setValue("kajoDisplayPage" + i.toString(), mEnabled[i]);
+        }
+    }
+
+    function toggleSelected() as Void {
+        toggleRow(mSelectedRow);
+    }
+
+    function toggleRow(row as Lang.Number) as Void {
+        if (row < 0 || row >= 5) { return; }
+        mSelectedRow = row;
+        mEnabled[row] = !mEnabled[row];
+        var active = 0;
+        for (var i = 0; i < 5; i += 1) {
+            if (mEnabled[i]) { active += 1; }
+        }
+        if (active == 0) {
+            mEnabled[row] = true;
+            WatchUi.showToast("Mindestens eine Seite muss aktiv bleiben", null);
+        } else {
+            persistConfig();
+        }
+        WatchUi.requestUpdate();
+    }
+
     function toggleAt(y as Lang.Number) as Void {
         if (mRowHeight <= 0) { return; }
         var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
         if (row >= 0 && row < 5) {
-            mEnabled[row] = !mEnabled[row];
-            var active = 0;
-            for (var i = 0; i < 5; i += 1) {
-                if (mEnabled[i]) { active += 1; }
-            }
-            if (active == 0) {
-                mEnabled[row] = true;
-                WatchUi.showToast("Mindestens eine Seite muss aktiv bleiben", null);
-            }
-            WatchUi.requestUpdate();
+            toggleRow(row);
         } else if (y > mUnit * 0.75) {
             saveConfig();
         }
@@ -52,9 +78,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
     }
 
     function saveConfig() as Void {
-        for (var i = 0; i < 5; i += 1) {
-            Storage.setValue("kajoDisplayPage" + i.toString(), mEnabled[i]);
-        }
+        persistConfig();
         WatchUi.popView(WatchUi.SLIDE_DOWN);
     }
 
@@ -78,9 +102,10 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
         var left = cx - (rowWidth / 2);
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var focused = i == mSelectedRow;
+            dc.setColor(focused ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), (mRowHeight * 0.82).toNumber());
-            dc.setColor(mEnabled[i] ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
+            dc.setColor(focused ? 0xFFB020 : (mEnabled[i] ? 0x25D3CB : 0x344047), Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), 4, (mRowHeight * 0.82).toNumber());
             drawFit(dc, cx - rowWidth * 0.12, y + mRowHeight * 0.20,
                 labels[i], rowWidth * 0.66, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
@@ -95,7 +120,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
             }
         }
 
-        drawFit(dc, cx, mUnit * 0.79, "OBERE TASTE · SPEICHERN",
+        drawFit(dc, cx, mUnit * 0.79, "OBERE TASTE · ÄNDERN",
             mUnit * 0.72, Graphics.FONT_XTINY, 0x25D3CB);
         drawFit(dc, cx, mUnit * 0.86, "UNTERE TASTE · ZURÜCK",
             mUnit * 0.72, Graphics.FONT_XTINY, 0x98A5AB);
