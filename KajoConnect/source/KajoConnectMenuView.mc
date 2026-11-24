@@ -83,6 +83,6 @@ class KajoConnectMenuView extends WatchUi.View {
             drawLabel(dc, cx, (top + 11).toNumber(), mRows[i], (width * 0.82).toNumber());
         }
 
-        drawLabel(dc, cx, 330, "ZURUECK", mUnit * 0.55);
+        drawLabel(dc, cx, 330, "ZURUECK", (mUnit * 0.55).toNumber());
     }
 }
