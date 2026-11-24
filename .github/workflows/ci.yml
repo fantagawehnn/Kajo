@@ -90,6 +90,9 @@ jobs:
       - name: Run account storage activation race tests
         run: node --experimental-default-type=module --test tests/storage-activation-race.test.mjs
 
+      - name: Run async activation race tests
+        run: node --experimental-default-type=module --test tests/async-activation-race.test.mjs
+
       - name: Run split cloud activity storage tests
         run: node --experimental-default-type=module --test tests/cloud-activities.test.mjs
       - name: Run parallel cloud activity loading tests

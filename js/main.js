@@ -10,6 +10,7 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
+import { createActivationGuard } from './activation-guard.js?v=1';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar, reviewApprovedWeeklyPlan, setManualActivityLink, setManualSessionStatus, generateAdaptiveWeekProposal, discardAdaptiveWeekProposal, applyAdaptiveWeekProposal } from './season-plan-editor.js?v=8';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
@@ -815,11 +816,10 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
 
     const userId = activeAppUserId;
     const expectedActivationSequence = activationSequence;
-    const ensureCurrentUser = () => {
-        if (!appUserReady || activeAppUserId !== userId || activationSequence !== expectedActivationSequence) {
-            throw new Error('Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.');
-        }
-    };
+    const ensureCurrentUser = createActivationGuard(
+        () => appUserReady && activeAppUserId === userId && activationSequence === expectedActivationSequence,
+        'Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
+    );
     const { count, error: countError } = await supabase.from('garmin_health_records')
         .select('record_date', { count: 'exact', head: true })
         .eq('user_id', userId)
@@ -2652,9 +2652,10 @@ function applyReconciledCloudSnapshot(snapshot) {
  * derselbe Drei-Wege-Abgleich wiederholt.
  */
 async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId) {
-    const ensureCurrent = () => {
-        if (!isCurrent()) throw new Error('Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.');
-    };
+    const ensureCurrent = createActivationGuard(
+        isCurrent,
+        'Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
+    );
     let cloud = initialCloudSnapshot;
     let cloudActivities = initialCloudActivities;
 
