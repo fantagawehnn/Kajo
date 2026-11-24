@@ -26,6 +26,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mEngine;
     var mTimer;
     var mStatus = "BEREIT";
+    var mStartError as Lang.String = "";
     var mButtonTop = 0;
     var mButtonBottom = 0;
     var mScreenWidth = 0;
@@ -878,6 +879,7 @@ class KajoConnectActivityView extends WatchUi.View {
         syncPendingActivityUploads();
         var started = mEngine.start(mBoatClass);
         if (started) {
+            mStartError = "";
             mStartTimestamp = Time.now().value();
             var startInfo = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
             var startDay = (startInfo.day < 10 ? "0" : "") + startInfo.day.toString();
@@ -900,6 +902,7 @@ class KajoConnectActivityView extends WatchUi.View {
             Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mTimer.start(method(:onTimer), 1000, true);
         } else {
+            mStartError = mEngine.getLastError();
             mStatus = "START FEHLGESCHLAGEN";
         }
         WatchUi.requestUpdate();
@@ -1405,7 +1408,8 @@ class KajoConnectActivityView extends WatchUi.View {
             drawActivityText(dc, cx, 239, 280, 18, "GPS · " + gpsText + "   PULS · " + hrNow,
                 Graphics.FONT_XTINY, 0x98A5AB);
             if (mStatus == "START FEHLGESCHLAGEN") {
-                drawActivityText(dc, cx, 270, 280, 18, "START NICHT MÖGLICH",
+                var startErrorText = mStartError == "" ? "START NICHT MÖGLICH" : compactWorkoutText(mStartError, 38);
+                drawActivityText(dc, cx, 270, 280, 18, startErrorText,
                     Graphics.FONT_XTINY, 0xFF9F1A);
             }
             var startWidth = mKajoLayout.safeRectWidth(310, 58, mUnit * 0.78);
