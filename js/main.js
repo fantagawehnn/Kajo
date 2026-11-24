@@ -666,38 +666,61 @@ async function diagnoseGarminSummaryJson() {
     }
 }
 
-async function loadGarminActivitiesFromCloud() {
-    const userId = activeAppUserId;
+// Verhindert doppelte parallele Garmin-Vorschauabrufe pro Benutzer.
+const garminActivityCloudLoadsInFlight = new Map();
+
+async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId) {
+    const userId = expectedUserId;
     if (!userId) throw new Error('Für den Garmin-Aktivitätsabgleich ist kein aktiver Benutzer angemeldet.');
 
-    const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
-        .select('garmin_activity_id, activity')
-        .eq('user_id', userId)
-        .order('start_time', { ascending: true })
-        .order('garmin_activity_id', { ascending: true })
-        .range(offset, offset + limit - 1));
+    const existingLoad = garminActivityCloudLoadsInFlight.get(userId);
+    if (existingLoad) return existingLoad;
 
-    let added = 0, merged = 0, ambiguous = 0;
-    for (const row of data) {
-        const candidate = garminCandidateFromPreview(row.activity);
-        if (!candidate) continue;
-        const matches = findGarminDuplicates(candidate);
-        if (matches.length === 1) {
-            mergeGarminActivity(matches[0], candidate);
-            merged++;
-        } else if (matches.length === 0) {
-            state.rawActivities.push(candidate);
-            added++;
-        } else {
-            ambiguous++;
+    const loadPromise = (async () => {
+        const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
+            .select('garmin_activity_id, activity')
+            .eq('user_id', userId)
+            .order('start_time', { ascending: true })
+            .order('garmin_activity_id', { ascending: true })
+            .range(offset, offset + limit - 1));
+
+        // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
+        // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
+        if (activeAppUserId !== userId || !appUserReady) {
+            return { added: 0, merged: 0, ambiguous: 0, sanitized: 0, stale: true };
+        }
+
+        let added = 0, merged = 0, ambiguous = 0;
+        for (const row of data) {
+            const candidate = garminCandidateFromPreview(row.activity);
+            if (!candidate) continue;
+            const matches = findGarminDuplicates(candidate);
+            if (matches.length === 1) {
+                mergeGarminActivity(matches[0], candidate);
+                merged++;
+            } else if (matches.length === 0) {
+                state.rawActivities.push(candidate);
+                added++;
+            } else {
+                ambiguous++;
+            }
+        }
+        const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
+        if (added || merged || sanitized) {
+            saveDataToLocalStorage();
+            initEngine();
+        }
+        return { added, merged, ambiguous, sanitized, stale: false };
+    })();
+
+    garminActivityCloudLoadsInFlight.set(userId, loadPromise);
+    try {
+        return await loadPromise;
+    } finally {
+        if (garminActivityCloudLoadsInFlight.get(userId) === loadPromise) {
+            garminActivityCloudLoadsInFlight.delete(userId);
         }
     }
-    const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
-    if (added || merged || sanitized) {
-        saveDataToLocalStorage();
-        initEngine();
-    }
-    return { added, merged, ambiguous, sanitized };
 }
 
 
@@ -3503,9 +3526,6 @@ async function handleAuthSession(session) {
                 throw new Error('Es liegen einzelne Cloud-Aktivitäten ohne zugehörigen Hauptdatensatz vor. Der lokale Zustand wurde nicht überschrieben; der Cloud-Transfer muss geprüft werden.');
             }
 
-            try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
-            catch (garminLoadError) { console.warn('Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', garminLoadError); }
-
             // Reine Intervals.icu-Aktivitäten werden aus dem aktiven Trainingsbestand
             // ausgeblendet und separat aufbewahrt. Garmin-Datensätze mit ergänzendem
             // Intervals-Quellverweis bleiben als Garmin-Aktivitäten erhalten.
@@ -3539,8 +3559,14 @@ async function handleAuthSession(session) {
             try {
                 initializeSettings();
                 initEngine();
-                // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
-                // und hält den App-Start dadurch nicht auf.
+                // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
+                // nicht erforderlich. Sie werden nach dem ersten Rendern parallel
+                // zum Tagesabgleich geladen; beide Aufrufer teilen einen laufenden
+                // Abruf, damit nicht unnötig dieselben Seiten doppelt gelesen werden.
+                void loadGarminActivitiesFromCloud(userId).catch(garminLoadError => {
+                    console.warn('Garmin-Cloud-Aktivitäten konnten im Hintergrund nicht geladen werden:', garminLoadError);
+                });
+                // Der Tagesabgleich läuft ebenfalls nach dem ersten Rendern.
                 void syncGarminTodayOnOpen(userId);
                 initializeNutritionRemindersWhenIdle();
             } catch (renderError) {
