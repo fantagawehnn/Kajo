@@ -1227,14 +1227,40 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawPageHeader(dc, "BEREIT");
-            drawActivityText(dc, cx, 125, 280, 24, compactWorkoutText(mCurrentWorkoutName, 32),
+            drawActivityText(dc, cx, 76, 280, 24, compactWorkoutText(mCurrentWorkoutName, 34),
                 Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx, 166, 220, 38, mBoatClass,
-                Graphics.FONT_NUMBER_MEDIUM, 0x25D3CB);
-            drawActivityText(dc, cx, 216, 260, 18, "GPS · " + gpsText + "   PULS · " + hrNow,
+
+            var durationText = mCurrentWorkoutDuration == ""
+                ? "–"
+                : mCurrentWorkoutDuration + " MIN";
+            drawActivityText(dc, cx, 112, 280, 48, durationText,
+                Graphics.FONT_NUMBER_HOT, 0x25D3CB);
+
+            var planSummary = "";
+            if (mCurrentWorkoutWarmup != "") {
+                planSummary = "EINWÄRMEN " + mCurrentWorkoutWarmup;
+            }
+            if (mCurrentWorkoutMainSet != "") {
+                planSummary = planSummary == "" ? mCurrentWorkoutMainSet :
+                    planSummary + " · " + mCurrentWorkoutMainSet;
+            }
+            if (mCurrentWorkoutCooldown != "") {
+                planSummary = planSummary == "" ? "AUSFAHREN " + mCurrentWorkoutCooldown :
+                    planSummary + " · AUSFAHREN " + mCurrentWorkoutCooldown;
+            }
+            if (planSummary == "" && mWorkoutSteps.size() > 0) {
+                planSummary = mWorkoutSteps.size().toString() + " TRAININGSABSCHNITTE";
+            }
+            if (planSummary == "") { planSummary = "OHNE PLAN"; }
+            drawActivityText(dc, cx, 170, 280, 30,
+                compactWorkoutText(planSummary, 58),
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, cx, 210, 240, 18, "BOOTSKLASSE · " + mBoatClass,
+                Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            drawActivityText(dc, cx, 239, 280, 18, "GPS · " + gpsText + "   PULS · " + hrNow,
                 Graphics.FONT_XTINY, 0x98A5AB);
             if (mStatus == "START FEHLGESCHLAGEN") {
-                drawActivityText(dc, cx, 260, 280, 18, "START NICHT MÖGLICH",
+                drawActivityText(dc, cx, 270, 280, 18, "START NICHT MÖGLICH",
                     Graphics.FONT_XTINY, 0xFF9F1A);
             }
             drawActivityText(dc, cx, 326, 280, 18, "OBERE TASTE · STARTEN",
