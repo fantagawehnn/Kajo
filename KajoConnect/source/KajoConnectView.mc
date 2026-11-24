@@ -39,6 +39,11 @@ class KajoConnectView extends WatchUi.View {
         View.initialize();
         mKajoLayout = new KajoLayout();
         mApi = new KajoConnectApi();
+        var savedBoat = Storage.getValue("kajoSelectedBoat");
+        if (savedBoat != null &&
+            (savedBoat.toString() == "K1" || savedBoat.toString() == "C1" || savedBoat.toString() == "C2")) {
+            mSelectedBoat = savedBoat.toString();
+        }
         var cachedSessions = Storage.getValue("kajoPlannedSessions");
         if (cachedSessions != null) {
             mPlannedSessions = cachedSessions as Lang.Array<Lang.Dictionary>;
@@ -310,13 +315,15 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) {
-        if (y >= mBoatTop && y <= mBoatBottom &&
-            x >= mBoatLeft && x <= mBoatRight) {
-            var relativeX = x - mBoatLeft;
-            var third = (mBoatRight - mBoatLeft) / 3;
+        // Grosszuegige Touch-Zone um die sichtbare Bootsauswahl. Die
+        // drei Segmente bleiben gleich breit und liegen oberhalb der Hauptkarte.
+        if (y >= 66 && y <= 130 && x >= 48 && x <= 342) {
+            var relativeX = x - 48;
+            var third = 294 / 3;
             if (relativeX < third) { mSelectedBoat = "K1"; }
             else if (relativeX < (third * 2)) { mSelectedBoat = "C1"; }
             else { mSelectedBoat = "C2"; }
+            Storage.setValue("kajoSelectedBoat", mSelectedBoat);
             WatchUi.requestUpdate();
             return;
         }
