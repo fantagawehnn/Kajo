@@ -10,12 +10,13 @@ class KajoConnectMenuView extends WatchUi.View {
     var mWidth as Lang.Number = 0;
     var mHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
-    var mRowTop as Lang.Number = 82;
-    var mRowStep as Lang.Number = 61;
-    var mRowHeight as Lang.Number = 48;
+    var mRowTop as Lang.Number = 77;
+    var mRowStep as Lang.Number = 51;
+    var mRowHeight as Lang.Number = 42;
     var mRows as Lang.Array<Lang.String> = [
         "ANZEIGEN ANPASSEN",
         "TRAININGSÜBERSICHT",
+        "INTERVALL-HINWEISE",
         "UHR MIT KAJO VERBINDEN",
         "EIGENE DATENFELDER"
     ];
@@ -36,9 +37,9 @@ class KajoConnectMenuView extends WatchUi.View {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
-        if (y < mRowTop || y >= (mRowTop + (mRowStep * 4))) { return; }
+        if (y < mRowTop || y >= (mRowTop + (mRowStep * 5))) { return; }
         var index = Math.floor((y - mRowTop) / mRowStep).toNumber();
-        if (index < 0 || index >= 4) { return; }
+        if (index < 0 || index >= 5) { return; }
         if (index == 0) {
             var config = new KajoConnectDisplayConfigView();
             WatchUi.pushView(config, new KajoConnectDisplayConfigDelegate(config), WatchUi.SLIDE_UP);
@@ -46,6 +47,9 @@ class KajoConnectMenuView extends WatchUi.View {
             var list = new KajoConnectWorkoutListView(mHomeView);
             WatchUi.pushView(list, new KajoConnectWorkoutListDelegate(list), WatchUi.SLIDE_UP);
         } else if (index == 2) {
+            var hints = new KajoConnectIntervalHintsView();
+            WatchUi.pushView(hints, new KajoConnectIntervalHintsDelegate(hints), WatchUi.SLIDE_UP);
+        } else if (index == 3) {
             var pairing = new KajoConnectPairingView();
             WatchUi.pushView(pairing, new KajoConnectPairingDelegate(), WatchUi.SLIDE_UP);
         } else {
@@ -82,6 +86,6 @@ class KajoConnectMenuView extends WatchUi.View {
                     (left + rowWidth).toNumber(), top + mRowHeight + 5);
             }
         }
-        drawLabel(dc, cx, 335, "ZURÜCK", (mUnit * 0.55).toNumber());
+        drawLabel(dc, cx, 345, "ZURÜCK", (mUnit * 0.55).toNumber());
     }
 }
