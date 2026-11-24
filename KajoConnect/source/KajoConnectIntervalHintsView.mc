@@ -8,6 +8,7 @@ class KajoConnectIntervalHintsView extends WatchUi.View {
 
     var mKajoLayout as KajoLayout;
     var mValues as Lang.Array<Lang.Boolean> = [true, true, true, false];
+    var mSelectedRow as Lang.Number = 0;
     var mLabels as Lang.Array<Lang.String> = [
         "ZIEL ANZEIGEN",
         "NÄCHSTES INTERVALL",
@@ -34,19 +35,36 @@ class KajoConnectIntervalHintsView extends WatchUi.View {
         }
     }
 
-    function toggleAt(y as Lang.Number) as Void {
-        var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
-        if (row >= 0 && row < mValues.size()) {
-            mValues[row] = !mValues[row];
-            WatchUi.requestUpdate();
-        }
+    function moveSelection(direction as Lang.Number) as Void {
+        mSelectedRow += direction;
+        if (mSelectedRow < 0) { mSelectedRow = mValues.size() - 1; }
+        if (mSelectedRow >= mValues.size()) { mSelectedRow = 0; }
+        WatchUi.requestUpdate();
     }
 
-    function saveConfig() as Void {
+    function persistValues() as Void {
         Storage.setValue("kajoIntervalShowTarget", mValues[0]);
         Storage.setValue("kajoIntervalShowNext", mValues[1]);
         Storage.setValue("kajoIntervalVibration", mValues[2]);
         Storage.setValue("kajoIntervalTone", mValues[3]);
+    }
+
+    function toggleSelected() as Void {
+        mValues[mSelectedRow] = !mValues[mSelectedRow];
+        persistValues();
+        WatchUi.requestUpdate();
+    }
+
+    function toggleAt(y as Lang.Number) as Void {
+        var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
+        if (row >= 0 && row < mValues.size()) {
+            mSelectedRow = row;
+            toggleSelected();
+        }
+    }
+
+    function saveConfig() as Void {
+        persistValues();
         WatchUi.showToast("Intervall-Hinweise gespeichert", null);
         WatchUi.popView(WatchUi.SLIDE_DOWN);
     }
@@ -70,9 +88,10 @@ class KajoConnectIntervalHintsView extends WatchUi.View {
         var left = cx - (rowWidth / 2);
         for (var i = 0; i < mValues.size(); i += 1) {
             var y = mRowTop + (i * mRowHeight);
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var focused = i == mSelectedRow;
+            dc.setColor(focused ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), 46);
-            dc.setColor(mValues[i] ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
+            dc.setColor(focused ? 0xFFB020 : (mValues[i] ? 0x25D3CB : 0x344047), Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 46);
             drawFit(dc, cx - rowWidth * 0.10, y + 14, mLabels[i],
                 rowWidth * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
@@ -84,7 +103,7 @@ class KajoConnectIntervalHintsView extends WatchUi.View {
                 dc.drawLine(left.toNumber(), y + 50, (left + rowWidth).toNumber(), y + 50);
             }
         }
-        drawFit(dc, cx, mUnit * 0.79, "OBERE TASTE · SPEICHERN",
+        drawFit(dc, cx, mUnit * 0.79, "OBERE TASTE · ÄNDERN",
             mUnit * 0.76, Graphics.FONT_XTINY, 0x25D3CB);
         drawFit(dc, cx, mUnit * 0.86, "UNTERE TASTE · ZURÜCK",
             mUnit * 0.76, Graphics.FONT_XTINY, 0x98A5AB);
