@@ -406,9 +406,9 @@ class KajoConnectView extends WatchUi.View {
             (mStartBottom - mStartTop).toNumber(), 20);
         dc.drawLine((heroLeft + 18).toNumber(), 139, (heroLeft + 52).toNumber(), 139);
         drawHomeText(dc, cx, 139, heroWidth * 0.84, 22,
-            compactWorkoutText(heroName, 30), Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            heroName, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         drawHomeText(dc, cx, 164, heroWidth * 0.84, 17,
-            compactWorkoutText(heroDetail, 34), Graphics.FONT_XTINY, 0xAAB7BD);
+            heroDetail, Graphics.FONT_XTINY, 0xAAB7BD);
         drawHomeText(dc, cx, 181, heroWidth * 0.84, 13,
             heroMeta, Graphics.FONT_XTINY, 0x00D8CC);
         drawHomeText(dc, heroLeft + heroWidth - 18, 151, 18, 22, "›",
