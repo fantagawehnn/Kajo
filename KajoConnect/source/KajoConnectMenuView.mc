@@ -11,11 +11,11 @@ class KajoConnectMenuView extends WatchUi.View {
     var mHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
     var mRowTop as Lang.Number = 82;
-    var mRowStep as Lang.Number = 58;
-    var mRowHeight as Lang.Number = 42;
+    var mRowStep as Lang.Number = 61;
+    var mRowHeight as Lang.Number = 48;
     var mRows as Lang.Array<Lang.String> = [
         "ANZEIGEN ANPASSEN",
-        "TRAININGSUEBERSICHT",
+        "TRAININGSÜBERSICHT",
         "UHR MIT KAJO VERBINDEN",
         "EIGENE DATENFELDER"
     ];
@@ -62,27 +62,26 @@ class KajoConnectMenuView extends WatchUi.View {
         mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
 
-        // Feste, voneinander getrennte Zonen: Titel 28-54, Karten 82-298, Zurueck 320-350.
         drawLabel(dc, cx, 30, "EINSTELLUNGEN", 270);
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(62, 64, 328, 64);
 
-        for (var i = 0; i < 4; i += 1) {
+        mRowTop = 82;
+        for (var i = 0; i < mRows.size(); i += 1) {
             var top = mRowTop + (i * mRowStep);
-            var width = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.78);
-            var left = cx - (width / 2);
-            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(left.toNumber(), top.toNumber(), width.toNumber(),
-                mRowHeight, 12);
-            dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(left.toNumber(), top.toNumber(), width.toNumber(),
-                mRowHeight, 12);
-            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle((left + 9).toNumber(), (top + 9).toNumber(),
-                4, (mRowHeight - 18).toNumber(), 2);
-            // Pro Karte genau eine Textzeile. Keine zweite "Oeffnen"-Zeile, die
-            // mit der eigentlichen Bezeichnung kollidieren kann.
-            drawLabel(dc, cx, (top + 11).toNumber(), mRows[i], (width * 0.82).toNumber());
+            var rowWidth = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.80);
+            var left = cx - (rowWidth / 2);
+            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), top.toNumber(), rowWidth.toNumber(), mRowHeight);
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), top.toNumber(), 4, mRowHeight);
+            drawLabel(dc, cx, (top + 12).toNumber(), mRows[i], (rowWidth - 24).toNumber());
+            if (i < mRows.size() - 1) {
+                dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+                dc.drawLine(left.toNumber(), top + mRowHeight + 5,
+                    (left + rowWidth).toNumber(), top + mRowHeight + 5);
+            }
         }
-
-        drawLabel(dc, cx, 330, "ZURUECK", (mUnit * 0.55).toNumber());
+        drawLabel(dc, cx, 335, "ZURÜCK", (mUnit * 0.55).toNumber());
     }
 }
