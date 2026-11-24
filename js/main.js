@@ -3446,14 +3446,14 @@ async function syncGarminTodayOnOpen(userId) {
             const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + attempt * 15;
             console.info('KAJO: Garmin-Tagesabgleich wartet wegen API-Limit', waitSeconds, 'Sekunden.');
             await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-            if (activeAppUserId !== userId || !appUserReady) return;
+            if (!isCurrentSync()) return;
         }
 
         if (!isCurrentSync()) return;
         const activityCloudSync = await loadGarminActivitiesFromCloud(userId);
         if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
-            void backfillGarminAnalysisOnOpen(userId, activationSequence);
+            void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
         }
 
         // Rohtelemetrie wird nicht mehr automatisch beim App-Start synchronisiert.
