@@ -552,117 +552,80 @@ class KajoConnectActivityView extends WatchUi.View {
         var cyan = 0x00E5CC;
         var muted = 0xA0AAB2;
         var stepCount = mWorkoutSteps.size();
-        var stepLabel = mCurrentWorkoutState == "PLANNED" ? "TRAINING" : "FREIES TRAINING";
-        var target = "";
-        var nextLabel = "";
+        var statusText = mCurrentWorkoutState == "PLANNED" ? "TRAINING" : "FREIES TRAINING";
         var remainingText = "";
+
         if (stepCount > 0 && !mWorkoutSequenceComplete) {
             var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
-            stepLabel = step["label"] == null ? "PADDELN" : step["label"].toString();
-            target = step["target"] == null ? "" : step["target"].toString();
+            statusText = "INTERVALL " + (mWorkoutStepIndex + 1).toString() + "/" + stepCount.toString();
             var remaining = (step["durationSeconds"] as Lang.Number) - mWorkoutStepElapsedSeconds;
             if (remaining < 0) { remaining = 0; }
             remainingText = formatTime(remaining * 1000);
-            if (mWorkoutStepIndex + 1 < stepCount) {
-                var nextStep = mWorkoutSteps[mWorkoutStepIndex + 1] as Lang.Dictionary;
-                var nextDuration = nextStep["durationSeconds"] as Lang.Number;
-                nextLabel = "DANACH  " + formatTime(nextDuration * 1000) + "  " +
-                    (nextStep["label"] == null ? "" : nextStep["label"].toString());
-            }
         } else if (mWorkoutSequenceComplete) {
-            stepLabel = "ABGESCHLOSSEN";
+            statusText = "ABGESCHLOSSEN";
         }
 
-        var statusText = stepCount > 0
-            ? "INTERVALL " + (mWorkoutStepIndex + 1).toString() + "/" + stepCount.toString()
-            : compactWorkoutText(stepLabel, 26);
-        var statusY = mUnit * 0.105;
-        var statusH = mUnit * 0.055;
-        var statusW = mKajoLayout.safeRectWidth(statusY, statusH, mUnit * 0.72);
-        var statusX = cx - (statusW / 2);
+        // Status als einzelne kompakte Kennzeichnung – keine zweite Textzeile.
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(statusX.toNumber(), statusY.toNumber(), statusW.toNumber(),
-            statusH.toNumber(), (mUnit * 0.025).toNumber());
+        dc.fillRoundedRectangle(70, 42, 250, 30, 12);
         dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(statusX.toNumber(), statusY.toNumber(), statusW.toNumber(),
-            statusH.toNumber(), (mUnit * 0.025).toNumber());
-        drawFit(dc, cx, statusY + (mUnit * 0.015), statusText, statusW * 0.88,
-            Graphics.FONT_XTINY, cyan);
+        dc.drawRoundedRectangle(70, 42, 250, 30, 12);
+        drawFit(dc, 195, 48, statusText, 224, Graphics.FONT_SMALL, cyan);
 
+        // Timer als zentrale Information.
         var timerText = remainingText != "" ? remainingText :
             (activityInfo != null && activityInfo.timerTime != null
                 ? formatTime(activityInfo.timerTime) : elapsed);
         dc.setColor(0x12363B, Graphics.COLOR_BLACK);
-        dc.drawArc(cx.toNumber(), (mUnit * 0.305).toNumber(), (mUnit * 0.135).toNumber(),
-            Graphics.ARC_CLOCKWISE, 205, 335);
+        dc.drawArc(195, 145, 59, Graphics.ARC_CLOCKWISE, 205, 335);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawArc(cx.toNumber(), (mUnit * 0.305).toNumber(), (mUnit * 0.135).toNumber(),
-            Graphics.ARC_CLOCKWISE, 215, 325);
-        drawFit(dc, cx, mUnit * 0.265, timerText, mUnit * 0.66,
+        dc.drawArc(195, 145, 59, Graphics.ARC_CLOCKWISE, 215, 325);
+        drawFit(dc, 195, 123, timerText, 250,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.39,
-            target == "" ? "LAUFENDE EINHEIT" : compactWorkoutText(target, 28),
-            mUnit * 0.70, Graphics.FONT_XTINY, cyan);
-        drawFit(dc, cx, mUnit * 0.445,
-            nextLabel == "" ? "ZEIT IN BEWEGUNG" : compactWorkoutText(nextLabel, 34),
-            mUnit * 0.76, Graphics.FONT_XTINY, muted);
 
-        var pace = "--:--";
-        if (activityInfo != null && activityInfo.currentSpeed != null) {
-            pace = formatPace(activityInfo.currentSpeed * 3.6);
-        }
-        var distanceMeters = "--";
-        if (activityInfo != null && activityInfo.elapsedDistance != null) {
-            distanceMeters = numberText(activityInfo.elapsedDistance, 0);
-        }
+        // Zwei feste Kennzahlenkarten.
+        drawDashboardPanel(dc, 35, 207, 155, 76);
+        drawDashboardPanel(dc, 200, 207, 155, 76);
 
-        var cardTop = mUnit * 0.505;
-        var cardHeight = mUnit * 0.135;
-        var cardWidth = mKajoLayout.safeRectWidth(cardTop, cardHeight, mUnit * 0.37);
-        var leftCenter = cx - (mUnit * 0.205);
-        var rightCenter = cx + (mUnit * 0.205);
-        var leftX = leftCenter - (cardWidth / 2);
-        var rightX = rightCenter - (cardWidth / 2);
-        dc.setColor(0x071316, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(leftX.toNumber(), cardTop.toNumber(), cardWidth.toNumber(),
-            cardHeight.toNumber(), (mUnit * 0.025).toNumber());
-        dc.fillRoundedRectangle(rightX.toNumber(), cardTop.toNumber(), cardWidth.toNumber(),
-            cardHeight.toNumber(), (mUnit * 0.025).toNumber());
-        drawFit(dc, leftCenter, cardTop + mUnit * 0.018, "PACE / KM",
-            cardWidth * 0.88, Graphics.FONT_XTINY, muted);
-        drawFit(dc, leftCenter, cardTop + mUnit * 0.055, pace,
-            cardWidth * 0.88, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, rightCenter, cardTop + mUnit * 0.018, "DISTANZ",
-            cardWidth * 0.88, Graphics.FONT_XTINY, muted);
-        drawFit(dc, rightCenter, cardTop + mUnit * 0.055, distanceMeters,
-            cardWidth * 0.88, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, rightCenter, cardTop + mUnit * 0.105, "M",
-            cardWidth * 0.70, Graphics.FONT_XTINY, muted);
+        drawFit(dc, 112, 218, "GESCHWINDIGKEIT", 128,
+            Graphics.FONT_XTINY, muted);
+        drawFit(dc, 112, 239, speedNow, 128,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawFit(dc, 112, 263, "KM/H", 128,
+            Graphics.FONT_XTINY, muted);
 
-        dc.setColor(0xFF4A55, Graphics.COLOR_BLACK);
-        dc.fillCircle((mUnit * 0.285).toNumber(), (mUnit * 0.692).toNumber(),
-            (mUnit * 0.012).toNumber());
-        drawFit(dc, cx, mUnit * 0.665, hrNow, mUnit * 0.32,
+        drawFit(dc, 277, 218, "DISTANZ", 128,
+            Graphics.FONT_XTINY, muted);
+        drawFit(dc, 277, 239, distance, 128,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawFit(dc, 277, 263, "KM", 128,
+            Graphics.FONT_XTINY, muted);
+
+        // Herzfrequenz und Zone erhalten eine eigene, klar begrenzte Fläche.
+        drawDashboardPanel(dc, 65, 294, 260, 48);
+        drawFit(dc, 195, 300, hrNow + " BPM", 220,
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, cx + (mUnit * 0.19), mUnit * 0.685, "BPM",
-            mUnit * 0.14, Graphics.FONT_XTINY, muted);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
-        var barLeft = cx - (mUnit * 0.29);
-        var barWidth = mUnit * 0.58;
-        var gap = mUnit * 0.012;
-        var segmentWidth = (barWidth - (gap * 4)) / 5;
+        var barLeft = 112;
+        var segmentWidth = 28;
+        var gap = 5;
         for (var z = 0; z < 5; z += 1) {
-            var zx = barLeft + (z * (segmentWidth + gap));
-            dc.setColor(zoneColors[z], Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(zx.toNumber(), (mUnit * 0.735).toNumber(),
-                segmentWidth.toNumber(), (mUnit * 0.016).toNumber(),
-                (mUnit * 0.008).toNumber());
+            var segmentColor = zone > 0 && zone == z + 1 ? zoneColors[z] : 0x263238;
+            dc.setColor(segmentColor, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(barLeft + (z * (segmentWidth + gap)), 329,
+                segmentWidth, 5, 2);
         }
-        drawFit(dc, cx, mUnit * 0.76,
-            zone > 0 && zone <= 5 ? "HERZFREQUENZ  Z" + zone.toString() : "HERZFREQUENZZONE --",
-            mUnit * 0.70, Graphics.FONT_XTINY,
-            zone > 0 && zone <= 5 ? zoneColors[zone - 1] : muted);
+
+        // Seitenanzeige und Touch-Navigation ganz unten; kein Zurueck-Button.
+        mButtonTop = 340;
+        mButtonBottom = 375;
+        var visibleDots = mPageCount < 5 ? mPageCount : 5;
+        var firstDotX = 195 - ((visibleDots - 1) * 9);
+        for (var dot = 0; dot < visibleDots; dot += 1) {
+            dc.setColor(dot == (mPage < 5 ? mPage : 4) ? cyan : 0x555555, Graphics.COLOR_BLACK);
+            dc.fillCircle(firstDotX + (dot * 18), 354, 3);
+        }
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
@@ -883,12 +846,8 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
-        var cx = mScreenWidth / 2;
-        drawFit(dc, cx, mUnit * 0.105, title, mUnit * 0.72,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.16,
-            (mPage + 1).toString() + " / " + mPageCount.toString(),
-            mUnit * 0.48, Graphics.FONT_XTINY, 0x00E5CC);
+        // Fester Kopfbereich fuer das 390 x 390 Pixel grosse Venu-3S-Display.
+        drawFit(dc, 195, 42, title, 260, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
     }
 
     function drawMetric(dc as Dc, x, y, label as Lang.String, value as Lang.String,
@@ -932,13 +891,12 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function onUpdate(dc as Dc) {
         dc.clear();
-        mScreenWidth = dc.getWidth();
-        mScreenHeight = dc.getHeight();
-        mUnit = mScreenWidth;
-        if (mScreenHeight < mUnit) { mUnit = mScreenHeight; }
-        mKajoLayout.configure(mScreenWidth, mScreenHeight);
+        mScreenWidth = 390;
+        mScreenHeight = 390;
+        mUnit = 390;
+        mKajoLayout.configure(390, 390);
 
-        var cx = mScreenWidth / 2;
+        var cx = 195;
         if (mPage < mEnabledPageIds.size()) {
             mCurrentPageId = mEnabledPageIds[mPage] as Lang.Number;
         } else {
@@ -1008,54 +966,51 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawPageHeader(dc, "BEREIT");
-            var readyPanelY = mUnit * 0.29;
-            var readyPanelHeight = mUnit * 0.24;
-            var readyPanelWidth = mKajoLayout.safeRectWidth(readyPanelY, readyPanelHeight, mUnit * 0.72);
-            var readyPanelX = cx - (readyPanelWidth / 2);
-            drawDashboardPanel(dc, readyPanelX, readyPanelY, readyPanelWidth, readyPanelHeight);
-            drawFit(dc, cx, mUnit * 0.335, compactWorkoutText(mCurrentWorkoutName, 30),
-                readyPanelWidth * 0.86, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            drawFit(dc, cx, mUnit * 0.405, mBoatClass,
-                readyPanelWidth * 0.82, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
-            if (mCurrentWorkoutDuration != "") {
-                drawFit(dc, cx, mUnit * 0.465, mCurrentWorkoutDuration + " MIN",
-                    readyPanelWidth * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            }
+            drawDashboardPanel(dc, 45, 132, 300, 108);
+            drawFit(dc, 195, 165, compactWorkoutText(mCurrentWorkoutName, 30),
+                260, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, 195, 200, mBoatClass,
+                250, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
             if (mStatus == "START FEHLGESCHLAGEN") {
-                drawFit(dc, cx, mUnit * 0.62, "START NICHT MOEGLICH",
-                    mUnit * 0.76, Graphics.FONT_XTINY, 0xFFFF7043);
+                drawFit(dc, 195, 270, "START NICHT MOEGLICH",
+                    280, Graphics.FONT_XTINY, 0xFFFF7043);
             }
+            mButtonTop = 310;
+            mButtonBottom = 365;
+            drawButton(dc, cx, 310, 240, "STARTEN");
         } else if (mStatus == "GESPEICHERT") {
-            // Nach dem Speichern keine Live-Dashboard-Werte mehr zeichnen:
-            // ActivityInfo ist dann leer und die alte Live-Ansicht wirkte
-            // wie ein ueberlagertes, abgeschnittenes Dashboard.
-            drawPageHeader(dc, "TRAINING GESPEICHERT");
-            drawFit(dc, cx, mUnit * 0.36, "AUFZEICHNUNG BEENDET",
-                mUnit * 0.76, Graphics.FONT_MEDIUM, 0x00E5CC);
-            drawFit(dc, cx, mUnit * 0.47, "FIT-DATEI GESPEICHERT",
-                mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            drawPageHeader(dc, "GESPEICHERT");
+            drawFit(dc, 195, 165, "AUFZEICHNUNG BEENDET",
+                290, Graphics.FONT_MEDIUM, cyan);
+            drawFit(dc, 195, 215, "FIT-DATEI GESPEICHERT",
+                280, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            mButtonTop = 340;
+            mButtonBottom = 375;
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             drawPageHeader(dc, "SPEICHERFEHLER");
-            drawFit(dc, cx, mUnit * 0.38, "BITTE ERNEUT SPEICHERN",
-                mUnit * 0.76, Graphics.FONT_SMALL, 0xFFFF7043);
+            drawFit(dc, 195, 180, "BITTE ERNEUT SPEICHERN",
+                290, Graphics.FONT_SMALL, 0xFFFF7043);
+            mButtonTop = 310;
+            mButtonBottom = 365;
+            drawButton(dc, cx, 310, 240, "ERNEUT SPEICHERN");
         } else if (mCurrentPageId == 0) {
             drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, currentHeartRateZone, activityInfo);
         } else if (mCurrentPageId == 1) {
             drawPageHeader(dc, "GESCHWINDIGKEIT");
-            drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", speedNow, "KM/H", mUnit * 0.68, Graphics.FONT_LARGE);
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "DURCHSCHNITT", speedAvg, "KM/H", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "MAXIMUM", speedMax, "KM/H", mUnit * 0.39, Graphics.FONT_MEDIUM);
+            drawMetric(dc, cx, 115, "AKTUELL", speedNow, "KM/H", 260, Graphics.FONT_LARGE);
+            drawMetric(dc, 112, 245, "DURCHSCHNITT", speedAvg, "KM/H", 145, Graphics.FONT_MEDIUM);
+            drawMetric(dc, 278, 245, "MAXIMUM", speedMax, "KM/H", 145, Graphics.FONT_MEDIUM);
         } else if (mCurrentPageId == 2) {
             drawPageHeader(dc, "HERZFREQUENZ");
-            drawMetric(dc, cx, mUnit * 0.25, "AKTUELL", hrNow, "BPM", mUnit * 0.68, Graphics.FONT_LARGE);
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.54, "DURCHSCHNITT", hrAvg, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.54, "MAXIMUM", hrMax, "BPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawHeartRateZone(dc, cx, mUnit * 0.735, mUnit * 0.62, currentHeartRateZone);
+            drawMetric(dc, cx, 115, "AKTUELL", hrNow, "BPM", 260, Graphics.FONT_LARGE);
+            drawMetric(dc, 112, 235, "DURCHSCHNITT", hrAvg, "BPM", 145, Graphics.FONT_MEDIUM);
+            drawMetric(dc, 278, 235, "MAXIMUM", hrMax, "BPM", 145, Graphics.FONT_MEDIUM);
+            drawHeartRateZone(dc, cx, 310, 220, currentHeartRateZone);
         } else if (mCurrentPageId == 3) {
             drawPageHeader(dc, "DISTANZ & ZEIT");
-            drawMetric(dc, cx, mUnit * 0.25, "DISTANZ", distance, "KM", mUnit * 0.68, Graphics.FONT_LARGE);
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.57, "ZEIT", elapsed, "", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.57, "KALORIEN", calories, "KCAL", mUnit * 0.39, Graphics.FONT_MEDIUM);
+            drawMetric(dc, cx, 115, "DISTANZ", distance, "KM", 260, Graphics.FONT_LARGE);
+            drawMetric(dc, 112, 245, "ZEIT", elapsed, "", 145, Graphics.FONT_MEDIUM);
+            drawMetric(dc, 278, 245, "KALORIEN", calories, "KCAL", 145, Graphics.FONT_MEDIUM);
         } else if (mCurrentPageId >= 5 && mCurrentPageId <= 7) {
             var customMetricValues = {
                 "speedNow" => speedNow,
@@ -1081,99 +1036,51 @@ class KajoConnectActivityView extends WatchUi.View {
             drawCustomMetricPage(dc, cx, customMetricValues,
                 getCustomMetricIds(customLayoutIndex), getCustomMetricSizes(customLayoutIndex),
                 getCustomMetricPositions(customLayoutIndex), customPageTitle);
+            mButtonTop = 340;
+            mButtonBottom = 375;
         } else if (mCurrentPageId == 8) {
-            if (mWorkoutSteps.size() > 0) {
-                drawPageHeader(dc, "TRAININGSABLAUF");
-                if (mWorkoutSequenceComplete) {
-                    drawFit(dc, cx, mUnit * 0.34, "ABGESCHLOSSEN", mUnit * 0.78, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-                    drawFit(dc, cx, mUnit * 0.47, mWorkoutSteps.size().toString() + " SCHRITTE ERLEDIGT", mUnit * 0.76, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
-                } else {
-                    var currentStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
-                    var stepType = currentStep["type"].toString();
-                    var stepTypeLabel = "TRAINING";
-                    if (stepType == "warmup") { stepTypeLabel = "AUFWAERMEN"; }
-                    else if (stepType == "work") { stepTypeLabel = "BELASTUNG"; }
-                    else if (stepType == "recovery") { stepTypeLabel = "ERHOLUNG"; }
-                    else if (stepType == "cooldown") { stepTypeLabel = "ABWAERMEN"; }
-                    drawFit(dc, cx, mUnit * 0.235, "SCHRITT " + (mWorkoutStepIndex + 1).toString() + " / " + mWorkoutSteps.size().toString() + " · " + stepTypeLabel, mUnit * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                    drawFit(dc, cx, mUnit * 0.34, compactWorkoutText(currentStep["label"].toString(), 42), mUnit * 0.82, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-                    var stepDuration = currentStep["durationSeconds"] as Lang.Number;
-                    var remaining = stepDuration - mWorkoutStepElapsedSeconds;
-                    if (remaining < 0) { remaining = 0; }
-                    drawFit(dc, cx, mUnit * 0.47, formatTime(remaining * 1000), mUnit * 0.82, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-                    if (currentStep["target"] != null && currentStep["target"].toString() != "") {
-                        drawFit(dc, cx, mUnit * 0.60, compactWorkoutText(currentStep["target"].toString(), 58), mUnit * 0.82, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
-                    }
-                    if (mWorkoutStepIndex + 1 < mWorkoutSteps.size()) {
-                        var nextStep = mWorkoutSteps[mWorkoutStepIndex + 1] as Lang.Dictionary;
-                        drawFit(dc, cx, mUnit * 0.705, "ALS NAECHSTES: " + compactWorkoutText(nextStep["label"].toString(), 32),
-                            mUnit * 0.82, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                    } else {
-                        drawFit(dc, cx, mUnit * 0.705, "LETZTER SCHRITT", mUnit * 0.82,
-                            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                    }
+            drawPageHeader(dc, "TRAININGSABLAUF");
+            if (mWorkoutSteps.size() > 0 && !mWorkoutSequenceComplete) {
+                var currentStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+                drawDashboardPanel(dc, 45, 125, 300, 175);
+                drawFit(dc, 195, 158, compactWorkoutText(currentStep["label"].toString(), 42),
+                    260, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+                var stepDuration = currentStep["durationSeconds"] as Lang.Number;
+                var remaining = stepDuration - mWorkoutStepElapsedSeconds;
+                if (remaining < 0) { remaining = 0; }
+                drawFit(dc, 195, 205, formatTime(remaining * 1000),
+                    260, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+                if (currentStep["target"] != null && currentStep["target"].toString() != "") {
+                    drawFit(dc, 195, 255, compactWorkoutText(currentStep["target"].toString(), 58),
+                        260, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
                 }
             } else {
-                drawPageHeader(dc, "TRAININGSANWEISUNG");
-            if (mCurrentWorkoutIntensity != "") {
-                drawFit(dc, cx, mUnit * 0.215,
-                    "INTENSITAET - " + compactWorkoutText(mCurrentWorkoutIntensity, 34),
-                    mUnit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                drawFit(dc, 195, 180, "ABGESCHLOSSEN", 260,
+                    Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
             }
-            if (mCurrentWorkoutObjective != "") {
-                drawFit(dc, cx, mUnit * 0.285, "ZIEL", mUnit * 0.72,
-                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                drawFit(dc, cx, mUnit * 0.325, compactWorkoutText(mCurrentWorkoutObjective, 58),
-                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-            if (mCurrentWorkoutWarmup != "") {
-                drawFit(dc, cx, mUnit * 0.415, "AUFWAERMEN", mUnit * 0.72,
-                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                drawFit(dc, cx, mUnit * 0.455, compactWorkoutText(mCurrentWorkoutWarmup, 58),
-                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-            if (mCurrentWorkoutMainSet != "") {
-                drawFit(dc, cx, mUnit * 0.545, "HAUPTTEIL", mUnit * 0.72,
-                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                drawFit(dc, cx, mUnit * 0.585, compactWorkoutText(mCurrentWorkoutMainSet, 72),
-                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-            if (mCurrentWorkoutCooldown != "") {
-                drawFit(dc, cx, mUnit * 0.695, "ABWAERMEN", mUnit * 0.72,
-                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-                drawFit(dc, cx, mUnit * 0.735, compactWorkoutText(mCurrentWorkoutCooldown, 58),
-                    mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            }
-            }
+            mButtonTop = 340;
+            mButtonBottom = 375;
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.245, "KADENZ", cadenceNow, "RPM", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.245, "LEISTUNG", powerNow, "W", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.30, mUnit * 0.49, "HOEHE", altitude, "M", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawMetric(dc, mScreenWidth * 0.70, mUnit * 0.49, "TRAINING EFFECT", trainingEffect, "", mUnit * 0.39, Graphics.FONT_MEDIUM);
-            drawFit(dc, cx, mUnit * 0.72, gpsText + " · GPS " + gpsAccuracy, mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawFit(dc, cx, mUnit * 0.765, "Anstieg " + ascent + " m · Abstieg " + descent + " m", mUnit * 0.76, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawMetric(dc, 112, 135, "KADENZ", cadenceNow, "RPM", 145, Graphics.FONT_MEDIUM);
+            drawMetric(dc, 278, 135, "LEISTUNG", powerNow, "W", 145, Graphics.FONT_MEDIUM);
+            drawMetric(dc, 112, 245, "HOEHE", altitude, "M", 145, Graphics.FONT_MEDIUM);
+            drawMetric(dc, 278, 245, "TRAINING EFFECT", trainingEffect, "", 145, Graphics.FONT_MEDIUM);
+            drawFit(dc, 195, 325, gpsText + " · GPS " + gpsAccuracy, 260, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            mButtonTop = 340;
+            mButtonBottom = 375;
         }
 
-        mButtonTop = mUnit * 0.82;
-        mButtonBottom = mUnit * 0.90;
-        if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
-            drawButton(dc, cx, mUnit * 0.81, mUnit * 0.54, "STARTEN");
-        } else if (mStatus == "AUFZEICHNUNG") {
-            // Page navigation replaces the old lap/end pair. Activity is never ended here.
-            drawFit(dc, mScreenWidth * 0.23, mUnit * 0.835, "<", mUnit * 0.12,
-                Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            for (var dot = 0; dot < mPageCount && dot < 5; dot += 1) {
-                dc.setColor(dot == mPage ? 0x00E5CC : 0x555555, Graphics.COLOR_BLACK);
-                dc.fillCircle((cx + ((dot - ((mPageCount < 5 ? mPageCount : 5) - 1) / 2) * mUnit * 0.055)).toNumber(),
-                    (mUnit * 0.855).toNumber(), (mUnit * 0.009).toNumber());
+        if (mStatus == "AUFZEICHNUNG") {
+            // Pfeile und Punkte sind Navigation, keine zusaetzlichen Unterueberschriften.
+            drawFit(dc, 116, 342, "<", 22, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, 274, 342, ">", 22, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            var visibleDots = mPageCount < 5 ? mPageCount : 5;
+            var firstDotX = 195 - ((visibleDots - 1) * 9);
+            for (var dot = 0; dot < visibleDots; dot += 1) {
+                dc.setColor(dot == (mPage < 5 ? mPage : 4) ? 0x00E5CC : 0x555555, Graphics.COLOR_BLACK);
+                dc.fillCircle(firstDotX + (dot * 18), 354, 3);
             }
-            drawFit(dc, mScreenWidth * 0.77, mUnit * 0.835, ">", mUnit * 0.12,
-                Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
-            drawButton(dc, cx, mUnit * 0.81, mUnit * 0.54, "ERNEUT SPEICHERN");
-        } else {
-            drawButton(dc, cx, mUnit * 0.81, mUnit * 0.54, "ZURUECK");
         }
     }
 }
