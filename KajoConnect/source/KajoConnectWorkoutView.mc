@@ -64,7 +64,6 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var contentWidth = unit * 0.78;
 
         var name = valueText("name", "Geplante Einheit");
-        var date = valueText("date", "Datum offen");
         var type = valueText("type", "Training");
         var duration = valueText("duration", "");
         var targetLoad = valueText("targetTss", "");
