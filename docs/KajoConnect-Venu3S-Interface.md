@@ -4,6 +4,10 @@
 
 The Connect IQ manifest targets only `venu3s`. Garmin's device reference lists a round 390 × 390 AMOLED display, touch input, logical buttons `enter`, `menu`, and `esc`, and Connect IQ API level 5.2.
 
+## Minimum API level
+
+The manifest minimum is Connect IQ API 5.1.0 because the native menus use the `:footer` option, which Garmin documents as available since API 5.1.0. The Venu 3S target supports API 5.2.
+
 ## Screen architecture
 
 Use Garmin's native UI components wherever the screen is primarily a list or a set of preferences:
