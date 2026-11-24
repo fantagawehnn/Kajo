@@ -68,46 +68,36 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
         drawFit(dc, cx, mUnit * 0.075, "ANZEIGE",
             mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        // Die Optionen stehen direkt unter dem Seitentitel.
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(62, mUnit * 0.16, 328, mUnit * 0.16);
 
-        var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
+        var labels = ["Übersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.205;
         mRowHeight = mUnit * 0.105;
-        var cardHeight = mRowHeight * 0.82;
-        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.76);
-        var cardX = cx - (cardWidth / 2);
-
+        var rowWidth = mKajoLayout.safeRectWidth(mRowTop, mRowHeight * 0.82, mUnit * 0.80);
+        var left = cx - (rowWidth / 2);
         for (var i = 0; i < 5; i += 1) {
             var y = mRowTop + (i * mRowHeight);
-            dc.setColor(0x071619, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.022).toNumber());
-            dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.022).toNumber());
-            if (mEnabled[i]) {
-                dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle((cardX + mUnit * 0.015).toNumber(),
-                    (y + mUnit * 0.016).toNumber(), (mUnit * 0.009).toNumber(),
-                    (cardHeight - mUnit * 0.032).toNumber(), (mUnit * 0.004).toNumber());
-            }
+            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), (mRowHeight * 0.82).toNumber());
+            dc.setColor(mEnabled[i] ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), y.toNumber(), 4, (mRowHeight * 0.82).toNumber());
+            drawFit(dc, cx - rowWidth * 0.12, y + mRowHeight * 0.20,
+                labels[i], rowWidth * 0.66, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
             var state = mEnabled[i] ? "AN" : "AUS";
-            var labelWidth = cardWidth * 0.68;
-            drawFit(dc, cardX + (labelWidth / 2) + (mUnit * 0.035),
-                y + (cardHeight * 0.27), labels[i], labelWidth * 0.94,
-                Graphics.FONT_TINY, Graphics.COLOR_WHITE);
-            drawFit(dc, cardX + cardWidth * 0.86,
-                y + (cardHeight * 0.30), state, cardWidth * 0.22,
-                Graphics.FONT_XTINY, mEnabled[i] ? 0x00E5CC : Graphics.COLOR_LT_GRAY);
+            drawFit(dc, cx + rowWidth * 0.36, y + mRowHeight * 0.20,
+                state, rowWidth * 0.20, Graphics.FONT_XTINY,
+                mEnabled[i] ? 0x25D3CB : 0x98A5AB);
+            if (i < 4) {
+                dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+                dc.drawLine(left.toNumber(), y + (mRowHeight * 0.90),
+                    (left + rowWidth).toNumber(), y + (mRowHeight * 0.90));
+            }
         }
 
-        var saveHeight = mUnit * 0.08;
-        var saveY = mUnit * 0.77;
-        var saveWidth = mKajoLayout.safeRectWidth(saveY, saveHeight, mUnit * 0.54);
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((cx - saveWidth / 2).toNumber(), saveY.toNumber(),
-            saveWidth.toNumber(), saveHeight.toNumber(), (mUnit * 0.025).toNumber());
-        drawFit(dc, cx, saveY + (mUnit * 0.022), "SPEICHERN",
-            saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+        drawFit(dc, cx, mUnit * 0.79, "OBERE TASTE · SPEICHERN",
+            mUnit * 0.72, Graphics.FONT_XTINY, 0x25D3CB);
+        drawFit(dc, cx, mUnit * 0.86, "UNTERE TASTE · ZURÜCK",
+            mUnit * 0.72, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
