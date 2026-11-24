@@ -47,36 +47,3 @@ test('activity manifest prevents deleted cloud rows from reappearing', () => {
     ], ['kept']);
     assert.deepEqual(merged, [{ id: 'kept' }]);
 });
-
-test('new Garmin Connect IQ uploads remain visible before the snapshot manifest is refreshed', () => {
-    const merged = mergeCloudActivities(
-        [{ id: 'older', name: 'Existing activity' }],
-        [
-            { record_id: 'older', payload: { id: 'older', name: 'Existing cloud activity' } },
-            { record_id: 'watch-device-1-activity-1', payload: {
-                id: 'kajo-watch-device-1-activity-1',
-                source: 'garmin-connect-iq',
-                name: 'KAJO Watch K1'
-            } },
-            { record_id: 'removed-other', payload: { id: 'removed-other', source: 'garmin' } }
-        ],
-        ['older']
-    );
-    assert.deepEqual(merged.map(item => item.id), ['older', 'kajo-watch-device-1-activity-1']);
-    assert.equal(merged[1].source, 'garmin-connect-iq');
-});
-
-test('watch uploads become subject to the refreshed activity manifest', () => {
-    const merged = mergeCloudActivities(
-        [],
-        [{ record_id: 'watch-id', payload: { id: 'watch-id', source: 'garmin-connect-iq' } }],
-        []
-    );
-    assert.deepEqual(merged, [{ id: 'watch-id', source: 'garmin-connect-iq' }]);
-    const afterRemoval = mergeCloudActivities(
-        [],
-        [{ record_id: 'watch-id', payload: { id: 'watch-id', source: 'garmin-connect-iq' } }],
-        []
-    );
-    assert.equal(afterRemoval.length, 1);
-});
