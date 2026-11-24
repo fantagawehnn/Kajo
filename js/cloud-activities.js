@@ -171,7 +171,12 @@ export function mergeCloudActivities(snapshotActivities, cloudRows, allowedRecor
     const allowed = Array.isArray(allowedRecordIds) ? new Set(allowedRecordIds.map(String)) : null;
     for (const row of Array.isArray(cloudRows) ? cloudRows : []) {
         if (!row?.record_id || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
-        if (allowed && !allowed.has(String(row.record_id))) continue;
+        // Watch uploads are created after the snapshot manifest was last written.
+        // Keep them visible even when the manifest does not know their IDs yet.
+        // Once the user removes one and the next snapshot sync writes a new
+        // manifest, the same allow-list continues to prevent deleted rows returning.
+        const isWatchUpload = row.payload.source === 'garmin-connect-iq';
+        if (allowed && !allowed.has(String(row.record_id)) && !isWatchUpload) continue;
         merged.set(String(row.record_id), row.payload);
     }
     return Array.from(merged.values());
