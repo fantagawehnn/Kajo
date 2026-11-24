@@ -76,6 +76,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mElapsedSeconds as Lang.Number = 0;
     var mFinalDistance as Lang.String = "--";
     var mFinalAverageHeartRate as Lang.String = "--";
+    var mFinalDistanceMeters = null;
+    var mFinalAverageHeartRateValue = null;
     var mHistoryEntrySaved as Lang.Boolean = false;
 
     function loadWorkoutSteps(value) as Void {
@@ -847,9 +849,11 @@ class KajoConnectActivityView extends WatchUi.View {
         var info = Activity.getActivityInfo();
         if (info == null) { return; }
         if (info.elapsedDistance != null) {
+            mFinalDistanceMeters = info.elapsedDistance;
             mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
         }
         if (info.averageHeartRate != null) {
+            mFinalAverageHeartRateValue = info.averageHeartRate;
             mFinalAverageHeartRate = info.averageHeartRate.toString();
         }
         if (info.timerTime != null && info.timerTime > 0) {
@@ -866,6 +870,8 @@ class KajoConnectActivityView extends WatchUi.View {
             mElapsedSeconds = 0;
             mFinalDistance = "--";
             mFinalAverageHeartRate = "--";
+            mFinalDistanceMeters = null;
+            mFinalAverageHeartRateValue = null;
             mHistoryEntrySaved = false;
             mWorkoutStepIndex = 0;
             mWorkoutStepElapsedSeconds = 0;
@@ -925,9 +931,19 @@ class KajoConnectActivityView extends WatchUi.View {
             var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
             var dayText = (info.day < 10 ? "0" : "") + info.day.toString();
             var monthText = (info.month < 10 ? "0" : "") + info.month.toString();
+            var dateIso = info.year.toString() + "-" + monthText + "-" + dayText;
 
             var entry = {};
             entry["date"] = dayText + "." + monthText + ".";
+            entry["dateIso"] = dateIso;
+            entry["durationSeconds"] = mElapsedSeconds;
+            entry["source"] = "garmin-connect-iq";
+            if (mFinalDistanceMeters != null) {
+                entry["distanceMeters"] = mFinalDistanceMeters;
+            }
+            if (mFinalAverageHeartRateValue != null) {
+                entry["averageHeartRateBpm"] = mFinalAverageHeartRateValue;
+            }
             entry["boatClass"] = mBoatClass;
             entry["name"] = mCurrentWorkoutName;
             entry["duration"] = formatTime(mElapsedSeconds * 1000);
