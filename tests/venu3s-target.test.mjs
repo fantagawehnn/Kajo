@@ -224,7 +224,8 @@ test("home screen prioritizes one large start action and separates secondary nav
   assert.match(homeView, /mMenuRowStep = 52/);
   assert.match(homeView, /if \(y >= mStartTop && y <= mStartBottom &&/);
   assert.match(homeView, /startActivity\(\)/);
-  assert.match(homeView, /mBoatLeft = secondaryLeft/);\n  assert.doesNotMatch(homeView, /if \(y >= 76 && y <= 106/);
+  assert.match(homeView, /mBoatLeft = secondaryLeft/);
+  assert.doesNotMatch(homeView, /if \(y >= 76 && y <= 106/);
   assert.doesNotMatch(homeView, /var labels = \["HEUTE", "GESPEICHERT", "FREI TRAINIEREN"\]/);
 });
 
