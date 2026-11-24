@@ -399,8 +399,11 @@ class KajoConnectView extends WatchUi.View {
         }
         if (y >= mFreeTop && y <= mFreeBottom) {
             var row = Math.floor((y - mFreeTop) / mMenuRowStep).toNumber();
-            if (row >= 0 && row < 3) {
-                mHomeSelection = row;
+            if (row == 0) {
+                mHomeSelection = 1;
+                activateHomeSelection();
+            } else if (row == 1) {
+                mHomeSelection = 2;
                 activateHomeSelection();
             }
         }
@@ -444,9 +447,9 @@ class KajoConnectView extends WatchUi.View {
 
         mStartTop = 100;
         mStartBottom = 158;
-        mFreeTop = 166;
-        mFreeBottom = 352;
-        mMenuRowStep = 61;
+        mFreeTop = 167;
+        mFreeBottom = 291;
+        mMenuRowStep = 66;
 
         for (var item = 0; item < 3; item += 1) {
             var top = 101 + (item * 66);
