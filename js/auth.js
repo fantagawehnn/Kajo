@@ -81,9 +81,24 @@ function showApp(session) {
 
 window.addEventListener('endurance:user-load-error', (event) => {
     const detail = event.detail || {};
+    // Verspätete Fehler eines vorherigen Kontos dürfen die aktuelle Ansicht
+    // nicht schließen oder den Status des inzwischen angemeldeten Kontos ändern.
+    if (detail.userId && detail.userId !== currentAuthUserId) return;
+
+    localReadyUserId = null;
+    readyUserId = null;
     authBootScreen?.classList.add('hidden');
     authScreen.classList.remove('hidden');
-    setMessage('Deine Kontodaten konnten nicht geladen werden: ' + (detail.message || 'Unbekannter Fehler') + ' Bitte lade die Seite neu. Deine gespeicherten Daten wurden nicht gelöscht.', true);
+    appNavigation.classList.add('hidden');
+    appMain.classList.add('hidden');
+    appNavigation.inert = false;
+    appMain.inert = false;
+    if (mobileHeader) mobileHeader.inert = true;
+    appMain.setAttribute('aria-busy', 'false');
+    activationNotice.classList.add('hidden');
+    // Die Abmeldung bleibt auch nach einem fehlgeschlagenen Cloud-Abgleich erreichbar.
+    userBar.classList.remove('hidden');
+    setMessage('Deine Kontodaten konnten nicht sicher abgeglichen werden: ' + (detail.message || 'Unbekannter Fehler') + ' Bitte lade die Seite neu. Deine lokalen Daten wurden nicht gelöscht.', true);
 });
 
 window.addEventListener('endurance:user-local-ready', (event) => {

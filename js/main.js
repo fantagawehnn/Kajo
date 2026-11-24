@@ -3668,7 +3668,10 @@ async function handleAuthSession(session) {
                     deactivateUserStorage();
                     activeAppUserId = null;
                     window.dispatchEvent(new CustomEvent('endurance:user-load-error', {
-                        detail: { message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.' }
+                        detail: {
+                            userId,
+                            message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.'
+                        }
                     }));
                 }
             }
