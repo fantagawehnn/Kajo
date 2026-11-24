@@ -67,8 +67,7 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
 
         drawCentered(dc, cx, mUnit * 0.075, "TRAINING STARTEN", mUnit * 0.76,
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.13, "EINHEIT AUSWAEHLEN", mUnit * 0.72,
-            Graphics.FONT_XTINY, 0x00E5CC);
+        // Auswahl wird durch die Karten selbst erklaert.
 
         mRowTop = Math.floor(mUnit * 0.215).toNumber();
         mRowHeight = Math.floor(mUnit * 0.178).toNumber();
