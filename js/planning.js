@@ -99,6 +99,7 @@ export function addPlannedStrengthExercise(){
     const reps=document.getElementById('plan-strength-exercise-reps')?.value||'';
     const weight=document.getElementById('plan-strength-exercise-weight')?.value||'';
     try{
+        if(plannedStrengthExercises.length>=40)throw new Error('Du kannst maximal 40 Übungen pro Trainingseinheit hinterlegen.');
         plannedStrengthExercises.push(createPlannedStrengthExercise({name,sets,reps,weight}));
         ['plan-strength-exercise-name','plan-strength-exercise-weight'].forEach(id=>setPlanField(id,''));
         renderPlannedStrengthExercises();
