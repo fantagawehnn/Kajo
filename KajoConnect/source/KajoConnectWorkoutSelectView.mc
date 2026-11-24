@@ -6,7 +6,6 @@ import Toybox.WatchUi;
 class KajoConnectWorkoutSelectView extends WatchUi.View {
 
     var mKajoLayout as KajoLayout;
-
     var mSessions as Lang.Array<Lang.Dictionary>;
     var mHomeView as KajoConnectView;
     var mPage as Lang.Number = 0;
@@ -71,17 +70,13 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         mUnit = width < height ? width : height;
         mKajoLayout.configure(width, height);
         var cx = width / 2;
-
-        drawCentered(dc, cx, mUnit * 0.075, "TRAINING STARTEN", mUnit * 0.76,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        // Auswahl wird durch die Karten selbst erklaert.
+        drawCentered(dc, cx, mUnit * 0.075, "HEUTE · TRAINING WÄHLEN",
+            mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(62, mUnit * 0.17, 328, mUnit * 0.17);
 
         mRowTop = Math.floor(mUnit * 0.215).toNumber();
         mRowHeight = Math.floor(mUnit * 0.178).toNumber();
-        var cardHeight = mUnit * 0.15;
-        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.76);
-        var cardX = cx - (cardWidth / 2);
-
         for (var row = 0; row < 3; row += 1) {
             var index = (mPage * 3) + row;
             if (index >= mSessions.size()) { continue; }
@@ -90,35 +85,30 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
             var name = session["name"] == null ? "Geplante Einheit" : session["name"].toString();
             var type = session["type"] == null ? "Training" : session["type"].toString();
             var duration = session["duration"] == null ? "" : session["duration"].toString();
-
-            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.028).toNumber());
-            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.028).toNumber());
-            drawCentered(dc, cx, y + mUnit * 0.027, compactText(name, 34),
-                cardWidth * 0.86, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            var detail = type;
-            if (duration != "") { detail += "  /  " + duration + " MIN"; }
-            drawCentered(dc, cx, y + mUnit * 0.077, detail,
-                cardWidth * 0.86, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            var rowWidth = mKajoLayout.safeRectWidth(y, 58, mUnit * 0.80);
+            var left = cx - (rowWidth / 2);
+            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), 58);
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 58);
+            drawCentered(dc, cx, y + 6, compactText(name, 34), rowWidth - 22,
+                Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawCentered(dc, cx, y + 28, type + (duration == "" ? "" : " · " + duration + " MIN"),
+                rowWidth - 22, Graphics.FONT_XTINY, 0x98A5AB);
+            var cue = session["mainSet"] == null ? "" : session["mainSet"].toString();
             var intensity = session["intensity"];
-            var mainSet = session["mainSet"];
-            var cue = mainSet == null ? "" : mainSet.toString();
             if (intensity != null && intensity.toString() != "") {
-                cue = cue == "" ? intensity.toString() : intensity.toString() + "  /  " + cue;
+                cue = cue == "" ? intensity.toString() : intensity.toString() + " · " + cue;
             }
             if (cue != "") {
-                drawCentered(dc, cx, y + mUnit * 0.112, compactText(cue, 38),
-                    cardWidth * 0.86, Graphics.FONT_XTINY, 0x00E5CC);
+                drawCentered(dc, cx, y + 43, compactText(cue, 38),
+                    rowWidth - 22, Graphics.FONT_XTINY, 0x25D3CB);
             }
         }
-
         drawCentered(dc, cx, mUnit * 0.795,
-            (mPage + 1).toString() + " / " + mPageCount.toString() + "  ·  WISCHEN",
-            mUnit * 0.68, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawCentered(dc, cx, mUnit * 0.86, "ZURUECK", mUnit * 0.55,
-            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            (mPage + 1).toString() + " / " + mPageCount.toString() + " · WISCHEN",
+            mUnit * 0.68, Graphics.FONT_XTINY, 0x98A5AB);
+        drawCentered(dc, cx, mUnit * 0.85, "ZURÜCK",
+            mUnit * 0.55, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
