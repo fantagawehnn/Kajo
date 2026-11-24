@@ -810,19 +810,25 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
     if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich an, bevor du Garmin-Gesundheitsdaten wiederherstellst.');
     if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
 
-    const rows = [];
-    const pageSize = 1000;
-    for (let offset = 0; ; offset += pageSize) {
-        const { data, error } = await supabase.from('garmin_health_records')
-            .select('data_type, record_date, payload')
-            .gte('record_date', startDate)
-            .lte('record_date', endDate)
-            .order('record_date', { ascending: true })
-            .range(offset, offset + pageSize - 1);
-        if (error) throw error;
-        rows.push(...(data || []));
-        if (!data || data.length < pageSize) break;
-    }
+    const userId = activeAppUserId;
+    const { count, error: countError } = await supabase.from('garmin_health_records')
+        .select('record_date', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('record_date', startDate)
+        .lte('record_date', endDate);
+    if (countError) throw countError;
+
+    const rows = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_health_records')
+        .select('data_type, record_date, payload')
+        .eq('user_id', userId)
+        .gte('record_date', startDate)
+        .lte('record_date', endDate)
+        .order('record_date', { ascending: true })
+        .range(offset, offset + limit - 1), {
+            pageSize: 1000,
+            totalCount: Number.isFinite(count) ? count : undefined,
+            concurrency: 3
+        });
 
     const byDate = new Map();
     for (const row of rows) {
