@@ -122,6 +122,9 @@ test("Activity screen uses shared bounded text and reserves a separate bottom co
   assert.match(activityView, /mScreenWidth = dc\.getWidth\(\)/);
   assert.match(activityView, /drawActivityDashboard\(dc, cx, hrNow, elapsed, distance, speedNow/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
+  assert.match(homeView, /KEIN TRAINING FÜR HEUTE GEPLANT/);
+  assert.match(homeView, /if \(todaySessions\.size\(\) == 0\)/);
+  assert.match(homeView, /mStartLeft = 0/);
 });
 
 test("all custom Garmin screens use the shared measured-width text layout", () => {
@@ -201,6 +204,9 @@ test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts"
   assert.match(activityView, /mTrainingFieldCount == 2/);
   assert.match(activityView, /mTrainingFieldCount == 4/);
   assert.match(activityView, /mTrainingFieldCount == 6/);
+  assert.match(activityView, /var mTrainingFieldCount as Lang\.Number = 4/);
+  assert.match(activityView, /drawHeartRateField\(dc, 278, fieldTop4 \+ fieldRowHeight4, 126, hrNow, zone\)/);
+  assert.match(activityView, /drawLine\(72, fieldTop4 \+ fieldRowHeight4, 318, fieldTop4 \+ fieldRowHeight4\)/);
   assert.match(activityView, /intervalDistanceText\(activityInfo\)/);
 });
 
