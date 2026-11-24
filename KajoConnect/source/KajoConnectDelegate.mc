@@ -10,6 +10,19 @@ class KajoConnectDelegate extends WatchUi.BehaviorDelegate {
         mView = view;
     }
 
+    function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
+        var key = keyEvent.getKey();
+        if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
+            mView.activateHomeSelection();
+            return true;
+        }
+        if (key == WatchUi.KEY_ESC) {
+            mView.openSettings();
+            return true;
+        }
+        return false;
+    }
+
     function onTap(clickEvent) {
 
         var coordinates = clickEvent.getCoordinates();
