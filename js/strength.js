@@ -13,7 +13,7 @@ export function renderStrengthView() {
     const search = String(document.getElementById('strength-database-search')?.value || '').trim().toLocaleLowerCase('de');
     const records = extractStrengthRecords(state.rawActivities, state.strengthPBs);
     const groups = groupStrengthRecords(records).filter(group => !search || group.exercise.toLocaleLowerCase('de').includes(search));
-    const totalSets = records.length;
+    const totalSets = groups.reduce((sum, group) => sum + group.entries.length, 0);
     const summary = document.getElementById('strength-database-summary');
     if (summary) summary.textContent = records.length
         ? groups.length + ' Übungen · ' + totalSets + ' dokumentierte Sätze' + (search ? ' · gefiltert' : '')
