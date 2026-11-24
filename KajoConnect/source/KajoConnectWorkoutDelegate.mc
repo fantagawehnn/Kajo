@@ -1,12 +1,12 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-class KajoConnectWorkoutDelegate extends WatchUi.BehaviorDelegate {
+class KajoConnectWorkoutDelegate extends WatchUi.InputDelegate {
 
     var mView as KajoConnectWorkoutView;
 
     function initialize(view as KajoConnectWorkoutView) {
-        BehaviorDelegate.initialize();
+        InputDelegate.initialize();
         mView = view;
     }
 
@@ -17,6 +17,10 @@ class KajoConnectWorkoutDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
         if (key == WatchUi.KEY_ESC) {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            return true;
+        }
+        if (key == WatchUi.KEY_MENU || key == WatchUi.KEY_ACTION_MENU) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return true;
         }
