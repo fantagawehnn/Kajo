@@ -209,8 +209,7 @@ class KajoConnectPairingView extends WatchUi.View {
 
         drawFit(dc, center, unit * 0.12, "KAJO",
             unit * 0.70, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawFit(dc, center, unit * 0.205, "UHR VERBINDEN",
-            unit * 0.72, Graphics.FONT_SMALL, 0x00E5CC);
+        // Kopplungsstatus und Code erklaeren den Vorgang direkt.
 
         if (mCode.length() > 0 && !mPaired) {
             var cardTop = unit * 0.31;
