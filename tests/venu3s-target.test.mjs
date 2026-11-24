@@ -7,6 +7,7 @@ const buildScript = readFileSync(new URL("../KajoConnect/build.ps1", import.meta
 const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityDelegate.mc", import.meta.url), "utf8");
 const homeDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectDelegate.mc", import.meta.url), "utf8");
 const menuDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectMenuViewDelegate.mc", import.meta.url), "utf8");
+const settingsMenu = readFileSync(new URL("../KajoConnect/source/KajoConnectMenuView.mc", import.meta.url), "utf8");
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
 const layoutView = readFileSync(new URL("../KajoConnect/source/KajoLayout.mc", import.meta.url), "utf8");
@@ -43,8 +44,9 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
   assert.match(activityDelegate, /function onMenu\(\)[\s\S]*?nextDisplayPage\(1\)/);
-  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?moveHomeSelection\(1\)/);
-  assert.match(menuDelegate, /function onMenu\(\)[\s\S]*?moveSelection\(1\)/);
+  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
+  assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
+  assert.match(settingsMenu, /extends WatchUi\.Menu2/);
 });
 
 test("Recording uses Garmin kayaking with whitewater subsport", () => {
@@ -117,8 +119,6 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
   for (const [name, source] of [
     ["home", homeView],
     ["activity", activityView],
-    ["workout select", workoutSelectView],
-    ["workout list", workoutListView],
     ["workout detail", workoutView],
     ["custom fields", customFieldsView],
     ["display config", displayConfigView],
@@ -230,4 +230,27 @@ test("shared text boxes reject text taller than their assigned vertical region",
   assert.match(layoutView, /dc\.getFontHeight\(font\) > height/);
   assert.match(homeView, /mKajoLayout\.drawTextBox/);
   assert.match(activityView, /mKajoLayout\.drawTextBox/);
+});
+
+test("all custom watch views clear with an opaque black background before drawing", () => {
+  const sourceDirectory = new URL("../KajoConnect/source/", import.meta.url);
+  const sourceFiles = readdirSync(sourceDirectory).filter((name) => name.endsWith(".mc"));
+  for (const fileName of sourceFiles) {
+    const source = readFileSync(new URL(fileName, sourceDirectory), "utf8");
+    if (!source.includes("dc.clear();")) continue;
+    assert.match(
+      source,
+      /dc\.setColor\(Graphics\.COLOR_BLACK,\s*Graphics\.COLOR_BLACK\);\s*dc\.clear\(\);/,
+      fileName + " must clear to an opaque black background"
+    );
+  }
+});
+
+test("settings and workout selection use Garmin-native Menu2 views", () => {
+  assert.match(settingsMenu, /extends WatchUi\.Menu2/);
+  assert.match(settingsMenu, /new WatchUi\.MenuItem\("Trainingsfelder"/);
+  assert.match(settingsMenu, /new WatchUi\.MenuItem\("Mit KAJO verbinden"/);
+  assert.match(workoutListView, /extends WatchUi\.Menu2/);
+  assert.match(workoutSelectView, /extends WatchUi\.Menu2/);
+  assert.match(menuDelegate, /function onSelect\(item as WatchUi\.MenuItem\)/);
 });
