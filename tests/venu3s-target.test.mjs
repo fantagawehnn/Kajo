@@ -7,6 +7,7 @@ const buildScript = readFileSync(new URL("../KajoConnect/build.ps1", import.meta
 const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityDelegate.mc", import.meta.url), "utf8");
 const homeDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectDelegate.mc", import.meta.url), "utf8");
 const menuDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectMenuViewDelegate.mc", import.meta.url), "utf8");
+const settingsRootDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectMenuDelegate.mc", import.meta.url), "utf8");
 const settingsMenu = readFileSync(new URL("../KajoConnect/source/KajoConnectMenuView.mc", import.meta.url), "utf8");
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
@@ -45,7 +46,8 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
   assert.match(activityDelegate, /function onMenu\(\)[\s\S]*?nextDisplayPage\(1\)/);
-  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);\n  assert.match(readFileSync(new URL("../KajoConnect/source/KajoConnectMenuDelegate.mc", import.meta.url), "utf8"), /function onSelect\\(item as WatchUi\\.MenuItem\\)[\\s\\S]*?openSettingsItem\\(item\\.getId\\(\\)\\.toString\\(\\)\\)/);
+  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
+  assert.match(settingsRootDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
   assert.match(settingsMenu, /extends WatchUi\.Menu2/);
   assert.match(displayConfigView, /extends WatchUi\.CheckboxMenu/);
