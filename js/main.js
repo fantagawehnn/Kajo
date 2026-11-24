@@ -3481,10 +3481,11 @@ async function handleAuthSession(session) {
             // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
             // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
             // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
-            const [loadedUserId, cloudSnapshot, cloudActivities] = await Promise.all([
+            const [loadedUserId, cloudSnapshot, cloudActivities, baseline] = await Promise.all([
                 withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000),
                 withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
-                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000)
+                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000),
+                withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
             ]);
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             if (loadedUserId !== userId) {
@@ -3507,7 +3508,6 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
-                const baseline = await loadCloudSyncBaseline();
                 const reconciliation = await reconcileCloudState(userId, cloudSnapshot, cloudActivities, baseline);
                 if (!reconciliation.ok) {
                     cloudSyncBlocked = true;
