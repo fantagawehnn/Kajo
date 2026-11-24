@@ -205,8 +205,8 @@ test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts"
   assert.match(activityView, /mTrainingFieldCount == 4/);
   assert.match(activityView, /mTrainingFieldCount == 6/);
   assert.match(activityView, /var mTrainingFieldCount as Lang\.Number = 4/);
-  assert.match(activityView, /drawHeartRateField\(dc, 278, fieldTop4 \+ fieldRowHeight4, 126, hrNow, zone\)/);
-  assert.match(activityView, /drawLine\(72, fieldTop4 \+ fieldRowHeight4, 318, fieldTop4 \+ fieldRowHeight4\)/);
+  assert.match(activityView, /dc\.fillRoundedRectangle\(54, 123, 282, 31, 15\)/);\n  assert.match(activityView, /dc\.drawArc\(cx, 197, 105, Graphics\.ARC_CLOCKWISE, 225, 360\)/);\n  assert.match(activityView, /drawActivityText\(dc, 276, 326, 126, 34, "♥ " \+ hrNow/);
+  assert.match(activityView, /dc\.drawLine\(72, 320, 318, 320\)/);\n  assert.match(activityView, /"PACE MIN\/KM"/);\n  assert.match(activityView, /"BPM · ZONE " \+ zone\.toString\(\)/);
   assert.match(activityView, /intervalDistanceText\(activityInfo\)/);
 });
 
