@@ -177,7 +177,7 @@ class KajoLayout {
         }
 
         if (displayText.length() == 0 || availableWidth <= 0) { return; }
-        dc.setColor(color, Graphics.COLOR_BLACK);
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
             Math.round(x).toNumber(),
             textY,
