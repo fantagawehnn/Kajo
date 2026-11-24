@@ -567,53 +567,53 @@ class KajoConnectActivityView extends WatchUi.View {
 
         // Status als einzelne kompakte Kennzeichnung – keine zweite Textzeile.
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(70, 42, 250, 30, 12);
+        dc.fillRoundedRectangle(85, 72, 220, 28, 11);
         dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(70, 42, 250, 30, 12);
-        drawFit(dc, 195, 48, statusText, 224, Graphics.FONT_SMALL, cyan);
+        dc.drawRoundedRectangle(85, 72, 220, 28, 11);
+        drawFit(dc, 195, 78, statusText, 194, Graphics.FONT_SMALL, cyan);
 
         // Timer als zentrale Information.
         var timerText = remainingText != "" ? remainingText :
             (activityInfo != null && activityInfo.timerTime != null
                 ? formatTime(activityInfo.timerTime) : elapsed);
         dc.setColor(0x12363B, Graphics.COLOR_BLACK);
-        dc.drawArc(195, 145, 59, Graphics.ARC_CLOCKWISE, 205, 335);
+        dc.drawArc(195, 164, 54, Graphics.ARC_CLOCKWISE, 205, 335);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawArc(195, 145, 59, Graphics.ARC_CLOCKWISE, 215, 325);
-        drawFit(dc, 195, 123, timerText, 250,
+        dc.drawArc(195, 164, 54, Graphics.ARC_CLOCKWISE, 215, 325);
+        drawFit(dc, 195, 141, timerText, 250,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
 
         // Zwei feste Kennzahlenkarten.
-        drawDashboardPanel(dc, 35, 207, 155, 76);
-        drawDashboardPanel(dc, 200, 207, 155, 76);
+        drawDashboardPanel(dc, 45, 228, 145, 68);
+        drawDashboardPanel(dc, 200, 228, 145, 68);
 
-        drawFit(dc, 112, 218, "GESCHWINDIGKEIT", 128,
+        drawFit(dc, 117, 237, "GESCHW.", 118,
             Graphics.FONT_XTINY, muted);
-        drawFit(dc, 112, 239, speedNow, 128,
+        drawFit(dc, 117, 254, speedNow, 118,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, 112, 263, "KM/H", 128,
+        drawFit(dc, 117, 277, "KM/H", 118,
             Graphics.FONT_XTINY, muted);
 
-        drawFit(dc, 277, 218, "DISTANZ", 128,
+        drawFit(dc, 272, 237, "DISTANZ", 118,
             Graphics.FONT_XTINY, muted);
-        drawFit(dc, 277, 239, distance, 128,
+        drawFit(dc, 272, 254, distance, 118,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, 277, 263, "KM", 128,
+        drawFit(dc, 272, 277, "KM", 118,
             Graphics.FONT_XTINY, muted);
 
         // Herzfrequenz und Zone erhalten eine eigene, klar begrenzte Fläche.
-        drawDashboardPanel(dc, 65, 294, 260, 48);
-        drawFit(dc, 195, 300, hrNow + " BPM", 220,
+        drawDashboardPanel(dc, 101, 302, 188, 38);
+        drawFit(dc, 195, 305, hrNow + " BPM", 158,
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
-        var barLeft = 112;
-        var segmentWidth = 28;
+        var barLeft = 122;
+        var segmentWidth = 24;
         var gap = 5;
         for (var z = 0; z < 5; z += 1) {
             var segmentColor = zone > 0 && zone == z + 1 ? zoneColors[z] : 0x263238;
             dc.setColor(segmentColor, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(barLeft + (z * (segmentWidth + gap)), 329,
+            dc.fillRoundedRectangle(barLeft + (z * (segmentWidth + gap)), 330,
                 segmentWidth, 5, 2);
         }
 
@@ -624,7 +624,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var firstDotX = 195 - ((visibleDots - 1) * 9);
         for (var dot = 0; dot < visibleDots; dot += 1) {
             dc.setColor(dot == (mPage < 5 ? mPage : 4) ? cyan : 0x555555, Graphics.COLOR_BLACK);
-            dc.fillCircle(firstDotX + (dot * 18), 354, 3);
+            dc.fillCircle(firstDotX + (dot * 18), 356, 3);
         }
     }
 
@@ -1075,8 +1075,8 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (mStatus == "AUFZEICHNUNG") {
             // Pfeile und Punkte sind Navigation, keine zusaetzlichen Unterueberschriften.
-            drawFit(dc, 116, 342, "<", 22, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            drawFit(dc, 274, 342, ">", 22, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, 116, 343, "<", 22, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, 274, 343, ">", 22, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
             var visibleDots = mPageCount < 5 ? mPageCount : 5;
             var firstDotX = 195 - ((visibleDots - 1) * 9);
             for (var dot = 0; dot < visibleDots; dot += 1) {
