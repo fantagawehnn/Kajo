@@ -740,6 +740,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var statusText = mBoatClass + " · FREI";
         var targetText = "";
         var phaseColor = 0x25D3CB;
+        var nextText = "";
 
         if (stepCount > 0 && !mWorkoutSequenceComplete && !mIsTransitioning) {
             var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
@@ -752,115 +753,140 @@ class KajoConnectActivityView extends WatchUi.View {
             }
             if (isRecoveryStep(step)) {
                 phaseColor = 0xFFB020;
-                statusText += " · ERHOLEN";
+                statusText += " · PAUSE";
             } else {
                 statusText += " · PADDELN!";
             }
+            if (mShowNextInterval) { nextText = nextStepSummary(); }
         } else if (mWorkoutSequenceComplete) {
-            statusText = "TRAINING ABGESCHLOSSEN";
+            statusText = "TRAINING BEENDET";
         }
 
+        // Runde Intervallanzeige: Statusleiste und Countdown liegen innerhalb
+        // des nutzbaren Kreisbereichs des Venu-3S-Displays.
         if (mTrainingShowStatus) {
-            drawActivityText(dc, cx, 35, 280, 20, statusText,
+            dc.setColor(0x263238, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(54, 123, 282, 31, 15);
+            dc.setColor(0x69D5D3, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(54, 123, 282, 31, 15);
+            drawActivityText(dc, cx, 127, 268, 22, statusText,
                 Graphics.FONT_SMALL, phaseColor);
         }
 
+        // Fortschrittsring um den Timer, mit kleinem offenen Abschnitt am unteren Rand.
         if (stepCount > 0 && !mWorkoutSequenceComplete) {
             var activeStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
             var activeDuration = activeStep["durationSeconds"] as Lang.Number;
             var progress = activeDuration > 0 ? mWorkoutStepElapsedSeconds / activeDuration : 0.0;
             if (progress < 0) { progress = 0; }
             if (progress > 1) { progress = 1; }
-            var progressEnd = 215 + (110 * progress);
+            var progressEnd = 225 + (310 * progress);
             dc.setColor(0x263238, Graphics.COLOR_BLACK);
-            dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 215, 325);
+            dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 135, 225);
+            dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 225, 315);
             dc.setColor(phaseColor, Graphics.COLOR_BLACK);
-            if (progressEnd > 215) {
-                dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 215, progressEnd);
+            if (progressEnd <= 360) {
+                dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 225, progressEnd);
+            } else {
+                dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 225, 360);
+                dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 0, progressEnd - 360);
             }
         }
 
-        drawActivityText(dc, cx, 86, 270, 58, timerText,
-            Graphics.FONT_NUMBER_HOT, phaseColor);
-        drawActivityText(dc, cx, 143, 120, 16, "MIN : SEK",
-            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, cx - 5, 164, 205, 56, timerText,
+            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+        drawActivityText(dc, cx + 105, 174, 42, 18, "min",
+            Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         if (targetText != "") {
-            drawActivityText(dc, cx, 163, 280, 18, targetText,
-                Graphics.FONT_XTINY, phaseColor);
+            drawActivityText(dc, cx, 218, 230, 17, targetText,
+                Graphics.FONT_XTINY, 0x69D5D3);
         }
-        if (mShowNextInterval && stepCount > 0 && !mWorkoutSequenceComplete) {
-            var nextText = nextStepSummary();
-            if (nextText != "") {
-                drawActivityText(dc, cx, 182, 280, 16, nextText,
-                    Graphics.FONT_XTINY, 0x98A5AB);
-            }
+        if (nextText != "") {
+            drawActivityText(dc, cx, 240, 260, 17, nextText,
+                Graphics.FONT_XTINY, 0x98A5AB);
         }
 
         if (mTrainingFieldCount == 2) {
             if (mTrainingShowHR) {
-                drawHeartRateField(dc, cx, 228, 250, hrNow, zone);
+                drawHeartRateField(dc, cx, 278, 250, hrNow, zone);
             }
         } else if (mTrainingFieldCount == 4) {
-            // Standardansicht: vier kompakte Messfelder als 2x2-Raster.
-            // Die HF-Zone ist direkt im Herzfrequenzfeld integriert.
-            var fieldTop4 = 207;
-            var fieldRowHeight4 = 68;
             var distanceValue4 = stepCount > 0 ? intervalDistanceText(activityInfo) : distance;
             var pace4 = "--:--";
             if (activityInfo != null && activityInfo.currentSpeed != null) {
                 pace4 = formatPace(activityInfo.currentSpeed * 3.6);
             }
 
-            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-            dc.drawLine(195, fieldTop4, 195, fieldTop4 + (fieldRowHeight4 * 2));
-            dc.drawLine(72, fieldTop4 + fieldRowHeight4, 318, fieldTop4 + fieldRowHeight4);
+            // Obere Messwertzeile: Schlagfrequenz und Distanz.
+            dc.setColor(0x465057, Graphics.COLOR_BLACK);
+            dc.drawLine(195, 265, 195, 312);
+            dc.drawLine(72, 320, 318, 320);
 
             if (mTrainingShowCadence) {
-                drawDataField(dc, 112, fieldTop4, 126, "SCHLÄGE", cadenceNow, "SPM");
+                drawActivityText(dc, 130, 264, 112, 34, cadenceNow,
+                    Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, 130, 298, 126, 14, "SCHLÄGE SPM",
+                    Graphics.FONT_XTINY, 0x98A5AB);
             }
             if (mTrainingShowDistance) {
-                drawDataField(dc, 278, fieldTop4, 126,
-                    stepCount > 0 ? "INTERVALL-DIST." : "DISTANZ", distanceValue4, "KM");
+                drawActivityText(dc, 276, 264, 112, 34, distanceValue4,
+                    Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, 276, 298, 126, 14,
+                    stepCount > 0 ? "INTERVALL-DIST. KM" : "DISTANZ KM",
+                    Graphics.FONT_XTINY, 0x98A5AB);
             }
+
+            // Untere Messwertzeile: Pace links, Herzfrequenz samt Zone rechts.
             if (mTrainingShowPace) {
-                drawDataField(dc, 112, fieldTop4 + fieldRowHeight4, 126,
-                    "PACE", pace4, "MIN/KM");
+                drawActivityText(dc, 130, 326, 126, 34, pace4,
+                    Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, 130, 359, 126, 14, "PACE MIN/KM",
+                    Graphics.FONT_XTINY, 0x98A5AB);
             }
             if (mTrainingShowHR) {
-                drawHeartRateField(dc, 278, fieldTop4 + fieldRowHeight4, 126, hrNow, zone);
+                drawActivityText(dc, 276, 326, 126, 34, "♥ " + hrNow,
+                    Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, 276, 359, 126, 14, "BPM · ZONE " + zone.toString(),
+                    Graphics.FONT_XTINY, zone > 0 ? 0xFFB020 : 0x98A5AB);
+                var zoneColors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
+                var zoneBarWidth = 112;
+                var zoneGap = 3;
+                var zoneSegmentWidth = (zoneBarWidth - (zoneGap * 4)) / 5;
+                var zoneLeft = 276 - (zoneBarWidth / 2);
+                for (var z = 0; z < 5; z += 1) {
+                    dc.setColor(zone == z + 1 ? zoneColors[z] : 0x344047, Graphics.COLOR_BLACK);
+                    dc.fillRectangle(zoneLeft + (z * (zoneSegmentWidth + zoneGap)), 376,
+                        zoneSegmentWidth, 5);
+                }
             }
         } else if (mTrainingFieldCount == 6) {
-            var fieldTop6 = 207;
-            var fieldRowHeight = 68;
-            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-            dc.drawLine(195, fieldTop6, 195, fieldTop6 + (fieldRowHeight * 2));
-            dc.drawLine(72, fieldTop6 + fieldRowHeight, 318, fieldTop6 + fieldRowHeight);
-            var distanceValue = stepCount > 0 ? intervalDistanceText(activityInfo) : distance;
+            var fieldTop6 = 264;
+            var fieldRowHeight6 = 38;
+            var distanceValue6 = stepCount > 0 ? intervalDistanceText(activityInfo) : distance;
+            var pace6 = "--:--";
+            if (activityInfo != null && activityInfo.currentSpeed != null) {
+                pace6 = formatPace(activityInfo.currentSpeed * 3.6);
+            }
             if (mTrainingShowCadence) {
                 drawDataField(dc, 112, fieldTop6, 126, "SCHLÄGE", cadenceNow, "SPM");
             }
             if (mTrainingShowDistance) {
-                drawDataField(dc, 278, fieldTop6, 126, stepCount > 0 ? "INTERVALL-DIST." : "DISTANZ",
-                    distanceValue, "KM");
+                drawDataField(dc, 278, fieldTop6, 126,
+                    stepCount > 0 ? "INTERVALL-DIST." : "DISTANZ", distanceValue6, "KM");
             }
             if (mTrainingShowPace) {
-                var pace = "--:--";
-                if (activityInfo != null && activityInfo.currentSpeed != null) {
-                    pace = formatPace(activityInfo.currentSpeed * 3.6);
-                }
-                drawDataField(dc, 112, fieldTop6 + fieldRowHeight, 126, "PACE", pace, "MIN/KM");
+                drawDataField(dc, 112, fieldTop6 + fieldRowHeight6, 126, "PACE", pace6, "MIN/KM");
             }
             if (mTrainingShowHR) {
-                drawHeartRateField(dc, 278, fieldTop6 + fieldRowHeight, 126, hrNow, zone);
+                drawHeartRateField(dc, 278, fieldTop6 + fieldRowHeight6, 126, hrNow, zone);
             }
         }
 
-        // Bei einem Feld bleibt nur der Intervalltimer sichtbar.
         mButtonTop = 0;
         mButtonBottom = 0;
     }
 
-        function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
+    function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
         var colors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
         drawFit(dc, centerX, top, zone > 0 ? "ZONE " + zone.toString() : "ZONE –",
             width, Graphics.FONT_XTINY, zone > 0 ? colors[zone - 1] : 0x98A5AB);
