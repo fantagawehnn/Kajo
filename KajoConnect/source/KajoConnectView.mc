@@ -21,6 +21,10 @@ class KajoConnectView extends WatchUi.View {
     var mBoatRight = 0;
     var mStartTop = 0;
     var mStartBottom = 0;
+    var mStartLeft = 0;
+    var mStartRight = 0;
+    var mSecondaryLeft = 0;
+    var mSecondaryRight = 0;
     var mFreeTop = 0;
     var mFreeBottom = 0;
     var mMenuTop = 0;
@@ -383,14 +387,14 @@ class KajoConnectView extends WatchUi.View {
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y >= mStartTop && y <= mStartBottom &&
-            x >= mBoatLeft && x <= mBoatRight) {
+            x >= mStartLeft && x <= mStartRight) {
             mHomeSelection = 0;
             activateHomeSelection();
             return;
         }
 
         if (y >= mFreeTop && y <= mFreeBottom &&
-            x >= mBoatLeft && x <= mBoatRight) {
+            x >= mSecondaryLeft && x <= mSecondaryRight) {
             var row = Math.floor((y - mFreeTop) / mMenuRowStep).toNumber();
             if (row == 0) {
                 mHomeSelection = 1;
@@ -437,8 +441,8 @@ class KajoConnectView extends WatchUi.View {
         var mainWidth = mKajoLayout.safeRectWidth(mStartTop,
             mStartBottom - mStartTop, mUnit * 0.78);
         var mainLeft = cx - (mainWidth / 2);
-        mBoatLeft = mainLeft;
-        mBoatRight = mainLeft + mainWidth;
+        mStartLeft = mainLeft;
+        mStartRight = mainLeft + mainWidth;
 
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(mainLeft.toNumber(), mStartTop,
@@ -456,8 +460,8 @@ class KajoConnectView extends WatchUi.View {
         mMenuRowStep = 52;
         var secondaryWidth = mKajoLayout.safeRectWidth(mFreeTop, 44, mUnit * 0.78);
         var secondaryLeft = cx - (secondaryWidth / 2);
-        mBoatLeft = secondaryLeft;
-        mBoatRight = secondaryLeft + secondaryWidth;
+        mSecondaryLeft = secondaryLeft;
+        mSecondaryRight = secondaryLeft + secondaryWidth;
 
         for (var item = 0; item < 2; item += 1) {
             var top = mFreeTop + (item * mMenuRowStep);
