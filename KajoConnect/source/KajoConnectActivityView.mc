@@ -897,6 +897,8 @@ class KajoConnectActivityView extends WatchUi.View {
         mKajoLayout.configure(390, 390);
 
         var cx = 195;
+        mButtonTop = 340;
+        mButtonBottom = 375;
         if (mPage < mEnabledPageIds.size()) {
             mCurrentPageId = mEnabledPageIds[mPage] as Lang.Number;
         } else {
