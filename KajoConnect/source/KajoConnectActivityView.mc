@@ -557,7 +557,6 @@ class KajoConnectActivityView extends WatchUi.View {
         var statusText = mCurrentWorkoutState == "PLANNED" ? "TRAINING" : "FREIES TRAINING";
         var timerText = elapsed;
         var targetText = "";
-        var nextText = "";
 
         if (stepCount > 0 && !mWorkoutSequenceComplete) {
             var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
@@ -568,95 +567,91 @@ class KajoConnectActivityView extends WatchUi.View {
             if (step["target"] != null && step["target"].toString() != "") {
                 targetText = "ZIEL: " + step["target"].toString();
             }
-            if (mWorkoutStepIndex + 1 < stepCount) {
-                var nextStep = mWorkoutSteps[mWorkoutStepIndex + 1] as Lang.Dictionary;
-                nextText = "ALS NAECHSTES: " + nextStep["label"].toString();
-            }
         } else if (mWorkoutSequenceComplete) {
             statusText = "TRAINING ABGESCHLOSSEN";
         }
 
-        // Kompakter Status-Chip und zentraler Intervalltimer.
+        // Status-Chip
         dc.setColor(0x0B2024, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(63, 43, 264, 29, 14);
+        dc.fillRoundedRectangle(66, 40, 258, 27, 13);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(63, 43, 264, 29, 14);
-        drawActivityText(dc, 195, 49, 236, 16, statusText + " · PADDELN",
+        dc.drawRoundedRectangle(66, 40, 258, 27, 13);
+        drawActivityText(dc, 195, 46, 230, 15, statusText,
             Graphics.FONT_XTINY, cyan);
 
+        // Timerbereich: Zahl, Einheit und Trainingsziel haben eigene Zeilen.
         dc.setColor(0x12363B, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 145, 79, Graphics.ARC_CLOCKWISE, 205, 335);
+        dc.drawArc(cx, 139, 73, Graphics.ARC_CLOCKWISE, 210, 330);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 145, 79, Graphics.ARC_CLOCKWISE, 215, 325);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(cx, 116, Graphics.FONT_NUMBER_MEDIUM, timerText,
-            Graphics.TEXT_JUSTIFY_CENTER);
-        drawActivityText(dc, cx, 151, 100, 14, "MINUTEN",
+        dc.drawArc(cx, 139, 73, Graphics.ARC_CLOCKWISE, 220, 320);
+        drawActivityText(dc, cx, 91, 250, 48, timerText,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, cx, 141, 100, 14, "MINUTEN",
             Graphics.FONT_XTINY, muted);
         if (targetText != "") {
-            drawActivityText(dc, cx, 174, 270, 16, targetText,
+            drawActivityText(dc, cx, 163, 270, 15, targetText,
                 Graphics.FONT_XTINY, 0xE2D95A);
-        } else if (mCurrentWorkoutState == "PLANNED") {
-            drawActivityText(dc, cx, 174, 270, 16, mCurrentWorkoutName,
+        } else if (mCurrentWorkoutState == "PLANNED" && mCurrentWorkoutName != "") {
+            drawActivityText(dc, cx, 163, 270, 15, mCurrentWorkoutName,
                 Graphics.FONT_XTINY, 0xE2D95A);
         }
-        if (nextText != "") {
-            drawActivityText(dc, cx, 193, 270, 14, nextText,
-                Graphics.FONT_XTINY, muted);
-        }
-
-        // Vier kompakte Messfelder: Schlagfrequenz, Distanz, Pace und Herzfrequenz.
-        drawDashboardPanel(dc, 42, 218, 148, 57);
-        drawDashboardPanel(dc, 200, 218, 148, 57);
-        drawDashboardPanel(dc, 42, 282, 148, 57);
-        drawDashboardPanel(dc, 200, 282, 148, 57);
-
-        drawActivityText(dc, 116, 224, 122, 12, "SCHLAEGE / MIN",
-            Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, 116, 239, 122, 25, cadenceNow,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-
-        drawActivityText(dc, 274, 224, 122, 12, "DISTANZ",
-            Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, 274, 239, 122, 25, distance,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
 
         var pace = "--:--";
         if (activityInfo != null && activityInfo.currentSpeed != null) {
             pace = formatPace(activityInfo.currentSpeed * 3.6);
         }
-        drawActivityText(dc, 116, 288, 122, 12, "PACE / KM",
+
+        // Vier gleich grosse Datenkarten. Jede Karte hat Label, Wert und Einheit
+        // in separaten Zeilen; keine dynamische Textzeile liegt ueber einer anderen.
+        var cardWidth = 146;
+        var cardHeight = 61;
+        var leftX = 42;
+        var rightX = 202;
+        var topY = 199;
+        var bottomY = 269;
+
+        drawDashboardPanel(dc, leftX, topY, cardWidth, cardHeight);
+        drawDashboardPanel(dc, rightX, topY, cardWidth, cardHeight);
+        drawDashboardPanel(dc, leftX, bottomY, cardWidth, cardHeight);
+        drawDashboardPanel(dc, rightX, bottomY, cardWidth, cardHeight);
+
+        drawActivityText(dc, leftX + 73, topY + 5, 126, 13, "SCHLAGFREQUENZ",
             Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, 116, 303, 122, 24, pace,
+        drawActivityText(dc, leftX + 73, topY + 21, 126, 24, cadenceNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-
-        drawActivityText(dc, 274, 288, 122, 12, "HERZFREQUENZ",
+        drawActivityText(dc, leftX + 73, topY + 46, 126, 11, "SPM",
             Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, 274, 303, 122, 24, hrNow + " BPM",
-            Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, 274, 326, 122, 9,
-            zone > 0 ? "ZONE " + zone.toString() : "ZONE --",
-            Graphics.FONT_XTINY, 0xE3E84A);
 
-        var zoneColors = [0x20D98A, 0x8BE34A, 0xE3E84A, 0xFFB52E, 0xF04455];
-        var barLeft = 229;
-        var segmentWidth = 17;
-        var gap = 3;
-        for (var z = 0; z < 5; z += 1) {
-            var segmentColor = zone > 0 && zone == z + 1 ? zoneColors[z] : 0x263238;
-            dc.setColor(segmentColor, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(barLeft + (z * (segmentWidth + gap)), 335,
-                segmentWidth, 4, 2);
-        }
+        drawActivityText(dc, rightX + 73, topY + 5, 126, 13, "DISTANZ",
+            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, rightX + 73, topY + 21, 126, 24, distance,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, rightX + 73, topY + 46, 126, 11, "KM",
+            Graphics.FONT_XTINY, muted);
 
-        // Seitenpunkte bleiben am unteren Rand und zeigen die weiteren Datenseiten.
-        mButtonTop = 343;
-        mButtonBottom = 377;
+        drawActivityText(dc, leftX + 73, bottomY + 5, 126, 13, "PACE / KM",
+            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, leftX + 73, bottomY + 21, 126, 24, pace,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, leftX + 73, bottomY + 46, 126, 11, "MIN / KM",
+            Graphics.FONT_XTINY, muted);
+
+        drawActivityText(dc, rightX + 73, bottomY + 5, 126, 13, "HERZFREQUENZ",
+            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, rightX + 73, bottomY + 20, 126, 23, hrNow,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, rightX + 73, bottomY + 44, 126, 12,
+            zone > 0 ? "BPM  ·  ZONE " + zone.toString() : "BPM  ·  ZONE --",
+            Graphics.FONT_XTINY, zone > 0 ? 0xE3E84A : muted);
+
+        // Navigation liegt ausserhalb der Datenkarten.
+        mButtonTop = 340;
+        mButtonBottom = 375;
         var visibleDots = mPageCount < 5 ? mPageCount : 5;
         var firstDotX = 195 - ((visibleDots - 1) * 9);
         for (var dot = 0; dot < visibleDots; dot += 1) {
             dc.setColor(dot == (mPage < 5 ? mPage : 4) ? cyan : 0x555555, Graphics.COLOR_BLACK);
-            dc.fillCircle(firstDotX + (dot * 18), 358, 3);
+            dc.fillCircle(firstDotX + (dot * 18), 356, 3);
         }
     }
 
