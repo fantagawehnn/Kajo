@@ -91,14 +91,13 @@ class KajoLayout {
         return scaledFont(dc, text, maxWidth, targetHeight, preferredFont);
     }
 
+    // Text and controls use almost the complete physical display width.
+    // Keep only a small 2.5% safety margin at both sides; do not shrink
+    // content to the inscribed circle's narrow chord near the top/bottom.
     function safeWidthAt(x, y, requestedWidth) as Lang.Number {
-        var dy = y - mCenterY;
-        var remaining = (mRadius * mRadius) - (dy * dy);
-        if (remaining <= 0) { return 0; }
-        var halfChord = Math.sqrt(remaining);
-        var margin = mUnit * 0.035;
-        var left = mCenterX - halfChord + margin;
-        var right = mCenterX + halfChord - margin;
+        var margin = mWidth * 0.025;
+        var left = margin;
+        var right = mWidth - margin;
         var availableLeft = x - left;
         var availableRight = right - x;
         var available = availableLeft < availableRight ? availableLeft : availableRight;
