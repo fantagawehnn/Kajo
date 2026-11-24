@@ -21,6 +21,7 @@ const trainingFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConne
 const historyView = readFileSync(new URL("../KajoConnect/source/KajoConnectHistoryView.mc", import.meta.url), "utf8");
 const boatClassView = readFileSync(new URL("../KajoConnect/source/KajoConnectBoatClassView.mc", import.meta.url), "utf8");
 const unitsView = readFileSync(new URL("../KajoConnect/source/KajoConnectUnitsView.mc", import.meta.url), "utf8");
+const connectEndpoint = readFileSync(new URL("../supabase/functions/kajo-connect/index.ts", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -158,6 +159,19 @@ test("completed activities are stored locally and displayed in watch history", (
   assert.match(historyView, /"BPM"/);
   assert.match(historyView, /"Details in der KAJO App"/);
   assert.match(homeView, /getTodaysSessions\(\)/);
+});
+
+test("completed Garmin watch activities are queued locally and uploaded idempotently", () => {
+  assert.match(activityView, /Storage\.setValue\("kajoPendingActivityUploads", next\)/);
+  assert.match(activityView, /"action" => "upload-activity"/);
+  assert.match(activityView, /function onActivityUploadResponse\(/);
+  assert.match(activityView, /entry\["clientActivityId"\]/);
+  assert.match(connectEndpoint, /action === "upload-activity"/);
+  assert.match(connectEndpoint, /kajo-watch-.*clientId/);
+  assert.match(connectEndpoint, /onConflict: "user_id,record_id"/);
+  assert.match(connectEndpoint, /durationSeconds/);
+  assert.match(connectEndpoint, /distanceMeters/);
+  assert.match(connectEndpoint, /averageHeartRateBpm/);
 });
 
 test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts", () => {
