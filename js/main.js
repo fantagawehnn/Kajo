@@ -2891,6 +2891,9 @@ async function flushCloudSync(options = {}) {
     }
 
     const userId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === userId && cloudSyncUserId === userId
+        && appUserReady && activationSequence === syncActivationSequence;
     cloudSyncInFlight = true;
     cloudSyncPending = false;
     let saveSucceeded = false;
@@ -2913,13 +2916,15 @@ async function flushCloudSync(options = {}) {
             }
         }
 
+        if (!isCurrentSync()) return;
         const [latestCloud, latestActivities, baseline] = await Promise.all([
             fetchCloudSnapshot(),
             fetchCloudActivities(supabase, userId),
             loadCloudSyncBaseline()
         ]);
-        if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
-        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline);
+        if (!isCurrentSync()) return;
+        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline, isCurrentSync);
+        if (!isCurrentSync()) return;
         if (!reconciliation.ok) {
             if (reconciliation.empty) {
                 cloudSyncBlocked = true;
@@ -2954,7 +2959,7 @@ async function flushCloudSync(options = {}) {
             setCloudTransferMessage('Lokale und Cloud-Daten wurden automatisch abgeglichen. Neue Einträge wurden ergänzt; widersprüchliche Änderungen wurden nicht überschrieben.');
         }
     } catch (error) {
-        if (activeAppUserId === userId) {
+        if (isCurrentSync()) {
             setCloudSyncStatus('Cloud-Speicherung fehlgeschlagen – lokale Daten bleiben erhalten.');
             console.error('Automatische Cloud-Synchronisierung fehlgeschlagen:', error);
         }
