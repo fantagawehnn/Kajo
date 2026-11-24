@@ -3072,9 +3072,11 @@ async function performCloudInitialTransfer() {
         const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
         const initialBaseline = JSON.parse(JSON.stringify(initialSnapshot));
         const activityUpload = await syncCloudActivities(supabase, userId, initialSnapshot.activities || []);
+        if (activeAppUserId !== userId || !appUserReady) return;
         initialSnapshot.activityIds = getCloudActivityIds(userId, initialSnapshot.activities || []);
         initialSnapshot.activities = [];
         const result = await saveCloudSnapshot(initialSnapshot, 0, userId);
+        if (activeAppUserId !== userId || !appUserReady) return;
         if (!result.saved) {
             cloudInitialTransferState = 'exists';
             closeCloudInitialTransferConfirmation();
@@ -3086,16 +3088,20 @@ async function performCloudInitialTransfer() {
         cloudSyncVersion = result.currentVersion;
         cloudSyncBlocked = false;
         try {
-            await saveCloudSyncBaseline(initialBaseline);
+            const baselineSaved = await saveCloudSyncBaseline(initialBaseline, userId);
+            if (!baselineSaved) return;
         } catch (baselineError) {
+            if (activeAppUserId !== userId || !appUserReady) return;
             console.warn('Erstübertragung erfolgreich, aber die lokale Synchronisierungsbasis konnte nicht gespeichert werden:', baselineError);
         }
+        if (activeAppUserId !== userId || !appUserReady) return;
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
+        if (activeAppUserId !== userId || !appUserReady) return;
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Erstübertragung fehlgeschlagen. Der Cloud-Status wird zur Sicherheit erneut geprüft. ' + error.message);
-        if (activeAppUserId) await refreshCloudInitialTransferState(activeAppUserId);
+        if (activeAppUserId === userId) await refreshCloudInitialTransferState(userId);
     } finally {
         cloudInitialTransferBusy = false;
         if (button) button.disabled = false;

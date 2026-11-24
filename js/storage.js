@@ -285,12 +285,19 @@ export async function loadCloudSyncBaseline() {
 }
 
 /** Speichert die Synchronisierungsbasis getrennt von den fachlichen App-Daten. */
-export async function saveCloudSyncBaseline(snapshot) {
-    if (!activeUserStorage || !activeUserId) throw new Error('Kein aktiver Benutzer-Speicher für die Synchronisierungsbasis.');
+export async function saveCloudSyncBaseline(snapshot, expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) {
+        throw new Error('Der aktive Benutzer-Speicher hat sich vor dem Speichern der Synchronisierungsbasis geändert.');
+    }
     if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
         throw new Error('Die Synchronisierungsbasis ist ungültig.');
     }
-    await activeUserStorage.saveCollections({ cloudSyncBaseline: snapshot });
+    // Den ursprünglichen Speicher festhalten, damit ein Kontowechsel während
+    // des asynchronen Schreibens niemals die Basis in das neue Konto umlenkt.
+    await storageForUser.saveCollections({ cloudSyncBaseline: snapshot });
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
     return true;
 }
 
