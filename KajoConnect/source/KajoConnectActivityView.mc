@@ -1,4 +1,5 @@
 import Toybox.Activity;
+import Toybox.Attention;
 import Toybox.Application;
 import Toybox.Application.Storage;
 import Toybox.Graphics;
@@ -56,6 +57,12 @@ class KajoConnectActivityView extends WatchUi.View {
     var mWorkoutStepIndex as Lang.Number = 0;
     var mWorkoutStepElapsedSeconds as Lang.Number = 0;
     var mWorkoutSequenceComplete as Lang.Boolean = false;
+    var mIsTransitioning as Lang.Boolean = false;
+    var mTransitionCountdown as Lang.Number = 0;
+    var mShowIntervalTarget as Lang.Boolean = true;
+    var mShowNextInterval as Lang.Boolean = true;
+    var mIntervalVibrationEnabled as Lang.Boolean = true;
+    var mIntervalToneEnabled as Lang.Boolean = false;
     var mCurrentPageId as Lang.Number = 0;
     var mGpsQuality as Lang.Number = Position.QUALITY_NOT_AVAILABLE;
     // Lokaler Sekundenzaehler als verlaesslicher Fallback, falls Garmin timerTime nicht liefert.
@@ -66,6 +73,8 @@ class KajoConnectActivityView extends WatchUi.View {
         mWorkoutStepIndex = 0;
         mWorkoutStepElapsedSeconds = 0;
         mWorkoutSequenceComplete = false;
+        mIsTransitioning = false;
+        mTransitionCountdown = 0;
         if (value == null) { return; }
         var source = value as Lang.Array<Lang.Dictionary>;
         for (var i = 0; i < source.size() && i < 40; i += 1) {
@@ -84,6 +93,43 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
+    function loadIntervalSettings() as Void {
+        var showTarget = Storage.getValue("kajoIntervalShowTarget");
+        var showNext = Storage.getValue("kajoIntervalShowNext");
+        var vibration = Storage.getValue("kajoIntervalVibration");
+        var tone = Storage.getValue("kajoIntervalTone");
+        mShowIntervalTarget = showTarget == null ? true : showTarget as Lang.Boolean;
+        mShowNextInterval = showNext == null ? true : showNext as Lang.Boolean;
+        mIntervalVibrationEnabled = vibration == null ? true : vibration as Lang.Boolean;
+        mIntervalToneEnabled = tone == null ? false : tone as Lang.Boolean;
+    }
+
+    function notifyIntervalTransition() as Void {
+        if (mIntervalVibrationEnabled && (Attention has :vibrate) && (Attention has :VibeProfile)) {
+            var pattern = [new Attention.VibeProfile(75, 260)];
+            Attention.vibrate(pattern);
+        }
+        if (mIntervalToneEnabled && (Attention has :playTone)) {
+            Attention.playTone(Attention.TONE_INTERVAL_ALERT);
+        }
+    }
+
+    function isRecoveryStep(step as Lang.Dictionary) as Lang.Boolean {
+        var stepType = step["type"];
+        return stepType != null &&
+            (stepType.toString() == "recovery" ||
+             stepType.toString() == "rest" ||
+             stepType.toString() == "pause");
+    }
+
+    function nextStepDescription() as Lang.String {
+        var nextIndex = mWorkoutStepIndex + 1;
+        if (nextIndex >= mWorkoutSteps.size()) { return "TRAINING BEENDET"; }
+        var nextStep = mWorkoutSteps[nextIndex] as Lang.Dictionary;
+        var label = nextStep["label"] == null ? "NÄCHSTER ABSCHNITT" : nextStep["label"].toString();
+        return compactWorkoutText(label, 42);
+    }
+
     function moveWorkoutStep(direction as Lang.Number) as Void {
         if (mWorkoutSteps.size() == 0) { return; }
         var nextIndex = mWorkoutStepIndex + direction;
@@ -96,21 +142,40 @@ class KajoConnectActivityView extends WatchUi.View {
         mWorkoutStepIndex = nextIndex;
         mWorkoutStepElapsedSeconds = 0;
         mWorkoutSequenceComplete = false;
+        mIsTransitioning = false;
+        mTransitionCountdown = 0;
     }
 
     function updateWorkoutStepTimer() as Void {
         if (mWorkoutSteps.size() == 0 || mWorkoutSequenceComplete) { return; }
+        if (mIsTransitioning) {
+            if (mTransitionCountdown > 1) {
+                mTransitionCountdown -= 1;
+            } else {
+                mIsTransitioning = false;
+                mTransitionCountdown = 0;
+                mWorkoutStepIndex += 1;
+                mWorkoutStepElapsedSeconds = 0;
+                WatchUi.showToast("Neuer Trainingsabschnitt", null);
+            }
+            return;
+        }
         var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
         var duration = step["durationSeconds"] as Lang.Number;
         mWorkoutStepElapsedSeconds += 1;
         if (mWorkoutStepElapsedSeconds >= duration) {
             if (mWorkoutStepIndex + 1 < mWorkoutSteps.size()) {
-                mWorkoutStepIndex += 1;
-                mWorkoutStepElapsedSeconds = 0;
-                WatchUi.showToast("Naechster Trainingsschritt", null);
+                mIsTransitioning = true;
+                mTransitionCountdown = 3;
+                notifyIntervalTransition();
             } else {
                 mWorkoutSequenceComplete = true;
+                mWorkoutStepElapsedSeconds = duration;
                 WatchUi.showToast("Trainingsablauf abgeschlossen", null);
+                if (mIntervalVibrationEnabled && (Attention has :vibrate) && (Attention has :VibeProfile)) {
+                    var finishedPattern = [new Attention.VibeProfile(85, 500)];
+                    Attention.vibrate(finishedPattern);
+                }
             }
         }
     }
@@ -121,6 +186,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mBoatClass = boatClass;
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
+        loadIntervalSettings();
         loadCurrentWorkout();
         loadDisplayPages();
     }
@@ -556,13 +622,13 @@ class KajoConnectActivityView extends WatchUi.View {
         var targetText = "";
         var phaseColor = 0x25D3CB;
 
-        if (stepCount > 0 && !mWorkoutSequenceComplete) {
+        if (stepCount > 0 && !mWorkoutSequenceComplete && !mIsTransitioning) {
             var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
             statusText = "INTERVALL " + (mWorkoutStepIndex + 1).toString() + "/" + stepCount.toString();
             var remaining = (step["durationSeconds"] as Lang.Number) - mWorkoutStepElapsedSeconds;
             if (remaining < 0) { remaining = 0; }
             timerText = formatTime(remaining * 1000);
-            if (step["target"] != null && step["target"].toString() != "") {
+            if (mShowIntervalTarget && step["target"] != null && step["target"].toString() != "") {
                 targetText = "ZIEL: " + step["target"].toString();
             }
             var stepType = step["type"];
@@ -675,6 +741,8 @@ class KajoConnectActivityView extends WatchUi.View {
             mWorkoutStepIndex = 0;
             mWorkoutStepElapsedSeconds = 0;
             mWorkoutSequenceComplete = false;
+            mIsTransitioning = false;
+            mTransitionCountdown = 0;
             Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mTimer.start(method(:onTimer), 1000, true);
         } else {
@@ -1062,6 +1130,34 @@ class KajoConnectActivityView extends WatchUi.View {
                 Graphics.FONT_SMALL, 0xFF9F1A);
             drawActivityText(dc, cx, 335, 280, 18, "OBERE TASTE · ERNEUT",
                 Graphics.FONT_XTINY, 0x25D3CB);
+            mButtonTop = 0;
+            mButtonBottom = 0;
+        } else if (mIsTransitioning && mStatus == "AUFZEICHNUNG") {
+            drawPageHeader(dc, "GLEICH");
+            drawActivityText(dc, cx, 88, 260, 112, mTransitionCountdown.toString(),
+                Graphics.FONT_NUMBER_HOT, 0x25D3CB);
+            var nextLabel = nextStepDescription();
+            var nextPhase = "PADDELN!";
+            var nextColor = 0x25D3CB;
+            if (mWorkoutStepIndex + 1 < mWorkoutSteps.size()) {
+                var nextStep = mWorkoutSteps[mWorkoutStepIndex + 1] as Lang.Dictionary;
+                if (isRecoveryStep(nextStep)) {
+                    nextPhase = "ERHOLEN";
+                    nextColor = 0xFFB020;
+                }
+            } else {
+                nextPhase = "ABSCHLUSS";
+            }
+            drawActivityText(dc, cx, 220, 260, 24, nextPhase,
+                Graphics.FONT_SMALL, nextColor);
+            if (mShowNextInterval) {
+                drawActivityText(dc, cx, 252, 280, 22, nextLabel,
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            }
+            dc.setColor(0x263238, Graphics.COLOR_BLACK);
+            dc.drawArc(cx, 195, 142, Graphics.ARC_CLOCKWISE, 205, 335);
+            dc.setColor(0xFFB020, Graphics.COLOR_BLACK);
+            dc.drawArc(cx, 195, 142, Graphics.ARC_CLOCKWISE, 205, 335);
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mCurrentPageId == 0) {
