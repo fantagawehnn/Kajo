@@ -8,6 +8,7 @@ class KajoConnectTrainingFieldsView extends WatchUi.View {
 
     var mKajoLayout as KajoLayout;
     var mFieldCount as Lang.Number = 4;
+    var mSelectedRow as Lang.Number = 0;
     var mValues as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
     var mLabels as Lang.Array<Lang.String> = [
         "INTERVALL-STATUS",
@@ -43,6 +44,28 @@ class KajoConnectTrainingFieldsView extends WatchUi.View {
         }
     }
 
+    function moveSelection(direction as Lang.Number) as Void {
+        mSelectedRow += direction;
+        if (mSelectedRow < 0) { mSelectedRow = mValues.size() - 1; }
+        if (mSelectedRow >= mValues.size()) { mSelectedRow = 0; }
+        WatchUi.requestUpdate();
+    }
+
+    function toggleSelected() as Void {
+        mValues[mSelectedRow] = !mValues[mSelectedRow];
+        persistValues();
+        WatchUi.requestUpdate();
+    }
+
+    function persistValues() as Void {
+        Storage.setValue("kajoTrainingFieldCount", mFieldCount);
+        Storage.setValue("kajoTrainingShowStatus", mValues[0]);
+        Storage.setValue("kajoTrainingShowHR", mValues[1]);
+        Storage.setValue("kajoTrainingShowCadence", mValues[2]);
+        Storage.setValue("kajoTrainingShowDistance", mValues[3]);
+        Storage.setValue("kajoTrainingShowPace", mValues[4]);
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y >= 65 && y <= 112) {
             var index = Math.floor((x - 40) / 78).toNumber();
@@ -54,18 +77,13 @@ class KajoConnectTrainingFieldsView extends WatchUi.View {
         }
         var row = Math.floor((y - mRowTop) / mRowStep).toNumber();
         if (row >= 0 && row < mValues.size()) {
-            mValues[row] = !mValues[row];
-            WatchUi.requestUpdate();
+            mSelectedRow = row;
+            toggleSelected();
         }
     }
 
     function saveConfig() as Void {
-        Storage.setValue("kajoTrainingFieldCount", mFieldCount);
-        Storage.setValue("kajoTrainingShowStatus", mValues[0]);
-        Storage.setValue("kajoTrainingShowHR", mValues[1]);
-        Storage.setValue("kajoTrainingShowCadence", mValues[2]);
-        Storage.setValue("kajoTrainingShowDistance", mValues[3]);
-        Storage.setValue("kajoTrainingShowPace", mValues[4]);
+        persistValues();
         WatchUi.showToast("Trainingsfelder gespeichert", null);
         WatchUi.popView(WatchUi.SLIDE_DOWN);
     }
@@ -105,9 +123,10 @@ class KajoConnectTrainingFieldsView extends WatchUi.View {
         var left = cx - (rowWidth / 2);
         for (var row = 0; row < mValues.size(); row += 1) {
             var y = mRowTop + (row * mRowStep);
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var focused = row == mSelectedRow;
+            dc.setColor(focused ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), 34);
-            dc.setColor(mValues[row] ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
+            dc.setColor(focused ? 0xFFB020 : (mValues[row] ? 0x25D3CB : 0x344047), Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 34);
             drawFit(dc, cx - rowWidth * 0.10, y + 10, mLabels[row],
                 rowWidth * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
@@ -120,7 +139,7 @@ class KajoConnectTrainingFieldsView extends WatchUi.View {
             }
         }
 
-        drawFit(dc, cx, mUnit * 0.865, "OBERE TASTE · SPEICHERN",
+        drawFit(dc, cx, mUnit * 0.865, "OBERE TASTE · ÄNDERN",
             mUnit * 0.76, Graphics.FONT_XTINY, 0x25D3CB);
         drawFit(dc, cx, mUnit * 0.92, "UNTERE TASTE · ZURÜCK",
             mUnit * 0.76, Graphics.FONT_XTINY, 0x98A5AB);
