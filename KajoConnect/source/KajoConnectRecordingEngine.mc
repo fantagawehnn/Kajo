@@ -44,6 +44,16 @@ class KajoConnectRecordingEngine {
         return mSession != null && mSession.isRecording();
     }
 
+    function pause() as Lang.Boolean {
+        if (mSession == null || !mSession.isRecording()) { return false; }
+        return mSession.stop();
+    }
+
+    function resume() as Lang.Boolean {
+        if (mSession == null || mSession.isRecording()) { return false; }
+        return mSession.start();
+    }
+
     function addLap() as Lang.Boolean {
         if (!isRecording()) {
             return false;
