@@ -990,12 +990,13 @@
         </div>
 
 
-        <!-- PERSONAL BESTS -->
+        <!-- AUTOMATISCHE KRAFTTRAININGSDATENBANK -->
         <div id="view-strength" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between gap-3">
-                <div><h2 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-purple-400"></i> Personal Bests · Kraftleistungen</h2><p class="text-xs text-slate-400 mt-1">Dokumentiere deine höchsten Trainingsgewichte und Wiederholungsleistungen je Übung.</p></div>
-                <button type="button" onclick="openStrengthModal()" class="shrink-0 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold">+ Personal Best</button>
-            </div>
+            <section class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div><h2 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="dumbbell" class="w-5 h-5 text-purple-400"></i> Trainingsdatenbank · Kraft</h2><p class="text-xs text-slate-400 mt-1">Deine Gewichte werden automatisch aus gespeicherten, absolvierten Krafttrainingseinheiten übernommen.</p></div>
+                <input id="strength-database-search" type="search" oninput="renderStrengthView()" placeholder="Übung suchen, z. B. Kniebeugen" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-slate-500">
+                <p id="strength-database-summary" class="text-[11px] text-slate-500" aria-live="polite"></p>
+            </section>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="strength-history-grid"></div>
         </div>
 
