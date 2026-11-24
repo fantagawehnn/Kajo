@@ -1477,8 +1477,9 @@ class KajoConnectActivityView extends WatchUi.View {
                 Graphics.FONT_SMALL, 0xFF9F1A);
             drawActivityText(dc, cx, 335, 280, 18, "ERNEUT SPEICHERN",
                 Graphics.FONT_XTINY, 0x25D3CB);
-            mButtonTop = 0;
-            mButtonBottom = 0;
+            // Die sichtbare Wiederholungsaktion muss auch per Touch erreichbar sein.
+            mButtonTop = 306;
+            mButtonBottom = 374;
         } else if (mIsTransitioning && mStatus == "AUFZEICHNUNG") {
             drawPageHeader(dc, "GLEICH");
             drawActivityText(dc, cx, 88, 260, 112, mTransitionCountdown.toString(),
