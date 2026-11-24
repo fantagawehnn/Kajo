@@ -382,7 +382,7 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (y >= 48 && y <= 66 && x >= 54 && x <= 336) {
+        if (y >= 76 && y <= 106 && x >= 54 && x <= 336) {
             var relativeX = x - 54;
             var third = 282 / 3;
             if (relativeX < third) { mSelectedBoat = "K1"; }
