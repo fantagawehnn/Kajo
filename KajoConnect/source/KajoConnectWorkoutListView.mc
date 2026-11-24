@@ -9,6 +9,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
     var mKajoLayout as KajoLayout;
     var mSessions as Lang.Array<Lang.Dictionary> = [];
     var mPage as Lang.Number = 0;
+    var mSelectedRow as Lang.Number = 0;
     var mPageCount as Lang.Number = 1;
     var mRowTop as Lang.Number = 0;
     var mRowHeight as Lang.Number = 0;
@@ -30,6 +31,25 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         mKajoLayout.drawTextFit(dc, x, y, text, maxWidth, preferredFont, color);
     }
 
+    function moveSelection(direction as Lang.Number) as Void {
+        if (mSessions.size() == 0) { return; }
+        var index = (mPage * 3) + mSelectedRow + direction;
+        if (index < 0) { index = mSessions.size() - 1; }
+        if (index >= mSessions.size()) { index = 0; }
+        mPage = Math.floor(index / 3).toNumber();
+        mSelectedRow = index % 3;
+        WatchUi.requestUpdate();
+    }
+
+    function selectFocused() as Void {
+        var index = (mPage * 3) + mSelectedRow;
+        if (index >= 0 && index < mSessions.size()) {
+            var selected = mSessions[index] as Lang.Dictionary;
+            var workoutView = new KajoConnectWorkoutView(selected, mHomeView);
+            WatchUi.pushView(workoutView, new KajoConnectWorkoutDelegate(workoutView), WatchUi.SLIDE_UP);
+        }
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y > mUnit * 0.82) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
@@ -37,6 +57,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         }
         if (mSessions.size() == 0 || y < mRowTop || y >= mRowTop + (mRowHeight * 3)) { return; }
         var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
+        mSelectedRow = row;
         var index = (mPage * 3) + row;
         if (index < mSessions.size()) {
             var selected = mSessions[index] as Lang.Dictionary;
@@ -50,6 +71,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         mPage += direction;
         if (mPage < 0) { mPage = mPageCount - 1; }
         if (mPage >= mPageCount) { mPage = 0; }
+        mSelectedRow = 0;
         WatchUi.requestUpdate();
     }
 
@@ -61,7 +83,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         mKajoLayout.configure(width, height);
         var cx = width / 2;
         drawCentered(dc, cx, mUnit * 0.075, "GESPEICHERT", mUnit * 0.72,
-            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            Graphics.FONT_SMALL, selectedRow ? Graphics.COLOR_WHITE : 0x98A5AB);
         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
         dc.drawLine(62, mUnit * 0.17, 328, mUnit * 0.17);
 
@@ -88,9 +110,10 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             var duration = session["duration"] == null ? "--" : session["duration"].toString();
             var rowWidth = mKajoLayout.safeRectWidth(y, 58, mUnit * 0.80);
             var left = cx - (rowWidth / 2);
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var selectedRow = row == mSelectedRow;
+            dc.setColor(selectedRow ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), 58);
-            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.setColor(selectedRow ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 58);
             drawCentered(dc, cx, y + 7, name, rowWidth - 22,
                 Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
