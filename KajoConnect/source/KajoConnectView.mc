@@ -214,10 +214,8 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function scrollPlan(direction) {
-        // Auf dem Startbildschirm wird die Trainingsliste vertikal weitergeschoben.
-        mMenuStartIndex += direction;
-        if (mMenuStartIndex < 0) { mMenuStartIndex = 0; }
-        if (mMenuStartIndex > 1) { mMenuStartIndex = 1; }
+        // Alle vier Navigationspunkte bleiben gleichzeitig sichtbar.
+        mMenuStartIndex = 0;
         WatchUi.requestUpdate();
     }
 
@@ -318,16 +316,15 @@ class KajoConnectView extends WatchUi.View {
             return;
         }
         if (y >= mFreeTop && y <= mFreeBottom) {
-            var row = Math.floor((y - mFreeTop) / (mUnit * 0.073)).toNumber();
-            var index = mMenuStartIndex + row;
-            if (index == 0) {
+            var row = Math.floor((y - mFreeTop) / 32).toNumber();
+            if (row == 0) {
                 openActivityView(null);
-            } else if (index == 1) {
+            } else if (row == 1) {
                 var listView = new KajoConnectWorkoutListView(self);
                 WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
-            } else if (index == 2) {
+            } else if (row == 2) {
                 WatchUi.showToast("Trainingshistorie ist noch nicht verfuegbar", null);
-            } else if (index == 3) {
+            } else if (row == 3) {
                 var menuView = new KajoConnectMenuView(self);
                 WatchUi.pushView(menuView, new KajoConnectMenuViewDelegate(menuView), WatchUi.SLIDE_UP);
             }
@@ -338,108 +335,71 @@ class KajoConnectView extends WatchUi.View {
         dc.clear();
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
-        mUnit = mWidth < mHeight ? mWidth : mHeight;
-        mKajoLayout.configure(mWidth, mHeight);
-        var cx = mWidth / 2;
+        mUnit = 390;
+        mKajoLayout.configure(390, 390);
+        var cx = 195;
         var todaySessions = getTodaysSessions();
 
-        // KAJO home: one clear header, one primary training action, four compact routes.
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((mUnit * 0.34).toNumber(), (mUnit * 0.075).toNumber(),
-            (mUnit * 0.035).toNumber(), (mUnit * 0.035).toNumber(), (mUnit * 0.012).toNumber());
-        drawCentered(dc, cx, mUnit * 0.075, "KAJO", mUnit * 0.54,
-            Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, mUnit * 0.132, compactSyncStatus(), mUnit * 0.60,
-            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        // Venu 3S: feste Pixelzonen statt prozentual verschobener Elemente.
+        // Kopfbereich
+        drawCentered(dc, cx, 34, "KAJO", 190, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
 
-        // Boot class selector. The three equal tap zones remain easy to hit.
-        mBoatTop = mUnit * 0.165;
-        mBoatBottom = mUnit * 0.225;
-        mBoatLeft = cx - (mUnit * 0.36);
-        mBoatRight = cx + (mUnit * 0.36);
-        var selectorY = mBoatTop;
-        var selectorH = mBoatBottom - mBoatTop;
-        var selectorW = mKajoLayout.safeRectWidth(selectorY, selectorH, mUnit * 0.72);
-        var selectorX = cx - (selectorW / 2);
+        // Bootsklassen-Auswahl
+        mBoatTop = 78;
+        mBoatBottom = 116;
+        mBoatLeft = 70;
+        mBoatRight = 320;
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(selectorX.toNumber(), selectorY.toNumber(),
-            selectorW.toNumber(), selectorH.toNumber(), (mUnit * 0.025).toNumber());
+        dc.fillRoundedRectangle(70, 78, 250, 38, 14);
         var classLabels = ["K1", "C1", "C2"];
         for (var b = 0; b < 3; b += 1) {
-            var segmentX = selectorX + (selectorW * b / 3);
-            var segmentWidth = selectorW / 3;
+            var segmentX = 70 + (b * 83);
+            var segmentWidth = b == 2 ? 84 : 83;
             if (classLabels[b] == mSelectedBoat) {
                 dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle(segmentX.toNumber(), selectorY.toNumber(),
-                    segmentWidth.toNumber(), selectorH.toNumber(), (mUnit * 0.022).toNumber());
+                dc.fillRoundedRectangle(segmentX, 78, segmentWidth, 38, 12);
             }
-            drawCentered(dc, segmentX + (segmentWidth / 2),
-                selectorY + (selectorH * 0.24), classLabels[b], segmentWidth * 0.86,
-                Graphics.FONT_SMALL,
-                classLabels[b] == mSelectedBoat ? Graphics.COLOR_BLACK : Graphics.COLOR_LT_GRAY);
+            drawCentered(dc, segmentX + (segmentWidth / 2), 85, classLabels[b],
+                70, Graphics.FONT_MEDIUM,
+                classLabels[b] == mSelectedBoat ? Graphics.COLOR_BLACK : Graphics.COLOR_WHITE);
         }
 
-        // Today's session is the dominant action, with deliberately short copy.
-        mStartTop = mUnit * 0.265;
-        mStartBottom = mUnit * 0.465;
-        var cardY = mStartTop;
-        var cardH = mStartBottom - mStartTop;
-        var cardW = mKajoLayout.safeRectWidth(cardY, cardH, mUnit * 0.82);
-        var cardX = cx - (cardW / 2);
+        // Eine einzige, dominante Trainingsfläche ohne Unterüberschriften.
+        mStartTop = 132;
+        mStartBottom = 218;
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(cardX.toNumber(), cardY.toNumber(), cardW.toNumber(),
-            cardH.toNumber(), (mUnit * 0.045).toNumber());
+        dc.fillRoundedRectangle(42, 132, 306, 86, 22);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(cardX.toNumber(), (cardY + mUnit * 0.025).toNumber(),
-            (mUnit * 0.012).toNumber(), (cardH - mUnit * 0.05).toNumber(),
-            (mUnit * 0.006).toNumber());
+        dc.fillRoundedRectangle(42, 150, 5, 50, 2);
 
         var heroName = "FREIES TRAINING";
-        var heroDetails = "JETZT STARTEN";
         if (todaySessions.size() == 1) {
             var todayWorkout = todaySessions[0] as Lang.Dictionary;
-            heroName = todayWorkout["name"] == null ? "GEPLANTES TRAINING" : todayWorkout["name"].toString();
-            var durationText = todayWorkout["duration"] == null ? "" : todayWorkout["duration"].toString() + " MIN";
-            var typeText = todayWorkout["type"] == null ? "TRAINING" : todayWorkout["type"].toString();
-            heroDetails = durationText == "" ? typeText : durationText + "  /  " + typeText;
+            heroName = todayWorkout["name"] == null
+                ? "GEPLANTES TRAINING" : todayWorkout["name"].toString();
         } else if (todaySessions.size() > 1) {
-            heroName = todaySessions.size().toString() + " TRAININGSEINHEITEN";
-            heroDetails = "EINHEIT AUSWAEHLEN";
+            heroName = todaySessions.size().toString() + " EINHEITEN HEUTE";
         }
-        drawCentered(dc, cx, cardY + (mUnit * 0.052), "HEUTE", cardW * 0.78,
-            Graphics.FONT_XTINY, 0x00E5CC);
-        drawCentered(dc, cx, cardY + (mUnit * 0.092), heroName, cardW * 0.82,
+        drawCentered(dc, 195, 162, heroName, 265,
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawCentered(dc, cx, cardY + (mUnit * 0.15), heroDetails, cardW * 0.82,
-            Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawCentered(dc, cx, cardY + (mUnit * 0.177), "ANTIPPEN ZUM STARTEN",
-            cardW * 0.82, Graphics.FONT_XTINY, 0x00E5CC);
 
-        // Secondary navigation uses one consistent row height and matching hit areas.
-        mFreeTop = mUnit * 0.515;
-        mFreeBottom = mUnit * 0.825;
-        var rowStep = mUnit * 0.073;
-        var rowH = mUnit * 0.060;
+        // Vier gleichwertige Navigationsflächen – jeweils nur eine Textzeile.
+        mFreeTop = 226;
+        mFreeBottom = 354;
         var labels = ["FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
-        var hints = ["OHNE VORGABE", "GEPLANTE EINHEITEN", "BALD VERFUEGBAR", "ANZEIGE & UHR"];
+        var rowYs = [226, 258, 290, 322];
+        var rowXs = [55, 55, 64, 82];
+        var rowWidths = [280, 280, 262, 226];
         for (var row = 0; row < 4; row += 1) {
-            var itemIndex = mMenuStartIndex + row;
-            if (itemIndex >= labels.size()) { continue; }
-            var rowY = mFreeTop + (row * rowStep);
-            var rowWidth = mKajoLayout.safeRectWidth(rowY, rowH, mUnit * 0.76);
-            var rowX = cx - (rowWidth / 2);
+            var rowY = rowYs[row];
+            var rowX = rowXs[row];
+            var rowWidth = rowWidths[row];
             dc.setColor(0x071316, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(rowX.toNumber(), rowY.toNumber(), rowWidth.toNumber(),
-                rowH.toNumber(), (mUnit * 0.022).toNumber());
+            dc.fillRoundedRectangle(rowX, rowY, rowWidth, 26, 9);
             dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(rowX.toNumber(), rowY.toNumber(), rowWidth.toNumber(),
-                rowH.toNumber(), (mUnit * 0.022).toNumber());
-            drawCentered(dc, rowX + rowWidth * 0.43, rowY + rowH * 0.17,
-                labels[itemIndex], rowWidth * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawCentered(dc, rowX + rowWidth * 0.43, rowY + rowH * 0.52,
-                hints[itemIndex], rowWidth * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawCentered(dc, rowX + rowWidth * 0.88, rowY + rowH * 0.28,
-                ">", rowWidth * 0.12, Graphics.FONT_MEDIUM, 0x00E5CC);
+            dc.drawRoundedRectangle(rowX, rowY, rowWidth, 26, 9);
+            drawCentered(dc, 195, rowY + 5, labels[row],
+                rowWidth - 24, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
     }
 
