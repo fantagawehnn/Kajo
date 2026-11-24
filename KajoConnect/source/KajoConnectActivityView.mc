@@ -130,6 +130,15 @@ class KajoConnectActivityView extends WatchUi.View {
         return compactWorkoutText(label, 42);
     }
 
+    function nextStepSummary() as Lang.String {
+        var nextIndex = mWorkoutStepIndex + 1;
+        if (nextIndex >= mWorkoutSteps.size()) { return ""; }
+        var nextStep = mWorkoutSteps[nextIndex] as Lang.Dictionary;
+        var duration = nextStep["durationSeconds"] as Lang.Number;
+        var label = nextStep["label"] == null ? "NÄCHSTER ABSCHNITT" : nextStep["label"].toString();
+        return "NÄCHSTES: " + formatTime(duration * 1000) + " " + compactWorkoutText(label, 28);
+    }
+
     function moveWorkoutStep(direction as Lang.Number) as Void {
         if (mWorkoutSteps.size() == 0) { return; }
         var nextIndex = mWorkoutStepIndex + direction;
@@ -657,8 +666,15 @@ class KajoConnectActivityView extends WatchUi.View {
         drawActivityText(dc, cx, 143, 120, 16, "MIN : SEK",
             Graphics.FONT_XTINY, 0x98A5AB);
         if (targetText != "") {
-            drawActivityText(dc, cx, 165, 280, 18, targetText,
+            drawActivityText(dc, cx, 163, 280, 18, targetText,
                 Graphics.FONT_XTINY, phaseColor);
+        }
+        if (mShowNextInterval && stepCount > 0 && !mWorkoutSequenceComplete) {
+            var nextText = nextStepSummary();
+            if (nextText != "") {
+                drawActivityText(dc, cx, 182, 280, 16, nextText,
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            }
         }
 
         var pace = "--:--";
@@ -858,21 +874,7 @@ class KajoConnectActivityView extends WatchUi.View {
             return;
         }
         if (mStatus == "AUFZEICHNUNG") {
-            if (mCurrentPageId == 8 && mWorkoutSteps.size() > 0) {
-                if (mWorkoutSequenceComplete) {
-                    if (x < mScreenWidth / 2) {
-                        if (mWorkoutStepIndex > 0) { mWorkoutStepIndex -= 1; }
-                    } else {
-                        mWorkoutStepIndex = 0;
-                    }
-                    mWorkoutSequenceComplete = false;
-                    mWorkoutStepElapsedSeconds = 0;
-                } else if (x < mScreenWidth / 2) {
-                    moveWorkoutStep(-1);
-                } else {
-                    moveWorkoutStep(1);
-                }
-            } else if (x < mScreenWidth / 2) {
+            if (x < mScreenWidth / 2) {
                 mPage -= 1;
                 if (mPage < 0) { mPage = mPageCount - 1; }
             } else {
@@ -1206,27 +1208,60 @@ class KajoConnectActivityView extends WatchUi.View {
             mButtonTop = 340;
             mButtonBottom = 375;
         } else if (mCurrentPageId == 8) {
-            drawPageHeader(dc, "TRAININGSABLAUF");
-            if (mWorkoutSteps.size() > 0 && !mWorkoutSequenceComplete) {
-                var currentStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
-                drawDashboardPanel(dc, 45, 125, 300, 175);
-                drawFit(dc, 195, 158, compactWorkoutText(currentStep["label"].toString(), 42),
-                    260, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-                var stepDuration = currentStep["durationSeconds"] as Lang.Number;
-                var remaining = stepDuration - mWorkoutStepElapsedSeconds;
-                if (remaining < 0) { remaining = 0; }
-                drawFit(dc, 195, 205, formatTime(remaining * 1000),
-                    260, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-                if (currentStep["target"] != null && currentStep["target"].toString() != "") {
-                    drawFit(dc, 195, 255, compactWorkoutText(currentStep["target"].toString(), 58),
-                        260, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            drawPageHeader(dc, "INTERVALLPLAN");
+            if (mWorkoutSteps.size() > 0) {
+                var firstStep = Math.floor(mWorkoutStepIndex / 5) * 5;
+                var visibleSteps = 5;
+                var rowTop = 78;
+                var rowHeight = 49;
+                var rowWidth = mKajoLayout.safeRectWidth(rowTop, 39, 300);
+                var rowLeft = cx - (rowWidth / 2);
+                for (var stepRow = 0; stepRow < visibleSteps; stepRow += 1) {
+                    var stepIndex = firstStep + stepRow;
+                    if (stepIndex >= mWorkoutSteps.size()) { continue; }
+                    var planStep = mWorkoutSteps[stepIndex] as Lang.Dictionary;
+                    var rowY = rowTop + (stepRow * rowHeight);
+                    var isCurrent = stepIndex == mWorkoutStepIndex && !mWorkoutSequenceComplete && !mIsTransitioning;
+                    var isDone = stepIndex < mWorkoutStepIndex || mWorkoutSequenceComplete;
+                    var stepColor = isCurrent ? 0x25D3CB : (isDone ? 0x56636A : 0x98A5AB);
+                    var marker = isDone ? "✓" : (isCurrent ? "▶" : (stepIndex + 1).toString());
+                    var duration = planStep["durationSeconds"] as Lang.Number;
+                    var durationText = formatTime(duration * 1000);
+                    var stepName = planStep["label"] == null ? "ABSCHNITT" : planStep["label"].toString();
+                    var target = planStep["target"] == null ? "" : planStep["target"].toString();
+                    var typeText = isRecoveryStep(planStep) ? "ERHOLEN" : "BELASTUNG";
+                    dc.setColor(isCurrent ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
+                    dc.fillRectangle(rowLeft.toNumber(), rowY.toNumber(), rowWidth.toNumber(), 39);
+                    dc.setColor(stepColor, Graphics.COLOR_BLACK);
+                    dc.fillRectangle(rowLeft.toNumber(), rowY.toNumber(), 4, 39);
+                    drawActivityText(dc, cx - rowWidth * 0.32, rowY + 3, rowWidth * 0.14, 30,
+                        marker, Graphics.FONT_SMALL, stepColor);
+                    drawActivityText(dc, cx + rowWidth * 0.05, rowY + 3, rowWidth * 0.60, 16,
+                        compactWorkoutText(stepName, 30), Graphics.FONT_XTINY,
+                        isCurrent ? Graphics.COLOR_WHITE : stepColor);
+                    var detail = durationText + " · " + typeText;
+                    if (target != "") { detail += " · " + compactWorkoutText(target, 18); }
+                    drawActivityText(dc, cx + rowWidth * 0.05, rowY + 20, rowWidth * 0.60, 14,
+                        detail, Graphics.FONT_XTINY, isCurrent ? 0x25D3CB : 0x98A5AB);
+                    if (stepRow < visibleSteps - 1) {
+                        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+                        dc.drawLine(rowLeft.toNumber(), rowY + 42,
+                            (rowLeft + rowWidth).toNumber(), rowY + 42);
+                    }
                 }
+                var pageCount = Math.floor(mWorkoutSteps.size() / 5);
+                if ((mWorkoutSteps.size() % 5) > 0) { pageCount += 1; }
+                drawActivityText(dc, cx, 330, 260, 16,
+                    "ABSCHNITTE " + (firstStep + 1).toString() + "–" +
+                    ((firstStep + 5) < mWorkoutSteps.size() ? (firstStep + 5).toString() : mWorkoutSteps.size().toString()) +
+                    " / " + mWorkoutSteps.size().toString(),
+                    Graphics.FONT_XTINY, 0x98A5AB);
             } else {
-                drawFit(dc, 195, 180, "ABGESCHLOSSEN", 260,
-                    Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, cx, 180, 260, 22, "KEIN INTERVALLPLAN",
+                    Graphics.FONT_SMALL, 0x98A5AB);
             }
-            mButtonTop = 340;
-            mButtonBottom = 375;
+            mButtonTop = 0;
+            mButtonBottom = 0;
         } else {
             drawPageHeader(dc, "WEITERE DATEN");
             drawMetric(dc, 112, 135, "KADENZ", cadenceNow, "RPM", 145, Graphics.FONT_MEDIUM);
