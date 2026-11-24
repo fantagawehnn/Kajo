@@ -146,13 +146,21 @@ test("home screen filters today's sessions and separates planned and free traini
   assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
 });
 
-test("home screen keeps fixed hero and menu areas inside the Venu 3S display", () => {
-  assert.match(homeView, /mStartTop = 132/);
-  assert.match(homeView, /mStartBottom = 218/);
-  assert.match(homeView, /mFreeTop = 226/);
-  assert.match(homeView, /mFreeBottom = 354/);
-  assert.match(homeView, /rowYs = \[226, 258, 290, 322\]/);
+test("home screen uses four non-overlapping fixed zones on the Venu 3S", () => {
+  assert.match(homeView, /mStartTop = 136/);
+  assert.match(homeView, /mStartBottom = 226/);
+  assert.match(homeView, /mBoatTop = 76/);
+  assert.match(homeView, /mBoatBottom = 118/);
+  assert.match(homeView, /rowYs = \[240, 268, 296, 324\]/);
+  assert.match(homeView, /drawHomeText\(dc, cx, rowY \+ 3, rowWidth - 24, 18/);
   assert.match(homeView, /"TRAININGSPLAN"/);
   assert.match(homeView, /"EINSTELLUNGEN"/);
   assert.doesNotMatch(homeView, /ANTIPPEN ZUM STARTEN|OHNE VORGABE|GEPLANTE EINHEITEN/);
+});
+
+test("shared text boxes reject text taller than their assigned vertical region", () => {
+  assert.match(layoutView, /function drawTextBox\(/);
+  assert.match(layoutView, /dc\.getFontHeight\(font\) > height/);
+  assert.match(homeView, /mKajoLayout\.drawTextBox/);
+  assert.match(activityView, /mKajoLayout\.drawTextBox/);
 });
