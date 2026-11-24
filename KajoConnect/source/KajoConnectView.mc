@@ -382,22 +382,15 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (y >= 76 && y <= 106 && x >= 54 && x <= 336) {
-            var relativeX = x - 54;
-            var third = 282 / 3;
-            if (relativeX < third) { mSelectedBoat = "K1"; }
-            else if (relativeX < (third * 2)) { mSelectedBoat = "C1"; }
-            else { mSelectedBoat = "C2"; }
-            Storage.setValue("kajoSelectedBoat", mSelectedBoat);
-            WatchUi.requestUpdate();
-            return;
-        }
-        if (y >= mStartTop && y <= mStartBottom) {
+        if (y >= mStartTop && y <= mStartBottom &&
+            x >= mBoatLeft && x <= mBoatRight) {
             mHomeSelection = 0;
             activateHomeSelection();
             return;
         }
-        if (y >= mFreeTop && y <= mFreeBottom) {
+
+        if (y >= mFreeTop && y <= mFreeBottom &&
+            x >= mBoatLeft && x <= mBoatRight) {
             var row = Math.floor((y - mFreeTop) / mMenuRowStep).toNumber();
             if (row == 0) {
                 mHomeSelection = 1;
@@ -416,11 +409,12 @@ class KajoConnectView extends WatchUi.View {
         mHeight = dc.getHeight();
         mUnit = mWidth < mHeight ? mWidth : mHeight;
         mKajoLayout.configure(mWidth, mHeight);
+
         var cx = mWidth / 2;
         var todaySessions = getTodaysSessions();
-
         var todayLabel = "Kein Training geplant";
         var todayDetail = "Freies Training";
+
         if (todaySessions.size() == 1) {
             var workout = todaySessions[0] as Lang.Dictionary;
             todayLabel = workout["name"] == null ? "Geplantes Training" : workout["name"].toString();
@@ -432,55 +426,56 @@ class KajoConnectView extends WatchUi.View {
             todayDetail = "Training auswählen";
         }
 
-        drawHomeText(dc, cx, 28, 250, 28, "KAJO", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, 55, 260, 16,
+        drawHomeText(dc, cx, 40, 240, 30, "KAJO", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawHomeText(dc, cx, 72, 280, 16,
             mSelectedBoat + " · " + compactSyncStatus(),
             Graphics.FONT_XTINY, mSyncStatus == "KAJO AKTUALISIERT" ? 0x25D3CB : 0x98A5AB);
 
-        var boatWidth = mKajoLayout.safeRectWidth(76, 30, mUnit * 0.72);
-        var boatLeft = cx - (boatWidth / 2);
-        dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
-        dc.fillRectangle(boatLeft.toNumber(), 76, boatWidth.toNumber(), 30);
-        drawHomeText(dc, cx, 83, boatWidth - 12, 16,
-            "K1       C1       C2", Graphics.FONT_XTINY, 0x25D3CB);
-
+        // Eine zentrale Hauptaktion statt mehrerer konkurrierender Auswahlflächen.
         mStartTop = 118;
-        mStartBottom = 218;
-        var mainWidth = mKajoLayout.safeRectWidth(mStartTop, 94, mUnit * 0.82);
+        mStartBottom = 220;
+        var mainWidth = mKajoLayout.safeRectWidth(mStartTop,
+            mStartBottom - mStartTop, mUnit * 0.78);
         var mainLeft = cx - (mainWidth / 2);
+        mBoatLeft = mainLeft;
+        mBoatRight = mainLeft + mainWidth;
+
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-        dc.fillRectangle(mainLeft.toNumber(), mStartTop, mainWidth.toNumber(), 94);
-        drawHomeText(dc, cx, 135, mainWidth - 22, 24,
+        dc.fillRoundedRectangle(mainLeft.toNumber(), mStartTop,
+            mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12);
+        drawHomeText(dc, cx, 139, mainWidth - 20, 24,
             "TRAINING STARTEN", Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
-        drawHomeText(dc, cx, 166, mainWidth - 22, 34,
+        drawHomeText(dc, cx, 171, mainWidth - 22, 26,
             todayLabel, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
-        drawHomeText(dc, cx, 194, mainWidth - 22, 14,
+        drawHomeText(dc, cx, 198, mainWidth - 22, 14,
             todayDetail, Graphics.FONT_XTINY, Graphics.COLOR_BLACK);
 
-        mFreeTop = 232;
-        mFreeBottom = 332;
+        // Zwei klar getrennte Sekundäraktionen mit identischen sichtbaren und aktiven Flächen.
+        mFreeTop = 238;
+        mFreeBottom = 342;
         mMenuRowStep = 52;
-        var secondaryWidth = mKajoLayout.safeRectWidth(232, 94, mUnit * 0.82);
+        var secondaryWidth = mKajoLayout.safeRectWidth(mFreeTop, 44, mUnit * 0.78);
         var secondaryLeft = cx - (secondaryWidth / 2);
+        mBoatLeft = secondaryLeft;
+        mBoatRight = secondaryLeft + secondaryWidth;
+
         for (var item = 0; item < 2; item += 1) {
-            var top = 232 + (item * 52);
-            var label = item == 0 ? "TRAININGSPLAN & SPEICHER" : "FREIES TRAINING";
+            var top = mFreeTop + (item * mMenuRowStep);
+            var label = item == 0 ? "TRAININGSPLAN" : "FREIES TRAINING";
             var detail = item == 0
                 ? mPlannedSessions.size().toString() + " EINHEITEN GESPEICHERT"
                 : "OHNE GEPLANTE EINHEIT";
+
             dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
-            dc.fillRectangle(secondaryLeft.toNumber(), top, secondaryWidth.toNumber(), 44);
+            dc.fillRoundedRectangle(secondaryLeft.toNumber(), top,
+                secondaryWidth.toNumber(), 44, 8);
             dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
             dc.fillRectangle(secondaryLeft.toNumber(), top, 3, 44);
-            drawHomeText(dc, cx, top + 5, secondaryWidth - 18, 18,
-                label, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            drawHomeText(dc, cx, top + 4, secondaryWidth - 18, 18,
+                label, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
             drawHomeText(dc, cx, top + 23, secondaryWidth - 18, 14,
                 detail, Graphics.FONT_XTINY, 0x98A5AB);
         }
-        drawHomeText(dc, cx, 344, 240, 16, "MENÜTASTE · EINSTELLUNGEN",
-            Graphics.FONT_XTINY, 0x98A5AB);
-    }
-
     }
 
 }
