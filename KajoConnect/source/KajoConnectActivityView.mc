@@ -503,16 +503,14 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function drawDashboardPanel(dc as Dc, x, y, width, height) as Void {
-        dc.setColor(0x071619, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(),
-            height.toNumber(), (mUnit * 0.028).toNumber());
-        dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(x.toNumber(), y.toNumber(), width.toNumber(),
-            height.toNumber(), (mUnit * 0.028).toNumber());
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((x + mUnit * 0.012).toNumber(),
-            (y + mUnit * 0.025).toNumber(), (mUnit * 0.008).toNumber(),
-            (height - mUnit * 0.05).toNumber(), (mUnit * 0.004).toNumber());
+        // Einheitliche horizontale Flaeche statt abgerundeter Datenkarte.
+        dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+        dc.fillRectangle(x.toNumber(), y.toNumber(), width.toNumber(), height.toNumber());
+        dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+        dc.fillRectangle(x.toNumber(), y.toNumber(), 4, height.toNumber());
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(x.toNumber(), (y + height).toNumber(),
+            (x + width).toNumber(), (y + height).toNumber());
     }
 
     function drawHeartRateRing(dc as Dc, centerX, centerY, radius, zone as Lang.Number) as Void {
@@ -551,12 +549,12 @@ class KajoConnectActivityView extends WatchUi.View {
     function drawActivityDashboard(dc as Dc, cx, hrNow as Lang.String, elapsed as Lang.String,
         distance as Lang.String, speedNow as Lang.String, cadenceNow as Lang.String,
         zone as Lang.Number, activityInfo) as Void {
-        var cyan = 0x00D8CC;
-        var muted = 0xA0AAB2;
+
         var stepCount = mWorkoutSteps.size();
-        var statusText = mCurrentWorkoutState == "PLANNED" ? "TRAINING" : "FREIES TRAINING";
         var timerText = elapsed;
+        var statusText = mBoatClass + " · FREI";
         var targetText = "";
+        var phaseColor = 0x25D3CB;
 
         if (stepCount > 0 && !mWorkoutSequenceComplete) {
             var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
@@ -567,33 +565,34 @@ class KajoConnectActivityView extends WatchUi.View {
             if (step["target"] != null && step["target"].toString() != "") {
                 targetText = "ZIEL: " + step["target"].toString();
             }
+            var stepType = step["type"];
+            if (stepType != null &&
+                (stepType.toString() == "recovery" || stepType.toString() == "rest" ||
+                 stepType.toString() == "pause")) {
+                phaseColor = 0xFFB020;
+                statusText += " · ERHOLEN";
+            } else {
+                statusText += " · PADDELN!";
+            }
         } else if (mWorkoutSequenceComplete) {
             statusText = "TRAINING ABGESCHLOSSEN";
         }
 
-        // Status-Chip
-        dc.setColor(0x0B2024, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(110, 48, 170, 25, 12);
-        dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(110, 48, 170, 25, 12);
-        drawActivityText(dc, 195, 53, 150, 14, statusText,
-            Graphics.FONT_XTINY, cyan);
+        drawActivityText(dc, cx, 35, 280, 20, statusText,
+            Graphics.FONT_SMALL, phaseColor);
 
-        // Timerbereich: Zahl, Einheit und Trainingsziel haben eigene Zeilen.
-        dc.setColor(0x12363B, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 125, 60, Graphics.ARC_CLOCKWISE, 210, 330);
-        dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 125, 60, Graphics.ARC_CLOCKWISE, 220, 320);
-        drawActivityText(dc, cx, 82, 220, 46, timerText,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, cx, 131, 100, 13, "MINUTEN",
-            Graphics.FONT_XTINY, muted);
+        // Der Ring bleibt als dezente Trainingsfortschrittsanzeige erhalten.
+        dc.setColor(0x263238, Graphics.COLOR_BLACK);
+        dc.drawArc(cx, 133, 65, Graphics.ARC_CLOCKWISE, 205, 335);
+        dc.setColor(phaseColor, Graphics.COLOR_BLACK);
+        dc.drawArc(cx, 133, 65, Graphics.ARC_CLOCKWISE, 215, 325);
+        drawActivityText(dc, cx, 86, 270, 58, timerText,
+            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+        drawActivityText(dc, cx, 143, 120, 16, "MIN : SEK",
+            Graphics.FONT_XTINY, 0x98A5AB);
         if (targetText != "") {
-            drawActivityText(dc, cx, 151, 240, 14, targetText,
-                Graphics.FONT_XTINY, 0xE2D95A);
-        } else if (mCurrentWorkoutState == "PLANNED" && mCurrentWorkoutName != "") {
-            drawActivityText(dc, cx, 151, 240, 14, mCurrentWorkoutName,
-                Graphics.FONT_XTINY, 0xE2D95A);
+            drawActivityText(dc, cx, 165, 280, 18, targetText,
+                Graphics.FONT_XTINY, phaseColor);
         }
 
         var pace = "--:--";
@@ -601,84 +600,63 @@ class KajoConnectActivityView extends WatchUi.View {
             pace = formatPace(activityInfo.currentSpeed * 3.6);
         }
 
-        // Vier gleich grosse Datenkarten. Jede Karte hat Label, Wert und Einheit
-        // in separaten Zeilen; keine dynamische Textzeile liegt ueber einer anderen.
-        var cardWidth = 126;
-        var cardHeight = 58;
-        var leftX = 59;
-        var rightX = 205;
-        var topY = 190;
-        var bottomY = 255;
+        // Vier Datenfelder ohne Karten: zwei Spalten, getrennt durch feine Linien.
+        var left = 72;
+        var right = 268;
+        var top = 205;
+        var rowHeight = 64;
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(195, top, 195, top + (rowHeight * 2));
+        dc.drawLine(72, top + rowHeight, 318, top + rowHeight);
 
-        drawDashboardPanel(dc, leftX, topY, cardWidth, cardHeight);
-        drawDashboardPanel(dc, rightX, topY, cardWidth, cardHeight);
-        drawDashboardPanel(dc, leftX, bottomY, cardWidth, cardHeight);
-        drawDashboardPanel(dc, rightX, bottomY, cardWidth, cardHeight);
-
-        drawActivityText(dc, leftX + 63, topY + 4, 108, 12, "SCHLAGFREQUENZ",
-            Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, leftX + 63, topY + 18, 108, 23, cadenceNow,
+        drawActivityText(dc, left, top + 5, 118, 14, "SCHLÄGE",
+            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, left, top + 22, 118, 30, cadenceNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, leftX + 63, topY + 42, 108, 11, "SPM",
-            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, left, top + 49, 118, 12, "SPM",
+            Graphics.FONT_XTINY, 0x98A5AB);
 
-        drawActivityText(dc, rightX + 63, topY + 4, 108, 12, "DISTANZ",
-            Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, rightX + 63, topY + 18, 108, 23, distance,
+        drawActivityText(dc, right, top + 5, 118, 14, "HERZFREQUENZ",
+            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, right, top + 20, 118, 30, hrNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, rightX + 63, topY + 42, 108, 11, "KM",
-            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, right, top + 49, 118, 12,
+            zone > 0 ? "BPM · Z" + zone.toString() : "BPM · ZONE –",
+            Graphics.FONT_XTINY, zone > 0 ? 0xFF453A : 0x98A5AB);
 
-        drawActivityText(dc, leftX + 63, bottomY + 4, 108, 12, "PACE / KM",
-            Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, leftX + 63, bottomY + 18, 108, 23, pace,
+        drawActivityText(dc, left, top + rowHeight + 5, 118, 14, "DISTANZ",
+            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, left, top + rowHeight + 22, 118, 30, distance,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, leftX + 63, bottomY + 42, 108, 11, "MIN / KM",
-            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, left, top + rowHeight + 49, 118, 12, "KM",
+            Graphics.FONT_XTINY, 0x98A5AB);
 
-        drawActivityText(dc, rightX + 63, bottomY + 4, 108, 12, "HERZFREQUENZ",
-            Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, rightX + 63, bottomY + 17, 108, 22, hrNow,
+        drawActivityText(dc, right, top + rowHeight + 5, 118, 14, "PACE",
+            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, right, top + rowHeight + 22, 118, 30, pace,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, rightX + 63, bottomY + 40, 108, 11,
-            zone > 0 ? "BPM  ·  ZONE " + zone.toString() : "BPM  ·  ZONE --",
-            Graphics.FONT_XTINY, zone > 0 ? 0xE3E84A : muted);
+        drawActivityText(dc, right, top + rowHeight + 49, 118, 12, "MIN/KM",
+            Graphics.FONT_XTINY, 0x98A5AB);
 
-        // Navigation liegt ausserhalb der Datenkarten.
-        mButtonTop = 340;
-        mButtonBottom = 375;
-        var visibleDots = mPageCount < 5 ? mPageCount : 5;
-        var firstDotX = 195 - ((visibleDots - 1) * 9);
-        for (var dot = 0; dot < visibleDots; dot += 1) {
-            dc.setColor(dot == (mPage < 5 ? mPage : 4) ? cyan : 0x555555, Graphics.COLOR_BLACK);
-            dc.fillCircle(firstDotX + (dot * 18), 356, 3);
-        }
+        // Die Seitennavigation erfolgt per Wischgeste; es gibt keine Bildschirm-Pfeile.
+        mButtonTop = 0;
+        mButtonBottom = 0;
     }
 
     function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
-        if (zone == 0) {
-            drawFit(dc, centerX, top, "ZONE --", width, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            return;
-        }
-
-        drawFit(dc, centerX, top, "HERZFREQUENZZONE  Z" + zone.toString(), width, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-
-        var segmentGap = mUnit * 0.012;
+        var colors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
+        drawFit(dc, centerX, top, zone > 0 ? "ZONE " + zone.toString() : "ZONE –",
+            width, Graphics.FONT_XTINY, zone > 0 ? colors[zone - 1] : 0x98A5AB);
+        var segmentGap = 4;
         var segmentWidth = (width - (segmentGap * 4)) / 5;
-        var barTop = top + (mUnit * 0.045);
-        var barHeight = mUnit * 0.022;
+        var barTop = top + 18;
+        var barHeight = 7;
         var left = centerX - (width / 2);
-
         for (var i = 0; i < 5; i += 1) {
             var x = left + (i * (segmentWidth + segmentGap));
-            dc.setColor((i + 1) == zone ? Graphics.COLOR_WHITE : Graphics.COLOR_DK_GRAY, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(
-                x.toNumber(),
-                barTop.toNumber(),
-                segmentWidth.toNumber(),
-                barHeight.toNumber(),
-                (barHeight / 2).toNumber()
-            );
+            dc.setColor(zone == i + 1 ? colors[i] : 0x344047, Graphics.COLOR_BLACK);
+            dc.fillRectangle(x.toNumber(), barTop.toNumber(),
+                segmentWidth.toNumber(), barHeight);
         }
     }
 
@@ -694,6 +672,26 @@ class KajoConnectActivityView extends WatchUi.View {
             mTimer.start(method(:onTimer), 1000, true);
         } else {
             mStatus = "START FEHLGESCHLAGEN";
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function pauseRecording() as Void {
+        if (mEngine.pause()) {
+            mTimer.stop();
+            mStatus = "PAUSIERT";
+        } else {
+            WatchUi.showToast("Pause konnte nicht aktiviert werden", null);
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function resumeRecording() as Void {
+        if (mEngine.resume()) {
+            mStatus = "AUFZEICHNUNG";
+            mTimer.start(method(:onTimer), 1000, true);
+        } else {
+            WatchUi.showToast("Training konnte nicht fortgesetzt werden", null);
         }
         WatchUi.requestUpdate();
     }
@@ -750,7 +748,9 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             startRecording();
         } else if (mStatus == "AUFZEICHNUNG") {
-            finishRecording();
+            pauseRecording();
+        } else if (mStatus == "PAUSIERT") {
+            resumeRecording();
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             finishRecording();
         } else if (mStatus == "GESPEICHERT") {
@@ -758,20 +758,16 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
-    // Aktion der unteren physischen Taste. true bedeutet: Taste wurde
-    // als Rundenmarkierung verarbeitet; false lässt die Zurück-Funktion zu.
     function handleLapButton() as Lang.Boolean {
-        // Eine gestoppte, aber noch nicht gespeicherte FIT-Session darf
-        // nicht versehentlich über die Zurück-Taste verlassen werden.
         if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             WatchUi.showToast("Bitte zuerst erneut speichern", null);
             return true;
         }
-
-        if (mStatus != "AUFZEICHNUNG") {
-            return false;
+        if (mStatus == "PAUSIERT") {
+            finishRecording();
+            return true;
         }
-
+        if (mStatus != "AUFZEICHNUNG") { return false; }
         if (mEngine.addLap()) {
             WatchUi.showToast("Runde gespeichert", null);
         } else {
@@ -963,7 +959,7 @@ class KajoConnectActivityView extends WatchUi.View {
         var hrAvg = "--";
         var hrMax = "--";
         var distance = "--";
-        var elapsed = mStatus == "AUFZEICHNUNG" ? formatTime(mElapsedSeconds * 1000) : "00:00";
+        var elapsed = (mStatus == "AUFZEICHNUNG" || mStatus == "PAUSIERT") ? formatTime(mElapsedSeconds * 1000) : "00:00";
         var calories = "--";
         var cadenceNow = "--";
         var powerNow = "--";
@@ -1005,36 +1001,65 @@ class KajoConnectActivityView extends WatchUi.View {
 
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             drawPageHeader(dc, "BEREIT");
-            drawDashboardPanel(dc, 45, 132, 300, 108);
-            drawFit(dc, 195, 165, compactWorkoutText(mCurrentWorkoutName, 30),
-                260, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            drawFit(dc, 195, 200, mBoatClass,
-                250, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
+            drawActivityText(dc, cx, 125, 280, 24, compactWorkoutText(mCurrentWorkoutName, 32),
+                Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawActivityText(dc, cx, 166, 220, 38, mBoatClass,
+                Graphics.FONT_NUMBER_MEDIUM, 0x25D3CB);
+            drawActivityText(dc, cx, 216, 260, 18, "GPS · " + gpsText + "   PULS · " + hrNow,
+                Graphics.FONT_XTINY, 0x98A5AB);
             if (mStatus == "START FEHLGESCHLAGEN") {
-                drawFit(dc, 195, 270, "START NICHT MOEGLICH",
-                    280, Graphics.FONT_XTINY, 0xFFFF7043);
+                drawActivityText(dc, cx, 260, 280, 18, "START NICHT MÖGLICH",
+                    Graphics.FONT_XTINY, 0xFF9F1A);
             }
-            mButtonTop = 310;
-            mButtonBottom = 365;
-            drawButton(dc, cx, 310, 240, "STARTEN");
+            drawActivityText(dc, cx, 326, 280, 18, "OBERE TASTE · STARTEN",
+                Graphics.FONT_XTINY, 0x25D3CB);
+            drawActivityText(dc, cx, 354, 280, 18, "UNTERE TASTE · ZURÜCK",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            mButtonTop = 0;
+            mButtonBottom = 0;
+        } else if (mStatus == "PAUSIERT") {
+            drawPageHeader(dc, "PAUSIERT");
+            drawActivityText(dc, cx, 115, 280, 66, elapsed,
+                Graphics.FONT_NUMBER_HOT, 0xFFB020);
+            if (mWorkoutSteps.size() > 0 && !mWorkoutSequenceComplete) {
+                var pausedStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+                drawActivityText(dc, cx, 202, 280, 22,
+                    "INTERVALL " + (mWorkoutStepIndex + 1).toString() + "/" + mWorkoutSteps.size().toString(),
+                    Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                drawActivityText(dc, cx, 231, 280, 20,
+                    compactWorkoutText(pausedStep["label"].toString(), 38),
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            } else {
+                drawActivityText(dc, cx, 210, 280, 20, mCurrentWorkoutName,
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            }
+            drawActivityText(dc, cx, 316, 280, 18, "OBERE TASTE · WEITER",
+                Graphics.FONT_XTINY, 0x25D3CB);
+            drawActivityText(dc, cx, 345, 280, 18, "UNTERE TASTE · BEENDEN",
+                Graphics.FONT_XTINY, 0xFFB020);
+            mButtonTop = 0;
+            mButtonBottom = 0;
         } else if (mStatus == "GESPEICHERT") {
-            drawPageHeader(dc, "GESPEICHERT");
-            drawFit(dc, 195, 165, "AUFZEICHNUNG BEENDET",
-                290, Graphics.FONT_MEDIUM, 0x00E5CC);
-            drawFit(dc, 195, 215, "FIT-DATEI GESPEICHERT",
-                280, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
-            mButtonTop = 340;
-            mButtonBottom = 375;
+            drawPageHeader(dc, "TRAINING BEENDET");
+            drawActivityText(dc, cx, 132, 280, 55, elapsed,
+                Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+            drawActivityText(dc, cx, 207, 280, 18, "FIT-DATEI GESPEICHERT",
+                Graphics.FONT_XTINY, 0x25D3CB);
+            drawActivityText(dc, cx, 335, 280, 18, "OBERE TASTE · ZURÜCK",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            mButtonTop = 0;
+            mButtonBottom = 0;
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             drawPageHeader(dc, "SPEICHERFEHLER");
-            drawFit(dc, 195, 180, "BITTE ERNEUT SPEICHERN",
-                290, Graphics.FONT_SMALL, 0xFFFF7043);
-            mButtonTop = 310;
-            mButtonBottom = 365;
-            drawButton(dc, cx, 310, 240, "ERNEUT SPEICHERN");
+            drawActivityText(dc, cx, 180, 280, 22, "BITTE ERNEUT SPEICHERN",
+                Graphics.FONT_SMALL, 0xFF9F1A);
+            drawActivityText(dc, cx, 335, 280, 18, "OBERE TASTE · ERNEUT",
+                Graphics.FONT_XTINY, 0x25D3CB);
+            mButtonTop = 0;
+            mButtonBottom = 0;
         } else if (mCurrentPageId == 0) {
             drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, cadenceNow, currentHeartRateZone, activityInfo);
-        } else if (mCurrentPageId == 1) {
+
             drawPageHeader(dc, "GESCHWINDIGKEIT");
             drawMetric(dc, cx, 115, "AKTUELL", speedNow, "KM/H", 260, Graphics.FONT_LARGE);
             drawMetric(dc, 112, 245, "DURCHSCHNITT", speedAvg, "KM/H", 145, Graphics.FONT_MEDIUM);
