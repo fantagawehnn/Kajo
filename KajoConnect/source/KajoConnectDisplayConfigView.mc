@@ -68,8 +68,7 @@ class KajoConnectDisplayConfigView extends WatchUi.View {
 
         drawFit(dc, cx, mUnit * 0.075, "ANZEIGE",
             mUnit * 0.70, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.13, "DATENSEITEN EIN- ODER AUSBLENDEN",
-            mUnit * 0.76, Graphics.FONT_XTINY, 0x00E5CC);
+        // Die Optionen stehen direkt unter dem Seitentitel.
 
         var labels = ["Uebersicht", "Geschwindigkeit", "Herzfrequenz", "Distanz & Zeit", "Weitere Daten"];
         mRowTop = mUnit * 0.205;
