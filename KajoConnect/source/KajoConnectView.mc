@@ -267,7 +267,7 @@ class KajoConnectView extends WatchUi.View {
             var view = new KajoConnectDisplayConfigView();
             WatchUi.pushView(view, new KajoConnectDisplayConfigDelegate(view), WatchUi.SLIDE_UP);
         } else if (identifier == "training_overview") {
-            var view = new KajoConnectWorkoutListView(self);
+            var view = new KajoConnectWorkoutListView(self, null, "TRAININGSPLAN", "EINHEITEN GESPEICHERT");
             WatchUi.pushView(view, new KajoConnectWorkoutListDelegate(view), WatchUi.SLIDE_UP);
         } else if (identifier == "history") {
             var view = new KajoConnectHistoryView();
