@@ -64,7 +64,7 @@ test('GPS tracking is enabled only after the FIT session starts successfully', (
     const start = method(activity, 'startRecording', 'onTimer');
     assert.ok(start.indexOf('if (started)') < start.indexOf('Position.enableLocationEvents'));
     assert.match(start, /Position\.LOCATION_CONTINUOUS/);
-    assert.match(start, /else\s*\{\s*mStatus = "START FEHLGESCHLAGEN"/);
+    assert.match(start, /else\s*\{\s*mStartError = mEngine\.getLastError\(\);\s*mStatus = "START FEHLGESCHLAGEN"/);
 });
 
 
@@ -80,6 +80,7 @@ test('a failed start attempt never discards a potentially existing FIT session',
     assert.doesNotMatch(start, /mSession\.discard\(/);
     assert.match(start, /if \(!started\) \{[\s\S]*?return false;/);
     assert.doesNotMatch(start, /mSession = null/);
+    assert.match(start, /mLastError = error\.toString\(\)/);
 });
 
 test('watch upload updates the versioned activity manifest before acknowledging success', async () => {
