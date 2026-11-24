@@ -82,7 +82,7 @@ class KajoLayout {
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        var targetHeight = dc.getFontHeight(preferredFont) * 0.62;
+        var targetHeight = dc.getFontHeight(preferredFont) * 0.88;
         return scaledFont(dc, text, maxWidth, targetHeight, preferredFont);
     }
 
@@ -114,7 +114,7 @@ class KajoLayout {
     function drawTextFit(dc as Dc, x, y, text as Lang.String,
         maxWidth, preferredFont, color as Lang.Number) as Void {
         if (text.length() == 0 || maxWidth <= 0) { return; }
-        var targetHeight = dc.getFontHeight(preferredFont) * 0.62;
+        var targetHeight = dc.getFontHeight(preferredFont) * 0.88;
         drawTextBox(
             dc,
             x.toNumber(),
