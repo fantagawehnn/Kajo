@@ -19,6 +19,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mUploadInFlightId as Lang.String = "";
     var mStartTimestamp as Lang.Number = 0;
     var mStartDateIso as Lang.String = "";
+    var mStartDateDisplay as Lang.String = "";
     var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
 
     var mBoatClass as Lang.String;
@@ -879,6 +880,7 @@ class KajoConnectActivityView extends WatchUi.View {
             var startDay = (startInfo.day < 10 ? "0" : "") + startInfo.day.toString();
             var startMonth = (startInfo.month < 10 ? "0" : "") + startInfo.month.toString();
             mStartDateIso = startInfo.year.toString() + "-" + startMonth + "-" + startDay;
+            mStartDateDisplay = startDay + "." + startMonth + ".";
             mStatus = "AUFZEICHNUNG";
             mElapsedSeconds = 0;
             mFinalDistance = "--";
@@ -945,10 +947,11 @@ class KajoConnectActivityView extends WatchUi.View {
             var dayText = (info.day < 10 ? "0" : "") + info.day.toString();
             var monthText = (info.month < 10 ? "0" : "") + info.month.toString();
             var dateIso = mStartDateIso == "" ? info.year.toString() + "-" + monthText + "-" + dayText : mStartDateIso;
+            var dateDisplay = mStartDateDisplay == "" ? dayText + "." + monthText + "." : mStartDateDisplay;
             var clientActivityId = "watch-" + mStartTimestamp.toString();
 
             var entry = {};
-            entry["date"] = dayText + "." + monthText + ".";
+            entry["date"] = dateDisplay;
             entry["dateIso"] = dateIso;
             entry["clientActivityId"] = clientActivityId;
             entry["startTimestamp"] = mStartTimestamp;
@@ -994,9 +997,13 @@ class KajoConnectActivityView extends WatchUi.View {
                     return;
                 }
             }
+            if (pending.size() >= 20) {
+                WatchUi.showToast("Upload-Warteschlange voll – bitte KAJO verbinden", null);
+                return;
+            }
             var next = [];
             next.add(entry);
-            for (var i = 0; i < pending.size() && i < 19; i += 1) {
+            for (var i = 0; i < pending.size(); i += 1) {
                 next.add(pending[i]);
             }
             Storage.setValue("kajoPendingActivityUploads", next);
@@ -1077,6 +1084,7 @@ class KajoConnectActivityView extends WatchUi.View {
             // Der Server behandelt dieselbe Aktivitäts-ID idempotent.
         }
         mUploadInFlightId = "";
+        syncPendingActivityUploads();
         WatchUi.requestUpdate();
     }
 
