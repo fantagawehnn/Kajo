@@ -315,7 +315,7 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) {
-        // Die Sportart-Zeile bleibt kompakt; drei breite Touchbereiche waehlen K1, C1 oder C2.
+        // Sportart-Auswahl bleibt auf die Kopfzeile begrenzt.
         if (y >= 48 && y <= 64 && x >= 54 && x <= 336) {
             var relativeX = x - 54;
             var third = 282 / 3;
@@ -332,16 +332,19 @@ class KajoConnectView extends WatchUi.View {
             return;
         }
 
-        if (y >= mFreeTop && y <= mFreeBottom) {
-            var row = Math.floor((y - mFreeTop) / mMenuRowStep).toNumber();
-            if (row == 0) {
+        // Vier Menuepunkte als 2x2-Raster: Touch-Zonen entsprechen exakt den Karten.
+        if (y >= mFreeTop && y <= mFreeBottom && x >= 48 && x <= 342) {
+            var row = y < 277 ? 0 : 1;
+            var column = x < (mWidth / 2) ? 0 : 1;
+            var item = (row * 2) + column;
+            if (item == 0) {
                 openActivityView(null);
-            } else if (row == 1) {
+            } else if (item == 1) {
                 var listView = new KajoConnectWorkoutListView(self);
                 WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
-            } else if (row == 2) {
+            } else if (item == 2) {
                 WatchUi.showToast("Trainingshistorie ist noch nicht verfuegbar", null);
-            } else if (row == 3) {
+            } else if (item == 3) {
                 var menuView = new KajoConnectMenuView(self);
                 WatchUi.pushView(menuView, new KajoConnectMenuViewDelegate(menuView), WatchUi.SLIDE_UP);
             }
@@ -357,28 +360,25 @@ class KajoConnectView extends WatchUi.View {
         var cx = mWidth / 2;
         var todaySessions = getTodaysSessions();
 
-        // KAJO Startseite: klare Kopfzeile, hervorgehobene heutige Einheit und
-        // vier grosse, voneinander getrennte Trainingsnavigationen.
-        // Logo-Markierung als reduzierte Paddel-/Wellenlinie.
+        // Kopfbereich
         dc.setColor(0x00D8CC, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 31, mUnit * 0.035, Graphics.ARC_CLOCKWISE, 205, 325);
-        dc.drawLine(cx - 12, 34, cx + 10, 25);
+        dc.drawArc(cx, 30, mUnit * 0.035, Graphics.ARC_CLOCKWISE, 205, 325);
+        dc.drawLine(cx - 12, 33, cx + 10, 24);
         drawHomeText(dc, cx + 25, 17, 112, 26, "KAJO",
             Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-
-        drawHomeText(dc, cx, 49, 245, 14, "SPORTART: " + mSelectedBoat + " · WILDWASSER",
+        drawHomeText(dc, cx, 48, 245, 15, "SPORTART: " + mSelectedBoat + " · WILDWASSER",
             Graphics.FONT_XTINY, 0xAAB7BD);
-        drawHomeText(dc, cx, 67, 250, 14, compactSyncStatus(),
+        drawHomeText(dc, cx, 66, 250, 14, compactSyncStatus(),
             Graphics.FONT_XTINY, mSyncStatus == "KAJO AKTUALISIERT" ? 0x00D8CC : 0x82939A);
 
         dc.setColor(0x42545A, Graphics.COLOR_BLACK);
-        dc.drawLine(70, 91, 320, 91);
-
-        drawHomeText(dc, cx, 99, 250, 18, "TRAINING FUER HEUTE",
+        dc.drawLine(78, 88, 312, 88);
+        drawHomeText(dc, cx, 94, 250, 18, "TRAINING FUER HEUTE",
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
 
-        mStartTop = 122;
-        mStartBottom = 198;
+        // Eine kompakte Trainingskarte mit drei strikt getrennten Textzeilen.
+        mStartTop = 116;
+        mStartBottom = 192;
         var heroName = "KEIN TRAINING GEPLANT";
         var heroDetail = "Freies Training starten";
         var heroMeta = "TIPPE ZUM STARTEN";
@@ -392,55 +392,57 @@ class KajoConnectView extends WatchUi.View {
             heroMeta = "GEPLANTE EINHEIT · STARTEN";
         } else if (todaySessions.size() > 1) {
             heroName = todaySessions.size().toString() + " EINHEITEN HEUTE";
-            heroDetail = "Training auswählen";
+            heroDetail = "Training auswaehlen";
             heroMeta = "TAGESPLAN";
         }
 
         var heroWidth = mKajoLayout.safeRectWidth(mStartTop, mStartBottom - mStartTop, mUnit * 0.78);
         var heroLeft = cx - (heroWidth / 2);
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(),
-            (mStartBottom - mStartTop).toNumber(), 20);
+        dc.fillRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(), 76, 18);
         dc.setColor(0x00D8CC, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(),
-            (mStartBottom - mStartTop).toNumber(), 20);
-        dc.drawLine((heroLeft + 18).toNumber(), 139, (heroLeft + 52).toNumber(), 139);
-        drawHomeText(dc, cx, 139, (heroWidth * 0.84).toNumber(), 22,
+        dc.drawRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(), 76, 18);
+        drawHomeText(dc, cx, 129, (heroWidth * 0.82).toNumber(), 20,
             heroName, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, 164, (heroWidth * 0.84).toNumber(), 17,
+        drawHomeText(dc, cx, 153, (heroWidth * 0.82).toNumber(), 15,
             heroDetail, Graphics.FONT_XTINY, 0xAAB7BD);
-        drawHomeText(dc, cx, 181, (heroWidth * 0.84).toNumber(), 13,
+        drawHomeText(dc, cx, 173, (heroWidth * 0.82).toNumber(), 13,
             heroMeta, Graphics.FONT_XTINY, 0x00D8CC);
-        drawHomeText(dc, heroLeft + heroWidth - 18, 151, 18, 22, "›",
-            Graphics.FONT_MEDIUM, 0x00D8CC);
 
-        drawHomeText(dc, cx - 56, 207, 150, 18, "TRAININGS",
+        drawHomeText(dc, cx, 199, 180, 18, "MENUE",
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx + 82, 209, 105, 14, "SCROLLEN  V",
-            Graphics.FONT_XTINY, 0x82939A);
 
-        var labels = ["FREIES TRAINING", "GEPLANTE TRAININGS", "VERGANGENE TRAININGS", "EINSTELLUNGEN"];
+        // 2x2 Raster statt vier untereinanderliegender Zeilen.
+        // Alle Karten enden deutlich vor dem unteren Rand des runden Displays.
+        var labels = ["FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
         var icons = ["F", "P", "H", "E"];
-        mFreeTop = 222;
-        mFreeBottom = 374;
-        mMenuRowStep = 34;
-        mMenuRowCount = 4;
-        for (var row = 0; row < 4; row += 1) {
-            var rowY = 222 + (row * 34);
-            var rowWidth = mKajoLayout.safeRectWidth(rowY, 29, mUnit * 0.78);
-            var rowLeft = cx - (rowWidth / 2);
+        var cardWidth = 136;
+        var cardHeight = 44;
+        var leftCenter = cx - 73;
+        var rightCenter = cx + 73;
+        var topRow = 222;
+        var bottomRow = 276;
+        mFreeTop = 218;
+        mFreeBottom = 326;
+
+        for (var item = 0; item < 4; item += 1) {
+            var cardX = item % 2 == 0 ? leftCenter : rightCenter;
+            var cardY = item < 2 ? topRow : bottomRow;
+            var cardLeft = cardX - (cardWidth / 2);
+            var safeWidth = mKajoLayout.safeRectWidthAt(cardX, cardY, cardHeight, cardWidth);
+            cardLeft = cardX - (safeWidth / 2);
+
             dc.setColor(0x0A171B, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(rowLeft.toNumber(), rowY, rowWidth.toNumber(), 29, 15);
+            dc.fillRoundedRectangle(cardLeft.toNumber(), cardY, safeWidth.toNumber(), cardHeight, 13);
             dc.setColor(0x294047, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(rowLeft.toNumber(), rowY, rowWidth.toNumber(), 29, 15);
+            dc.drawRoundedRectangle(cardLeft.toNumber(), cardY, safeWidth.toNumber(), cardHeight, 13);
             dc.setColor(0x12383B, Graphics.COLOR_BLACK);
-            dc.fillCircle((rowLeft + 19).toNumber(), rowY + 15, 10);
-            drawHomeText(dc, rowLeft + 19, rowY + 7, 20, 16, icons[row],
+            dc.fillCircle((cardLeft + 17).toNumber(), cardY + 22, 9);
+            drawHomeText(dc, cardLeft + 17, cardY + 14, 18, 16, icons[item],
                 Graphics.FONT_XTINY, 0x00D8CC);
-            drawHomeText(dc, cx + 10, rowY + 7, rowWidth - 56, 16,
-                labels[row], Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-            drawHomeText(dc, rowLeft + rowWidth - 17, rowY + 6, 16, 18, ">",
-                Graphics.FONT_SMALL, 0x82939A);
+            drawHomeText(dc, cardX + 9, cardY + 14, safeWidth - 34, 16,
+                labels[item], Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
     }
+
 }
