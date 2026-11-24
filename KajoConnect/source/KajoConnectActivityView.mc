@@ -589,7 +589,7 @@ class KajoConnectActivityView extends WatchUi.View {
         dc.setColor(cyan, Graphics.COLOR_BLACK);
         dc.drawArc(cx, 145, 79, Graphics.ARC_CLOCKWISE, 215, 325);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(cx, 111, Graphics.FONT_NUMBER_HOT, timerText,
+        dc.drawText(cx, 116, Graphics.FONT_NUMBER_MEDIUM, timerText,
             Graphics.TEXT_JUSTIFY_CENTER);
         drawActivityText(dc, cx, 151, 100, 14, "MINUTEN",
             Graphics.FONT_XTINY, muted);
@@ -634,6 +634,9 @@ class KajoConnectActivityView extends WatchUi.View {
             Graphics.FONT_XTINY, muted);
         drawActivityText(dc, 274, 303, 122, 24, hrNow + " BPM",
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, 274, 326, 122, 9,
+            zone > 0 ? "ZONE " + zone.toString() : "ZONE --",
+            Graphics.FONT_XTINY, 0xE3E84A);
 
         var zoneColors = [0x20D98A, 0x8BE34A, 0xE3E84A, 0xFFB52E, 0xF04455];
         var barLeft = 229;
@@ -642,7 +645,7 @@ class KajoConnectActivityView extends WatchUi.View {
         for (var z = 0; z < 5; z += 1) {
             var segmentColor = zone > 0 && zone == z + 1 ? zoneColors[z] : 0x263238;
             dc.setColor(segmentColor, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(barLeft + (z * (segmentWidth + gap)), 328,
+            dc.fillRoundedRectangle(barLeft + (z * (segmentWidth + gap)), 335,
                 segmentWidth, 4, 2);
         }
 
