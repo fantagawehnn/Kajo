@@ -128,6 +128,23 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function moveFocus(direction as Lang.Number) as Void {
+        var first = mPage * 4;
+        var visible = mMetricIds.size() - first;
+        if (visible > 4) { visible = 4; }
+        if (visible <= 0) { return; }
+        var local = mSelectedRow - first;
+        if (local < 0 || local >= visible) {
+            local = direction >= 0 ? 0 : visible - 1;
+        } else {
+            local += direction;
+            if (local < 0) { local = visible - 1; }
+            if (local >= visible) { local = 0; }
+        }
+        mSelectedRow = first + local;
+        WatchUi.requestUpdate();
+    }
+
     function moveSelected(direction as Lang.Number) as Void {
         if (mSelectedRow < 0 || mSelectedRow >= mMetricIds.size()) {
             WatchUi.showToast("Zuerst rechts ein Datenfeld auswaehlen", null);
