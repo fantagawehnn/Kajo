@@ -19,6 +19,7 @@ const customFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnect
 const displayConfigView = readFileSync(new URL("../KajoConnect/source/KajoConnectDisplayConfigView.mc", import.meta.url), "utf8");
 const pairingView = readFileSync(new URL("../KajoConnect/source/KajoConnectPairingView.mc", import.meta.url), "utf8");
 const trainingFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnectTrainingFieldsView.mc", import.meta.url), "utf8");
+const intervalHintsView = readFileSync(new URL("../KajoConnect/source/KajoConnectIntervalHintsView.mc", import.meta.url), "utf8");
 const historyView = readFileSync(new URL("../KajoConnect/source/KajoConnectHistoryView.mc", import.meta.url), "utf8");
 const boatClassView = readFileSync(new URL("../KajoConnect/source/KajoConnectBoatClassView.mc", import.meta.url), "utf8");
 const unitsView = readFileSync(new URL("../KajoConnect/source/KajoConnectUnitsView.mc", import.meta.url), "utf8");
@@ -123,7 +124,6 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
     ["custom fields", customFieldsView],
     ["display config", displayConfigView],
     ["pairing", pairingView],
-    ["training fields", trainingFieldsView],
   ]) {
     assert.match(source, /mKajoLayout\.drawTextFit/, name + " must use the shared text layout");
   }
@@ -180,11 +180,15 @@ test("completed Garmin watch activities are queued locally and uploaded idempote
 
 test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts", () => {
   assert.match(trainingFieldsView, /mCounts as Lang\.Array<Lang\.Number> = \[1, 2, 4, 6\]/);
-  assert.match(trainingFieldsView, /"INTERVALL-STATUS"/);
-  assert.match(trainingFieldsView, /"PULS \+ ZONE"/);
-  assert.match(trainingFieldsView, /"SCHLAGFREQUENZ"/);
-  assert.match(trainingFieldsView, /"DISTANZ"/);
-  assert.match(trainingFieldsView, /"PACE"/);
+  assert.match(trainingFieldsView, /extends WatchUi\.Menu2/);
+  assert.match(trainingFieldsView, /extends WatchUi\.CheckboxMenu/);
+  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Intervallstatus"/);
+  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Puls \+ Zone"/);
+  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Schlagfrequenz"/);
+  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Distanz"/);
+  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Pace"/);
+  assert.match(intervalHintsView, /extends WatchUi\.CheckboxMenu/);
+  assert.match(intervalHintsView, /"kajoIntervalTone", false/);
   assert.match(activityView, /mTrainingFieldCount == 2/);
   assert.match(activityView, /mTrainingFieldCount == 4/);
   assert.match(activityView, /mTrainingFieldCount == 6/);
