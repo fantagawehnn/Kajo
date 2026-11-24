@@ -14,6 +14,12 @@ import Toybox.WatchUi;
 class KajoConnectActivityView extends WatchUi.View {
 
     var mKajoLayout as KajoLayout;
+    var mApi as KajoConnectApi;
+    var mUploadInFlight as Lang.Boolean = false;
+    var mUploadInFlightId as Lang.String = "";
+    var mStartTimestamp as Lang.Number = 0;
+    var mStartDateIso as Lang.String = "";
+    var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
 
     var mBoatClass as Lang.String;
     var mEngine;
@@ -288,6 +294,7 @@ class KajoConnectActivityView extends WatchUi.View {
     function initialize(boatClass as Lang.String) {
         View.initialize();
         mKajoLayout = new KajoLayout();
+        mApi = new KajoConnectApi();
         mBoatClass = boatClass;
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
@@ -864,8 +871,14 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function startRecording() as Void {
+        syncPendingActivityUploads();
         var started = mEngine.start(mBoatClass);
         if (started) {
+            mStartTimestamp = Time.now().value();
+            var startInfo = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+            var startDay = (startInfo.day < 10 ? "0" : "") + startInfo.day.toString();
+            var startMonth = (startInfo.month < 10 ? "0" : "") + startInfo.month.toString();
+            mStartDateIso = startInfo.year.toString() + "-" + startMonth + "-" + startDay;
             mStatus = "AUFZEICHNUNG";
             mElapsedSeconds = 0;
             mFinalDistance = "--";
@@ -931,11 +944,14 @@ class KajoConnectActivityView extends WatchUi.View {
             var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
             var dayText = (info.day < 10 ? "0" : "") + info.day.toString();
             var monthText = (info.month < 10 ? "0" : "") + info.month.toString();
-            var dateIso = info.year.toString() + "-" + monthText + "-" + dayText;
+            var dateIso = mStartDateIso == "" ? info.year.toString() + "-" + monthText + "-" + dayText : mStartDateIso;
+            var clientActivityId = "watch-" + mStartTimestamp.toString();
 
             var entry = {};
             entry["date"] = dayText + "." + monthText + ".";
             entry["dateIso"] = dateIso;
+            entry["clientActivityId"] = clientActivityId;
+            entry["startTimestamp"] = mStartTimestamp;
             entry["durationSeconds"] = mElapsedSeconds;
             entry["source"] = "garmin-connect-iq";
             if (mFinalDistanceMeters != null) {
@@ -955,12 +971,113 @@ class KajoConnectActivityView extends WatchUi.View {
                 nextHistory.add(previous[i]);
             }
             Storage.setValue("kajoActivityHistory", nextHistory);
+            queueActivityUpload(entry);
             mHistoryEntrySaved = true;
             return true;
         } catch (error) {
             WatchUi.showToast("Historie konnte nicht gespeichert werden", null);
             return false;
         }
+    }
+
+    function queueActivityUpload(entry as Lang.Dictionary) as Void {
+        try {
+            var stored = Storage.getValue("kajoPendingActivityUploads");
+            var pending = stored == null ? [] : stored as Lang.Array<Lang.Dictionary>;
+            var activityId = entry["clientActivityId"];
+            if (activityId == null) { return; }
+            for (var i = 0; i < pending.size(); i += 1) {
+                var existing = pending[i] as Lang.Dictionary;
+                if (existing["clientActivityId"] != null &&
+                    existing["clientActivityId"].toString() == activityId.toString()) {
+                    syncPendingActivityUploads();
+                    return;
+                }
+            }
+            var next = [];
+            next.add(entry);
+            for (var i = 0; i < pending.size() && i < 19; i += 1) {
+                next.add(pending[i]);
+            }
+            Storage.setValue("kajoPendingActivityUploads", next);
+            syncPendingActivityUploads();
+        } catch (error) {
+            WatchUi.showToast("Upload lokal vorgemerkt fehlgeschlagen", null);
+        }
+    }
+
+    function syncPendingActivityUploads() as Void {
+        if (mUploadInFlight) { return; }
+        var token = Storage.getValue("kajoDeviceToken");
+        if (token == null || token.toString().length() != 64) { return; }
+        var stored = Storage.getValue("kajoPendingActivityUploads");
+        if (stored == null) { return; }
+        var pending = stored as Lang.Array<Lang.Dictionary>;
+        if (pending.size() == 0) { return; }
+        var entry = pending[0] as Lang.Dictionary;
+        var activityId = entry["clientActivityId"];
+        var dateValue = entry["dateIso"];
+        var durationValue = entry["durationSeconds"];
+        var boatValue = entry["boatClass"];
+        if (activityId == null || dateValue == null || durationValue == null || boatValue == null) {
+            WatchUi.showToast("Upload-Datensatz unvollstaendig", null);
+            return;
+        }
+        var activity = {
+            "clientActivityId" => activityId,
+            "date" => dateValue,
+            "durationSeconds" => durationValue,
+            "boatClass" => boatValue,
+            "name" => entry["name"] == null ? "KAJO Training" : entry["name"]
+        };
+        if (entry["startTimestamp"] != null) {
+            activity["startTimestamp"] = entry["startTimestamp"];
+        }
+        if (entry["distanceMeters"] != null) {
+            activity["distanceMeters"] = entry["distanceMeters"];
+        }
+        if (entry["averageHeartRateBpm"] != null) {
+            activity["averageHeartRateBpm"] = entry["averageHeartRateBpm"];
+        }
+        mUploadInFlight = true;
+        mUploadInFlightId = activityId.toString();
+        try {
+            mApi.postJson(
+                mEndpoint,
+                { "action" => "upload-activity", "activity" => activity },
+                token.toString(),
+                method(:onActivityUploadResponse)
+            );
+        } catch (error) {
+            mUploadInFlight = false;
+            mUploadInFlightId = "";
+        }
+    }
+
+    function onActivityUploadResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) as Void {
+        mUploadInFlight = false;
+        if (responseCode != 200 || data == null || data["ok"] != true) {
+            mUploadInFlightId = "";
+            return;
+        }
+        try {
+            var stored = Storage.getValue("kajoPendingActivityUploads");
+            var pending = stored == null ? [] : stored as Lang.Array<Lang.Dictionary>;
+            var next = [];
+            for (var i = 0; i < pending.size(); i += 1) {
+                var entry = pending[i] as Lang.Dictionary;
+                var activityId = entry["clientActivityId"];
+                if (activityId == null || activityId.toString() != mUploadInFlightId) {
+                    next.add(entry);
+                }
+            }
+            Storage.setValue("kajoPendingActivityUploads", next);
+        } catch (error) {
+            // Ein lokaler Löschfehler führt zu einem sicheren erneuten Upload.
+            // Der Server behandelt dieselbe Aktivitäts-ID idempotent.
+        }
+        mUploadInFlightId = "";
+        WatchUi.requestUpdate();
     }
 
     function finishRecording() as Void {
