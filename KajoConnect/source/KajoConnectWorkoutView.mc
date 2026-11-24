@@ -8,6 +8,8 @@ class KajoConnectWorkoutView extends WatchUi.View {
     var mKajoLayout as KajoLayout;
     var mWorkout as Lang.Dictionary;
     var mParent as KajoConnectView;
+    var mStartTop as Lang.Number = 0;
+    var mStartBottom as Lang.Number = 0;
 
     function initialize(workout as Lang.Dictionary, parent as KajoConnectView) {
         View.initialize();
@@ -21,8 +23,9 @@ class KajoConnectWorkoutView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        // Die Vorschau bleibt bewusst ohne eingeblendeten Start-Button.
-        // Start erfolgt über die obere Taste; Touch ist keine Voraussetzung.
+        if (y >= mStartTop && y <= mStartBottom) {
+            startSelectedWorkout();
+        }
     }
 
     function valueText(key as Lang.String, fallback as Lang.String) as Lang.String {
@@ -115,11 +118,16 @@ class KajoConnectWorkoutView extends WatchUi.View {
                 contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
         }
 
-        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-        dc.drawLine(70, unit * 0.79, 320, unit * 0.79);
-        drawCentered(dc, center, unit * 0.82, "OBERE TASTE · STARTEN",
-            contentWidth, Graphics.FONT_XTINY, 0x25D3CB);
-        drawCentered(dc, center, unit * 0.88, "UNTERE TASTE · ZURÜCK",
+        mStartTop = unit * 0.79;
+        mStartBottom = unit * 0.93;
+        var buttonWidth = mKajoLayout.safeRectWidth(mStartTop, mStartBottom - mStartTop, unit * 0.78);
+        var buttonLeft = center - (buttonWidth / 2);
+        dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+        dc.fillRectangle(buttonLeft.toNumber(), mStartTop, buttonWidth.toNumber(),
+            (mStartBottom - mStartTop).toNumber());
+        drawCentered(dc, center, unit * 0.825, "TRAINING STARTEN",
+            buttonWidth - 16, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+        drawCentered(dc, center, unit * 0.945, "ZURÜCK · UNTERE TASTE",
             contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
