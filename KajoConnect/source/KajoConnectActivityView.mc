@@ -489,13 +489,13 @@ class KajoConnectActivityView extends WatchUi.View {
             var label = getCustomMetricLabel(metricId);
             var value = getCustomMetricValue(metricId, values);
             var unit = getCustomMetricUnit(metricId);
-            drawFit(dc, x, tileTop + (mUnit * 0.018), label, tileWidth * 0.88,
-                Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawFit(dc, x, tileTop + (mUnit * 0.065), value, tileWidth * 0.88,
-                valueFont, Graphics.COLOR_WHITE);
+            drawActivityText(dc, x, tileTop + 4, tileWidth * 0.88, 14,
+                label, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            drawActivityText(dc, x, tileTop + 22, tileWidth * 0.88, 25,
+                value, valueFont, Graphics.COLOR_WHITE);
             if (unit != "") {
-                drawFit(dc, x, tileTop + (mUnit * 0.145), unit, tileWidth * 0.88,
-                    Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+                drawActivityText(dc, x, tileTop + 50, tileWidth * 0.88, 14,
+                    unit, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             }
         }
     }
@@ -570,7 +570,7 @@ class KajoConnectActivityView extends WatchUi.View {
         dc.fillRoundedRectangle(85, 72, 220, 28, 11);
         dc.setColor(0x17343A, Graphics.COLOR_BLACK);
         dc.drawRoundedRectangle(85, 72, 220, 28, 11);
-        drawFit(dc, 195, 78, statusText, 194, Graphics.FONT_SMALL, cyan);
+        drawActivityText(dc, 195, 76, 194, 18, statusText, Graphics.FONT_XTINY, cyan);
 
         // Timer als zentrale Information.
         var timerText = remainingText != "" ? remainingText :
@@ -580,31 +580,25 @@ class KajoConnectActivityView extends WatchUi.View {
         dc.drawArc(195, 164, 54, Graphics.ARC_CLOCKWISE, 205, 335);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
         dc.drawArc(195, 164, 54, Graphics.ARC_CLOCKWISE, 215, 325);
-        drawFit(dc, 195, 141, timerText, 250,
+        drawActivityText(dc, 195, 143, 230, 38, timerText,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
 
         // Zwei feste Kennzahlenkarten.
         drawDashboardPanel(dc, 45, 228, 145, 68);
         drawDashboardPanel(dc, 200, 228, 145, 68);
 
-        drawFit(dc, 117, 237, "GESCHW.", 118,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, 117, 254, speedNow, 118,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, 117, 277, "KM/H", 118,
-            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, 117, 233, 118, 14, "GESCHW.", Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, 117, 249, 118, 26, speedNow, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, 117, 277, 118, 12, "KM/H", Graphics.FONT_XTINY, muted);
 
-        drawFit(dc, 272, 237, "DISTANZ", 118,
-            Graphics.FONT_XTINY, muted);
-        drawFit(dc, 272, 254, distance, 118,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawFit(dc, 272, 277, "KM", 118,
-            Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, 272, 233, 118, 14, "DISTANZ", Graphics.FONT_XTINY, muted);
+        drawActivityText(dc, 272, 249, 118, 26, distance, Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, 272, 277, 118, 12, "KM", Graphics.FONT_XTINY, muted);
 
         // Herzfrequenz und Zone erhalten eine eigene, klar begrenzte Fläche.
         drawDashboardPanel(dc, 101, 302, 188, 38);
-        drawFit(dc, 195, 305, hrNow + " BPM", 158,
-            Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, 195, 304, 158, 22, hrNow + " BPM",
+            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
 
         var zoneColors = [0x39FF14, 0x00E676, 0xFFD700, 0xFF9100, 0xFF2A2A];
         var barLeft = 122;
@@ -845,9 +839,16 @@ class KajoConnectActivityView extends WatchUi.View {
         mKajoLayout.drawTextFit(dc, x, y, text, maxWidth, preferredFont, color);
     }
 
+
+    function drawActivityText(dc as Dc, x as Lang.Number, top as Lang.Number,
+        width as Lang.Number, height as Lang.Number, text as Lang.String,
+        preferredFont, color as Lang.Number) as Void {
+        mKajoLayout.drawTextBox(dc, x, top, width, height, text, preferredFont, color);
+    }
+
     function drawPageHeader(dc as Dc, title as Lang.String) as Void {
         // Fester Kopfbereich fuer das 390 x 390 Pixel grosse Venu-3S-Display.
-        drawFit(dc, 195, 42, title, 260, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawActivityText(dc, 195, 30, 260, 24, title, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
     }
 
     function drawMetric(dc as Dc, x, y, label as Lang.String, value as Lang.String,
@@ -856,13 +857,14 @@ class KajoConnectActivityView extends WatchUi.View {
         var panelHeight = mUnit * 0.19;
         var panelWidth = mKajoLayout.safeRectWidthAt(x, panelTop, panelHeight, maxWidth);
         drawDashboardPanel(dc, x - (panelWidth / 2), panelTop, panelWidth, panelHeight);
-        drawFit(dc, x, y, label, panelWidth * 0.86,
-            Graphics.FONT_XTINY, 0xA0AAB2);
-        drawFit(dc, x, y + (mUnit * 0.055), value, panelWidth * 0.86,
-            valueFont, Graphics.COLOR_WHITE);
+        // Drei feste Textzeilen innerhalb der Kachel; keine Zeile darf die naechste beruehren.
+        drawActivityText(dc, x, panelTop + 5, panelWidth * 0.86, 14,
+            label, Graphics.FONT_XTINY, 0xA0AAB2);
+        drawActivityText(dc, x, panelTop + 23, panelWidth * 0.86, 25,
+            value, valueFont, Graphics.COLOR_WHITE);
         if (unit != "") {
-            drawFit(dc, x, y + (mUnit * 0.13), unit, panelWidth * 0.86,
-                Graphics.FONT_XTINY, 0xA0AAB2);
+            drawActivityText(dc, x, panelTop + 51, panelWidth * 0.86, 14,
+                unit, Graphics.FONT_XTINY, 0xA0AAB2);
         }
     }
 
