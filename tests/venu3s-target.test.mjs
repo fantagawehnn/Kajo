@@ -149,6 +149,10 @@ test("boat class and metric unit settings are available on the watch", () => {
 test("completed activities are stored locally and displayed in watch history", () => {
   assert.match(activityView, /Storage\.setValue\("kajoActivityHistory", nextHistory\)/);
   assert.match(activityView, /mHistoryEntrySaved/);
+  assert.match(activityView, /entry\["dateIso"\] = dateIso/);
+  assert.match(activityView, /entry\["durationSeconds"\] = mElapsedSeconds/);
+  assert.match(activityView, /entry\["distanceMeters"\] = mFinalDistanceMeters/);
+  assert.match(activityView, /entry\["averageHeartRateBpm"\] = mFinalAverageHeartRateValue/);
   assert.match(historyView, /Storage\.getValue\("kajoActivityHistory"\)/);
   assert.match(historyView, /"HISTORIE"/);
   assert.match(historyView, /"BPM"/);
