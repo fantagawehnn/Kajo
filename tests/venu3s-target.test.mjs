@@ -146,16 +146,16 @@ test("home screen filters today's sessions and separates planned and free traini
   assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
 });
 
-test("home screen uses four non-overlapping fixed zones on the Venu 3S", () => {
-  assert.match(homeView, /mStartTop = 136/);
-  assert.match(homeView, /mStartBottom = 226/);
-  assert.match(homeView, /mBoatTop = 76/);
-  assert.match(homeView, /mBoatBottom = 118/);
-  assert.match(homeView, /rowYs = \[240, 268, 296, 324\]/);
-  assert.match(homeView, /drawHomeText\(dc, cx, rowY \+ 3, rowWidth - 24, 18/);
-  assert.match(homeView, /"TRAININGSPLAN"/);
-  assert.match(homeView, /"EINSTELLUNGEN"/);
-  assert.doesNotMatch(homeView, /ANTIPPEN ZUM STARTEN|OHNE VORGABE|GEPLANTE EINHEITEN/);
+test("home screen follows the KAJO round-display training dashboard layout", () => {
+  assert.match(homeView, /mStartTop = 122/);
+  assert.match(homeView, /mStartBottom = 198/);
+  assert.match(homeView, /mFreeTop = 222/);
+  assert.match(homeView, /mMenuRowStep = 34/);
+  assert.match(homeView, /"TRAINING FUER HEUTE"/);
+  assert.match(homeView, /"FREIES TRAINING", "GEPLANTE TRAININGS", "VERGANGENE TRAININGS", "EINSTELLUNGEN"/);
+  assert.match(homeView, /drawHomeText\(dc, cx, rowY \+ 7, rowWidth - 56, 16/);
+  assert.match(homeView, /"SPORTART: " \+ mSelectedBoat/);
+  assert.match(homeView, /"KAJO"/);
 });
 
 test("shared text boxes reject text taller than their assigned vertical region", () => {
