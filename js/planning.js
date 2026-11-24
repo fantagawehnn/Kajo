@@ -9,7 +9,6 @@ import { renderCalendar } from './calendar.js';
 let editingPlannedWorkoutId = null;
 
 export function renderPlannedWorkouts() {
-    const categories=getTypeColorMap();
     const el=document.getElementById('planned-workouts-list');
     const section=document.getElementById('planned-this-week-section');
     if(!el||!section)return;
