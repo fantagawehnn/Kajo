@@ -37,6 +37,9 @@ class KajoConnectTrainingFieldsView extends WatchUi.Menu2 {
             return;
         }
         WatchUi.showToast("Trainingsanzeige gespeichert", null);
+        // Menu2-Items werden beim Oeffnen aufgebaut; nach dem Speichern neu oeffnen,
+        // damit "Aktuell ausgewaehlt" den gespeicherten Wert widerspiegelt.
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
     }
 }
 
