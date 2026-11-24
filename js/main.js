@@ -1232,6 +1232,8 @@ async function persistGarminTelemetryBatch(activities, userId) {
 
 async function syncMissingGarminTelemetry(startDate, endDate, status) {
     const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence;
     if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
     const pending = state.rawActivities.filter(activity => {
         const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
@@ -1244,7 +1246,7 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     const errors = [];
     let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
-        if (activeAppUserId !== syncUserId || !appUserReady) {
+        if (!isCurrentSync()) {
             return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
         }
         const activity = pending[index];
@@ -1257,18 +1259,18 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
                     detail = await downloadGarminFitTelemetry(id);
-                    if (activeAppUserId !== syncUserId || !appUserReady) {
+                    if (!isCurrentSync()) {
                         return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
                     }
                     break;
                 } catch (error) {
-                    if (activeAppUserId !== syncUserId || !appUserReady) {
+                    if (!isCurrentSync()) {
                         return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
                     }
                     if (attempt > 0 || !/HTTP 429|rate.?limit/i.test(error?.message || '')) throw error;
                     if (message) message.textContent = 'Garmin begrenzt den FIT-Abruf. Aktivität ' + (index + 1) + '/' + pending.length + ' wird nach 30 Sekunden erneut versucht …';
                     await new Promise(resolve => setTimeout(resolve, 30000));
-                    if (activeAppUserId !== syncUserId || !appUserReady) {
+                    if (!isCurrentSync()) {
                         return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
                     }
                 }
@@ -1283,7 +1285,7 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
             recordFields += Object.keys(detail.recordFieldCounts || {}).length;
             imported++;
         } catch (error) {
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
             }
             failed++;
@@ -1291,13 +1293,13 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
             console.warn('Garmin-Zeitreihen konnten nicht importiert werden:', id, error);
         }
         if ((index + 1) % 5 === 0 || index === pending.length - 1) {
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
             }
             if (saveDataToLocalStorage() === false) throw new Error('Garmin-Zeitreihen konnten nicht im lokalen Datenspeicher gesichert werden.');
             const batch = pending.slice(persistedThrough, index + 1);
             const cloudResult = await persistGarminTelemetryBatch(batch, syncUserId);
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
             }
             persistedThrough = index + 1;
@@ -1324,6 +1326,8 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
  */
 async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null) {
     const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence;
     if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
     const now = Date.now();
     const cooldowns = {
@@ -1352,7 +1356,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
     const errors = [];
     let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
-        if (activeAppUserId !== syncUserId || !appUserReady) {
+        if (!isCurrentSync()) {
             return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
         }
         const activity = pending[index];
@@ -1379,12 +1383,12 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                     const waitSeconds = Math.max(30, Number(match?.[1] || 30));
                     if (message) message.textContent = 'Garmin-Abruflimit: automatische Fortsetzung in ' + waitSeconds + ' Sekunden …';
                     await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-                    if (activeAppUserId !== syncUserId || !appUserReady) {
+                    if (!isCurrentSync()) {
                         return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
                     }
                 }
             }
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
             }
             if (lastError) throw lastError;
@@ -1446,7 +1450,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 rawSeries += usableSeries;
             }
         } catch (error) {
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
             }
             const errorMessage = error?.message || 'Unbekannter Garmin-JSON-Fehler';
@@ -1464,7 +1468,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
             }
             const batch = pending.slice(persistedThrough, index + 1);
             const cloudResult = await persistGarminTelemetryBatch(batch, syncUserId);
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
             }
             persistedThrough = index + 1;
