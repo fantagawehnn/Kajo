@@ -2540,9 +2540,11 @@ const domReady = document.readyState === 'loading'
     ? new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))
     : Promise.resolve();
 
-async function loadCloudProfile(session) {
+async function loadCloudProfile(session, expectedActivationSequence = activationSequence) {
     const userId = session?.user?.id;
-    if (!userId || !supabase || activeProfileUserId === userId) return;
+    const isCurrentProfileLoad = () => Boolean(userId && activeAppUserId === userId
+        && activationSequence === expectedActivationSequence);
+    if (!userId || !supabase || activeProfileUserId === userId || !isCurrentProfileLoad()) return;
 
     const { data, error } = await supabase
         .from('user_profiles')
@@ -2551,10 +2553,11 @@ async function loadCloudProfile(session) {
         .maybeSingle();
 
     if (error) {
+        if (!isCurrentProfileLoad()) return;
         console.error('Cloud-Profil konnte nicht geladen werden:', error);
         return;
     }
-    if (activeAppUserId !== userId) return;
+    if (!isCurrentProfileLoad()) return;
 
     activeProfileUserId = userId;
     if (!data?.profile || typeof data.profile !== 'object' || Array.isArray(data.profile)) return;
@@ -2588,9 +2591,9 @@ async function loadCloudProfile(session) {
             const { error: profileSaveError } = await supabase.from('user_profiles')
                 .upsert({ user_id: userId, profile: mergedProfile, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
             if (profileSaveError) throw profileSaveError;
-            if (activeAppUserId !== userId) return;
+            if (!isCurrentProfileLoad()) return;
         } catch (profileSaveError) {
-            if (activeAppUserId !== userId) return;
+            if (!isCurrentProfileLoad()) return;
             console.error('Zusammengeführtes Athletenprofil konnte nicht in der Cloud aktualisiert werden:', profileSaveError);
             const indicator = document.getElementById('sync-status-indicator');
             if (indicator) indicator.textContent = 'Lokales Profil wurde geschützt gespeichert; die Cloud-Profilangleichung muss erneut versucht werden.';
@@ -3079,13 +3082,15 @@ function closeCloudSyncModal() {
     modal.classList.remove('flex');
 }
 
-async function refreshCloudInitialTransferState(userId = activeAppUserId) {
-    if (!supabase || !userId || userId !== activeAppUserId) return;
+async function refreshCloudInitialTransferState(userId = activeAppUserId, expectedActivationSequence = activationSequence) {
+    const isCurrentTransferCheck = () => Boolean(userId && activeAppUserId === userId
+        && activationSequence === expectedActivationSequence);
+    if (!supabase || !userId || !isCurrentTransferCheck()) return;
     cloudInitialTransferState = 'checking';
     setCloudTransferMessage('Prüfe, ob für dieses Konto bereits ein zentraler Cloud-Datensatz existiert …');
     try {
         const cloud = await fetchCloudSnapshot();
-        if (userId !== activeAppUserId) return;
+        if (!isCurrentTransferCheck()) return;
         if (cloud.userId !== userId) throw new Error('Das angemeldete Konto hat sich während der Prüfung geändert.');
         if (cloud.data !== null) {
             cloudInitialTransferState = 'exists';
@@ -3095,7 +3100,7 @@ async function refreshCloudInitialTransferState(userId = activeAppUserId) {
             setCloudTransferMessage('Für dieses Konto wurde noch kein zentraler Datensatz gefunden. Deine lokalen Daten bleiben unverändert, bis du den Erstupload ausdrücklich bestätigst.', true);
         }
     } catch (error) {
-        if (userId !== activeAppUserId) return;
+        if (!isCurrentTransferCheck()) return;
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Cloud-Status konnte nicht geprüft werden. Es wurde nichts übertragen. ' + error.message);
     }
@@ -3126,12 +3131,15 @@ async function performCloudInitialTransfer() {
     if (!appUserReady || !activeAppUserId || cloudInitialTransferState !== 'empty' || cloudInitialTransferBusy) return;
     cloudInitialTransferBusy = true;
     const userId = activeAppUserId;
+    const transferActivationSequence = activationSequence;
+    const isCurrentTransfer = () => activeAppUserId === userId && appUserReady
+        && activationSequence === transferActivationSequence;
     const button = document.getElementById('cloud-sync-confirm-button');
     if (button) button.disabled = true;
     setCloudTransferMessage('Cloud-Datenbestand wird nochmals geprüft. Es wurde noch nichts übertragen …');
     try {
         const existing = await fetchCloudSnapshot();
-        if (userId !== activeAppUserId || existing.userId !== userId) throw new Error('Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.');
+        if (!isCurrentTransfer() || existing.userId !== userId) throw new Error('Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.');
         if (existing.data !== null || existing.version !== 0) {
             cloudInitialTransferState = 'exists';
             closeCloudInitialTransferConfirmation();
@@ -3143,11 +3151,11 @@ async function performCloudInitialTransfer() {
         const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
         const initialBaseline = JSON.parse(JSON.stringify(initialSnapshot));
         const activityUpload = await syncCloudActivities(supabase, userId, initialSnapshot.activities || []);
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentTransfer()) return;
         initialSnapshot.activityIds = getCloudActivityIds(userId, initialSnapshot.activities || []);
         initialSnapshot.activities = [];
         const result = await saveCloudSnapshot(initialSnapshot, 0, userId);
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentTransfer()) return;
         if (!result.saved) {
             cloudInitialTransferState = 'exists';
             closeCloudInitialTransferConfirmation();
@@ -3156,12 +3164,12 @@ async function performCloudInitialTransfer() {
         }
         try {
             const baselineSaved = await saveCloudSyncBaseline(initialBaseline, userId);
-            if (!baselineSaved) return;
+            if (!baselineSaved || !isCurrentTransfer()) return;
         } catch (baselineError) {
-            if (activeAppUserId !== userId || !appUserReady) return;
+            if (!isCurrentTransfer()) return;
             console.warn('Erstübertragung erfolgreich, aber die lokale Synchronisierungsbasis konnte nicht gespeichert werden:', baselineError);
         }
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentTransfer()) return;
         cloudInitialTransferState = 'uploaded';
         cloudSyncUserId = userId;
         cloudSyncVersion = result.currentVersion;
@@ -3169,10 +3177,10 @@ async function performCloudInitialTransfer() {
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentTransfer()) return;
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Erstübertragung fehlgeschlagen. Der Cloud-Status wird zur Sicherheit erneut geprüft. ' + error.message);
-        if (activeAppUserId === userId) await refreshCloudInitialTransferState(userId);
+        if (isCurrentTransfer()) await refreshCloudInitialTransferState(userId, transferActivationSequence);
     } finally {
         cloudInitialTransferBusy = false;
         if (button) button.disabled = false;
@@ -3770,8 +3778,9 @@ async function handleAuthSession(session) {
                 }
             })();
 
-            await refreshCloudInitialTransferState(userId);
-            await loadCloudProfile(session);
+            await refreshCloudInitialTransferState(userId, sequence);
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            await loadCloudProfile(session, sequence);
         } catch (error) {
             console.error('Benutzerdaten konnten nicht sicher geladen werden:', error);
             if (sequence === activationSequence) {
