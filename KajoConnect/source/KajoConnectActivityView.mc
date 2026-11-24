@@ -1153,7 +1153,7 @@ class KajoConnectActivityView extends WatchUi.View {
             drawPageHeader(dc, "SPEICHERFEHLER");
             drawActivityText(dc, cx, 180, 280, 22, "BITTE ERNEUT SPEICHERN",
                 Graphics.FONT_SMALL, 0xFF9F1A);
-            drawActivityText(dc, cx, 335, 280, 18, "OBERE TASTE · ERNEUT",
+            drawActivityText(dc, cx, 335, 280, 18, "ERNEUT SPEICHERN",
                 Graphics.FONT_XTINY, 0x25D3CB);
             mButtonTop = 0;
             mButtonBottom = 0;
