@@ -292,6 +292,10 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
+    function onShow() as Void {
+        syncPendingActivityUploads();
+    }
+
     function initialize(boatClass as Lang.String) {
         View.initialize();
         mKajoLayout = new KajoLayout();
