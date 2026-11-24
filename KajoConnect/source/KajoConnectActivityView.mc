@@ -618,11 +618,18 @@ class KajoConnectActivityView extends WatchUi.View {
 
         drawActivityText(dc, right, top + 5, 118, 14, "HERZFREQUENZ",
             Graphics.FONT_XTINY, 0x98A5AB);
-        drawActivityText(dc, right, top + 20, 118, 30, hrNow,
+        drawActivityText(dc, right, top + 17, 118, 27, hrNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, right, top + 49, 118, 12,
-            zone > 0 ? "BPM · Z" + zone.toString() : "BPM · ZONE –",
+        drawActivityText(dc, right, top + 44, 118, 11,
+            zone > 0 ? "BPM · ZONE " + zone.toString() : "BPM · ZONE –",
             Graphics.FONT_XTINY, zone > 0 ? 0xFF453A : 0x98A5AB);
+        var zoneColors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
+        var zoneBarLeft = right - 48;
+        var zoneBarWidth = 18;
+        for (var zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
+            dc.setColor(zone == zoneIndex + 1 ? zoneColors[zoneIndex] : 0x344047, Graphics.COLOR_BLACK);
+            dc.fillRectangle(zoneBarLeft + (zoneIndex * 20), top + 57, zoneBarWidth, 5);
+        }
 
         drawActivityText(dc, left, top + rowHeight + 5, 118, 14, "DISTANZ",
             Graphics.FONT_XTINY, 0x98A5AB);
