@@ -12,6 +12,7 @@ import { createUserStorage } from './user-storage.js?v=4';
 
 let activeUserStorage = null;
 let activeUserId = null;
+let activeStorageGeneration = 0;
 let indexedDbWriteQueue = Promise.resolve();
 let indexedDbWriteError = null;
 
@@ -222,6 +223,7 @@ function defaultUserState() {
 }
 
 export function deactivateUserStorage() {
+    activeStorageGeneration++;
     activeUserStorage = null;
     activeUserId = null;
     defaultUserState();
@@ -229,6 +231,7 @@ export function deactivateUserStorage() {
 
 export async function loadStateForUser(userId) {
     if (!userId) throw new Error('Keine gültige Benutzer-ID für das Laden der Daten.');
+    const loadGeneration = ++activeStorageGeneration;
     const userStorage = createUserStorage(userId);
     activeUserStorage = userStorage;
     activeUserId = userId;
@@ -238,7 +241,7 @@ export async function loadStateForUser(userId) {
         stateKey,
         await userStorage.getCollection(collection)
     ]));
-    if (activeUserId !== userId) return null;
+    if (activeUserId !== userId || activeStorageGeneration !== loadGeneration) return null;
     const loaded = Object.fromEntries(values);
 
     state.garminTelemetryStore = loaded.garminTelemetryStore && typeof loaded.garminTelemetryStore === 'object'
