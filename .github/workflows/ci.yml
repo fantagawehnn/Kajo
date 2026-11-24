@@ -40,6 +40,7 @@ jobs:
           node --check js/daily-heart-rate.js
           node --check js/daily-hr-activity.js
           node --check js/main.js
+          node --check js/garmin-sync-history.js
           node --check js/analysis-insights.js
           node --check js/calculations.js
           node --check js/training-load.js
@@ -151,6 +152,9 @@ jobs:
 
       - name: Run Garmin activity pagination tests
         run: node --experimental-default-type=module --test tests/garmin-activity-pagination.test.mjs
+
+      - name: Run Garmin sync history tests
+        run: node --experimental-default-type=module --test tests/garmin-sync-history.test.mjs
 
       - name: Run Garmin analysis cache tests
         run: node --experimental-default-type=module --test tests/garmin-analysis-cache.test.mjs

@@ -16,6 +16,7 @@ import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
+import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
@@ -1068,19 +1069,11 @@ async function loadGarminSyncHistory() {
         container.textContent = 'Bitte anmelden, um die Synchronisierungshistorie zu sehen.';
         return;
     }
+    const requestUserId = activeAppUserId;
     container.textContent = 'Synchronisierungshistorie wird geladen …';
     try {
-        const healthRows = [];
-        const pageSize = 1000;
-        for (let offset = 0; ; offset += pageSize) {
-            const { data, error } = await supabase.from('garmin_health_records')
-                .select('data_type,record_date')
-                .order('record_date', { ascending: true })
-                .range(offset, offset + pageSize - 1);
-            if (error) throw error;
-            healthRows.push(...(data || []));
-            if (!data || data.length < pageSize) break;
-        }
+        const { healthRows, activityRows } = await loadGarminSyncHistoryData(supabase, requestUserId);
+        if (!appUserReady || activeAppUserId !== requestUserId) return;
 
         const groups = new Map();
         for (const row of healthRows) {
@@ -1093,11 +1086,7 @@ async function loadGarminSyncHistory() {
             if (date && (!group.last || date > group.last)) group.last = date;
         }
 
-        const { data: activityRows, error: activityError } = await supabase.from('garmin_activities')
-            .select('start_time')
-            .order('start_time', { ascending: true });
-        if (activityError) throw activityError;
-        const activityDates = (activityRows || []).map(row => String(row.start_time || '').slice(0, 10)).filter(Boolean);
+        const activityDates = activityRows.map(row => String(row.start_time || '').slice(0, 10)).filter(Boolean);
         if (activityDates.length) {
             groups.set('activities', {
                 count: activityDates.length,
@@ -1151,7 +1140,9 @@ async function loadGarminSyncHistory() {
           </div>
           <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
     } catch (error) {
-        container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
+        if (activeAppUserId === requestUserId) {
+            container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
+        }
     }
 }
 
