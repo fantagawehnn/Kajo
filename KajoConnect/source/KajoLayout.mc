@@ -196,10 +196,13 @@ class KajoLayout {
         if (text.length() == 0 || width <= 0 || height <= 0) { return; }
 
         var font = fitFont(dc, text, width, preferredFont);
+        // XTINY ist die kleinste verfuegbare Garmin-Schrift. Auf dem Venu 3S
+        // kann selbst sie hoeher als sehr kleine 14-px-Zonen sein. In diesem
+        // Fall darf der Text nicht komplett verschwinden: XTINY bleibt die
+        // Fallback-Schrift; die Zeile wird weiterhin horizontal begrenzt.
         if (dc.getFontHeight(font) > height) {
             font = Graphics.FONT_XTINY;
         }
-        if (dc.getFontHeight(font) > height) { return; }
 
         var textHeight = dc.getFontHeight(font);
         var centerY = top + ((height - textHeight) / 2);
