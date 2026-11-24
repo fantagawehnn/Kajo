@@ -48,6 +48,9 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
   assert.match(settingsMenu, /extends WatchUi\.Menu2/);
+  assert.match(displayConfigView, /extends WatchUi\.CheckboxMenu/);
+  assert.match(displayConfigView, /findItemById\(identifier\)/);
+  assert.match(displayConfigView, /activeCount == 0/);
 });
 
 test("Recording uses Garmin kayaking with whitewater subsport", () => {
@@ -122,7 +125,6 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
     ["activity", activityView],
     ["workout detail", workoutView],
     ["custom fields", customFieldsView],
-    ["display config", displayConfigView],
     ["pairing", pairingView],
   ]) {
     assert.match(source, /mKajoLayout\.drawTextFit/, name + " must use the shared text layout");
