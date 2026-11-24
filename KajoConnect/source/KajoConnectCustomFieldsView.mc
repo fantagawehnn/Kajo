@@ -243,7 +243,7 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
         dc.drawLine(62, mUnit * 0.17, 328, mUnit * 0.17);
 
-        mRowTop = Math.round(mUnit * 0.205).toNumber();
+        mRowTop = Math.round(mUnit * 0.225).toNumber();
         mRowHeight = Math.round(mUnit * 0.108).toNumber();
         var rowHeight = mRowHeight * 0.82;
         var rowWidth = mKajoLayout.safeRectWidth(mRowTop, rowHeight, mUnit * 0.80);
