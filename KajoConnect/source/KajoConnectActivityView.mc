@@ -780,10 +780,10 @@ class KajoConnectActivityView extends WatchUi.View {
             var progress = activeDuration > 0 ? mWorkoutStepElapsedSeconds / activeDuration : 0.0;
             if (progress < 0) { progress = 0; }
             if (progress > 1) { progress = 1; }
-            var progressEnd = 225 + (310 * progress);
+            var progressEnd = 225 + (270 * progress);
             dc.setColor(0x263238, Graphics.COLOR_BLACK);
-            dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 135, 225);
-            dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 225, 315);
+            dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 225, 360);
+            dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 0, 135);
             dc.setColor(phaseColor, Graphics.COLOR_BLACK);
             if (progressEnd <= 360) {
                 dc.drawArc(cx, 197, 105, Graphics.ARC_CLOCKWISE, 225, progressEnd);
