@@ -165,6 +165,9 @@ test("completed Garmin watch activities are queued locally and uploaded idempote
   assert.match(activityView, /Storage\.setValue\("kajoPendingActivityUploads", next\)/);
   assert.match(activityView, /"action" => "upload-activity"/);
   assert.match(activityView, /function onActivityUploadResponse\(/);
+  assert.match(activityView, /pending\.size\(\) >= 20/);
+  assert.match(activityView, /syncPendingActivityUploads\(\);[\s\S]*?WatchUi\.requestUpdate\(\)/);
+  assert.match(activityView, /mStartDateIso/);
   assert.match(activityView, /entry\["clientActivityId"\]/);
   assert.match(connectEndpoint, /action === "upload-activity"/);
   assert.match(connectEndpoint, /recordId = "kajo-watch-" \+ device\.id \+ "-" \+ clientId/);
