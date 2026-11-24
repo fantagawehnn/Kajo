@@ -1293,6 +1293,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function onUpdate(dc as Dc) {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
         mScreenWidth = 390;
         mScreenHeight = 390;
