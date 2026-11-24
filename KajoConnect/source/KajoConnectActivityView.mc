@@ -67,6 +67,8 @@ class KajoConnectActivityView extends WatchUi.View {
     var mGpsQuality as Lang.Number = Position.QUALITY_NOT_AVAILABLE;
     // Lokaler Sekundenzaehler als verlaesslicher Fallback, falls Garmin timerTime nicht liefert.
     var mElapsedSeconds as Lang.Number = 0;
+    var mFinalDistance as Lang.String = "--";
+    var mFinalAverageHeartRate as Lang.String = "--";
 
     function loadWorkoutSteps(value) as Void {
         mWorkoutSteps = [];
@@ -827,6 +829,21 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function finishRecording() as Void {
+        // Letzte verfuegbare Aktivitaetswerte vor dem FIT-Speichern sichern.
+        var finalInfo = Activity.getActivityInfo();
+        if (finalInfo != null) {
+            if (finalInfo.elapsedDistance != null) {
+                mFinalDistance = numberText(finalInfo.elapsedDistance / 1000.0, 2);
+            }
+            if (finalInfo.averageHeartRate != null) {
+                mFinalAverageHeartRate = finalInfo.averageHeartRate.toString();
+            }
+            if (finalInfo.timerTime != null && finalInfo.timerTime > 0) {
+                mElapsedSeconds = Math.floor(finalInfo.timerTime / 1000).toNumber();
+            } else if (finalInfo.elapsedTime != null && finalInfo.elapsedTime > 0) {
+                mElapsedSeconds = Math.floor(finalInfo.elapsedTime / 1000).toNumber();
+            }
+        }
         if (mEngine.finish()) {
             mTimer.stop();
             Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
@@ -1143,11 +1160,26 @@ class KajoConnectActivityView extends WatchUi.View {
             mButtonBottom = 0;
         } else if (mStatus == "GESPEICHERT") {
             drawPageHeader(dc, "TRAINING BEENDET");
-            drawActivityText(dc, cx, 132, 280, 55, elapsed,
+            drawActivityText(dc, cx, 105, 280, 56, elapsed,
                 Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx, 207, 280, 18, "FIT-DATEI GESPEICHERT",
+            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+            dc.drawLine(72, 181, 318, 181);
+            dc.drawLine(195, 190, 195, 270);
+            drawActivityText(dc, 132, 196, 112, 15, "DISTANZ",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 132, 218, 112, 30, mFinalDistance,
+                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+            drawActivityText(dc, 132, 247, 112, 14, "KM",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 258, 196, 112, 15, "Ø PULS",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 258, 218, 112, 30, mFinalAverageHeartRate,
+                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+            drawActivityText(dc, 258, 247, 112, 14, "BPM",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, cx, 300, 280, 18, "FIT-DATEI GESPEICHERT",
                 Graphics.FONT_XTINY, 0x25D3CB);
-            drawActivityText(dc, cx, 335, 280, 18, "OBERE TASTE · ZURÜCK",
+            drawActivityText(dc, cx, 345, 280, 18, "OBERE TASTE · ZURÜCK",
                 Graphics.FONT_XTINY, 0x98A5AB);
             mButtonTop = 0;
             mButtonBottom = 0;
@@ -1250,7 +1282,7 @@ class KajoConnectActivityView extends WatchUi.View {
                     if (stepIndex >= mWorkoutSteps.size()) { continue; }
                     var planStep = mWorkoutSteps[stepIndex] as Lang.Dictionary;
                     var rowY = rowTop + (stepRow * rowHeight);
-                    var isCurrent = stepIndex == mWorkoutStepIndex && !mWorkoutSequenceComplete && !mIsTransitioning;
+                    var isCurrent = stepIndex == mWorkoutStepIndex && !mWorkoutSequenceComplete;
                     var isDone = stepIndex < mWorkoutStepIndex || mWorkoutSequenceComplete;
                     var stepColor = isCurrent ? 0x25D3CB : (isDone ? 0x56636A : 0x98A5AB);
                     var marker = isDone ? "✓" : (isCurrent ? "▶" : (stepIndex + 1).toString());
