@@ -60,6 +60,7 @@ jobs:
           node --check js/settings.js
           node --check js/theme.js
           node --check js/calendar.js
+          node --check js/planning.js
           node --check js/activity-groups.js
           node --check js/dashboard.js
           node --check js/readiness.js

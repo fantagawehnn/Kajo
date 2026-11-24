@@ -7140,6 +7140,44 @@ html.theme-light #analysis-subpage-performance .kajo-performance-trend { backgro
 .kajo-training-subnav #training-subnav-competitions.is-active { color:#f2ad67; background:rgba(249,115,22,.10); border-color:rgba(251,146,60,.25); }
 .kajo-training-subnav #training-subnav-strength.is-active { color:#c4a1f5; background:rgba(168,85,247,.10); border-color:rgba(192,132,252,.25); }
 
+/* Trainingsplanung: Details bleiben zugeklappt, bis sie bewusst geöffnet werden. */
+.kajo-planning-disclosure {
+  border:1px solid #263244;
+  border-radius:12px;
+  background:rgba(8,13,21,.42);
+  overflow:hidden;
+}
+.kajo-planning-disclosure > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:44px;
+  padding:11px 13px;
+  color:#d7e0eb;
+  font-size:12px;
+  font-weight:650;
+  cursor:pointer;
+  list-style:none;
+}
+.kajo-planning-disclosure > summary::-webkit-details-marker { display:none; }
+.kajo-planning-disclosure > summary::after {
+  content:"+";
+  color:#55d6a0;
+  font-size:18px;
+  font-weight:400;
+  line-height:1;
+}
+.kajo-planning-disclosure[open] > summary::after { content:"−"; }
+.kajo-planning-disclosure[open] > summary {
+  border-bottom:1px solid #263244;
+  color:#fff;
+}
+.kajo-planning-disclosure > :not(summary) { margin-left:12px; margin-right:12px; }
+.kajo-planning-disclosure > :last-child { margin-bottom:12px; }
+#planned-this-week-section { padding:14px !important; }
+#planned-workouts-list { gap:6px !important; }
+
 /* Planung und Wettkämpfe sind getrennte Ansichten desselben Datenbereichs. */
 body.kajo-training-planning-view #races-countdown-grid,
 body.kajo-training-planning-view #race-modal,
