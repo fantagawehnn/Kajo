@@ -83,6 +83,8 @@ jobs:
 
       - name: Run split cloud activity storage tests
         run: node --experimental-default-type=module --test tests/cloud-activities.test.mjs
+      - name: Run parallel cloud activity loading tests
+        run: node --experimental-default-type=module --test tests/cloud-activities-pagination.test.mjs
 
       - name: Run conflict-aware cloud merge tests
         run: node --experimental-default-type=module --test tests/cloud-merge.test.mjs
