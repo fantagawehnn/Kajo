@@ -16,6 +16,7 @@ class KajoConnectUnitsView extends WatchUi.View {
     }
 
     function onUpdate(dc as Dc) {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
         var width = dc.getWidth();
         var height = dc.getHeight();
