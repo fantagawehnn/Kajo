@@ -45,15 +45,9 @@ class KajoConnectDelegate extends WatchUi.BehaviorDelegate {
         return true;
     }
 
-    function onMenu() {
-
-        var menuView = new KajoConnectMenuView(mView);
-        WatchUi.pushView(
-            menuView,
-            new KajoConnectMenuViewDelegate(menuView),
-            WatchUi.SLIDE_UP
-        );
-
+    // Mittlere Taste: Fokus zwischen den drei Startseiten-Einträgen wechseln.
+    function onMenu() as Lang.Boolean {
+        mView.moveHomeSelection(1);
         return true;
     }
 }
