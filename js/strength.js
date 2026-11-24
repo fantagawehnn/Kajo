@@ -3,7 +3,7 @@
  * ============================================================ */
 
 import { state } from './state.js';
-import { openCSVDetailsModal, toggleActivityEdit } from './activities.js?v=24';
+import { openCSVDetailsModal } from './activities.js?v=24';
 import { saveDataToLocalStorage } from './storage.js?v=5';
 import { formatDateDDMMYY, escapeHtml, toLocalDateString } from './utils.js';
 import { extractStrengthRecords, groupStrengthRecords } from './strength-database.js?v=1';
@@ -21,7 +21,7 @@ export function renderStrengthView() {
             const activityId = button.dataset.strengthActivityId;
             if (!activityId) return;
             openCSVDetailsModal(encodeURIComponent(activityId));
-            toggleActivityEdit();
+            document.getElementById('activity-edit-panel')?.classList.remove('hidden');
         });
     }
     const groups = groupStrengthRecords(records).filter(group => !search || group.exercise.toLocaleLowerCase('de').includes(search));
