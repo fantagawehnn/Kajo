@@ -63,6 +63,13 @@ class KajoConnectActivityView extends WatchUi.View {
     var mShowNextInterval as Lang.Boolean = true;
     var mIntervalVibrationEnabled as Lang.Boolean = true;
     var mIntervalToneEnabled as Lang.Boolean = false;
+    var mTrainingFieldCount as Lang.Number = 4;
+    var mTrainingShowStatus as Lang.Boolean = true;
+    var mTrainingShowHR as Lang.Boolean = true;
+    var mTrainingShowCadence as Lang.Boolean = true;
+    var mTrainingShowDistance as Lang.Boolean = true;
+    var mTrainingShowPace as Lang.Boolean = true;
+    var mStepStartDistanceMeters = null;
     var mCurrentPageId as Lang.Number = 0;
     var mGpsQuality as Lang.Number = Position.QUALITY_NOT_AVAILABLE;
     // Lokaler Sekundenzaehler als verlaesslicher Fallback, falls Garmin timerTime nicht liefert.
@@ -104,6 +111,73 @@ class KajoConnectActivityView extends WatchUi.View {
         mShowNextInterval = showNext == null ? true : showNext as Lang.Boolean;
         mIntervalVibrationEnabled = vibration == null ? true : vibration as Lang.Boolean;
         mIntervalToneEnabled = tone == null ? false : tone as Lang.Boolean;
+    }
+
+    function loadTrainingFieldSettings() as Void {
+        var count = Storage.getValue("kajoTrainingFieldCount");
+        if (count == 1 || count == 2 || count == 4 || count == 6) {
+            mTrainingFieldCount = count as Lang.Number;
+        }
+        var showStatus = Storage.getValue("kajoTrainingShowStatus");
+        var showHR = Storage.getValue("kajoTrainingShowHR");
+        var showCadence = Storage.getValue("kajoTrainingShowCadence");
+        var showDistance = Storage.getValue("kajoTrainingShowDistance");
+        var showPace = Storage.getValue("kajoTrainingShowPace");
+        mTrainingShowStatus = showStatus == null ? true : showStatus as Lang.Boolean;
+        mTrainingShowHR = showHR == null ? true : showHR as Lang.Boolean;
+        mTrainingShowCadence = showCadence == null ? true : showCadence as Lang.Boolean;
+        mTrainingShowDistance = showDistance == null ? true : showDistance as Lang.Boolean;
+        mTrainingShowPace = showPace == null ? true : showPace as Lang.Boolean;
+    }
+
+    function setStepDistanceBaseline() as Void {
+        mStepStartDistanceMeters = null;
+        var info = Activity.getActivityInfo();
+        if (info != null && info.elapsedDistance != null) {
+            mStepStartDistanceMeters = info.elapsedDistance;
+        }
+    }
+
+    function intervalDistanceText(activityInfo) as Lang.String {
+        if (activityInfo == null || activityInfo.elapsedDistance == null ||
+            mStepStartDistanceMeters == null) { return "--"; }
+        var travelled = activityInfo.elapsedDistance - (mStepStartDistanceMeters as Lang.Number);
+        if (travelled < 0) { return "--"; }
+        return numberText(travelled / 1000.0, 2);
+    }
+
+    function drawDataField(dc as Dc, centerX as Lang.Number, top as Lang.Number,
+        width as Lang.Number, label as Lang.String, value as Lang.String,
+        unit as Lang.String) as Void {
+        drawActivityText(dc, centerX, top + 3, width, 14, label,
+            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, centerX, top + 19, width, 28, value,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        if (unit != "") {
+            drawActivityText(dc, centerX, top + 48, width, 12, unit,
+                Graphics.FONT_XTINY, 0x98A5AB);
+        }
+    }
+
+    function drawHeartRateField(dc as Dc, centerX as Lang.Number, top as Lang.Number,
+        width as Lang.Number, hrNow as Lang.String, zone as Lang.Number) as Void {
+        drawActivityText(dc, centerX, top + 2, width, 14, "HERZFREQUENZ",
+            Graphics.FONT_XTINY, 0x98A5AB);
+        drawActivityText(dc, centerX, top + 18, width, 28, hrNow,
+            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+        drawActivityText(dc, centerX, top + 45, width, 12,
+            zone > 0 ? "BPM · ZONE " + zone.toString() : "BPM · ZONE –",
+            Graphics.FONT_XTINY, zone > 0 ? 0xFF453A : 0x98A5AB);
+        var colors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
+        var barWidth = width * 0.82;
+        var segmentGap = 3;
+        var segmentWidth = (barWidth - (segmentGap * 4)) / 5;
+        var left = centerX - (barWidth / 2);
+        for (var i = 0; i < 5; i += 1) {
+            dc.setColor(zone == i + 1 ? colors[i] : 0x344047, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left + (i * (segmentWidth + segmentGap)),
+                top + 60, segmentWidth, 5);
+        }
     }
 
     function notifyIntervalTransition() as Void {
@@ -173,6 +247,7 @@ class KajoConnectActivityView extends WatchUi.View {
                 mTransitionCountdown = 0;
                 mWorkoutStepIndex += 1;
                 mWorkoutStepElapsedSeconds = 0;
+                setStepDistanceBaseline();
                 // Vibrationssignal genau beim Start der neuen Belastungs- oder Erholungsphase.
                 notifyIntervalTransition();
                 WatchUi.showToast("Neuer Trainingsabschnitt", null);
@@ -192,6 +267,7 @@ class KajoConnectActivityView extends WatchUi.View {
             if (hasNextStep) {
                 mWorkoutStepIndex += 1;
                 mWorkoutStepElapsedSeconds = 0;
+                setStepDistanceBaseline();
                 notifyIntervalTransition();
                 WatchUi.showToast("Neuer Trainingsabschnitt", null);
             } else {
@@ -213,6 +289,7 @@ class KajoConnectActivityView extends WatchUi.View {
         mEngine = new KajoConnectRecordingEngine();
         mTimer = new Timer.Timer();
         loadIntervalSettings();
+        loadTrainingFieldSettings();
         loadCurrentWorkout();
         loadDisplayPages();
     }
@@ -657,10 +734,7 @@ class KajoConnectActivityView extends WatchUi.View {
             if (mShowIntervalTarget && step["target"] != null && step["target"].toString() != "") {
                 targetText = "ZIEL: " + step["target"].toString();
             }
-            var stepType = step["type"];
-            if (stepType != null &&
-                (stepType.toString() == "recovery" || stepType.toString() == "rest" ||
-                 stepType.toString() == "pause")) {
+            if (isRecoveryStep(step)) {
                 phaseColor = 0xFFB020;
                 statusText += " · ERHOLEN";
             } else {
@@ -670,10 +744,11 @@ class KajoConnectActivityView extends WatchUi.View {
             statusText = "TRAINING ABGESCHLOSSEN";
         }
 
-        drawActivityText(dc, cx, 35, 280, 20, statusText,
-            Graphics.FONT_SMALL, phaseColor);
+        if (mTrainingShowStatus) {
+            drawActivityText(dc, cx, 35, 280, 20, statusText,
+                Graphics.FONT_SMALL, phaseColor);
+        }
 
-        // Fortschritt des aktuellen Abschnitts als schmaler Aussenbogen.
         if (stepCount > 0 && !mWorkoutSequenceComplete) {
             var activeStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
             var activeDuration = activeStep["durationSeconds"] as Lang.Number;
@@ -688,6 +763,7 @@ class KajoConnectActivityView extends WatchUi.View {
                 dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 215, progressEnd);
             }
         }
+
         drawActivityText(dc, cx, 86, 270, 58, timerText,
             Graphics.FONT_NUMBER_HOT, phaseColor);
         drawActivityText(dc, cx, 143, 120, 16, "MIN : SEK",
@@ -704,62 +780,52 @@ class KajoConnectActivityView extends WatchUi.View {
             }
         }
 
-        var pace = "--:--";
-        if (activityInfo != null && activityInfo.currentSpeed != null) {
-            pace = formatPace(activityInfo.currentSpeed * 3.6);
+        if (mTrainingFieldCount == 2) {
+            if (mTrainingShowHR) {
+                drawHeartRateField(dc, cx, 228, 250, hrNow, zone);
+            }
+        } else if (mTrainingFieldCount == 4) {
+            var fieldTop = 236;
+            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+            dc.drawLine(195, fieldTop, 195, fieldTop + 72);
+            if (mTrainingShowCadence) {
+                drawDataField(dc, 112, fieldTop, 126, "SCHLÄGE", cadenceNow, "SPM");
+            }
+            if (mTrainingShowHR) {
+                drawHeartRateField(dc, 278, fieldTop, 126, hrNow, zone);
+            }
+        } else if (mTrainingFieldCount == 6) {
+            var fieldTop6 = 207;
+            var fieldRowHeight = 68;
+            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+            dc.drawLine(195, fieldTop6, 195, fieldTop6 + (fieldRowHeight * 2));
+            dc.drawLine(72, fieldTop6 + fieldRowHeight, 318, fieldTop6 + fieldRowHeight);
+            var distanceValue = stepCount > 0 ? intervalDistanceText(activityInfo) : distance;
+            if (mTrainingShowCadence) {
+                drawDataField(dc, 112, fieldTop6, 126, "SCHLÄGE", cadenceNow, "SPM");
+            }
+            if (mTrainingShowDistance) {
+                drawDataField(dc, 278, fieldTop6, 126, stepCount > 0 ? "INTERVALL-DIST." : "DISTANZ",
+                    distanceValue, "KM");
+            }
+            if (mTrainingShowPace) {
+                var pace = "--:--";
+                if (activityInfo != null && activityInfo.currentSpeed != null) {
+                    pace = formatPace(activityInfo.currentSpeed * 3.6);
+                }
+                drawDataField(dc, 112, fieldTop6 + fieldRowHeight, 126, "PACE", pace, "MIN/KM");
+            }
+            if (mTrainingShowHR) {
+                drawHeartRateField(dc, 278, fieldTop6 + fieldRowHeight, 126, hrNow, zone);
+            }
         }
 
-        // Vier Datenfelder ohne Karten: zwei Spalten, getrennt durch feine Linien.
-        var left = 72;
-        var right = 268;
-        var top = 205;
-        var rowHeight = 64;
-        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-        dc.drawLine(195, top, 195, top + (rowHeight * 2));
-        dc.drawLine(72, top + rowHeight, 318, top + rowHeight);
-
-        drawActivityText(dc, left, top + 5, 118, 14, "SCHLÄGE",
-            Graphics.FONT_XTINY, 0x98A5AB);
-        drawActivityText(dc, left, top + 22, 118, 30, cadenceNow,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, left, top + 49, 118, 12, "SPM",
-            Graphics.FONT_XTINY, 0x98A5AB);
-
-        drawActivityText(dc, right, top + 5, 118, 14, "HERZFREQUENZ",
-            Graphics.FONT_XTINY, 0x98A5AB);
-        drawActivityText(dc, right, top + 17, 118, 27, hrNow,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, right, top + 44, 118, 11,
-            zone > 0 ? "BPM · ZONE " + zone.toString() : "BPM · ZONE –",
-            Graphics.FONT_XTINY, zone > 0 ? 0xFF453A : 0x98A5AB);
-        var zoneColors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
-        var zoneBarLeft = right - 48;
-        var zoneBarWidth = 18;
-        for (var zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
-            dc.setColor(zone == zoneIndex + 1 ? zoneColors[zoneIndex] : 0x344047, Graphics.COLOR_BLACK);
-            dc.fillRectangle(zoneBarLeft + (zoneIndex * 20), top + 57, zoneBarWidth, 5);
-        }
-
-        drawActivityText(dc, left, top + rowHeight + 5, 118, 14, "DISTANZ",
-            Graphics.FONT_XTINY, 0x98A5AB);
-        drawActivityText(dc, left, top + rowHeight + 22, 118, 30, distance,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, left, top + rowHeight + 49, 118, 12, "KM",
-            Graphics.FONT_XTINY, 0x98A5AB);
-
-        drawActivityText(dc, right, top + rowHeight + 5, 118, 14, "PACE",
-            Graphics.FONT_XTINY, 0x98A5AB);
-        drawActivityText(dc, right, top + rowHeight + 22, 118, 30, pace,
-            Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, right, top + rowHeight + 49, 118, 12, "MIN/KM",
-            Graphics.FONT_XTINY, 0x98A5AB);
-
-        // Die Seitennavigation erfolgt per Wischgeste; es gibt keine Bildschirm-Pfeile.
+        // Bei einem Feld bleibt nur der Intervalltimer sichtbar.
         mButtonTop = 0;
         mButtonBottom = 0;
     }
 
-    function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
+        function drawHeartRateZone(dc as Dc, centerX, top, width, zone as Lang.Number) as Void {
         var colors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
         drawFit(dc, centerX, top, zone > 0 ? "ZONE " + zone.toString() : "ZONE –",
             width, Graphics.FONT_XTINY, zone > 0 ? colors[zone - 1] : 0x98A5AB);
@@ -804,6 +870,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mWorkoutSequenceComplete = false;
             mIsTransitioning = false;
             mTransitionCountdown = 0;
+            setStepDistanceBaseline();
             Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mTimer.start(method(:onTimer), 1000, true);
         } else {
