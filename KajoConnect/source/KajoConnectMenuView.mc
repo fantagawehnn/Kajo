@@ -13,6 +13,7 @@ class KajoConnectMenuView extends WatchUi.View {
     var mRowTop as Lang.Number = 64;
     var mRowStep as Lang.Number = 30;
     var mRowHeight as Lang.Number = 25;
+    var mSelectedIndex as Lang.Number = 0;
     var mRows as Lang.Array<Lang.String> = [
         "TRAININGSFELDER",
         "DATENSEITEN",
@@ -34,6 +35,18 @@ class KajoConnectMenuView extends WatchUi.View {
     function drawLabel(dc as Dc, x as Lang.Number, y as Lang.Number,
         label as Lang.String, width as Lang.Number) as Void {
         mKajoLayout.drawTextFit(dc, x, y, label, width, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+    }
+
+    function moveSelection(direction as Lang.Number) as Void {
+        mSelectedIndex += direction;
+        if (mSelectedIndex < 0) { mSelectedIndex = mRows.size() - 1; }
+        if (mSelectedIndex >= mRows.size()) { mSelectedIndex = 0; }
+        WatchUi.requestUpdate();
+    }
+
+    function activateSelection() as Void {
+        var y = mRowTop + (mSelectedIndex * mRowStep) + (mRowHeight / 2);
+        handleTap(y);
     }
 
     function handleTap(y as Lang.Number) as Void {
@@ -91,11 +104,14 @@ class KajoConnectMenuView extends WatchUi.View {
             var top = mRowTop + (i * mRowStep);
             var rowWidth = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.80);
             var left = cx - (rowWidth / 2);
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var selected = i == mSelectedIndex;
+            dc.setColor(selected ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), top.toNumber(), rowWidth.toNumber(), mRowHeight);
-            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.setColor(selected ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), top.toNumber(), 4, mRowHeight);
-            drawLabel(dc, cx, (top + 12).toNumber(), mRows[i], (rowWidth - 24).toNumber());
+            mKajoLayout.drawTextFit(dc, cx, (top + 6).toNumber(), mRows[i],
+                (rowWidth - 24).toNumber(), Graphics.FONT_XTINY,
+                selected ? 0x25D3CB : Graphics.COLOR_WHITE);
             if (i < mRows.size() - 1) {
                 dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
                 dc.drawLine(left.toNumber(), top + mRowHeight + 5,
