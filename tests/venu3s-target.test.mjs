@@ -222,7 +222,9 @@ test("home screen uses three horizontal strips within the circular Venu 3S displ
   assert.match(homeView, /mStartTop = 100/);
   assert.match(homeView, /mStartBottom = 158/);
   assert.match(homeView, /mFreeTop = 166/);
-  assert.match(homeView, /mFreeBottom = 352/);
+  assert.match(homeView, /mFreeBottom = 291/);
+  assert.match(homeView, /mMenuRowStep = 66/);
+  assert.match(homeView, /if \(row == 0\)[\s\S]*?mHomeSelection = 1;[\s\S]*?else if \(row == 1\)[\s\S]*?mHomeSelection = 2;/);
   assert.match(homeView, /var labels = \["HEUTE", "GESPEICHERT", "FREI TRAINIEREN"\]/);
   assert.match(homeView, /var top = 101 \+ \(item \* 66\)/);
   assert.match(homeView, /var rowHeight = 58/);
