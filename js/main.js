@@ -43,7 +43,7 @@ import { closePlannedWorkoutModal, deletePlannedWorkout, openPlannedWorkoutModal
 import { openManualActivityModal, closeManualActivityModal, updateManualActivityFields, addManualActivityExerciseSet, removeManualActivityExerciseSet, saveManualActivity } from './manual-activity.js?v=3';
 import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActivity, attachDailyHrSeriesToActivity, invalidateDailyHrActivityPreview } from './daily-hr-activity.js?v=1';
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
-import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=2';
+import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=4';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
 import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=6';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
@@ -4103,6 +4103,7 @@ Object.assign(window, {
     discardAdaptiveWeekProposal,
     applyAdaptiveWeekProposal,
     openStrengthModal,
+    renderStrengthView,
     performIntervalsLiveSync,
     saveCheckin,
     saveDayEditor,
