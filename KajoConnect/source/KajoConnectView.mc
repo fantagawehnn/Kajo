@@ -248,7 +248,42 @@ class KajoConnectView extends WatchUi.View {
 
     function openSettings() as Void {
         var menuView = new KajoConnectMenuView(self);
-        WatchUi.pushView(menuView, new KajoConnectMenuViewDelegate(menuView), WatchUi.SLIDE_UP);
+        WatchUi.pushView(menuView, new KajoConnectMenuViewDelegate(self), WatchUi.SLIDE_UP);
+    }
+
+    function openSettingsItem(identifier as Lang.String) as Void {
+        if (identifier == "training_fields") {
+            var view = new KajoConnectTrainingFieldsView();
+            WatchUi.pushView(view, new KajoConnectTrainingFieldsDelegate(view), WatchUi.SLIDE_UP);
+        } else if (identifier == "display_pages") {
+            var view = new KajoConnectDisplayConfigView();
+            WatchUi.pushView(view, new KajoConnectDisplayConfigDelegate(view), WatchUi.SLIDE_UP);
+        } else if (identifier == "training_overview") {
+            var view = new KajoConnectWorkoutListView(self);
+            WatchUi.pushView(view, new KajoConnectWorkoutListDelegate(view), WatchUi.SLIDE_UP);
+        } else if (identifier == "history") {
+            var view = new KajoConnectHistoryView();
+            WatchUi.pushView(view, new KajoConnectHistoryDelegate(view), WatchUi.SLIDE_UP);
+        } else if (identifier == "interval_hints") {
+            var view = new KajoConnectIntervalHintsView();
+            WatchUi.pushView(view, new KajoConnectIntervalHintsDelegate(view), WatchUi.SLIDE_UP);
+        } else if (identifier == "boat_class") {
+            var view = new KajoConnectBoatClassView(self);
+            WatchUi.pushView(view, new KajoConnectBoatClassDelegate(view), WatchUi.SLIDE_UP);
+        } else if (identifier == "units") {
+            var view = new KajoConnectUnitsView();
+            WatchUi.pushView(view, new KajoConnectUnitsDelegate(), WatchUi.SLIDE_UP);
+        } else if (identifier == "pairing") {
+            var view = new KajoConnectPairingView();
+            WatchUi.pushView(view, new KajoConnectPairingDelegate(), WatchUi.SLIDE_UP);
+        } else if (identifier == "custom_fields") {
+            var view = new KajoConnectCustomFieldsView();
+            WatchUi.pushView(view, new KajoConnectCustomFieldsDelegate(view), WatchUi.SLIDE_UP);
+        }
+    }
+
+    function getPlannedSessions() as Lang.Array<Lang.Dictionary> {
+        return mPlannedSessions;
     }
 
     function openActivityView(workout as Lang.Dictionary or Null) as Void {
