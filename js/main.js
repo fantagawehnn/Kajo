@@ -3054,11 +3054,11 @@ function closeCloudInitialTransferConfirmation() {
 async function performCloudInitialTransfer() {
     if (!appUserReady || !activeAppUserId || cloudInitialTransferState !== 'empty' || cloudInitialTransferBusy) return;
     cloudInitialTransferBusy = true;
+    const userId = activeAppUserId;
     const button = document.getElementById('cloud-sync-confirm-button');
     if (button) button.disabled = true;
     setCloudTransferMessage('Cloud-Datenbestand wird nochmals geprüft. Es wurde noch nichts übertragen …');
     try {
-        const userId = activeAppUserId;
         const existing = await fetchCloudSnapshot();
         if (userId !== activeAppUserId || existing.userId !== userId) throw new Error('Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.');
         if (existing.data !== null || existing.version !== 0) {
@@ -3083,10 +3083,6 @@ async function performCloudInitialTransfer() {
             setCloudTransferMessage('Der Erstupload wurde wegen eines Versionskonflikts abgebrochen. Es wurden keine vorhandenen Cloud-Daten überschrieben.');
             return;
         }
-        cloudInitialTransferState = 'uploaded';
-        cloudSyncUserId = userId;
-        cloudSyncVersion = result.currentVersion;
-        cloudSyncBlocked = false;
         try {
             const baselineSaved = await saveCloudSyncBaseline(initialBaseline, userId);
             if (!baselineSaved) return;
@@ -3095,6 +3091,10 @@ async function performCloudInitialTransfer() {
             console.warn('Erstübertragung erfolgreich, aber die lokale Synchronisierungsbasis konnte nicht gespeichert werden:', baselineError);
         }
         if (activeAppUserId !== userId || !appUserReady) return;
+        cloudInitialTransferState = 'uploaded';
+        cloudSyncUserId = userId;
+        cloudSyncVersion = result.currentVersion;
+        cloudSyncBlocked = false;
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
