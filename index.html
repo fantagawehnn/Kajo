@@ -825,7 +825,9 @@
                     <div><p class="text-[10px] font-bold tracking-widest text-cyan-400">LANGFRISTIGE TRAININGSSTEUERUNG</p><h2 class="text-lg font-bold text-white">Saisonplanung</h2><p class="text-xs text-slate-400 mt-1">Lege den Rahmen fest. Deine eingetragenen Wettkämpfe werden automatisch berücksichtigt.</p></div>
                     <span id="season-plan-status" class="text-[10px] rounded-lg border border-slate-700 px-2 py-1 text-slate-300">Noch nicht angelegt</span>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <details id="season-plan-basics-details" class="kajo-planning-disclosure">
+                    <summary>Saisonrahmen bearbeiten</summary>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <label class="text-slate-400">Name der Saison<input id="season-plan-name" type="text" maxlength="120" placeholder="z. B. Saison 2027" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
                     <label class="text-slate-400">Planungsmodus<select id="season-plan-mode" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"><option value="hybrid">Hybrid – Coach schlägt vor, du entscheidest</option><option value="adaptive">Adaptiv – laufende Anpassung</option><option value="fixed">Fix – Planung bleibt unverändert</option></select></label>
                     <label class="text-slate-400">Saisonstart<input id="season-plan-start" type="date" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"></label>
@@ -844,7 +846,16 @@
                         <button type="button" id="season-plan-proposal-apply" onclick="applySeasonPlanProposal()" class="hidden px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold">Phasen in Entwurf übernehmen</button>
                     </div>
                 </section>
-                <section class="border-t border-slate-800 pt-4 space-y-3">
+                    <p id="season-plan-message" class="text-xs text-slate-300" role="status" aria-live="polite"></p>
+                    <div class="flex flex-wrap justify-end gap-2 border-t border-slate-800 pt-3">
+                        <button type="button" onclick="saveSeasonPlanEditor(false)" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold">Entwurf speichern</button>
+                        <button type="button" onclick="saveSeasonPlanEditor(true)" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Saisonplan freigeben</button>
+                    </div>
+                </details>
+                <details id="weekly-plan-management-details" class="kajo-planning-disclosure">
+                    <summary>Wochenplanung verwalten</summary>
+                    <div class="pt-3 space-y-3">
+                <section class="space-y-3">
                     <div><h3 class="text-sm font-semibold text-white">Wochenperiodisierung</h3><p class="text-[11px] text-slate-400">Der Coach entwickelt aus einer freigegebenen Saisonphase eine konkrete Trainingswoche. Der Vorschlag wird erst nach deiner Prüfung gespeichert und separat freigegeben.</p></div>
                     <div class="flex flex-wrap items-end gap-2">
                         <label class="text-xs text-slate-400">Wochenstart (Montag)<input id="weekly-plan-start" type="date" class="block mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"></label>
@@ -883,7 +894,11 @@
                         </section>
                     </section>
                 </section>
-                <div class="border-t border-slate-800 pt-4 space-y-3">
+                    </div>
+                </details>
+                <details id="season-phases-details" class="kajo-planning-disclosure">
+                    <summary>Trainingsphasen verwalten</summary>
+                    <div class="pt-3 border-t border-slate-800 space-y-3">
                     <div><h3 class="text-sm font-semibold text-white">Trainingsphasen</h3><p class="text-[11px] text-slate-400">Phasen kannst du zunächst selbst eintragen. Der Coach soll später begründete Vorschläge machen, die du vor der Übernahme prüfst.</p></div>
                     <div id="season-plan-phases" class="space-y-3"></div>
                     <div class="rounded-xl border border-dashed border-slate-700 bg-slate-950/50 p-3 space-y-3">
@@ -901,11 +916,8 @@
                         <button type="button" onclick="addSeasonPlanPhase()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold">+ Phase hinzufügen</button>
                     </div>
                 </div>
-                <p id="season-plan-message" class="text-xs text-slate-300" role="status" aria-live="polite"></p>
-                <div class="flex flex-wrap justify-end gap-2 border-t border-slate-800 pt-3">
-                    <button type="button" onclick="saveSeasonPlanEditor(false)" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold">Entwurf speichern</button>
-                    <button type="button" onclick="saveSeasonPlanEditor(true)" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Saisonplan freigeben</button>
-                </div>
+                    </div>
+                </details>
             </section>
 
             <!-- Die drei wichtigsten kommenden Wettkämpfe -->
