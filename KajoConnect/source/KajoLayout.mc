@@ -40,7 +40,12 @@ class KajoLayout {
             return preferredFont;
         }
 
-        var scale = ((maxHeight * 1.0) - 2.0) / (baseHeight * 1.0);
+        // Die bisherigen Textboxen waren fuer die Venu 3S zu konservativ:
+        // Viele Labels hatten nur 14 px Hoehe und wurden dadurch unlesbar klein.
+        // 25 % groessere Schrift wird zugelassen; der Zeichenbereich waechst
+        // proportional mit und bleibt weiterhin auf die Kreisform begrenzt.
+        var effectiveHeight = maxHeight * 1.25;
+        var scale = ((effectiveHeight * 1.0) - 1.0) / (baseHeight * 1.0);
         if (scale > 1.0) { scale = 1.0; }
         if (scale <= 0.0) { return preferredFont; }
 
@@ -141,8 +146,8 @@ class KajoLayout {
 
         var font = scaledFont(dc, text, available, height, preferredFont);
         var textHeight = dc.getFontHeight(font);
-        if (textHeight > height) {
-            // Do not draw an oversized fallback font into a smaller row.
+        var effectiveHeight = height * 1.25;
+        if (textHeight > effectiveHeight) {
             return;
         }
 
@@ -162,9 +167,9 @@ class KajoLayout {
         if (displayText.length() == 0) { return; }
 
         var clipLeft = Math.round(x - (available / 2)).toNumber();
-        var clipTop = Math.round(top).toNumber();
+        var clipTop = Math.round(top - (height * 0.125)).toNumber();
         var clipWidth = Math.round(available).toNumber();
-        var clipHeight = Math.round(height).toNumber();
+        var clipHeight = Math.round(effectiveHeight).toNumber();
 
         dc.setClip(clipLeft, clipTop, clipWidth, clipHeight);
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
