@@ -15,6 +15,7 @@ const layoutView = readFileSync(new URL("../KajoConnect/source/KajoLayout.mc", i
 const homeView = readFileSync(new URL("../KajoConnect/source/KajoConnectView.mc", import.meta.url), "utf8");
 const workoutSelectView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutSelectView.mc", import.meta.url), "utf8");
 const workoutListView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutListView.mc", import.meta.url), "utf8");
+const workoutListDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutListDelegate.mc", import.meta.url), "utf8");
 const workoutView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutView.mc", import.meta.url), "utf8");
 const customFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnectCustomFieldsView.mc", import.meta.url), "utf8");
 const displayConfigView = readFileSync(new URL("../KajoConnect/source/KajoConnectDisplayConfigView.mc", import.meta.url), "utf8");
@@ -45,7 +46,7 @@ test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compil
 test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
-  assert.match(activityDelegate, /function onMenu\(\)[\s\S]*?nextDisplayPage\(1\)/);
+  assert.match(activityDelegate, /key == WatchUi\.KEY_UP \|\| key == WatchUi\.KEY_MENU[\s\S]*?nextDisplayPage\(1\)/);
   assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
   assert.match(settingsRootDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
@@ -106,8 +107,9 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 
 test("shared Garmin layout uses transparent text backgrounds and measured font widths", () => {
   assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
-  assert.ok(layoutView.includes("dc.getFontHeight(candidate)"));
-  assert.ok(layoutView.includes("getTextWidthInPixels(text, font)"));
+  assert.ok(layoutView.includes("dc.getFontHeight(preferredFont)"));
+  assert.ok(layoutView.includes("dc.getTextWidthInPixels(text, preferredFont)"));
+  assert.match(layoutView, /Graphics\.getVectorFont\([\s\S]*?:font => preferredFont[\s\S]*?:scale => scale/);
   assert.ok(layoutView.includes("dc.setColor(color, Graphics.COLOR_TRANSPARENT)"));
 });
 
@@ -218,12 +220,14 @@ test("home screen prioritizes one large start action and separates secondary nav
   assert.match(homeView, /"TRAINING STARTEN"/);
   assert.match(homeView, /"TRAININGSPLAN"/);
   assert.match(homeView, /"FREIES TRAINING"/);
-  assert.match(homeView, /mStartTop = 118/);
-  assert.match(homeView, /mStartBottom = 220/);
-  assert.match(homeView, /mFreeTop = 238/);
-  assert.match(homeView, /mFreeBottom = 342/);
-  assert.match(homeView, /mMenuRowStep = 52/);
-  assert.match(homeView, /if \(y >= mStartTop && y <= mStartBottom &&/);
+  assert.match(homeView, /mStartTop = 94/);
+  assert.match(homeView, /mStartBottom = 198/);
+  assert.match(homeView, /mPlanTop = 212/);
+  assert.match(homeView, /mPlanBottom = 260/);
+  assert.match(homeView, /mFreeTrainingTop = 270/);
+  assert.match(homeView, /mFreeTrainingBottom = 318/);
+  assert.match(homeView, /mMenuRowStep = 58/);
+  assert.match(homeView, /x >= mStartLeft && x <= mStartRight/);
   assert.match(homeView, /startActivity\(\)/);
   assert.match(homeView, /mStartLeft = mainLeft/);
   assert.match(homeView, /mSecondaryLeft = secondaryLeft/);
@@ -233,7 +237,9 @@ test("home screen prioritizes one large start action and separates secondary nav
 
 test("shared text boxes reject text taller than their assigned vertical region", () => {
   assert.match(layoutView, /function drawTextBox\(/);
-  assert.match(layoutView, /dc\.getFontHeight\(font\) > height/);
+  assert.match(layoutView, /if \(textHeight > height\)/);
+  assert.match(layoutView, /dc\.setClip\(/);
+  assert.match(layoutView, /dc\.clearClip\(\)/);
   assert.match(homeView, /mKajoLayout\.drawTextBox/);
   assert.match(activityView, /mKajoLayout\.drawTextBox/);
 });
@@ -252,11 +258,15 @@ test("all custom watch views clear with an opaque black background before drawin
   }
 });
 
-test("settings and workout selection use Garmin-native Menu2 views", () => {
+test("settings keep native menus while workout selection uses a custom dark view", () => {
   assert.match(settingsMenu, /extends WatchUi\.Menu2/);
   assert.match(settingsMenu, /new WatchUi\.MenuItem\("Trainingsfelder"/);
   assert.match(settingsMenu, /new WatchUi\.MenuItem\("Mit KAJO verbinden"/);
-  assert.match(workoutListView, /extends WatchUi\.Menu2/);
-  assert.match(workoutSelectView, /extends WatchUi\.Menu2/);
+  assert.match(workoutListView, /extends WatchUi\.View/);
+  assert.match(workoutListView, /dc\.setColor\(Graphics\.COLOR_BLACK, Graphics\.COLOR_BLACK\)/);
+  assert.match(workoutListView, /fillRoundedRectangle/);
+  assert.match(workoutListDelegate, /extends WatchUi\.InputDelegate/);
+  assert.match(homeView, /new KajoConnectWorkoutListView\(self, todaysSessions, "HEUTE WÄHLEN"/);
+  assert.doesNotMatch(homeView, /new KajoConnectWorkoutSelectView/);
   assert.match(menuDelegate, /function onSelect\(item as WatchUi\.MenuItem\)/);
 });
