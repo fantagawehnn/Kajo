@@ -27,6 +27,10 @@ class KajoConnectView extends WatchUi.View {
     var mSecondaryRight = 0;
     var mFreeTop = 0;
     var mFreeBottom = 0;
+    var mPlanTop = 0;
+    var mPlanBottom = 0;
+    var mFreeTrainingTop = 0;
+    var mFreeTrainingBottom = 0;
     var mMenuTop = 0;
     var mMenuBottom = 0;
     var mPlanStartY = 0;
@@ -386,23 +390,25 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (y >= mStartTop && y <= mStartBottom &&
-            x >= mStartLeft && x <= mStartRight) {
+        // Touch-Grenzen entsprechen exakt den gezeichneten Schaltflaechen.
+        if (x >= mStartLeft && x <= mStartRight &&
+            y >= mStartTop && y <= mStartBottom) {
             mHomeSelection = 0;
             activateHomeSelection();
             return;
         }
 
-        if (y >= mFreeTop && y <= mFreeBottom &&
-            x >= mSecondaryLeft && x <= mSecondaryRight) {
-            var row = Math.floor((y - mFreeTop) / mMenuRowStep).toNumber();
-            if (row == 0) {
-                mHomeSelection = 1;
-                activateHomeSelection();
-            } else if (row == 1) {
-                mHomeSelection = 2;
-                activateHomeSelection();
-            }
+        if (x >= mSecondaryLeft && x <= mSecondaryRight &&
+            y >= mPlanTop && y <= mPlanBottom) {
+            mHomeSelection = 1;
+            activateHomeSelection();
+            return;
+        }
+
+        if (x >= mSecondaryLeft && x <= mSecondaryRight &&
+            y >= mFreeTrainingTop && y <= mFreeTrainingBottom) {
+            mHomeSelection = 2;
+            activateHomeSelection();
         }
     }
 
@@ -430,67 +436,105 @@ class KajoConnectView extends WatchUi.View {
             todayDetail = "Training auswählen";
         }
 
-        drawHomeText(dc, cx, 40, 240, 30, "KAJO", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, 72, 280, 16,
+        // Kopfbereich: eigene, voneinander getrennte Textzeilen.
+        drawHomeText(dc, cx, 28, 220, 26, "KAJO", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        drawHomeText(dc, cx, 57, 270, 18,
             mSelectedBoat + " · " + compactSyncStatus(),
             Graphics.FONT_XTINY, mSyncStatus == "KAJO AKTUALISIERT" ? 0x25D3CB : 0x98A5AB);
 
-        // Eine zentrale Hauptaktion statt mehrerer konkurrierender Auswahlflächen.
-        mStartTop = 118;
-        mStartBottom = 220;
-        var mainWidth = mKajoLayout.safeRectWidth(mStartTop,
-            mStartBottom - mStartTop, mUnit * 0.78);
+        // Hauptaktion: sichtbare Flaeche und Touch-Grenzen verwenden dieselben Koordinaten.
+        mStartTop = 94;
+        mStartBottom = 198;
+        var mainWidth = mKajoLayout.safeRectWidth(
+            mStartTop, mStartBottom - mStartTop, mUnit * 0.78
+        );
         var mainLeft = cx - (mainWidth / 2);
         mStartLeft = mainLeft;
         mStartRight = mainLeft + mainWidth;
 
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(mainLeft.toNumber(), mStartTop,
-            mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12);
+        dc.fillRoundedRectangle(
+            mainLeft.toNumber(), mStartTop,
+            mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12
+        );
         if (mHomeSelection == 0) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(mainLeft.toNumber() - 3, mStartTop - 3,
-                mainWidth.toNumber() + 6, (mStartBottom - mStartTop).toNumber() + 6, 14);
+            dc.drawRoundedRectangle(
+                mainLeft.toNumber() - 3, mStartTop - 3,
+                mainWidth.toNumber() + 6, (mStartBottom - mStartTop).toNumber() + 6, 14
+            );
         }
-        drawHomeText(dc, cx, 139, mainWidth - 20, 24,
+
+        // Drei feste Textzeilen ohne vertikale Ueberlappung.
+        drawHomeText(dc, cx, 108, mainWidth - 24, 25,
             "TRAINING STARTEN", Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
-        drawHomeText(dc, cx, 171, mainWidth - 22, 26,
+        drawHomeText(dc, cx, 139, mainWidth - 24, 25,
             todayLabel, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
-        drawHomeText(dc, cx, 198, mainWidth - 22, 14,
+        drawHomeText(dc, cx, 169, mainWidth - 24, 17,
             todayDetail, Graphics.FONT_XTINY, Graphics.COLOR_BLACK);
 
-        // Zwei klar getrennte Sekundäraktionen mit identischen sichtbaren und aktiven Flächen.
-        mFreeTop = 238;
-        mFreeBottom = 342;
-        mMenuRowStep = 52;
-        var secondaryWidth = mKajoLayout.safeRectWidth(mFreeTop, 44, mUnit * 0.78);
+        // Sekundaeraktionen: getrennte Rechtecke mit 10 px Abstand.
+        // Die gemeinsame Breite wird anhand der unteren Schaltflaeche berechnet,
+        // damit beide Flaechen vollstaendig innerhalb des runden Displays liegen.
+        mPlanTop = 212;
+        mPlanBottom = 260;
+        mFreeTrainingTop = 270;
+        mFreeTrainingBottom = 318;
+        mFreeTop = mPlanTop;
+        mFreeBottom = mFreeTrainingBottom;
+        mMenuRowStep = 58;
+
+        var secondaryWidth = mKajoLayout.safeRectWidth(
+            mFreeTrainingTop, mFreeTrainingBottom - mFreeTrainingTop, mUnit * 0.78
+        );
         var secondaryLeft = cx - (secondaryWidth / 2);
         mSecondaryLeft = secondaryLeft;
         mSecondaryRight = secondaryLeft + secondaryWidth;
 
-        for (var item = 0; item < 2; item += 1) {
-            var top = mFreeTop + (item * mMenuRowStep);
-            var label = item == 0 ? "TRAININGSPLAN" : "FREIES TRAINING";
-            var detail = item == 0
-                ? mPlannedSessions.size().toString() + " EINHEITEN GESPEICHERT"
-                : "OHNE GEPLANTE EINHEIT";
-
-            var selectedRow = (item + 1) == mHomeSelection;
-            dc.setColor(selectedRow ? 0x123034 : 0x0B1114, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(secondaryLeft.toNumber(), top,
-                secondaryWidth.toNumber(), 44, 8);
-            if (selectedRow) {
-                dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-                dc.drawRoundedRectangle(secondaryLeft.toNumber(), top,
-                    secondaryWidth.toNumber(), 44, 8);
-            }
+        // Trainingsplan
+        var planSelected = mHomeSelection == 1;
+        dc.setColor(planSelected ? 0x123034 : 0x0B1114, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(
+            secondaryLeft.toNumber(), mPlanTop,
+            secondaryWidth.toNumber(), (mPlanBottom - mPlanTop).toNumber(), 8
+        );
+        if (planSelected) {
             dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-            dc.fillRectangle(secondaryLeft.toNumber(), top, 3, 44);
-            drawHomeText(dc, cx, top + 4, secondaryWidth - 18, 18,
-                label, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-            drawHomeText(dc, cx, top + 23, secondaryWidth - 18, 14,
-                detail, Graphics.FONT_XTINY, 0x98A5AB);
+            dc.drawRoundedRectangle(
+                secondaryLeft.toNumber(), mPlanTop,
+                secondaryWidth.toNumber(), (mPlanBottom - mPlanTop).toNumber(), 8
+            );
         }
+        dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+        dc.fillRectangle(secondaryLeft.toNumber(), mPlanTop, 3,
+            (mPlanBottom - mPlanTop).toNumber());
+        drawHomeText(dc, cx, mPlanTop + 5, secondaryWidth - 18, 18,
+            "TRAININGSPLAN", Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawHomeText(dc, cx, mPlanTop + 26, secondaryWidth - 18, 14,
+            mPlannedSessions.size().toString() + " EINHEITEN GESPEICHERT",
+            Graphics.FONT_XTINY, 0x98A5AB);
+
+        // Freies Training
+        var freeSelected = mHomeSelection == 2;
+        dc.setColor(freeSelected ? 0x123034 : 0x0B1114, Graphics.COLOR_BLACK);
+        dc.fillRoundedRectangle(
+            secondaryLeft.toNumber(), mFreeTrainingTop,
+            secondaryWidth.toNumber(), (mFreeTrainingBottom - mFreeTrainingTop).toNumber(), 8
+        );
+        if (freeSelected) {
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(
+                secondaryLeft.toNumber(), mFreeTrainingTop,
+                secondaryWidth.toNumber(), (mFreeTrainingBottom - mFreeTrainingTop).toNumber(), 8
+            );
+        }
+        dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+        dc.fillRectangle(secondaryLeft.toNumber(), mFreeTrainingTop, 3,
+            (mFreeTrainingBottom - mFreeTrainingTop).toNumber());
+        drawHomeText(dc, cx, mFreeTrainingTop + 5, secondaryWidth - 18, 18,
+            "FREIES TRAINING", Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        drawHomeText(dc, cx, mFreeTrainingTop + 26, secondaryWidth - 18, 14,
+            "OHNE GEPLANTE EINHEIT", Graphics.FONT_XTINY, 0x98A5AB);
     }
 
 }
