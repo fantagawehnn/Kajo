@@ -14,7 +14,7 @@ class KajoConnectWorkoutListDelegate extends WatchUi.BehaviorDelegate {
         var key = keyEvent.getKey();
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
             // Obere Taste öffnet den ersten sichtbaren Eintrag der aktuellen Seite.
-            mView.handleTap(100, 100);
+            mView.selectFocused();
             return true;
         }
         if (key == WatchUi.KEY_ESC) {
@@ -22,6 +22,11 @@ class KajoConnectWorkoutListDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
         return false;
+    }
+
+    function onMenu() as Lang.Boolean {
+        mView.moveSelection(1);
+        return true;
     }
 
     function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
