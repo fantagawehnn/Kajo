@@ -16,6 +16,7 @@ const customFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnect
 const displayConfigView = readFileSync(new URL("../KajoConnect/source/KajoConnectDisplayConfigView.mc", import.meta.url), "utf8");
 const pairingView = readFileSync(new URL("../KajoConnect/source/KajoConnectPairingView.mc", import.meta.url), "utf8");
 const trainingFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnectTrainingFieldsView.mc", import.meta.url), "utf8");
+const historyView = readFileSync(new URL("../KajoConnect/source/KajoConnectHistoryView.mc", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -114,6 +115,8 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
     ["custom fields", customFieldsView],
     ["display config", displayConfigView],
     ["pairing", pairingView],
+    ["training fields", trainingFieldsView],
+    ["history", historyView],
   ]) {
     assert.match(source, /mKajoLayout\.drawTextFit/, name + " must use the shared text layout");
   }
@@ -124,6 +127,16 @@ test("custom field editor keeps header, four rows, controls and save action in d
   assert.match(customFieldsView, /mRowHeight = Math\.round\(mUnit \* 0\.108\)/);
   assert.match(customFieldsView, /mControlTop = Math\.round\(mUnit \* 0\.70\)/);
   assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.79\)/);
+});
+
+test("completed activities are stored locally and displayed in watch history", () => {
+  assert.match(activityView, /Storage\.setValue\("kajoActivityHistory", nextHistory\)/);
+  assert.match(activityView, /mHistoryEntrySaved/);
+  assert.match(historyView, /Storage\.getValue\("kajoActivityHistory"\)/);
+  assert.match(historyView, /"HISTORIE"/);
+  assert.match(historyView, /"BPM"/);
+  assert.match(historyView, /"Details in der KAJO App"/);
+  assert.match(homeView, /getTodaysSessions\(\)/);
 });
 
 test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts", () => {
