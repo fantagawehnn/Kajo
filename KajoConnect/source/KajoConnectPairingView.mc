@@ -207,38 +207,38 @@ class KajoConnectPairingView extends WatchUi.View {
         var center = width / 2;
         mKajoLayout.configure(width, height);
 
-        drawFit(dc, center, unit * 0.12, "KAJO",
-            unit * 0.70, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        // Kopplungsstatus und Code erklaeren den Vorgang direkt.
+        drawFit(dc, center, unit * 0.10, "KAJO VERBINDEN",
+            unit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(62, unit * 0.18, 328, unit * 0.18);
 
         if (mCode.length() > 0 && !mPaired) {
-            var cardTop = unit * 0.31;
-            var cardHeight = unit * 0.17;
-            var cardWidth = mKajoLayout.safeRectWidth(cardTop, cardHeight, unit * 0.80);
-            var cardLeft = center - (cardWidth / 2);
-            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(cardLeft.toNumber(), cardTop.toNumber(),
-                cardWidth.toNumber(), cardHeight.toNumber(), (unit * 0.035).toNumber());
-            dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardLeft.toNumber(), cardTop.toNumber(),
-                cardWidth.toNumber(), cardHeight.toNumber(), (unit * 0.035).toNumber());
-            drawFit(dc, center, cardTop + unit * 0.025, "KOPPLUNGSCODE",
-                cardWidth * 0.86, Graphics.FONT_XTINY, 0xA0AAB2);
-            drawFit(dc, center, cardTop + unit * 0.075, formatCode(),
-                cardWidth * 0.92, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-            drawFit(dc, center, unit * 0.535, "CODE IN DER KAJO APP EINGEBEN",
-                unit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+            var stripTop = unit * 0.31;
+            var stripHeight = unit * 0.18;
+            var stripWidth = mKajoLayout.safeRectWidth(stripTop, stripHeight, unit * 0.80);
+            var stripLeft = center - (stripWidth / 2);
+            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            dc.fillRectangle(stripLeft.toNumber(), stripTop.toNumber(),
+                stripWidth.toNumber(), stripHeight.toNumber());
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.fillRectangle(stripLeft.toNumber(), stripTop.toNumber(), 4, stripHeight.toNumber());
+            drawFit(dc, center, stripTop + unit * 0.025, "KOPPLUNGSCODE",
+                stripWidth * 0.88, Graphics.FONT_XTINY, 0x98A5AB);
+            drawFit(dc, center, stripTop + unit * 0.075, formatCode(),
+                stripWidth * 0.92, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawFit(dc, center, unit * 0.56, "CODE IN DER KAJO APP EINGEBEN",
+                unit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         } else if (mPaired) {
-            drawFit(dc, center, unit * 0.39, "VERBUNDEN",
-                unit * 0.72, Graphics.FONT_MEDIUM, 0x00E5CC);
+            drawFit(dc, center, unit * 0.40, "ERFOLGREICH VERBUNDEN",
+                unit * 0.78, Graphics.FONT_MEDIUM, 0x25D3CB);
         } else {
-            drawFit(dc, center, unit * 0.40, "CODE WIRD ERSTELLT",
-                unit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+            drawFit(dc, center, unit * 0.40, "KOPPLUNGSCODE WIRD ERSTELLT",
+                unit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
 
-        drawFit(dc, center, unit * 0.68, mStatus,
-            unit * 0.78, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-        drawFit(dc, center, unit * 0.87, "ZURUECK",
-            unit * 0.48, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
+        drawFit(dc, center, unit * 0.70, mStatus,
+            unit * 0.78, Graphics.FONT_XTINY, 0x98A5AB);
+        drawFit(dc, center, unit * 0.87, "UNTERE TASTE · ZURÜCK",
+            unit * 0.74, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
