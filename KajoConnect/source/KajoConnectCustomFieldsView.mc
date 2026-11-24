@@ -234,15 +234,20 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
         mKajoLayout.configure(mWidth, mHeight);
         var cx = mWidth / 2;
 
-        drawFit(dc, cx, mUnit * 0.065, "DATENFELDER",
+        drawFit(dc, cx, mUnit * 0.055, "DATENFELDER",
             mUnit * 0.72, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        // Keine Unterueberschriften; die Navigation bleibt ueber die Bedienung erreichbar.
+        drawFit(dc, cx, mUnit * 0.12,
+            "LAYOUT " + (mLayoutIndex + 1).toString() + "/" + mLayoutCount.toString() +
+            " · SEITE " + (mPage + 1).toString() + "/" + mPageCount.toString(),
+            mUnit * 0.78, Graphics.FONT_XTINY, 0x98A5AB);
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(62, mUnit * 0.17, 328, mUnit * 0.17);
 
-        mRowTop = Math.round(mUnit * 0.225).toNumber();
+        mRowTop = Math.round(mUnit * 0.205).toNumber();
         mRowHeight = Math.round(mUnit * 0.108).toNumber();
-        var cardHeight = mRowHeight * 0.82;
-        var cardWidth = mKajoLayout.safeRectWidth(mRowTop, cardHeight, mUnit * 0.76);
-        var cardX = cx - (cardWidth / 2);
+        var rowHeight = mRowHeight * 0.82;
+        var rowWidth = mKajoLayout.safeRectWidth(mRowTop, rowHeight, mUnit * 0.80);
+        var left = cx - (rowWidth / 2);
 
         for (var row = 0; row < 4; row += 1) {
             var index = (mPage * 4) + row;
@@ -260,54 +265,40 @@ class KajoConnectCustomFieldsView extends WatchUi.View {
                 sizeText = fieldSize == 0 ? "S" : fieldSize == 2 ? "L" : "M";
             }
             var stateText = isEnabled ? (orderIndex + 1).toString() + " " + sizeText : "AUS";
-            dc.setColor(isFocused ? 0x10272B : 0x071619, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.022).toNumber());
-            dc.setColor(isFocused ? 0x00E5CC : 0x17343A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(cardX.toNumber(), y.toNumber(), cardWidth.toNumber(),
-                cardHeight.toNumber(), (mUnit * 0.022).toNumber());
-            if (isEnabled) {
-                dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle((cardX + mUnit * 0.015).toNumber(),
-                    (y + mUnit * 0.018).toNumber(), (mUnit * 0.009).toNumber(),
-                    (cardHeight - mUnit * 0.036).toNumber(), (mUnit * 0.004).toNumber());
+            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), rowHeight.toNumber());
+            dc.setColor(isFocused ? 0xFFB020 : (isEnabled ? 0x25D3CB : 0x344047), Graphics.COLOR_BLACK);
+            dc.fillRectangle(left.toNumber(), y.toNumber(), 4, rowHeight.toNumber());
+            drawFit(dc, cx - rowWidth * 0.10, y + rowHeight * 0.22,
+                mMetricLabels[index], rowWidth * 0.66, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
+            drawFit(dc, cx + rowWidth * 0.36, y + rowHeight * 0.22,
+                stateText, rowWidth * 0.20, Graphics.FONT_XTINY,
+                isEnabled ? 0x25D3CB : 0x98A5AB);
+            if (row < 3 && index < mMetricIds.size() - 1) {
+                dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+                dc.drawLine(left.toNumber(), y + mRowHeight * 0.90,
+                    (left + rowWidth).toNumber(), y + mRowHeight * 0.90);
             }
-            drawFit(dc, cardX + cardWidth * 0.39,
-                y + (cardHeight * 0.27), mMetricLabels[index],
-                cardWidth * 0.62, Graphics.FONT_TINY, Graphics.COLOR_WHITE);
-            drawFit(dc, cardX + cardWidth * 0.84,
-                y + (cardHeight * 0.30), stateText,
-                cardWidth * 0.25, Graphics.FONT_XTINY,
-                isEnabled ? 0x00E5CC : Graphics.COLOR_LT_GRAY);
         }
 
         mControlTop = Math.round(mUnit * 0.70).toNumber();
         mControlBottom = Math.round(mUnit * 0.775).toNumber();
-        var controlWidth = mUnit * 0.21;
-        var controlHeight = mControlBottom - mControlTop;
-        var centers = [cx - (mUnit * 0.25), cx, cx + (mUnit * 0.25)];
-        var labels = ["HOCH", "GROESSE", "RUNTER"];
-        for (var b = 0; b < 3; b += 1) {
-            var left = centers[b] - (controlWidth / 2);
-            dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(left.toNumber(), mControlTop,
-                controlWidth.toNumber(), controlHeight.toNumber(), (mUnit * 0.02).toNumber());
-            dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(left.toNumber(), mControlTop,
-                controlWidth.toNumber(), controlHeight.toNumber(), (mUnit * 0.02).toNumber());
-            drawFit(dc, centers[b], mControlTop + (controlHeight * 0.28),
-                labels[b], controlWidth * 0.90, Graphics.FONT_XTINY,
-                b == 1 ? 0x00E5CC : Graphics.COLOR_WHITE);
-        }
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(70, mControlTop, 320, mControlTop);
+        drawFit(dc, cx - mUnit * 0.25, mControlTop + mUnit * 0.025,
+            "HOCH", mUnit * 0.20, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+        drawFit(dc, cx, mControlTop + mUnit * 0.025,
+            "GROESSE", mUnit * 0.22, Graphics.FONT_XTINY, 0x25D3CB);
+        drawFit(dc, cx + mUnit * 0.25, mControlTop + mUnit * 0.025,
+            "RUNTER", mUnit * 0.20, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+        dc.drawLine(70, mControlBottom, 320, mControlBottom);
 
         mSaveTop = Math.round(mUnit * 0.79).toNumber();
         mSaveBottom = Math.round(mUnit * 0.865).toNumber();
-        var saveWidth = mKajoLayout.safeRectWidth(mSaveTop, mSaveBottom - mSaveTop, mUnit * 0.54);
-        dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle((cx - saveWidth / 2).toNumber(), mSaveTop,
-            saveWidth.toNumber(), (mSaveBottom - mSaveTop).toNumber(),
-            (mUnit * 0.025).toNumber());
-        drawFit(dc, cx, mSaveTop + (mUnit * 0.022), "SPEICHERN",
-            saveWidth * 0.88, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+        drawFit(dc, cx, mSaveTop + mUnit * 0.02, "OBERE TASTE · SPEICHERN",
+            mUnit * 0.74, Graphics.FONT_XTINY, 0x25D3CB);
+        drawFit(dc, cx, mUnit * 0.89, "UNTERE TASTE · ZURÜCK",
+            mUnit * 0.74, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
