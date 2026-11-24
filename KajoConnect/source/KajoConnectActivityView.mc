@@ -172,12 +172,12 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function drawHeartRateField(dc as Dc, centerX as Lang.Number, top as Lang.Number,
         width as Lang.Number, hrNow as Lang.String, zone as Lang.Number) as Void {
-        drawActivityText(dc, centerX, top + 2, width, 14, "HERZFREQUENZ",
+        drawActivityText(dc, centerX, top + 2, width, 14, "PULS",
             Graphics.FONT_XTINY, 0x98A5AB);
         drawActivityText(dc, centerX, top + 18, width, 28, hrNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
         drawActivityText(dc, centerX, top + 45, width, 12,
-            zone > 0 ? "BPM · ZONE " + zone.toString() : "BPM · ZONE –",
+            zone > 0 ? "BPM · Z" + zone.toString() : "BPM · --",
             Graphics.FONT_XTINY, zone > 0 ? 0xFF453A : 0x98A5AB);
         var colors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
         var barWidth = width * 0.82;
