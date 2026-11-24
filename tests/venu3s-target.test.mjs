@@ -17,6 +17,8 @@ const displayConfigView = readFileSync(new URL("../KajoConnect/source/KajoConnec
 const pairingView = readFileSync(new URL("../KajoConnect/source/KajoConnectPairingView.mc", import.meta.url), "utf8");
 const trainingFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnectTrainingFieldsView.mc", import.meta.url), "utf8");
 const historyView = readFileSync(new URL("../KajoConnect/source/KajoConnectHistoryView.mc", import.meta.url), "utf8");
+const boatClassView = readFileSync(new URL("../KajoConnect/source/KajoConnectBoatClassView.mc", import.meta.url), "utf8");
+const unitsView = readFileSync(new URL("../KajoConnect/source/KajoConnectUnitsView.mc", import.meta.url), "utf8");
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -117,6 +119,8 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
     ["pairing", pairingView],
     ["training fields", trainingFieldsView],
     ["history", historyView],
+    ["boat class", boatClassView],
+    ["units", unitsView],
   ]) {
     assert.match(source, /mKajoLayout\.drawTextFit/, name + " must use the shared text layout");
   }
@@ -127,6 +131,14 @@ test("custom field editor keeps header, four rows, controls and save action in d
   assert.match(customFieldsView, /mRowHeight = Math\.round\(mUnit \* 0\.108\)/);
   assert.match(customFieldsView, /mControlTop = Math\.round\(mUnit \* 0\.70\)/);
   assert.match(customFieldsView, /mSaveTop = Math\.round\(mUnit \* 0\.79\)/);
+});
+
+test("boat class and metric unit settings are available on the watch", () => {
+  assert.match(boatClassView, /\["K1", "C1", "C2"\]/);
+  assert.match(boatClassView, /Storage\.getValue\("kajoSelectedBoat"\)/);
+  assert.match(unitsView, /"DISTANZ", "KM"/);
+  assert.match(unitsView, /"TEMPO", "MIN\/KM"/);
+  assert.match(unitsView, /"GESCHWINDIGKEIT", "KM\/H"/);
 });
 
 test("completed activities are stored locally and displayed in watch history", () => {
