@@ -25,6 +25,10 @@ class KajoConnectWorkoutDelegate extends WatchUi.BehaviorDelegate {
 
     function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
         var coordinates = clickEvent.getCoordinates();
+        if (coordinates[1] >= 365) {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            return true;
+        }
         mView.handleTap(coordinates[0], coordinates[1]);
         return true;
     }
