@@ -247,7 +247,7 @@ class KajoConnectView extends WatchUi.View {
         if (mHomeSelection == 0) {
             startActivity();
         } else if (mHomeSelection == 1) {
-            var listView = new KajoConnectWorkoutListView(self);
+            var listView = new KajoConnectWorkoutListView(self, null, "TRAININGSPLAN", "EINHEITEN GESPEICHERT");
             WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
         } else {
             openActivityView(null);
@@ -328,8 +328,8 @@ class KajoConnectView extends WatchUi.View {
         var todaysSessions = getTodaysSessions();
 
         if (todaysSessions.size() > 1) {
-            var selector = new KajoConnectWorkoutSelectView(todaysSessions, self);
-            WatchUi.pushView(selector, new KajoConnectWorkoutSelectDelegate(selector), WatchUi.SLIDE_UP);
+            var selector = new KajoConnectWorkoutListView(self, todaysSessions, "HEUTE WÄHLEN", "EINHEITEN HEUTE");
+            WatchUi.pushView(selector, new KajoConnectWorkoutListDelegate(selector), WatchUi.SLIDE_UP);
         } else if (todaysSessions.size() == 1) {
             showWorkoutDetails(todaysSessions[0] as Lang.Dictionary);
         } else {
