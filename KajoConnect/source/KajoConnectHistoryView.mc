@@ -88,8 +88,8 @@ class KajoConnectHistoryView extends WatchUi.View {
             return;
         }
 
-        mRowTop = mUnit * 0.205;
-        mRowHeight = mUnit * 0.185;
+        mRowTop = (mUnit * 0.205).toNumber();
+        mRowHeight = (mUnit * 0.185).toNumber();
         var rowWidth = mKajoLayout.safeRectWidth(mRowTop, mRowHeight * 0.86, mUnit * 0.80);
         var left = cx - (rowWidth / 2);
         for (var row = 0; row < 3; row += 1) {

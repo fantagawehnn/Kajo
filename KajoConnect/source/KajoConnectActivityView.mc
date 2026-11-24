@@ -859,7 +859,6 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function captureActivitySummary() as Void {
         var info = Activity.getActivityInfo();
-        if (info == null) { return; }
         if (info.elapsedDistance != null) {
             mFinalDistanceMeters = info.elapsedDistance;
             mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
@@ -1573,14 +1572,17 @@ class KajoConnectActivityView extends WatchUi.View {
                     dc.fillRectangle(rowLeft.toNumber(), rowY.toNumber(), rowWidth.toNumber(), 39);
                     dc.setColor(stepColor, Graphics.COLOR_BLACK);
                     dc.fillRectangle(rowLeft.toNumber(), rowY.toNumber(), 4, 39);
-                    drawActivityText(dc, cx - rowWidth * 0.32, rowY + 3, rowWidth * 0.14, 30,
+                    drawActivityText(dc, (cx - rowWidth * 0.32).toNumber(), rowY + 3,
+                        (rowWidth * 0.14).toNumber(), 30,
                         marker, Graphics.FONT_SMALL, stepColor);
-                    drawActivityText(dc, cx + rowWidth * 0.05, rowY + 3, rowWidth * 0.60, 16,
+                    drawActivityText(dc, (cx + rowWidth * 0.05).toNumber(),
+                        (rowY + 3).toNumber(), (rowWidth * 0.60).toNumber(), 16,
                         compactWorkoutText(stepName, 30), Graphics.FONT_XTINY,
                         isCurrent ? Graphics.COLOR_WHITE : stepColor);
                     var detail = durationText + " · " + typeText;
                     if (target != "") { detail += " · " + compactWorkoutText(target, 18); }
-                    drawActivityText(dc, cx + rowWidth * 0.05, rowY + 20, rowWidth * 0.60, 14,
+                    drawActivityText(dc, (cx + rowWidth * 0.05).toNumber(), (rowY + 20).toNumber(),
+                        (rowWidth * 0.60).toNumber(), 14,
                         detail, Graphics.FONT_XTINY, isCurrent ? 0x25D3CB : 0x98A5AB);
                     if (stepRow < visibleSteps - 1) {
                         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
