@@ -34,6 +34,13 @@ class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
         return false;
     }
 
+    // Einstellungen bleiben waehrend der Aufzeichnung bewusst gesperrt.
+    // KEY_MENU ist auf der Venu 3S kein frei belegbarer Druck der mittleren
+    // Custom-Taste, sondern die Menue-Geste der oberen Aktionstaste.
+    function onMenu() as Lang.Boolean {
+        return true;
+    }
+
     // Vertikales Wischen wechselt zwischen den Datenansichten.
     function onNextPage() as Lang.Boolean {
         mView.nextDisplayPage(1);
