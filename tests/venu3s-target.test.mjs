@@ -45,7 +45,7 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
   assert.match(activityDelegate, /function onMenu\(\)[\s\S]*?nextDisplayPage\(1\)/);
-  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
+  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);\n  assert.match(readFileSync(new URL("../KajoConnect/source/KajoConnectMenuDelegate.mc", import.meta.url), "utf8"), /function onSelect\\(item as WatchUi\\.MenuItem\\)[\\s\\S]*?openSettingsItem\\(item\\.getId\\(\\)\\.toString\\(\\)\\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
   assert.match(settingsMenu, /extends WatchUi\.Menu2/);
   assert.match(displayConfigView, /extends WatchUi\.CheckboxMenu/);
@@ -213,16 +213,16 @@ test("home screen prioritizes one large start action and separates secondary nav
   assert.match(homeView, /todaySessions\.size\(\) == 1/);
   assert.match(homeView, /todaySessions\.size\(\) > 1/);
   assert.match(homeView, /"TRAINING STARTEN"/);
-  assert.match(homeView, /"TRAININGSPLAN & SPEICHER"/);
+  assert.match(homeView, /"TRAININGSPLAN"/);
   assert.match(homeView, /"FREIES TRAINING"/);
   assert.match(homeView, /mStartTop = 118/);
-  assert.match(homeView, /mStartBottom = 218/);
-  assert.match(homeView, /mFreeTop = 232/);
-  assert.match(homeView, /mFreeBottom = 332/);
+  assert.match(homeView, /mStartBottom = 220/);
+  assert.match(homeView, /mFreeTop = 238/);
+  assert.match(homeView, /mFreeBottom = 342/);
   assert.match(homeView, /mMenuRowStep = 52/);
-  assert.match(homeView, /if \(y >= mStartTop && y <= mStartBottom\)/);
+  assert.match(homeView, /if \(y >= mStartTop && y <= mStartBottom &&/);
   assert.match(homeView, /startActivity\(\)/);
-  assert.match(homeView, /if \(y >= 76 && y <= 106/);
+  assert.match(homeView, /mBoatLeft = secondaryLeft/);\n  assert.doesNotMatch(homeView, /if \(y >= 76 && y <= 106/);
   assert.doesNotMatch(homeView, /var labels = \["HEUTE", "GESPEICHERT", "FREI TRAINIEREN"\]/);
 });
 
