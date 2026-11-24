@@ -3183,8 +3183,12 @@ async function performCloudInitialTransfer() {
         setCloudTransferMessage('Erstübertragung fehlgeschlagen. Der Cloud-Status wird zur Sicherheit erneut geprüft. ' + error.message);
         if (isCurrentTransfer()) await refreshCloudInitialTransferState(userId, transferActivationSequence);
     } finally {
-        cloudInitialTransferBusy = false;
-        if (button) button.disabled = false;
+        // Ein älterer Request darf den Zustand eines inzwischen gestarteten
+        // Transfers nicht freigeben oder dessen Schaltfläche aktivieren.
+        if (isCurrentTransfer()) {
+            cloudInitialTransferBusy = false;
+            if (button) button.disabled = false;
+        }
     }
 }
 
@@ -3560,6 +3564,15 @@ async function handleAuthSession(session) {
 
     if (userId && activeAppUserId === userId && (appUserReady || activationPromise)) return;
     const sequence = ++activationSequence;
+
+    // Ein laufender Ersttransfer gehört immer genau zu einer Aktivierung.
+    // Beim Konto-/Sitzungswechsel darf er weder die neue UI sperren noch deren
+    // Transferstatus oder Schaltfläche später aus seinem finally-Block ändern.
+    cloudInitialTransferBusy = false;
+    cloudInitialTransferState = 'unknown';
+    const transferButtonOnActivation = document.getElementById('cloud-sync-confirm-button');
+    if (transferButtonOnActivation) transferButtonOnActivation.disabled = false;
+    closeCloudInitialTransferConfirmation();
 
     if (!userId) {
         activeAppUserId = null;
