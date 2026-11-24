@@ -64,6 +64,8 @@ Die Berechnung folgt der bestehenden KAJO-Logik in `js/training-load.js`:
 
 Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuellen Grenzwerte werden lokal mit Datum gespeichert; veraltete Tageswerte werden nicht als aktuelle Zonen übernommen. Ohne gültige Grenzen erscheint „ZONE --“.
 
+Die lokale Verlaufsliste `kajoActivityHistory` speichert Anzeigeformate und zusätzlich ISO-Datum, Dauer in Sekunden sowie – sofern verfügbar – Distanz in Metern und numerischen Durchschnittspuls. Fehlende Messwerte werden ausgelassen und nicht als Null gespeichert. Diese Historie ist weiterhin nicht mit dem KAJO-Konto synchronisiert.
+
 ## 6. Noch offen
 
 - Die KAJO-Web-App enthält einen Editor für drei eigene Datenseiten mit jeweils bis zu vier Kennzahlen, Reihenfolge, individueller Größenstufe und Position in einem begrenzten Raster (oben links/rechts, unten links/rechts oder unten mittig). Die Einstellungen werden im benutzerspezifischen `settings.kajoConnectDisplayLayouts` gespeichert und durch die bestehende Cloud-Synchronisierung übertragen.
