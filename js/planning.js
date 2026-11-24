@@ -9,7 +9,7 @@ import { renderCalendar } from './calendar.js';
 let editingPlannedWorkoutId = null;
 
 export function renderPlannedWorkouts() {
-    const sports=getSportsCatalog(), categories=getTypeColorMap();
+    const categories=getTypeColorMap();
     const el=document.getElementById('planned-workouts-list');
     const section=document.getElementById('planned-this-week-section');
     if(!el||!section)return;
@@ -22,23 +22,20 @@ export function renderPlannedWorkouts() {
     const list=[...state.plannedActivities].filter(p=>p.date>=todayKey&&p.date<=end).sort((a,b)=>a.date.localeCompare(b.date));
     section.classList.remove('hidden');
     if(!list.length){
-        el.innerHTML='<p class="rounded-xl border border-dashed border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-400">Für diese Woche sind noch keine Trainingseinheiten oder Ruhetage geplant. Lege deine nächste Planung über „+ Einheit planen“ an.</p>';
+        el.innerHTML='<p class="rounded-lg border border-dashed border-slate-700 px-3 py-4 text-xs text-slate-500">Noch keine Planungen für diese Woche.</p>';
         return;
     }
     list.forEach(p=>{
-        const isRestDay=p.type==='RestDay';
-        const cat=categories[p.category||'ga']||categories.ga, sport=isRestDay?'Ruhetag':(sports[p.type]||sports.Workout).label;
         const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
         el.insertAdjacentHTML('beforeend', `
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
+            <div class="bg-slate-950/70 border border-slate-800 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <span class="text-[10px] ${cat.text}">${formatDateDDMMYY(p.date)} · ${escapeHtml(cat.label)}</span>
-                    <h4 class="text-sm font-bold text-white">${escapeHtml(p.name)}</h4>
-                    <p class="text-xs text-slate-400">${escapeHtml(sport)}${isRestDay?' · keine geplante Trainingsbelastung':` · ${p.duration||'—'} min · Ziel-Load ${p.targetTss??'—'}`}</p>
+                    <span class="block text-[10px] text-slate-500">${formatDateDDMMYY(p.date)}</span>
+                    <h4 class="text-xs font-semibold text-white truncate">${escapeHtml(p.name)}</h4>
                 </div>
                 <div class="flex shrink-0 items-center gap-3">
-                    <button type="button" onclick="openPlannedWorkoutModal('${id}')" class="text-xs text-cyan-400 hover:text-white">Bearbeiten</button>
-                    <button type="button" onclick="deletePlannedWorkout('${id}')" class="text-xs text-rose-400 hover:text-white">Löschen</button>
+                    <button type="button" onclick="openPlannedWorkoutModal('${id}')" aria-label="Planung bearbeiten" class="text-xs text-cyan-400 hover:text-white">Bearbeiten</button>
+                    <button type="button" onclick="deletePlannedWorkout('${id}')" aria-label="Planung löschen" class="text-xs text-rose-400 hover:text-white">Löschen</button>
                 </div>
             </div>`);
     });
