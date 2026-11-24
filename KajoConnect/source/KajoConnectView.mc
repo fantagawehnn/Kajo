@@ -332,6 +332,13 @@ class KajoConnectView extends WatchUi.View {
         return todaysSessions;
     }
 
+    function moveHomeSelection(direction as Lang.Number) as Void {
+        mHomeSelection += direction;
+        if (mHomeSelection < 0) { mHomeSelection = 2; }
+        if (mHomeSelection > 2) { mHomeSelection = 0; }
+        WatchUi.requestUpdate();
+    }
+
     function setBoatClass(boatClass as Lang.String) as Void {
         if (boatClass != "K1" && boatClass != "C1" && boatClass != "C2") { return; }
         mSelectedBoat = boatClass;
