@@ -656,11 +656,21 @@ class KajoConnectActivityView extends WatchUi.View {
         drawActivityText(dc, cx, 35, 280, 20, statusText,
             Graphics.FONT_SMALL, phaseColor);
 
-        // Der Ring bleibt als dezente Trainingsfortschrittsanzeige erhalten.
-        dc.setColor(0x263238, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 133, 65, Graphics.ARC_CLOCKWISE, 205, 335);
-        dc.setColor(phaseColor, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 133, 65, Graphics.ARC_CLOCKWISE, 215, 325);
+        // Fortschritt des aktuellen Abschnitts als schmaler Aussenbogen.
+        if (stepCount > 0 && !mWorkoutSequenceComplete) {
+            var activeStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+            var activeDuration = activeStep["durationSeconds"] as Lang.Number;
+            var progress = activeDuration > 0 ? mWorkoutStepElapsedSeconds / activeDuration : 0.0;
+            if (progress < 0) { progress = 0; }
+            if (progress > 1) { progress = 1; }
+            var progressEnd = 215 + (110 * progress);
+            dc.setColor(0x263238, Graphics.COLOR_BLACK);
+            dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 215, 325);
+            dc.setColor(phaseColor, Graphics.COLOR_BLACK);
+            if (progressEnd > 215) {
+                dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 215, progressEnd);
+            }
+        }
         drawActivityText(dc, cx, 86, 270, 58, timerText,
             Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
         drawActivityText(dc, cx, 143, 120, 16, "MIN : SEK",
@@ -1157,9 +1167,9 @@ class KajoConnectActivityView extends WatchUi.View {
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
             dc.setColor(0x263238, Graphics.COLOR_BLACK);
-            dc.drawArc(cx, 195, 142, Graphics.ARC_CLOCKWISE, 205, 335);
+            dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 205, 335);
             dc.setColor(0xFFB020, Graphics.COLOR_BLACK);
-            dc.drawArc(cx, 195, 142, Graphics.ARC_CLOCKWISE, 205, 335);
+            dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 205, 335);
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mCurrentPageId == 0) {
@@ -1273,7 +1283,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mButtonBottom = 375;
         }
 
-        if (mStatus == "AUFZEICHNUNG") {
+        if (mStatus == "AUFZEICHNUNG" && !mIsTransitioning) {
             // Nur dezente Seitenpunkte; die Navigation erfolgt per Wischgeste.
             var visibleDots = mPageCount < 5 ? mPageCount : 5;
             var firstDotX = 195 - ((visibleDots - 1) * 9);
