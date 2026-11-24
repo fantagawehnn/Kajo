@@ -26,10 +26,13 @@ class KajoConnectBoatClassView extends WatchUi.View {
     }
 
     function moveSelection(direction as Lang.Number) as Void {
-        var index = mOptions.find(mSelectedBoat);
-        if (index == null) { index = 0; }
-        index = (index + direction) % mOptions.size();
+        var index = 0;
+        for (var i = 0; i < mOptions.size(); i += 1) {
+            if (mOptions[i] == mSelectedBoat) { index = i; }
+        }
+        index += direction;
         if (index < 0) { index = mOptions.size() - 1; }
+        if (index >= mOptions.size()) { index = 0; }
         mSelectedBoat = mOptions[index];
         WatchUi.requestUpdate();
     }
