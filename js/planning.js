@@ -3,7 +3,7 @@
  * ============================================================ */
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=5';
-import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js?v=2';
+import { formatDateDDMMYY, toLocalDateString, escapeHtml } from './utils.js?v=2';
 import { renderCalendar } from './calendar.js';
 
 let editingPlannedWorkoutId = null;
