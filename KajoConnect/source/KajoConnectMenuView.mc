@@ -10,11 +10,12 @@ class KajoConnectMenuView extends WatchUi.View {
     var mWidth as Lang.Number = 0;
     var mHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
-    var mRowTop as Lang.Number = 77;
-    var mRowStep as Lang.Number = 51;
-    var mRowHeight as Lang.Number = 42;
+    var mRowTop as Lang.Number = 73;
+    var mRowStep as Lang.Number = 44;
+    var mRowHeight as Lang.Number = 36;
     var mRows as Lang.Array<Lang.String> = [
-        "ANZEIGEN ANPASSEN",
+        "TRAININGSFELDER",
+        "DATENSEITEN",
         "TRAININGSÜBERSICHT",
         "INTERVALL-HINWEISE",
         "UHR MIT KAJO VERBINDEN",
@@ -33,23 +34,26 @@ class KajoConnectMenuView extends WatchUi.View {
     }
 
     function handleTap(y as Lang.Number) as Void {
-        if (y >= mUnit * 0.865) {
+        if (y >= mUnit * 0.875) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
-        if (y < mRowTop || y >= (mRowTop + (mRowStep * 5))) { return; }
+        if (y < mRowTop || y >= (mRowTop + (mRowStep * 6))) { return; }
         var index = Math.floor((y - mRowTop) / mRowStep).toNumber();
-        if (index < 0 || index >= 5) { return; }
+        if (index < 0 || index >= 6) { return; }
         if (index == 0) {
+            var trainingFields = new KajoConnectTrainingFieldsView();
+            WatchUi.pushView(trainingFields, new KajoConnectTrainingFieldsDelegate(trainingFields), WatchUi.SLIDE_UP);
+        } else if (index == 1) {
             var config = new KajoConnectDisplayConfigView();
             WatchUi.pushView(config, new KajoConnectDisplayConfigDelegate(config), WatchUi.SLIDE_UP);
-        } else if (index == 1) {
+        } else if (index == 2) {
             var list = new KajoConnectWorkoutListView(mHomeView);
             WatchUi.pushView(list, new KajoConnectWorkoutListDelegate(list), WatchUi.SLIDE_UP);
-        } else if (index == 2) {
+        } else if (index == 3) {
             var hints = new KajoConnectIntervalHintsView();
             WatchUi.pushView(hints, new KajoConnectIntervalHintsDelegate(hints), WatchUi.SLIDE_UP);
-        } else if (index == 3) {
+        } else if (index == 4) {
             var pairing = new KajoConnectPairingView();
             WatchUi.pushView(pairing, new KajoConnectPairingDelegate(), WatchUi.SLIDE_UP);
         } else {
@@ -70,7 +74,7 @@ class KajoConnectMenuView extends WatchUi.View {
         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
         dc.drawLine(62, 64, 328, 64);
 
-        mRowTop = 82;
+        mRowTop = 73;
         for (var i = 0; i < mRows.size(); i += 1) {
             var top = mRowTop + (i * mRowStep);
             var rowWidth = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.80);
