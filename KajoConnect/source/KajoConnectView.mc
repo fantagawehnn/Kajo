@@ -316,7 +316,7 @@ class KajoConnectView extends WatchUi.View {
 
     function handleTap(x as Lang.Number, y as Lang.Number) {
         // Die Sportart-Zeile bleibt kompakt; drei breite Touchbereiche waehlen K1, C1 oder C2.
-        if (y >= 48 && y <= 88 && x >= 54 && x <= 336) {
+        if (y >= 48 && y <= 64 && x >= 54 && x <= 336) {
             var relativeX = x - 54;
             var third = 282 / 3;
             if (relativeX < third) { mSelectedBoat = "K1"; }
