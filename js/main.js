@@ -1688,8 +1688,11 @@ async function syncGarminSelectedRange() {
             status.textContent = 'HF-Nachladen pausiert: ' + (error?.message || 'Unbekannter Fehler');
             setGarminSyncIndicator('current', 'Verbunden');
         } finally {
-            button.disabled = false;
-            button.textContent = 'Daten synchronisieren';
+            // Ein alter Sync darf die Schaltfläche einer neu aktivierten Sitzung nicht freigeben.
+            if (isCurrentSync()) {
+                button.disabled = false;
+                button.textContent = 'Daten synchronisieren';
+            }
         }
         return;
     }
@@ -1854,8 +1857,11 @@ async function syncGarminSelectedRange() {
         await loadGarminSyncHistory();
         if (!isCurrentSync()) return;
     } finally {
-        button.disabled = false;
-        if (button.textContent === 'Synchronisierung läuft …') button.textContent = 'Erneut versuchen';
+        // Ein alter Sync darf die Schaltfläche einer neu aktivierten Sitzung nicht freigeben.
+        if (isCurrentSync()) {
+            button.disabled = false;
+            if (button.textContent === 'Synchronisierung läuft …') button.textContent = 'Erneut versuchen';
+        }
     }
 }
 
