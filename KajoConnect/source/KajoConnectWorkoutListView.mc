@@ -14,11 +14,18 @@ class KajoConnectWorkoutListView extends WatchUi.View {
     var mRowHeight as Lang.Number = 54;
     var mRowGap as Lang.Number = 8;
     var mVisibleRows as Lang.Number = 4;
+    var mTitle as Lang.String = "TRAININGSPLAN";
+    var mCountLabel as Lang.String = "EINHEITEN GESPEICHERT";
 
-    function initialize(homeView as KajoConnectView) {
+    function initialize(homeView as KajoConnectView,
+        sessions as Lang.Array<Lang.Dictionary> or Null,
+        title as Lang.String,
+        countLabel as Lang.String) {
         View.initialize();
         mHomeView = homeView;
-        mSessions = homeView.getPlannedSessions();
+        mSessions = sessions == null ? homeView.getPlannedSessions() : sessions;
+        mTitle = title;
+        mCountLabel = countLabel;
         mLayout = new KajoLayout();
     }
 
@@ -66,9 +73,9 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         dc.clear();
 
         mLayout.drawTextBox(dc, cx, 25, unit * 0.78, 28,
-            "TRAININGSPLAN", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            mTitle, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
         mLayout.drawTextBox(dc, cx, 55, unit * 0.78, 22,
-            mSessions.size().toString() + " EINHEITEN GESPEICHERT",
+            mSessions.size().toString() + " " + mCountLabel,
             Graphics.FONT_XTINY, 0x98A5AB);
 
         if (mSessions.size() == 0) {
