@@ -93,6 +93,7 @@ class KajoConnectTrainingFieldsView extends WatchUi.View {
     }
 
     function onUpdate(dc as Dc) {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
         mWidth = dc.getWidth();
         mUnit = mWidth < dc.getHeight() ? mWidth : dc.getHeight();
