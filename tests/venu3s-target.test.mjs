@@ -153,7 +153,7 @@ test("home screen follows the KAJO round-display training dashboard layout", () 
   assert.match(homeView, /mMenuRowStep = 34/);
   assert.match(homeView, /"TRAINING FUER HEUTE"/);
   assert.match(homeView, /"FREIES TRAINING", "GEPLANTE TRAININGS", "VERGANGENE TRAININGS", "EINSTELLUNGEN"/);
-  assert.match(homeView, /drawHomeText\(dc, cx, rowY \+ 7, rowWidth - 56, 16/);
+  assert.match(homeView, /drawHomeText\\(dc, cx \\+ 10, rowY \\+ 7, rowWidth - 56, 16/);
   assert.match(homeView, /"SPORTART: " \+ mSelectedBoat/);
   assert.match(homeView, /"KAJO"/);
 });
