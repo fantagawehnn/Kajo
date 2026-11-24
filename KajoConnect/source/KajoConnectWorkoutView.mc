@@ -62,7 +62,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
             contentWidth, Graphics.FONT_SMALL, 0x25D3CB);
         drawCentered(dc, center, unit * 0.14, compactText(name, 34),
             contentWidth, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawCentered(dc, center, unit * 0.20, type.toUpperCase(),
+        drawCentered(dc, center, unit * 0.20, type,
             contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
         dc.drawLine(70, unit * 0.26, 320, unit * 0.26);
