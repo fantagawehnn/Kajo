@@ -17,9 +17,13 @@ class KajoConnectWorkoutView extends WatchUi.View {
         mParent = parent;
     }
 
+    function startSelectedWorkout() as Void {
+        mParent.beginWorkout(mWorkout);
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y >= mStartTop && y <= mStartBottom) {
-            mParent.beginWorkout(mWorkout);
+            startSelectedWorkout();
         } else {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
         }
