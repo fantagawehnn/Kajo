@@ -17,11 +17,11 @@ class KajoConnectWorkoutListDelegate extends WatchUi.InputDelegate {
             mView.selectCurrent();
             return true;
         }
-        if (key == WatchUi.KEY_UP || key == WatchUi.KEY_MENU) {
+        if (key == WatchUi.KEY_UP) {
             mView.moveSelection(-1);
             return true;
         }
-        if (key == WatchUi.KEY_DOWN) {
+        if (key == WatchUi.KEY_DOWN || key == WatchUi.KEY_MENU) {
             mView.moveSelection(1);
             return true;
         }
