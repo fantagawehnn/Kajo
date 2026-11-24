@@ -435,19 +435,31 @@ export function saveDataToLocalStorage() {
  * Entfernt alte lokale Garmin-Rohtelemetrie erst nach erfolgreichem Cloud-Readback.
  * Der aktive Arbeitsspeicher bleibt unangetastet, damit Diagramme weiter funktionieren.
  */
-export async function clearLocalGarminTelemetryCache() {
-    if (!activeUserStorage || !activeUserId) throw new Error('Kein aktiver Benutzer-Speicher für die Telemetrie-Bereinigung.');
+export async function clearLocalGarminTelemetryCache(expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) {
+        throw new Error('Der aktive Benutzer-Speicher hat sich vor der Telemetrie-Bereinigung geändert.');
+    }
+
+    // Den Storage-Handle festhalten: Ein Kontowechsel während der asynchronen
+    // IndexedDB-Operation darf nachfolgende Schreibvorgänge nicht auf den
+    // inzwischen aktiven Speicher eines anderen Kontos umlenken.
     await indexedDbWriteQueue;
-    await activeUserStorage.removeCollection('garminTelemetry');
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
+    await storageForUser.removeCollection('garminTelemetry');
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
+
     const compactActivities = stripGarminTelemetryFromActivities(state.rawActivities);
     try {
-        activeUserStorage.setItem('activities', JSON.stringify(compactActivities));
+        storageForUser.setItem('activities', JSON.stringify(compactActivities));
     } catch (error) {
         if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
-        try { activeUserStorage.removeItem('activities'); } catch (_) {}
+        try { storageForUser.removeItem('activities'); } catch (_) {}
         console.warn('Aktivitäten-Fallback wegen voller localStorage-Quote übersprungen; IndexedDB wird verwendet.');
     }
-    await activeUserStorage.saveCollections({ activities: compactActivities });
+    await storageForUser.saveCollections({ activities: compactActivities });
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
     state.garminTelemetryStore = {};
     return true;
 }

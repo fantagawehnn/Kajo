@@ -2514,6 +2514,7 @@ async function loadCloudProfile(session) {
             const { error: profileSaveError } = await supabase.from('user_profiles')
                 .upsert({ user_id: userId, profile: mergedProfile, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
             if (profileSaveError) throw profileSaveError;
+            if (activeAppUserId !== userId) return;
         } catch (profileSaveError) {
             console.error('Zusammengeführtes Athletenprofil konnte nicht in der Cloud aktualisiert werden:', profileSaveError);
             const indicator = document.getElementById('sync-status-indicator');
@@ -3014,6 +3015,7 @@ async function refreshCloudInitialTransferState(userId = activeAppUserId) {
             setCloudTransferMessage('Für dieses Konto wurde noch kein zentraler Datensatz gefunden. Deine lokalen Daten bleiben unverändert, bis du den Erstupload ausdrücklich bestätigst.', true);
         }
     } catch (error) {
+        if (userId !== activeAppUserId) return;
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Cloud-Status konnte nicht geprüft werden. Es wurde nichts übertragen. ' + error.message);
     }
@@ -3274,10 +3276,12 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
             saveDataToLocalStorage();
             // Kleine Pause zwischen Cloud-Abfragen verhindert Lastspitzen.
             await new Promise(resolve => setTimeout(resolve, 300));
+            if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
         } catch (error) {
             console.warn('KAJO: Historische Garmin-Analysewerte konnten für einen Datenblock nicht berechnet werden:', error);
         }
     }
+    if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
     if (calculated > 0) {
         saveDataToLocalStorage();
         initEngine();
@@ -3648,7 +3652,8 @@ async function handleAuthSession(session) {
                     if (missingAfterReadback.length > 0) {
                         throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
                     }
-                    await clearLocalGarminTelemetryCache();
+                    const cacheCleared = await clearLocalGarminTelemetryCache(userId);
+                    if (!cacheCleared || sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
                     // Nach bestätigtem Cloud-Readback die Rohmessreihen auch aus dem
                     // aktiven Aktivitätszustand entfernen. Die Detailansicht lädt sie
                     // später gezielt für die jeweils geöffnete Aktivität.
