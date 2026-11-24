@@ -31,7 +31,7 @@ globalThis.alert = () => {};
 globalThis.setTimeout = () => 0;
 
 const { state, setRefreshHandler } = await import('../js/state.js');
-const storage = await import('../js/storage.js?v=5');
+const storage = await import('../js/storage.js?v=6');
 const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
 const { getRacePriorityMeta, migrateLegacyRacePriorities } = await import('../js/competitions.js');
@@ -125,7 +125,7 @@ assert.equal(state.seasonPlan.id, 'smoke-season');
 
 // Saving a sickness/injury entry must finish locally without waiting for a cloud request.
 setRefreshHandler(() => {});
-const healthModule = await import('../js/health.js?v=79');
+const healthModule = await import('../js/health.js?v=81');
 document.getElementById('health-log-date-from').value = '2026-11-12';
 document.getElementById('health-log-date-to').value = '2026-11-13';
 document.getElementById('health-log-status').value = 'sick';
