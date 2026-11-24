@@ -221,7 +221,7 @@ test("home screen filters today's sessions and separates planned and free traini
 test("home screen uses three horizontal strips within the circular Venu 3S display", () => {
   assert.match(homeView, /mStartTop = 100/);
   assert.match(homeView, /mStartBottom = 158/);
-  assert.match(homeView, /mFreeTop = 166/);
+  assert.match(homeView, /mFreeTop = 167/);
   assert.match(homeView, /mFreeBottom = 291/);
   assert.match(homeView, /mMenuRowStep = 66/);
   assert.match(homeView, /if \(row == 0\)[\s\S]*?mHomeSelection = 1;[\s\S]*?else if \(row == 1\)[\s\S]*?mHomeSelection = 2;/);
