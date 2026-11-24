@@ -81,3 +81,20 @@ test('a failed start attempt never discards a potentially existing FIT session',
     assert.match(start, /if \(!started\) \{[\s\S]*?return false;/);
     assert.doesNotMatch(start, /mSession = null/);
 });
+
+test('watch upload updates the versioned activity manifest before acknowledging success', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const endpoint = await readFile(new URL('../supabase/functions/kajo-connect/index.ts', import.meta.url), 'utf8');
+    const helperStart = endpoint.indexOf('async function addActivityToSnapshotManifest');
+    const uploadStart = endpoint.indexOf('if (action === "upload-activity")');
+    assert.notEqual(helperStart, -1);
+    assert.notEqual(uploadStart, -1);
+    const helper = endpoint.slice(helperStart, endpoint.indexOf('Deno.serve', helperStart));
+    assert.match(helper, /from\("user_data"\)/);
+    assert.match(helper, /p_expected_version:\s*Number\(snapshot\.version/);
+    assert.match(helper, /admin\.rpc\("save_user_data"/);
+    assert.match(helper, /attempt < 3/);
+    const upload = endpoint.slice(uploadStart, endpoint.indexOf('// All watch requests after pairing', uploadStart));
+    assert.ok(upload.indexOf('addActivityToSnapshotManifest(admin, device.user_id, recordId)') > upload.indexOf('Activity upload could not be verified'));
+    assert.match(upload, /source: "garmin-connect-iq"/);
+});
