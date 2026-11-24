@@ -83,7 +83,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         mKajoLayout.configure(width, height);
         var cx = width / 2;
         drawCentered(dc, cx, mUnit * 0.075, "GESPEICHERT", mUnit * 0.72,
-            Graphics.FONT_SMALL, selectedRow ? Graphics.COLOR_WHITE : 0x98A5AB);
+            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
         dc.drawLine(62, mUnit * 0.17, 328, mUnit * 0.17);
 
@@ -116,7 +116,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             dc.setColor(selectedRow ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 58);
             drawCentered(dc, cx, y + 7, name, rowWidth - 22,
-                Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                Graphics.FONT_SMALL, selectedRow ? Graphics.COLOR_WHITE : 0x98A5AB);
             drawCentered(dc, cx, y + 30, date + " · " + type,
                 rowWidth - 22, Graphics.FONT_XTINY, 0x98A5AB);
             drawCentered(dc, cx, y + 44,
