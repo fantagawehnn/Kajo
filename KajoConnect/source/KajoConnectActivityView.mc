@@ -157,7 +157,13 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function updateWorkoutStepTimer() as Void {
         if (mWorkoutSteps.size() == 0 || mWorkoutSequenceComplete) { return; }
+        var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+        var duration = step["durationSeconds"] as Lang.Number;
+        var hasNextStep = mWorkoutStepIndex + 1 < mWorkoutSteps.size();
+
         if (mIsTransitioning) {
+            // Countdown läuft innerhalb der letzten drei Sekunden des aktuellen Abschnitts.
+            mWorkoutStepElapsedSeconds += 1;
             if (mTransitionCountdown > 1) {
                 mTransitionCountdown -= 1;
             } else {
@@ -169,14 +175,21 @@ class KajoConnectActivityView extends WatchUi.View {
             }
             return;
         }
-        var step = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
-        var duration = step["durationSeconds"] as Lang.Number;
+
         mWorkoutStepElapsedSeconds += 1;
-        if (mWorkoutStepElapsedSeconds >= duration) {
-            if (mWorkoutStepIndex + 1 < mWorkoutSteps.size()) {
-                mIsTransitioning = true;
-                mTransitionCountdown = 3;
-                notifyIntervalTransition();
+        var remaining = duration - mWorkoutStepElapsedSeconds;
+        if (hasNextStep && remaining > 0 && remaining <= 3) {
+            mIsTransitioning = true;
+            mTransitionCountdown = remaining;
+            notifyIntervalTransition();
+            return;
+        }
+
+        if (remaining <= 0) {
+            if (hasNextStep) {
+                mWorkoutStepIndex += 1;
+                mWorkoutStepElapsedSeconds = 0;
+                WatchUi.showToast("Neuer Trainingsabschnitt", null);
             } else {
                 mWorkoutSequenceComplete = true;
                 mWorkoutStepElapsedSeconds = duration;
