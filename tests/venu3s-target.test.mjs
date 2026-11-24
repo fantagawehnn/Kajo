@@ -28,7 +28,7 @@ const connectEndpoint = readFileSync(new URL("../supabase/functions/kajo-connect
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
   assert.deepEqual(products, ["venu3s"]);
-  assert.match(manifest, /minApiLevel="5\\.1\\.0"/);
+  assert.match(manifest, /minApiLevel="5\.1\.0"/);
 });
 
 test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compiles only the Venu 3S", () => {
