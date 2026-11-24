@@ -25,6 +25,10 @@ const database = {
                             setTimeout(() => transaction.oncomplete?.(), 0);
                         }, 30);
                         return request;
+                    },
+                    put(record) {
+                        indexedValues.set(record.key, record.value);
+                        setTimeout(() => transaction.oncomplete?.(), 0);
                     }
                 };
             }
@@ -33,7 +37,8 @@ const database = {
     }
 };
 
-globalThis.window = {};
+globalThis.window = { dispatchEvent() {} };
+globalThis.CustomEvent = class CustomEvent { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } };
 globalThis.indexedDB = {
     open() {
         const request = { result: database, onsuccess: null, onerror: null };
