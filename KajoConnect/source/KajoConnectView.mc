@@ -442,36 +442,46 @@ class KajoConnectView extends WatchUi.View {
             mSelectedBoat + " · " + compactSyncStatus(),
             Graphics.FONT_XTINY, mSyncStatus == "KAJO AKTUALISIERT" ? 0x25D3CB : 0x98A5AB);
 
-        // Hauptaktion: sichtbare Flaeche und Touch-Grenzen verwenden dieselben Koordinaten.
+        // Bei geplantem Training bleibt die große Startfläche erhalten.
+        // Ohne geplante Einheit erscheint nur ein kompakter Hinweis in derselben
+        // Schriftgröße wie die beiden darunterliegenden Menüeinträge.
         mStartTop = 94;
         mStartBottom = 198;
         var mainWidth = mKajoLayout.safeRectWidth(
             mStartTop, mStartBottom - mStartTop, mUnit * 0.78
         );
         var mainLeft = cx - (mainWidth / 2);
-        mStartLeft = mainLeft;
-        mStartRight = mainLeft + mainWidth;
 
-        dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(
-            mainLeft.toNumber(), mStartTop,
-            mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12
-        );
-        if (mHomeSelection == 0) {
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(
-                mainLeft.toNumber() - 3, mStartTop - 3,
-                mainWidth.toNumber() + 6, (mStartBottom - mStartTop).toNumber() + 6, 14
+        if (todaySessions.size() == 0) {
+            mStartLeft = 0;
+            mStartRight = 0;
+            drawHomeText(dc, cx, 137, mainWidth, 24,
+                "KEIN TRAINING FÜR HEUTE GEPLANT",
+                Graphics.FONT_SMALL, 0x98A5AB);
+        } else {
+            mStartLeft = mainLeft;
+            mStartRight = mainLeft + mainWidth;
+
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(
+                mainLeft.toNumber(), mStartTop,
+                mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12
             );
-        }
+            if (mHomeSelection == 0) {
+                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+                dc.drawRoundedRectangle(
+                    mainLeft.toNumber() - 3, mStartTop - 3,
+                    mainWidth.toNumber() + 6, (mStartBottom - mStartTop).toNumber() + 6, 14
+                );
+            }
 
-        // Drei feste Textzeilen ohne vertikale Ueberlappung.
-        drawHomeText(dc, cx, 108, mainWidth - 24, 25,
-            "TRAINING STARTEN", Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
-        drawHomeText(dc, cx, 139, mainWidth - 24, 25,
-            todayLabel, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
-        drawHomeText(dc, cx, 169, mainWidth - 24, 17,
-            todayDetail, Graphics.FONT_XTINY, Graphics.COLOR_BLACK);
+            drawHomeText(dc, cx, 108, mainWidth - 24, 25,
+                "TRAINING STARTEN", Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
+            drawHomeText(dc, cx, 139, mainWidth - 24, 25,
+                todayLabel, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+            drawHomeText(dc, cx, 169, mainWidth - 24, 17,
+                todayDetail, Graphics.FONT_XTINY, Graphics.COLOR_BLACK);
+        }
 
         // Sekundaeraktionen: getrennte Rechtecke mit 10 px Abstand.
         // Die gemeinsame Breite wird anhand der unteren Schaltflaeche berechnet,
