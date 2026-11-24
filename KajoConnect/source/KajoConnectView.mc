@@ -334,7 +334,7 @@ class KajoConnectView extends WatchUi.View {
 
         // Vier Menuepunkte als 2x2-Raster: Touch-Zonen entsprechen exakt den Karten.
         if (y >= mFreeTop && y <= mFreeBottom && x >= 48 && x <= 342) {
-            var row = y < 277 ? 0 : 1;
+            var row = y < 278 ? 0 : 1;
             var column = x < (mWidth / 2) ? 0 : 1;
             var item = (row * 2) + column;
             if (item == 0) {
@@ -362,23 +362,23 @@ class KajoConnectView extends WatchUi.View {
 
         // Kopfbereich
         dc.setColor(0x00D8CC, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 30, mUnit * 0.035, Graphics.ARC_CLOCKWISE, 205, 325);
-        dc.drawLine(cx - 12, 33, cx + 10, 24);
-        drawHomeText(dc, cx + 25, 17, 112, 26, "KAJO",
+        dc.drawArc(cx - 38, 53, mUnit * 0.035, Graphics.ARC_CLOCKWISE, 205, 325);
+        dc.drawLine(cx - 50, 56, cx - 28, 47);
+        drawHomeText(dc, cx + 12, 40, 112, 26, "KAJO",
             Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, 48, 245, 15, "SPORTART: " + mSelectedBoat + " · WILDWASSER",
+        drawHomeText(dc, cx, 70, 220, 15, "SPORTART: " + mSelectedBoat + " · WILDWASSER",
             Graphics.FONT_XTINY, 0xAAB7BD);
-        drawHomeText(dc, cx, 66, 250, 14, compactSyncStatus(),
+        drawHomeText(dc, cx, 87, 220, 14, compactSyncStatus(),
             Graphics.FONT_XTINY, mSyncStatus == "KAJO AKTUALISIERT" ? 0x00D8CC : 0x82939A);
 
         dc.setColor(0x42545A, Graphics.COLOR_BLACK);
-        dc.drawLine(78, 88, 312, 88);
-        drawHomeText(dc, cx, 94, 250, 18, "TRAINING FUER HEUTE",
+        dc.drawLine(78, 108, 312, 108);
+        drawHomeText(dc, cx, 113, 230, 18, "TRAINING FUER HEUTE",
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
 
         // Eine kompakte Trainingskarte mit drei strikt getrennten Textzeilen.
-        mStartTop = 116;
-        mStartBottom = 192;
+        mStartTop = 135;
+        mStartBottom = 204;
         var heroName = "KEIN TRAINING GEPLANT";
         var heroDetail = "Freies Training starten";
         var heroMeta = "TIPPE ZUM STARTEN";
@@ -396,20 +396,20 @@ class KajoConnectView extends WatchUi.View {
             heroMeta = "TAGESPLAN";
         }
 
-        var heroWidth = mKajoLayout.safeRectWidth(mStartTop, mStartBottom - mStartTop, mUnit * 0.78);
+        var heroWidth = mKajoLayout.safeRectWidth(mStartTop, mStartBottom - mStartTop, mUnit * 0.76);
         var heroLeft = cx - (heroWidth / 2);
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(), 76, 18);
+        dc.fillRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(), 69, 17);
         dc.setColor(0x00D8CC, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(), 76, 18);
-        drawHomeText(dc, cx, 129, (heroWidth * 0.82).toNumber(), 20,
+        dc.drawRoundedRectangle(heroLeft.toNumber(), mStartTop, heroWidth.toNumber(), 69, 17);
+        drawHomeText(dc, cx, 145, (heroWidth * 0.82).toNumber(), 19,
             heroName, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, 153, (heroWidth * 0.82).toNumber(), 15,
+        drawHomeText(dc, cx, 167, (heroWidth * 0.82).toNumber(), 15,
             heroDetail, Graphics.FONT_XTINY, 0xAAB7BD);
-        drawHomeText(dc, cx, 173, (heroWidth * 0.82).toNumber(), 13,
+        drawHomeText(dc, cx, 185, (heroWidth * 0.82).toNumber(), 13,
             heroMeta, Graphics.FONT_XTINY, 0x00D8CC);
 
-        drawHomeText(dc, cx, 199, 180, 18, "MENUE",
+        drawHomeText(dc, cx, 211, 180, 18, "MENUE",
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
 
         // 2x2 Raster statt vier untereinanderliegender Zeilen.
@@ -420,10 +420,10 @@ class KajoConnectView extends WatchUi.View {
         var cardHeight = 44;
         var leftCenter = cx - 73;
         var rightCenter = cx + 73;
-        var topRow = 222;
-        var bottomRow = 276;
-        mFreeTop = 218;
-        mFreeBottom = 326;
+        var topRow = 232;
+        var bottomRow = 282;
+        mFreeTop = 228;
+        mFreeBottom = 332;
 
         for (var item = 0; item < 4; item += 1) {
             var cardX = item % 2 == 0 ? leftCenter : rightCenter;
