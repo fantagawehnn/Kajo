@@ -209,6 +209,13 @@ class KajoConnectView extends WatchUi.View {
         mKajoLayout.drawTextFit(dc, x, y, text, maxWidth, preferredFont, color);
     }
 
+
+    function drawHomeText(dc as Dc, x as Lang.Number, top as Lang.Number,
+        width as Lang.Number, height as Lang.Number, text as Lang.String,
+        preferredFont, color as Lang.Number) as Void {
+        mKajoLayout.drawTextBox(dc, x, top, width, height, text, preferredFont, color);
+    }
+
     function setPlannedSessions(sessions as Lang.Array<Lang.Dictionary>) {
         mPlannedSessions = sessions;
         mPlanStartIndex = 0;
@@ -352,37 +359,41 @@ class KajoConnectView extends WatchUi.View {
         var cx = 195;
         var todaySessions = getTodaysSessions();
 
-        // Venu 3S: feste Pixelzonen statt prozentual verschobener Elemente.
-        // Kopfbereich
-        drawCentered(dc, cx, 34, "KAJO", 190, Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+        // Venu 3S / 390 x 390: jede Zeile besitzt eine eigene, nicht ueberlappende Zone.
+        // Zonen: Kopf 24-54 | Boot 76-118 | Hauptkarte 136-226 | Menue 244-358.
+        // Hintergrundflaechen werden zuerst gezeichnet, Text liegt danach innerhalb der Karten.
 
-        // Bootsklassen-Auswahl
-        mBoatTop = 78;
-        mBoatBottom = 116;
+        // 1. Kopfzone: y=24..54, Textzone y=28..52.
+        drawHomeText(dc, cx, 28, 190, 24, "KAJO",
+            Graphics.FONT_LARGE, Graphics.COLOR_WHITE);
+
+        // 2. Bootsauswahl: Aussenflaeche x=70..320, y=76..118.
+        mBoatTop = 76;
+        mBoatBottom = 118;
         mBoatLeft = 70;
         mBoatRight = 320;
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(70, 78, 250, 38, 14);
+        dc.fillRoundedRectangle(70, 76, 250, 42, 14);
         var classLabels = ["K1", "C1", "C2"];
         for (var b = 0; b < 3; b += 1) {
             var segmentX = 70 + (b * 83);
             var segmentWidth = b == 2 ? 84 : 83;
             if (classLabels[b] == mSelectedBoat) {
                 dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-                dc.fillRoundedRectangle(segmentX, 78, segmentWidth, 38, 12);
+                dc.fillRoundedRectangle(segmentX, 76, segmentWidth, 42, 12);
             }
-            drawCentered(dc, segmentX + (segmentWidth / 2), 85, classLabels[b],
-                70, Graphics.FONT_MEDIUM,
+            drawHomeText(dc, segmentX + (segmentWidth / 2), 85,
+                segmentWidth - 12, 24, classLabels[b], Graphics.FONT_MEDIUM,
                 classLabels[b] == mSelectedBoat ? Graphics.COLOR_BLACK : Graphics.COLOR_WHITE);
         }
 
-        // Eine einzige, dominante Trainingsfläche ohne Unterüberschriften.
-        mStartTop = 132;
-        mStartBottom = 218;
+        // 3. Hauptaktion: Karte x=42..348, y=136..226.
+        mStartTop = 136;
+        mStartBottom = 226;
         dc.setColor(0x07191D, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(42, 132, 306, 86, 22);
+        dc.fillRoundedRectangle(42, 136, 306, 90, 22);
         dc.setColor(0x00E5CC, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(42, 150, 5, 50, 2);
+        dc.fillRoundedRectangle(54, 156, 5, 50, 2);
 
         var heroName = "FREIES TRAINING";
         if (todaySessions.size() == 1) {
@@ -392,46 +403,41 @@ class KajoConnectView extends WatchUi.View {
         } else if (todaySessions.size() > 1) {
             heroName = todaySessions.size().toString() + " EINHEITEN HEUTE";
         }
-        drawCentered(dc, 195, 162, heroName, 265,
+        drawHomeText(dc, cx, 166, 270, 30, heroName,
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
 
-        // Keine doppelte Aktion: Ohne geplante Einheit steht FREIES TRAINING
-        // bereits als Hauptkachel bereit; dann erscheinen drei Navigationspunkte.
+        // 4. Navigation: Karten haben je 26 px Hoehe und mindestens 8 px Abstand.
         var labels = [];
         var rowYs = [];
-        var rowXs = [];
         var rowWidths = [];
         if (todaySessions.size() == 0) {
             mMenuRowCount = 3;
             mMenuRowStep = 36;
-            mFreeTop = 246;
-            mFreeBottom = 350;
+            mFreeTop = 244;
+            mFreeBottom = 352;
             labels = ["TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
-            rowYs = [246, 282, 318];
-            rowXs = [65, 75, 110];
-            rowWidths = [260, 240, 170];
+            rowYs = [248, 284, 320];
+            rowWidths = [260, 240, 200];
         } else {
             mMenuRowCount = 4;
-            mMenuRowStep = 32;
-            mFreeTop = 226;
-            mFreeBottom = 354;
+            mMenuRowStep = 28;
+            mFreeTop = 240;
+            mFreeBottom = 356;
             labels = ["FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
-            rowYs = [226, 258, 290, 322];
-            rowXs = [55, 55, 75, 115];
-            rowWidths = [280, 280, 240, 160];
+            rowYs = [240, 268, 296, 324];
+            rowWidths = [280, 280, 240, 200];
         }
 
         for (var row = 0; row < mMenuRowCount; row += 1) {
             var rowY = rowYs[row];
-            var rowX = rowXs[row];
             var rowWidth = rowWidths[row];
+            var rowX = cx - (rowWidth / 2);
             dc.setColor(0x071316, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(rowX, rowY, rowWidth, 26, 9);
+            dc.fillRoundedRectangle(rowX, rowY, rowWidth, 24, 8);
             dc.setColor(0x17343A, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(rowX, rowY, rowWidth, 26, 9);
-            drawCentered(dc, 195, rowY + 5, labels[row],
-                rowWidth - 24, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            dc.drawRoundedRectangle(rowX, rowY, rowWidth, 24, 8);
+            drawHomeText(dc, cx, rowY + 3, rowWidth - 24, 18,
+                labels[row], Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
         }
     }
-
 }
