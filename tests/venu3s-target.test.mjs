@@ -5,6 +5,8 @@ import { readFileSync, readdirSync } from "node:fs";
 const manifest = readFileSync(new URL("../KajoConnect/manifest.xml", import.meta.url), "utf8");
 const buildScript = readFileSync(new URL("../KajoConnect/build.ps1", import.meta.url), "utf8");
 const activityDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityDelegate.mc", import.meta.url), "utf8");
+const homeDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectDelegate.mc", import.meta.url), "utf8");
+const menuDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectMenuViewDelegate.mc", import.meta.url), "utf8");
 const recordingEngine = readFileSync(new URL("../KajoConnect/source/KajoConnectRecordingEngine.mc", import.meta.url), "utf8");
 const activityView = readFileSync(new URL("../KajoConnect/source/KajoConnectActivityView.mc", import.meta.url), "utf8");
 const layoutView = readFileSync(new URL("../KajoConnect/source/KajoLayout.mc", import.meta.url), "utf8");
@@ -36,9 +38,12 @@ test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compil
   assert.match(buildScript, /outputInfo\.Length -le 0/);
 });
 
-test("Activity controls retain the intended Venu 3S button mapping", () => {
+test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
+  assert.match(activityDelegate, /function onMenu\(\)[\s\S]*?nextDisplayPage\(1\)/);
+  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?moveHomeSelection\(1\)/);
+  assert.match(menuDelegate, /function onMenu\(\)[\s\S]*?moveSelection\(1\)/);
 });
 
 test("Recording uses Garmin kayaking with whitewater subsport", () => {
