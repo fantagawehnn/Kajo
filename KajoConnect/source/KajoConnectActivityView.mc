@@ -1143,9 +1143,7 @@ class KajoConnectActivityView extends WatchUi.View {
         }
 
         if (mStatus == "AUFZEICHNUNG") {
-            // Pfeile und Punkte sind Navigation, keine zusaetzlichen Unterueberschriften.
-            drawFit(dc, 130, 344, "<", 18, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-            drawFit(dc, 260, 344, ">", 18, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
+            // Nur dezente Seitenpunkte; die Navigation erfolgt per Wischgeste.
             var visibleDots = mPageCount < 5 ? mPageCount : 5;
             var firstDotX = 195 - ((visibleDots - 1) * 9);
             for (var dot = 0; dot < visibleDots; dot += 1) {
