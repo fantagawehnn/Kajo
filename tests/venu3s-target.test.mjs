@@ -154,8 +154,9 @@ test("completed activities are stored locally and displayed in watch history", (
   assert.match(activityView, /entry\["distanceMeters"\] = mFinalDistanceMeters/);
   assert.match(activityView, /entry\["averageHeartRateBpm"\] = mFinalAverageHeartRateValue/);
   assert.match(historyView, /Storage\.getValue\("kajoActivityHistory"\)/);
-  assert.match(historyView, /"HISTORIE"/);
-  assert.match(historyView, /"BPM"/);
+  assert.match(historyView, /extends WatchUi\.Menu2/);
+  assert.match(historyView, /"TRAININGSHISTORIE"/);
+  assert.match(historyView, /" bpm"/);
   assert.match(historyView, /"Details in der KAJO App"/);
   assert.match(homeView, /getTodaysSessions\(\)/);
 });
