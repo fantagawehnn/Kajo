@@ -29,6 +29,8 @@ class KajoConnectView extends WatchUi.View {
     var mPlanRowHeight = 0;
     var mPlanStartIndex = 0;
     var mMenuStartIndex = 0;
+    var mMenuRowStep as Lang.Number = 32;
+    var mMenuRowCount as Lang.Number = 4;
     var mApi as KajoConnectApi;
     var mSyncStatus as Lang.String = "NICHT MIT KAJO VERBUNDEN";
     var mEndpoint as Lang.String = "https://zgvargkfzgekokuisarv.supabase.co/functions/v1/kajo-connect";
@@ -316,8 +318,18 @@ class KajoConnectView extends WatchUi.View {
             return;
         }
         if (y >= mFreeTop && y <= mFreeBottom) {
-            var row = Math.floor((y - mFreeTop) / 32).toNumber();
-            if (row == 0) {
+            var row = Math.floor((y - mFreeTop) / mMenuRowStep).toNumber();
+            if (mMenuRowCount == 3) {
+                if (row == 0) {
+                    var planView = new KajoConnectWorkoutListView(self);
+                    WatchUi.pushView(planView, new KajoConnectWorkoutListDelegate(planView), WatchUi.SLIDE_UP);
+                } else if (row == 1) {
+                    WatchUi.showToast("Trainingshistorie ist noch nicht verfuegbar", null);
+                } else if (row == 2) {
+                    var settingsView = new KajoConnectMenuView(self);
+                    WatchUi.pushView(settingsView, new KajoConnectMenuViewDelegate(settingsView), WatchUi.SLIDE_UP);
+                }
+            } else if (row == 0) {
                 openActivityView(null);
             } else if (row == 1) {
                 var listView = new KajoConnectWorkoutListView(self);
@@ -383,14 +395,33 @@ class KajoConnectView extends WatchUi.View {
         drawCentered(dc, 195, 162, heroName, 265,
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
 
-        // Vier gleichwertige Navigationsflächen – jeweils nur eine Textzeile.
-        mFreeTop = 226;
-        mFreeBottom = 354;
-        var labels = ["FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
-        var rowYs = [226, 258, 290, 322];
-        var rowXs = [55, 55, 75, 115];
-        var rowWidths = [280, 280, 240, 160];
-        for (var row = 0; row < 4; row += 1) {
+        // Keine doppelte Aktion: Ohne geplante Einheit steht FREIES TRAINING
+        // bereits als Hauptkachel bereit; dann erscheinen drei Navigationspunkte.
+        var labels = [];
+        var rowYs = [];
+        var rowXs = [];
+        var rowWidths = [];
+        if (todaySessions.size() == 0) {
+            mMenuRowCount = 3;
+            mMenuRowStep = 36;
+            mFreeTop = 246;
+            mFreeBottom = 350;
+            labels = ["TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
+            rowYs = [246, 282, 318];
+            rowXs = [65, 75, 110];
+            rowWidths = [260, 240, 170];
+        } else {
+            mMenuRowCount = 4;
+            mMenuRowStep = 32;
+            mFreeTop = 226;
+            mFreeBottom = 354;
+            labels = ["FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"];
+            rowYs = [226, 258, 290, 322];
+            rowXs = [55, 55, 75, 115];
+            rowWidths = [280, 280, 240, 160];
+        }
+
+        for (var row = 0; row < mMenuRowCount; row += 1) {
             var rowY = rowYs[row];
             var rowX = rowXs[row];
             var rowWidth = rowWidths[row];
