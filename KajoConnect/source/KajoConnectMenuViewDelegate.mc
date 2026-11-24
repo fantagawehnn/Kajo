@@ -13,7 +13,7 @@ class KajoConnectMenuViewDelegate extends WatchUi.BehaviorDelegate {
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
-            mView.handleTap(100);
+            mView.activateSelection();
             return true;
         }
         if (key == WatchUi.KEY_ESC) {
@@ -21,6 +21,11 @@ class KajoConnectMenuViewDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
         return false;
+    }
+
+    function onMenu() as Lang.Boolean {
+        mView.moveSelection(1);
+        return true;
     }
 
     function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
