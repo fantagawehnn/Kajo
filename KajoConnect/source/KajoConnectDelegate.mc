@@ -3,9 +3,9 @@ import Toybox.WatchUi;
 
 class KajoConnectDelegate extends WatchUi.BehaviorDelegate {
 
-    var mView;
+    var mView as KajoConnectView;
 
-    function initialize(view) {
+    function initialize(view as KajoConnectView) {
         BehaviorDelegate.initialize();
         mView = view;
     }
@@ -16,38 +16,29 @@ class KajoConnectDelegate extends WatchUi.BehaviorDelegate {
             mView.activateHomeSelection();
             return true;
         }
-        if (key == WatchUi.KEY_ESC) {
-            mView.openSettings();
-            return true;
-        }
+        // ESC is the native Back action on the Venu 3S. At the root page
+        // it is deliberately not repurposed as a settings shortcut.
         return false;
     }
 
-    function onTap(clickEvent) {
-
-        var coordinates = clickEvent.getCoordinates();
-
-        var x = coordinates[0];
-        var y = coordinates[1];
-
-        mView.handleTap(x, y);
-
+    function onMenu() as Lang.Boolean {
+        mView.openSettings();
         return true;
     }
 
-    function onNextPage() {
+    function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
+        var coordinates = clickEvent.getCoordinates();
+        mView.handleTap(coordinates[0], coordinates[1]);
+        return true;
+    }
+
+    function onNextPage() as Lang.Boolean {
         mView.scrollPlan(1);
         return true;
     }
 
-    function onPreviousPage() {
+    function onPreviousPage() as Lang.Boolean {
         mView.scrollPlan(-1);
-        return true;
-    }
-
-    // Mittlere Taste: Fokus zwischen den drei Startseiten-Einträgen wechseln.
-    function onMenu() as Lang.Boolean {
-        mView.moveHomeSelection(1);
         return true;
     }
 }
