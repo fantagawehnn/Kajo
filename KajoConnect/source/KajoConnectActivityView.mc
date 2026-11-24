@@ -671,10 +671,8 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function onTimer() as Void {
-        if (mStatus == "AUFZEICHNUNG") {
-            mElapsedSeconds += 1;
-            updateWorkoutStepTimer();
-        }
+        if (mStatus == "AUFZEICHNUNG") { mElapsedSeconds += 1; }
+        if (mStatus == "AUFZEICHNUNG") { updateWorkoutStepTimer(); }
         WatchUi.requestUpdate();
     }
     function onPosition(positionInfo as Position.Info) as Void {
