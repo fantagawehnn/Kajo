@@ -812,8 +812,9 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
     if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
 
     const userId = activeAppUserId;
+    const expectedActivationSequence = activationSequence;
     const ensureCurrentUser = () => {
-        if (!appUserReady || activeAppUserId !== userId) {
+        if (!appUserReady || activeAppUserId !== userId || activationSequence !== expectedActivationSequence) {
             throw new Error('Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.');
         }
     };
@@ -3380,8 +3381,11 @@ async function syncGarminTodayOnOpen(userId) {
     if (!userId || !appUserReady || activeAppUserId !== userId) return;
     const date = getLocalCalendarDate();
     const runKey = userId + ':' + date;
-    if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(runKey)) return;
-    garminDailySyncInFlight.add(runKey);
+    const syncActivationSequence = activationSequence;
+    const inFlightKey = runKey + ':' + syncActivationSequence;
+    const isCurrentSync = () => activeAppUserId === userId && appUserReady && activationSequence === syncActivationSequence;
+    if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(inFlightKey)) return;
+    garminDailySyncInFlight.add(inFlightKey);
 
     try {
         // Bereits gespeicherte Garmin-Tageswerte und der Live-Verbindungsstatus
@@ -3410,7 +3414,7 @@ async function syncGarminTodayOnOpen(userId) {
             healthHistoryPromise,
             callGarminFunction({ action: 'status' })
         ]);
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentSync()) return;
         if (connection.connection?.status !== 'connected') {
             try { setUserLocalSetting('garmin_connected', 'false'); } catch (_) {}
             return;
@@ -3424,13 +3428,15 @@ async function syncGarminTodayOnOpen(userId) {
         for (let attempt = 0; attempt < 4; attempt++) {
             try {
                 response = await callGarminFunction({ action: 'sync-today', date });
+                if (!isCurrentSync()) return;
             } catch (syncError) {
+                if (!isCurrentSync()) return;
                 const rateLimited = /HTTP 429|rate.?limit/i.test(syncError?.message || '');
                 if (!rateLimited || attempt === 3) throw syncError;
                 const waitSeconds = 30 + attempt * 15;
                 console.info('KAJO: Garmin-Aktivitätsabruf wartet wegen API-Limit', waitSeconds, 'Sekunden.');
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-                if (activeAppUserId !== userId || !appUserReady) return;
+                if (!isCurrentSync()) return;
                 continue;
             }
             health = response.sync?.healthSync || null;
@@ -3443,9 +3449,9 @@ async function syncGarminTodayOnOpen(userId) {
             if (activeAppUserId !== userId || !appUserReady) return;
         }
 
-        if (activeAppUserId !== userId || !appUserReady) return;
-        const activityCloudSync = await loadGarminActivitiesFromCloud();
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentSync()) return;
+        const activityCloudSync = await loadGarminActivitiesFromCloud(userId);
+        if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
             void backfillGarminAnalysisOnOpen(userId, activationSequence);
         }
@@ -3466,7 +3472,7 @@ async function syncGarminTodayOnOpen(userId) {
             console.warn('KAJO: Neue Garmin-Telemetrie konnte noch nicht in die Cloud übertragen werden:', telemetryCloudError);
         }
 
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentSync()) return;
         const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
             || telemetryCloud.failed;
@@ -3477,7 +3483,7 @@ async function syncGarminTodayOnOpen(userId) {
             if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
                 const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
-                    if (activeAppUserId === userId && appUserReady && !garminDailySyncCompleted.has(runKey)) {
+                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
                         void syncGarminTodayOnOpen(userId);
                     }
                 }, retryDelay);
@@ -3497,12 +3503,12 @@ async function syncGarminTodayOnOpen(userId) {
         }
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
-        if (activeAppUserId === userId && appUserReady) {
+        if (isCurrentSync()) {
             setGarminSyncResult('Automatischer Tagesabgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), 'error');
             setGarminSyncIndicator('current', 'Verbunden');
         }
     } finally {
-        garminDailySyncInFlight.delete(runKey);
+        garminDailySyncInFlight.delete(inFlightKey);
     }
 }
 
