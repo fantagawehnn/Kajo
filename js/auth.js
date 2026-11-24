@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client.js';
+import { getActivationUiState } from './activation-ui-state.js?v=1';
 
 const authScreen = document.getElementById('auth-screen');
 const authBootScreen = document.getElementById('auth-boot-screen');
@@ -17,7 +18,17 @@ const logoutButton = document.getElementById('auth-logout');
 
 let isSignUp = false;
 let currentAuthUserId = null;
+let localReadyUserId = null;
 let readyUserId = null;
+
+const mobileHeader = document.querySelector('.kajo-mobile-header');
+const activationNotice = document.createElement('div');
+activationNotice.id = 'auth-local-sync-notice';
+activationNotice.className = 'hidden mb-4 rounded-xl border border-sky-500/30 bg-sky-950/40 px-4 py-3 text-sm text-sky-100';
+activationNotice.setAttribute('role', 'status');
+activationNotice.setAttribute('aria-live', 'polite');
+activationNotice.textContent = 'Lokale Datenansicht – der Cloud-Abgleich läuft. Die App ist bis zum Abschluss vorübergehend schreibgeschützt.';
+appMain.prepend(activationNotice);
 
 function withAuthTimeout(promise, label, timeoutMs = 20000) {
     let timeoutId;
@@ -41,17 +52,30 @@ function handleAuthCheckError(error) {
 
 function showApp(session) {
     const signedIn = Boolean(session?.user);
-    currentAuthUserId = session?.user?.id || null;
-    if (!signedIn) readyUserId = null;
-    const ready = signedIn && readyUserId === currentAuthUserId;
+    const nextUserId = session?.user?.id || null;
+    if (!nextUserId || (currentAuthUserId && nextUserId !== currentAuthUserId)) {
+        localReadyUserId = null;
+        readyUserId = null;
+    }
+    currentAuthUserId = nextUserId;
+    const { visible, readOnly } = getActivationUiState(
+        currentAuthUserId,
+        localReadyUserId,
+        readyUserId
+    );
 
-    // Ein bestätigter Login zeigt nie erneut das Anmeldeformular.
-    // Während die Kontodaten geladen werden, bleibt nur der neutrale Startbildschirm sichtbar.
+    // Lokale Daten dürfen früh erscheinen, bleiben bis zum abgeschlossenen
+    // Cloud-Abgleich aber vollständig schreibgeschützt.
     authScreen.classList.toggle('hidden', signedIn);
-    authBootScreen?.classList.toggle('hidden', !signedIn || ready);
-    appNavigation.classList.toggle('hidden', !ready);
-    appMain.classList.toggle('hidden', !ready);
-    userBar.classList.toggle('hidden', !ready);
+    authBootScreen?.classList.toggle('hidden', !signedIn || visible);
+    appNavigation.classList.toggle('hidden', !visible);
+    appMain.classList.toggle('hidden', !visible);
+    userBar.classList.toggle('hidden', !visible);
+    appNavigation.inert = readOnly;
+    appMain.inert = readOnly;
+    if (mobileHeader) mobileHeader.inert = readOnly;
+    appMain.setAttribute('aria-busy', String(readOnly));
+    activationNotice.classList.toggle('hidden', !readOnly);
     if (signedIn) userEmail.textContent = session.user.email || 'Angemeldet';
 }
 
@@ -62,11 +86,23 @@ window.addEventListener('endurance:user-load-error', (event) => {
     setMessage('Deine Kontodaten konnten nicht geladen werden: ' + (detail.message || 'Unbekannter Fehler') + ' Bitte lade die Seite neu. Deine gespeicherten Daten wurden nicht gelöscht.', true);
 });
 
+window.addEventListener('endurance:user-local-ready', (event) => {
+    const userId = event.detail?.userId;
+    if (!userId || (currentAuthUserId && userId !== currentAuthUserId)) return;
+    localReadyUserId = userId;
+    if (userId === currentAuthUserId) {
+        showApp({ user: { id: userId, email: userEmail.textContent } });
+    }
+});
+
 window.addEventListener('endurance:user-ready', (event) => {
     const userId = event.detail?.userId;
-    if (!userId || userId !== currentAuthUserId) return;
+    if (!userId || (currentAuthUserId && userId !== currentAuthUserId)) return;
+    localReadyUserId = userId;
     readyUserId = userId;
-    showApp({ user: { id: userId, email: userEmail.textContent } });
+    if (userId === currentAuthUserId) {
+        showApp({ user: { id: userId, email: userEmail.textContent } });
+    }
 });
 
 function setMode(signUp) {

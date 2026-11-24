@@ -3478,16 +3478,42 @@ async function handleAuthSession(session) {
             // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
             // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
             // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
-            const [loadedUserId, cloudSnapshot, cloudActivities, baseline] = await Promise.all([
-                withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000),
+            // Den lokalen Kontostand zuerst bereitstellen. Die unabhängigen
+            // Cloud-/Baseline-Lesevorgänge laufen parallel weiter, blockieren aber
+            // nicht mehr die erste lokale, ausdrücklich schreibgeschützte Ansicht.
+            const localStatePromise = withActivationTimeout(
+                loadStateForUser(userId),
+                'Das Laden deiner lokalen Kontodaten',
+                20000
+            );
+            const cloudLoadPromise = Promise.all([
                 withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
                 withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000),
                 withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
             ]);
+            // Cloud-Fehler werden beim späteren await weitergereicht. Der Handler
+            // verhindert eine unhandled rejection, falls der lokale Store länger lädt.
+            void cloudLoadPromise.catch(() => {});
+
+            const loadedUserId = await localStatePromise;
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             if (loadedUserId !== userId) {
                 throw new Error('Der lokale Datenspeicher gehört nicht mehr zum angemeldeten Konto.');
             }
+
+            await domReady;
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            try {
+                initializeSettings();
+                initEngine();
+            } catch (localRenderError) {
+                console.error('Die lokale KAJO-Ansicht konnte nicht vollständig aufgebaut werden:', localRenderError);
+            }
+            window.dispatchEvent(new CustomEvent('endurance:user-local-ready', { detail: { userId } }));
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+            const [cloudSnapshot, cloudActivities, baseline] = await cloudLoadPromise;
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
             // Lokale Rohtelemetrie vor dem Anwenden des maßgeblichen Cloud-Snapshots
             // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
             const localTelemetryForMigration = getGarminTelemetryRecordsForCloud();
@@ -3548,36 +3574,30 @@ async function handleAuthSession(session) {
             const migrationCandidates = Array.from(migrationMap.values());
             mergeGarminTelemetryRecords(migrationCandidates);
 
-            await domReady;
-            if (sequence !== activationSequence || activeAppUserId !== userId) return;
-
-            // Die Anmeldung und das Laden der Kontodaten sind abgeschlossen.
-            // Die App wird jetzt sichtbar gemacht, bevor die aufwendige Erst-
-            // darstellung startet. So bleibt die Anmeldeseite nicht stehen,
-            // während Dashboard und Diagramme initial gerendert werden.
-            appUserReady = true;
-            window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
-            await new Promise(resolve => requestAnimationFrame(() => resolve()));
-
+            // Den abgeglichenen Datenstand vollständig rendern, bevor die
+            // schreibgeschützte lokale Ansicht für Eingaben freigegeben wird.
             try {
                 initializeSettings();
                 initEngine();
-                // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
-                // nicht erforderlich. Sie werden nach dem ersten Rendern parallel
-                // zum Tagesabgleich geladen; beide Aufrufer teilen einen laufenden
-                // Abruf, damit nicht unnötig dieselben Seiten doppelt gelesen werden.
-                void loadGarminActivitiesFromCloud(userId).catch(garminLoadError => {
-                    console.warn('Garmin-Cloud-Aktivitäten konnten im Hintergrund nicht geladen werden:', garminLoadError);
-                });
-                // Der Tagesabgleich läuft ebenfalls nach dem ersten Rendern.
-                void syncGarminTodayOnOpen(userId);
-                initializeNutritionRemindersWhenIdle();
             } catch (renderError) {
-                console.error('Die App-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
+                console.error('Die abgeglichene KAJO-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
                 window.dispatchEvent(new CustomEvent('endurance:user-init-error', {
                     detail: { message: renderError?.message || 'Fehler beim Aufbau der App-Oberfläche.' }
                 }));
             }
+
+            appUserReady = true;
+            window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+            // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
+            // nicht erforderlich. Sie werden nach der Freigabe parallel zum
+            // Tagesabgleich geladen; beide Aufrufer teilen einen laufenden Abruf.
+            void loadGarminActivitiesFromCloud(userId).catch(garminLoadError => {
+                console.warn('Garmin-Cloud-Aktivitäten konnten im Hintergrund nicht geladen werden:', garminLoadError);
+            });
+            void syncGarminTodayOnOpen(userId);
+            initializeNutritionRemindersWhenIdle();
 
             // Der erste sichtbare App-Aufbau wartet nicht auf den Telemetrie-Upload.
             // Daten werden erst nach erfolgreichem Cloud-Readback lokal bereinigt.

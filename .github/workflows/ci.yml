@@ -40,6 +40,7 @@ jobs:
           node --check js/daily-heart-rate.js
           node --check js/daily-hr-activity.js
           node --check js/main.js
+          node --check js/activation-ui-state.js
           node --check js/garmin-sync-history.js
           node --check js/analysis-insights.js
           node --check js/calculations.js
@@ -81,6 +82,9 @@ jobs:
 
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
+
+      - name: Run activation UI state tests
+        run: node --experimental-default-type=module --test tests/activation-ui-state.test.mjs
 
       - name: Run split cloud activity storage tests
         run: node --experimental-default-type=module --test tests/cloud-activities.test.mjs
