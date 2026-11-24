@@ -447,6 +447,11 @@ class KajoConnectView extends WatchUi.View {
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
         dc.fillRoundedRectangle(mainLeft.toNumber(), mStartTop,
             mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12);
+        if (mHomeSelection == 0) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(mainLeft.toNumber() - 3, mStartTop - 3,
+                mainWidth.toNumber() + 6, (mStartBottom - mStartTop).toNumber() + 6, 14);
+        }
         drawHomeText(dc, cx, 139, mainWidth - 20, 24,
             "TRAINING STARTEN", Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
         drawHomeText(dc, cx, 171, mainWidth - 22, 26,
@@ -470,9 +475,15 @@ class KajoConnectView extends WatchUi.View {
                 ? mPlannedSessions.size().toString() + " EINHEITEN GESPEICHERT"
                 : "OHNE GEPLANTE EINHEIT";
 
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var selectedRow = (item + 1) == mHomeSelection;
+            dc.setColor(selectedRow ? 0x123034 : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRoundedRectangle(secondaryLeft.toNumber(), top,
                 secondaryWidth.toNumber(), 44, 8);
+            if (selectedRow) {
+                dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+                dc.drawRoundedRectangle(secondaryLeft.toNumber(), top,
+                    secondaryWidth.toNumber(), 44, 8);
+            }
             dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
             dc.fillRectangle(secondaryLeft.toNumber(), top, 3, 44);
             drawHomeText(dc, cx, top + 4, secondaryWidth - 18, 18,
