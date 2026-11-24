@@ -332,6 +332,13 @@ class KajoConnectView extends WatchUi.View {
         return todaysSessions;
     }
 
+    function setBoatClass(boatClass as Lang.String) as Void {
+        if (boatClass != "K1" && boatClass != "C1" && boatClass != "C2") { return; }
+        mSelectedBoat = boatClass;
+        Storage.setValue("kajoSelectedBoat", mSelectedBoat);
+        WatchUi.requestUpdate();
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         if (y >= 48 && y <= 66 && x >= 54 && x <= 336) {
             var relativeX = x - 54;
