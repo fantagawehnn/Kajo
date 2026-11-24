@@ -64,7 +64,9 @@ Die Berechnung folgt der bestehenden KAJO-Logik in `js/training-load.js`:
 
 Die Uhr berechnet keine eigene HFmax, Ruhe-HF oder abweichende Zonen. Die aktuellen Grenzwerte werden lokal mit Datum gespeichert; veraltete Tageswerte werden nicht als aktuelle Zonen übernommen. Ohne gültige Grenzen erscheint „ZONE --“.
 
-Die lokale Verlaufsliste `kajoActivityHistory` speichert Anzeigeformate und zusätzlich ISO-Datum, Dauer in Sekunden sowie – sofern verfügbar – Distanz in Metern und numerischen Durchschnittspuls. Fehlende Messwerte werden ausgelassen und nicht als Null gespeichert. Diese Historie ist weiterhin nicht mit dem KAJO-Konto synchronisiert.
+Die lokale Verlaufsliste `kajoActivityHistory` speichert Anzeigeformate und zusätzlich ISO-Startdatum, Startzeitstempel, Dauer in Sekunden sowie – sofern verfügbar – Distanz in Metern und numerischen Durchschnittspuls. Fehlende Messwerte werden ausgelassen und nicht als Null gespeichert. Nach Abschluss wird der Datensatz zusätzlich in einer lokalen Upload-Warteschlange abgelegt. Bei bestehender Kopplung versucht die Uhr den Upload an den `kajo-connect`-Endpunkt; fehlgeschlagene Übertragungen bleiben für einen späteren Versuch vorgemerkt. Der Endpunkt legt die Aktivität mit einer stabilen, gerätebezogenen ID in der vorhandenen `activities`-Tabelle ab. Wiederholte Uploads derselben Geräteaktivität sind dadurch idempotent. Die KAJO-App kann diese Zeilen über ihren bestehenden Cloud-Aktivitätsabruf einlesen.
+
+Die Geräte-ID und der Startzeitstempel identifizieren Wiederholungsversuche derselben Watch-Aufzeichnung. Eine spätere separate Garmin-FIT-/Garmin-Connect-Importaktivität besitzt jedoch eine andere Quell-ID; eine automatische Zusammenführung dieser beiden Quellen ist damit noch nicht umgesetzt.
 
 ## 6. Noch offen
 
