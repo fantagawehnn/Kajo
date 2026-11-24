@@ -39,6 +39,7 @@ jobs:
           node --check js/garmin-heart-rate-sync.js
           node --check js/daily-heart-rate.js
           node --check js/daily-hr-activity.js
+          node --check js/strength-database.js
           node --check js/main.js
           node --check js/auth.js
           node --check js/activation-ui-state.js
@@ -81,6 +82,9 @@ jobs:
           node --check supabase/functions/garmin-personal/activity-date.js
           node --check supabase/functions/garmin-personal/activity-scan-plan.js
           node --check supabase/functions/garmin-personal/fit-download-retry.js
+
+      - name: Run automatic strength database tests
+        run: node --experimental-default-type=module --test tests/strength-database.test.mjs
 
       - name: Run regression smoke tests
         run: node tests/regression-smoke.mjs
