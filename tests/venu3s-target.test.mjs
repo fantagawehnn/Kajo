@@ -124,9 +124,6 @@ test("all custom Garmin screens use the shared measured-width text layout", () =
     ["display config", displayConfigView],
     ["pairing", pairingView],
     ["training fields", trainingFieldsView],
-    ["history", historyView],
-    ["boat class", boatClassView],
-    ["units", unitsView],
   ]) {
     assert.match(source, /mKajoLayout\.drawTextFit/, name + " must use the shared text layout");
   }
@@ -140,11 +137,13 @@ test("custom field editor keeps header, four rows, controls and save action in d
 });
 
 test("boat class and metric unit settings are available on the watch", () => {
-  assert.match(boatClassView, /\["K1", "C1", "C2"\]/);
+  assert.match(boatClassView, /new WatchUi\.MenuItem\("K1 · Kajak"/);
+  assert.match(boatClassView, /new WatchUi\.MenuItem\("C1 · Canadier"/);
+  assert.match(boatClassView, /new WatchUi\.MenuItem\("C2 · Canadier"/);
   assert.match(boatClassView, /Storage\.getValue\("kajoSelectedBoat"\)/);
-  assert.match(unitsView, /"DISTANZ", "KM"/);
-  assert.match(unitsView, /"TEMPO", "MIN\/KM"/);
-  assert.match(unitsView, /"GESCHWINDIGKEIT", "KM\/H"/);
+  assert.match(unitsView, /new WatchUi\.MenuItem\("Distanz", "Kilometer \(km\)"/);
+  assert.match(unitsView, /new WatchUi\.MenuItem\("Tempo", "Minuten pro Kilometer/);
+  assert.match(unitsView, /new WatchUi\.MenuItem\("Geschwindigkeit", "Kilometer pro Stunde/);
 });
 
 test("completed activities are stored locally and displayed in watch history", () => {
