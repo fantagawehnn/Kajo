@@ -1535,6 +1535,9 @@ function recordGarminActivityCoverageRange(startDate, endDate) {
 
 
 async function syncGarminHeartRateRange(startDate, endDate, status) {
+    const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence;
     const pending = state.rawActivities.filter(activity => {
         const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
         const date = String(activity.date || '').slice(0, 10);
@@ -1550,6 +1553,7 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
     let authFailed = false;
     const errors = [];
     for (let index = 0; index < pending.length; index++) {
+        if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
         const activity = pending[index];
         const id = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId);
         const message = status?.querySelector('#garmin-sync-progress-message');
@@ -1559,14 +1563,18 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
             for (let attempt = 0; attempt < 3; attempt++) {
                 try {
                     detail = await downloadGarminFitTelemetry(id);
+                    if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
                     break;
                 } catch (error) {
+                    if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
                     if (attempt >= 2 || !/HTTP 429|rate.?limit/i.test(error?.message || '')) throw error;
                     const waitSeconds = 30 + attempt * 15;
                     if (message) message.textContent = 'Garmin-Abruflimit erreicht. Neuer Versuch in ' + waitSeconds + ' Sekunden …';
                     await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                    if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
                 }
             }
+            if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
             const hr = Array.isArray(detail?.telemetry?.hr) ? detail.telemetry.hr : [];
             const time = Array.isArray(detail?.telemetry?.time) ? detail.telemetry.time : [];
             const validHrCount = countValidHeartRateSamples(hr, time);
@@ -1609,6 +1617,7 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
                 initEngine();
             }
         } catch (error) {
+            if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
             failed++;
             errors.push(id + ': ' + (error?.message || 'HF-Nachladen fehlgeschlagen'));
             console.warn('Garmin-HF-Zeitreihe konnte nicht nachgeladen werden:', id, error);
@@ -1617,9 +1626,12 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
                 break;
             }
         }
-        if (index < pending.length - 1 && !authFailed) await new Promise(resolve => setTimeout(resolve, 900));
+        if (index < pending.length - 1 && !authFailed) {
+            await new Promise(resolve => setTimeout(resolve, 900));
+            if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
+        }
     }
-    if (imported > 0) initEngine();
+    if (imported > 0 && isCurrentSync()) initEngine();
     return {
         total: pending.length, imported, failed, noHeartRate, insufficientHeartRate,
         remaining: Math.max(0, pending.length - imported - failed - noHeartRate - insufficientHeartRate),
@@ -1633,6 +1645,10 @@ async function syncGarminSelectedRange() {
     const startDate = document.getElementById('garmin-preview-start-date')?.value;
     const endDate = document.getElementById('garmin-preview-end-date')?.value;
     if (!status || !button) return;
+    const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => Boolean(syncUserId && activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence);
+    if (!isCurrentSync()) return;
     const today = new Date().toISOString().slice(0, 10);
     if (!startDate || !endDate || startDate > endDate || endDate > today) {
         status.textContent = 'Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
@@ -1647,6 +1663,7 @@ async function syncGarminSelectedRange() {
         renderGarminSyncProgress(0, totalDays);
         try {
             const result = await syncGarminHeartRateRange(startDate, endDate, status);
+            if (!isCurrentSync() || result.aborted) return;
             status.removeAttribute('aria-busy');
             status.textContent = result.authFailed
                 ? 'HF-Nachladen pausiert: Supabase-Sitzung konnte nicht erneuert werden. Bitte melde dich erneut an. ' +
@@ -1660,8 +1677,10 @@ async function syncGarminSelectedRange() {
                         (result.remaining ? ' Noch nicht versucht: ' + result.remaining + '.' : '') +
                         (result.errors.length ? ' Erste Fehler: ' + result.errors.slice(0, 3).join(' | ') : '');
             setGarminSyncIndicator('current', 'Verbunden');
-            await refreshGarminConnectionStatus();
+            await refreshGarminConnectionStatus(syncUserId, syncActivationSequence);
+            if (!isCurrentSync()) return;
         } catch (error) {
+            if (!isCurrentSync()) return;
             status.removeAttribute('aria-busy');
             status.textContent = 'HF-Nachladen pausiert: ' + (error?.message || 'Unbekannter Fehler');
             setGarminSyncIndicator('current', 'Verbunden');
@@ -1700,6 +1719,7 @@ async function syncGarminSelectedRange() {
     // history. Health history keeps its own three-day cursor inside that chunk.
     // This prevents a long historical range from exhausting the worker time limit.
     for (const chunk of chunks) {
+        if (!isCurrentSync()) return;
         let includeActivities = true;
         let remainingDays = null;
         const chunkDays = Math.floor(
@@ -1719,13 +1739,16 @@ async function syncGarminSelectedRange() {
                     timezoneOffsetMinutes: new Date().getTimezoneOffset(),
                     onlyMissingDays: true
                 });
+                if (!isCurrentSync()) return;
             } catch (error) {
+                if (!isCurrentSync()) return;
                 if (!/HTTP 429|rate.?limit/i.test(error?.message || '') || consecutiveRateLimits >= 8) throw error;
                 consecutiveRateLimits++;
                 const waitSeconds = 30 + Math.min(30, (consecutiveRateLimits - 1) * 5);
                 const message = status.querySelector('#garmin-sync-progress-message');
                 if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatischer neuer Versuch in ' + waitSeconds + ' Sekunden …';
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                if (!isCurrentSync()) return;
                 batch++;
                 continue;
             }
@@ -1738,7 +1761,8 @@ async function syncGarminSelectedRange() {
                     activitySummary[key] += Number(sync.activitySync[key] || 0);
                 }
                 activitySummary.status = sync.activitySync.status || activitySummary.status;
-                await loadGarminActivitiesFromCloud();
+                await loadGarminActivitiesFromCloud(syncUserId);
+                if (!isCurrentSync()) return;
             }
 
             remainingDays = Number(health.remainingDays ?? 0);
@@ -1767,6 +1791,7 @@ async function syncGarminSelectedRange() {
                 if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden (' + completedDays + '/' + totalDays + ' Tage verarbeitet).';
                 setGarminSyncProgressPhase('Warte auf Garmin-Freigabe · der bisherige Tagesfortschritt bleibt erhalten.');
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                if (!isCurrentSync()) return;
                 batch++;
                 continue;
             }
@@ -1790,11 +1815,14 @@ async function syncGarminSelectedRange() {
         initEngine();
     }
         healthImportSummary = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
+        if (!isCurrentSync()) return;
         const message = status.querySelector('#garmin-sync-progress-message');
         if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
         setGarminSyncProgressPhase('Tagesabgleich abgeschlossen · FIT-Dateien und Aktivitätsdetails werden ergänzt.');
         const telemetrySummary = await syncMissingGarminTelemetry(startDate, endDate, status);
+        if (!isCurrentSync() || telemetrySummary.aborted) return;
         const jsonTelemetrySummary = await syncMissingGarminJsonTelemetry(startDate, endDate, status);
+        if (!isCurrentSync() || jsonTelemetrySummary.aborted) return;
         status.removeAttribute('aria-busy');
         const activitiesText = activitySummary
             ? (activitySummary.stored || 0) + ' Aktivitäten gespeichert'
@@ -1810,25 +1838,31 @@ async function syncGarminSelectedRange() {
             ' Tagen. Vorhandene Check-in-Werte blieben unverändert.' +
             (telemetrySummary.errors.length ? ' Erste FIT-Fehler: ' + telemetrySummary.errors.slice(0, 3).join(' | ') : '');
         button.textContent = 'Daten synchronisieren';
-        await refreshGarminConnectionStatus();
+        await refreshGarminConnectionStatus(syncUserId, syncActivationSequence);
+        if (!isCurrentSync()) return;
         await loadGarminSyncHistory();
+        if (!isCurrentSync()) return;
     } catch (error) {
+        if (!isCurrentSync()) return;
         status.removeAttribute('aria-busy');
         status.textContent = 'Synchronisierung pausiert: ' + (error?.message || 'Unbekannter Fehler') +
             ' Der bereits erreichte Fortschritt bleibt gespeichert. Du kannst denselben Zeitraum erneut starten.';
         setGarminSyncIndicator('current', 'Verbunden');
         await loadGarminSyncHistory();
+        if (!isCurrentSync()) return;
     } finally {
         button.disabled = false;
         if (button.textContent === 'Synchronisierung läuft …') button.textContent = 'Erneut versuchen';
     }
 }
 
-async function refreshGarminConnectionStatus() {
+async function refreshGarminConnectionStatus(expectedUserId = activeAppUserId, expectedActivationSequence = activationSequence) {
+    const isCurrentRequest = () => Boolean(expectedUserId && activeAppUserId === expectedUserId && appUserReady && activationSequence === expectedActivationSequence);
     const status = document.getElementById('garmin-connection-status');
     if (status) status.textContent = 'Verbindungsstatus wird geprüft …';
     try {
         const result = await callGarminFunction({ action: 'status' });
+        if (!isCurrentRequest()) return;
         const connected = result.connection?.status === 'connected';
         try { setUserLocalSetting('garmin_connected', connected ? 'true' : 'false'); } catch (_) {}
         const apiEntry = document.getElementById('garmin-api-entry');
@@ -1843,6 +1877,7 @@ async function refreshGarminConnectionStatus() {
             if (status) status.textContent = 'Nicht verbunden';
         }
     } catch (error) {
+        if (!isCurrentRequest()) return;
         try { setUserLocalSetting('garmin_connected', 'unknown'); } catch (_) {}
         setGarminSyncIndicator('error', 'Nicht verbunden');
         if (status) status.textContent = 'Verbindungsstatus konnte nicht geprüft werden.';
