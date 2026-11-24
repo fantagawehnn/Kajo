@@ -1,148 +1,72 @@
 import Toybox.Application.Storage;
-import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.Math;
 import Toybox.WatchUi;
 
-class KajoConnectTrainingFieldsView extends WatchUi.View {
+class KajoConnectTrainingFieldsView extends WatchUi.Menu2 {
 
-    var mKajoLayout as KajoLayout;
-    var mFieldCount as Lang.Number = 4;
-    var mSelectedRow as Lang.Number = 0;
-    var mValues as Lang.Array<Lang.Boolean> = [true, true, true, true, true];
-    var mLabels as Lang.Array<Lang.String> = [
-        "INTERVALL-STATUS",
-        "PULS + ZONE",
-        "SCHLAGFREQUENZ",
-        "DISTANZ",
-        "PACE"
-    ];
     var mCounts as Lang.Array<Lang.Number> = [1, 2, 4, 6];
-    var mRowTop as Lang.Number = 126;
-    var mRowStep as Lang.Number = 42;
-    var mUnit as Lang.Number = 390;
-    var mWidth as Lang.Number = 390;
 
     function initialize() {
-        View.initialize();
-        mKajoLayout = new KajoLayout();
-        var savedCount = Storage.getValue("kajoTrainingFieldCount");
-        if (savedCount != null &&
-            (savedCount == 1 || savedCount == 2 || savedCount == 4 || savedCount == 6)) {
-            mFieldCount = savedCount as Lang.Number;
+        Menu2.initialize({:title => "TRAININGSFELDER", :footer => "KAJO · ANZEIGE KONFIGURIEREN"});
+        var saved = Storage.getValue("kajoTrainingFieldCount");
+        var selectedCount = saved == null ? 4 : saved as Lang.Number;
+
+        for (var i = 0; i < mCounts.size(); i += 1) {
+            var count = mCounts[i];
+            var subLabel = count == selectedCount ? "Aktuell ausgewählt" : "Anzahl sichtbarer Werte";
+            addItem(new WatchUi.MenuItem(count.toString() + " Felder", subLabel, "count_" + count.toString(), {}));
         }
-        var keys = [
-            "kajoTrainingShowStatus",
-            "kajoTrainingShowHR",
-            "kajoTrainingShowCadence",
-            "kajoTrainingShowDistance",
-            "kajoTrainingShowPace"
-        ];
-        for (var i = 0; i < keys.size(); i += 1) {
-            var saved = Storage.getValue(keys[i]);
-            if (saved != null) { mValues[i] = saved as Lang.Boolean; }
-        }
+        addItem(new WatchUi.MenuItem("Messwerte auswählen", "Status, Puls, Frequenz, Distanz, Pace", "metrics", {}));
     }
 
-    function moveSelection(direction as Lang.Number) as Void {
-        mSelectedRow += direction;
-        if (mSelectedRow < 0) { mSelectedRow = mValues.size() - 1; }
-        if (mSelectedRow >= mValues.size()) { mSelectedRow = 0; }
-        WatchUi.requestUpdate();
-    }
-
-    function toggleSelected() as Void {
-        mValues[mSelectedRow] = !mValues[mSelectedRow];
-        persistValues();
-        WatchUi.requestUpdate();
-    }
-
-    function persistValues() as Void {
-        Storage.setValue("kajoTrainingFieldCount", mFieldCount);
-        Storage.setValue("kajoTrainingShowStatus", mValues[0]);
-        Storage.setValue("kajoTrainingShowHR", mValues[1]);
-        Storage.setValue("kajoTrainingShowCadence", mValues[2]);
-        Storage.setValue("kajoTrainingShowDistance", mValues[3]);
-        Storage.setValue("kajoTrainingShowPace", mValues[4]);
-    }
-
-    function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (y >= 65 && y <= 112) {
-            var index = Math.floor((x - 40) / 78).toNumber();
-            if (index >= 0 && index < mCounts.size()) {
-                mFieldCount = mCounts[index];
-                WatchUi.requestUpdate();
-            }
+    function selectItem(identifier as Lang.String) as Void {
+        if (identifier == "metrics") {
+            var menu = new KajoConnectTrainingMetricMenu();
+            WatchUi.pushView(menu, new KajoConnectTrainingMetricDelegate(menu), WatchUi.SLIDE_UP);
             return;
         }
-        var row = Math.floor((y - mRowTop) / mRowStep).toNumber();
-        if (row >= 0 && row < mValues.size()) {
-            mSelectedRow = row;
-            toggleSelected();
+        if (identifier == "count_1") {
+            Storage.setValue("kajoTrainingFieldCount", 1);
+        } else if (identifier == "count_2") {
+            Storage.setValue("kajoTrainingFieldCount", 2);
+        } else if (identifier == "count_4") {
+            Storage.setValue("kajoTrainingFieldCount", 4);
+        } else if (identifier == "count_6") {
+            Storage.setValue("kajoTrainingFieldCount", 6);
+        } else {
+            return;
         }
+        WatchUi.showToast("Trainingsanzeige gespeichert", null);
+    }
+}
+
+class KajoConnectTrainingMetricMenu extends WatchUi.CheckboxMenu {
+
+    function initialize() {
+        CheckboxMenu.initialize({:title => "MESSWERTE", :footer => "KAJO · SOFORT GESPEICHERT"});
+        addItem(new WatchUi.CheckboxMenuItem("Intervallstatus", "Aktuelle Trainingsphase", "status", readFlag("kajoTrainingShowStatus", true), {}));
+        addItem(new WatchUi.CheckboxMenuItem("Puls + Zone", "Herzfrequenz und Zone", "hr", readFlag("kajoTrainingShowHR", true), {}));
+        addItem(new WatchUi.CheckboxMenuItem("Schlagfrequenz", "Schläge pro Minute", "cadence", readFlag("kajoTrainingShowCadence", true), {}));
+        addItem(new WatchUi.CheckboxMenuItem("Distanz", "Zurückgelegte Strecke", "distance", readFlag("kajoTrainingShowDistance", true), {}));
+        addItem(new WatchUi.CheckboxMenuItem("Pace", "Zeit pro Kilometer", "pace", readFlag("kajoTrainingShowPace", true), {}));
     }
 
-    function saveConfig() as Void {
-        persistValues();
-        WatchUi.showToast("Trainingsfelder gespeichert", null);
-        WatchUi.popView(WatchUi.SLIDE_DOWN);
+    function readFlag(key as Lang.String, fallback as Lang.Boolean) as Lang.Boolean {
+        var saved = Storage.getValue(key);
+        return saved == null ? fallback : saved as Lang.Boolean;
     }
 
-    function drawFit(dc as Dc, x, y, text as Lang.String, maxWidth, font, color as Lang.Number) as Void {
-        mKajoLayout.drawTextFit(dc, x, y, text, maxWidth, font, color);
-    }
-
-    function onUpdate(dc as Dc) {
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
-        mWidth = dc.getWidth();
-        mUnit = mWidth < dc.getHeight() ? mWidth : dc.getHeight();
-        mKajoLayout.configure(dc.getWidth(), dc.getHeight());
-        var cx = mWidth / 2;
-
-        drawFit(dc, cx, mUnit * 0.065, "TRAININGSFELDER",
-            mUnit * 0.78, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawFit(dc, cx, mUnit * 0.15, "ANZAHL SICHTBARER FELDER",
-            mUnit * 0.78, Graphics.FONT_XTINY, 0x98A5AB);
-
-        var optionWidth = mUnit * 0.17;
-        for (var i = 0; i < mCounts.size(); i += 1) {
-            var x = 40 + (i * 78);
-            var selected = mFieldCount == mCounts[i];
-            dc.setColor(selected ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
-            dc.fillRectangle(x, mUnit * 0.205, optionWidth, 34);
-            dc.setColor(selected ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
-            dc.fillRectangle(x, mUnit * 0.205, 3, 34);
-            drawFit(dc, x + optionWidth / 2, mUnit * 0.225,
-                mCounts[i].toString(), optionWidth * 0.8,
-                Graphics.FONT_MEDIUM, selected ? 0x25D3CB : Graphics.COLOR_WHITE);
+    function persistOption(identifier as Lang.String, enabled as Lang.Boolean) as Void {
+        if (identifier == "status") {
+            Storage.setValue("kajoTrainingShowStatus", enabled);
+        } else if (identifier == "hr") {
+            Storage.setValue("kajoTrainingShowHR", enabled);
+        } else if (identifier == "cadence") {
+            Storage.setValue("kajoTrainingShowCadence", enabled);
+        } else if (identifier == "distance") {
+            Storage.setValue("kajoTrainingShowDistance", enabled);
+        } else if (identifier == "pace") {
+            Storage.setValue("kajoTrainingShowPace", enabled);
         }
-
-        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-        dc.drawLine(62, mUnit * 0.31, 328, mUnit * 0.31);
-        var rowWidth = mKajoLayout.safeRectWidth(mRowTop, 34, mUnit * 0.80);
-        var left = cx - (rowWidth / 2);
-        for (var row = 0; row < mValues.size(); row += 1) {
-            var y = mRowTop + (row * mRowStep);
-            var focused = row == mSelectedRow;
-            dc.setColor(focused ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
-            dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), 34);
-            dc.setColor(focused ? 0xFFB020 : (mValues[row] ? 0x25D3CB : 0x344047), Graphics.COLOR_BLACK);
-            dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 34);
-            drawFit(dc, cx - rowWidth * 0.10, y + 10, mLabels[row],
-                rowWidth * 0.72, Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-            drawFit(dc, cx + rowWidth * 0.37, y + 10,
-                mValues[row] ? "AN" : "AUS", rowWidth * 0.18,
-                Graphics.FONT_XTINY, mValues[row] ? 0x25D3CB : 0x98A5AB);
-            if (row < mValues.size() - 1) {
-                dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-                dc.drawLine(left.toNumber(), y + 38, (left + rowWidth).toNumber(), y + 38);
-            }
-        }
-
-        drawFit(dc, cx, mUnit * 0.865, "OBERE TASTE · ÄNDERN",
-            mUnit * 0.76, Graphics.FONT_XTINY, 0x25D3CB);
-        drawFit(dc, cx, mUnit * 0.92, "UNTERE TASTE · ZURÜCK",
-            mUnit * 0.76, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
