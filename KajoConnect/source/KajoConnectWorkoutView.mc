@@ -81,8 +81,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
 
         drawCentered(dc, center, unit * 0.075, "TRAININGSDETAILS",
             contentWidth, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawCentered(dc, center, unit * 0.13, date,
-            contentWidth, Graphics.FONT_XTINY, 0x00E5CC);
+        // Datum wird nicht mehr als zweite Kopfzeile ausgegeben.
 
         var cardTop = unit * 0.19;
         var cardHeight = unit * 0.15;
