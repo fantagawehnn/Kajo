@@ -24,8 +24,6 @@ class KajoLayout {
     }
 
     function fontPercent(preferredFont) as Lang.Float {
-        // Garmin-Fonts sind auf kleinen Runddisplays deutlich groesser als
-        // ihre Bezeichnung vermuten laesst. Deshalb konservative Zielhoehen.
         if (preferredFont == Graphics.FONT_NUMBER_HOT) { return 0.070; }
         if (preferredFont == Graphics.FONT_NUMBER_MEDIUM) { return 0.060; }
         if (preferredFont == Graphics.FONT_LARGE) { return 0.045; }
@@ -35,82 +33,57 @@ class KajoLayout {
         return 0.028;
     }
 
+    function scaledFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number,
+        maxHeight as Lang.Number, preferredFont) {
+        var baseHeight = dc.getFontHeight(preferredFont);
+        if (baseHeight <= 0 || maxWidth <= 0 || maxHeight <= 0) {
+            return preferredFont;
+        }
+
+        var scale = (maxHeight - 2) / baseHeight;
+        if (scale > 1.0) { scale = 1.0; }
+        if (scale <= 0.0) { return preferredFont; }
+
+        var baseWidth = dc.getTextWidthInPixels(text, preferredFont);
+        if (baseWidth > 0) {
+            var widthScale = (maxWidth * 0.94) / baseWidth;
+            if (widthScale < scale) { scale = widthScale; }
+        }
+
+        if (scale <= 0.0) { return preferredFont; }
+
+        // Venu 3S supports scalable fonts (Connect IQ 5.2). Scaling the
+        // requested Garmin font keeps the visual hierarchy but allows real
+        // 12–24 px text instead of forcing FONT_XTINY's 32 px bitmap size.
+        if (Graphics has :getVectorFont) {
+            var vectorFont = Graphics.getVectorFont({
+                :font => preferredFont,
+                :scale => scale
+            });
+            if (vectorFont != null) { return vectorFont; }
+        }
+
+        // Safe fallback for devices without scalable-font support. The
+        // caller clips the text to its own box and skips impossible layouts.
+        return preferredFont;
+    }
+
     function fontForPercent(dc as Dc, targetPercent as Lang.Float) {
-        // Waehlt die groesste Garmin-Schrift, deren reale Pixelhoehe
-        // innerhalb des angeforderten Anteils der Displayhoehe liegt.
-        // So bleiben Hoehenberechnungen und die tatsaechlich gezeichnete
-        // Schrift auf dem Venu 3S konsistent.
         var targetHeight = mUnit * targetPercent;
-        var selectedFont = Graphics.FONT_XTINY;
-        var selectedHeight = dc.getFontHeight(selectedFont);
-
-        var candidate = Graphics.FONT_TINY;
-        var candidateHeight = dc.getFontHeight(candidate);
-        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
-            selectedFont = candidate;
-            selectedHeight = candidateHeight;
+        var preferred = Graphics.FONT_XTINY;
+        if (targetHeight >= dc.getFontHeight(Graphics.FONT_LARGE)) {
+            preferred = Graphics.FONT_LARGE;
+        } else if (targetHeight >= dc.getFontHeight(Graphics.FONT_MEDIUM)) {
+            preferred = Graphics.FONT_MEDIUM;
+        } else if (targetHeight >= dc.getFontHeight(Graphics.FONT_SMALL)) {
+            preferred = Graphics.FONT_SMALL;
         }
-
-        candidate = Graphics.FONT_SMALL;
-        candidateHeight = dc.getFontHeight(candidate);
-        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
-            selectedFont = candidate;
-            selectedHeight = candidateHeight;
-        }
-
-        candidate = Graphics.FONT_MEDIUM;
-        candidateHeight = dc.getFontHeight(candidate);
-        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
-            selectedFont = candidate;
-            selectedHeight = candidateHeight;
-        }
-
-        candidate = Graphics.FONT_LARGE;
-        candidateHeight = dc.getFontHeight(candidate);
-        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
-            selectedFont = candidate;
-            selectedHeight = candidateHeight;
-        }
-
-        candidate = Graphics.FONT_NUMBER_MEDIUM;
-        candidateHeight = dc.getFontHeight(candidate);
-        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
-            selectedFont = candidate;
-            selectedHeight = candidateHeight;
-        }
-
-        candidate = Graphics.FONT_NUMBER_HOT;
-        candidateHeight = dc.getFontHeight(candidate);
-        if (candidateHeight <= targetHeight && candidateHeight >= selectedHeight) {
-            selectedFont = candidate;
-        }
-
-        return selectedFont;
+        return scaledFont(dc, "KAJO", mUnit * 0.8, targetHeight, preferred);
     }
 
     function fitFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number, preferredFont) {
-        // Immer mit der angeforderten Schrift beginnen und nur kleiner werden.
-        // Die vorherige Logik konnte von XTINY auf SMALL vergroessern, wenn
-        // eine Zeile zu breit war. Das war kontraproduktiv und beguenstigte
-        // Ueberlagerungen in den kompakten Bereichen des runden Displays.
-        var font = preferredFont;
-        if (dc.getTextWidthInPixels(text, font) <= maxWidth) { return font; }
-
-        if (font == Graphics.FONT_NUMBER_HOT ||
-            font == Graphics.FONT_NUMBER_MEDIUM ||
-            font == Graphics.FONT_LARGE ||
-            font == Graphics.FONT_MEDIUM) {
-            font = Graphics.FONT_SMALL;
-            if (dc.getTextWidthInPixels(text, font) <= maxWidth) { return font; }
-        }
-
-        if (font != Graphics.FONT_TINY && font != Graphics.FONT_XTINY) {
-            font = Graphics.FONT_TINY;
-            if (dc.getTextWidthInPixels(text, font) <= maxWidth) { return font; }
-        }
-
-        font = Graphics.FONT_XTINY;
-        return font;
+        var targetHeight = dc.getFontHeight(preferredFont) * 0.62;
+        return scaledFont(dc, text, maxWidth, targetHeight, preferredFont);
     }
 
     function safeWidthAt(x, y, requestedWidth) as Lang.Number {
@@ -131,106 +104,78 @@ class KajoLayout {
 
     function safeTextWidth(dc as Dc, x, y,
         font, requestedWidth) as Lang.Number {
-        return safeWidthAt(x, y + (dc.getFontHeight(font) / 2), requestedWidth);
+        return safeWidthAt(x, y, requestedWidth);
     }
 
     function safeTextY(y, textHeight) as Lang.Number {
-        // Text darf niemals automatisch vertikal verschoben werden.
-        // Ein Clamping an den Kreisrand hat zuvor mehrere unabhaengige
-        // Textzeilen auf dieselbe y-Position gesetzt und Ueberlagerungen
-        // verursacht. Die Kreisbreite wird separat ueber safeTextWidth
-        // begrenzt; die vom jeweiligen Bildschirm definierte Zeile bleibt
-        // exakt an ihrer vorgesehenen Position.
         return Math.round(y).toNumber();
     }
 
     function drawTextFit(dc as Dc, x, y, text as Lang.String,
         maxWidth, preferredFont, color as Lang.Number) as Void {
         if (text.length() == 0 || maxWidth <= 0) { return; }
-
-        // Texte werden innerhalb ihrer vorgesehenen Zeile gehalten.
-        // Vertikale Positionen werden nicht verschoben, da das sonst
-        // benachbarte Zeilen uebereinander schieben koennte.
-        var font = fitFont(dc, text, maxWidth.toNumber(), preferredFont);
-        var textHeight = dc.getFontHeight(font);
-        var textY = Math.round(y).toNumber();
-        if (textY < 0 || textY + textHeight > dc.getHeight()) { return; }
-
-        var availableWidth = safeTextWidth(
-            dc, x.toNumber(), textY, font, maxWidth.toNumber()
-        );
-        font = fitFont(dc, text, availableWidth, font);
-        textHeight = dc.getFontHeight(font);
-        if (textY + textHeight > dc.getHeight()) { return; }
-        availableWidth = safeTextWidth(
-            dc, x.toNumber(), textY, font, maxWidth.toNumber()
-        );
-
-        var displayText = text;
-        while (displayText.length() > 0 &&
-            dc.getTextWidthInPixels(displayText, font) > availableWidth) {
-            if (displayText.length() <= 4) {
-                displayText = "";
-            } else {
-                displayText = displayText.substring(0, displayText.length() - 4) + "...";
-            }
-        }
-
-        if (displayText.length() == 0 || availableWidth <= 0) { return; }
-        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(
-            Math.round(x).toNumber(),
-            textY,
-            font,
-            displayText,
-            Graphics.TEXT_JUSTIFY_CENTER
+        var targetHeight = dc.getFontHeight(preferredFont) * 0.62;
+        drawTextBox(
+            dc,
+            x.toNumber(),
+            y.toNumber(),
+            maxWidth.toNumber(),
+            targetHeight.toNumber(),
+            text,
+            preferredFont,
+            color
         );
     }
 
-
-    // Zeichnet Text nur innerhalb einer expliziten rechteckigen Textzone.
-    // Die Hoehe wird vor dem Zeichnen geprueft; es gibt kein vertikales Clamping.
+    // Every text draw is measured against its actual rectangle. A scalable
+    // font is selected for that rectangle, the string is shortened using
+    // measured pixel width, and setClip is a final guard against spillover.
     function drawTextBox(dc as Dc, x as Lang.Number, top as Lang.Number,
         width as Lang.Number, height as Lang.Number, text as Lang.String,
         preferredFont, color as Lang.Number) as Void {
         if (text.length() == 0 || width <= 0 || height <= 0) { return; }
 
-        var font = fitFont(dc, text, width, preferredFont);
-        // XTINY ist die kleinste verfuegbare Garmin-Schrift. Auf dem Venu 3S
-        // kann selbst sie hoeher als sehr kleine 14-px-Zonen sein. In diesem
-        // Fall darf der Text nicht komplett verschwinden: XTINY bleibt die
-        // Fallback-Schrift; die Zeile wird weiterhin horizontal begrenzt.
-        if (dc.getFontHeight(font) > height) {
-            font = Graphics.FONT_XTINY;
-        }
-
-        var textHeight = dc.getFontHeight(font);
-        var centerY = top + ((height - textHeight) / 2);
-        var available = safeWidthAt(x, centerY + (textHeight / 2), width);
-        font = fitFont(dc, text, available, font);
-        textHeight = dc.getFontHeight(font);
+        var centerY = top + (height / 2);
+        var available = safeWidthAt(x, centerY, width);
         if (available <= 0) { return; }
 
+        var font = scaledFont(dc, text, available, height, preferredFont);
+        var textHeight = dc.getFontHeight(font);
+        if (textHeight > height && font == preferredFont) {
+            // Do not draw an oversized fallback font into a smaller row.
+            return;
+        }
+
         var displayText = text;
-        while (displayText.length() > 0 &&
-            dc.getTextWidthInPixels(displayText, font) > available) {
-            if (displayText.length() <= 4) {
-                displayText = "";
+        if (dc.getTextWidthInPixels(displayText, font) > available) {
+            while (displayText.length() > 0 &&
+                dc.getTextWidthInPixels(displayText + "...", font) > available) {
+                displayText = displayText.substring(0, displayText.length() - 1);
+            }
+            if (displayText.length() > 0) {
+                displayText += "...";
             } else {
-                displayText = displayText.substring(0, displayText.length() - 4) + "...";
+                displayText = "";
             }
         }
+
         if (displayText.length() == 0) { return; }
 
-        centerY = top + ((height - textHeight) / 2);
+        var clipLeft = Math.round(x - (available / 2)).toNumber();
+        var clipTop = Math.round(top).toNumber();
+        var clipWidth = Math.round(available).toNumber();
+        var clipHeight = Math.round(height).toNumber();
+
+        dc.setClip(clipLeft, clipTop, clipWidth, clipHeight);
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
-            Math.round(x).toNumber(),
-            Math.round(centerY).toNumber(),
+            x,
+            centerY,
             font,
             displayText,
-            Graphics.TEXT_JUSTIFY_CENTER
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
         );
+        dc.clearClip();
     }
 
     function safeRectWidthAt(x, top, height,
