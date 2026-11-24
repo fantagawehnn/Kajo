@@ -328,6 +328,45 @@ function safePlannedSession(value: unknown): PlannedSession | null {
   };
 }
 
+async function addActivityToSnapshotManifest(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  recordId: string,
+) {
+  // Keep the snapshot manifest authoritative: app-side merging intentionally
+  // hides rows not listed there so deleted cloud activities cannot reappear.
+  // Retry optimistic-version conflicts because the app may save the snapshot
+  // at the same time as a watch upload.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: snapshot, error: readError } = await admin
+      .from("user_data")
+      .select("data,version")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (readError) throw readError;
+    if (!snapshot || !snapshot.data || typeof snapshot.data !== "object" || Array.isArray(snapshot.data)) {
+      throw new Error("KAJO cloud snapshot is not initialized yet; activity upload can be retried.");
+    }
+
+    const data = snapshot.data as JsonRecord;
+    const currentIds = Array.isArray(data.activityIds)
+      ? data.activityIds.filter((value): value is string => typeof value === "string")
+      : [];
+    if (currentIds.includes(recordId)) return;
+
+    const nextData: JsonRecord = { ...data, activityIds: [...currentIds, recordId] };
+    const { data: result, error: saveError } = await admin.rpc("save_user_data", {
+      p_data: nextData,
+      p_expected_version: Number(snapshot.version || 1),
+    });
+    if (saveError) throw saveError;
+    const saved = Array.isArray(result) ? result[0] : result;
+    if (saved?.saved === true) return;
+    // A concurrent snapshot write won; read the latest version and retry.
+  }
+  throw new Error("Could not add the watch activity to the KAJO snapshot manifest after concurrent updates.");
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -599,6 +638,10 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (saveError) throw saveError;
       if (!saved?.record_id) throw new Error("Activity upload could not be verified.");
+      // The activity row is only visible to KAJO when its stable ID is listed
+      // in the versioned snapshot manifest. Update that manifest before acking
+      // the upload so a successful watch response also means app visibility.
+      await addActivityToSnapshotManifest(admin, device.user_id, recordId);
       await admin.from("kajo_connect_devices")
         .update({ last_seen_at: new Date().toISOString() }).eq("id", device.id);
       return json(200, { ok: true, status: "saved", recordId, idempotent: true });
