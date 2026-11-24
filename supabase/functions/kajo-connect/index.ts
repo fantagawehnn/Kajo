@@ -522,7 +522,7 @@ Deno.serve(async (request) => {
     // The client ID is stable across retries; user_id + record_id makes this idempotent.
     if (action === "upload-activity") {
       const authorization = request.headers.get("Authorization") || "";
-      const match = authorization.match(/^Bearer\\s+([a-f0-9]{64})$/i);
+      const match = authorization.match(/^Bearer\s+([a-f0-9]{64})$/i);
       if (!match) return json(401, { error: "A valid device token is required." });
       const tokenHash = await sha256(match[1]);
       const { data: device, error: deviceError } = await admin
