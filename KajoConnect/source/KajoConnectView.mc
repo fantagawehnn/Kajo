@@ -374,7 +374,7 @@ class KajoConnectView extends WatchUi.View {
         dc.setColor(0x42545A, Graphics.COLOR_BLACK);
         dc.drawLine(70, 91, 320, 91);
 
-        drawHomeText(dc, cx, 99, 250, 18, "TRAINING FÜR HEUTE",
+        drawHomeText(dc, cx, 99, 250, 18, "TRAINING FUER HEUTE",
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
 
         mStartTop = 122;
@@ -416,30 +416,30 @@ class KajoConnectView extends WatchUi.View {
 
         drawHomeText(dc, cx - 56, 207, 150, 18, "TRAININGS",
             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx + 82, 209, 105, 14, "SCROLLEN  ⌄",
+        drawHomeText(dc, cx + 82, 209, 105, 14, "SCROLLEN  V",
             Graphics.FONT_XTINY, 0x82939A);
 
         var labels = ["FREIES TRAINING", "GEPLANTE TRAININGS", "VERGANGENE TRAININGS", "EINSTELLUNGEN"];
-        var icons = ["▶", "▦", "◷", "⚙"];
-        mFreeTop = 228;
+        var icons = ["F", "P", "H", "E"];
+        mFreeTop = 222;
         mFreeBottom = 374;
-        mMenuRowStep = 36;
+        mMenuRowStep = 34;
         mMenuRowCount = 4;
         for (var row = 0; row < 4; row += 1) {
-            var rowY = 228 + (row * 36);
-            var rowWidth = mKajoLayout.safeRectWidth(rowY, 30, mUnit * 0.78);
+            var rowY = 222 + (row * 34);
+            var rowWidth = mKajoLayout.safeRectWidth(rowY, 29, mUnit * 0.78);
             var rowLeft = cx - (rowWidth / 2);
             dc.setColor(0x0A171B, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(rowLeft.toNumber(), rowY, rowWidth.toNumber(), 30, 15);
+            dc.fillRoundedRectangle(rowLeft.toNumber(), rowY, rowWidth.toNumber(), 29, 15);
             dc.setColor(0x294047, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(rowLeft.toNumber(), rowY, rowWidth.toNumber(), 30, 15);
+            dc.drawRoundedRectangle(rowLeft.toNumber(), rowY, rowWidth.toNumber(), 29, 15);
             dc.setColor(0x12383B, Graphics.COLOR_BLACK);
             dc.fillCircle((rowLeft + 19).toNumber(), rowY + 15, 10);
             drawHomeText(dc, rowLeft + 19, rowY + 7, 20, 16, icons[row],
                 Graphics.FONT_XTINY, 0x00D8CC);
             drawHomeText(dc, cx + 10, rowY + 7, rowWidth - 56, 16,
                 labels[row], Graphics.FONT_XTINY, Graphics.COLOR_WHITE);
-            drawHomeText(dc, rowLeft + rowWidth - 17, rowY + 6, 16, 18, "›",
+            drawHomeText(dc, rowLeft + rowWidth - 17, rowY + 6, 16, 18, ">",
                 Graphics.FONT_SMALL, 0x82939A);
         }
     }
