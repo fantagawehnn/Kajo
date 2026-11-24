@@ -40,13 +40,13 @@ class KajoLayout {
             return preferredFont;
         }
 
-        var scale = (maxHeight - 2) / baseHeight;
+        var scale = ((maxHeight * 1.0) - 2.0) / (baseHeight * 1.0);
         if (scale > 1.0) { scale = 1.0; }
         if (scale <= 0.0) { return preferredFont; }
 
         var baseWidth = dc.getTextWidthInPixels(text, preferredFont);
         if (baseWidth > 0) {
-            var widthScale = (maxWidth * 0.94) / baseWidth;
+            var widthScale = ((maxWidth * 0.94) / (baseWidth * 1.0));
             if (widthScale < scale) { scale = widthScale; }
         }
 
