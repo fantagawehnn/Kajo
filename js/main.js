@@ -2516,6 +2516,7 @@ async function loadCloudProfile(session) {
             if (profileSaveError) throw profileSaveError;
             if (activeAppUserId !== userId) return;
         } catch (profileSaveError) {
+            if (activeAppUserId !== userId) return;
             console.error('Zusammengeführtes Athletenprofil konnte nicht in der Cloud aktualisiert werden:', profileSaveError);
             const indicator = document.getElementById('sync-status-indicator');
             if (indicator) indicator.textContent = 'Lokales Profil wurde geschützt gespeichert; die Cloud-Profilangleichung muss erneut versucht werden.';
