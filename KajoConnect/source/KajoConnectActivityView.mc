@@ -190,6 +190,7 @@ class KajoConnectActivityView extends WatchUi.View {
             if (hasNextStep) {
                 mWorkoutStepIndex += 1;
                 mWorkoutStepElapsedSeconds = 0;
+                notifyIntervalTransition();
                 WatchUi.showToast("Neuer Trainingsabschnitt", null);
             } else {
                 mWorkoutSequenceComplete = true;
