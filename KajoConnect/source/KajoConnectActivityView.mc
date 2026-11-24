@@ -489,12 +489,12 @@ class KajoConnectActivityView extends WatchUi.View {
             var label = getCustomMetricLabel(metricId);
             var value = getCustomMetricValue(metricId, values);
             var unit = getCustomMetricUnit(metricId);
-            drawActivityText(dc, x, tileTop + 4, tileWidth * 0.88, 14,
+            drawActivityText(dc, x, tileTop + 4, (tileWidth * 0.88).toNumber(), 14,
                 label, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
-            drawActivityText(dc, x, tileTop + 22, tileWidth * 0.88, 25,
+            drawActivityText(dc, x, tileTop + 22, (tileWidth * 0.88).toNumber(), 25,
                 value, valueFont, Graphics.COLOR_WHITE);
             if (unit != "") {
-                drawActivityText(dc, x, tileTop + 50, tileWidth * 0.88, 14,
+                drawActivityText(dc, x, tileTop + 50, (tileWidth * 0.88).toNumber(), 14,
                     unit, Graphics.FONT_XTINY, Graphics.COLOR_LT_GRAY);
             }
         }
@@ -858,12 +858,12 @@ class KajoConnectActivityView extends WatchUi.View {
         var panelWidth = mKajoLayout.safeRectWidthAt(x, panelTop, panelHeight, maxWidth);
         drawDashboardPanel(dc, x - (panelWidth / 2), panelTop, panelWidth, panelHeight);
         // Drei feste Textzeilen innerhalb der Kachel; keine Zeile darf die naechste beruehren.
-        drawActivityText(dc, x, panelTop + 5, panelWidth * 0.86, 14,
+        drawActivityText(dc, x, panelTop + 5, (panelWidth * 0.86).toNumber(), 14,
             label, Graphics.FONT_XTINY, 0xA0AAB2);
-        drawActivityText(dc, x, panelTop + 23, panelWidth * 0.86, 25,
+        drawActivityText(dc, x, panelTop + 23, (panelWidth * 0.86).toNumber(), 25,
             value, valueFont, Graphics.COLOR_WHITE);
         if (unit != "") {
-            drawActivityText(dc, x, panelTop + 51, panelWidth * 0.86, 14,
+            drawActivityText(dc, x, panelTop + 51, (panelWidth * 0.86).toNumber(), 14,
                 unit, Graphics.FONT_XTINY, 0xA0AAB2);
         }
     }
