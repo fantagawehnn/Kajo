@@ -7,37 +7,42 @@ import Toybox.Lang;
 class KajoConnectRecordingEngine {
 
     var mSession as ActivityRecording.Session? = null;
+    var mLastError as Lang.String = "";
 
     function initialize() {
     }
 
     function start(boatClass as Lang.String) as Lang.Boolean {
-        if (mSession != null && mSession.isRecording()) {
-            return false;
-        }
+        mLastError = "";
+        try {
+            if (mSession != null && mSession.isRecording()) {
+                return false;
+            }
 
-        mSession = ActivityRecording.createSession({
-            :name => "KAJO " + boatClass,
-            :sport => Activity.SPORT_KAYAKING,
-            :subSport => Activity.SUB_SPORT_WHITEWATER
-        });
+            mSession = ActivityRecording.createSession({
+                :name => "KAJO " + boatClass,
+                :sport => Activity.SPORT_KAYAKING,
+                :subSport => Activity.SUB_SPORT_WHITEWATER
+            });
 
-        // Garmin gibt bei einer noch offenen FIT-Session dasselbe Session-
-        // Objekt zurueck. Nach einem App-Neustart darf eine laufende Aufnahme
-        // deshalb nicht durch einen zweiten start()-Aufruf verworfen werden.
-        if (mSession.isRecording()) {
+            if (mSession.isRecording()) {
+                return true;
+            }
+
+            var started = mSession.start();
+            if (!started) {
+                mLastError = "SESSION_START_FALSE";
+                return false;
+            }
             return true;
-        }
-
-        var started = mSession.start();
-        if (!started) {
-            // Nicht verwerfen: createSession() kann eine bereits offene,
-            // zuvor pausierte FIT-Session zurueckgegeben haben. Ein discard()
-            // koennte in diesem Fall vorhandene Aufzeichnungsdaten loeschen.
-            // Die Session bleibt fuer einen erneuten Startversuch erhalten.
+        } catch (error) {
+            mLastError = error.toString();
             return false;
         }
-        return true;
+    }
+
+    function getLastError() as Lang.String {
+        return mLastError;
     }
 
     function isRecording() as Lang.Boolean {
