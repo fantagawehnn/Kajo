@@ -812,12 +812,18 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
     if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
 
     const userId = activeAppUserId;
+    const ensureCurrentUser = () => {
+        if (!appUserReady || activeAppUserId !== userId) {
+            throw new Error('Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.');
+        }
+    };
     const { count, error: countError } = await supabase.from('garmin_health_records')
         .select('record_date', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('record_date', startDate)
         .lte('record_date', endDate);
     if (countError) throw countError;
+    ensureCurrentUser();
 
     const rows = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_health_records')
         .select('data_type, record_date, payload')
@@ -830,6 +836,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             totalCount: Number.isFinite(count) ? count : undefined,
             concurrency: 3
         });
+    ensureCurrentUser();
 
     const byDate = new Map();
     for (const row of rows) {
@@ -916,6 +923,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         changedDays++;
     }
 
+    ensureCurrentUser();
     if (!dryRun && importedValues > 0) {
         if (saveDataToLocalStorage() === false) {
             throw new Error('Die Werte wurden ermittelt, konnten aber nicht gespeichert werden. Bitte Kontoanmeldung prüfen.');
