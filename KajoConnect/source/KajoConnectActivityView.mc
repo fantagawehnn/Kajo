@@ -76,6 +76,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mElapsedSeconds as Lang.Number = 0;
     var mFinalDistance as Lang.String = "--";
     var mFinalAverageHeartRate as Lang.String = "--";
+    var mHistoryEntrySaved as Lang.Boolean = false;
 
     function loadWorkoutSteps(value) as Void {
         mWorkoutSteps = [];
@@ -865,6 +866,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mElapsedSeconds = 0;
             mFinalDistance = "--";
             mFinalAverageHeartRate = "--";
+            mHistoryEntrySaved = false;
             mWorkoutStepIndex = 0;
             mWorkoutStepElapsedSeconds = 0;
             mWorkoutSequenceComplete = false;
@@ -914,10 +916,42 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function saveHistoryEntry() as Lang.Boolean {
+        if (mHistoryEntrySaved) { return true; }
+        try {
+            var stored = Storage.getValue("kajoActivityHistory");
+            var previous = stored == null ? [] : stored as Lang.Array<Lang.Dictionary>;
+            var nextHistory = [];
+            var info = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+            var dayText = (info.day < 10 ? "0" : "") + info.day.toString();
+            var monthText = (info.month < 10 ? "0" : "") + info.month.toString();
+
+            var entry = {};
+            entry["date"] = dayText + "." + monthText + ".";
+            entry["boatClass"] = mBoatClass;
+            entry["name"] = mCurrentWorkoutName;
+            entry["duration"] = formatTime(mElapsedSeconds * 1000);
+            entry["distance"] = mFinalDistance;
+            entry["averageHeartRate"] = mFinalAverageHeartRate;
+
+            nextHistory.add(entry);
+            for (var i = 0; i < previous.size() && i < 19; i += 1) {
+                nextHistory.add(previous[i]);
+            }
+            Storage.setValue("kajoActivityHistory", nextHistory);
+            mHistoryEntrySaved = true;
+            return true;
+        } catch (error) {
+            WatchUi.showToast("Historie konnte nicht gespeichert werden", null);
+            return false;
+        }
+    }
+
     function finishRecording() as Void {
         // Vor dem Beenden letzte verfuegbare Werte sichern.
         captureActivitySummary();
         if (mEngine.finish()) {
+            saveHistoryEntry();
             mTimer.stop();
             Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
             mStatus = "GESPEICHERT";
@@ -960,7 +994,7 @@ class KajoConnectActivityView extends WatchUi.View {
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             finishRecording();
         } else if (mStatus == "GESPEICHERT") {
-            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            if (saveHistoryEntry()) { WatchUi.popView(WatchUi.SLIDE_DOWN); }
         }
     }
 
@@ -1004,7 +1038,7 @@ class KajoConnectActivityView extends WatchUi.View {
             return;
         }
         if (mStatus == "GESPEICHERT") {
-            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            if (saveHistoryEntry()) { WatchUi.popView(WatchUi.SLIDE_DOWN); }
         }
     }
 
