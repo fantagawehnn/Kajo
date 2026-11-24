@@ -1,123 +1,22 @@
-import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.Math;
 import Toybox.WatchUi;
 
-class KajoConnectMenuView extends WatchUi.View {
+class KajoConnectMenuView extends WatchUi.Menu2 {
 
     var mHomeView as KajoConnectView;
-    var mKajoLayout as KajoLayout;
-    var mWidth as Lang.Number = 0;
-    var mHeight as Lang.Number = 0;
-    var mUnit as Lang.Number = 0;
-    var mRowTop as Lang.Number = 64;
-    var mRowStep as Lang.Number = 30;
-    var mRowHeight as Lang.Number = 25;
-    var mSelectedIndex as Lang.Number = 0;
-    var mRows as Lang.Array<Lang.String> = [
-        "TRAININGSFELDER",
-        "DATENSEITEN",
-        "TRAININGSÜBERSICHT",
-        "HISTORIE",
-        "INTERVALL-HINWEISE",
-        "BOOTSKLASSE",
-        "EINHEITEN",
-        "UHR MIT KAJO VERBINDEN",
-        "EIGENE DATENFELDER"
-    ];
 
     function initialize(homeView as KajoConnectView) {
-        View.initialize();
+        Menu2.initialize({:title => "EINSTELLUNGEN", :footer => "KAJO CONNECT"});
         mHomeView = homeView;
-        mKajoLayout = new KajoLayout();
-    }
 
-    function drawLabel(dc as Dc, x as Lang.Number, y as Lang.Number,
-        label as Lang.String, width as Lang.Number) as Void {
-        mKajoLayout.drawTextFit(dc, x, y, label, width, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-    }
-
-    function moveSelection(direction as Lang.Number) as Void {
-        mSelectedIndex += direction;
-        if (mSelectedIndex < 0) { mSelectedIndex = mRows.size() - 1; }
-        if (mSelectedIndex >= mRows.size()) { mSelectedIndex = 0; }
-        WatchUi.requestUpdate();
-    }
-
-    function activateSelection() as Void {
-        var y = mRowTop + (mSelectedIndex * mRowStep) + (mRowHeight / 2);
-        handleTap(y);
-    }
-
-    function handleTap(y as Lang.Number) as Void {
-        if (y >= mUnit * 0.90) {
-            WatchUi.popView(WatchUi.SLIDE_DOWN);
-            return;
-        }
-        if (y < mRowTop || y >= (mRowTop + (mRowStep * 9))) { return; }
-        var index = Math.floor((y - mRowTop) / mRowStep).toNumber();
-        if (index < 0 || index >= 9) { return; }
-        if (index == 0) {
-            var trainingFields = new KajoConnectTrainingFieldsView();
-            WatchUi.pushView(trainingFields, new KajoConnectTrainingFieldsDelegate(trainingFields), WatchUi.SLIDE_UP);
-        } else if (index == 1) {
-            var config = new KajoConnectDisplayConfigView();
-            WatchUi.pushView(config, new KajoConnectDisplayConfigDelegate(config), WatchUi.SLIDE_UP);
-        } else if (index == 2) {
-            var list = new KajoConnectWorkoutListView(mHomeView);
-            WatchUi.pushView(list, new KajoConnectWorkoutListDelegate(list), WatchUi.SLIDE_UP);
-        } else if (index == 3) {
-            var history = new KajoConnectHistoryView();
-            WatchUi.pushView(history, new KajoConnectHistoryDelegate(history), WatchUi.SLIDE_UP);
-        } else if (index == 4) {
-            var hints = new KajoConnectIntervalHintsView();
-            WatchUi.pushView(hints, new KajoConnectIntervalHintsDelegate(hints), WatchUi.SLIDE_UP);
-        } else if (index == 5) {
-            var boatClass = new KajoConnectBoatClassView(mHomeView);
-            WatchUi.pushView(boatClass, new KajoConnectBoatClassDelegate(boatClass), WatchUi.SLIDE_UP);
-        } else if (index == 6) {
-            var units = new KajoConnectUnitsView();
-            WatchUi.pushView(units, new KajoConnectUnitsDelegate(), WatchUi.SLIDE_UP);
-        } else if (index == 7) {
-            var pairing = new KajoConnectPairingView();
-            WatchUi.pushView(pairing, new KajoConnectPairingDelegate(), WatchUi.SLIDE_UP);
-        } else {
-            var fields = new KajoConnectCustomFieldsView();
-            WatchUi.pushView(fields, new KajoConnectCustomFieldsDelegate(fields), WatchUi.SLIDE_UP);
-        }
-    }
-
-    function onUpdate(dc as Dc) {
-        dc.clear();
-        mWidth = dc.getWidth();
-        mHeight = dc.getHeight();
-        mUnit = mWidth < mHeight ? mWidth : mHeight;
-        mKajoLayout.configure(mWidth, mHeight);
-        var cx = mWidth / 2;
-
-        drawLabel(dc, cx, 30, "EINSTELLUNGEN", 270);
-        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-        dc.drawLine(62, 64, 328, 64);
-
-        mRowTop = 64;
-        for (var i = 0; i < mRows.size(); i += 1) {
-            var top = mRowTop + (i * mRowStep);
-            var rowWidth = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.80);
-            var left = cx - (rowWidth / 2);
-            var selected = i == mSelectedIndex;
-            dc.setColor(selected ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
-            dc.fillRectangle(left.toNumber(), top.toNumber(), rowWidth.toNumber(), mRowHeight);
-            dc.setColor(selected ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
-            dc.fillRectangle(left.toNumber(), top.toNumber(), 4, mRowHeight);
-            mKajoLayout.drawTextFit(dc, cx, (top + 6).toNumber(), mRows[i],
-                (rowWidth - 24).toNumber(), Graphics.FONT_XTINY,
-                selected ? 0x25D3CB : Graphics.COLOR_WHITE);
-            if (i < mRows.size() - 1) {
-                dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-                dc.drawLine(left.toNumber(), top + mRowHeight + 5,
-                    (left + rowWidth).toNumber(), top + mRowHeight + 5);
-            }
-        }
-        drawLabel(dc, cx, 350, "ZURÜCK", (mUnit * 0.55).toNumber());
+        addItem(new WatchUi.MenuItem("Trainingsfelder", "1, 2, 4 oder 6 Werte", "training_fields", {}));
+        addItem(new WatchUi.MenuItem("Datenseiten", "Trainingsanzeigen konfigurieren", "display_pages", {}));
+        addItem(new WatchUi.MenuItem("Trainingsübersicht", "Geplante Einheiten", "training_overview", {}));
+        addItem(new WatchUi.MenuItem("Historie", "Abgeschlossene Einheiten", "history", {}));
+        addItem(new WatchUi.MenuItem("Intervall-Hinweise", "Vibration und Signaltöne", "interval_hints", {}));
+        addItem(new WatchUi.MenuItem("Bootsklasse", "K1 · C1 · C2", "boat_class", {}));
+        addItem(new WatchUi.MenuItem("Einheiten", "Metrisches System", "units", {}));
+        addItem(new WatchUi.MenuItem("Mit KAJO verbinden", "Gerät koppeln und synchronisieren", "pairing", {}));
+        addItem(new WatchUi.MenuItem("Eigene Datenfelder", "Individuelle Messwerte", "custom_fields", {}));
     }
 }
