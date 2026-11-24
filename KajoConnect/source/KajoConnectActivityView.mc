@@ -171,6 +171,8 @@ class KajoConnectActivityView extends WatchUi.View {
                 mTransitionCountdown = 0;
                 mWorkoutStepIndex += 1;
                 mWorkoutStepElapsedSeconds = 0;
+                // Vibrationssignal genau beim Start der neuen Belastungs- oder Erholungsphase.
+                notifyIntervalTransition();
                 WatchUi.showToast("Neuer Trainingsabschnitt", null);
             }
             return;
@@ -181,7 +183,6 @@ class KajoConnectActivityView extends WatchUi.View {
         if (hasNextStep && remaining > 0 && remaining <= 3) {
             mIsTransitioning = true;
             mTransitionCountdown = remaining;
-            notifyIntervalTransition();
             return;
         }
 
@@ -685,7 +686,7 @@ class KajoConnectActivityView extends WatchUi.View {
             }
         }
         drawActivityText(dc, cx, 86, 270, 58, timerText,
-            Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+            Graphics.FONT_NUMBER_HOT, phaseColor);
         drawActivityText(dc, cx, 143, 120, 16, "MIN : SEK",
             Graphics.FONT_XTINY, 0x98A5AB);
         if (targetText != "") {
@@ -1181,8 +1182,12 @@ class KajoConnectActivityView extends WatchUi.View {
             }
             dc.setColor(0x263238, Graphics.COLOR_BLACK);
             dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 205, 335);
+            var countdownProgress = mTransitionCountdown / 3.0;
+            var countdownEnd = 205 + (130 * countdownProgress);
             dc.setColor(0xFFB020, Graphics.COLOR_BLACK);
-            dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 205, 335);
+            if (countdownEnd > 205) {
+                dc.drawArc(cx, 195, 178, Graphics.ARC_CLOCKWISE, 205, countdownEnd);
+            }
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mCurrentPageId == 0) {
