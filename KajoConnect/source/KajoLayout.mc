@@ -33,8 +33,8 @@ class KajoLayout {
         return 0.028;
     }
 
-    function scaledFont(dc as Dc, text as Lang.String, maxWidth as Lang.Number,
-        maxHeight as Lang.Number, preferredFont) {
+    function scaledFont(dc as Dc, text as Lang.String, maxWidth,
+        maxHeight, preferredFont) {
         var baseHeight = dc.getFontHeight(preferredFont);
         if (baseHeight <= 0 || maxWidth <= 0 || maxHeight <= 0) {
             return preferredFont;
@@ -141,7 +141,7 @@ class KajoLayout {
 
         var font = scaledFont(dc, text, available, height, preferredFont);
         var textHeight = dc.getFontHeight(font);
-        if (textHeight > height && font == preferredFont) {
+        if (textHeight > height) {
             // Do not draw an oversized fallback font into a smaller row.
             return;
         }
