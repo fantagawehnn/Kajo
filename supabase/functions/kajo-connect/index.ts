@@ -518,6 +518,92 @@ Deno.serve(async (request) => {
       return json(200, { ok: true, status: "revoked" });
     }
 
+    // Upload one completed watch activity into the existing KAJO activities table.
+    // The client ID is stable across retries; user_id + record_id makes this idempotent.
+    if (action === "upload-activity") {
+      const authorization = request.headers.get("Authorization") || "";
+      const match = authorization.match(/^Bearer\\s+([a-f0-9]{64})$/i);
+      if (!match) return json(401, { error: "A valid device token is required." });
+      const tokenHash = await sha256(match[1]);
+      const { data: device, error: deviceError } = await admin
+        .from("kajo_connect_devices")
+        .select("id,user_id")
+        .eq("token_hash", tokenHash)
+        .is("revoked_at", null)
+        .maybeSingle();
+      if (deviceError) throw deviceError;
+      if (!device) return json(401, { error: "This device is not paired or has been revoked." });
+      if (!await consumeRateLimit(admin, "device-upload-activity", device.id, 20, 60)) {
+        return json(429, { error: "Activity uploads are temporarily rate limited." });
+      }
+
+      const raw = body.activity;
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        return json(400, { error: "A completed activity object is required." });
+      }
+      const activity = raw as JsonRecord;
+      const clientId = typeof activity.clientActivityId === "string" ? activity.clientActivityId : "";
+      if (!/^[a-zA-Z0-9_-]{1,100}$/.test(clientId)) {
+        return json(400, { error: "Invalid client activity ID." });
+      }
+      if (!validDate(activity.date)) return json(400, { error: "A valid local activity date is required." });
+      const boatClass = activity.boatClass;
+      if (boatClass !== "K1" && boatClass !== "C1" && boatClass !== "C2") {
+        return json(400, { error: "Unsupported boat class." });
+      }
+      const durationSeconds = Number(activity.durationSeconds);
+      if (!Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 21600) {
+        return json(400, { error: "Activity duration must be between 1 second and 6 hours." });
+      }
+      const distanceMeters = activity.distanceMeters == null ? null : Number(activity.distanceMeters);
+      if (distanceMeters !== null && (!Number.isFinite(distanceMeters) || distanceMeters <= 0 || distanceMeters > 1000000)) {
+        return json(400, { error: "Invalid activity distance." });
+      }
+      const averageHeartRate = activity.averageHeartRateBpm == null ? null : Number(activity.averageHeartRateBpm);
+      if (averageHeartRate !== null && (!Number.isInteger(averageHeartRate) || averageHeartRate < 30 || averageHeartRate > 250)) {
+        return json(400, { error: "Invalid average heart rate." });
+      }
+      const name = typeof activity.name === "string" && activity.name.trim()
+        ? activity.name.trim().slice(0, 120)
+        : "KAJO Training";
+      const startTimestamp = Number(activity.startTimestamp);
+      const startTime = Number.isInteger(startTimestamp) && startTimestamp > 0
+        ? new Date(startTimestamp * 1000).toISOString()
+        : null;
+      const recordId = "kajo-watch-" + device.id + "-" + clientId;
+      const payload: JsonRecord = {
+        id: recordId,
+        source: "garmin-connect-iq",
+        sources: ["garmin-connect-iq"],
+        sourceId: clientId,
+        sourceRefs: { kajoConnectDeviceId: device.id, kajoConnectActivityId: clientId },
+        date: activity.date,
+        startTime,
+        name,
+        type: boatClass === "K1" ? "Kayaking" : boatClass,
+        category: "ga",
+        duration: Number((durationSeconds / 60).toFixed(2)),
+        distance: distanceMeters !== null ? Number((distanceMeters / 1000).toFixed(3)) : null,
+        hr: averageHeartRate,
+        boatClass,
+      };
+      const { data: saved, error: saveError } = await admin
+        .from("activities")
+        .upsert({
+          user_id: device.user_id,
+          record_id: recordId,
+          activity_date: activity.date,
+          payload,
+        }, { onConflict: "user_id,record_id" })
+        .select("record_id")
+        .maybeSingle();
+      if (saveError) throw saveError;
+      if (!saved?.record_id) throw new Error("Activity upload could not be verified.");
+      await admin.from("kajo_connect_devices")
+        .update({ last_seen_at: new Date().toISOString() }).eq("id", device.id);
+      return json(200, { ok: true, status: "saved", recordId, idempotent: true });
+    }
+
     // All watch requests after pairing use a random bearer token; only its hash is stored.
     if (action === "sync") {
       const authorization = request.headers.get("Authorization") || "";
