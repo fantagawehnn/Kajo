@@ -573,26 +573,26 @@ class KajoConnectActivityView extends WatchUi.View {
 
         // Status-Chip
         dc.setColor(0x0B2024, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(66, 40, 258, 27, 13);
+        dc.fillRoundedRectangle(110, 48, 170, 25, 12);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawRoundedRectangle(66, 40, 258, 27, 13);
-        drawActivityText(dc, 195, 46, 230, 15, statusText,
+        dc.drawRoundedRectangle(110, 48, 170, 25, 12);
+        drawActivityText(dc, 195, 53, 150, 14, statusText,
             Graphics.FONT_XTINY, cyan);
 
         // Timerbereich: Zahl, Einheit und Trainingsziel haben eigene Zeilen.
         dc.setColor(0x12363B, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 139, 73, Graphics.ARC_CLOCKWISE, 210, 330);
+        dc.drawArc(cx, 125, 60, Graphics.ARC_CLOCKWISE, 210, 330);
         dc.setColor(cyan, Graphics.COLOR_BLACK);
-        dc.drawArc(cx, 139, 73, Graphics.ARC_CLOCKWISE, 220, 320);
-        drawActivityText(dc, cx, 91, 250, 48, timerText,
+        dc.drawArc(cx, 125, 60, Graphics.ARC_CLOCKWISE, 220, 320);
+        drawActivityText(dc, cx, 82, 220, 46, timerText,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, cx, 141, 100, 14, "MINUTEN",
+        drawActivityText(dc, cx, 131, 100, 13, "MINUTEN",
             Graphics.FONT_XTINY, muted);
         if (targetText != "") {
-            drawActivityText(dc, cx, 163, 270, 15, targetText,
+            drawActivityText(dc, cx, 151, 240, 14, targetText,
                 Graphics.FONT_XTINY, 0xE2D95A);
         } else if (mCurrentWorkoutState == "PLANNED" && mCurrentWorkoutName != "") {
-            drawActivityText(dc, cx, 163, 270, 15, mCurrentWorkoutName,
+            drawActivityText(dc, cx, 151, 240, 14, mCurrentWorkoutName,
                 Graphics.FONT_XTINY, 0xE2D95A);
         }
 
@@ -603,44 +603,44 @@ class KajoConnectActivityView extends WatchUi.View {
 
         // Vier gleich grosse Datenkarten. Jede Karte hat Label, Wert und Einheit
         // in separaten Zeilen; keine dynamische Textzeile liegt ueber einer anderen.
-        var cardWidth = 146;
-        var cardHeight = 61;
-        var leftX = 42;
-        var rightX = 202;
-        var topY = 199;
-        var bottomY = 269;
+        var cardWidth = 126;
+        var cardHeight = 58;
+        var leftX = 59;
+        var rightX = 205;
+        var topY = 190;
+        var bottomY = 255;
 
         drawDashboardPanel(dc, leftX, topY, cardWidth, cardHeight);
         drawDashboardPanel(dc, rightX, topY, cardWidth, cardHeight);
         drawDashboardPanel(dc, leftX, bottomY, cardWidth, cardHeight);
         drawDashboardPanel(dc, rightX, bottomY, cardWidth, cardHeight);
 
-        drawActivityText(dc, leftX + 73, topY + 5, 126, 13, "SCHLAGFREQUENZ",
+        drawActivityText(dc, leftX + 63, topY + 4, 108, 12, "SCHLAGFREQUENZ",
             Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, leftX + 73, topY + 21, 126, 24, cadenceNow,
+        drawActivityText(dc, leftX + 63, topY + 18, 108, 23, cadenceNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, leftX + 73, topY + 46, 126, 11, "SPM",
+        drawActivityText(dc, leftX + 63, topY + 42, 108, 11, "SPM",
             Graphics.FONT_XTINY, muted);
 
-        drawActivityText(dc, rightX + 73, topY + 5, 126, 13, "DISTANZ",
+        drawActivityText(dc, rightX + 63, topY + 4, 108, 12, "DISTANZ",
             Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, rightX + 73, topY + 21, 126, 24, distance,
+        drawActivityText(dc, rightX + 63, topY + 18, 108, 23, distance,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, rightX + 73, topY + 46, 126, 11, "KM",
+        drawActivityText(dc, rightX + 63, topY + 42, 108, 11, "KM",
             Graphics.FONT_XTINY, muted);
 
-        drawActivityText(dc, leftX + 73, bottomY + 5, 126, 13, "PACE / KM",
+        drawActivityText(dc, leftX + 63, bottomY + 4, 108, 12, "PACE / KM",
             Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, leftX + 73, bottomY + 21, 126, 24, pace,
+        drawActivityText(dc, leftX + 63, bottomY + 18, 108, 23, pace,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, leftX + 73, bottomY + 46, 126, 11, "MIN / KM",
+        drawActivityText(dc, leftX + 63, bottomY + 42, 108, 11, "MIN / KM",
             Graphics.FONT_XTINY, muted);
 
-        drawActivityText(dc, rightX + 73, bottomY + 5, 126, 13, "HERZFREQUENZ",
+        drawActivityText(dc, rightX + 63, bottomY + 4, 108, 12, "HERZFREQUENZ",
             Graphics.FONT_XTINY, muted);
-        drawActivityText(dc, rightX + 73, bottomY + 20, 126, 23, hrNow,
+        drawActivityText(dc, rightX + 63, bottomY + 17, 108, 22, hrNow,
             Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-        drawActivityText(dc, rightX + 73, bottomY + 44, 126, 12,
+        drawActivityText(dc, rightX + 63, bottomY + 40, 108, 11,
             zone > 0 ? "BPM  ·  ZONE " + zone.toString() : "BPM  ·  ZONE --",
             Graphics.FONT_XTINY, zone > 0 ? 0xE3E84A : muted);
 
