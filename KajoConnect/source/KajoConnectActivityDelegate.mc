@@ -1,12 +1,12 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
+class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
 
     var mView as KajoConnectActivityView;
 
     function initialize(view as KajoConnectActivityView) {
-        BehaviorDelegate.initialize();
+        InputDelegate.initialize();
         mView = view;
     }
 
@@ -31,23 +31,29 @@ class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
 
+        if (key == WatchUi.KEY_UP || key == WatchUi.KEY_MENU) {
+            mView.nextDisplayPage(1);
+            return true;
+        }
+        if (key == WatchUi.KEY_DOWN) {
+            mView.nextDisplayPage(-1);
+            return true;
+        }
+
         return false;
     }
 
-    // Mittlere Taste: zwischen den Trainings-Datenseiten wechseln.
-    function onMenu() as Lang.Boolean {
-        mView.nextDisplayPage(1);
-        return true;
-    }
-
-    // Vertikales Wischen wechselt zwischen den Datenansichten.
-    function onNextPage() as Lang.Boolean {
-        mView.nextDisplayPage(1);
-        return true;
-    }
-
-    function onPreviousPage() as Lang.Boolean {
-        mView.nextDisplayPage(-1);
-        return true;
+    // Touch-Wischgesten werden direkt verarbeitet, ohne Behavior-Mapping.
+    function onSwipe(swipeEvent as WatchUi.SwipeEvent) as Lang.Boolean {
+        var direction = swipeEvent.getDirection();
+        if (direction == WatchUi.SWIPE_UP) {
+            mView.nextDisplayPage(1);
+            return true;
+        }
+        if (direction == WatchUi.SWIPE_DOWN) {
+            mView.nextDisplayPage(-1);
+            return true;
+        }
+        return false;
     }
 }
