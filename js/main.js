@@ -1081,10 +1081,14 @@ async function loadGarminSyncHistory() {
         return;
     }
     const requestUserId = activeAppUserId;
+    const requestActivationSequence = activationSequence;
+    const isCurrentRequest = () => appUserReady
+        && activeAppUserId === requestUserId
+        && activationSequence === requestActivationSequence;
     container.textContent = 'Synchronisierungshistorie wird geladen …';
     try {
         const { healthRows, activityRows } = await loadGarminSyncHistoryData(supabase, requestUserId);
-        if (!appUserReady || activeAppUserId !== requestUserId) return;
+        if (!isCurrentRequest()) return;
 
         const groups = new Map();
         for (const row of healthRows) {
@@ -1151,7 +1155,7 @@ async function loadGarminSyncHistory() {
           </div>
           <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
     } catch (error) {
-        if (activeAppUserId === requestUserId) {
+        if (isCurrentRequest()) {
             container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
         }
     }
