@@ -118,16 +118,16 @@ class KajoConnectWorkoutView extends WatchUi.View {
                 contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
         }
 
-        mStartTop = unit * 0.79;
-        mStartBottom = unit * 0.93;
+        mStartTop = unit * 0.78;
+        mStartBottom = unit * 0.89;
         var buttonWidth = mKajoLayout.safeRectWidth(mStartTop, mStartBottom - mStartTop, unit * 0.78);
         var buttonLeft = center - (buttonWidth / 2);
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
         dc.fillRectangle(buttonLeft.toNumber(), mStartTop, buttonWidth.toNumber(),
             (mStartBottom - mStartTop).toNumber());
-        drawCentered(dc, center, unit * 0.825, "TRAINING STARTEN",
+        drawCentered(dc, center, unit * 0.805, "TRAINING STARTEN",
             buttonWidth - 16, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
-        drawCentered(dc, center, unit * 0.945, "ZURÜCK · UNTERE TASTE",
+        drawCentered(dc, center, unit * 0.92, "ZURÜCK",
             contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
     }
 }
