@@ -981,7 +981,7 @@ class KajoConnectActivityView extends WatchUi.View {
         } else if (mStatus == "GESPEICHERT") {
             drawPageHeader(dc, "GESPEICHERT");
             drawFit(dc, 195, 165, "AUFZEICHNUNG BEENDET",
-                290, Graphics.FONT_MEDIUM, cyan);
+                290, Graphics.FONT_MEDIUM, 0x00E5CC);
             drawFit(dc, 195, 215, "FIT-DATEI GESPEICHERT",
                 280, Graphics.FONT_SMALL, Graphics.COLOR_LT_GRAY);
             mButtonTop = 340;
