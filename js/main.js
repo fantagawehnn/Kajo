@@ -670,11 +670,13 @@ async function diagnoseGarminSummaryJson() {
 // Verhindert doppelte parallele Garmin-Vorschauabrufe pro Benutzer.
 const garminActivityCloudLoadsInFlight = new Map();
 
-async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId) {
+async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, expectedActivationSequence = activationSequence) {
     const userId = expectedUserId;
+    const requestActivationSequence = expectedActivationSequence;
     if (!userId) throw new Error('Für den Garmin-Aktivitätsabgleich ist kein aktiver Benutzer angemeldet.');
+    const requestKey = userId + ':' + requestActivationSequence;
 
-    const existingLoad = garminActivityCloudLoadsInFlight.get(userId);
+    const existingLoad = garminActivityCloudLoadsInFlight.get(requestKey);
     if (existingLoad) return existingLoad;
 
     const loadPromise = (async () => {
@@ -687,7 +689,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId) {
 
         // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
         // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
-        if (activeAppUserId !== userId || !appUserReady) {
+        if (activeAppUserId !== userId || !appUserReady || activationSequence !== requestActivationSequence) {
             return { added: 0, merged: 0, ambiguous: 0, sanitized: 0, stale: true };
         }
 
@@ -714,12 +716,12 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId) {
         return { added, merged, ambiguous, sanitized, stale: false };
     })();
 
-    garminActivityCloudLoadsInFlight.set(userId, loadPromise);
+    garminActivityCloudLoadsInFlight.set(requestKey, loadPromise);
     try {
         return await loadPromise;
     } finally {
-        if (garminActivityCloudLoadsInFlight.get(userId) === loadPromise) {
-            garminActivityCloudLoadsInFlight.delete(userId);
+        if (garminActivityCloudLoadsInFlight.get(requestKey) === loadPromise) {
+            garminActivityCloudLoadsInFlight.delete(requestKey);
         }
     }
 }
@@ -1762,7 +1764,7 @@ async function syncGarminSelectedRange() {
                     activitySummary[key] += Number(sync.activitySync[key] || 0);
                 }
                 activitySummary.status = sync.activitySync.status || activitySummary.status;
-                await loadGarminActivitiesFromCloud(syncUserId);
+                await loadGarminActivitiesFromCloud(syncUserId, syncActivationSequence);
                 if (!isCurrentSync()) return;
             }
 
@@ -3450,7 +3452,7 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (!isCurrentSync()) return;
-        const activityCloudSync = await loadGarminActivitiesFromCloud(userId);
+        const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
         if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
             void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
@@ -3709,7 +3711,7 @@ async function handleAuthSession(session) {
             // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
             // nicht erforderlich. Sie werden nach der Freigabe parallel zum
             // Tagesabgleich geladen; beide Aufrufer teilen einen laufenden Abruf.
-            void loadGarminActivitiesFromCloud(userId).catch(garminLoadError => {
+            void loadGarminActivitiesFromCloud(userId, sequence).catch(garminLoadError => {
                 console.warn('Garmin-Cloud-Aktivitäten konnten im Hintergrund nicht geladen werden:', garminLoadError);
             });
             void syncGarminTodayOnOpen(userId);
