@@ -118,6 +118,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
                 contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
         }
 
+        // Convert fractional layout coordinates to integer screen coordinates.
         mStartTop = (unit * 0.78).toNumber();
         mStartBottom = (unit * 0.89).toNumber();
         var buttonWidth = mKajoLayout.safeRectWidth(mStartTop, mStartBottom - mStartTop, unit * 0.78);
