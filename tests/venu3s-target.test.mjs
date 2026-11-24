@@ -138,7 +138,7 @@ test("home screen filters today's sessions and separates planned and free traini
   assert.match(homeView, /var todaySessions = getTodaysSessions\(\)/);
   assert.match(homeView, /todaySessions\.size\(\) == 1/);
   assert.match(homeView, /todaySessions\.size\(\) > 1/);
-  assert.match(homeView, /"FREIES TRAINING"/);
+  assert.match(homeView, /"FREI TRAINIEREN"/);
   assert.match(homeView, /openActivityView\(null\)/);
   assert.match(homeView, /if \(y >= mStartTop && y <= mStartBottom\)/);
   assert.match(homeView, /startActivity\(\)/);
@@ -146,17 +146,17 @@ test("home screen filters today's sessions and separates planned and free traini
   assert.doesNotMatch(homeView, /"DEIN TRAINING"/);
 });
 
-test("home screen keeps the KAJO dashboard inside the circular display safe area", () => {
-  assert.match(homeView, /mStartTop = 135/);
-  assert.match(homeView, /mStartBottom = 204/);
-  assert.match(homeView, /mFreeTop = 228/);
-  assert.match(homeView, /mFreeBottom = 332/);
-  assert.match(homeView, /var topRow = 232/);
-  assert.match(homeView, /var bottomRow = 282/);
-  assert.match(homeView, /"FREIES TRAINING", "TRAININGSPLAN", "HISTORIE", "EINSTELLUNGEN"/);
-  assert.match(homeView, /var row = y < 278 \? 0 : 1/);
-  assert.match(homeView, /"SPORTART: " \+ mSelectedBoat/);
-  assert.match(homeView, /"KAJO"/);
+test("home screen uses three horizontal strips within the circular Venu 3S display", () => {
+  assert.match(homeView, /mStartTop = 100/);
+  assert.match(homeView, /mStartBottom = 158/);
+  assert.match(homeView, /mFreeTop = 166/);
+  assert.match(homeView, /mFreeBottom = 352/);
+  assert.match(homeView, /var labels = \["HEUTE", "GESPEICHERT", "FREI TRAINIEREN"\]/);
+  assert.match(homeView, /var top = 101 \+ \(item \* 66\)/);
+  assert.match(homeView, /var rowHeight = 58/);
+  assert.match(homeView, /safeRectWidth\(top, rowHeight, mUnit \* 0\.80\)/);
+  assert.match(homeView, /"WISCHEN · AUSWÄHLEN"/);
+  assert.match(homeView, /"KAJO  ·  " \+ mSelectedBoat/);
 });
 
 test("shared text boxes reject text taller than their assigned vertical region", () => {
