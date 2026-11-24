@@ -43,3 +43,28 @@ test('retries transient failures only up to the configured limit', async () => {
     }, { maxRetries: 2, retryDelayMs: 0 }), error => error === failure);
     assert.equal(attempts, 3);
 });
+
+test('loads counted pages concurrently within the configured limit and preserves page order', async () => {
+    const rows = Array.from({ length: 2501 }, (_, id) => ({ id }));
+    let active = 0;
+    let maxActive = 0;
+    const result = await loadGarminActivityPages(async (offset, limit) => {
+        active++;
+        maxActive = Math.max(maxActive, active);
+        await new Promise(resolve => setTimeout(resolve, 5));
+        const data = rows.slice(offset, offset + limit);
+        active--;
+        return { data, error: null };
+    }, { pageSize: 500, totalCount: rows.length, concurrency: 3, retryDelayMs: 0 });
+    assert.equal(result.length, rows.length);
+    assert.deepEqual(result, rows);
+    assert.ok(maxActive > 1);
+    assert.ok(maxActive <= 3);
+});
+
+test('rejects a counted pagination result when a page is incomplete', async () => {
+    await assert.rejects(loadGarminActivityPages(async (offset, limit) => ({
+        data: offset === 0 ? [{ id: 0 }] : Array.from({ length: Math.min(limit, 4) }, (_, index) => ({ id: offset + index })),
+        error: null
+    }), { pageSize: 5, totalCount: 10, concurrency: 2, retryDelayMs: 0 }), /nicht vollständig/);
+});

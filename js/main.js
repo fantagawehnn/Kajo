@@ -10,12 +10,14 @@
  * ============================================================ */
 
 import { state, setRefreshHandler } from './state.js';
+import { createActivationGuard } from './activation-guard.js?v=1';
 import { renderSeasonPlanEditor, addSeasonPlanPhase, removeSeasonPlanPhase, saveSeasonPlanEditor, generateSeasonPlanProposal, applySeasonPlanProposal, discardSeasonPlanProposal, generateWeeklyPlanProposal, applyWeeklyPlanProposal, approveWeeklyPlan, discardWeeklyPlanProposal, transferWeeklyPlanToCalendar, reviewApprovedWeeklyPlan, setManualActivityLink, setManualSessionStatus, generateAdaptiveWeekProposal, discardAdaptiveWeekProposal, applyAdaptiveWeekProposal } from './season-plan-editor.js?v=8';
 import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSection, editAthleteProfileSection, cancelAthleteProfileEdit, saveAthleteProfileSection } from './profile.js?v=4';
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
+import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
@@ -666,38 +668,63 @@ async function diagnoseGarminSummaryJson() {
     }
 }
 
-async function loadGarminActivitiesFromCloud() {
-    const userId = activeAppUserId;
+// Verhindert doppelte parallele Garmin-Vorschauabrufe pro Benutzer.
+const garminActivityCloudLoadsInFlight = new Map();
+
+async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, expectedActivationSequence = activationSequence) {
+    const userId = expectedUserId;
+    const requestActivationSequence = expectedActivationSequence;
     if (!userId) throw new Error('Für den Garmin-Aktivitätsabgleich ist kein aktiver Benutzer angemeldet.');
+    const requestKey = userId + ':' + requestActivationSequence;
 
-    const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
-        .select('garmin_activity_id, activity')
-        .eq('user_id', userId)
-        .order('start_time', { ascending: true })
-        .order('garmin_activity_id', { ascending: true })
-        .range(offset, offset + limit - 1));
+    const existingLoad = garminActivityCloudLoadsInFlight.get(requestKey);
+    if (existingLoad) return existingLoad;
 
-    let added = 0, merged = 0, ambiguous = 0;
-    for (const row of data) {
-        const candidate = garminCandidateFromPreview(row.activity);
-        if (!candidate) continue;
-        const matches = findGarminDuplicates(candidate);
-        if (matches.length === 1) {
-            mergeGarminActivity(matches[0], candidate);
-            merged++;
-        } else if (matches.length === 0) {
-            state.rawActivities.push(candidate);
-            added++;
-        } else {
-            ambiguous++;
+    const loadPromise = (async () => {
+        const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
+            .select('garmin_activity_id, activity')
+            .eq('user_id', userId)
+            .order('start_time', { ascending: true })
+            .order('garmin_activity_id', { ascending: true })
+            .range(offset, offset + limit - 1));
+
+        // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
+        // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
+        if (activeAppUserId !== userId || !appUserReady || activationSequence !== requestActivationSequence) {
+            return { added: 0, merged: 0, ambiguous: 0, sanitized: 0, stale: true };
+        }
+
+        let added = 0, merged = 0, ambiguous = 0;
+        for (const row of data) {
+            const candidate = garminCandidateFromPreview(row.activity);
+            if (!candidate) continue;
+            const matches = findGarminDuplicates(candidate);
+            if (matches.length === 1) {
+                mergeGarminActivity(matches[0], candidate);
+                merged++;
+            } else if (matches.length === 0) {
+                state.rawActivities.push(candidate);
+                added++;
+            } else {
+                ambiguous++;
+            }
+        }
+        const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
+        if (added || merged || sanitized) {
+            saveDataToLocalStorage();
+            initEngine();
+        }
+        return { added, merged, ambiguous, sanitized, stale: false };
+    })();
+
+    garminActivityCloudLoadsInFlight.set(requestKey, loadPromise);
+    try {
+        return await loadPromise;
+    } finally {
+        if (garminActivityCloudLoadsInFlight.get(requestKey) === loadPromise) {
+            garminActivityCloudLoadsInFlight.delete(requestKey);
         }
     }
-    const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
-    if (added || merged || sanitized) {
-        saveDataToLocalStorage();
-        initEngine();
-    }
-    return { added, merged, ambiguous, sanitized };
 }
 
 
@@ -787,19 +814,32 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
     if (!appUserReady || !activeAppUserId) throw new Error('Bitte melde dich an, bevor du Garmin-Gesundheitsdaten wiederherstellst.');
     if (!supabase) throw new Error('Die Verbindung zur Garmin-Datenbank ist nicht verfügbar.');
 
-    const rows = [];
-    const pageSize = 1000;
-    for (let offset = 0; ; offset += pageSize) {
-        const { data, error } = await supabase.from('garmin_health_records')
-            .select('data_type, record_date, payload')
-            .gte('record_date', startDate)
-            .lte('record_date', endDate)
-            .order('record_date', { ascending: true })
-            .range(offset, offset + pageSize - 1);
-        if (error) throw error;
-        rows.push(...(data || []));
-        if (!data || data.length < pageSize) break;
-    }
+    const userId = activeAppUserId;
+    const expectedActivationSequence = activationSequence;
+    const ensureCurrentUser = createActivationGuard(
+        () => appUserReady && activeAppUserId === userId && activationSequence === expectedActivationSequence,
+        'Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
+    );
+    const { count, error: countError } = await supabase.from('garmin_health_records')
+        .select('record_date', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('record_date', startDate)
+        .lte('record_date', endDate);
+    if (countError) throw countError;
+    ensureCurrentUser();
+
+    const rows = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_health_records')
+        .select('data_type, record_date, payload')
+        .eq('user_id', userId)
+        .gte('record_date', startDate)
+        .lte('record_date', endDate)
+        .order('record_date', { ascending: true })
+        .range(offset, offset + limit - 1), {
+            pageSize: 1000,
+            totalCount: Number.isFinite(count) ? count : undefined,
+            concurrency: 3
+        });
+    ensureCurrentUser();
 
     const byDate = new Map();
     for (const row of rows) {
@@ -886,6 +926,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         changedDays++;
     }
 
+    ensureCurrentUser();
     if (!dryRun && importedValues > 0) {
         if (saveDataToLocalStorage() === false) {
             throw new Error('Die Werte wurden ermittelt, konnten aber nicht gespeichert werden. Bitte Kontoanmeldung prüfen.');
@@ -1039,19 +1080,15 @@ async function loadGarminSyncHistory() {
         container.textContent = 'Bitte anmelden, um die Synchronisierungshistorie zu sehen.';
         return;
     }
+    const requestUserId = activeAppUserId;
+    const requestActivationSequence = activationSequence;
+    const isCurrentRequest = () => appUserReady
+        && activeAppUserId === requestUserId
+        && activationSequence === requestActivationSequence;
     container.textContent = 'Synchronisierungshistorie wird geladen …';
     try {
-        const healthRows = [];
-        const pageSize = 1000;
-        for (let offset = 0; ; offset += pageSize) {
-            const { data, error } = await supabase.from('garmin_health_records')
-                .select('data_type,record_date')
-                .order('record_date', { ascending: true })
-                .range(offset, offset + pageSize - 1);
-            if (error) throw error;
-            healthRows.push(...(data || []));
-            if (!data || data.length < pageSize) break;
-        }
+        const { healthRows, activityRows } = await loadGarminSyncHistoryData(supabase, requestUserId);
+        if (!isCurrentRequest()) return;
 
         const groups = new Map();
         for (const row of healthRows) {
@@ -1064,11 +1101,7 @@ async function loadGarminSyncHistory() {
             if (date && (!group.last || date > group.last)) group.last = date;
         }
 
-        const { data: activityRows, error: activityError } = await supabase.from('garmin_activities')
-            .select('start_time')
-            .order('start_time', { ascending: true });
-        if (activityError) throw activityError;
-        const activityDates = (activityRows || []).map(row => String(row.start_time || '').slice(0, 10)).filter(Boolean);
+        const activityDates = activityRows.map(row => String(row.start_time || '').slice(0, 10)).filter(Boolean);
         if (activityDates.length) {
             groups.set('activities', {
                 count: activityDates.length,
@@ -1122,7 +1155,9 @@ async function loadGarminSyncHistory() {
           </div>
           <p class="pt-1 text-[10px] text-slate-500">Gezählt werden gespeicherte Garmin-Datensätze, nicht einzelne Messpunkte innerhalb einer Datei.</p>`;
     } catch (error) {
-        container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
+        if (isCurrentRequest()) {
+            container.textContent = 'Historie konnte nicht geladen werden: ' + (error.message || 'Unbekannter Fehler');
+        }
     }
 }
 
@@ -1204,6 +1239,8 @@ async function persistGarminTelemetryBatch(activities, userId) {
 
 async function syncMissingGarminTelemetry(startDate, endDate, status) {
     const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence;
     if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
     const pending = state.rawActivities.filter(activity => {
         const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
@@ -1216,7 +1253,7 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
     const errors = [];
     let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
-        if (activeAppUserId !== syncUserId || !appUserReady) {
+        if (!isCurrentSync()) {
             return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
         }
         const activity = pending[index];
@@ -1229,11 +1266,20 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
                     detail = await downloadGarminFitTelemetry(id);
+                    if (!isCurrentSync()) {
+                        return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+                    }
                     break;
                 } catch (error) {
+                    if (!isCurrentSync()) {
+                        return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+                    }
                     if (attempt > 0 || !/HTTP 429|rate.?limit/i.test(error?.message || '')) throw error;
                     if (message) message.textContent = 'Garmin begrenzt den FIT-Abruf. Aktivität ' + (index + 1) + '/' + pending.length + ' wird nach 30 Sekunden erneut versucht …';
                     await new Promise(resolve => setTimeout(resolve, 30000));
+                    if (!isCurrentSync()) {
+                        return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+                    }
                 }
             }
             applyGarminFitDetail(activity, detail);
@@ -1246,14 +1292,23 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
             recordFields += Object.keys(detail.recordFieldCounts || {}).length;
             imported++;
         } catch (error) {
+            if (!isCurrentSync()) {
+                return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+            }
             failed++;
             errors.push(id + ': ' + (error?.message || 'FIT-Abruf fehlgeschlagen'));
             console.warn('Garmin-Zeitreihen konnten nicht importiert werden:', id, error);
         }
         if ((index + 1) % 5 === 0 || index === pending.length - 1) {
+            if (!isCurrentSync()) {
+                return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+            }
             if (saveDataToLocalStorage() === false) throw new Error('Garmin-Zeitreihen konnten nicht im lokalen Datenspeicher gesichert werden.');
             const batch = pending.slice(persistedThrough, index + 1);
             const cloudResult = await persistGarminTelemetryBatch(batch, syncUserId);
+            if (!isCurrentSync()) {
+                return { total: pending.length, imported, failed, withHr, withSpeed, withCadence, laps, sets, workoutSteps, recordFields, errors, aborted: true };
+            }
             persistedThrough = index + 1;
             if (status) {
                 const message = status.querySelector('#garmin-sync-progress-message');
@@ -1278,6 +1333,8 @@ async function syncMissingGarminTelemetry(startDate, endDate, status) {
  */
 async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null) {
     const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence;
     if (!syncUserId || !appUserReady) throw new Error('Die Garmin-Telemetrie-Synchronisierung benötigt ein angemeldetes Konto.');
     const now = Date.now();
     const cooldowns = {
@@ -1306,7 +1363,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
     const errors = [];
     let persistedThrough = 0;
     for (let index = 0; index < pending.length; index++) {
-        if (activeAppUserId !== syncUserId || !appUserReady) {
+        if (!isCurrentSync()) {
             return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
         }
         const activity = pending[index];
@@ -1333,9 +1390,12 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                     const waitSeconds = Math.max(30, Number(match?.[1] || 30));
                     if (message) message.textContent = 'Garmin-Abruflimit: automatische Fortsetzung in ' + waitSeconds + ' Sekunden …';
                     await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                    if (!isCurrentSync()) {
+                        return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+                    }
                 }
             }
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
             }
             if (lastError) throw lastError;
@@ -1397,7 +1457,7 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
                 rawSeries += usableSeries;
             }
         } catch (error) {
-            if (activeAppUserId !== syncUserId || !appUserReady) {
+            if (!isCurrentSync()) {
                 return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
             }
             const errorMessage = error?.message || 'Unbekannter Garmin-JSON-Fehler';
@@ -1415,6 +1475,9 @@ async function syncMissingGarminJsonTelemetry(startDate, endDate, status = null)
             }
             const batch = pending.slice(persistedThrough, index + 1);
             const cloudResult = await persistGarminTelemetryBatch(batch, syncUserId);
+            if (!isCurrentSync()) {
+                return { total: pending.length, imported, noData, failed, rawSeries, rateLimited, errors, aborted: true };
+            }
             persistedThrough = index + 1;
             if (message && cloudResult.verified) {
                 message.textContent = 'Rohtelemetrie in der Cloud gesichert: ' + cloudResult.verified + ' Datensätze bestätigt.';
@@ -1479,6 +1542,9 @@ function recordGarminActivityCoverageRange(startDate, endDate) {
 
 
 async function syncGarminHeartRateRange(startDate, endDate, status) {
+    const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence;
     const pending = state.rawActivities.filter(activity => {
         const id = activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId;
         const date = String(activity.date || '').slice(0, 10);
@@ -1494,6 +1560,7 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
     let authFailed = false;
     const errors = [];
     for (let index = 0; index < pending.length; index++) {
+        if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
         const activity = pending[index];
         const id = String(activity.sourceRefs?.garminActivityId ?? activity.garminData?.activityId);
         const message = status?.querySelector('#garmin-sync-progress-message');
@@ -1503,14 +1570,18 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
             for (let attempt = 0; attempt < 3; attempt++) {
                 try {
                     detail = await downloadGarminFitTelemetry(id);
+                    if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
                     break;
                 } catch (error) {
+                    if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
                     if (attempt >= 2 || !/HTTP 429|rate.?limit/i.test(error?.message || '')) throw error;
                     const waitSeconds = 30 + attempt * 15;
                     if (message) message.textContent = 'Garmin-Abruflimit erreicht. Neuer Versuch in ' + waitSeconds + ' Sekunden …';
                     await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                    if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
                 }
             }
+            if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
             const hr = Array.isArray(detail?.telemetry?.hr) ? detail.telemetry.hr : [];
             const time = Array.isArray(detail?.telemetry?.time) ? detail.telemetry.time : [];
             const validHrCount = countValidHeartRateSamples(hr, time);
@@ -1553,6 +1624,7 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
                 initEngine();
             }
         } catch (error) {
+            if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
             failed++;
             errors.push(id + ': ' + (error?.message || 'HF-Nachladen fehlgeschlagen'));
             console.warn('Garmin-HF-Zeitreihe konnte nicht nachgeladen werden:', id, error);
@@ -1561,9 +1633,12 @@ async function syncGarminHeartRateRange(startDate, endDate, status) {
                 break;
             }
         }
-        if (index < pending.length - 1 && !authFailed) await new Promise(resolve => setTimeout(resolve, 900));
+        if (index < pending.length - 1 && !authFailed) {
+            await new Promise(resolve => setTimeout(resolve, 900));
+            if (!isCurrentSync()) return { total: pending.length, imported, failed, noHeartRate, insufficientHeartRate, remaining: pending.length - imported - failed - noHeartRate - insufficientHeartRate, authFailed, errors, aborted: true };
+        }
     }
-    if (imported > 0) initEngine();
+    if (imported > 0 && isCurrentSync()) initEngine();
     return {
         total: pending.length, imported, failed, noHeartRate, insufficientHeartRate,
         remaining: Math.max(0, pending.length - imported - failed - noHeartRate - insufficientHeartRate),
@@ -1577,6 +1652,10 @@ async function syncGarminSelectedRange() {
     const startDate = document.getElementById('garmin-preview-start-date')?.value;
     const endDate = document.getElementById('garmin-preview-end-date')?.value;
     if (!status || !button) return;
+    const syncUserId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => Boolean(syncUserId && activeAppUserId === syncUserId && appUserReady && activationSequence === syncActivationSequence);
+    if (!isCurrentSync()) return;
     const today = new Date().toISOString().slice(0, 10);
     if (!startDate || !endDate || startDate > endDate || endDate > today) {
         status.textContent = 'Bitte wähle einen gültigen Zeitraum bis einschließlich heute.';
@@ -1591,6 +1670,7 @@ async function syncGarminSelectedRange() {
         renderGarminSyncProgress(0, totalDays);
         try {
             const result = await syncGarminHeartRateRange(startDate, endDate, status);
+            if (!isCurrentSync() || result.aborted) return;
             status.removeAttribute('aria-busy');
             status.textContent = result.authFailed
                 ? 'HF-Nachladen pausiert: Supabase-Sitzung konnte nicht erneuert werden. Bitte melde dich erneut an. ' +
@@ -1604,14 +1684,19 @@ async function syncGarminSelectedRange() {
                         (result.remaining ? ' Noch nicht versucht: ' + result.remaining + '.' : '') +
                         (result.errors.length ? ' Erste Fehler: ' + result.errors.slice(0, 3).join(' | ') : '');
             setGarminSyncIndicator('current', 'Verbunden');
-            await refreshGarminConnectionStatus();
+            await refreshGarminConnectionStatus(syncUserId, syncActivationSequence);
+            if (!isCurrentSync()) return;
         } catch (error) {
+            if (!isCurrentSync()) return;
             status.removeAttribute('aria-busy');
             status.textContent = 'HF-Nachladen pausiert: ' + (error?.message || 'Unbekannter Fehler');
             setGarminSyncIndicator('current', 'Verbunden');
         } finally {
-            button.disabled = false;
-            button.textContent = 'Daten synchronisieren';
+            // Ein alter Sync darf die Schaltfläche einer neu aktivierten Sitzung nicht freigeben.
+            if (isCurrentSync()) {
+                button.disabled = false;
+                button.textContent = 'Daten synchronisieren';
+            }
         }
         return;
     }
@@ -1644,6 +1729,7 @@ async function syncGarminSelectedRange() {
     // history. Health history keeps its own three-day cursor inside that chunk.
     // This prevents a long historical range from exhausting the worker time limit.
     for (const chunk of chunks) {
+        if (!isCurrentSync()) return;
         let includeActivities = true;
         let remainingDays = null;
         const chunkDays = Math.floor(
@@ -1663,13 +1749,16 @@ async function syncGarminSelectedRange() {
                     timezoneOffsetMinutes: new Date().getTimezoneOffset(),
                     onlyMissingDays: true
                 });
+                if (!isCurrentSync()) return;
             } catch (error) {
+                if (!isCurrentSync()) return;
                 if (!/HTTP 429|rate.?limit/i.test(error?.message || '') || consecutiveRateLimits >= 8) throw error;
                 consecutiveRateLimits++;
                 const waitSeconds = 30 + Math.min(30, (consecutiveRateLimits - 1) * 5);
                 const message = status.querySelector('#garmin-sync-progress-message');
                 if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatischer neuer Versuch in ' + waitSeconds + ' Sekunden …';
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                if (!isCurrentSync()) return;
                 batch++;
                 continue;
             }
@@ -1682,7 +1771,8 @@ async function syncGarminSelectedRange() {
                     activitySummary[key] += Number(sync.activitySync[key] || 0);
                 }
                 activitySummary.status = sync.activitySync.status || activitySummary.status;
-                await loadGarminActivitiesFromCloud();
+                await loadGarminActivitiesFromCloud(syncUserId, syncActivationSequence);
+                if (!isCurrentSync()) return;
             }
 
             remainingDays = Number(health.remainingDays ?? 0);
@@ -1711,6 +1801,7 @@ async function syncGarminSelectedRange() {
                 if (message) message.textContent = 'Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden (' + completedDays + '/' + totalDays + ' Tage verarbeitet).';
                 setGarminSyncProgressPhase('Warte auf Garmin-Freigabe · der bisherige Tagesfortschritt bleibt erhalten.');
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                if (!isCurrentSync()) return;
                 batch++;
                 continue;
             }
@@ -1734,11 +1825,14 @@ async function syncGarminSelectedRange() {
         initEngine();
     }
         healthImportSummary = await loadGarminHealthRecordsIntoCheckins(startDate, endDate);
+        if (!isCurrentSync()) return;
         const message = status.querySelector('#garmin-sync-progress-message');
         if (message) message.textContent = 'Lade HF- und Geschwindigkeitszeitreihen der Garmin-Aktivitäten …';
         setGarminSyncProgressPhase('Tagesabgleich abgeschlossen · FIT-Dateien und Aktivitätsdetails werden ergänzt.');
         const telemetrySummary = await syncMissingGarminTelemetry(startDate, endDate, status);
+        if (!isCurrentSync() || telemetrySummary.aborted) return;
         const jsonTelemetrySummary = await syncMissingGarminJsonTelemetry(startDate, endDate, status);
+        if (!isCurrentSync() || jsonTelemetrySummary.aborted) return;
         status.removeAttribute('aria-busy');
         const activitiesText = activitySummary
             ? (activitySummary.stored || 0) + ' Aktivitäten gespeichert'
@@ -1754,25 +1848,34 @@ async function syncGarminSelectedRange() {
             ' Tagen. Vorhandene Check-in-Werte blieben unverändert.' +
             (telemetrySummary.errors.length ? ' Erste FIT-Fehler: ' + telemetrySummary.errors.slice(0, 3).join(' | ') : '');
         button.textContent = 'Daten synchronisieren';
-        await refreshGarminConnectionStatus();
+        await refreshGarminConnectionStatus(syncUserId, syncActivationSequence);
+        if (!isCurrentSync()) return;
         await loadGarminSyncHistory();
+        if (!isCurrentSync()) return;
     } catch (error) {
+        if (!isCurrentSync()) return;
         status.removeAttribute('aria-busy');
         status.textContent = 'Synchronisierung pausiert: ' + (error?.message || 'Unbekannter Fehler') +
             ' Der bereits erreichte Fortschritt bleibt gespeichert. Du kannst denselben Zeitraum erneut starten.';
         setGarminSyncIndicator('current', 'Verbunden');
         await loadGarminSyncHistory();
+        if (!isCurrentSync()) return;
     } finally {
-        button.disabled = false;
-        if (button.textContent === 'Synchronisierung läuft …') button.textContent = 'Erneut versuchen';
+        // Ein alter Sync darf die Schaltfläche einer neu aktivierten Sitzung nicht freigeben.
+        if (isCurrentSync()) {
+            button.disabled = false;
+            if (button.textContent === 'Synchronisierung läuft …') button.textContent = 'Erneut versuchen';
+        }
     }
 }
 
-async function refreshGarminConnectionStatus() {
+async function refreshGarminConnectionStatus(expectedUserId = activeAppUserId, expectedActivationSequence = activationSequence) {
+    const isCurrentRequest = () => Boolean(expectedUserId && activeAppUserId === expectedUserId && appUserReady && activationSequence === expectedActivationSequence);
     const status = document.getElementById('garmin-connection-status');
     if (status) status.textContent = 'Verbindungsstatus wird geprüft …';
     try {
         const result = await callGarminFunction({ action: 'status' });
+        if (!isCurrentRequest()) return;
         const connected = result.connection?.status === 'connected';
         try { setUserLocalSetting('garmin_connected', connected ? 'true' : 'false'); } catch (_) {}
         const apiEntry = document.getElementById('garmin-api-entry');
@@ -1787,6 +1890,7 @@ async function refreshGarminConnectionStatus() {
             if (status) status.textContent = 'Nicht verbunden';
         }
     } catch (error) {
+        if (!isCurrentRequest()) return;
         try { setUserLocalSetting('garmin_connected', 'unknown'); } catch (_) {}
         setGarminSyncIndicator('error', 'Nicht verbunden');
         if (status) status.textContent = 'Verbindungsstatus konnte nicht geprüft werden.';
@@ -2446,9 +2550,11 @@ const domReady = document.readyState === 'loading'
     ? new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))
     : Promise.resolve();
 
-async function loadCloudProfile(session) {
+async function loadCloudProfile(session, expectedActivationSequence = activationSequence) {
     const userId = session?.user?.id;
-    if (!userId || !supabase || activeProfileUserId === userId) return;
+    const isCurrentProfileLoad = () => Boolean(userId && activeAppUserId === userId
+        && activationSequence === expectedActivationSequence);
+    if (!userId || !supabase || activeProfileUserId === userId || !isCurrentProfileLoad()) return;
 
     const { data, error } = await supabase
         .from('user_profiles')
@@ -2457,10 +2563,11 @@ async function loadCloudProfile(session) {
         .maybeSingle();
 
     if (error) {
+        if (!isCurrentProfileLoad()) return;
         console.error('Cloud-Profil konnte nicht geladen werden:', error);
         return;
     }
-    if (activeAppUserId !== userId) return;
+    if (!isCurrentProfileLoad()) return;
 
     activeProfileUserId = userId;
     if (!data?.profile || typeof data.profile !== 'object' || Array.isArray(data.profile)) return;
@@ -2494,7 +2601,9 @@ async function loadCloudProfile(session) {
             const { error: profileSaveError } = await supabase.from('user_profiles')
                 .upsert({ user_id: userId, profile: mergedProfile, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
             if (profileSaveError) throw profileSaveError;
+            if (!isCurrentProfileLoad()) return;
         } catch (profileSaveError) {
+            if (!isCurrentProfileLoad()) return;
             console.error('Zusammengeführtes Athletenprofil konnte nicht in der Cloud aktualisiert werden:', profileSaveError);
             const indicator = document.getElementById('sync-status-indicator');
             if (indicator) indicator.textContent = 'Lokales Profil wurde geschützt gespeichert; die Cloud-Profilangleichung muss erneut versucht werden.';
@@ -2552,11 +2661,16 @@ function applyReconciledCloudSnapshot(snapshot) {
  * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
  * derselbe Drei-Wege-Abgleich wiederholt.
  */
-async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null) {
+async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId) {
+    const ensureCurrent = createActivationGuard(
+        isCurrent,
+        'Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
+    );
     let cloud = initialCloudSnapshot;
     let cloudActivities = initialCloudActivities;
 
     for (let attempt = 0; attempt < 4; attempt += 1) {
+        ensureCurrent();
         if (!cloud || cloud.userId !== userId) {
             throw new Error('Der Cloud-Datenstand gehört nicht zum aktuell angemeldeten Konto.');
         }
@@ -2668,6 +2782,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         // Nur neue bzw. noch nicht separat gespeicherte Legacy-Aktivitäten
         // werden hochgeladen. Bestehende Cloud-Zeilen bleiben unverändert.
         const activityUpload = await syncCloudActivities(supabase, userId, activitiesToUpload);
+        ensureCurrent();
         const cloudPayload = {
             ...mergedSnapshot,
             activityIds: getCloudActivityIds(userId, mergedActivities),
@@ -2683,11 +2798,15 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             if (!cloudSnapshotsEqual(latestLocal, local)) {
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
+                ensureCurrent();
                 cloudActivities = await fetchCloudActivities(supabase, userId);
+                ensureCurrent();
                 continue;
             }
+            ensureCurrent();
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
+            ensureCurrent();
             return {
                 ok: true,
                 version: cloud.version,
@@ -2698,6 +2817,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         const saved = await saveCloudSnapshot(cloudPayload, cloud.version, userId);
+        ensureCurrent();
         if (saved.saved) {
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
             const latestLocal = withCloudActivityIds(
@@ -2708,12 +2828,17 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 baselineSnapshot = mergedSnapshot;
                 try { await saveCloudSyncBaseline(mergedSnapshot); }
                 catch (error) { console.warn('Synchronisierungsbasis konnte nicht aktualisiert werden:', error); }
+                ensureCurrent();
                 cloud = await fetchCloudSnapshot();
+                ensureCurrent();
                 cloudActivities = await fetchCloudActivities(supabase, userId);
+                ensureCurrent();
                 continue;
             }
+            ensureCurrent();
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
+            ensureCurrent();
             return {
                 ok: true,
                 version: saved.currentVersion,
@@ -2724,10 +2849,12 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         cloud = await fetchCloudSnapshot();
+        ensureCurrent();
         if (cloud.userId !== userId) {
             throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
         }
         cloudActivities = await fetchCloudActivities(supabase, userId);
+        ensureCurrent();
     }
 
     return { ok: false, retryLimit: true, version: cloud?.version || 0, conflicts: [] };
@@ -2781,6 +2908,9 @@ async function flushCloudSync(options = {}) {
     }
 
     const userId = activeAppUserId;
+    const syncActivationSequence = activationSequence;
+    const isCurrentSync = () => activeAppUserId === userId && cloudSyncUserId === userId
+        && appUserReady && activationSequence === syncActivationSequence;
     cloudSyncInFlight = true;
     cloudSyncPending = false;
     let saveSucceeded = false;
@@ -2803,13 +2933,15 @@ async function flushCloudSync(options = {}) {
             }
         }
 
+        if (!isCurrentSync()) return;
         const [latestCloud, latestActivities, baseline] = await Promise.all([
             fetchCloudSnapshot(),
             fetchCloudActivities(supabase, userId),
             loadCloudSyncBaseline()
         ]);
-        if (activeAppUserId !== userId || cloudSyncUserId !== userId) return;
-        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline);
+        if (!isCurrentSync()) return;
+        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline, isCurrentSync);
+        if (!isCurrentSync()) return;
         if (!reconciliation.ok) {
             if (reconciliation.empty) {
                 cloudSyncBlocked = true;
@@ -2844,7 +2976,7 @@ async function flushCloudSync(options = {}) {
             setCloudTransferMessage('Lokale und Cloud-Daten wurden automatisch abgeglichen. Neue Einträge wurden ergänzt; widersprüchliche Änderungen wurden nicht überschrieben.');
         }
     } catch (error) {
-        if (activeAppUserId === userId) {
+        if (isCurrentSync()) {
             setCloudSyncStatus('Cloud-Speicherung fehlgeschlagen – lokale Daten bleiben erhalten.');
             console.error('Automatische Cloud-Synchronisierung fehlgeschlagen:', error);
         }
@@ -2961,13 +3093,15 @@ function closeCloudSyncModal() {
     modal.classList.remove('flex');
 }
 
-async function refreshCloudInitialTransferState(userId = activeAppUserId) {
-    if (!supabase || !userId || userId !== activeAppUserId) return;
+async function refreshCloudInitialTransferState(userId = activeAppUserId, expectedActivationSequence = activationSequence) {
+    const isCurrentTransferCheck = () => Boolean(userId && activeAppUserId === userId
+        && activationSequence === expectedActivationSequence);
+    if (!supabase || !userId || !isCurrentTransferCheck()) return;
     cloudInitialTransferState = 'checking';
     setCloudTransferMessage('Prüfe, ob für dieses Konto bereits ein zentraler Cloud-Datensatz existiert …');
     try {
         const cloud = await fetchCloudSnapshot();
-        if (userId !== activeAppUserId) return;
+        if (!isCurrentTransferCheck()) return;
         if (cloud.userId !== userId) throw new Error('Das angemeldete Konto hat sich während der Prüfung geändert.');
         if (cloud.data !== null) {
             cloudInitialTransferState = 'exists';
@@ -2977,6 +3111,7 @@ async function refreshCloudInitialTransferState(userId = activeAppUserId) {
             setCloudTransferMessage('Für dieses Konto wurde noch kein zentraler Datensatz gefunden. Deine lokalen Daten bleiben unverändert, bis du den Erstupload ausdrücklich bestätigst.', true);
         }
     } catch (error) {
+        if (!isCurrentTransferCheck()) return;
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Cloud-Status konnte nicht geprüft werden. Es wurde nichts übertragen. ' + error.message);
     }
@@ -3006,13 +3141,16 @@ function closeCloudInitialTransferConfirmation() {
 async function performCloudInitialTransfer() {
     if (!appUserReady || !activeAppUserId || cloudInitialTransferState !== 'empty' || cloudInitialTransferBusy) return;
     cloudInitialTransferBusy = true;
+    const userId = activeAppUserId;
+    const transferActivationSequence = activationSequence;
+    const isCurrentTransfer = () => activeAppUserId === userId && appUserReady
+        && activationSequence === transferActivationSequence;
     const button = document.getElementById('cloud-sync-confirm-button');
     if (button) button.disabled = true;
     setCloudTransferMessage('Cloud-Datenbestand wird nochmals geprüft. Es wurde noch nichts übertragen …');
     try {
-        const userId = activeAppUserId;
         const existing = await fetchCloudSnapshot();
-        if (userId !== activeAppUserId || existing.userId !== userId) throw new Error('Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.');
+        if (!isCurrentTransfer() || existing.userId !== userId) throw new Error('Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.');
         if (existing.data !== null || existing.version !== 0) {
             cloudInitialTransferState = 'exists';
             closeCloudInitialTransferConfirmation();
@@ -3024,33 +3162,43 @@ async function performCloudInitialTransfer() {
         const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
         const initialBaseline = JSON.parse(JSON.stringify(initialSnapshot));
         const activityUpload = await syncCloudActivities(supabase, userId, initialSnapshot.activities || []);
+        if (!isCurrentTransfer()) return;
         initialSnapshot.activityIds = getCloudActivityIds(userId, initialSnapshot.activities || []);
         initialSnapshot.activities = [];
         const result = await saveCloudSnapshot(initialSnapshot, 0, userId);
+        if (!isCurrentTransfer()) return;
         if (!result.saved) {
             cloudInitialTransferState = 'exists';
             closeCloudInitialTransferConfirmation();
             setCloudTransferMessage('Der Erstupload wurde wegen eines Versionskonflikts abgebrochen. Es wurden keine vorhandenen Cloud-Daten überschrieben.');
             return;
         }
+        try {
+            const baselineSaved = await saveCloudSyncBaseline(initialBaseline, userId);
+            if (!baselineSaved || !isCurrentTransfer()) return;
+        } catch (baselineError) {
+            if (!isCurrentTransfer()) return;
+            console.warn('Erstübertragung erfolgreich, aber die lokale Synchronisierungsbasis konnte nicht gespeichert werden:', baselineError);
+        }
+        if (!isCurrentTransfer()) return;
         cloudInitialTransferState = 'uploaded';
         cloudSyncUserId = userId;
         cloudSyncVersion = result.currentVersion;
         cloudSyncBlocked = false;
-        try {
-            await saveCloudSyncBaseline(initialBaseline);
-        } catch (baselineError) {
-            console.warn('Erstübertragung erfolgreich, aber die lokale Synchronisierungsbasis konnte nicht gespeichert werden:', baselineError);
-        }
         closeCloudInitialTransferConfirmation();
         setCloudTransferMessage('Erstübertragung erfolgreich gespeichert (Cloud-Version ' + result.currentVersion + '). ' + activityUpload.uploaded + ' Aktivitäten wurden separat geprüft. Lokale Daten wurden nicht gelöscht oder verändert.');
     } catch (error) {
+        if (!isCurrentTransfer()) return;
         cloudInitialTransferState = 'error';
         setCloudTransferMessage('Erstübertragung fehlgeschlagen. Der Cloud-Status wird zur Sicherheit erneut geprüft. ' + error.message);
-        if (activeAppUserId) await refreshCloudInitialTransferState(activeAppUserId);
+        if (isCurrentTransfer()) await refreshCloudInitialTransferState(userId, transferActivationSequence);
     } finally {
-        cloudInitialTransferBusy = false;
-        if (button) button.disabled = false;
+        // Ein älterer Request darf den Zustand eines inzwischen gestarteten
+        // Transfers nicht freigeben oder dessen Schaltfläche aktivieren.
+        if (isCurrentTransfer()) {
+            cloudInitialTransferBusy = false;
+            if (button) button.disabled = false;
+        }
     }
 }
 
@@ -3237,10 +3385,12 @@ async function runGarminAnalysisBackfillOnOpen(userId, sequence) {
             saveDataToLocalStorage();
             // Kleine Pause zwischen Cloud-Abfragen verhindert Lastspitzen.
             await new Promise(resolve => setTimeout(resolve, 300));
+            if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
         } catch (error) {
             console.warn('KAJO: Historische Garmin-Analysewerte konnten für einen Datenblock nicht berechnet werden:', error);
         }
     }
+    if (sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
     if (calculated > 0) {
         saveDataToLocalStorage();
         initEngine();
@@ -3256,31 +3406,40 @@ async function syncGarminTodayOnOpen(userId) {
     if (!userId || !appUserReady || activeAppUserId !== userId) return;
     const date = getLocalCalendarDate();
     const runKey = userId + ':' + date;
-    if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(runKey)) return;
-    garminDailySyncInFlight.add(runKey);
+    const syncActivationSequence = activationSequence;
+    const inFlightKey = runKey + ':' + syncActivationSequence;
+    const isCurrentSync = () => activeAppUserId === userId && appUserReady && activationSequence === syncActivationSequence;
+    if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(inFlightKey)) return;
+    garminDailySyncInFlight.add(inFlightKey);
 
     try {
-        // Bereits gespeicherte Garmin-Tageswerte unabhängig vom Live-API-Status
-        // laden, damit historische Aktivitäten adaptive Ruhe-HF erhalten.
-        try {
-            const activityDates = (state.rawActivities || [])
-                .map(activity => String(activity?.date || activity?.startTime || '').slice(0, 10))
-                .filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value))
-                .sort();
-            const zoneWindowDays = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 7));
-            const healthStart = activityDates.length
-                ? new Date(activityDates[0] + 'T12:00:00')
-                : new Date(date + 'T12:00:00');
-            healthStart.setDate(healthStart.getDate() - zoneWindowDays + 1);
-            const healthStartDate = getLocalCalendarDate(healthStart);
-            const healthImport = await loadGarminHealthRecordsIntoCheckins(healthStartDate, date);
-            console.info('KAJO: Garmin-Tagesruhe-HF für den Trainingsverlauf geladen:', healthImport);
-        } catch (healthHistoryError) {
-            console.warn('KAJO: Gespeicherte Garmin-Tagesruhe-HF konnten nicht vollständig geladen werden:', healthHistoryError);
-        }
+        // Bereits gespeicherte Garmin-Tageswerte und der Live-Verbindungsstatus
+        // sind unabhängige Lesevorgänge. Beide parallel starten, den Tagesabgleich
+        // aber weiterhin erst nach Abschluss des lokalen Gesundheitsdatenimports beginnen.
+        const healthHistoryPromise = (async () => {
+            try {
+                const activityDates = (state.rawActivities || [])
+                    .map(activity => String(activity?.date || activity?.startTime || '').slice(0, 10))
+                    .filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value))
+                    .sort();
+                const zoneWindowDays = Math.min(28, Math.max(3, Number(state.settings?.heartRateZoneSettings?.restingHrWindowDays) || 7));
+                const healthStart = activityDates.length
+                    ? new Date(activityDates[0] + 'T12:00:00')
+                    : new Date(date + 'T12:00:00');
+                healthStart.setDate(healthStart.getDate() - zoneWindowDays + 1);
+                const healthStartDate = getLocalCalendarDate(healthStart);
+                const healthImport = await loadGarminHealthRecordsIntoCheckins(healthStartDate, date);
+                console.info('KAJO: Garmin-Tagesruhe-HF für den Trainingsverlauf geladen:', healthImport);
+            } catch (healthHistoryError) {
+                console.warn('KAJO: Gespeicherte Garmin-Tagesruhe-HF konnten nicht vollständig geladen werden:', healthHistoryError);
+            }
+        })();
 
-        const connection = await callGarminFunction({ action: 'status' });
-        if (activeAppUserId !== userId || !appUserReady) return;
+        const [ , connection ] = await Promise.all([
+            healthHistoryPromise,
+            callGarminFunction({ action: 'status' })
+        ]);
+        if (!isCurrentSync()) return;
         if (connection.connection?.status !== 'connected') {
             try { setUserLocalSetting('garmin_connected', 'false'); } catch (_) {}
             return;
@@ -3294,13 +3453,15 @@ async function syncGarminTodayOnOpen(userId) {
         for (let attempt = 0; attempt < 4; attempt++) {
             try {
                 response = await callGarminFunction({ action: 'sync-today', date });
+                if (!isCurrentSync()) return;
             } catch (syncError) {
+                if (!isCurrentSync()) return;
                 const rateLimited = /HTTP 429|rate.?limit/i.test(syncError?.message || '');
                 if (!rateLimited || attempt === 3) throw syncError;
                 const waitSeconds = 30 + attempt * 15;
                 console.info('KAJO: Garmin-Aktivitätsabruf wartet wegen API-Limit', waitSeconds, 'Sekunden.');
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-                if (activeAppUserId !== userId || !appUserReady) return;
+                if (!isCurrentSync()) return;
                 continue;
             }
             health = response.sync?.healthSync || null;
@@ -3310,14 +3471,14 @@ async function syncGarminTodayOnOpen(userId) {
             const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + attempt * 15;
             console.info('KAJO: Garmin-Tagesabgleich wartet wegen API-Limit', waitSeconds, 'Sekunden.');
             await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-            if (activeAppUserId !== userId || !appUserReady) return;
+            if (!isCurrentSync()) return;
         }
 
-        if (activeAppUserId !== userId || !appUserReady) return;
-        const activityCloudSync = await loadGarminActivitiesFromCloud();
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentSync()) return;
+        const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
+        if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
-            void backfillGarminAnalysisOnOpen(userId, activationSequence);
+            void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
         }
 
         // Rohtelemetrie wird nicht mehr automatisch beim App-Start synchronisiert.
@@ -3336,7 +3497,7 @@ async function syncGarminTodayOnOpen(userId) {
             console.warn('KAJO: Neue Garmin-Telemetrie konnte noch nicht in die Cloud übertragen werden:', telemetryCloudError);
         }
 
-        if (activeAppUserId !== userId || !appUserReady) return;
+        if (!isCurrentSync()) return;
         const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
             || telemetryCloud.failed;
@@ -3347,7 +3508,7 @@ async function syncGarminTodayOnOpen(userId) {
             if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
                 const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
-                    if (activeAppUserId === userId && appUserReady && !garminDailySyncCompleted.has(runKey)) {
+                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
                         void syncGarminTodayOnOpen(userId);
                     }
                 }, retryDelay);
@@ -3367,12 +3528,12 @@ async function syncGarminTodayOnOpen(userId) {
         }
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
-        if (activeAppUserId === userId && appUserReady) {
+        if (isCurrentSync()) {
             setGarminSyncResult('Automatischer Tagesabgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), 'error');
             setGarminSyncIndicator('current', 'Verbunden');
         }
     } finally {
-        garminDailySyncInFlight.delete(runKey);
+        garminDailySyncInFlight.delete(inFlightKey);
     }
 }
 
@@ -3414,6 +3575,15 @@ async function handleAuthSession(session) {
     if (userId && activeAppUserId === userId && (appUserReady || activationPromise)) return;
     const sequence = ++activationSequence;
 
+    // Ein laufender Ersttransfer gehört immer genau zu einer Aktivierung.
+    // Beim Konto-/Sitzungswechsel darf er weder die neue UI sperren noch deren
+    // Transferstatus oder Schaltfläche später aus seinem finally-Block ändern.
+    cloudInitialTransferBusy = false;
+    cloudInitialTransferState = 'unknown';
+    const transferButtonOnActivation = document.getElementById('cloud-sync-confirm-button');
+    if (transferButtonOnActivation) transferButtonOnActivation.disabled = false;
+    closeCloudInitialTransferConfirmation();
+
     if (!userId) {
         activeAppUserId = null;
         activeProfileUserId = null;
@@ -3452,15 +3622,42 @@ async function handleAuthSession(session) {
             // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
             // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
             // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
-            const [loadedUserId, cloudSnapshot, cloudActivities] = await Promise.all([
-                withActivationTimeout(loadStateForUser(userId), 'Das Laden deiner lokalen Kontodaten', 20000),
+            // Den lokalen Kontostand zuerst bereitstellen. Die unabhängigen
+            // Cloud-/Baseline-Lesevorgänge laufen parallel weiter, blockieren aber
+            // nicht mehr die erste lokale, ausdrücklich schreibgeschützte Ansicht.
+            const localStatePromise = withActivationTimeout(
+                loadStateForUser(userId),
+                'Das Laden deiner lokalen Kontodaten',
+                20000
+            );
+            const cloudLoadPromise = Promise.all([
                 withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
-                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000)
+                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000),
+                withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
             ]);
+            // Cloud-Fehler werden beim späteren await weitergereicht. Der Handler
+            // verhindert eine unhandled rejection, falls der lokale Store länger lädt.
+            void cloudLoadPromise.catch(() => {});
+
+            const loadedUserId = await localStatePromise;
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             if (loadedUserId !== userId) {
                 throw new Error('Der lokale Datenspeicher gehört nicht mehr zum angemeldeten Konto.');
             }
+
+            await domReady;
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            try {
+                initializeSettings();
+                initEngine();
+            } catch (localRenderError) {
+                console.error('Die lokale KAJO-Ansicht konnte nicht vollständig aufgebaut werden:', localRenderError);
+            }
+            window.dispatchEvent(new CustomEvent('endurance:user-local-ready', { detail: { userId } }));
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+            const [cloudSnapshot, cloudActivities, baseline] = await cloudLoadPromise;
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
             // Lokale Rohtelemetrie vor dem Anwenden des maßgeblichen Cloud-Snapshots
             // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
             const localTelemetryForMigration = getGarminTelemetryRecordsForCloud();
@@ -3478,8 +3675,13 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
-                const baseline = await loadCloudSyncBaseline();
-                const reconciliation = await reconcileCloudState(userId, cloudSnapshot, cloudActivities, baseline);
+                const reconciliation = await reconcileCloudState(
+                    userId,
+                    cloudSnapshot,
+                    cloudActivities,
+                    baseline,
+                    () => sequence === activationSequence && activeAppUserId === userId
+                );
                 if (!reconciliation.ok) {
                     cloudSyncBlocked = true;
                     const details = reconciliation.conflicts?.length
@@ -3503,9 +3705,6 @@ async function handleAuthSession(session) {
                 throw new Error('Es liegen einzelne Cloud-Aktivitäten ohne zugehörigen Hauptdatensatz vor. Der lokale Zustand wurde nicht überschrieben; der Cloud-Transfer muss geprüft werden.');
             }
 
-            try { await withActivationTimeout(loadGarminActivitiesFromCloud(), 'Das Laden der Garmin-Daten', 20000); }
-            catch (garminLoadError) { console.warn('Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', garminLoadError); }
-
             // Reine Intervals.icu-Aktivitäten werden aus dem aktiven Trainingsbestand
             // ausgeblendet und separat aufbewahrt. Garmin-Datensätze mit ergänzendem
             // Intervals-Quellverweis bleiben als Garmin-Aktivitäten erhalten.
@@ -3525,30 +3724,30 @@ async function handleAuthSession(session) {
             const migrationCandidates = Array.from(migrationMap.values());
             mergeGarminTelemetryRecords(migrationCandidates);
 
-            await domReady;
-            if (sequence !== activationSequence || activeAppUserId !== userId) return;
-
-            // Die Anmeldung und das Laden der Kontodaten sind abgeschlossen.
-            // Die App wird jetzt sichtbar gemacht, bevor die aufwendige Erst-
-            // darstellung startet. So bleibt die Anmeldeseite nicht stehen,
-            // während Dashboard und Diagramme initial gerendert werden.
-            appUserReady = true;
-            window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
-            await new Promise(resolve => requestAnimationFrame(() => resolve()));
-
+            // Den abgeglichenen Datenstand vollständig rendern, bevor die
+            // schreibgeschützte lokale Ansicht für Eingaben freigegeben wird.
             try {
                 initializeSettings();
                 initEngine();
-                // Der Tagesabgleich läuft nach dem ersten Rendern im Hintergrund
-                // und hält den App-Start dadurch nicht auf.
-                void syncGarminTodayOnOpen(userId);
-                initializeNutritionRemindersWhenIdle();
             } catch (renderError) {
-                console.error('Die App-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
+                console.error('Die abgeglichene KAJO-Oberfläche konnte nicht vollständig initialisiert werden:', renderError);
                 window.dispatchEvent(new CustomEvent('endurance:user-init-error', {
                     detail: { message: renderError?.message || 'Fehler beim Aufbau der App-Oberfläche.' }
                 }));
             }
+
+            appUserReady = true;
+            window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+            // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
+            // nicht erforderlich. Sie werden nach der Freigabe parallel zum
+            // Tagesabgleich geladen; beide Aufrufer teilen einen laufenden Abruf.
+            void loadGarminActivitiesFromCloud(userId, sequence).catch(garminLoadError => {
+                console.warn('Garmin-Cloud-Aktivitäten konnten im Hintergrund nicht geladen werden:', garminLoadError);
+            });
+            void syncGarminTodayOnOpen(userId);
+            initializeNutritionRemindersWhenIdle();
 
             // Der erste sichtbare App-Aufbau wartet nicht auf den Telemetrie-Upload.
             // Daten werden erst nach erfolgreichem Cloud-Readback lokal bereinigt.
@@ -3576,7 +3775,8 @@ async function handleAuthSession(session) {
                     if (missingAfterReadback.length > 0) {
                         throw new Error('Cloud-Readback unvollständig: ' + missingAfterReadback.length + ' Telemetrie-Datensätze fehlen.');
                     }
-                    await clearLocalGarminTelemetryCache();
+                    const cacheCleared = await clearLocalGarminTelemetryCache(userId);
+                    if (!cacheCleared || sequence !== activationSequence || activeAppUserId !== userId || !appUserReady) return;
                     // Nach bestätigtem Cloud-Readback die Rohmessreihen auch aus dem
                     // aktiven Aktivitätszustand entfernen. Die Detailansicht lädt sie
                     // später gezielt für die jeweils geöffnete Aktivität.
@@ -3602,8 +3802,9 @@ async function handleAuthSession(session) {
                 }
             })();
 
-            await refreshCloudInitialTransferState(userId);
-            await loadCloudProfile(session);
+            await refreshCloudInitialTransferState(userId, sequence);
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            await loadCloudProfile(session, sequence);
         } catch (error) {
             console.error('Benutzerdaten konnten nicht sicher geladen werden:', error);
             if (sequence === activationSequence) {
@@ -3619,7 +3820,10 @@ async function handleAuthSession(session) {
                     deactivateUserStorage();
                     activeAppUserId = null;
                     window.dispatchEvent(new CustomEvent('endurance:user-load-error', {
-                        detail: { message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.' }
+                        detail: {
+                            userId,
+                            message: error?.message || 'Unbekannter Fehler beim Laden deiner Kontodaten.'
+                        }
                     }));
                 }
             }

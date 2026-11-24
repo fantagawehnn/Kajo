@@ -140,31 +140,67 @@ export async function syncCloudActivities(client, userId, activities) {
     return { uploaded, total: rows.length, changed: changedRows.length, batches: batches.length };
 }
 
-/** Loads all activity rows in bounded pages; RLS restricts results to the user. */
-export async function fetchCloudActivities(client, userId) {
+/**
+ * Lädt alle Aktivitätszeilen vollständig, aber mit begrenzter Parallelität.
+ * Der exakte Count verhindert, dass bei parallelen Seiten ein unvollständiger
+ * Datenstand unbemerkt in den konfliktbewussten Abgleich gelangt.
+ */
+export async function fetchCloudActivities(client, userId, options = {}) {
     requireClient(client);
     if (!userId) throw new Error('Für den Cloud-Abruf fehlt die Benutzer-ID.');
 
-    const pageSize = 500;
+    const pageSize = Math.max(1, Math.floor(Number(options.pageSize) || 500));
+    const concurrency = Math.min(4, Math.max(1, Math.floor(Number(options.concurrency) || 3)));
+    const { count, error: countError } = await client
+        .from('activities')
+        .select('record_id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+    if (countError) throw countError;
+
+    // Supabase liefert bei einem nicht verfügbaren Count ggf. null. In diesem
+    // Fall bleibt der bewährte sequenzielle Abruf als sicherer Fallback erhalten.
     const records = [];
-    for (let offset = 0; ; offset += pageSize) {
-        const { data, error } = await client
-            .from('activities')
-            .select('record_id,payload')
-            .eq('user_id', userId)
-            .order('record_id', { ascending: true })
-            .range(offset, offset + pageSize - 1);
-        if (error) throw error;
-        const page = Array.isArray(data) ? data : [];
-        records.push(...page);
-        if (page.length < pageSize) break;
+    if (Number.isFinite(count)) {
+        const offsets = [];
+        for (let offset = 0; offset < count; offset += pageSize) offsets.push(offset);
+        for (let index = 0; index < offsets.length; index += concurrency) {
+            const batch = offsets.slice(index, index + concurrency);
+            const pages = await Promise.all(batch.map(async offset => {
+                const { data, error } = await client
+                    .from('activities')
+                    .select('record_id,payload')
+                    .eq('user_id', userId)
+                    .order('record_id', { ascending: true })
+                    .range(offset, offset + pageSize - 1);
+                if (error) throw error;
+                return Array.isArray(data) ? data : [];
+            }));
+            for (const page of pages) records.push(...page);
+        }
+        if (records.length !== count) {
+            throw new Error('Der Cloud-Aktivitätsabruf war während der parallelen Seitenabfrage nicht konsistent. Es wurde kein unvollständiger Datenstand übernommen; bitte erneut synchronisieren.');
+        }
+    } else {
+        for (let offset = 0; ; offset += pageSize) {
+            const { data, error } = await client
+                .from('activities')
+                .select('record_id,payload')
+                .eq('user_id', userId)
+                .order('record_id', { ascending: true })
+                .range(offset, offset + pageSize - 1);
+            if (error) throw error;
+            const page = Array.isArray(data) ? data : [];
+            records.push(...page);
+            if (page.length < pageSize) break;
+        }
     }
+
     const hashes = new Map();
-    for (const row of records) {
-        const hash = await hashActivityPayload(row.payload);
-        if (hash) hashes.set(String(row.record_id), hash);
-    }
-    if (hashes.size) cloudActivityHashes.set(userId, hashes);
+    const computedHashes = await Promise.all(records.map(row => hashActivityPayload(row.payload)));
+    records.forEach((row, index) => {
+        if (computedHashes[index]) hashes.set(String(row.record_id), computedHashes[index]);
+    });
+    if (hashes.size || records.length === 0) cloudActivityHashes.set(userId, hashes);
     return records;
 }
 

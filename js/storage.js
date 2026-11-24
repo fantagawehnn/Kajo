@@ -12,6 +12,7 @@ import { createUserStorage } from './user-storage.js?v=4';
 
 let activeUserStorage = null;
 let activeUserId = null;
+let activeStorageGeneration = 0;
 let indexedDbWriteQueue = Promise.resolve();
 let indexedDbWriteError = null;
 
@@ -222,6 +223,7 @@ function defaultUserState() {
 }
 
 export function deactivateUserStorage() {
+    activeStorageGeneration++;
     activeUserStorage = null;
     activeUserId = null;
     defaultUserState();
@@ -229,6 +231,7 @@ export function deactivateUserStorage() {
 
 export async function loadStateForUser(userId) {
     if (!userId) throw new Error('Keine gültige Benutzer-ID für das Laden der Daten.');
+    const loadGeneration = ++activeStorageGeneration;
     const userStorage = createUserStorage(userId);
     activeUserStorage = userStorage;
     activeUserId = userId;
@@ -238,7 +241,7 @@ export async function loadStateForUser(userId) {
         stateKey,
         await userStorage.getCollection(collection)
     ]));
-    if (activeUserId !== userId) return null;
+    if (activeUserId !== userId || activeStorageGeneration !== loadGeneration) return null;
     const loaded = Object.fromEntries(values);
 
     state.garminTelemetryStore = loaded.garminTelemetryStore && typeof loaded.garminTelemetryStore === 'object'
@@ -285,12 +288,19 @@ export async function loadCloudSyncBaseline() {
 }
 
 /** Speichert die Synchronisierungsbasis getrennt von den fachlichen App-Daten. */
-export async function saveCloudSyncBaseline(snapshot) {
-    if (!activeUserStorage || !activeUserId) throw new Error('Kein aktiver Benutzer-Speicher für die Synchronisierungsbasis.');
+export async function saveCloudSyncBaseline(snapshot, expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) {
+        throw new Error('Der aktive Benutzer-Speicher hat sich vor dem Speichern der Synchronisierungsbasis geändert.');
+    }
     if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
         throw new Error('Die Synchronisierungsbasis ist ungültig.');
     }
-    await activeUserStorage.saveCollections({ cloudSyncBaseline: snapshot });
+    // Den ursprünglichen Speicher festhalten, damit ein Kontowechsel während
+    // des asynchronen Schreibens niemals die Basis in das neue Konto umlenkt.
+    await storageForUser.saveCollections({ cloudSyncBaseline: snapshot });
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
     return true;
 }
 
@@ -435,19 +445,31 @@ export function saveDataToLocalStorage() {
  * Entfernt alte lokale Garmin-Rohtelemetrie erst nach erfolgreichem Cloud-Readback.
  * Der aktive Arbeitsspeicher bleibt unangetastet, damit Diagramme weiter funktionieren.
  */
-export async function clearLocalGarminTelemetryCache() {
-    if (!activeUserStorage || !activeUserId) throw new Error('Kein aktiver Benutzer-Speicher für die Telemetrie-Bereinigung.');
+export async function clearLocalGarminTelemetryCache(expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) {
+        throw new Error('Der aktive Benutzer-Speicher hat sich vor der Telemetrie-Bereinigung geändert.');
+    }
+
+    // Den Storage-Handle festhalten: Ein Kontowechsel während der asynchronen
+    // IndexedDB-Operation darf nachfolgende Schreibvorgänge nicht auf den
+    // inzwischen aktiven Speicher eines anderen Kontos umlenken.
     await indexedDbWriteQueue;
-    await activeUserStorage.removeCollection('garminTelemetry');
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
+    await storageForUser.removeCollection('garminTelemetry');
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
+
     const compactActivities = stripGarminTelemetryFromActivities(state.rawActivities);
     try {
-        activeUserStorage.setItem('activities', JSON.stringify(compactActivities));
+        storageForUser.setItem('activities', JSON.stringify(compactActivities));
     } catch (error) {
         if (error?.name !== 'QuotaExceededError' && error?.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
-        try { activeUserStorage.removeItem('activities'); } catch (_) {}
+        try { storageForUser.removeItem('activities'); } catch (_) {}
         console.warn('Aktivitäten-Fallback wegen voller localStorage-Quote übersprungen; IndexedDB wird verwendet.');
     }
-    await activeUserStorage.saveCollections({ activities: compactActivities });
+    await storageForUser.saveCollections({ activities: compactActivities });
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
     state.garminTelemetryStore = {};
     return true;
 }
