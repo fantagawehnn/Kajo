@@ -16,10 +16,15 @@ class KajoConnectHistoryDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
         if (keyEvent.getKey() == WatchUi.KEY_ENTER || keyEvent.getKey() == WatchUi.KEY_START) {
-            WatchUi.showToast("Details in der KAJO App", null);
+            mView.showSelectedEntry();
             return true;
         }
         return false;
+    }
+
+    function onMenu() as Lang.Boolean {
+        mView.moveSelection(1);
+        return true;
     }
 
     function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
