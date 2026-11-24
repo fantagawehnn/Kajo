@@ -33,7 +33,7 @@ class KajoConnectMenuView extends WatchUi.View {
     }
 
     function handleTap(y as Lang.Number) as Void {
-        if (y >= mUnit * 0.80) {
+        if (y >= mUnit * 0.865) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
