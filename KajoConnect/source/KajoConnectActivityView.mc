@@ -1295,12 +1295,12 @@ class KajoConnectActivityView extends WatchUi.View {
     function onUpdate(dc as Dc) {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
-        mScreenWidth = 390;
-        mScreenHeight = 390;
-        mUnit = 390;
-        mKajoLayout.configure(390, 390);
+        mScreenWidth = dc.getWidth();
+        mScreenHeight = dc.getHeight();
+        mUnit = mScreenWidth < mScreenHeight ? mScreenWidth : mScreenHeight;
+        mKajoLayout.configure(mScreenWidth, mScreenHeight);
 
-        var cx = 195;
+        var cx = mScreenWidth / 2;
         mButtonTop = 340;
         mButtonBottom = 375;
         if (mPage < mEnabledPageIds.size()) {
@@ -1408,12 +1408,14 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawActivityText(dc, cx, 270, 280, 18, "START NICHT MÖGLICH",
                     Graphics.FONT_XTINY, 0xFF9F1A);
             }
-            drawActivityText(dc, cx, 326, 280, 18, "OBERE TASTE · STARTEN",
-                Graphics.FONT_XTINY, 0x25D3CB);
-            drawActivityText(dc, cx, 354, 280, 18, "UNTERE TASTE · ZURÜCK",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            mButtonTop = 0;
-            mButtonBottom = 0;
+            var startWidth = mKajoLayout.safeRectWidth(310, 58, mUnit * 0.78);
+            var startLeft = cx - (startWidth / 2);
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.fillRectangle(startLeft.toNumber(), 310, startWidth.toNumber(), 48);
+            drawActivityText(dc, cx, 325, startWidth - 18, 20, "TRAINING STARTEN",
+                Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
+            mButtonTop = 306;
+            mButtonBottom = 374;
         } else if (mStatus == "PAUSIERT") {
             drawPageHeader(dc, "PAUSIERT");
             drawActivityText(dc, cx, 115, 280, 66, elapsed,
