@@ -151,7 +151,7 @@ test("home screen keeps fixed hero and menu areas inside the Venu 3S display", (
   assert.match(homeView, /mStartBottom = 218/);
   assert.match(homeView, /mFreeTop = 226/);
   assert.match(homeView, /mFreeBottom = 354/);
-  assert.match(homeView, /var rowYs = \[226, 258, 290, 322\]/);
+  assert.match(homeView, /rowYs = \[226, 258, 290, 322\]/);
   assert.match(homeView, /"TRAININGSPLAN"/);
   assert.match(homeView, /"EINSTELLUNGEN"/);
   assert.doesNotMatch(homeView, /ANTIPPEN ZUM STARTEN|OHNE VORGABE|GEPLANTE EINHEITEN/);
