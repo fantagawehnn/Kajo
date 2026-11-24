@@ -1164,11 +1164,9 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        if (y < mButtonTop || y > mButtonBottom) { return; }
-        if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
-            startRecording();
-            return;
-        }
+        // Während der Aufzeichnung wechselt ein Tap auf die linke/rechte
+        // Bildschirmhälfte direkt die Datenseite. Die alte globale
+        // Button-Hitbox am unteren Rand hat diese Taps zuvor blockiert.
         if (mStatus == "AUFZEICHNUNG") {
             if (x < mScreenWidth / 2) {
                 mPage -= 1;
@@ -1178,6 +1176,12 @@ class KajoConnectActivityView extends WatchUi.View {
                 if (mPage >= mPageCount) { mPage = 0; }
             }
             WatchUi.requestUpdate();
+            return;
+        }
+
+        if (y < mButtonTop || y > mButtonBottom) { return; }
+        if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
+            startRecording();
             return;
         }
         if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
