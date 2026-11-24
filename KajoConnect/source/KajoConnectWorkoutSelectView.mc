@@ -49,6 +49,13 @@ class KajoConnectWorkoutSelectView extends WatchUi.View {
         }
     }
 
+    function selectFirstWorkout() as Void {
+        var index = mPage * 3;
+        if (index >= 0 && index < mSessions.size()) {
+            mHomeView.startActivityWithWorkout(mSessions[index] as Lang.Dictionary);
+        }
+    }
+
     function nextPage(direction as Lang.Number) as Void {
         if (mPageCount <= 1) { return; }
         mPage += direction;
