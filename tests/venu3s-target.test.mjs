@@ -17,6 +17,7 @@ const workoutSelectView = readFileSync(new URL("../KajoConnect/source/KajoConnec
 const workoutListView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutListView.mc", import.meta.url), "utf8");
 const workoutListDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutListDelegate.mc", import.meta.url), "utf8");
 const workoutView = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutView.mc", import.meta.url), "utf8");
+const workoutDelegate = readFileSync(new URL("../KajoConnect/source/KajoConnectWorkoutDelegate.mc", import.meta.url), "utf8");
 const customFieldsView = readFileSync(new URL("../KajoConnect/source/KajoConnectCustomFieldsView.mc", import.meta.url), "utf8");
 const displayConfigView = readFileSync(new URL("../KajoConnect/source/KajoConnectDisplayConfigView.mc", import.meta.url), "utf8");
 const pairingView = readFileSync(new URL("../KajoConnect/source/KajoConnectPairingView.mc", import.meta.url), "utf8");
@@ -47,7 +48,10 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_UP \|\| key == WatchUi\.KEY_MENU[\s\S]*?nextDisplayPage\(1\)/);
-  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
+  assert.match(homeDelegate, /extends WatchUi\.InputDelegate/);
+  assert.match(homeDelegate, /key == WatchUi\.KEY_MENU \|\| key == WatchUi\.KEY_ACTION_MENU[\s\S]*?openSettings\(\)/);
+  assert.match(homeDelegate, /key == WatchUi\.KEY_ESC[\s\S]*?scrollPlan\(1\)/);
+  assert.match(workoutDelegate, /extends WatchUi\.InputDelegate/);
   assert.match(settingsRootDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
   assert.match(menuDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
