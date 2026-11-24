@@ -1066,7 +1066,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mButtonBottom = 0;
         } else if (mCurrentPageId == 0) {
             drawActivityDashboard(dc, cx, hrNow, elapsed, distance, speedNow, cadenceNow, currentHeartRateZone, activityInfo);
-
+        } else if (mCurrentPageId == 1) {
             drawPageHeader(dc, "GESCHWINDIGKEIT");
             drawMetric(dc, cx, 115, "AKTUELL", speedNow, "KM/H", 260, Graphics.FONT_LARGE);
             drawMetric(dc, 112, 245, "DURCHSCHNITT", speedAvg, "KM/H", 145, Graphics.FONT_MEDIUM);
