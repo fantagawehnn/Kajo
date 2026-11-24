@@ -776,11 +776,29 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
+    function captureActivitySummary() as Void {
+        var info = Activity.getActivityInfo();
+        if (info == null) { return; }
+        if (info.elapsedDistance != null) {
+            mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
+        }
+        if (info.averageHeartRate != null) {
+            mFinalAverageHeartRate = info.averageHeartRate.toString();
+        }
+        if (info.timerTime != null && info.timerTime > 0) {
+            mElapsedSeconds = Math.floor(info.timerTime / 1000).toNumber();
+        } else if (info.elapsedTime != null && info.elapsedTime > 0) {
+            mElapsedSeconds = Math.floor(info.elapsedTime / 1000).toNumber();
+        }
+    }
+
     function startRecording() as Void {
         var started = mEngine.start(mBoatClass);
         if (started) {
             mStatus = "AUFZEICHNUNG";
             mElapsedSeconds = 0;
+            mFinalDistance = "--";
+            mFinalAverageHeartRate = "--";
             mWorkoutStepIndex = 0;
             mWorkoutStepElapsedSeconds = 0;
             mWorkoutSequenceComplete = false;
@@ -795,6 +813,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function pauseRecording() as Void {
+        captureActivitySummary();
         if (mEngine.pause()) {
             mTimer.stop();
             mStatus = "PAUSIERT";
@@ -829,21 +848,8 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function finishRecording() as Void {
-        // Letzte verfuegbare Aktivitaetswerte vor dem FIT-Speichern sichern.
-        var finalInfo = Activity.getActivityInfo();
-        if (finalInfo != null) {
-            if (finalInfo.elapsedDistance != null) {
-                mFinalDistance = numberText(finalInfo.elapsedDistance / 1000.0, 2);
-            }
-            if (finalInfo.averageHeartRate != null) {
-                mFinalAverageHeartRate = finalInfo.averageHeartRate.toString();
-            }
-            if (finalInfo.timerTime != null && finalInfo.timerTime > 0) {
-                mElapsedSeconds = Math.floor(finalInfo.timerTime / 1000).toNumber();
-            } else if (finalInfo.elapsedTime != null && finalInfo.elapsedTime > 0) {
-                mElapsedSeconds = Math.floor(finalInfo.elapsedTime / 1000).toNumber();
-            }
-        }
+        // Vor dem Beenden letzte verfuegbare Werte sichern.
+        captureActivitySummary();
         if (mEngine.finish()) {
             mTimer.stop();
             Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
