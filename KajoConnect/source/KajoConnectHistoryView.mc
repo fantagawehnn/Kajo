@@ -9,6 +9,7 @@ class KajoConnectHistoryView extends WatchUi.View {
     var mKajoLayout as KajoLayout;
     var mEntries as Lang.Array<Lang.Dictionary> = [];
     var mPage as Lang.Number = 0;
+    var mSelectedRow as Lang.Number = 0;
     var mPageCount as Lang.Number = 1;
     var mRowTop as Lang.Number = 82;
     var mRowHeight as Lang.Number = 74;
@@ -24,17 +25,36 @@ class KajoConnectHistoryView extends WatchUi.View {
         if (mPageCount < 1) { mPageCount = 1; }
     }
 
+    function moveSelection(direction as Lang.Number) as Void {
+        if (mEntries.size() == 0) { return; }
+        var index = (mPage * 3) + mSelectedRow + direction;
+        if (index < 0) { index = mEntries.size() - 1; }
+        if (index >= mEntries.size()) { index = 0; }
+        mPage = Math.floor(index / 3).toNumber();
+        mSelectedRow = index % 3;
+        WatchUi.requestUpdate();
+    }
+
+    function showSelectedEntry() as Void {
+        var index = (mPage * 3) + mSelectedRow;
+        if (index >= 0 && index < mEntries.size()) {
+            WatchUi.showToast("Details in der KAJO App", null);
+        }
+    }
+
     function nextPage(direction as Lang.Number) as Void {
         if (mPageCount <= 1) { return; }
         mPage += direction;
         if (mPage < 0) { mPage = mPageCount - 1; }
         if (mPage >= mPageCount) { mPage = 0; }
+        mSelectedRow = 0;
         WatchUi.requestUpdate();
     }
 
     function showEntryInfo(y as Lang.Number) as Void {
         if (y < mRowTop || y >= mRowTop + (mRowHeight * 3)) { return; }
         var row = Math.floor((y - mRowTop) / mRowHeight).toNumber();
+        mSelectedRow = row;
         var index = (mPage * 3) + row;
         if (index >= 0 && index < mEntries.size()) {
             WatchUi.showToast("Details in der KAJO App", null);
@@ -82,9 +102,10 @@ class KajoConnectHistoryView extends WatchUi.View {
             var duration = entry["duration"] == null ? "--:--" : entry["duration"].toString();
             var distance = entry["distance"] == null ? "--" : entry["distance"].toString();
             var averageHR = entry["averageHeartRate"] == null ? "--" : entry["averageHeartRate"].toString();
-            dc.setColor(0x0B1114, Graphics.COLOR_BLACK);
+            var selectedRow = row == mSelectedRow;
+            dc.setColor(selectedRow ? 0x0A2A2C : 0x0B1114, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), rowWidth.toNumber(), 62);
-            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.setColor(selectedRow ? 0x25D3CB : 0x344047, Graphics.COLOR_BLACK);
             dc.fillRectangle(left.toNumber(), y.toNumber(), 4, 62);
             drawFit(dc, cx - rowWidth * 0.12, y + 7,
                 date + " · " + boat + " · " + duration,
