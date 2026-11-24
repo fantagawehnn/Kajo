@@ -209,7 +209,7 @@ class KajoLayout {
         var available = safeWidthAt(x, centerY + (textHeight / 2), width);
         font = fitFont(dc, text, available, font);
         textHeight = dc.getFontHeight(font);
-        if (textHeight > height || available <= 0) { return; }
+        if (available <= 0) { return; }
 
         var displayText = text;
         while (displayText.length() > 0 &&
