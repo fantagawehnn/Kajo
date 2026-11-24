@@ -10,9 +10,9 @@ class KajoConnectMenuView extends WatchUi.View {
     var mWidth as Lang.Number = 0;
     var mHeight as Lang.Number = 0;
     var mUnit as Lang.Number = 0;
-    var mRowTop as Lang.Number = 67;
-    var mRowStep as Lang.Number = 34;
-    var mRowHeight as Lang.Number = 28;
+    var mRowTop as Lang.Number = 64;
+    var mRowStep as Lang.Number = 30;
+    var mRowHeight as Lang.Number = 25;
     var mRows as Lang.Array<Lang.String> = [
         "TRAININGSFELDER",
         "DATENSEITEN",
@@ -20,6 +20,7 @@ class KajoConnectMenuView extends WatchUi.View {
         "HISTORIE",
         "INTERVALL-HINWEISE",
         "BOOTSKLASSE",
+        "EINHEITEN",
         "UHR MIT KAJO VERBINDEN",
         "EIGENE DATENFELDER"
     ];
@@ -40,9 +41,9 @@ class KajoConnectMenuView extends WatchUi.View {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
-        if (y < mRowTop || y >= (mRowTop + (mRowStep * 8))) { return; }
+        if (y < mRowTop || y >= (mRowTop + (mRowStep * 9))) { return; }
         var index = Math.floor((y - mRowTop) / mRowStep).toNumber();
-        if (index < 0 || index >= 8) { return; }
+        if (index < 0 || index >= 9) { return; }
         if (index == 0) {
             var trainingFields = new KajoConnectTrainingFieldsView();
             WatchUi.pushView(trainingFields, new KajoConnectTrainingFieldsDelegate(trainingFields), WatchUi.SLIDE_UP);
@@ -62,6 +63,9 @@ class KajoConnectMenuView extends WatchUi.View {
             var boatClass = new KajoConnectBoatClassView(mHomeView);
             WatchUi.pushView(boatClass, new KajoConnectBoatClassDelegate(boatClass), WatchUi.SLIDE_UP);
         } else if (index == 6) {
+            var units = new KajoConnectUnitsView();
+            WatchUi.pushView(units, new KajoConnectUnitsDelegate(), WatchUi.SLIDE_UP);
+        } else if (index == 7) {
             var pairing = new KajoConnectPairingView();
             WatchUi.pushView(pairing, new KajoConnectPairingDelegate(), WatchUi.SLIDE_UP);
         } else {
@@ -82,7 +86,7 @@ class KajoConnectMenuView extends WatchUi.View {
         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
         dc.drawLine(62, 64, 328, 64);
 
-        mRowTop = 67;
+        mRowTop = 64;
         for (var i = 0; i < mRows.size(); i += 1) {
             var top = mRowTop + (i * mRowStep);
             var rowWidth = mKajoLayout.safeRectWidth(top, mRowHeight, mUnit * 0.80);
