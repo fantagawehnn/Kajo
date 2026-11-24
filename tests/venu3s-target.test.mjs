@@ -85,18 +85,19 @@ test("Monkey C source has no duplicate class-level member declarations", () => {
 });
 
 
-test("shared Garmin layout measures real font heights before selecting a display font", () => {
+test("shared Garmin layout uses transparent text backgrounds and measured font widths", () => {
   assert.ok(layoutView.includes("function fontForPercent(dc as Dc, targetPercent as Lang.Float)"));
   assert.ok(layoutView.includes("dc.getFontHeight(candidate)"));
   assert.ok(layoutView.includes("getTextWidthInPixels(text, font)"));
+  assert.ok(layoutView.includes("dc.setColor(color, Graphics.COLOR_TRANSPARENT)"));
 });
 
 test("Activity screen uses shared bounded text and reserves a separate bottom control area", () => {
   assert.match(activityView, /function drawFit\(/);
   assert.match(activityView, /mKajoLayout\.drawTextFit/);
-  assert.match(activityView, /mButtonTop = mUnit \* 0\.82/);
-  assert.match(activityView, /mButtonBottom = mUnit \* 0\.90/);
-  assert.match(activityView, /drawFit\(dc, cx, mUnit \* 0\.335/);
+  assert.match(activityView, /mButtonTop = 340/);
+  assert.match(activityView, /mButtonBottom = 375/);
+  assert.match(activityView, /drawActivityDashboard\(dc, cx, hrNow, elapsed, distance, speedNow/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
 });
 
@@ -146,11 +147,11 @@ test("home screen filters today's sessions and separates planned and free traini
 });
 
 test("home screen keeps the hero card, scrollable menu and lower controls in distinct bands", () => {
-  assert.match(homeView, /mStartTop = mUnit \* 0\.265/);
-  assert.match(homeView, /mStartBottom = mUnit \* 0\.465/);
-  assert.match(homeView, /mFreeTop = mUnit \* 0\.515/);
-  assert.match(homeView, /mFreeBottom = mUnit \* 0\.825/);
-  assert.match(homeView, /var rowStep = mUnit \* 0\.073/);
+  assert.match(homeView, /mStartTop = 132/);
+  assert.match(homeView, /mStartBottom = 218/);
+  assert.match(homeView, /mFreeTop = 226/);
+  assert.match(homeView, /mFreeBottom = 354/);
+  assert.match(homeView, /var rowYs = \[226, 258, 290, 322\]/);
   assert.match(homeView, /"TRAININGSPLAN"/);
   assert.match(homeView, /"EINSTELLUNGEN"/);
 });
