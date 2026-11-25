@@ -161,59 +161,63 @@ export async function fetchCloudActivities(client, userId, options = {}) {
     if (!userId) throw new Error('Für den Cloud-Abruf fehlt die Benutzer-ID.');
 
     // Activity payloads can be large (including long interval/workout arrays).
-    // Keep each PostgREST JSON aggregation small enough to avoid statement timeouts.
-    const pageSize = Math.max(1, Math.floor(Number(options.pageSize) || 100));
-    const concurrency = Math.min(2, Math.max(1, Math.floor(Number(options.concurrency) || 2)));
+    // Use small, sequential keyset pages: OFFSET becomes increasingly expensive
+    // for large accounts and can time out on later pages.
+    const requestedPageSize = Math.floor(Number(options.pageSize) || 25);
+    const pageSize = Math.min(50, Math.max(1, requestedPageSize));
     const { count, error: countError } = await client
         .from('activities')
         .select('record_id', { count: 'exact', head: true })
         .eq('user_id', userId);
     if (countError) throw cloudActivityQueryError(countError, 'Cloud-Aktivitäten: Anzahl der Datensätze (COUNT)');
 
-    // Supabase liefert bei einem nicht verfügbaren Count ggf. null. In diesem
-    // Fall bleibt der bewährte sequenzielle Abruf als sicherer Fallback erhalten.
     const records = [];
     if (Number.isFinite(count)) {
-        const offsets = [];
-        for (let offset = 0; offset < count; offset += pageSize) offsets.push(offset);
-        for (let index = 0; index < offsets.length; index += concurrency) {
-            const batch = offsets.slice(index, index + concurrency);
-            const pages = await Promise.all(batch.map(async offset => {
-                const { data, error } = await client
-                    .from('activities')
-                    .select('record_id,payload')
-                    .eq('user_id', userId)
-                    .order('record_id', { ascending: true })
-                    .range(offset, offset + pageSize - 1);
-                if (error) {
-                    throw cloudActivityQueryError(
-                        error,
-                        'Cloud-Aktivitäten: Datensatzseite ab Offset ' + offset
-                    );
-                }
-                return Array.isArray(data) ? data : [];
-            }));
-            for (const page of pages) records.push(...page);
-        }
-        if (records.length !== count) {
-            throw new Error('Der Cloud-Aktivitätsabruf war während der parallelen Seitenabfrage nicht konsistent. Es wurde kein unvollständiger Datenstand übernommen; bitte erneut synchronisieren.');
-        }
-    } else {
-        for (let offset = 0; ; offset += pageSize) {
-            const { data, error } = await client
+        let lastRecordId = null;
+        while (records.length < count) {
+            let query = client
                 .from('activities')
                 .select('record_id,payload')
-                .eq('user_id', userId)
+                .eq('user_id', userId);
+            if (lastRecordId !== null) query = query.gt('record_id', lastRecordId);
+            const { data, error } = await query
                 .order('record_id', { ascending: true })
-                .range(offset, offset + pageSize - 1);
+                .limit(pageSize);
             if (error) {
                 throw cloudActivityQueryError(
                     error,
-                    'Cloud-Aktivitäten: sequenzielle Datensatzseite ab Offset ' + offset
+                    'Cloud-Aktivitäten: Datensatzseite nach record_id ' + (lastRecordId ?? '(Anfang)')
                 );
             }
             const page = Array.isArray(data) ? data : [];
+            if (page.length === 0) break;
             records.push(...page);
+            lastRecordId = String(page[page.length - 1].record_id);
+        }
+        if (records.length !== count) {
+            throw new Error('Der Cloud-Aktivitätsabruf war während der schlüsselbasierten Seitenabfrage nicht konsistent. Es wurde kein unvollständiger Datenstand übernommen; bitte erneut synchronisieren.');
+        }
+    } else {
+        let lastRecordId = null;
+        for (;;) {
+            let query = client
+                .from('activities')
+                .select('record_id,payload')
+                .eq('user_id', userId);
+            if (lastRecordId !== null) query = query.gt('record_id', lastRecordId);
+            const { data, error } = await query
+                .order('record_id', { ascending: true })
+                .limit(pageSize);
+            if (error) {
+                throw cloudActivityQueryError(
+                    error,
+                    'Cloud-Aktivitäten: sequenzielle Datensatzseite nach record_id ' + (lastRecordId ?? '(Anfang)')
+                );
+            }
+            const page = Array.isArray(data) ? data : [];
+            if (page.length === 0) break;
+            records.push(...page);
+            lastRecordId = String(page[page.length - 1].record_id);
             if (page.length < pageSize) break;
         }
     }

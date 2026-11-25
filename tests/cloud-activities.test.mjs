@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getActivityConflictLabel, mergeCloudActivities, prepareCloudActivityRows } from '../js/cloud-activities.js';
+import { fetchCloudActivities, getActivityConflictLabel, mergeCloudActivities, prepareCloudActivityRows } from '../js/cloud-activities.js';
 
 test('prepares one stable user-scoped row per activity', () => {
     const rows = prepareCloudActivityRows('user-1', [
@@ -57,4 +57,62 @@ test('activity manifest prevents deleted cloud rows from reappearing', () => {
         { record_id: 'deleted', payload: { id: 'deleted' } }
     ], ['kept']);
     assert.deepEqual(merged, [{ id: 'kept' }]);
+});
+
+
+test('loads cloud activities with sequential keyset pages instead of OFFSET', async () => {
+    const source = ['a', 'b', 'c', 'd', 'e'].map(id => ({
+        record_id: id,
+        payload: { id, name: 'Activity ' + id }
+    }));
+    const cursors = [];
+    const client = {
+        from(table) {
+            assert.equal(table, 'activities');
+            const query = {
+                countQuery: false,
+                cursor: null,
+                pageLimit: 0,
+                select(_columns, options) {
+                    this.countQuery = options?.head === true;
+                    return this;
+                },
+                eq() { return this; },
+                gt(column, value) {
+                    assert.equal(column, 'record_id');
+                    this.cursor = value;
+                    cursors.push(value);
+                    return this;
+                },
+                order(column, options) {
+                    assert.equal(column, 'record_id');
+                    assert.equal(options.ascending, true);
+                    return this;
+                },
+                limit(value) {
+                    this.pageLimit = value;
+                    return this;
+                },
+                range() {
+                    throw new Error('OFFSET pagination must not be used');
+                },
+                then(resolve, reject) {
+                    const response = this.countQuery
+                        ? { count: source.length, error: null }
+                        : {
+                            data: source
+                                .filter(row => this.cursor === null || row.record_id > this.cursor)
+                                .slice(0, this.pageLimit),
+                            error: null
+                        };
+                    return Promise.resolve(response).then(resolve, reject);
+                }
+            };
+            return query;
+        }
+    };
+
+    const rows = await fetchCloudActivities(client, 'user-1', { pageSize: 2 });
+    assert.deepEqual(rows.map(row => row.record_id), ['a', 'b', 'c', 'd', 'e']);
+    assert.deepEqual(cursors, ['b', 'd']);
 });
