@@ -467,9 +467,9 @@ class KajoConnectView extends WatchUi.View {
 
         dc.setColor(0x344047, Graphics.COLOR_BLACK);
         dc.drawLine(
-            mKajoLayout.safeRectWidth(86, 1, mUnit * 0.78) == 0 ? 0 : cx - (mUnit * 0.39),
+            (cx - (mUnit * 0.39)).toNumber(),
             87,
-            cx + (mUnit * 0.39),
+            (cx + (mUnit * 0.39)).toNumber(),
             87
         );
 
@@ -539,11 +539,9 @@ class KajoConnectView extends WatchUi.View {
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
         dc.fillCircle(rowLeft.toNumber() + 19, 278, 11);
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.fillTriangle(
-            rowLeft.toNumber() + 16, 271,
-            rowLeft.toNumber() + 16, 285,
-            rowLeft.toNumber() + 25, 278
-        );
+        dc.drawLine(rowLeft.toNumber() + 16, 271, rowLeft.toNumber() + 25, 278);
+        dc.drawLine(rowLeft.toNumber() + 25, 278, rowLeft.toNumber() + 16, 285);
+        dc.drawLine(rowLeft.toNumber() + 16, 285, rowLeft.toNumber() + 16, 271);
         drawHomeText(dc, cx + 12, 264, rowWidth - 48, 30,
             "Freies Training", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
 
