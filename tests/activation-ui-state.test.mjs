@@ -12,8 +12,8 @@ test('unlocks the app only after reconciliation for the same account', () => {
     assert.deepEqual(getActivationUiState('athlete-1', 'athlete-1', 'athlete-1'), { visible: true, readOnly: false, syncing: false });
 });
 test('does not expose a previous account local view after an account switch', () => {
-    assert.deepEqual(getActivationUiState('athlete-2', 'athlete-1', null), { visible: false, readOnly: false });
+    assert.deepEqual(getActivationUiState('athlete-2', 'athlete-1', null), { visible: false, readOnly: false, syncing: false });
 });
 test('a fully ready account remains available without a local-ready marker', () => {
-    assert.deepEqual(getActivationUiState('athlete-1', null, 'athlete-1'), { visible: true, readOnly: false });
+    assert.deepEqual(getActivationUiState('athlete-1', null, 'athlete-1'), { visible: true, readOnly: false, syncing: false });
 });
