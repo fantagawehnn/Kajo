@@ -3732,14 +3732,9 @@ async function syncGarminTodayOnOpen(userId) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
             setGarminSyncResult('Der Tagesabgleich wurde nur teilweise abgeschlossen. Einige Garmin-Daten konnten nicht vollständig übernommen werden; fehlende Daten werden erneut geprüft.', 'partial');
-            if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
-                const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
-                setTimeout(() => {
-                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
-                        void syncGarminTodayOnOpen(userId);
-                    }
-                }, retryDelay);
-            }
+            // Keine zeitgesteuerten Wiederholungen: Ein fehlgeschlagener
+            // Abruf wird erst beim nächsten Öffnen der App erneut versucht.
+            // Der aktuelle Öffnungsvorgang zeigt den Teilfehler transparent an.
         } else {
             garminDailySyncCompleted.add(runKey);
             console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
