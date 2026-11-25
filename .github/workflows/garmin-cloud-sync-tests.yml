@@ -35,7 +35,8 @@ jobs:
             tests/garmin-activity-scan-plan.test.mjs \
             tests/garmin-health-normalize.test.mjs \
             tests/garmin-sync-history.test.mjs \
-            tests/garmin-heart-rate-sync.test.mjs
+            tests/garmin-heart-rate-sync.test.mjs \
+            tests/garmin-open-sync-policy.test.mjs
 
   edge-function-check:
     runs-on: ubuntu-24.04
