@@ -63,7 +63,7 @@ test('Garmin health endpoints are not retried inside the same app-open attempt',
 
 test('Garmin cloud preview payloads are fetched only for new or changed activity IDs', () => {
     assert.match(cloudLoader, /select\('garmin_activity_id, updated_at'\)/);
-    assert.match(cloudLoader, /getGarminActivityRowsNeedingPayload\(metadata, seenAtById, locallyAvailableGarminIds\)/);
+    assert.match(cloudLoader, /getGarminActivityRowsNeedingPayload\(\s*metadata,\s*seenAtById,\s*locallyAvailableGarminIds\s*\)/);
     assert.match(cloudLoader, /\.in\('garmin_activity_id', ids\)/);
     assert.match(cloudLoader, /setUserLocalSetting\('garminActivityCloudSeenAtById'/);
 });
