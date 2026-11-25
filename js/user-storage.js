@@ -63,6 +63,10 @@ export function createUserStorage(userId) {
             try {
                 return await getLocalCollection(storageKey);
             } catch (error) {
+                // Wenn der Browser IndexedDB überhaupt nicht unterstützt, kann
+                // dort auch keine frühere Sammlung liegen. localStorage bleibt
+                // dann der vollständige verfügbare Speicherweg.
+                if (error?.name === 'IndexedDBUnavailableError') return undefined;
                 // Ein fehlgeschlagener IndexedDB-Lesezugriff bedeutet nicht,
                 // dass die Sammlung leer ist: Sie kann ausschließlich dort liegen,
                 // etwa nachdem localStorage sein Speicherlimit erreicht hat.
