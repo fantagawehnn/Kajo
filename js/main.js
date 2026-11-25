@@ -17,6 +17,7 @@ import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
+import { parseGarminActivitySeenMap, getGarminActivityRowsNeedingPayload, mergeGarminActivitySeenMap } from './garmin-activity-cloud-delta.js?v=1';
 import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
@@ -702,10 +703,14 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         const overlapStart = validCursor
             ? new Date(Math.max(0, Date.parse(savedCursor) - 24 * 60 * 60 * 1000)).toISOString()
             : null;
-        const data = await loadGarminActivityPages((offset, limit) => {
+
+        // First fetch only the compact ID/timestamp index. The one-day overlap
+        // is retained, but unchanged activity JSON is not transferred again.
+        const metadata = await loadGarminActivityPages((offset, limit) => {
             let query = supabase.from('garmin_activities')
-                .select('garmin_activity_id, activity, updated_at')
-                .eq('user_id', userId);
+                .select('garmin_activity_id, updated_at')
+                .eq('user_id', userId)
+                .not('updated_at', 'is', null);
             if (overlapStart) {
                 query = query.gte('updated_at', overlapStart)
                     .order('updated_at', { ascending: true })
@@ -716,6 +721,31 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             }
             return query.range(offset, offset + limit - 1);
         });
+
+        const seenAtById = parseGarminActivitySeenMap(
+            getUserLocalSetting('garminActivityCloudSeenAtById')
+        );
+        const rowsNeedingPayload = getGarminActivityRowsNeedingPayload(metadata, seenAtById);
+        const changedIds = rowsNeedingPayload
+            .map(row => String(row.garmin_activity_id))
+            .filter(Boolean);
+        const data = [];
+
+        // Keep each IN filter bounded and fetch full previews only for new or
+        // updated IDs. This avoids downloading the same last-24-hour previews
+        // on every app opening.
+        for (let offset = 0; offset < changedIds.length; offset += 100) {
+            const ids = changedIds.slice(offset, offset + 100);
+            const { data: batch, error } = await supabase
+                .from('garmin_activities')
+                .select('garmin_activity_id, activity, updated_at')
+                .eq('user_id', userId)
+                .in('garmin_activity_id', ids)
+                .order('updated_at', { ascending: true })
+                .order('garmin_activity_id', { ascending: true });
+            if (error) throw error;
+            data.push(...(batch || []));
+        }
 
         // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
         // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
@@ -738,7 +768,9 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
                 ambiguous++;
             }
         }
-        const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
+        const sanitized = data.length
+            ? state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0)
+            : 0;
         if (added || merged || sanitized) {
             if (saveDataToLocalStorage() === false) {
                 throw new Error('Garmin-Aktivitätsvorschauen wurden geladen, konnten aber nicht lokal gespeichert werden.');
@@ -746,10 +778,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             initEngine();
         }
 
-        // Nach dem initialen Vollabruf nur noch seit dem letzten bestätigten
-        // updated_at-Zeitpunkt geänderte Vorschauen laden. Das 24-Stunden-
-        // Überlappungsfenster schützt vor verzögert sichtbaren Datenbank-Commits.
-        const latestUpdatedAt = data.map(row => row?.updated_at)
+        const latestUpdatedAt = metadata.map(row => row?.updated_at)
             .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
             .sort()
             .at(-1);
@@ -757,9 +786,11 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             if (activeAppUserId !== userId || !appUserReady || activationSequence !== requestActivationSequence) {
                 return { added, merged, ambiguous, sanitized, stale: true };
             }
+            const nextSeenAtById = mergeGarminActivitySeenMap(seenAtById, metadata, latestUpdatedAt);
+            setUserLocalSetting('garminActivityCloudSeenAtById', JSON.stringify(nextSeenAtById));
             setUserLocalSetting('garminActivityCloudReadThrough', latestUpdatedAt);
         }
-        return { added, merged, ambiguous, sanitized, stale: false };
+        return { added, merged, ambiguous, sanitized, stale: false, checked: metadata.length, downloaded: data.length };
     })();
 
     garminActivityCloudLoadsInFlight.set(requestKey, loadPromise);
@@ -771,7 +802,6 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         }
     }
 }
-
 
 function findGarminNumber(payload, aliases) {
     const wanted = new Set(aliases.map(key => key.toLowerCase()));
