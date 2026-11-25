@@ -16,9 +16,9 @@ let activeStorageGeneration = 0;
 let indexedDbWriteQueue = Promise.resolve();
 let indexedDbWriteError = null;
 
-function enqueueIndexedDbSave(storage, collections, label) {
+function enqueueIndexedDbSave(storage, collections, label, options = {}) {
     indexedDbWriteQueue = indexedDbWriteQueue
-        .then(async () => { await storage.saveCollections(collections); indexedDbWriteError = null; })
+        .then(async () => { await storage.saveCollections(collections, options); indexedDbWriteError = null; })
         .catch(error => { indexedDbWriteError = error; console.error(label, error); });
     return indexedDbWriteQueue;
 }
@@ -275,6 +275,26 @@ export async function loadStateForUser(userId) {
     return activeUserId;
 }
 
+/** Wartet auf lokale Schreibvorgänge und liest den offenen Sync-Auftrag. */
+export async function getPendingLocalSync(expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) return null;
+    await flushLocalPersistence();
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return null;
+    return await storageForUser.getPendingSync();
+}
+
+/** Entfernt nur den zuvor gelesenen und inzwischen bestätigten Auftrag. */
+export async function clearPendingLocalSync(expectedRecord, expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) return false;
+    await flushLocalPersistence();
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
+    return await storageForUser.clearPendingSync(expectedRecord);
+}
+
 /** Alte globale Daten werden absichtlich nicht mehr beim App-Start eingelesen. */
 export function loadStateFromStorage() {
     deactivateUserStorage();
@@ -299,7 +319,7 @@ export async function saveCloudSyncBaseline(snapshot, expectedUserId = activeUse
     }
     // Den ursprünglichen Speicher festhalten, damit ein Kontowechsel während
     // des asynchronen Schreibens niemals die Basis in das neue Konto umlenkt.
-    await storageForUser.saveCollections({ cloudSyncBaseline: snapshot });
+    await storageForUser.saveCollections({ cloudSyncBaseline: snapshot }, { queueCloudSync: false });
     if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
     return true;
 }
@@ -381,7 +401,7 @@ export function applyCloudDataSnapshot(snapshot) {
     });
     migrateDailyCheckinScale();
 
-    if (!saveDataToLocalStorage()) {
+    if (!saveDataToLocalStorage({ queueCloudSync: false })) {
         throw new Error('Der Cloud-Datenstand wurde geladen, aber der lokale Cache konnte nicht aktualisiert werden.');
     }
     return true;
@@ -413,7 +433,7 @@ export function saveActivitiesToLocalStorage() {
     return true;
 }
 
-export function saveDataToLocalStorage() {
+export function saveDataToLocalStorage(options = {}) {
     if (!activeUserStorage || !activeUserId) {
         console.warn('Speichern übersprungen: Es ist kein authentifizierter Benutzer-Speicher aktiv.');
         return false;
@@ -435,7 +455,7 @@ export function saveDataToLocalStorage() {
     }
 
     const storageForThisSave = activeUserStorage;
-    enqueueIndexedDbSave(storageForThisSave, snapshot, 'Benutzerbezogene IndexedDB-Sicherung fehlgeschlagen:');
+    enqueueIndexedDbSave(storageForThisSave, snapshot, 'Benutzerbezogene IndexedDB-Sicherung fehlgeschlagen:', options);
 
     window.dispatchEvent(new CustomEvent('endurance:data-saved', { detail: { userId: activeUserId } }));
     return true;
