@@ -157,6 +157,31 @@ test('erkennt weiterhin das tatsächliche Löschen einer geänderten Aktivität'
     assert.ok(result.conflicts.some(path => path.includes('Löschung gegen Änderung')));
 });
 
+test('überträgt eine bestätigte Aktivitätslöschung über das Cloud-Aktivitätsmanifest', () => {
+    const base = {
+        activityIds: ['activity-1', 'activity-2'],
+        activities: [
+            { id: 'activity-1', duration: 60 },
+            { id: 'activity-2', duration: 45 }
+        ]
+    };
+    const local = {
+        activityIds: ['activity-2'],
+        activities: [{ id: 'activity-2', duration: 45 }]
+    };
+    // Das Manifest des Cloud-Snapshots enthält activity-1 nicht mehr.
+    // Die separate activities-Tabelle kann den alten Payload noch enthalten;
+    // mergeCloudActivities filtert ihn anhand des Manifests vor diesem Merge.
+    const cloud = {
+        activityIds: ['activity-2'],
+        activities: [{ id: 'activity-2', duration: 45 }]
+    };
+    const result = merge(base, local, cloud);
+    assert.deepEqual(plain(result.conflicts), []);
+    assert.deepEqual(plain(result.snapshot.activityIds), ['activity-2']);
+    assert.deepEqual(plain(result.snapshot.activities), [{ id: 'activity-2', duration: 45 }]);
+});
+
 test('erkennt identische Snapshots unabhängig von Objektschlüssel-Reihenfolge', () => {
     assert.equal(cloudSnapshotsEqual({ a: 1, b: { x: 2, y: 3 } }, { b: { y: 3, x: 2 }, a: 1 }), true);
 });
