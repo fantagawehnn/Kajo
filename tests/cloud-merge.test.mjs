@@ -7,11 +7,11 @@ import assert from 'node:assert/strict';
 const sourcePath = fileURLToPath(new URL('../js/cloud-merge.js', import.meta.url));
 const source = readFileSync(sourcePath, 'utf8')
     .replace(/export function/g, 'function')
-    + '\nmodule.exports = { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds };';
+    + '\nmodule.exports = { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds, createCloudSnapshotPatch };';
 
 const moduleSandbox = { module: { exports: {} } };
 vm.runInNewContext(source, moduleSandbox, { filename: 'cloud-merge.js' });
-const { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } = moduleSandbox.module.exports;
+const { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds, createCloudSnapshotPatch } = moduleSandbox.module.exports;
 
 function merge(base, local, cloud) {
     return mergeCloudSnapshots(base, local, cloud);
@@ -170,4 +170,30 @@ test('normalisiert lokale Snapshots vor dem Vergleich mit abgeleiteten activityI
     const normalizedLocal = withCloudActivityIds(localStorageSnapshot, ['activity-1']);
     assert.deepEqual(plain(normalizedLocal), cloudComparableSnapshot);
     assert.equal(cloudSnapshotsEqual(normalizedLocal, cloudComparableSnapshot), true);
+});
+
+
+test('erstellt einen minimalen Patch nur für geänderte Snapshot-Bereiche', () => {
+    const current = {
+        planned: [{ id: 'p1', title: 'Alt' }],
+        checkins: { '2026-11-25': { sleep: 8 } },
+        profile: { displayName: 'Athletin' },
+        activityIds: ['a1']
+    };
+    const target = {
+        planned: [{ id: 'p1', title: 'Neu' }],
+        checkins: { '2026-11-25': { sleep: 8 } },
+        profile: { displayName: 'Athletin' },
+        activityIds: ['a1', 'a2']
+    };
+    const patch = createCloudSnapshotPatch(target, current);
+    assert.deepEqual(plain(patch), {
+        planned: [{ id: 'p1', title: 'Neu' }],
+        activityIds: ['a1', 'a2']
+    });
+});
+
+test('leerer Patch bei unveränderten Snapshot-Bereichen', () => {
+    const snapshot = { planned: [], checkins: {}, profile: {} };
+    assert.deepEqual(plain(createCloudSnapshotPatch(snapshot, snapshot)), {});
 });
