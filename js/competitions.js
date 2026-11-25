@@ -198,6 +198,10 @@ export function toggleRaceModal() {
     if (!modal) return;
 
     if (modal.classList.contains('hidden')) {
+        // Ein neues Wettkampfformular startet mit dem heutigen lokalen Datum.
+        // Ein bereits gewähltes Datum bleibt beim erneuten Öffnen unverändert.
+        const raceDateInput = document.getElementById('race-date');
+        if (raceDateInput && !raceDateInput.value) raceDateInput.value = toLocalDateString();
         // Aus dem scrollbaren App-Bereich lösen, damit das Modal viewport-zentriert bleibt.
         if (modal.parentElement !== document.body) document.body.appendChild(modal);
         modal.classList.remove('hidden');
