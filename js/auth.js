@@ -193,16 +193,12 @@ if (!supabase) {
         if (error) setMessage(error.message || 'Abmeldung fehlgeschlagen.', true);
     });
 
+    // onAuthStateChange liefert bereits INITIAL_SESSION. Ein zusätzlicher
+    // getSession()-Aufruf parallel zum App-Einstieg kann bei abgelaufenem Token
+    // unnötige, konkurrierende Refresh-Versuche auslösen.
     supabase.auth.onAuthStateChange((_event, session) => showApp(session));
-    supabase.auth.getSession().then(({ data, error }) => {
-        if (error) {
-            handleAuthCheckError(error);
-            return;
-        }
-        showApp(data?.session || null);
-    }).catch(handleAuthCheckError);
 
-    // Auch Fehler der parallelen Sitzungsprüfung in main.js beenden den endlosen Startbildschirm.
+    // Auch Fehler der zentralen Sitzungsprüfung in main.js beenden den Startbildschirm.
     window.addEventListener('endurance:auth-check-error', (event) => {
         handleAuthCheckError(event.detail?.error || new Error('Die Anmeldung konnte nicht überprüft werden.'));
     });
