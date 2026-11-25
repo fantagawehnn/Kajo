@@ -141,7 +141,7 @@ async function syncGarminHealthDay(
       const ageMs = Number.isFinite(fetchedAt) ? Math.max(0, Date.now() - fetchedAt) : Number.POSITIVE_INFINITY;
       // HRV and sleep values may arrive after the first morning request. Retry
       // empty markers after six hours rather than waiting a month.
-      const lateArrivingTypes = new Set(["hrv_daily", "hrv_detail", "sleep_detail", "sleep_summaries"]);
+      const lateArrivingTypes = new Set(["hrv_daily", "hrv_detail", "sleep_detail", "sleep_summaries", "menstrual_cycle_summary", "menstrual_cycle_day_view"]);
       const noDataRetryAfterMs = lateArrivingTypes.has(endpoint.type)
         ? 6 * 60 * 60 * 1000
         : 30 * 24 * 60 * 60 * 1000;
@@ -150,7 +150,8 @@ async function syncGarminHealthDay(
       // hours; successful static records are not fetched again unnecessarily.
       const refreshDuringDayTypes = new Set([
         "daily_summary", "heart_rate", "stress", "steps", "hydration",
-        "body_battery", "spo2", "nutrition"
+        "body_battery", "spo2", "nutrition", "menstrual_cycle_summary",
+        "menstrual_cycle_day_view"
       ]);
       const dynamicNeedsRefresh = Boolean(existing?.payload) &&
         !isEmptyGarminPayload(existing.payload) &&
