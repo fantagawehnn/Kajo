@@ -909,7 +909,7 @@ async function syncGarminActivitiesForUser(
     }
 
     fetched += rows.length;
-    stored += records.length;
+    stored += changedRecords.length;
   }
 
   const { error: statusError } = await admin.from("garmin_connections").update({
