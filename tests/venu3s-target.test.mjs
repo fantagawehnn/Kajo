@@ -27,6 +27,9 @@ const historyView = readFileSync(new URL("../KajoConnect/source/KajoConnectHisto
 const boatClassView = readFileSync(new URL("../KajoConnect/source/KajoConnectBoatClassView.mc", import.meta.url), "utf8");
 const unitsView = readFileSync(new URL("../KajoConnect/source/KajoConnectUnitsView.mc", import.meta.url), "utf8");
 const connectEndpoint = readFileSync(new URL("../supabase/functions/kajo-connect/index.ts", import.meta.url), "utf8");
+const smartphoneStorage = readFileSync(new URL("../js/storage.js", import.meta.url), "utf8");
+const smartphonePlanning = readFileSync(new URL("../js/planning.js", import.meta.url), "utf8");
+const smartphoneHtml = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
 test("standard workouts are synchronized and shown separately from dated sessions", () => {
   assert.match(connectEndpoint, /function safeStandardWorkout\(/);
@@ -36,6 +39,17 @@ test("standard workouts are synchronized and shown separately from dated session
   assert.match(workoutListView, /getStandardWorkouts\(\)/);
   assert.match(workoutListView, /isStandardWorkout/);
   assert.match(workoutListView, /STANDARD · /);
+});
+
+test("standard workout templates persist independently of dated planning", () => {
+  assert.match(smartphoneStorage, /standardWorkouts: 'standardWorkouts'/);
+  assert.match(smartphoneStorage, /state\.standardWorkouts = Array\.isArray\(loaded\.standardWorkouts\)/);
+  assert.match(smartphoneStorage, /standardWorkouts: state\.standardWorkouts/);
+  assert.match(smartphonePlanning, /export function saveStandardWorkout/);
+  assert.match(smartphonePlanning, /state\.standardWorkouts\.push\(workout\)/);
+  assert.match(smartphoneHtml, /id="standard-workouts-list"/);
+  assert.match(smartphoneHtml, /id="standard-workout-modal"/);
+  assert.doesNotMatch(smartphonePlanning.slice(smartphonePlanning.indexOf("export function saveStandardWorkout")), /state\.plannedActivities\.push/);
 });
 
 test("Venu 3S is the only Connect IQ product target", () => {
