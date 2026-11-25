@@ -3652,7 +3652,7 @@ async function handleAuthSession(session) {
             // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
             // Den lokalen Kontostand zuerst bereitstellen. Die unabhängigen
             // Cloud-/Baseline-Lesevorgänge laufen parallel weiter, blockieren aber
-            // nicht mehr die erste lokale, ausdrücklich schreibgeschützte Ansicht.
+            // nicht mehr die erste lokale Ansicht.
             const localStatePromise = withActivationTimeout(
                 loadStateForUser(userId),
                 'Das Laden deiner lokalen Kontodaten',
