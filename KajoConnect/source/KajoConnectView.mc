@@ -240,14 +240,19 @@ class KajoConnectView extends WatchUi.View {
         mHomeSelection += direction;
         if (mHomeSelection < 0) { mHomeSelection = 2; }
         if (mHomeSelection > 2) { mHomeSelection = 0; }
+        if (getTodaysSessions().size() == 0 && mHomeSelection == 0) {
+            mHomeSelection = direction >= 0 ? 1 : 2;
+        }
         WatchUi.requestUpdate();
     }
 
     function activateHomeSelection() as Void {
         if (mHomeSelection == 0) {
-            startActivity();
+            if (getTodaysSessions().size() > 0) {
+                startActivity();
+            }
         } else if (mHomeSelection == 1) {
-            var listView = new KajoConnectWorkoutListView(self, null, "TRAININGSPLAN", "EINHEITEN");
+            var listView = new KajoConnectWorkoutListView(self, null, "TRAININGS", "EINHEITEN");
             WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
         } else {
             openActivityView(null);
@@ -267,7 +272,7 @@ class KajoConnectView extends WatchUi.View {
             var view = new KajoConnectDisplayConfigView();
             WatchUi.pushView(view, new KajoConnectDisplayConfigDelegate(view), WatchUi.SLIDE_UP);
         } else if (identifier == "training_overview") {
-            var view = new KajoConnectWorkoutListView(self, null, "TRAININGSPLAN", "EINHEITEN GESPEICHERT");
+            var view = new KajoConnectWorkoutListView(self, null, "TRAININGS", "EINHEITEN GESPEICHERT");
             WatchUi.pushView(view, new KajoConnectWorkoutListDelegate(view), WatchUi.SLIDE_UP);
         } else if (identifier == "history") {
             var view = new KajoConnectHistoryView();
@@ -382,6 +387,21 @@ class KajoConnectView extends WatchUi.View {
         mHomeSelection += direction;
         if (mHomeSelection < 0) { mHomeSelection = 2; }
         if (mHomeSelection > 2) { mHomeSelection = 0; }
+        if (getTodaysSessions().size() == 0 && mHomeSelection == 0) {
+            mHomeSelection = direction >= 0 ? 1 : 2;
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function cycleBoatClass() as Void {
+        if (mSelectedBoat == "K1") {
+            mSelectedBoat = "C1";
+        } else if (mSelectedBoat == "C1") {
+            mSelectedBoat = "C2";
+        } else {
+            mSelectedBoat = "K1";
+        }
+        Storage.setValue("kajoSelectedBoat", mSelectedBoat);
         WatchUi.requestUpdate();
     }
 
@@ -393,8 +413,14 @@ class KajoConnectView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        // Touch-Grenzen entsprechen exakt den gezeichneten Schaltflaechen.
-        if (x >= mStartLeft && x <= mStartRight &&
+        // Bootsklasse direkt im Kopfbereich weiterschalten.
+        if (y >= mBoatTop && y <= mBoatBottom &&
+            x >= mBoatLeft && x <= mBoatRight) {
+            cycleBoatClass();
+            return;
+        }
+
+        if (mStartLeft > 0 && x >= mStartLeft && x <= mStartRight &&
             y >= mStartTop && y <= mStartBottom) {
             mHomeSelection = 0;
             activateHomeSelection();
@@ -418,6 +444,7 @@ class KajoConnectView extends WatchUi.View {
     function onUpdate(dc as Dc) {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
+
         mWidth = dc.getWidth();
         mHeight = dc.getHeight();
         mUnit = mWidth < mHeight ? mWidth : mHeight;
@@ -425,129 +452,105 @@ class KajoConnectView extends WatchUi.View {
 
         var cx = mWidth / 2;
         var todaySessions = getTodaysSessions();
-        var todayLabel = "Kein Training geplant";
-        var todayDetail = "Freies Training";
-
-        if (todaySessions.size() == 1) {
-            var workout = todaySessions[0] as Lang.Dictionary;
-            todayLabel = workout["name"] == null ? "Geplantes Training" : workout["name"].toString();
-            var duration = workout["duration"] == null ? "" : workout["duration"].toString();
-            var type = workout["type"] == null ? "" : workout["type"].toString();
-            todayDetail = duration == "" ? type : duration + " MIN · " + type;
-        } else if (todaySessions.size() > 1) {
-            todayLabel = todaySessions.size().toString() + " EINHEITEN HEUTE";
-            todayDetail = "Training auswählen";
-        }
-
-        // Kopfbereich: eigene, voneinander getrennte Textzeilen.
-        drawHomeText(dc, cx, 28, 220, 26, "KAJO", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, 57, 270, 18,
-            mSelectedBoat + " · " + compactSyncStatus(),
-            Graphics.FONT_XTINY, mSyncStatus == "KAJO AKTUALISIERT" ? 0x25D3CB : 0x98A5AB);
-
-        // Bei geplantem Training bleibt die große Startfläche erhalten.
-        // Ohne geplante Einheit erscheint nur ein kompakter Hinweis in derselben
-        // Schriftgröße wie die beiden darunterliegenden Menüeinträge.
-        mStartTop = 94;
-        mStartBottom = 198;
-        var mainWidth = mKajoLayout.safeRectWidth(
-            mStartTop, mStartBottom - mStartTop, mUnit * 0.78
-        );
+        var mainWidth = mKajoLayout.safeRectWidth(92, 86, mUnit * 0.82);
         var mainLeft = cx - (mainWidth / 2);
 
+        // Kopfbereich mit direkt antippbarer Bootsklasse.
+        drawHomeText(dc, cx, 20, 220, 28, "KAJO",
+            Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+        mBoatTop = 48;
+        mBoatBottom = 82;
+        mBoatLeft = cx - (mUnit * 0.34);
+        mBoatRight = cx + (mUnit * 0.34);
+        drawHomeText(dc, cx, 51, mUnit * 0.68, 24,
+            mSelectedBoat + "  ▾", Graphics.FONT_SMALL, 0x25D3CB);
+
+        dc.setColor(0x344047, Graphics.COLOR_BLACK);
+        dc.drawLine(
+            mKajoLayout.safeRectWidth(86, 1, mUnit * 0.78) == 0 ? 0 : cx - (mUnit * 0.39),
+            87,
+            cx + (mUnit * 0.39),
+            87
+        );
+
+        // Tagesbereich: nur bei vorhandener Einheit als Startfläche.
+        mStartTop = 96;
+        mStartBottom = 178;
         if (todaySessions.size() == 0) {
             mStartLeft = 0;
             mStartRight = 0;
-            drawHomeText(dc, cx, 137, mainWidth, 24,
-                "HEUTE KEIN TRAINING",
-                Graphics.FONT_SMALL, 0x98A5AB);
+            drawHomeText(dc, cx, 119, mainWidth, 30,
+                "Kein Training geplant", Graphics.FONT_SMALL, 0x98A5AB);
         } else {
             mStartLeft = mainLeft;
             mStartRight = mainLeft + mainWidth;
 
-            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(
-                mainLeft.toNumber(), mStartTop,
-                mainWidth.toNumber(), (mStartBottom - mStartTop).toNumber(), 12
-            );
-            if (mHomeSelection == 0) {
-                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-                dc.drawRoundedRectangle(
-                    mainLeft.toNumber() - 3, mStartTop - 3,
-                    mainWidth.toNumber() + 6, (mStartBottom - mStartTop).toNumber() + 6, 14
-                );
+            var workoutName = "";
+            var workoutDetail = "";
+            if (todaySessions.size() == 1) {
+                var workout = todaySessions[0] as Lang.Dictionary;
+                workoutName = workout["name"] == null
+                    ? "Geplantes Training" : workout["name"].toString();
+                var duration = workout["duration"] == null
+                    ? "" : workout["duration"].toString();
+                var type = workout["type"] == null
+                    ? "" : workout["type"].toString();
+                workoutDetail = duration == "" ? type : duration + " min · " + type;
+            } else {
+                workoutName = todaySessions.size().toString() + " Einheiten heute";
+                workoutDetail = "Training auswählen";
             }
 
-            drawHomeText(dc, cx, 108, mainWidth - 24, 25,
-                "TRAINING STARTEN", Graphics.FONT_MEDIUM, Graphics.COLOR_BLACK);
-            drawHomeText(dc, cx, 139, mainWidth - 24, 25,
-                todayLabel, Graphics.FONT_SMALL, Graphics.COLOR_BLACK);
-            drawHomeText(dc, cx, 169, mainWidth - 24, 17,
-                todayDetail, Graphics.FONT_XTINY, Graphics.COLOR_BLACK);
-        }
-
-        // Sekundaeraktionen: getrennte Rechtecke mit 10 px Abstand.
-        // Die gemeinsame Breite wird anhand der unteren Schaltflaeche berechnet,
-        // damit beide Flaechen vollstaendig innerhalb des runden Displays liegen.
-        mPlanTop = 212;
-        mPlanBottom = 260;
-        mFreeTrainingTop = 270;
-        mFreeTrainingBottom = 318;
-        mFreeTop = mPlanTop;
-        mFreeBottom = mFreeTrainingBottom;
-        mMenuRowStep = 58;
-
-        var secondaryWidth = mKajoLayout.safeRectWidth(
-            mFreeTrainingTop, mFreeTrainingBottom - mFreeTrainingTop, mUnit * 0.78
-        );
-        var secondaryLeft = cx - (secondaryWidth / 2);
-        mSecondaryLeft = secondaryLeft;
-        mSecondaryRight = secondaryLeft + secondaryWidth;
-
-        // Trainingsplan
-        var planSelected = mHomeSelection == 1;
-        dc.setColor(planSelected ? 0x123034 : 0x0B1114, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(
-            secondaryLeft.toNumber(), mPlanTop,
-            secondaryWidth.toNumber(), (mPlanBottom - mPlanTop).toNumber(), 8
-        );
-        if (planSelected) {
             dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(
-                secondaryLeft.toNumber(), mPlanTop,
-                secondaryWidth.toNumber(), (mPlanBottom - mPlanTop).toNumber(), 8
-            );
+            dc.fillRectangle(mainLeft.toNumber(), 105, 3, 58);
+            drawHomeText(dc, cx + 8, 106, mainWidth - 24, 27,
+                workoutName, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawHomeText(dc, cx + 8, 137, mainWidth - 24, 22,
+                workoutDetail, Graphics.FONT_XTINY, 0x98A5AB);
         }
-        dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-        dc.fillRectangle(secondaryLeft.toNumber(), mPlanTop, 3,
-            (mPlanBottom - mPlanTop).toNumber());
-        drawHomeText(dc, cx, mPlanTop + 5, secondaryWidth - 18, 18,
-            "TRAININGSPLAN", Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, mPlanTop + 26, secondaryWidth - 18, 14,
-            mPlannedSessions.size().toString() + " EINHEITEN GESPEICHERT",
-            Graphics.FONT_XTINY, 0x98A5AB);
 
-        // Freies Training
-        var freeSelected = mHomeSelection == 2;
-        dc.setColor(freeSelected ? 0x123034 : 0x0B1114, Graphics.COLOR_BLACK);
-        dc.fillRoundedRectangle(
-            secondaryLeft.toNumber(), mFreeTrainingTop,
-            secondaryWidth.toNumber(), (mFreeTrainingBottom - mFreeTrainingTop).toNumber(), 8
+        // Trennlinie oberhalb der beiden Menüeinträge.
+        dc.setColor(0x344047, Graphics.COLOR_BLACK);
+        dc.drawLine(cx - (mUnit * 0.39), 185, cx + (mUnit * 0.39), 185);
+
+        mPlanTop = 197;
+        mPlanBottom = 246;
+        mFreeTrainingTop = 253;
+        mFreeTrainingBottom = 302;
+        var rowWidth = mKajoLayout.safeRectWidth(
+            mPlanTop, mFreeTrainingBottom - mPlanTop, mUnit * 0.80
         );
-        if (freeSelected) {
-            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-            dc.drawRoundedRectangle(
-                secondaryLeft.toNumber(), mFreeTrainingTop,
-                secondaryWidth.toNumber(), (mFreeTrainingBottom - mFreeTrainingTop).toNumber(), 8
-            );
-        }
+        var rowLeft = cx - (rowWidth / 2);
+        mSecondaryLeft = rowLeft;
+        mSecondaryRight = rowLeft + rowWidth;
+
+        // Trainingsdatenbank – absichtlich ohne Navigationspfeil.
+        dc.setColor(mHomeSelection == 1 ? 0x25D3CB : 0x98A5AB, Graphics.COLOR_BLACK);
+        dc.fillCircle(rowLeft.toNumber() + 19, 221, 10);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillCircle(rowLeft.toNumber() + 19, 221, 5);
+        drawHomeText(dc, cx + 12, 207, rowWidth - 48, 30,
+            "Trainings", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+
+        dc.setColor(0x344047, Graphics.COLOR_BLACK);
+        dc.drawLine(rowLeft.toNumber(), 249, (rowLeft + rowWidth).toNumber(), 249);
+
+        // Freies Training.
         dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
-        dc.fillRectangle(secondaryLeft.toNumber(), mFreeTrainingTop, 3,
-            (mFreeTrainingBottom - mFreeTrainingTop).toNumber());
-        drawHomeText(dc, cx, mFreeTrainingTop + 5, secondaryWidth - 18, 18,
-            "FREIES TRAINING", Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-        drawHomeText(dc, cx, mFreeTrainingTop + 26, secondaryWidth - 18, 14,
-            "FREI STARTEN", Graphics.FONT_XTINY, 0x98A5AB);
+        dc.fillCircle(rowLeft.toNumber() + 19, 278, 11);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillTriangle(
+            rowLeft.toNumber() + 16, 271,
+            rowLeft.toNumber() + 16, 285,
+            rowLeft.toNumber() + 25, 278
+        );
+        drawHomeText(dc, cx + 12, 264, rowWidth - 48, 30,
+            "Freies Training", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+
+        // Touch-Ziele entsprechen den sichtbaren Zeilen.
+        mPlanTop = 197;
+        mPlanBottom = 246;
+        mFreeTrainingTop = 253;
+        mFreeTrainingBottom = 302;
     }
-
 }
