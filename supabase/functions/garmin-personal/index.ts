@@ -328,9 +328,9 @@ async function syncGarminHealthHistoryBatch(
   }).eq("user_id", userId).eq("sync_type", syncType);
   if (runningError) throw runningError;
 
-  // Process one calendar day per Edge Function invocation to reduce the
-  // amount of sequential Garmin endpoint work within the worker time limit.
-  // The browser continues from the persisted cursor in the next request.
+  // Process a bounded number of calendar days per invocation. The automatic
+  // app-open sync may process today plus its one-day overlap; manual history
+  // imports keep the smaller one-day batch and continue from the persisted cursor.
   const batchLimit = Math.max(1, Math.min(2, Math.floor(maxDaysPerInvocation) || 1));
   const processed: Array<Record<string, unknown>> = [];
   let failed = false;
