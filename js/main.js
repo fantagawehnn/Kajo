@@ -3665,6 +3665,7 @@ async function syncGarminTodayOnOpen(userId) {
     const syncActivationSequence = activationSequence;
     const inFlightKey = runKey + ':' + syncActivationSequence;
     const isCurrentSync = () => activeAppUserId === userId && appUserReady && activationSequence === syncActivationSequence;
+    let cloudActivityLoadAttempted = false;
     if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(inFlightKey)) return;
     garminDailySyncInFlight.add(inFlightKey);
 
@@ -3698,6 +3699,7 @@ async function syncGarminTodayOnOpen(userId) {
         if (!isCurrentSync()) return;
         if (connection.connection?.status !== 'connected') {
             try { setUserLocalSetting('garmin_connected', 'false'); } catch (_) {}
+            cloudActivityLoadAttempted = true;
             const cloudActivities = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
             if (!isCurrentSync()) return;
             if (cloudActivities.added > 0 || cloudActivities.merged > 0) {
@@ -3717,6 +3719,7 @@ async function syncGarminTodayOnOpen(userId) {
         const health = response.sync?.healthSync || null;
 
         if (!isCurrentSync()) return;
+        cloudActivityLoadAttempted = true;
         const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
         if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
@@ -3768,13 +3771,16 @@ async function syncGarminTodayOnOpen(userId) {
         if (isCurrentSync()) {
             // Auch bei einem Garmin-Fehler bleiben bereits gespeicherte Cloud-
             // Aktivitäten verfügbar. Der Delta-Abruf erfolgt hier genau einmal.
-            try {
-                const cloudActivities = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
-                if (cloudActivities.added > 0 || cloudActivities.merged > 0) {
-                    void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
+            if (!cloudActivityLoadAttempted) {
+                cloudActivityLoadAttempted = true;
+                try {
+                    const cloudActivities = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
+                    if (cloudActivities.added > 0 || cloudActivities.merged > 0) {
+                        void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
+                    }
+                } catch (cloudLoadError) {
+                    console.warn('KAJO: Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', cloudLoadError);
                 }
-            } catch (cloudLoadError) {
-                console.warn('KAJO: Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', cloudLoadError);
             }
             if (!isCurrentSync()) return;
             setGarminSyncResult('Automatischer Tagesabgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), 'error');
