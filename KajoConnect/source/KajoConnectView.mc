@@ -477,10 +477,12 @@ class KajoConnectView extends WatchUi.View {
         // Kopfbereich mit direkt antippbarer Bootsklasse.
         drawHomeText(dc, cx, 20, 220, 28, "KAJO",
             Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
-        mBoatTop = 48;
-        mBoatBottom = 82;
-        mBoatLeft = cx - (mUnit * 0.34);
-        mBoatRight = cx + (mUnit * 0.34);
+        // Großzügige Touch-Fläche für die Bootsklasse:
+        // Die gesamte Kopfzeile ist antippbar, nicht nur der Text selbst.
+        mBoatTop = 40;
+        mBoatBottom = 92;
+        mBoatLeft = 0;
+        mBoatRight = mWidth;
         drawHomeText(dc, cx, 51, mUnit * 0.68, 24,
             mSelectedBoat, Graphics.FONT_SMALL, 0x25D3CB);
 
