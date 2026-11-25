@@ -3095,8 +3095,12 @@ async function pullCloudChanges() {
             throw new Error('Das angemeldete Konto stimmt beim Cloud-Pull nicht überein.');
         }
         const activityCursor = getUserLocalSetting('cloudActivityCursor');
+        const watermarkTime = Date.parse(activityWatermark);
+        const cursorTime = Date.parse(activityCursor);
+        // Ein kurzer Überlappungsbereich erkennt auch verspätet sichtbare
+        // Transaktionen mit einem bereits vergebenen updated_at-Zeitstempel.
         const activityChanged = Boolean(activityWatermark && (
-            !activityCursor || Date.parse(activityWatermark) > Date.parse(activityCursor)
+            !Number.isFinite(cursorTime) || watermarkTime >= cursorTime - 60000
         ));
         const snapshotChanged = Number(latestCloud.version || 0) !== Number(cloudSyncVersion || 0);
         if (!snapshotChanged && !activityChanged) return;
