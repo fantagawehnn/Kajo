@@ -3083,17 +3083,23 @@ async function pullCloudChanges() {
     const userId = activeAppUserId;
     const pullSequence = activationSequence;
     try {
-        // Häufige Hintergrund-Pulls (Fokus/Tabwechsel/60-Sekunden-Intervall)
-        // prüfen zunächst nur die kleine Snapshot-Version. Der vollständige,
-        // teure Abruf aller Aktivitäten ist nur nötig, wenn ein anderes Gerät
-        // tatsächlich eine neue Cloud-Version gespeichert hat.
-        const latestCloud = await fetchCloudSnapshot();
+        // Snapshot-Version und den kleinen Aktivitäts-Wasserstand prüfen.
+        // Aktivitätsänderungen erhöhen nicht zwingend user_data.version.
+        const [latestCloud, activityWatermark] = await Promise.all([
+            fetchCloudSnapshot(),
+            getCloudActivityWatermark(supabase, userId)
+        ]);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId ||
             !appUserReady || activationSequence !== pullSequence) return;
         if (latestCloud.userId !== userId) {
             throw new Error('Das angemeldete Konto stimmt beim Cloud-Pull nicht überein.');
         }
-        if (Number(latestCloud.version || 0) === Number(cloudSyncVersion || 0)) return;
+        const activityCursor = getUserLocalSetting('cloudActivityCursor');
+        const activityChanged = Boolean(activityWatermark && (
+            !activityCursor || Date.parse(activityWatermark) > Date.parse(activityCursor)
+        ));
+        const snapshotChanged = Number(latestCloud.version || 0) !== Number(cloudSyncVersion || 0);
+        if (!snapshotChanged && !activityChanged) return;
 
         await flushCloudSync({ skipTelemetry: true });
     } catch (error) {
