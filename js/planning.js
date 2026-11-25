@@ -233,7 +233,8 @@ export function openStandardWorkoutModal(id = null) {
         'standard-workout-warmup': item?.warmup || '',
         'standard-workout-main': item?.mainSet || '',
         'standard-workout-cooldown': item?.cooldown || '',
-        'standard-workout-desc': item?.desc || ''
+        'standard-workout-desc': item?.desc || '',
+        'standard-workout-steps': (item?.steps || []).map(step => [step.type || 'work', (Number(step.durationSeconds) / 60), step.label || '', step.target || ''].join(' | ')).join('\n')
     };
     Object.entries(values).forEach(([fieldId, value]) => {
         const field = document.getElementById(fieldId);
@@ -259,6 +260,21 @@ export function saveStandardWorkout() {
     if (!name) { alert('Bitte gib dem Standardtraining einen Namen.'); return; }
     if (!['K1', 'C1', 'C2'].includes(discipline)) { alert('Bitte wähle K1, C1 oder C2.'); return; }
     if (duration !== null && (!Number.isFinite(duration) || duration < 1 || duration > 1440)) { alert('Bitte gib eine gültige Dauer zwischen 1 und 1440 Minuten an.'); return; }
+    const stepLines = value('standard-workout-steps').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const allowedStepTypes = ['warmup', 'work', 'recovery', 'cooldown', 'other'];
+    const steps = [];
+    for (let index = 0; index < stepLines.length; index += 1) {
+        const parts = stepLines[index].split('|').map(part => part.trim());
+        const [rawType, rawMinutes, label, target] = parts;
+        const type = allowedStepTypes.includes(rawType) ? rawType : 'work';
+        const minutes = Number(rawMinutes);
+        if (!label || !Number.isFinite(minutes) || minutes <= 0 || minutes > 360) {
+            alert('Schritt ' + (index + 1) + ': Bitte nutze Typ | Minuten | Bezeichnung | Ziel.');
+            return;
+        }
+        steps.push({ id: 'step-' + (index + 1), type, label: label.slice(0, 80), durationSeconds: Math.round(minutes * 60), target: (target || '').slice(0, 120) });
+        if (steps.length > 40) { alert('Maximal 40 Schritte pro Standardtraining.'); return; }
+    }
     const workout = {
         id: editingStandardWorkoutId || 'sw-' + Date.now(),
         name: name.slice(0, 120),
@@ -273,7 +289,7 @@ export function saveStandardWorkout() {
         desc: value('standard-workout-desc').slice(0, 300),
         category: 'ga',
         targetTss: null,
-        steps: [],
+        steps,
         isStandardWorkout: true
     };
     if (!Array.isArray(state.standardWorkouts)) state.standardWorkouts = [];
