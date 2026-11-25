@@ -55,6 +55,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
 
         var name = valueText("name", "Geplante Einheit");
         var type = valueText("type", "Training");
+        if (mWorkout["isStandardWorkout"] == true) { type = "STANDARD · " + type; }
         var duration = valueText("duration", "");
         var stepsValue = mWorkout["steps"];
         var stepCount = stepsValue == null ? 0 : stepsValue.size();
