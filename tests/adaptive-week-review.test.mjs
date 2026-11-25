@@ -138,3 +138,21 @@ test('manual statuses do not override matched activities and invalid status valu
     assert.equal(review.completedWithoutActivity.length, 0);
     assert.equal(review.missed.length, 0);
 });
+
+test('excludes rest days from training review, unresolved sessions and upcoming workouts', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [
+            { id: 'rest-past', date: '2026-11-16', name: 'Ruhetag', type: 'RestDay', category: 'rest' },
+            { id: 'rest-future', date: '2026-11-22', name: 'Ruhetag', type: 'rest' },
+            { id: 'training', date: '2026-11-17', name: 'C1 Technik', type: 'C1', discipline: 'C1' }
+        ],
+        manualSessionStatuses: [{ sessionId: 'rest-past', status: 'missed' }]
+    }, [], '2026-11-19');
+    assert.equal(review.unmatchedPlanned.length, 1);
+    assert.equal(review.unmatchedPlanned[0].session.id, 'training');
+    assert.equal(review.upcoming.length, 0);
+    assert.equal(review.missed.length, 0);
+    assert.equal(review.coverage.unconfirmedPastPlanCount, 1);
+    assert.equal(review.coverage.upcomingCount, 0);
+});
