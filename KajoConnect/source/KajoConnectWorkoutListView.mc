@@ -23,10 +23,28 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         countLabel as Lang.String) {
         View.initialize();
         mHomeView = homeView;
-        mSessions = sessions == null ? homeView.getPlannedSessions() : sessions;
+        var sourceSessions = sessions == null ? homeView.getPlannedSessions() : sessions;
+        mSessions = getCanoeSessions(sourceSessions);
         mTitle = title;
         mCountLabel = countLabel;
         mWorkoutLayout = new KajoLayout();
+    }
+
+
+    // Die Trainingsdatenbank zeigt ausschliesslich geplante Kanu-Einheiten
+    // mit einer eindeutig hinterlegten Bootsklasse K1, C1 oder C2.
+    function getCanoeSessions(sessions as Lang.Array<Lang.Dictionary>) as Lang.Array<Lang.Dictionary> {
+        var canoeSessions = [];
+        for (var i = 0; i < sessions.size(); i += 1) {
+            var session = sessions[i] as Lang.Dictionary;
+            var discipline = session["discipline"];
+            if (discipline == null) { continue; }
+            var boatClass = discipline.toString();
+            if (boatClass == "K1" || boatClass == "C1" || boatClass == "C2") {
+                canoeSessions.add(session);
+            }
+        }
+        return canoeSessions;
     }
 
     function moveSelection(direction as Lang.Number) as Void {
@@ -99,12 +117,10 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             var name = session["name"] == null
                 ? "GEPLANTE EINHEIT"
                 : session["name"].toString();
-            var type = session["type"] == null ? "TRAINING" : session["type"].toString();
+            var boatClass = session["discipline"].toString();
             var duration = session["duration"] == null ? "" : session["duration"].toString();
-            var date = session["date"] == null ? "" : session["date"].toString();
-            var details = type;
+            var details = boatClass;
             if (duration != "") { details += " · " + duration + " MIN"; }
-            if (date != "") { details += " · " + date; }
 
             var rowY = mRowTop + (visible * rowStep);
             var rowWidth = mWorkoutLayout.safeRectWidthAt(cx, rowY, mRowHeight, requestedWidth);
