@@ -58,14 +58,14 @@ function showApp(session) {
         readyUserId = null;
     }
     currentAuthUserId = nextUserId;
-    const { visible, readOnly } = getActivationUiState(
+    const { visible, readOnly, syncing } = getActivationUiState(
         currentAuthUserId,
         localReadyUserId,
         readyUserId
     );
 
-    // Lokale Daten dürfen früh erscheinen, bleiben bis zum abgeschlossenen
-    // Cloud-Abgleich aber vollständig schreibgeschützt.
+    // Sobald der lokale Kontospeicher geladen ist, bleibt die App bedienbar.
+    // Der Cloud-Abgleich läuft parallel und schützt Änderungen über den Drei-Wege-Abgleich.
     authScreen.classList.toggle('hidden', signedIn);
     authBootScreen?.classList.toggle('hidden', !signedIn || visible);
     appNavigation.classList.toggle('hidden', !visible);
@@ -75,7 +75,10 @@ function showApp(session) {
     appMain.inert = readOnly;
     if (mobileHeader) mobileHeader.inert = readOnly;
     appMain.setAttribute('aria-busy', String(readOnly));
-    activationNotice.classList.toggle('hidden', !readOnly);
+    activationNotice.classList.toggle('hidden', !syncing);
+    if (syncing) {
+        activationNotice.textContent = 'Deine lokalen Daten sind verfügbar. Änderungen werden sofort lokal gespeichert; der Cloud-Abgleich läuft im Hintergrund.';
+    }
     if (signedIn) userEmail.textContent = session.user.email || 'Angemeldet';
 }
 
