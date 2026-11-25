@@ -3718,15 +3718,13 @@ function withActivationTimeout(promise, label, timeoutMs = 30000) {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
-async function handleAuthSession(session) {
+async function handleAuthSession(session, authEvent = null) {
     let userId = session?.user?.id || null;
 
-    // Auth-Events können kurzzeitig eine leere Session liefern, obwohl Supabase
-    // bereits wieder eine gültige Session im Client hält. Eine solche verspätete
-    // oder transiente Null-Session darf den aktiven Benutzerspeicher nicht
-    // deaktivieren. Vor dem Abmelden wird deshalb der aktuelle Auth-Status
-    // außerhalb des synchronen onAuthStateChange-Callbacks erneut geprüft.
-    if (!userId && supabase) {
+    // INITIAL_SESSION und SIGNED_OUT sind bereits definitive Zustandsmeldungen
+    // des Auth-Clients. Nur bei späteren transienten Null-Events prüfen wir
+    // vorsichtshalber erneut; so entsteht beim Start kein zweiter Refresh-Request.
+    if (!userId && supabase && authEvent !== 'INITIAL_SESSION' && authEvent !== 'SIGNED_OUT') {
         try {
             const { data, error } = await supabase.auth.getSession();
             if (error) throw error;
@@ -4040,21 +4038,12 @@ async function handleAuthSession(session) {
 }
 
 if (supabase) {
-    supabase.auth.onAuthStateChange((_event, session) => {
+    // Supabase liefert beim Abonnieren INITIAL_SESSION mit dem gespeicherten
+    // Sitzungszustand. Ein zusätzlicher getSession()-Aufruf ist unnötig und kann
+    // bei abgelaufenen Tokens parallele Refresh-Versuche erzeugen.
+    supabase.auth.onAuthStateChange((event, session) => {
         // Keine asynchronen Supabase-Aufrufe direkt im Auth-Callback starten.
-        setTimeout(() => handleAuthSession(session), 0);
-    });
-
-    supabase.auth.getSession().then(({ data, error }) => {
-        if (error) {
-            console.error('Anmeldestatus konnte nicht geprüft werden:', error);
-            window.dispatchEvent(new CustomEvent('endurance:auth-check-error', { detail: { error } }));
-            return;
-        }
-        handleAuthSession(data?.session || null);
-    }).catch((error) => {
-        console.error('Anmeldestatus konnte nicht geprüft werden:', error);
-        window.dispatchEvent(new CustomEvent('endurance:auth-check-error', { detail: { error } }));
+        setTimeout(() => handleAuthSession(session, event), 0);
     });
 } else {
     deactivateUserStorage();
