@@ -24,7 +24,7 @@ import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } from './cloud-merge.js?v=1';
-import { fetchCloudActivities, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=2';
+import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=2';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
@@ -2662,12 +2662,36 @@ function applyReconciledCloudSnapshot(snapshot) {
 }
 
 /**
+ * Lädt den vollständigen Cloud-Aktivitätsstand aus der letzten bestätigten
+ * Basis plus Delta. Nur beim Erstabgleich oder fehlender Basis wird vollständig
+ * gelesen. Der Cursor wird erst nach erfolgreicher Reconciliation gespeichert.
+ */
+async function fetchCloudActivityState(userId, baselineSnapshot, syncState = {}) {
+    const savedCursor = syncState.cursor || getUserLocalSetting('cloudActivityCursor');
+    if (savedCursor && baselineSnapshot && Array.isArray(baselineSnapshot.activities)) {
+        const delta = await fetchCloudActivityDelta(supabase, userId, savedCursor);
+        syncState.cursor = delta.cursor || savedCursor;
+        syncState.incremental = true;
+        return mergeCloudActivityRows(userId, baselineSnapshot.activities, delta.rows);
+    }
+
+    const fullRows = await fetchCloudActivities(supabase, userId);
+    syncState.cursor = fullRows.syncCursor || null;
+    syncState.incremental = false;
+    return fullRows;
+}
+
+function persistCloudActivityCursor(syncState) {
+    if (syncState?.cursor) setUserLocalSetting('cloudActivityCursor', syncState.cursor);
+}
+
+/**
  * Führt lokale und zentrale Datenstände zusammen. Aktivitäten bleiben in der
  * separaten activities-Tabelle; der user_data-Snapshot enthält nur ihre IDs.
  * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
  * derselbe Drei-Wege-Abgleich wiederholt.
  */
-async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId) {
+async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId, activitySyncState = {}) {
     const ensureCurrent = createActivationGuard(
         isCurrent,
         'Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
@@ -2805,7 +2829,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
                 ensureCurrent();
-                cloudActivities = await fetchCloudActivities(supabase, userId);
+                cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
                 ensureCurrent();
                 continue;
             }
@@ -2813,6 +2837,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
             ensureCurrent();
+            persistCloudActivityCursor(activitySyncState);
             return {
                 ok: true,
                 version: cloud.version,
@@ -2837,7 +2862,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 ensureCurrent();
                 cloud = await fetchCloudSnapshot();
                 ensureCurrent();
-                cloudActivities = await fetchCloudActivities(supabase, userId);
+                cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
                 ensureCurrent();
                 continue;
             }
@@ -2845,6 +2870,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
             ensureCurrent();
+            persistCloudActivityCursor(activitySyncState);
             return {
                 ok: true,
                 version: saved.currentVersion,
@@ -2859,7 +2885,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         if (cloud.userId !== userId) {
             throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
         }
-        cloudActivities = await fetchCloudActivities(supabase, userId);
+        cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
         ensureCurrent();
     }
 
