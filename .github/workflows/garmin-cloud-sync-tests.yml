@@ -1,0 +1,50 @@
+name: KAJO Garmin and Cloud Sync Regression Tests
+
+on:
+  push:
+    branches:
+      - optimization/egress-health-sync
+  pull_request:
+    branches:
+      - v2
+
+permissions:
+  contents: read
+
+jobs:
+  node-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Check main application syntax
+        run: node --experimental-default-type=module --check js/main.js
+      - name: Run Garmin and cloud synchronization tests
+        run: |
+          node --experimental-default-type=module --test \
+            tests/cloud-sync-migrations.test.mjs \
+            tests/cloud-sync-patch.test.mjs \
+            tests/cloud-activities-pagination.test.mjs \
+            tests/cloud-activities.test.mjs \
+            tests/cloud-merge.test.mjs \
+            tests/garmin-activity-pagination.test.mjs \
+            tests/garmin-activity-scan-plan.test.mjs \
+            tests/garmin-health-normalize.test.mjs \
+            tests/garmin-sync-history.test.mjs \
+            tests/garmin-heart-rate-sync.test.mjs
+
+  edge-function-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Garmin Edge Function
+        run: deno check --no-lock supabase/functions/garmin-personal/index.ts
