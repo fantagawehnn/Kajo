@@ -25,6 +25,15 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         mHomeView = homeView;
         var sourceSessions = sessions == null ? homeView.getPlannedSessions() : sessions;
         mSessions = getCanoeSessions(sourceSessions);
+        if (sessions == null) {
+            var standardWorkouts = homeView.getStandardWorkouts();
+            var standards = getCanoeSessions(standardWorkouts);
+            for (var standardIndex = 0; standardIndex < standards.size(); standardIndex += 1) {
+                var standard = standards[standardIndex] as Lang.Dictionary;
+                standard["isStandardWorkout"] = true;
+                mSessions.add(standard);
+            }
+        }
         mTitle = title;
         mCountLabel = countLabel;
         mWorkoutLayout = new KajoLayout();
@@ -38,6 +47,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         for (var i = 0; i < sessions.size(); i += 1) {
             var session = sessions[i] as Lang.Dictionary;
             var discipline = session["discipline"];
+            if (discipline == null) { discipline = session["type"]; }
             if (discipline == null) { continue; }
             var boatClass = discipline.toString();
             if (boatClass == "K1" || boatClass == "C1" || boatClass == "C2") {
@@ -120,6 +130,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             var boatClass = session["discipline"].toString();
             var duration = session["duration"] == null ? "" : session["duration"].toString();
             var details = boatClass;
+            if (session["isStandardWorkout"] == true) { details = "STANDARD · " + details; }
             if (duration != "") { details += " · " + duration + " MIN"; }
 
             var rowY = mRowTop + (visible * rowStep);
