@@ -211,7 +211,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function nextStepDescription() as Lang.String {
         var nextIndex = mWorkoutStepIndex + 1;
-        if (nextIndex >= mWorkoutSteps.size()) { return "TRAINING BEENDET"; }
+        if (nextIndex >= mWorkoutSteps.size()) { return "GESPEICHERT"; }
         var nextStep = mWorkoutSteps[nextIndex] as Lang.Dictionary;
         var label = nextStep["label"] == null ? "NÄCHSTER ABSCHNITT" : nextStep["label"].toString();
         return compactWorkoutText(label, 42);
@@ -825,14 +825,14 @@ class KajoConnectActivityView extends WatchUi.View {
             if (mTrainingShowCadence) {
                 drawActivityText(dc, 130, 217, 112, 34, cadenceNow,
                     Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-                drawActivityText(dc, 130, 251, 126, 14, "SCHLÄGE SPM",
+                drawActivityText(dc, 130, 251, 126, 14, "SCHLÄGE",
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
             if (mTrainingShowDistance) {
                 drawActivityText(dc, 276, 217, 112, 34, distanceValue4,
                     Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
                 drawActivityText(dc, 276, 251, 126, 14,
-                    stepCount > 0 ? "INTERVALL-DIST. KM" : "DISTANZ KM",
+                    stepCount > 0 ? "INT.-KM" : "DISTANZ",
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
 
@@ -840,13 +840,13 @@ class KajoConnectActivityView extends WatchUi.View {
             if (mTrainingShowPace) {
                 drawActivityText(dc, 130, 278, 126, 34, pace4,
                     Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-                drawActivityText(dc, 130, 311, 126, 14, "PACE MIN/KM",
+                drawActivityText(dc, 130, 311, 126, 14, "PACE",
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
             if (mTrainingShowHR) {
                 drawActivityText(dc, 276, 278, 126, 34, "♥ " + hrNow,
                     Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-                drawActivityText(dc, 276, 311, 126, 14, "BPM · ZONE " + zone.toString(),
+                drawActivityText(dc, 276, 311, 126, 14, "BPM · Z" + zone.toString(),
                     Graphics.FONT_XTINY, zone > 0 ? 0xFFB020 : 0x98A5AB);
                 var zoneColors = [0x4CD964, 0x9BE15D, 0xFFD23F, 0xFF9F1A, 0xFF453A];
                 var zoneBarWidth = 64;
@@ -1485,9 +1485,9 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawActivityText(dc, cx, 210, 280, 20, mCurrentWorkoutName,
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
-            drawActivityText(dc, cx, 316, 280, 18, "OBERE TASTE · WEITER",
+            drawActivityText(dc, cx, 316, 280, 18, "OBEN · WEITER",
                 Graphics.FONT_XTINY, 0x25D3CB);
-            drawActivityText(dc, cx, 345, 280, 18, "UNTERE TASTE · BEENDEN",
+            drawActivityText(dc, cx, 345, 280, 18, "UNTEN · ENDE",
                 Graphics.FONT_XTINY, 0xFFB020);
             mButtonTop = 0;
             mButtonBottom = 0;
@@ -1510,9 +1510,9 @@ class KajoConnectActivityView extends WatchUi.View {
                 Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
             drawActivityText(dc, 258, 247, 112, 14, "BPM",
                 Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx, 300, 280, 18, "FIT-DATEI GESPEICHERT",
+            drawActivityText(dc, cx, 300, 280, 18, "FIT GESPEICHERT",
                 Graphics.FONT_XTINY, 0x25D3CB);
-            drawActivityText(dc, cx, 345, 280, 18, "OBERE TASTE · ZURÜCK",
+            drawActivityText(dc, cx, 345, 280, 18, "OBEN · ZURÜCK",
                 Graphics.FONT_XTINY, 0x98A5AB);
             mButtonTop = 0;
             mButtonBottom = 0;
