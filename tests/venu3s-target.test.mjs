@@ -285,3 +285,13 @@ test("settings keep native menus while workout selection uses a custom dark view
   assert.doesNotMatch(homeView, /new KajoConnectWorkoutSelectView/);
   assert.match(menuDelegate, /function onSelect\(item as WatchUi\.MenuItem\)/);
 });
+
+
+test("workout database lists only planned K1/C1/C2 canoe sessions and supports scrolling through the full loaded list", () => {
+  assert.match(workoutListView, /mSessions = getCanoeSessions\(sourceSessions\)/);
+  assert.match(workoutListView, /session\["discipline"\]/);
+  assert.match(workoutListView, /boatClass == "K1" \|\| boatClass == "C1" \|\| boatClass == "C2"/);
+  assert.match(workoutListView, /mFirstVisibleIndex = mSelectedIndex - mVisibleRows \+ 1/);
+  assert.match(workoutListDelegate, /direction == WatchUi\.SWIPE_UP[\s\S]*?moveSelection\(1\)/);
+  assert.match(workoutListDelegate, /key == WatchUi\.KEY_DOWN[\s\S]*?moveSelection\(1\)/);
+});
