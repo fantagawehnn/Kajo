@@ -26,6 +26,13 @@ const syncEnd = main.indexOf('\n}\n', syncStart);
 assert.notEqual(syncEnd, -1, 'Garmin app-open sync function must close');
 const syncFunction = main.slice(syncStart, syncEnd + 3);
 
+const cloudLoaderStart = main.indexOf('async function loadGarminActivitiesFromCloud(');
+assert.notEqual(cloudLoaderStart, -1, 'Garmin cloud preview loader must exist');
+const cloudLoaderEnd = main.indexOf('\n\nfunction findGarminNumber', cloudLoaderStart);
+assert.notEqual(cloudLoaderEnd, -1, 'Garmin cloud preview loader must close');
+const cloudLoader = main.slice(cloudLoaderStart, cloudLoaderEnd);
+
+
 test('Garmin API is attempted once per app opening without an in-session retry loop', () => {
     assert.equal(
         (syncFunction.match(/callGarminFunction\(\{ action: 'sync-today', date \}\)/g) || []).length,
@@ -52,4 +59,11 @@ test('Garmin health endpoints are not retried inside the same app-open attempt',
         1
     );
     assert.doesNotMatch(healthDayFunction, /setTimeout|firstError|HTTP 520/);
+});
+
+test('Garmin cloud preview payloads are fetched only for new or changed activity IDs', () => {
+    assert.match(cloudLoader, /select\('garmin_activity_id, updated_at'\)/);
+    assert.match(cloudLoader, /getGarminActivityRowsNeedingPayload\(metadata, seenAtById, locallyAvailableGarminIds\)/);
+    assert.match(cloudLoader, /\.in\('garmin_activity_id', ids\)/);
+    assert.match(cloudLoader, /setUserLocalSetting\('garminActivityCloudSeenAtById'/);
 });
