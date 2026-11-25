@@ -18,6 +18,17 @@ function requireClient(client) {
     if (!client?.from) throw new Error('Supabase ist für die Aktivitätssynchronisierung nicht verfügbar.');
 }
 
+function cloudActivityQueryError(error, stage) {
+    const wrapped = new Error(stage + ': ' + (error?.message || 'Unbekannter Datenbankfehler.'));
+    wrapped.name = 'CloudActivityQueryError';
+    wrapped.kajoStage = stage;
+    wrapped.code = error?.code ?? null;
+    wrapped.details = error?.details ?? null;
+    wrapped.hint = error?.hint ?? null;
+    wrapped.cause = error;
+    return wrapped;
+}
+
 function getActivityRecordId(activity) {
     const value = activity?.id
         ?? activity?.activityId
@@ -157,7 +168,7 @@ export async function fetchCloudActivities(client, userId, options = {}) {
         .from('activities')
         .select('record_id', { count: 'exact', head: true })
         .eq('user_id', userId);
-    if (countError) throw countError;
+    if (countError) throw cloudActivityQueryError(countError, 'Cloud-Aktivitäten: Anzahl der Datensätze (COUNT)');
 
     // Supabase liefert bei einem nicht verfügbaren Count ggf. null. In diesem
     // Fall bleibt der bewährte sequenzielle Abruf als sicherer Fallback erhalten.
@@ -174,7 +185,12 @@ export async function fetchCloudActivities(client, userId, options = {}) {
                     .eq('user_id', userId)
                     .order('record_id', { ascending: true })
                     .range(offset, offset + pageSize - 1);
-                if (error) throw error;
+                if (error) {
+                    throw cloudActivityQueryError(
+                        error,
+                        'Cloud-Aktivitäten: Datensatzseite ab Offset ' + offset
+                    );
+                }
                 return Array.isArray(data) ? data : [];
             }));
             for (const page of pages) records.push(...page);
@@ -190,7 +206,12 @@ export async function fetchCloudActivities(client, userId, options = {}) {
                 .eq('user_id', userId)
                 .order('record_id', { ascending: true })
                 .range(offset, offset + pageSize - 1);
-            if (error) throw error;
+            if (error) {
+                throw cloudActivityQueryError(
+                    error,
+                    'Cloud-Aktivitäten: sequenzielle Datensatzseite ab Offset ' + offset
+                );
+            }
             const page = Array.isArray(data) ? data : [];
             records.push(...page);
             if (page.length < pageSize) break;

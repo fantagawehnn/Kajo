@@ -2564,7 +2564,12 @@ async function loadCloudProfile(session, expectedActivationSequence = activation
 
     if (error) {
         if (!isCurrentProfileLoad()) return;
-        console.error('Cloud-Profil konnte nicht geladen werden:', error);
+        console.error('Cloud-Profil konnte nicht geladen werden:', error, {
+            kajoStage: 'Cloud-Profil: user_profiles-Datensatz lesen',
+            code: error?.code ?? null,
+            details: error?.details ?? null,
+            hint: error?.hint ?? null
+        });
         return;
     }
     if (!isCurrentProfileLoad()) return;
@@ -3824,7 +3829,12 @@ async function handleAuthSession(session) {
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             await loadCloudProfile(session, sequence);
         } catch (error) {
-            console.error('Benutzerdaten konnten nicht sicher geladen werden:', error);
+            console.error('Benutzerdaten konnten nicht sicher geladen werden:', error, {
+                kajoStage: error?.kajoStage || 'nicht zugeordnet – Fehler entstand außerhalb der instrumentierten Cloud-Abfragen',
+                code: error?.code ?? null,
+                details: error?.details ?? null,
+                hint: error?.hint ?? null
+            });
             if (sequence === activationSequence) {
                 if (appUserReady) {
                     // Nachgelagerte optionale Schritte (z. B. Profilabgleich) dürfen

@@ -13,6 +13,17 @@ function requireSupabase() {
     if (!supabase) throw new Error('Supabase ist nicht konfiguriert.');
 }
 
+function cloudSnapshotQueryError(error, stage) {
+    const wrapped = new Error(stage + ': ' + (error?.message || 'Unbekannter Datenbankfehler.'));
+    wrapped.name = 'CloudSnapshotQueryError';
+    wrapped.kajoStage = stage;
+    wrapped.code = error?.code ?? null;
+    wrapped.details = error?.details ?? null;
+    wrapped.hint = error?.hint ?? null;
+    wrapped.cause = error;
+    return wrapped;
+}
+
 function validateSnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
         throw new Error('Der Cloud-Datenstand muss ein JSON-Objekt sein.');
@@ -28,7 +39,7 @@ export async function fetchCloudSnapshot() {
     requireSupabase();
 
     const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError) throw authError;
+    if (authError) throw cloudSnapshotQueryError(authError, 'Cloud-Snapshot: angemeldeten Benutzer prüfen (auth.getUser)');
     const userId = authData?.user?.id;
     if (!userId) throw new Error('Für die Cloud-Synchronisierung ist eine Anmeldung erforderlich.');
 
@@ -38,7 +49,7 @@ export async function fetchCloudSnapshot() {
         .eq('user_id', userId)
         .maybeSingle();
 
-    if (error) throw error;
+    if (error) throw cloudSnapshotQueryError(error, 'Cloud-Snapshot: user_data-Datensatz lesen');
     if (!data) return { userId, data: null, version: 0, updatedAt: null };
 
     return {
