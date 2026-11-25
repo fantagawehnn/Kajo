@@ -747,7 +747,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         }
 
         // Nach dem initialen Vollabruf nur noch seit dem letzten bestätigten
-        // updated_at-Zeitpunkt geänderte Vorschauen laden. Das 60-Sekunden-
+        // updated_at-Zeitpunkt geänderte Vorschauen laden. Das 24-Stunden-
         // Überlappungsfenster schützt vor verzögert sichtbaren Datenbank-Commits.
         const latestUpdatedAt = data.map(row => row?.updated_at)
             .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
