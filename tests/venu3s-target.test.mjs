@@ -47,7 +47,7 @@ test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compil
 test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
-  assert.match(activityDelegate, /key == WatchUi\.KEY_UP \|\| key == WatchUi\.KEY_MENU[\s\S]*?nextDisplayPage\(1\)/);
+  assert.match(activityDelegate, /key == WatchUi\.KEY_MENU \|\| key == WatchUi\.KEY_ACTION_MENU[\s\S]*?nextDisplayPage\(1\)/);
   assert.match(homeDelegate, /extends WatchUi\.InputDelegate/);
   assert.match(homeDelegate, /key == WatchUi\.KEY_MENU[\s\S]*?scrollPlan\(1\)/);
   assert.match(homeDelegate, /key == WatchUi\.KEY_ACTION_MENU[\s\S]*?openSettings\(\)/);
@@ -232,7 +232,8 @@ test("home screen uses a Garmin-style list, hides empty workout icon, and cycles
   assert.match(homeView, /sessionType\.toString\(\) != "RestDay"/);
   assert.match(homeView, /var todaySessions = getTodaysSessions\(\)/);
   assert.match(homeView, /todaySessions\.size\(\) == 1/);
-  assert.match(homeView, /todaySessions\.size\(\) > 1/);
+  assert.match(homeView, /todaySessions\.size\(\) == 1/);
+  assert.match(homeView, /"Einheiten heute"/);
   assert.match(homeView, /"Kein Training geplant"/);
   assert.match(homeView, /"Trainings"/);
   assert.match(homeView, /"Freies Training"/);
