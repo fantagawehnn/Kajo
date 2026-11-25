@@ -681,12 +681,25 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
     if (existingLoad) return existingLoad;
 
     const loadPromise = (async () => {
-        const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
-            .select('garmin_activity_id, activity')
-            .eq('user_id', userId)
-            .order('start_time', { ascending: true })
-            .order('garmin_activity_id', { ascending: true })
-            .range(offset, offset + limit - 1));
+        const savedCursor = getUserLocalSetting('garminActivityCloudReadThrough');
+        const validCursor = typeof savedCursor === 'string' && Number.isFinite(Date.parse(savedCursor));
+        const overlapStart = validCursor
+            ? new Date(Math.max(0, Date.parse(savedCursor) - 60000)).toISOString()
+            : null;
+        const data = await loadGarminActivityPages((offset, limit) => {
+            let query = supabase.from('garmin_activities')
+                .select('garmin_activity_id, activity, updated_at')
+                .eq('user_id', userId);
+            if (overlapStart) {
+                query = query.gte('updated_at', overlapStart)
+                    .order('updated_at', { ascending: true })
+                    .order('garmin_activity_id', { ascending: true });
+            } else {
+                query = query.order('start_time', { ascending: true })
+                    .order('garmin_activity_id', { ascending: true });
+            }
+            return query.range(offset, offset + limit - 1);
+        });
 
         // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
         // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
@@ -711,8 +724,24 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         }
         const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
         if (added || merged || sanitized) {
-            saveDataToLocalStorage();
+            if (saveDataToLocalStorage() === false) {
+                throw new Error('Garmin-Aktivitätsvorschauen wurden geladen, konnten aber nicht lokal gespeichert werden.');
+            }
             initEngine();
+        }
+
+        // Nach dem initialen Vollabruf nur noch seit dem letzten bestätigten
+        // updated_at-Zeitpunkt geänderte Vorschauen laden. Das 60-Sekunden-
+        // Überlappungsfenster schützt vor verzögert sichtbaren Datenbank-Commits.
+        const latestUpdatedAt = data.map(row => row?.updated_at)
+            .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+            .sort()
+            .at(-1);
+        if (latestUpdatedAt) {
+            if (activeAppUserId !== userId || !appUserReady || activationSequence !== requestActivationSequence) {
+                return { added, merged, ambiguous, sanitized, stale: true };
+            }
+            setUserLocalSetting('garminActivityCloudReadThrough', latestUpdatedAt);
         }
         return { added, merged, ambiguous, sanitized, stale: false };
     })();
