@@ -45,7 +45,9 @@ function transactionFinished(transaction) {
 /** Öffnet die lokale Datenbank einmalig pro App-Sitzung. */
 export function openLocalDatabase() {
     if (!('indexedDB' in window)) {
-        return Promise.reject(new Error('Dieser Browser unterstützt IndexedDB nicht.'));
+        const error = new Error('Dieser Browser unterstützt IndexedDB nicht.');
+        error.name = 'IndexedDBUnavailableError';
+        return Promise.reject(error);
     }
 
     if (!databasePromise) {
