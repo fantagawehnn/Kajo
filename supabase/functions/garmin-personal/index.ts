@@ -1242,28 +1242,11 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Server-to-server entry point for Supabase Cron. The shared secret is
-    // stored only in Edge Function secrets and Supabase Vault, never in the app.
+    // Garmin synchronization is intentionally user-initiated by opening KAJO.
+    // Reject legacy scheduled invocations so a stale Supabase Cron job cannot
+    // trigger Garmin API requests in the background.
     if (action === "background-sync") {
-      const expectedSecret = Deno.env.get("GARMIN_CRON_SECRET");
-      const suppliedSecret = req.headers.get("x-garmin-cron-secret") ?? "";
-      if (!expectedSecret || suppliedSecret.length < 32 || suppliedSecret !== expectedSecret) {
-        return json(401, { error: "Nicht autorisierter Hintergrundabruf." });
-      }
-      const { data: connections, error: connectionError } = await admin
-        .from("garmin_connections").select("user_id").eq("status", "connected");
-      if (connectionError) throw connectionError;
-      const results = [];
-      for (const connection of connections ?? []) {
-        try {
-          results.push(await syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10)));
-        } catch (syncError) {
-          const message = syncError instanceof Error ? syncError.message.slice(0, 300) : "Unbekannter Fehler.";
-          await admin.from("garmin_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", connection.user_id);
-          results.push({ userId: connection.user_id, status: "error", error: message });
-        }
-      }
-      return json(200, { ok: true, processed: results.length, results });
+      return json(410, { error: "Hintergrundsynchronisierung ist deaktiviert. Garmin wird nur beim Öffnen von KAJO aktualisiert." });
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
