@@ -27,7 +27,7 @@ activationNotice.id = 'auth-local-sync-notice';
 activationNotice.className = 'hidden mb-4 rounded-xl border border-sky-500/30 bg-sky-950/40 px-4 py-3 text-sm text-sky-100';
 activationNotice.setAttribute('role', 'status');
 activationNotice.setAttribute('aria-live', 'polite');
-activationNotice.textContent = 'Lokale Datenansicht – der Cloud-Abgleich läuft. Die App ist bis zum Abschluss vorübergehend schreibgeschützt.';
+activationNotice.textContent = 'Lokale Daten sind verfügbar. Änderungen werden sofort lokal gespeichert; der Cloud-Abgleich läuft im Hintergrund.';
 appMain.prepend(activationNotice);
 
 function withAuthTimeout(promise, label, timeoutMs = 20000) {
@@ -58,7 +58,7 @@ function showApp(session) {
         readyUserId = null;
     }
     currentAuthUserId = nextUserId;
-    const { visible, readOnly } = getActivationUiState(
+    const { visible, readOnly, syncing } = getActivationUiState(
         currentAuthUserId,
         localReadyUserId,
         readyUserId
@@ -75,7 +75,7 @@ function showApp(session) {
     appMain.inert = readOnly;
     if (mobileHeader) mobileHeader.inert = readOnly;
     appMain.setAttribute('aria-busy', String(readOnly));
-    activationNotice.classList.toggle('hidden', !readOnly);
+    activationNotice.classList.toggle('hidden', !syncing);
     if (signedIn) userEmail.textContent = session.user.email || 'Angemeldet';
 }
 
