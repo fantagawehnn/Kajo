@@ -203,7 +203,7 @@ async function syncGarminHealthDay(
         dataType: endpoint.type,
         status: isRateLimited ? "rate_limited" : "error",
         error: isRateLimited
-          ? "Garmin hat eine Abrufpause angefordert. Die Synchronisierung wartet automatisch und versucht es erneut."
+          ? "Garmin hat eine Abrufpause angefordert. Der nächste Versuch erfolgt beim nächsten Öffnen von KAJO."
           : message.slice(0, 220),
         ...(isRateLimited ? { retryInSeconds: retryMatch ? Number(retryMatch[1]) : 30 } : {}),
       });
