@@ -3159,25 +3159,23 @@ function startCloudRealtime(userId) {
     const isCurrentChannel = () => cloudRealtimeUserId === userId
         && activeAppUserId === userId && appUserReady;
     const channel = supabase.channel('kajo-cloud-sync:' + userId)
+        // Nur kompakte Sync-Metadaten abonnieren. user_data und activities
+        // enthalten persönliche Daten und werden niemals per Realtime gestreamt.
         .on('postgres_changes', {
             event: '*',
             schema: 'public',
-            table: 'user_data',
+            table: 'kajo_sync_state',
             filter: 'user_id=eq.' + userId
         }, payload => {
             if (!isCurrentChannel()) return;
-            const remoteVersion = Number(payload?.new?.version || 0);
-            if (remoteVersion > Number(cloudSyncVersion || 0)) void pullCloudChanges();
-        })
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'activities',
-            filter: 'user_id=eq.' + userId
-        }, payload => {
-            if (!isCurrentChannel()) return;
-            const row = payload?.new?.user_id ? payload.new : payload?.old;
-            if (row?.user_id === userId) void pullCloudChanges({ forceActivity: true });
+            const change = payload?.new?.user_id ? payload.new : payload?.old;
+            if (change?.user_id !== userId) return;
+            if (change.scope === 'snapshot'
+                && Number(change.version || 0) > Number(cloudSyncVersion || 0)) {
+                void pullCloudChanges();
+            } else if (change.scope === 'activities') {
+                void pullCloudChanges({ forceActivity: true });
+            }
         })
         .subscribe((status, error) => {
             if (!isCurrentChannel()) return;
