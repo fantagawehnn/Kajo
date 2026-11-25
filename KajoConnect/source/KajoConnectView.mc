@@ -463,7 +463,7 @@ class KajoConnectView extends WatchUi.View {
         mBoatLeft = cx - (mUnit * 0.34);
         mBoatRight = cx + (mUnit * 0.34);
         drawHomeText(dc, cx, 51, mUnit * 0.68, 24,
-            mSelectedBoat + "  ▾", Graphics.FONT_SMALL, 0x25D3CB);
+            mSelectedBoat, Graphics.FONT_SMALL, 0x25D3CB);
 
         dc.setColor(0x344047, Graphics.COLOR_BLACK);
         dc.drawLine(
