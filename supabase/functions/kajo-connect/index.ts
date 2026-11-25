@@ -302,6 +302,35 @@ function safeDisplayLayouts(value: unknown) {
   });
 }
 
+function safeStandardWorkout(value: unknown): PlannedSession | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const workout = value as JsonRecord;
+  const rawDiscipline = typeof workout.discipline === "string" ? workout.discipline : workout.type;
+  const discipline = typeof rawDiscipline === "string" && ["K1", "C1", "C2"].includes(rawDiscipline)
+    ? rawDiscipline : null;
+  if (!discipline) return null;
+  return {
+    id: typeof workout.id === "string" ? workout.id.slice(0, 80) : typeof workout.id === "number" ? workout.id : null,
+    date: "",
+    name: typeof workout.name === "string" ? workout.name.slice(0, 120) : "Standardtraining",
+    type: typeof workout.type === "string" ? workout.type.slice(0, 60) : "Training",
+    duration: typeof workout.duration === "number" ? workout.duration : typeof workout.duration === "string" ? workout.duration.slice(0, 30) : null,
+    targetTss: typeof workout.targetTss === "number" ? workout.targetTss : typeof workout.targetTss === "string" ? workout.targetTss.slice(0, 30) : null,
+    category: typeof workout.category === "string" ? workout.category.slice(0, 80) : null,
+    desc: typeof workout.desc === "string" ? workout.desc.slice(0, 200) : null,
+    discipline,
+    raceFormat: typeof workout.raceFormat === "string" ? workout.raceFormat.slice(0, 40) : null,
+    waterType: typeof workout.waterType === "string" ? workout.waterType.slice(0, 40) : null,
+    intensity: typeof workout.intensity === "string" ? workout.intensity.slice(0, 120) : null,
+    objective: typeof workout.objective === "string" ? workout.objective.slice(0, 300) : null,
+    warmup: typeof workout.warmup === "string" ? workout.warmup.slice(0, 300) : null,
+    mainSet: typeof workout.mainSet === "string" ? workout.mainSet.slice(0, 500) : null,
+    cooldown: typeof workout.cooldown === "string" ? workout.cooldown.slice(0, 300) : null,
+    notes: typeof workout.notes === "string" ? workout.notes.slice(0, 300) : null,
+    steps: safeWorkoutSteps(workout.steps),
+  };
+}
+
 function safePlannedSession(value: unknown): PlannedSession | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const session = value as JsonRecord;
@@ -677,7 +706,7 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (snapshotError) throw snapshotError;
       if (!snapshot?.data || typeof snapshot.data !== "object") {
-        return json(200, { ok: true, schemaVersion: 1, plannedSessions: [], heartRateZones: null, displayLayouts: [], snapshotVersion: 0 });
+        return json(200, { ok: true, schemaVersion: 1, plannedSessions: [], standardWorkouts: [], heartRateZones: null, displayLayouts: [], snapshotVersion: 0 });
       }
 
       const data = snapshot.data as JsonRecord;
@@ -689,6 +718,11 @@ Deno.serve(async (request) => {
         .filter((session) => session.date >= addDays(localDate, -1) && session.date <= addDays(localDate, 14))
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 30);
+
+      const standardWorkouts = (Array.isArray(data.standardWorkouts) ? data.standardWorkouts : [])
+        .map(safeStandardWorkout)
+        .filter((workout): workout is PlannedSession => workout !== null)
+        .slice(0, 50);
 
       const profile = data.profile && typeof data.profile === "object" ? data.profile as JsonRecord : {};
       const settings = data.settings && typeof data.settings === "object" ? data.settings as JsonRecord : {};
@@ -703,6 +737,7 @@ Deno.serve(async (request) => {
         snapshotVersion: Number(snapshot.version || 1),
         snapshotUpdatedAt: snapshot.updated_at ?? null,
         plannedSessions,
+        standardWorkouts,
         heartRateZones,
         displayLayouts,
       });
