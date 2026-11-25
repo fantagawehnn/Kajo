@@ -39,12 +39,15 @@ test("standard workouts are synchronized and shown separately from dated session
   assert.match(workoutListView, /getStandardWorkouts\(\)/);
   assert.match(workoutListView, /isStandardWorkout/);
   assert.match(workoutListView, /STANDARD · /);
+  assert.match(workoutView, /mWorkout\["isStandardWorkout"\] == true/);
+  assert.match(workoutView, /"STANDARD · " \+ type/);
 });
 
 test("standard workout templates persist independently of dated planning", () => {
   assert.match(smartphoneStorage, /standardWorkouts: 'standardWorkouts'/);
   assert.match(smartphoneStorage, /state\.standardWorkouts = Array\.isArray\(loaded\.standardWorkouts\)/);
   assert.match(smartphoneStorage, /standardWorkouts: state\.standardWorkouts/);
+  assert.match(smartphoneStorage, /Ältere Cloud-Snapshots kennen Standardtrainings noch nicht/);
   assert.match(smartphonePlanning, /export function saveStandardWorkout/);
   assert.match(smartphonePlanning, /state\.standardWorkouts\.push\(workout\)/);
   assert.match(smartphoneHtml, /id="standard-workouts-list"/);
