@@ -488,7 +488,7 @@ export async function clearLocalGarminTelemetryCache(expectedUserId = activeUser
         try { storageForUser.removeItem('activities'); } catch (_) {}
         console.warn('Aktivitäten-Fallback wegen voller localStorage-Quote übersprungen; IndexedDB wird verwendet.');
     }
-    await storageForUser.saveCollections({ activities: compactActivities });
+    await storageForUser.saveCollections({ activities: compactActivities }, { queueCloudSync: false });
     if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser) return false;
     state.garminTelemetryStore = {};
     return true;
