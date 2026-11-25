@@ -61,6 +61,33 @@ export async function fetchCloudSnapshot() {
 }
 
 /**
+ * Liest nur Versionsmetadaten des Cloud-Snapshots. Damit kann die App prüfen,
+ * ob ihr bestätigter lokaler Basisstand noch aktuell ist, ohne das gesamte
+ * user_data-JSON bei jedem lokalen Speichervorgang erneut zu übertragen.
+ */
+export async function fetchCloudSnapshotMetadata() {
+    requireSupabase();
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw cloudSnapshotQueryError(authError, 'Cloud-Snapshot-Metadaten: angemeldeten Benutzer prüfen (auth.getUser)');
+    const userId = authData?.user?.id;
+    if (!userId) throw new Error('Für die Cloud-Synchronisierung ist eine Anmeldung erforderlich.');
+
+    const { data, error } = await supabase
+        .from('user_data')
+        .select('user_id, version, updated_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (error) throw cloudSnapshotQueryError(error, 'Cloud-Snapshot-Metadaten: Version lesen');
+    return {
+        userId,
+        version: Number(data?.version || 0),
+        updatedAt: data?.updated_at || null
+    };
+}
+
+/**
  * Speichert nur dann, wenn die erwartete Version noch aktuell ist.
  * Bei einem Konflikt wird NICHT automatisch überschrieben.
  */
