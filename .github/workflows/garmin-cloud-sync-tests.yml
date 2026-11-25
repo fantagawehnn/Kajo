@@ -34,6 +34,7 @@ jobs:
             tests/garmin-activity-pagination.test.mjs \
             tests/garmin-activity-scan-plan.test.mjs \
             tests/garmin-activity-upsert-plan.test.mjs \
+            tests/garmin-activity-cloud-delta.test.mjs \
             tests/garmin-health-normalize.test.mjs \
             tests/garmin-sync-history.test.mjs \
             tests/garmin-heart-rate-sync.test.mjs \
