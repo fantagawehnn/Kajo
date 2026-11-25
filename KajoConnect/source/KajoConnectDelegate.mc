@@ -21,7 +21,11 @@ class KajoConnectDelegate extends WatchUi.InputDelegate {
         }
 
         // Langer Druck auf die Menütaste öffnet die KAJO-Einstellungen.
-        if (key == WatchUi.KEY_MENU || key == WatchUi.KEY_ACTION_MENU) {
+        if (key == WatchUi.KEY_MENU) {
+            mView.scrollPlan(1);
+            return true;
+        }
+        if (key == WatchUi.KEY_ACTION_MENU) {
             mView.openSettings();
             return true;
         }
