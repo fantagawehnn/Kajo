@@ -24,7 +24,7 @@ import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
 import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } from './cloud-merge.js?v=1';
-import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=2';
+import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=3';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
