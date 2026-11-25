@@ -97,7 +97,6 @@ class KajoLayout {
 
         var margin = mUnit * 0.025;
         var radius = mRadius - margin;
-        var dx = x - mCenterX;
         var dy = y - mCenterY;
         if (radius <= 0 || Math.abs(dy) >= radius) { return 0; }
 
@@ -108,9 +107,10 @@ class KajoLayout {
         var circleRight = mCenterX + halfChord - margin;
         var availableLeft = x - circleLeft;
         var availableRight = circleRight - x;
-        var available = Math.min(availableLeft, availableRight) * 2;
+        var nearestSide = availableLeft < availableRight ? availableLeft : availableRight;
+        var available = nearestSide * 2;
         if (available <= 0) { return 0; }
-        return Math.round(Math.min(available, requestedWidth)).toNumber();
+        return Math.round(available < requestedWidth ? available : requestedWidth).toNumber();
     }
 
     function safeTextWidth(dc as Dc, x, y,
@@ -152,7 +152,6 @@ class KajoLayout {
 
         var font = scaledFont(dc, text, available, height, preferredFont);
         var textHeight = dc.getFontHeight(font);
-        var effectiveHeight = height * 0.90;
         if (textHeight > height) {
             return;
         }
