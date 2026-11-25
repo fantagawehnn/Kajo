@@ -64,8 +64,8 @@ function showApp(session) {
         readyUserId
     );
 
-    // Lokale Daten dürfen früh erscheinen, bleiben bis zum abgeschlossenen
-    // Cloud-Abgleich aber vollständig schreibgeschützt.
+    // Sobald der kontogebundene lokale Zustand geladen ist, bleibt die App
+    // bedienbar; der Cloud-Abgleich läuft parallel im Hintergrund.
     authScreen.classList.toggle('hidden', signedIn);
     authBootScreen?.classList.toggle('hidden', !signedIn || visible);
     appNavigation.classList.toggle('hidden', !visible);
