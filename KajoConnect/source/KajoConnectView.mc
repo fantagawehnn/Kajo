@@ -322,6 +322,9 @@ class KajoConnectView extends WatchUi.View {
             new KajoConnectActivityDelegate(activityView),
             WatchUi.SLIDE_UP
         );
+
+        // Der Start auf dem Home-Bildschirm soll die Aktivität direkt beginnen.
+        activityView.startRecording();
     }
 
     function startActivity() as Void {
