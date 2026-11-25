@@ -3118,10 +3118,11 @@ async function pullCloudChanges() {
         const activityCursor = getUserLocalSetting('cloudActivityCursor');
         const watermarkTime = Date.parse(activityWatermark);
         const cursorTime = Date.parse(activityCursor);
-        // Ein kurzer Überlappungsbereich erkennt auch verspätet sichtbare
-        // Transaktionen mit einem bereits vergebenen updated_at-Zeitstempel.
+        // Der Watermark-Vergleich löst nur bei einem tatsächlich neueren
+        // Zeitstempel einen Abruf aus. Der Delta-Query selbst überlappt 60 s,
+        // damit verspätet sichtbare Commits trotzdem mitgeladen werden.
         const activityChanged = Boolean(activityWatermark && (
-            !Number.isFinite(cursorTime) || watermarkTime >= cursorTime - 60000
+            !Number.isFinite(cursorTime) || watermarkTime > cursorTime
         ));
         const snapshotChanged = Number(latestCloudMetadata.version || 0) !== Number(cloudSyncVersion || 0);
         if (!snapshotChanged && !activityChanged) return;
