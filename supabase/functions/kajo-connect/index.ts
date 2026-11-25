@@ -344,7 +344,10 @@ function safePlannedSession(value: unknown): PlannedSession | null {
     targetTss: typeof session.targetTss === "number" ? session.targetTss : typeof session.targetTss === "string" ? session.targetTss.slice(0, 30) : null,
     category: typeof session.category === "string" ? session.category.slice(0, 80) : null,
     desc: typeof session.desc === "string" ? session.desc.slice(0, 200) : null,
-    discipline: typeof session.discipline === "string" ? session.discipline.slice(0, 40) : null,
+    discipline: typeof session.discipline === "string"
+      ? session.discipline.slice(0, 40)
+      : session.type === "Kayaking" ? "K1"
+      : session.type === "K1" || session.type === "C1" || session.type === "C2" ? session.type : null,
     raceFormat: typeof session.raceFormat === "string" ? session.raceFormat.slice(0, 40) : null,
     waterType: typeof session.waterType === "string" ? session.waterType.slice(0, 40) : null,
     intensity: typeof session.intensity === "string" ? session.intensity.slice(0, 120) : null,
