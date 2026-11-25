@@ -32,3 +32,58 @@ export function getGarminCheckinMetric(checkin, key) {
 
     return validNumber(value) ? Number(value) : null;
 }
+
+
+/**
+ * Stable identity for a Garmin HRV measurement series.
+ * Different source metrics or units must not be mixed in a trend or baseline.
+ */
+export function getGarminHrvMeasurementIdentity(checkin) {
+    const value = getGarminCheckinMetric(checkin, 'hrv');
+    if (!validNumber(value) || Number(value) <= 0) return null;
+
+    const dedicatedGarminValue = checkin?.garminHrv !== null
+        && checkin?.garminHrv !== undefined && checkin?.garminHrv !== '';
+    const metadata = checkin?.measurementSources?.garminHrv
+        || (checkin?.measurementSources?.hrv?.source === 'garmin'
+            ? checkin.measurementSources.hrv : null);
+
+    if (!metadata || typeof metadata !== 'object') {
+        return dedicatedGarminValue ? 'garmin:unspecified:ms' : 'legacy:unspecified:ms';
+    }
+
+    return [
+        String(metadata.source || (dedicatedGarminValue ? 'garmin' : 'unknown')).toLowerCase(),
+        String(metadata.metric || 'unspecified').toLowerCase(),
+        String(metadata.unit || 'ms').toLowerCase()
+    ].join(':');
+}
+
+/**
+ * Return HRV values for one comparable series across the supplied dates.
+ * The most recent valid source/metric/unit identity is selected; observations
+ * with a different identity remain null rather than being combined.
+ */
+export function getComparableGarminHrvSeries(checkins, dates) {
+    const records = checkins && typeof checkins === 'object' ? checkins : {};
+    const observations = (Array.isArray(dates) ? dates : []).map(date => {
+        const record = records[date];
+        const value = getGarminCheckinMetric(record, 'hrv');
+        return {
+            date,
+            value: validNumber(value) && Number(value) > 0 ? Number(value) : null,
+            identity: getGarminHrvMeasurementIdentity(record)
+        };
+    });
+    const identity = [...observations].reverse()
+        .find(item => item.identity && item.value !== null)?.identity || null;
+    const byDate = new Map(observations.map(item => [
+        item.date,
+        identity && item.identity === identity ? item.value : null
+    ]));
+    return {
+        identity,
+        byDate,
+        values: observations.map(item => identity && item.identity === identity ? item.value : null)
+    };
+}
