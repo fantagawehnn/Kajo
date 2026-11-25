@@ -213,8 +213,8 @@ test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts"
   assert.match(activityView, /dc\.drawArc\(cx, 150, 105, Graphics\.ARC_CLOCKWISE, 225, 360\)/);
   assert.match(activityView, /drawActivityText\(dc, 276, 278, 126, 34, "♥ " \+ hrNow/);
   assert.match(activityView, /dc\.drawLine\(72, 272, 318, 272\)/);
-  assert.match(activityView, /"PACE MIN\/KM"/);
-  assert.match(activityView, /"BPM · ZONE " \+ zone\.toString\(\)/);
+  assert.match(activityView, /"PACE"/);
+  assert.match(activityView, /"BPM · Z" \+ zone\.toString\(\)/);
   assert.match(activityView, /intervalDistanceText\(activityInfo\)/);
 });
 
