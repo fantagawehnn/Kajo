@@ -8,7 +8,7 @@ const sourcePath = fileURLToPath(new URL('../js/cloud-sync.js', import.meta.url)
 const source = readFileSync(sourcePath, 'utf8')
     .replace("import { supabase } from './supabase-client.js';", '')
     .replace(/export async function/g, 'async function')
-    + '\nmodule.exports = { saveCloudSnapshotPatch };';
+    + '\nmodule.exports = { saveCloudSnapshotPatch, saveCloudSnapshot };';
 
 function loadModule(supabase) {
     const sandbox = { supabase, module: { exports: {} } };
@@ -75,4 +75,26 @@ test('rejects empty patches and invalid versions before any network call', async
     await assert.rejects(() => saveCloudSnapshotPatch({}, 2, 'user-1'), /leerer Cloud-Patch/);
     await assert.rejects(() => saveCloudSnapshotPatch({ planned: [] }, 0, 'user-1'), /bestehende Version/);
     assert.equal(rpcCalled, false);
+});
+
+
+test('uses the existing full snapshot RPC for a new account at version zero', async () => {
+    const calls = [];
+    const supabase = {
+        auth: { async getUser() { return { data: { user: { id: 'new-user' } }, error: null }; } },
+        async rpc(name, args) {
+            calls.push({ name, args });
+            return { data: [{ saved: true, current_version: 1, current_updated_at: '2026-11-25T12:00:00Z' }], error: null };
+        }
+    };
+    const { saveCloudSnapshot } = loadModule(supabase);
+    const snapshot = { planned: [], checkins: {}, profile: { name: 'Neu' } };
+    const result = await saveCloudSnapshot(snapshot, 0, 'new-user');
+
+    assert.equal(result.saved, true);
+    assert.equal(result.currentVersion, 1);
+    assert.deepEqual(JSON.parse(JSON.stringify(calls)), [{
+        name: 'save_user_data',
+        args: { p_data: snapshot, p_expected_version: 0 }
+    }]);
 });
