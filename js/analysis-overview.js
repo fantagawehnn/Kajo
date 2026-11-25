@@ -7,7 +7,7 @@ import { getSportsCatalog, escapeHtml } from './utils.js';
 import { renderHeartRateZoneDistribution, setChartEmptyState } from './charts.js';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
-import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { getGarminCheckinMetric, getComparableGarminHrvSeries } from './garmin-metric-access.js';
 import { calculateReadiness } from './readiness.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
@@ -74,11 +74,12 @@ function cssColor(token, fallback) {
 function buildSeries(dates) {
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const load = dates.map(date => {
     const day = timeline.get(date);
     return day && valid(day.load) ? Number(day.load) : null;
   });
-  const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
+  const recovery = hrvSeries.values;
   const readiness = dates.map(date => {
     if (date > todayKey() || !checkins[date]) return null;
     const result = calculateReadiness(date, state);
@@ -182,6 +183,7 @@ function renderFitnessRecoveryContext(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const rows = dates.map(date => {
     const day = timeline.get(date);
     const checkin = checkins[date] || {};
@@ -192,8 +194,7 @@ function renderFitnessRecoveryContext(dates) {
     const formValue = garminMode
       ? (valid(day?.formPct) ? Number(day.formPct) : null)
       : (valid(day?.tsb) ? Number(day.tsb) : null);
-    const hrvRaw = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
-    const hrv = valid(hrvRaw) && Number(hrvRaw) > 0 ? Number(hrvRaw) : null;
+    const hrv = hrvSeries.byDate.get(date) ?? null;
     const readinessResult = date <= todayKey() && checkins[date] ? calculateReadiness(date, state) : null;
     const readiness = readinessResult?.enoughData && valid(readinessResult.score) ? Number(readinessResult.score) : null;
     const vo2max = getGarminCheckinMetric(checkin, 'vo2max');
@@ -245,6 +246,7 @@ function renderTrendObservations(dates) {
   const healthLogs = state.healthLogs || {};
   const recentDates = dates.slice(-7);
   const priorDates = dates.slice(-14, -7);
+  const hrvSeries = getComparableGarminHrvSeries(checkins, [...priorDates, ...recentDates]);
   const latestLoadDay = [...recentDates].reverse().map(date => timeline.get(date)).find(day =>
     day && day.loadMode && day.loadUnit && (valid(day.ctl) || valid(day.atl) || valid(day.tsb) || valid(day.formPct))
   );
@@ -270,10 +272,7 @@ function renderTrendObservations(dates) {
       }
       return valid(day[metric.key]) ? Number(day[metric.key]) : null;
     }
-    if (metric.key === 'hrv') {
-      const value = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
-      return valid(value) && Number(value) > 0 ? Number(value) : null;
-    }
+    if (metric.key === 'hrv') return hrvSeries.byDate.get(date) ?? null;
     if (metric.key === 'readiness') {
       if (date > todayKey() || !checkins[date]) return null;
       const result = calculateReadiness(date, state);
@@ -389,6 +388,7 @@ function renderHealthEventContext(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const events = Object.entries(state.healthLogs || {})
     .filter(([date, item]) => date >= dates[0] && date <= dates[dates.length - 1] && ['sick', 'injured'].includes(item?.status))
     .sort(([a], [b]) => b.localeCompare(a));
@@ -399,7 +399,7 @@ function renderHealthEventContext(dates) {
   const cards = events.slice(0, 8).map(([date, item]) => {
     const day = timeline.get(date);
     const checkin = checkins[date] || {};
-    const hrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const hrv = hrvSeries.byDate.get(date) ?? null;
     const readiness = date <= todayKey() && checkin ? calculateReadiness(date, state) : null;
     const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
     const load = day && valid(day.load)
@@ -445,6 +445,7 @@ function renderLoadRecoveryAssociation(dates) {
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
   const healthLogs = state.healthLogs || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const pairs = [];
   const cumulativePairs = [];
 
@@ -458,12 +459,10 @@ function renderLoadRecoveryAssociation(dates) {
     const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
     if (!dateSet.has(nextDate) || nextDate > todayKey()) continue;
 
-    const item = checkins[nextDate] || {};
-    const rawHrv = item.garminHrv ?? (item.measurementSources?.hrv?.source === 'garmin' ? item.hrv : null);
     const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
     const eventOnLoadDay = ['sick', 'injured'].includes(healthLogs[date]?.status);
     const eventOnRecoveryDay = ['sick', 'injured'].includes(healthLogs[nextDate]?.status);
-    const hrvValue = valid(rawHrv) && Number(rawHrv) > 0 ? Number(rawHrv) : null;
+    const hrvValue = hrvSeries.byDate.get(nextDate) ?? null;
     const readinessValue = readiness?.enoughData && valid(readiness.score) ? Number(readiness.score) : null;
 
     pairs.push({
@@ -549,6 +548,7 @@ function renderNextDayContext(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const dateSet = new Set(dates);
   const pairs = [];
   for (const date of dates) {
@@ -558,8 +558,7 @@ function renderNextDayContext(dates) {
     next.setDate(next.getDate() + 1);
     const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
     if (!dateSet.has(nextDate) || nextDate > todayKey()) continue;
-    const checkin = checkins[nextDate] || {};
-    const hrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const hrv = hrvSeries.byDate.get(nextDate) ?? null;
     const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
     const hasHrv = valid(hrv) && Number(hrv) > 0;
     const hasReadiness = readiness?.enoughData && valid(readiness.score);
