@@ -40,11 +40,10 @@ class KajoLayout {
             return preferredFont;
         }
 
-        // Die bisherigen Textboxen waren fuer die Venu 3S zu konservativ:
-        // Viele Labels hatten nur 14 px Hoehe und wurden dadurch unlesbar klein.
-        // 25 % groessere Schrift wird zugelassen; der Zeichenbereich waechst
-        // proportional mit und bleibt weiterhin auf die Kreisform begrenzt.
-        var effectiveHeight = maxHeight * 1.25;
+        // Text bleibt immer innerhalb der zugewiesenen Hoehe.
+        // Keine vergroesserten Clip-Bereiche: Sie verursachen Ueberlappungen
+        // und abgeschnittene Zeilen auf dem runden 390x390-Display.
+        var effectiveHeight = maxHeight * 0.90;
         var scale = ((effectiveHeight * 1.0) - 1.0) / (baseHeight * 1.0);
         if (scale > 1.0) { scale = 1.0; }
         if (scale <= 0.0) { return preferredFont; }
@@ -91,19 +90,27 @@ class KajoLayout {
         return scaledFont(dc, text, maxWidth, targetHeight, preferredFont);
     }
 
-    // Text and controls use almost the complete physical display width.
-    // Keep only a small 2.5% safety margin at both sides; do not shrink
-    // content to the inscribed circle's narrow chord near the top/bottom.
+    // Begrenzt Inhalte auf die tatsaechlich sichtbare Kreisflaeche.
+    // Die Breite wird an der jeweiligen vertikalen Position berechnet.
     function safeWidthAt(x, y, requestedWidth) as Lang.Number {
-        var margin = mWidth * 0.025;
-        var left = margin;
-        var right = mWidth - margin;
-        var availableLeft = x - left;
-        var availableRight = right - x;
-        var available = availableLeft < availableRight ? availableLeft : availableRight;
-        available = available * 2;
-        if (available < 0) { return 0; }
-        return Math.round(available < requestedWidth ? available : requestedWidth).toNumber();
+        if (mWidth <= 0 || mHeight <= 0 || requestedWidth <= 0) { return 0; }
+
+        var margin = mUnit * 0.025;
+        var radius = mRadius - margin;
+        var dx = x - mCenterX;
+        var dy = y - mCenterY;
+        if (radius <= 0 || Math.abs(dy) >= radius) { return 0; }
+
+        var halfChordSquared = (radius * radius) - (dy * dy);
+        if (halfChordSquared <= 0) { return 0; }
+        var halfChord = Math.sqrt(halfChordSquared);
+        var circleLeft = mCenterX - halfChord + margin;
+        var circleRight = mCenterX + halfChord - margin;
+        var availableLeft = x - circleLeft;
+        var availableRight = circleRight - x;
+        var available = Math.min(availableLeft, availableRight) * 2;
+        if (available <= 0) { return 0; }
+        return Math.round(Math.min(available, requestedWidth)).toNumber();
     }
 
     function safeTextWidth(dc as Dc, x, y,
@@ -145,8 +152,8 @@ class KajoLayout {
 
         var font = scaledFont(dc, text, available, height, preferredFont);
         var textHeight = dc.getFontHeight(font);
-        var effectiveHeight = height * 1.25;
-        if (textHeight > effectiveHeight) {
+        var effectiveHeight = height * 0.90;
+        if (textHeight > height) {
             return;
         }
 
@@ -166,9 +173,9 @@ class KajoLayout {
         if (displayText.length() == 0) { return; }
 
         var clipLeft = Math.round(x - (available / 2)).toNumber();
-        var clipTop = Math.round(top - (height * 0.125)).toNumber();
+        var clipTop = Math.round(top).toNumber();
         var clipWidth = Math.round(available).toNumber();
-        var clipHeight = Math.round(effectiveHeight).toNumber();
+        var clipHeight = Math.round(height).toNumber();
 
         dc.setClip(clipLeft, clipTop, clipWidth, clipHeight);
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
