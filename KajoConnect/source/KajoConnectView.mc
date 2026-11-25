@@ -215,7 +215,7 @@ class KajoConnectView extends WatchUi.View {
         if (mSyncStatus == "KAJO NICHT ERREICHBAR" ||
             mSyncStatus == "OFFLINE · GESPEICHERTER PLAN") { return "OFFLINE"; }
         if (mSyncStatus == "GESPEICHERTER TRAININGSPLAN") { return "OFFLINE"; }
-        if (mSyncStatus == "NICHT MIT KAJO VERBUNDEN") { return "NICHT VERBUNDEN"; }
+        if (mSyncStatus == "NICHT MIT KAJO VERBUNDEN") { return "OFFLINE"; }
         return "KAJO";
     }
 
@@ -247,7 +247,7 @@ class KajoConnectView extends WatchUi.View {
         if (mHomeSelection == 0) {
             startActivity();
         } else if (mHomeSelection == 1) {
-            var listView = new KajoConnectWorkoutListView(self, null, "TRAININGSPLAN", "EINHEITEN GESPEICHERT");
+            var listView = new KajoConnectWorkoutListView(self, null, "TRAININGSPLAN", "EINHEITEN");
             WatchUi.pushView(listView, new KajoConnectWorkoutListDelegate(listView), WatchUi.SLIDE_UP);
         } else {
             openActivityView(null);
@@ -456,7 +456,7 @@ class KajoConnectView extends WatchUi.View {
             mStartLeft = 0;
             mStartRight = 0;
             drawHomeText(dc, cx, 137, mainWidth, 24,
-                "KEIN TRAINING FÜR HEUTE GEPLANT",
+                "HEUTE KEIN TRAINING",
                 Graphics.FONT_SMALL, 0x98A5AB);
         } else {
             mStartLeft = mainLeft;
@@ -544,7 +544,7 @@ class KajoConnectView extends WatchUi.View {
         drawHomeText(dc, cx, mFreeTrainingTop + 5, secondaryWidth - 18, 18,
             "FREIES TRAINING", Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         drawHomeText(dc, cx, mFreeTrainingTop + 26, secondaryWidth - 18, 14,
-            "OHNE GEPLANTE EINHEIT", Graphics.FONT_XTINY, 0x98A5AB);
+            "FREI STARTEN", Graphics.FONT_XTINY, 0x98A5AB);
     }
 
 }
