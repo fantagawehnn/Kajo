@@ -12,6 +12,7 @@ class KajoConnectView extends WatchUi.View {
 
     var mSelectedBoat = "K1";
     var mPlannedSessions as Lang.Array<Lang.Dictionary> = [];
+    var mStandardWorkouts as Lang.Array<Lang.Dictionary> = [];
     var mWidth = 0;
     var mHeight = 0;
     var mUnit = 0;
@@ -53,6 +54,8 @@ class KajoConnectView extends WatchUi.View {
             (savedBoat.toString() == "K1" || savedBoat.toString() == "C1" || savedBoat.toString() == "C2")) {
             mSelectedBoat = savedBoat.toString();
         }
+        var cachedStandardWorkouts = Storage.getValue("kajoStandardWorkouts");
+        if (cachedStandardWorkouts != null) { mStandardWorkouts = cachedStandardWorkouts as Lang.Array<Lang.Dictionary>; }
         var cachedSessions = Storage.getValue("kajoPlannedSessions");
         if (cachedSessions != null) {
             mPlannedSessions = cachedSessions as Lang.Array<Lang.Dictionary>;
@@ -119,6 +122,18 @@ class KajoConnectView extends WatchUi.View {
         var cacheSaved = true;
         try {
             Storage.setValue("kajoPlannedSessions", mPlannedSessions);
+        } catch (error) {
+            cacheSaved = false;
+        }
+
+        var standardWorkouts = data["standardWorkouts"];
+        if (standardWorkouts != null) {
+            mStandardWorkouts = standardWorkouts as Lang.Array<Lang.Dictionary>;
+        } else {
+            mStandardWorkouts = [];
+        }
+        try {
+            Storage.setValue("kajoStandardWorkouts", mStandardWorkouts);
         } catch (error) {
             cacheSaved = false;
         }
@@ -297,6 +312,10 @@ class KajoConnectView extends WatchUi.View {
 
     function getPlannedSessions() as Lang.Array<Lang.Dictionary> {
         return mPlannedSessions;
+    }
+
+    function getStandardWorkouts() as Lang.Array<Lang.Dictionary> {
+        return mStandardWorkouts;
     }
 
     function openActivityView(workout as Lang.Dictionary or Null) as Void {

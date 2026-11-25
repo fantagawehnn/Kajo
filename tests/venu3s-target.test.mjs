@@ -27,6 +27,47 @@ const historyView = readFileSync(new URL("../KajoConnect/source/KajoConnectHisto
 const boatClassView = readFileSync(new URL("../KajoConnect/source/KajoConnectBoatClassView.mc", import.meta.url), "utf8");
 const unitsView = readFileSync(new URL("../KajoConnect/source/KajoConnectUnitsView.mc", import.meta.url), "utf8");
 const connectEndpoint = readFileSync(new URL("../supabase/functions/kajo-connect/index.ts", import.meta.url), "utf8");
+const smartphoneStorage = readFileSync(new URL("../js/storage.js", import.meta.url), "utf8");
+const smartphonePlanning = readFileSync(new URL("../js/planning.js", import.meta.url), "utf8");
+const smartphoneHtml = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+
+test("standard workouts are synchronized and shown separately from dated sessions", () => {
+  assert.match(connectEndpoint, /function safeStandardWorkout\(/);
+  assert.match(connectEndpoint, /standardWorkouts,/);
+  assert.match(homeView, /mStandardWorkouts/);
+  assert.match(homeView, /kajoStandardWorkouts/);
+  assert.match(workoutListView, /getStandardWorkouts\(\)/);
+  assert.match(workoutListView, /isStandardWorkout/);
+  assert.match(workoutListView, /STANDARD · /);
+  assert.match(workoutView, /mWorkout\["isStandardWorkout"\] == true/);
+  assert.match(workoutView, /isStandard \? "STANDARDTRAINING" : "GEPLANTE EINHEIT"/);
+  assert.match(workoutView, /valueText\("discipline", "KANU"\)/);
+  assert.match(workoutView, /"TRAININGSZIEL"/);
+  assert.match(workoutView, /"ABLAUF"/);
+  assert.match(workoutView, /"TRAINING STARTEN"/);
+});
+
+test("a selected standard workout keeps its instructions through preview and recording start", () => {
+  assert.match(workoutListView, /mHomeView\.startActivityWithWorkout\(mSessions\[mSelectedIndex\] as Lang\.Dictionary\)/);
+  assert.match(homeView, /function startActivityWithWorkout\(workout as Lang\.Dictionary\)[\s\S]*?showWorkoutDetails\(workout\)/);
+  assert.match(workoutView, /function startSelectedWorkout\(\)[\s\S]*?mParent\.beginWorkout\(mWorkout\)/);
+  assert.match(homeView, /function beginWorkout\(workout as Lang\.Dictionary\)[\s\S]*?openActivityView\(workout\)/);
+  assert.match(activityView, /function setSelectedWorkout\(workout as Lang\.Dictionary\)[\s\S]*?loadWorkoutSteps\(workout\["steps"\]\)/);
+  assert.match(activityView, /mCurrentWorkoutObjective = workout\["objective"\]/);
+  assert.match(activityView, /mCurrentWorkoutMainSet = workout\["mainSet"\]/);
+});
+
+test("standard workout templates persist independently of dated planning", () => {
+  assert.match(smartphoneStorage, /standardWorkouts: 'standardWorkouts'/);
+  assert.match(smartphoneStorage, /state\.standardWorkouts = Array\.isArray\(loaded\.standardWorkouts\)/);
+  assert.match(smartphoneStorage, /standardWorkouts: state\.standardWorkouts/);
+  assert.match(smartphoneStorage, /Ältere Cloud-Snapshots kennen Standardtrainings noch nicht/);
+  assert.match(smartphonePlanning, /export function saveStandardWorkout/);
+  assert.match(smartphonePlanning, /state\.standardWorkouts\.push\(workout\)/);
+  assert.match(smartphoneHtml, /id="standard-workouts-list"/);
+  assert.match(smartphoneHtml, /id="standard-workout-modal"/);
+  assert.doesNotMatch(smartphonePlanning.slice(smartphonePlanning.indexOf("export function saveStandardWorkout")), /state\.plannedActivities\.push/);
+});
 
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
@@ -284,4 +325,14 @@ test("settings keep native menus while workout selection uses a custom dark view
   assert.match(homeView, /new KajoConnectWorkoutListView\(self, todaysSessions, "HEUTE WÄHLEN"/);
   assert.doesNotMatch(homeView, /new KajoConnectWorkoutSelectView/);
   assert.match(menuDelegate, /function onSelect\(item as WatchUi\.MenuItem\)/);
+});
+
+
+test("workout database lists only planned K1/C1/C2 canoe sessions and supports scrolling through the full loaded list", () => {
+  assert.match(workoutListView, /mSessions = getCanoeSessions\(sourceSessions\)/);
+  assert.match(workoutListView, /session\["discipline"\]/);
+  assert.match(workoutListView, /boatClass == "K1" \|\| boatClass == "C1" \|\| boatClass == "C2"/);
+  assert.match(workoutListView, /mFirstVisibleIndex = mSelectedIndex - mVisibleRows \+ 1/);
+  assert.match(workoutListDelegate, /direction == WatchUi\.SWIPE_UP[\s\S]*?moveSelection\(1\)/);
+  assert.match(workoutListDelegate, /key == WatchUi\.KEY_DOWN[\s\S]*?moveSelection\(1\)/);
 });

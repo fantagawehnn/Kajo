@@ -16,6 +16,7 @@ export const state = {
     rawActivities: [],
     disabledIntervalsActivities: [],
     plannedActivities: [],
+    standardWorkouts: [],
     dailyCheckins: {},
     healthLogs: {},
     races: [],
