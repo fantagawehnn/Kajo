@@ -3698,6 +3698,11 @@ async function syncGarminTodayOnOpen(userId) {
         if (!isCurrentSync()) return;
         if (connection.connection?.status !== 'connected') {
             try { setUserLocalSetting('garmin_connected', 'false'); } catch (_) {}
+            const cloudActivities = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
+            if (!isCurrentSync()) return;
+            if (cloudActivities.added > 0 || cloudActivities.merged > 0) {
+                void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
+            }
             return;
         }
         try { setUserLocalSetting('garmin_connected', 'true'); } catch (_) {}
@@ -3761,6 +3766,17 @@ async function syncGarminTodayOnOpen(userId) {
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
         if (isCurrentSync()) {
+            // Auch bei einem Garmin-Fehler bleiben bereits gespeicherte Cloud-
+            // Aktivitäten verfügbar. Der Delta-Abruf erfolgt hier genau einmal.
+            try {
+                const cloudActivities = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
+                if (cloudActivities.added > 0 || cloudActivities.merged > 0) {
+                    void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
+                }
+            } catch (cloudLoadError) {
+                console.warn('KAJO: Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', cloudLoadError);
+            }
+            if (!isCurrentSync()) return;
             setGarminSyncResult('Automatischer Tagesabgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), 'error');
             setGarminSyncIndicator('current', 'Verbunden');
         }
@@ -3988,12 +4004,9 @@ async function handleAuthSession(session, authEvent = null) {
             }).catch(error => console.warn('Lokale Sync-Warteschlange konnte nicht geprüft werden:', error));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
-            // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
-            // nicht erforderlich. Sie werden nach der Freigabe parallel zum
-            // Tagesabgleich geladen; beide Aufrufer teilen einen laufenden Abruf.
-            void loadGarminActivitiesFromCloud(userId, sequence).catch(garminLoadError => {
-                console.warn('Garmin-Cloud-Aktivitäten konnten im Hintergrund nicht geladen werden:', garminLoadError);
-            });
+            // Garmin-Aktivitätsvorschauen werden einmalig im Tagesabgleich
+            // geladen – nach der Garmin-Aktualisierung bzw. bei Offline-Verbindung
+            // direkt aus der Cloud. So entstehen keine doppelten Delta-Abfragen.
             void syncGarminTodayOnOpen(userId);
             initializeNutritionRemindersWhenIdle();
 
