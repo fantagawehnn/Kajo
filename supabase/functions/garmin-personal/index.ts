@@ -248,6 +248,7 @@ async function syncGarminHealthHistoryBatch(
   endDate: string,
   rescanCompleted = false,
   forceRefresh = false,
+  maxDaysPerInvocation = 1,
 ) {
   const syncType = "health_history";
   let { data: state, error: stateError } = await admin
@@ -330,7 +331,7 @@ async function syncGarminHealthHistoryBatch(
   // Process one calendar day per Edge Function invocation to reduce the
   // amount of sequential Garmin endpoint work within the worker time limit.
   // The browser continues from the persisted cursor in the next request.
-  const batchLimit = 1;
+  const batchLimit = Math.max(1, Math.min(2, Math.floor(maxDaysPerInvocation) || 1));
   const processed: Array<Record<string, unknown>> = [];
   let failed = false;
   let rateLimited = false;
@@ -1288,10 +1289,15 @@ Deno.serve(async (req) => {
     if (action === "sync-today") {
       const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : "";
       if (!date) return json(400, { error: "Für den Garmin-Tagesabgleich wurde kein gültiges lokales Datum übergeben." });
-      const activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false);
-      // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
-      // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
-      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, false);
+      // Ein Tag Überlappung erfasst verspätet bei Garmin sichtbare Aktivitäten
+      // und Gesundheitswerte des Vortags, ohne ältere Historie erneut abzurufen.
+      const overlapStartDate = addUtcDays(date, -1);
+      const activitySync = await syncGarminActivitiesForUser(admin, userId, overlapStartDate, date, false);
+      // Pro Tag werden nur fehlende, verspätete oder dynamisch aktualisierte
+      // Gesundheitswerte von Garmin geladen. Leere Antworten löschen keine Nutzdaten.
+      const healthSync = await syncGarminHealthHistoryBatch(
+        admin, userId, overlapStartDate, date, true, false, 2
+      );
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 
