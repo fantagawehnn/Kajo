@@ -228,6 +228,9 @@ export async function fetchCloudActivities(client, userId, options = {}) {
         if (computedHashes[index]) hashes.set(String(row.record_id), computedHashes[index]);
     });
     if (hashes.size || records.length === 0) cloudActivityHashes.set(userId, hashes);
+    const updatedAtValues = records.map(row => row?.updated_at).filter(value => typeof value === 'string');
+    const syncCursor = updatedAtValues.sort().at(-1) || null;
+    Object.defineProperty(records, 'syncCursor', { value: syncCursor, enumerable: false });
     return records;
 }
 
