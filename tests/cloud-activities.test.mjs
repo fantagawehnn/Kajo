@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fetchCloudActivities, getActivityConflictLabel, mergeCloudActivities, prepareCloudActivityRows } from '../js/cloud-activities.js';
+import { fetchCloudActivities, fetchCloudActivityDelta, getActivityConflictLabel, mergeCloudActivities, mergeCloudActivityRows, prepareCloudActivityRows } from '../js/cloud-activities.js';
 
 test('prepares one stable user-scoped row per activity', () => {
     const rows = prepareCloudActivityRows('user-1', [
@@ -115,4 +115,59 @@ test('loads cloud activities with sequential keyset pages instead of OFFSET', as
     const rows = await fetchCloudActivities(client, 'user-1', { pageSize: 2 });
     assert.deepEqual(rows.map(row => row.record_id), ['a', 'b', 'c', 'd', 'e']);
     assert.deepEqual(cursors, ['b', 'd']);
+});
+
+
+test('fetches only changed activity payloads since the persisted watermark', async () => {
+    const watermark = '2026-11-25T12:03:00.000Z';
+    const source = [
+        { record_id: 'a', updated_at: '2026-11-25T11:59:30.000Z', payload: { id: 'a', name: 'A changed' } },
+        { record_id: 'b', updated_at: '2026-11-25T12:02:00.000Z', payload: { id: 'b', name: 'B changed' } }
+    ];
+    const requestedRanges = [];
+    const client = {
+        from(table) {
+            assert.equal(table, 'activities');
+            const query = {
+                selection: '',
+                offset: 0,
+                pageSize: 1,
+                select(columns) { this.selection = columns; return this; },
+                eq(column, value) { assert.equal(column, 'user_id'); assert.equal(value, 'user-1'); return this; },
+                order() { return this; },
+                limit() { return this; },
+                maybeSingle() {
+                    assert.equal(this.selection, 'updated_at');
+                    return Promise.resolve({ data: { updated_at: watermark }, error: null });
+                },
+                gte(column, value) { assert.equal(column, 'updated_at'); this.fromDate = value; return this; },
+                lte(column, value) { assert.equal(column, 'updated_at'); this.toDate = value; return this; },
+                range(from, to) { this.offset = from; this.pageSize = to - from + 1; requestedRanges.push([from, to]); return this; },
+                then(resolve, reject) {
+                    const data = source.filter(row => row.updated_at >= this.fromDate && row.updated_at <= this.toDate)
+                        .slice(this.offset, this.offset + this.pageSize);
+                    return Promise.resolve({ data, error: null }).then(resolve, reject);
+                }
+            };
+            return query;
+        }
+    };
+
+    const result = await fetchCloudActivityDelta(client, 'user-1', '2026-11-25T12:00:00.000Z', { pageSize: 1 });
+    assert.deepEqual(result.rows.map(row => row.record_id), ['a', 'b']);
+    assert.equal(result.cursor, watermark);
+    assert.deepEqual(requestedRanges, [[0, 0], [1, 1], [2, 2]]);
+});
+
+test('merges delta rows into the confirmed baseline without dropping unchanged activities', () => {
+    const rows = mergeCloudActivityRows('user-1', [
+        { id: 'a', name: 'A unchanged' },
+        { id: 'b', name: 'B old' }
+    ], [
+        { record_id: 'b', payload: { id: 'b', name: 'B updated' } },
+        { record_id: 'c', payload: { id: 'c', name: 'C new' } }
+    ]);
+    assert.deepEqual(rows.map(row => row.record_id).sort(), ['a', 'b', 'c']);
+    assert.equal(rows.find(row => row.record_id === 'a').payload.name, 'A unchanged');
+    assert.equal(rows.find(row => row.record_id === 'b').payload.name, 'B updated');
 });
