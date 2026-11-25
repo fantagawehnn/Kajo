@@ -138,3 +138,22 @@ test('manual statuses do not override matched activities and invalid status valu
     assert.equal(review.completedWithoutActivity.length, 0);
     assert.equal(review.missed.length, 0);
 });
+
+test('manual activity links require the same identifiable sport', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [{ id: 'p1', date: '2026-11-16', name: 'K1 locker', type: 'Kayaking', discipline: 'K1' }],
+        manualActivityLinks: [{ sessionId: 'p1', activityId: 'run1' }]
+    }, [{ id: 'run1', date: '2026-11-16', type: 'Run', name: 'Easy run' }], '2026-11-19');
+    assert.equal(review.matched.length, 0);
+    assert.equal(review.manualLinks.length, 0);
+    assert.equal(review.unmatchedPlanned.length, 1);
+    assert.equal(review.unplannedActivities.length, 1);
+});
+
+test('sport comparison accepts equivalent aliases but rejects unknown sports', async () => {
+    const { areSameAdaptiveSports } = await import('../js/adaptive-week-review.js');
+    assert.equal(areSameAdaptiveSports({ discipline: 'C1', type: 'Kayaking' }, { type: 'Kayaking', discipline: 'C1' }), true);
+    assert.equal(areSameAdaptiveSports({ discipline: 'K1', type: 'Kayaking' }, { type: 'Run' }), false);
+    assert.equal(areSameAdaptiveSports({ type: 'Other' }, { type: 'Other' }), false);
+});
