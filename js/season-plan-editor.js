@@ -5,7 +5,7 @@ import { requestSeasonPlanProposal, requestWeeklyPlanProposal, requestAdaptiveWe
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
 import { buildWeeklyPlanCalendarEntries, calendarTypeForSession, calendarCategoryForSession } from './weekly-plan-calendar.js?v=2';
-import { buildAdaptiveWeekReview } from './adaptive-week-review.js';
+import { buildAdaptiveWeekReview } from './adaptive-week-review.js?v=2';
 
 let draftPhases = [];
 let pendingProposal = null;
