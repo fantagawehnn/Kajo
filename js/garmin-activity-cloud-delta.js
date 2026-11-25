@@ -15,11 +15,12 @@ export function parseGarminActivitySeenMap(rawValue) {
     }
 }
 
-export function getGarminActivityRowsNeedingPayload(metadataRows, seenAtById) {
+export function getGarminActivityRowsNeedingPayload(metadataRows, seenAtById, locallyAvailableIds = new Set()) {
     return metadataRows.filter(row => {
         const id = String(row?.garmin_activity_id ?? '');
         const updatedAt = row?.updated_at;
-        return id && typeof updatedAt === 'string' && seenAtById[id] !== updatedAt;
+        return id && typeof updatedAt === 'string' &&
+            (seenAtById[id] !== updatedAt || !locallyAvailableIds.has(id));
     });
 }
 
