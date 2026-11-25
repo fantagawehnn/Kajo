@@ -209,8 +209,10 @@ export function discardDailyCheckin() {
 export function closeDailyCheckinModal() {
     const modal = document.getElementById("daily-checkin-modal");
     if (!modal) return;
-    // Das Check-in-Fenster wird ausschließlich nach erfolgreichem Speichern geschlossen.
-    if (!modal.classList.contains("hidden") && !modal.dataset.saved) return;
+    // Das Fenster muss jederzeit schließbar bleiben – auch wenn ein Speichervorgang
+    // fehlschlägt oder die Oberfläche weiterhin einen Speichervorgang anzeigt.
+    // Nicht gespeicherte Formularänderungen werden beim Schließen verworfen;
+    // gespeicherte Tagesdaten bleiben unverändert.
     modal.classList.add("hidden");
     modal.hidden = true;
     modal.style.setProperty("display", "none", "important");
