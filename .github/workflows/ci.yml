@@ -95,6 +95,9 @@ jobs:
       - name: Run activation UI state tests
         run: node --experimental-default-type=module --test tests/activation-ui-state.test.mjs
 
+      - name: Run Supabase auth bootstrap tests
+        run: node --experimental-default-type=module --test tests/auth-session-bootstrap.test.mjs
+
       - name: Run account storage activation race tests
         run: node --experimental-default-type=module --test tests/storage-activation-race.test.mjs
 
