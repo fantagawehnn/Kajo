@@ -40,7 +40,11 @@ test("standard workouts are synchronized and shown separately from dated session
   assert.match(workoutListView, /isStandardWorkout/);
   assert.match(workoutListView, /STANDARD · /);
   assert.match(workoutView, /mWorkout\["isStandardWorkout"\] == true/);
-  assert.match(workoutView, /"STANDARD · " \+ type/);
+  assert.match(workoutView, /isStandard \? "STANDARDTRAINING" : "GEPLANTE EINHEIT"/);
+  assert.match(workoutView, /valueText\("discipline", "KANU"\)/);
+  assert.match(workoutView, /"TRAININGSZIEL"/);
+  assert.match(workoutView, /"ABLAUF"/);
+  assert.match(workoutView, /"TRAINING STARTEN"/);
 });
 
 test("a selected standard workout keeps its instructions through preview and recording start", () => {
