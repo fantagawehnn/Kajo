@@ -29,7 +29,7 @@ test('only unseen or changed activity timestamps require full preview payloads',
         '2': '2026-11-25T10:30:00.000Z'
     };
     assert.deepEqual(
-        getGarminActivityRowsNeedingPayload(metadata, seen).map(row => row.garmin_activity_id),
+        getGarminActivityRowsNeedingPayload(metadata, seen, new Set(['1', '2'])).map(row => row.garmin_activity_id),
         ['2', '3']
     );
 });
@@ -49,4 +49,12 @@ test('seen timestamp map retains only the one-day overlap and adds current metad
             'new': '2026-11-25T12:00:00.000Z'
         }
     );
+});
+
+test('a cloud activity is downloaded again if its local activity is missing', () => {
+    const metadata = [
+        { garmin_activity_id: '1', updated_at: '2026-11-25T10:00:00.000Z' }
+    ];
+    const seen = { '1': '2026-11-25T10:00:00.000Z' };
+    assert.equal(getGarminActivityRowsNeedingPayload(metadata, seen, new Set()).length, 1);
 });
