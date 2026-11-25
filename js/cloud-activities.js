@@ -293,7 +293,12 @@ export async function fetchCloudActivityDelta(client, userId, since, options = {
         offset += pageSize;
     }
 
-    return { rows, cursor: watermark };
+    return {
+        rows,
+        // Ein später sichtbarer, aber früher gestarteter Commit darf den
+        // bestätigten Cursor nicht rückwärts bewegen.
+        cursor: watermarkMs > sinceMs ? watermark : since
+    };
 }
 
 /**
