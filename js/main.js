@@ -2975,13 +2975,17 @@ async function flushCloudSync(options = {}) {
         }
 
         if (!isCurrentSync()) return;
-        const [latestCloud, latestActivities, baseline] = await Promise.all([
+        const [latestCloud, baseline] = await Promise.all([
             fetchCloudSnapshot(),
-            fetchCloudActivities(supabase, userId),
             loadCloudSyncBaseline()
         ]);
         if (!isCurrentSync()) return;
-        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline, isCurrentSync);
+        const activitySyncState = { cursor: getUserLocalSetting('cloudActivityCursor') || null };
+        const latestActivities = await fetchCloudActivityState(userId, baseline, activitySyncState);
+        if (!isCurrentSync()) return;
+        const reconciliation = await reconcileCloudState(
+            userId, latestCloud, latestActivities, baseline, isCurrentSync, activitySyncState
+        );
         if (!isCurrentSync()) return;
         if (!reconciliation.ok) {
             if (reconciliation.empty) {
