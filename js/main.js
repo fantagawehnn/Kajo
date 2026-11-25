@@ -681,10 +681,26 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
     if (existingLoad) return existingLoad;
 
     const loadPromise = (async () => {
-        const savedCursor = getUserLocalSetting('garminActivityCloudReadThrough');
-        const validCursor = typeof savedCursor === 'string' && Number.isFinite(Date.parse(savedCursor));
+        let savedCursor = getUserLocalSetting('garminActivityCloudReadThrough');
+        let validCursor = typeof savedCursor === 'string' && Number.isFinite(Date.parse(savedCursor));
+        if (!validCursor) {
+            // Cursor auf einem neuen Gerät aus dem neuesten Cloud-Datensatz
+            // rekonstruieren, statt alle bereits synchronisierten Aktivitäten
+            // erneut herunterzuladen.
+            const { data: latestActivity, error: latestActivityError } = await supabase
+                .from('garmin_activities')
+                .select('updated_at')
+                .eq('user_id', userId)
+                .not('updated_at', 'is', null)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (latestActivityError) throw latestActivityError;
+            savedCursor = latestActivity?.updated_at || null;
+            validCursor = typeof savedCursor === 'string' && Number.isFinite(Date.parse(savedCursor));
+        }
         const overlapStart = validCursor
-            ? new Date(Math.max(0, Date.parse(savedCursor) - 60000)).toISOString()
+            ? new Date(Math.max(0, Date.parse(savedCursor) - 24 * 60 * 60 * 1000)).toISOString()
             : null;
         const data = await loadGarminActivityPages((offset, limit) => {
             let query = supabase.from('garmin_activities')
@@ -850,19 +866,32 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         'Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
     );
 
-    // Der automatische Tagesabgleich liest den historischen Bestand einmalig
-    // vollständig ein. Danach wird ab dem letzten erfolgreichen Lesedatum mit
-    // einem siebentägigen Überlappungsfenster weitergelesen. Das fängt verspätet
-    // gespeicherte Garmin-Datensätze auf, ohne bei jedem App-Start die gesamte
-    // Historie erneut zu übertragen. Manuelle Vorschau/Wiederherstellung bleibt
-    // davon unberührt.
+    // Automatischer Abruf: maximal einen Kalendertag Überlappung.
+    // Falls das lokale Gerät noch keinen Cursor besitzt (z. B. neues Gerät),
+    // leite den letzten vorhandenen Synchronisationsstand aus der Cloud ab.
+    // Nur wenn auch dort noch keine Gesundheitsdaten liegen, bleibt es beim
+    // initialen historischen Import. Manuelle Vorschau/Wiederherstellung bleibt
+    // von dieser inkrementellen Begrenzung unberührt.
     let effectiveStartDate = startDate;
     if (options.incremental === true) {
-        const lastReadDate = getUserLocalSetting('garminHealthRecordsReadThrough');
+        let lastReadDate = getUserLocalSetting('garminHealthRecordsReadThrough');
+        if (!(typeof lastReadDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(lastReadDate)
+            && lastReadDate <= endDate)) {
+            const { data: latestRecord, error: latestRecordError } = await supabase
+                .from('garmin_health_records')
+                .select('record_date')
+                .eq('user_id', userId)
+                .lte('record_date', endDate)
+                .order('record_date', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (latestRecordError) throw latestRecordError;
+            lastReadDate = latestRecord?.record_date || null;
+        }
         if (typeof lastReadDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(lastReadDate)
             && lastReadDate <= endDate) {
             const overlapStart = new Date(lastReadDate + 'T12:00:00');
-            overlapStart.setDate(overlapStart.getDate() - 7);
+            overlapStart.setDate(overlapStart.getDate() - 1);
             const overlapDate = overlapStart.toISOString().slice(0, 10);
             if (overlapDate > effectiveStartDate) effectiveStartDate = overlapDate;
         }
