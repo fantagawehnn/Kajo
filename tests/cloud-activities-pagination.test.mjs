@@ -6,36 +6,53 @@ function createPagedClient(rows, options = {}) {
     let active = 0;
     let maxActive = 0;
     const requestedPageSizes = [];
-    const pageSize = options.pageSize || 100;
+    const cursors = [];
+    const pageSize = options.pageSize || 25;
     const client = {
         from(table) {
             assert.equal(table, 'activities');
             const query = {
                 head: false,
-                offset: 0,
-                limit: rows.length,
+                cursor: null,
+                limitValue: null,
                 select(_columns, config = {}) { this.head = config.head === true; return this; },
                 eq() { return this; },
+                gt(_column, value) { this.cursor = String(value); cursors.push(this.cursor); return this; },
                 order() { return this; },
-                range(offset, end) { this.offset = offset; this.limit = end - offset + 1; requestedPageSizes.push(this.limit); return this; },
+                limit(value) { this.limitValue = value; requestedPageSizes.push(value); return this; },
                 then(resolve, reject) {
-                    if (this.head) return Promise.resolve({ count: rows.length, data: null, error: null }).then(resolve, reject);
+                    if (this.head) {
+                        return Promise.resolve({ count: options.countOverride ?? rows.length, data: null, error: null }).then(resolve, reject);
+                    }
                     active++;
                     maxActive = Math.max(maxActive, active);
                     return new Promise(done => setTimeout(() => {
-                        const data = rows.slice(this.offset, this.offset + this.limit);
+                        let eligible = rows;
+                        if (this.cursor !== null) {
+                            eligible = eligible.filter(row => row.record_id > this.cursor);
+                        }
+                        if (options.omitRecordId !== undefined) {
+                            eligible = eligible.filter(row => row.record_id !== options.omitRecordId);
+                        }
+                        const data = eligible.slice(0, this.limitValue);
                         active--;
                         done({ count: null, data, error: null });
-                    }, 5)).then(resolve, reject);
+                    }, 1)).then(resolve, reject);
                 }
             };
             return query;
         }
     };
-    return { client, getMaxActive: () => maxActive, getRequestedPageSizes: () => requestedPageSizes, pageSize };
+    return {
+        client,
+        getMaxActive: () => maxActive,
+        getRequestedPageSizes: () => requestedPageSizes,
+        getCursors: () => cursors,
+        pageSize
+    };
 }
 
-test('fetches all activity pages with bounded parallelism and stable ordering', async () => {
+test('fetches all activity pages sequentially with stable keyset ordering', async () => {
     const rows = Array.from({ length: 1203 }, (_, index) => ({
         record_id: String(index).padStart(4, '0'),
         payload: { id: String(index), duration: index + 1 }
@@ -45,27 +62,18 @@ test('fetches all activity pages with bounded parallelism and stable ordering', 
     assert.equal(loaded.length, rows.length);
     assert.equal(loaded[0].record_id, '0000');
     assert.equal(loaded.at(-1).record_id, '1202');
-    assert.ok(fixture.getMaxActive() > 1);
-    assert.ok(fixture.getMaxActive() <= 2);
-    assert.ok(fixture.getRequestedPageSizes().every(size => size <= 100));
+    assert.equal(fixture.getMaxActive(), 1);
+    assert.ok(fixture.getRequestedPageSizes().every(size => size <= 50));
+    assert.ok(fixture.getCursors().length > 0);
+    assert.equal(fixture.getCursors()[0], '0024');
 });
 
-test('does not return a partial result when page count and rows disagree', async () => {
+test('does not return a partial result when count and keyset pages disagree', async () => {
     const rows = Array.from({ length: 7 }, (_, index) => ({
         record_id: String(index),
         payload: { id: String(index) }
     }));
-    const fixture = createPagedClient(rows);
-    const originalFrom = fixture.client.from.bind(fixture.client);
-    fixture.client.from = table => {
-        const query = originalFrom(table);
-        const originalThen = query.then.bind(query);
-        query.then = (resolve, reject) => originalThen(result => {
-            if (!query.head && query.offset === 0) result.data = result.data.slice(0, 2);
-            return resolve(result);
-        }, reject);
-        return query;
-    };
+    const fixture = createPagedClient(rows, { omitRecordId: '3' });
     await assert.rejects(
         fetchCloudActivities(fixture.client, 'user-1', { pageSize: 5 }),
         /nicht konsistent/
