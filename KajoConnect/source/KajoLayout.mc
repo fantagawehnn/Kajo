@@ -98,7 +98,8 @@ class KajoLayout {
         var margin = mUnit * 0.025;
         var radius = mRadius - margin;
         var dy = y - mCenterY;
-        if (radius <= 0 || Math.abs(dy) >= radius) { return 0; }
+        var absDy = dy < 0 ? -dy : dy;
+        if (radius <= 0 || absDy >= radius) { return 0; }
 
         var halfChordSquared = (radius * radius) - (dy * dy);
         if (halfChordSquared <= 0) { return 0; }
