@@ -820,10 +820,29 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
         () => appUserReady && activeAppUserId === userId && activationSequence === expectedActivationSequence,
         'Der Garmin-Gesundheitsdatenimport wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
     );
+
+    // Der automatische Tagesabgleich liest den historischen Bestand einmalig
+    // vollständig ein. Danach wird ab dem letzten erfolgreichen Lesedatum mit
+    // einem siebentägigen Überlappungsfenster weitergelesen. Das fängt verspätet
+    // gespeicherte Garmin-Datensätze auf, ohne bei jedem App-Start die gesamte
+    // Historie erneut zu übertragen. Manuelle Vorschau/Wiederherstellung bleibt
+    // davon unberührt.
+    let effectiveStartDate = startDate;
+    if (options.incremental === true) {
+        const lastReadDate = getUserLocalSetting('garminHealthRecordsReadThrough');
+        if (typeof lastReadDate === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(lastReadDate)
+            && lastReadDate <= endDate) {
+            const overlapStart = new Date(lastReadDate + 'T12:00:00');
+            overlapStart.setDate(overlapStart.getDate() - 7);
+            const overlapDate = overlapStart.toISOString().slice(0, 10);
+            if (overlapDate > effectiveStartDate) effectiveStartDate = overlapDate;
+        }
+    }
+
     const { count, error: countError } = await supabase.from('garmin_health_records')
         .select('record_date', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('record_date', startDate)
+        .gte('record_date', effectiveStartDate)
         .lte('record_date', endDate);
     if (countError) throw countError;
     ensureCurrentUser();
@@ -831,7 +850,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
     const rows = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_health_records')
         .select('data_type, record_date, payload')
         .eq('user_id', userId)
-        .gte('record_date', startDate)
+        .gte('record_date', effectiveStartDate)
         .lte('record_date', endDate)
         .order('record_date', { ascending: true })
         .range(offset, offset + limit - 1), {
@@ -932,6 +951,12 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             throw new Error('Die Werte wurden ermittelt, konnten aber nicht gespeichert werden. Bitte Kontoanmeldung prüfen.');
         }
         initEngine();
+    }
+    if (!dryRun && options.incremental === true) {
+        ensureCurrentUser();
+        // Cursor erst nach erfolgreichem Datenabruf und lokaler Verarbeitung
+        // fortschreiben. Bei Fehlern bleibt der nächste Versuch verlustfrei.
+        setUserLocalSetting('garminHealthRecordsReadThrough', endDate);
     }
     return { days: changedDays, values: importedValues, records: rows.length, dates: byDate.size, metrics: metricSummary };
 }
@@ -3601,7 +3626,7 @@ async function syncGarminTodayOnOpen(userId) {
                     : new Date(date + 'T12:00:00');
                 healthStart.setDate(healthStart.getDate() - zoneWindowDays + 1);
                 const healthStartDate = getLocalCalendarDate(healthStart);
-                const healthImport = await loadGarminHealthRecordsIntoCheckins(healthStartDate, date);
+                const healthImport = await loadGarminHealthRecordsIntoCheckins(healthStartDate, date, { incremental: true });
                 console.info('KAJO: Garmin-Tagesruhe-HF für den Trainingsverlauf geladen:', healthImport);
             } catch (healthHistoryError) {
                 console.warn('KAJO: Gespeicherte Garmin-Tagesruhe-HF konnten nicht vollständig geladen werden:', healthHistoryError);
