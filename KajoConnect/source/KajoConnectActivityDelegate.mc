@@ -31,7 +31,9 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
             return true;
         }
 
-        if (key == WatchUi.KEY_UP || key == WatchUi.KEY_MENU) {
+        // Mittlere/Menu-Taste: durch die konfigurierten Datenseiten wechseln.
+        if (key == WatchUi.KEY_MENU || key == WatchUi.KEY_ACTION_MENU ||
+            key == WatchUi.KEY_UP || key == WatchUi.KEY_PAGE) {
             mView.nextDisplayPage(1);
             return true;
         }
