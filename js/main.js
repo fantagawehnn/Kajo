@@ -22,7 +22,7 @@ import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUp
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
-import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
+import { fetchCloudSnapshot, fetchCloudSnapshotMetadata, saveCloudSnapshot } from './cloud-sync.js';
 import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } from './cloud-merge.js?v=1';
 import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=3';
 import { computePerformanceTimeline } from './calculations.js?v=1';
@@ -2686,6 +2686,26 @@ function persistCloudActivityCursor(syncState) {
 }
 
 /**
+ * Baut aus dem letzten bestätigten lokalen Basisstand die kompakte Form auf,
+ * die user_data in der Cloud tatsächlich speichert (Aktivitäten nur als IDs).
+ */
+function createCloudSnapshotFromBaseline(userId, baseline, metadata) {
+    if (!baseline || !Array.isArray(baseline.activities)
+        || metadata?.userId !== userId || !Number.isSafeInteger(metadata.version)
+        || metadata.version < 1) return null;
+    const withIds = withCloudActivityIds(
+        baseline,
+        getCloudActivityIds(userId, baseline.activities)
+    );
+    return {
+        userId,
+        data: { ...withIds, activities: [] },
+        version: metadata.version,
+        updatedAt: metadata.updatedAt || null
+    };
+}
+
+/**
  * Führt lokale und zentrale Datenstände zusammen. Aktivitäten bleiben in der
  * separaten activities-Tabelle; der user_data-Snapshot enthält nur ihre IDs.
  * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
@@ -2975,10 +2995,15 @@ async function flushCloudSync(options = {}) {
         }
 
         if (!isCurrentSync()) return;
-        const [latestCloud, baseline] = await Promise.all([
-            fetchCloudSnapshot(),
+        const [cloudMetadata, baseline] = await Promise.all([
+            fetchCloudSnapshotMetadata(),
             loadCloudSyncBaseline()
         ]);
+        if (!isCurrentSync()) return;
+        let latestCloud = cloudSyncVersion > 0
+            ? createCloudSnapshotFromBaseline(userId, baseline, cloudMetadata)
+            : null;
+        if (!latestCloud) latestCloud = await fetchCloudSnapshot();
         if (!isCurrentSync()) return;
         const activitySyncState = { cursor: getUserLocalSetting('cloudActivityCursor') || null };
         const latestActivities = await fetchCloudActivityState(userId, baseline, activitySyncState);
@@ -3085,13 +3110,13 @@ async function pullCloudChanges() {
     try {
         // Snapshot-Version und den kleinen Aktivitäts-Wasserstand prüfen.
         // Aktivitätsänderungen erhöhen nicht zwingend user_data.version.
-        const [latestCloud, activityWatermark] = await Promise.all([
-            fetchCloudSnapshot(),
+        const [latestCloudMetadata, activityWatermark] = await Promise.all([
+            fetchCloudSnapshotMetadata(),
             getCloudActivityWatermark(supabase, userId)
         ]);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId ||
             !appUserReady || activationSequence !== pullSequence) return;
-        if (latestCloud.userId !== userId) {
+        if (latestCloudMetadata.userId !== userId) {
             throw new Error('Das angemeldete Konto stimmt beim Cloud-Pull nicht überein.');
         }
         const activityCursor = getUserLocalSetting('cloudActivityCursor');
@@ -3102,7 +3127,7 @@ async function pullCloudChanges() {
         const activityChanged = Boolean(activityWatermark && (
             !Number.isFinite(cursorTime) || watermarkTime >= cursorTime - 60000
         ));
-        const snapshotChanged = Number(latestCloud.version || 0) !== Number(cloudSyncVersion || 0);
+        const snapshotChanged = Number(latestCloudMetadata.version || 0) !== Number(cloudSyncVersion || 0);
         if (!snapshotChanged && !activityChanged) return;
 
         await flushCloudSync({ skipTelemetry: true });
