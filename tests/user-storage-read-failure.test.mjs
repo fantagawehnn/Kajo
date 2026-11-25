@@ -8,8 +8,18 @@ globalThis.localStorage = {
     removeItem(key) { values.delete(key); }
 };
 
-// Simuliert einen Browser ohne verfügbares IndexedDB.
-globalThis.window = {};
+// IndexedDB ist vorhanden, aber der Datenbankzugriff schlägt fehl.
+globalThis.window = { indexedDB: {} };
+globalThis.indexedDB = {
+    open() {
+        const request = {};
+        setTimeout(() => {
+            request.error = new Error('Simulierter IndexedDB-Lesefehler');
+            request.onerror?.();
+        }, 0);
+        return request;
+    }
+};
 
 const { createUserStorage } = await import('../js/user-storage.js?indexeddb-read-fail-closed');
 
@@ -24,9 +34,17 @@ test('an IndexedDB read failure is not silently treated as an empty collection',
     );
 });
 
-test('a valid localStorage collection remains readable without IndexedDB', async () => {
+test('a valid localStorage collection remains readable when IndexedDB fails', async () => {
     const storage = createUserStorage('athlete-2');
     storage.setItem('activities', JSON.stringify([{ id: 'local-1' }]));
 
     assert.deepEqual(await storage.getCollection('activities'), [{ id: 'local-1' }]);
+});
+
+test('a browser without IndexedDB can still use localStorage as its only store', async () => {
+    globalThis.window = {};
+    const storage = createUserStorage('athlete-3');
+    assert.equal(await storage.getCollection('activities'), undefined);
+    storage.setItem('activities', JSON.stringify([{ id: 'local-only' }]));
+    assert.deepEqual(await storage.getCollection('activities'), [{ id: 'local-only' }]);
 });
