@@ -305,7 +305,7 @@ function renderTrendObservations(dates) {
     : '<p class="kajo-analysis-chart-note">Keine Erkrankungs- oder Verletzungstage dokumentiert. Daraus lässt sich kein unauffälliger Gesundheitsstatus ableiten.</p>';
   root.innerHTML = rows.length
     ? '<div class="kajo-analysis-availability">' + rows.join('') + '</div>' + eventNote +
-      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Garmin-Form und TSB bleiben getrennte Indikatoren.</p>'
+      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. HRV-Werte werden nur bei übereinstimmender Quelle, Messmethode und Einheit verglichen; bei einem Methodenwechsel bleiben abweichende Werte in diesem Vergleich offen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Garmin-Form und TSB bleiben getrennte Indikatoren.</p>'
     : '<p class="kajo-analysis-chart-note">Für zwei aufeinanderfolgende Sieben-Tage-Zeiträume liegen nicht genügend vergleichbare Messwerte vor. Es wird kein Trend abgeleitet.</p>' + eventNote;
 }
 
@@ -539,7 +539,7 @@ function renderLoadRecoveryAssociation(dates) {
     '</div>' +
     '<p class="kajo-analysis-chart-note">Die Aufteilung ist eine Sensitivitätsbetrachtung und keine statistische Kontrolle von Krankheit oder Verletzung. Ein fehlender Eintrag bedeutet nicht, dass die Person gesund war. Einträge an Belastungstag D oder Recovery-Tag D+1 kennzeichnen das jeweilige Wertepaar.</p>' +
     '<p class="kajo-analysis-chart-note">Nur vollständige Folgetag-Paare desselben Load-Modells (' + escapeHtml(pairs[0].mode) + ', ' + escapeHtml(pairs[0].unit) +
-    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>' +
+    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. HRV-Werte werden nur bei übereinstimmender Quelle, Messmethode und Einheit berücksichtigt. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>' +
     '<h3 class="kajo-analysis-subheading">Ergänzende Mehrtagesperspektive</h3>' + cumulativeSection;
 }
 
@@ -589,7 +589,7 @@ function renderNextDayContext(dates) {
     '<p class="kajo-analysis-chart-note">Datenabdeckung im Zeitraum: ' + pairs.length + ' Load-Folgetag-Paare · davon ' +
     hrvPairs.length + ' mit Garmin-HRV und ' + readinessPairs.length + ' mit ausreichend belegter Readiness. Angezeigt werden die letzten ' +
     Math.min(10, pairs.length) + ' Paare. Es werden nur aufeinanderfolgende Kalendertage innerhalb des gewählten Zeitraums verglichen.</p>' +
-    '<p class="kajo-analysis-chart-note">Dies ist eine zeitliche Gegenüberstellung (Load an Tag D, Recovery an Tag D+1), keine statistische Korrelation und kein Nachweis eines Trainingseffekts. Load-Modelle und Einheiten können sich unterscheiden und werden deshalb pro Tag ausgewiesen. Fehlende HRV- oder Readiness-Werte bleiben offen.</p>';
+    '<p class="kajo-analysis-chart-note">Dies ist eine zeitliche Gegenüberstellung (Load an Tag D, Recovery an Tag D+1), keine statistische Korrelation und kein Nachweis eines Trainingseffekts. Load-Modelle und Einheiten können sich unterscheiden und werden deshalb pro Tag ausgewiesen. HRV wird nur aus einer im Zeitraum einheitlichen Quelle, Messmethode und Einheit dargestellt. Fehlende HRV- oder Readiness-Werte bleiben offen.</p>';
 }
 function renderDataAvailability(dates) {
   const root = document.getElementById('analysis-data-availability');
