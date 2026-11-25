@@ -893,7 +893,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
             const overlapStart = new Date(lastReadDate + 'T12:00:00');
             overlapStart.setDate(overlapStart.getDate() - 1);
             const overlapDate = overlapStart.toISOString().slice(0, 10);
-            if (overlapDate > effectiveStartDate) effectiveStartDate = overlapDate;
+            effectiveStartDate = overlapDate;
         }
     }
 
