@@ -42,6 +42,7 @@ const COLLECTION_KEYS = {
     disabledIntervals: 'disabledIntervalsActivities',
     garminTelemetry: 'garminTelemetryStore',
     planned: 'plannedActivities',
+    standardWorkouts: 'standardWorkouts',
     checkins: 'dailyCheckins',
     health: 'healthLogs',
     races: 'races',
@@ -209,6 +210,7 @@ function defaultUserState() {
     state.disabledIntervalsActivities = [];
     state.garminTelemetryStore = {};
     state.plannedActivities = [];
+    state.standardWorkouts = [];
     state.dailyCheckins = {};
     state.healthLogs = {};
     state.races = [];
@@ -249,6 +251,7 @@ export async function loadStateForUser(userId) {
     );
     state.disabledIntervalsActivities = Array.isArray(loaded.disabledIntervalsActivities) ? loaded.disabledIntervalsActivities : [];
     state.plannedActivities = Array.isArray(loaded.plannedActivities) ? loaded.plannedActivities : [];
+    state.standardWorkouts = Array.isArray(loaded.standardWorkouts) ? loaded.standardWorkouts : [];
     state.dailyCheckins = loaded.dailyCheckins && typeof loaded.dailyCheckins === 'object' ? loaded.dailyCheckins : {};
     state.healthLogs = loaded.healthLogs && typeof loaded.healthLogs === 'object' ? loaded.healthLogs : {};
     state.races = Array.isArray(loaded.races) ? loaded.races : [];
@@ -292,6 +295,7 @@ export function getUserDataSnapshot(options = {}) {
         : stripGarminTelemetryFromActivities(state.rawActivities);
     return {
         activities, disabledIntervals: state.disabledIntervalsActivities || [], planned: state.plannedActivities,
+        standardWorkouts: Array.isArray(state.standardWorkouts) ? state.standardWorkouts : [],
         checkins: state.dailyCheckins, health: state.healthLogs, races: state.races,
         seasonPlan: state.seasonPlan || null,
         strength: state.strengthLogs, strengthPBs: state.strengthPBs || [],
@@ -335,6 +339,7 @@ export function applyCloudDataSnapshot(snapshot) {
     state.disabledIntervalsActivities = Array.isArray(snapshot.disabledIntervals) ? snapshot.disabledIntervals : [];
     state.garminTelemetryStore = {};
     state.plannedActivities = snapshot.planned;
+    state.standardWorkouts = Array.isArray(snapshot.standardWorkouts) ? snapshot.standardWorkouts : [];
     state.dailyCheckins = snapshot.checkins;
     state.healthLogs = snapshot.health;
     state.races = snapshot.races;
@@ -440,6 +445,7 @@ export function exportDatabaseBackup() {
         activities: state.rawActivities,
         disabledIntervals: state.disabledIntervalsActivities || [],
         planned: state.plannedActivities,
+        standardWorkouts: state.standardWorkouts || [],
         checkins: state.dailyCheckins,
         health: state.healthLogs,
         races: state.races,
@@ -477,7 +483,7 @@ export async function inspectDatabaseBackup(file) {
         throw new Error('Die Datei enthält keine erkennbaren Endurance-AI-Backupdaten.');
     }
 
-    const arrays = ['activities', 'planned', 'races', 'strength', 'strengthPBs', 'supplements'];
+    const arrays = ['activities', 'planned', 'standardWorkouts', 'races', 'strength', 'strengthPBs', 'supplements'];
     for (const key of arrays) {
         if (parsed[key] != null && !Array.isArray(parsed[key])) {
             throw new Error(`Ungültiges Backup: "${key}" muss eine Liste sein.`);
@@ -492,6 +498,7 @@ export async function inspectDatabaseBackup(file) {
     const counts = {
         activities: parsed.activities?.length ?? 0,
         planned: parsed.planned?.length ?? 0,
+        standardWorkouts: parsed.standardWorkouts?.length ?? 0,
         checkins: Object.keys(parsed.checkins || {}).length,
         health: Object.keys(parsed.health || {}).length,
         races: parsed.races?.length ?? 0,
@@ -534,9 +541,9 @@ export async function importDatabaseBackup(file, options = {}) {
     if (!file) return false;
     const parsed = JSON.parse(await file.text());
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Ungültiges Backup: JSON-Wurzel muss ein Objekt sein.');
-    const supported = ['activities', 'planned', 'checkins', 'health', 'races', 'strength', 'strengthPBs', 'supplements', 'profile', 'settings', 'seasonPlan'];
+    const supported = ['activities', 'planned', 'standardWorkouts', 'checkins', 'health', 'races', 'strength', 'strengthPBs', 'supplements', 'profile', 'settings', 'seasonPlan'];
     if (!supported.some(key => Object.prototype.hasOwnProperty.call(parsed, key))) throw new Error('Die Datei enthält keine erkennbaren Endurance-AI-Backupdaten.');
-    const arrays = ['activities', 'planned', 'races', 'strength', 'strengthPBs', 'supplements'];
+    const arrays = ['activities', 'planned', 'standardWorkouts', 'races', 'strength', 'strengthPBs', 'supplements'];
     for (const key of arrays) {
         if (parsed[key] != null && !Array.isArray(parsed[key])) throw new Error(`Ungültiges Backup: "${key}" muss eine Liste sein.`);
     }
@@ -549,7 +556,7 @@ export async function importDatabaseBackup(file, options = {}) {
     if (options.confirmed !== true && !confirm('Ausgewählte Datenbereiche wiederherstellen? Die entsprechenden vorhandenen Bereiche werden ersetzt.')) return false;
 
     const stateMap = {
-        activities: 'rawActivities', planned: 'plannedActivities', checkins: 'dailyCheckins',
+        activities: 'rawActivities', planned: 'plannedActivities', standardWorkouts: 'standardWorkouts', checkins: 'dailyCheckins',
         health: 'healthLogs', races: 'races', strength: 'strengthLogs',
         strengthPBs: 'strengthPBs', supplements: 'supplements', profile: 'profile', settings: 'settings', seasonPlan: 'seasonPlan'
     };
