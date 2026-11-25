@@ -193,3 +193,107 @@ export function savePlannedWorkout(){
     }else state.plannedActivities.push({id:'p-'+Date.now(),date,name,type,duration,targetTss,category,desc,...workoutDetails});
     saveDataToLocalStorage();closePlannedWorkoutModal();renderPlannedWorkouts();renderCalendar();
 }
+
+
+// ------------------------------------------------------------
+// Standardtrainings: wiederverwendbare, datumsunabhängige Vorlagen
+// ------------------------------------------------------------
+let editingStandardWorkoutId = null;
+
+export function renderStandardWorkouts() {
+    const root = document.getElementById('standard-workouts-list');
+    if (!root) return;
+    const workouts = Array.isArray(state.standardWorkouts) ? state.standardWorkouts : [];
+    if (!workouts.length) {
+        root.innerHTML = '<p class="rounded-xl border border-dashed border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-400">Noch keine Standardtrainings angelegt.</p>';
+        return;
+    }
+    root.innerHTML = workouts.map(workout => {
+        const id = encodeURIComponent(String(workout.id)).replace(/'/g, '%27');
+        const boat = workout.discipline || workout.type || 'Kanu';
+        return '<article class="rounded-xl border border-slate-800 bg-slate-950 p-3 flex flex-wrap items-center justify-between gap-3">' +
+            '<div class="min-w-0"><span class="text-[10px] font-semibold tracking-wide text-cyan-300">STANDARDTRAINING · ' + escapeHtml(boat) + '</span>' +
+            '<h4 class="text-sm font-bold text-white">' + escapeHtml(workout.name || 'Training') + '</h4>' +
+            '<p class="text-xs text-slate-400">' + escapeHtml(workout.duration == null ? 'Dauer offen' : workout.duration + ' min') + (workout.intensity ? ' · ' + escapeHtml(workout.intensity) : '') + '</p></div>' +
+            '<div class="flex items-center gap-3"><button type="button" onclick="openStandardWorkoutModal(\'' + id + '\')" class="text-xs text-cyan-400">Bearbeiten</button>' +
+            '<button type="button" onclick="deleteStandardWorkout(\'' + id + '\')" class="text-xs text-rose-400">Löschen</button></div></article>';
+    }).join('');
+}
+
+export function openStandardWorkoutModal(id = null) {
+    const item = id == null ? null : (state.standardWorkouts || []).find(workout => String(workout.id) === decodeURIComponent(String(id)));
+    if (id != null && !item) return;
+    editingStandardWorkoutId = item ? String(item.id) : null;
+    const values = {
+        'standard-workout-name': item?.name || '',
+        'standard-workout-discipline': item?.discipline || item?.type || 'K1',
+        'standard-workout-duration': item?.duration ?? 60,
+        'standard-workout-intensity': item?.intensity || '',
+        'standard-workout-objective': item?.objective || '',
+        'standard-workout-warmup': item?.warmup || '',
+        'standard-workout-main': item?.mainSet || '',
+        'standard-workout-cooldown': item?.cooldown || '',
+        'standard-workout-desc': item?.desc || ''
+    };
+    Object.entries(values).forEach(([fieldId, value]) => {
+        const field = document.getElementById(fieldId);
+        if (field) field.value = value;
+    });
+    const title = document.getElementById('standard-workout-modal-title');
+    if (title) title.textContent = item ? 'Standardtraining bearbeiten' : 'Standardtraining erstellen';
+    const modal = document.getElementById('standard-workout-modal');
+    modal?.classList.remove('hidden');
+}
+
+export function closeStandardWorkoutModal() {
+    document.getElementById('standard-workout-modal')?.classList.add('hidden');
+    editingStandardWorkoutId = null;
+}
+
+export function saveStandardWorkout() {
+    const value = id => document.getElementById(id)?.value?.trim() || '';
+    const name = value('standard-workout-name');
+    const discipline = value('standard-workout-discipline');
+    const durationRaw = value('standard-workout-duration');
+    const duration = durationRaw === '' ? null : Number(durationRaw);
+    if (!name) { alert('Bitte gib dem Standardtraining einen Namen.'); return; }
+    if (!['K1', 'C1', 'C2'].includes(discipline)) { alert('Bitte wähle K1, C1 oder C2.'); return; }
+    if (duration !== null && (!Number.isFinite(duration) || duration < 1 || duration > 1440)) { alert('Bitte gib eine gültige Dauer zwischen 1 und 1440 Minuten an.'); return; }
+    const workout = {
+        id: editingStandardWorkoutId || 'sw-' + Date.now(),
+        name: name.slice(0, 120),
+        type: discipline,
+        discipline,
+        duration,
+        intensity: value('standard-workout-intensity').slice(0, 120),
+        objective: value('standard-workout-objective').slice(0, 300),
+        warmup: value('standard-workout-warmup').slice(0, 300),
+        mainSet: value('standard-workout-main').slice(0, 500),
+        cooldown: value('standard-workout-cooldown').slice(0, 300),
+        desc: value('standard-workout-desc').slice(0, 300),
+        category: 'ga',
+        targetTss: null,
+        steps: [],
+        isStandardWorkout: true
+    };
+    if (!Array.isArray(state.standardWorkouts)) state.standardWorkouts = [];
+    if (editingStandardWorkoutId) {
+        const index = state.standardWorkouts.findIndex(entry => String(entry.id) === editingStandardWorkoutId);
+        if (index < 0) return;
+        state.standardWorkouts[index] = { ...state.standardWorkouts[index], ...workout };
+    } else {
+        state.standardWorkouts.push(workout);
+    }
+    saveDataToLocalStorage();
+    closeStandardWorkoutModal();
+    renderStandardWorkouts();
+}
+
+export function deleteStandardWorkout(id) {
+    const decodedId = decodeURIComponent(String(id));
+    const workout = (state.standardWorkouts || []).find(entry => String(entry.id) === decodedId);
+    if (!workout || !confirm('Standardtraining "' + (workout.name || 'Training') + '" löschen?')) return;
+    state.standardWorkouts = state.standardWorkouts.filter(entry => String(entry.id) !== decodedId);
+    saveDataToLocalStorage();
+    renderStandardWorkouts();
+}
