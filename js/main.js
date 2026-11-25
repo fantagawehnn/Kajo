@@ -2839,34 +2839,6 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             activities: []
         };
 
-        if (cloudSnapshotsEqual(cloudPayload, cloud.data)) {
-            const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
-            const latestLocal = withCloudActivityIds(
-                latestLocalData,
-                getCloudActivityIds(userId, Array.isArray(latestLocalData.activities) ? latestLocalData.activities : [])
-            );
-            if (!cloudSnapshotsEqual(latestLocal, local)) {
-                baselineSnapshot = mergedSnapshot;
-                cloud = await fetchCloudSnapshot();
-                ensureCurrent();
-                cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
-                ensureCurrent();
-                continue;
-            }
-            ensureCurrent();
-            applyReconciledCloudSnapshot(mergedSnapshot);
-            await saveCloudSyncBaseline(mergedSnapshot);
-            ensureCurrent();
-            persistCloudActivityCursor(activitySyncState);
-            return {
-                ok: true,
-                version: cloud.version,
-                snapshot: mergedSnapshot,
-                activityUpload,
-                uploaded: false
-            };
-        }
-
         const cloudPatch = createCloudSnapshotPatch(cloudPayload, cloud.data);
         if (!Object.keys(cloudPatch).length) {
             // Aktivitätszeilen können bereits übertragen worden sein, auch wenn
@@ -2890,6 +2862,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             persistCloudActivityCursor(activitySyncState);
             return { ok: true, version: cloud.version, snapshot: mergedSnapshot, activityUpload, uploaded: false };
         }
+
         const saved = await saveCloudSnapshotPatch(cloudPatch, cloud.version, userId);
         ensureCurrent();
         if (saved.saved) {
