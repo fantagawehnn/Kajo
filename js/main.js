@@ -3744,7 +3744,8 @@ async function syncGarminTodayOnOpen(userId) {
 
         if (!isCurrentSync()) return;
         const partial = health?.status === 'partial' || health?.status === 'rate_limited'
-            || health?.rateLimited === true || Number(health?.failed || 0) > 0
+            || health?.status === 'in_progress' || health?.rateLimited === true
+            || Number(health?.failed || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
             || telemetryCloud.failed;
         if (partial) {
