@@ -5,7 +5,8 @@ import { fetchCloudActivities } from '../js/cloud-activities.js';
 function createPagedClient(rows, options = {}) {
     let active = 0;
     let maxActive = 0;
-    const pageSize = options.pageSize || 500;
+    const requestedPageSizes = [];
+    const pageSize = options.pageSize || 100;
     const client = {
         from(table) {
             assert.equal(table, 'activities');
@@ -16,7 +17,7 @@ function createPagedClient(rows, options = {}) {
                 select(_columns, config = {}) { this.head = config.head === true; return this; },
                 eq() { return this; },
                 order() { return this; },
-                range(offset, end) { this.offset = offset; this.limit = end - offset + 1; return this; },
+                range(offset, end) { this.offset = offset; this.limit = end - offset + 1; requestedPageSizes.push(this.limit); return this; },
                 then(resolve, reject) {
                     if (this.head) return Promise.resolve({ count: rows.length, data: null, error: null }).then(resolve, reject);
                     active++;
@@ -31,7 +32,7 @@ function createPagedClient(rows, options = {}) {
             return query;
         }
     };
-    return { client, getMaxActive: () => maxActive, pageSize };
+    return { client, getMaxActive: () => maxActive, getRequestedPageSizes: () => requestedPageSizes, pageSize };
 }
 
 test('fetches all activity pages with bounded parallelism and stable ordering', async () => {
@@ -45,7 +46,8 @@ test('fetches all activity pages with bounded parallelism and stable ordering', 
     assert.equal(loaded[0].record_id, '0000');
     assert.equal(loaded.at(-1).record_id, '1202');
     assert.ok(fixture.getMaxActive() > 1);
-    assert.ok(fixture.getMaxActive() <= 3);
+    assert.ok(fixture.getMaxActive() <= 2);
+    assert.ok(fixture.getRequestedPageSizes().every(size => size <= 100));
 });
 
 test('does not return a partial result when page count and rows disagree', async () => {
