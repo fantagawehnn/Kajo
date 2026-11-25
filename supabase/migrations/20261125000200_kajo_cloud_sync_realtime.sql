@@ -26,5 +26,3 @@ begin
 end;
 $migration$;
 
-comment on table public.user_data is
-    'KAJO versioned account snapshot; included in supabase_realtime for authenticated cross-device change notifications.';
