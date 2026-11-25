@@ -45,7 +45,7 @@ import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActi
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=4';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=6';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getPendingLocalSync, clearPendingLocalSync, flushLocalPersistence, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=6';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds, loadGarminTelemetryMetadataForActivityIds } from './garmin-cloud-telemetry.js?v=6';
@@ -2922,9 +2922,16 @@ async function flushCloudSync(options = {}) {
     cloudSyncInFlight = true;
     cloudSyncPending = false;
     let saveSucceeded = false;
+    let pendingOutboxRecord = null;
     setCloudSyncStatus('Cloud-Speicherung läuft …');
 
     try {
+        // Erst sicherstellen, dass alle zuvor lokal angenommenen Änderungen
+        // dauerhaft in IndexedDB liegen, bevor der Cloud-Stand bestätigt wird.
+        await flushLocalPersistence();
+        if (!isCurrentSync()) return;
+        pendingOutboxRecord = await getPendingLocalSync(userId);
+        if (!isCurrentSync()) return;
         // Rohtelemetrie wird getrennt übertragen. Reine Hintergrund-Pulls
         // überspringen diesen Upload, damit sie keine unnötigen Garmin-Requests auslösen.
         let telemetryUpload = { uploaded: 0, failed: false };
@@ -2976,6 +2983,16 @@ async function flushCloudSync(options = {}) {
         cloudSyncVersion = reconciliation.version;
         cloudSyncBlocked = false;
         saveSucceeded = true;
+        if (pendingOutboxRecord && isCurrentSync()) {
+            try {
+                await clearPendingLocalSync(pendingOutboxRecord, userId);
+            } catch (outboxError) {
+                // Ein nicht gelöschter Marker führt höchstens zu einem erneuten
+                // sicheren Abgleich; lokale Daten bleiben unangetastet.
+                console.warn('Bestätigter lokaler Sync-Auftrag konnte nicht entfernt werden:', outboxError);
+            }
+        }
+        if (!isCurrentSync()) return;
         const activityUpload = reconciliation.activityUpload || { uploaded: 0 };
         setCloudSyncStatus(telemetryUpload.failed
             ? 'App-Daten abgeglichen; Garmin-Telemetrie wartet auf erneuten Versuch.'
