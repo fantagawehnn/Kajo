@@ -82,10 +82,10 @@ class KajoConnectWorkoutListView extends WatchUi.View {
             mWorkoutLayout.drawTextBox(dc, cx, 158, (unit * 0.78).toNumber(), 32,
                 "KEINE TRAININGS", Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
             mWorkoutLayout.drawTextBox(dc, cx, 195, (unit * 0.78).toNumber(), 28,
-                "IN KAJO SIND KEINE EINHEITEN GESPEICHERT",
+                "KEINE EINHEITEN GESPEICHERT",
                 Graphics.FONT_XTINY, 0x98A5AB);
             mWorkoutLayout.drawTextBox(dc, cx, 342, (unit * 0.78).toNumber(), 20,
-                "ZURÜCK · UNTERE TASTE", Graphics.FONT_XTINY, 0x25D3CB);
+                "UNTEN · ZURÜCK", Graphics.FONT_XTINY, 0x25D3CB);
             return;
         }
 
@@ -131,7 +131,7 @@ class KajoConnectWorkoutListView extends WatchUi.View {
         var rangeLabel = firstLabel + "–" + lastIndex.toString() +
             " / " + mSessions.size().toString();
         mWorkoutLayout.drawTextBox(dc, cx, 345, (unit * 0.78).toNumber(), 18,
-            rangeLabel + " · OBEN/UNTEN WÄHLEN",
+            rangeLabel + " · OBEN/UNTEN",
             Graphics.FONT_XTINY, 0x25D3CB);
     }
 }
