@@ -59,17 +59,35 @@ function median(values) {
   const middle = Math.floor(sorted.length/2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle-1]+sorted[middle])/2;
 }
-function personalBaseline(key, date) {
+function hrvMeasurementIdentity(record) {
+  const source = record?.measurementSources?.garminHrv || record?.measurementSources?.hrv;
+  if (!source || typeof source !== 'object') {
+    return record?.garminHrv != null ? 'garmin:unspecified:ms' : 'legacy:unspecified:ms';
+  }
+  return [
+    String(source.source || 'unknown').toLowerCase(),
+    String(source.metric || 'unspecified').toLowerCase(),
+    String(source.unit || 'ms').toLowerCase()
+  ].join(':');
+}
+
+export function getPersonalHealthBaseline(key, date, checkins = state.dailyCheckins) {
   const end = new Date(date + 'T12:00:00');
   if (!Number.isFinite(end.getTime())) return null;
   const start = new Date(end);
   start.setDate(start.getDate()-90);
   const from = dateKey(start);
-  const values = Object.entries(state.dailyCheckins || {})
-    .filter(([day]) => day < date && day >= from)
+  const currentIdentity = key === 'hrv' ? hrvMeasurementIdentity(checkins?.[date]) : null;
+  const values = Object.entries(checkins || {})
+    .filter(([day, row]) => day < date && day >= from
+      && (key !== 'hrv' || hrvMeasurementIdentity(row) === currentIdentity))
     .map(([,row]) => metricValue(row,key))
     .filter(valid);
   return values.length >= 5 ? median(values) : null;
+}
+
+function personalBaseline(key, date) {
+  return getPersonalHealthBaseline(key, date, state.dailyCheckins);
 }
 function rangeWindow() {
   const end = todayKey();
