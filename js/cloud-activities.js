@@ -202,7 +202,7 @@ export async function fetchCloudActivities(client, userId, options = {}) {
         for (;;) {
             let query = client
                 .from('activities')
-                .select('record_id,payload')
+                .select('record_id,payload,updated_at')
                 .eq('user_id', userId);
             if (lastRecordId !== null) query = query.gt('record_id', lastRecordId);
             const { data, error } = await query
