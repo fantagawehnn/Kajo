@@ -4,6 +4,9 @@ export function getActivationUiState(userId, localReadyUserId, readyUserId) {
     const ready = signedIn && readyUserId === userId;
     return {
         visible: localReady || ready,
-        readOnly: localReady && !ready
+        // The account-scoped local state is the editable working copy.
+        // Reconciliation is guarded against concurrent local changes.
+        readOnly: false,
+        syncing: localReady && !ready
     };
 }

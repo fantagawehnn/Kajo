@@ -129,7 +129,7 @@ async function syncGarminHealthDay(
       // later (including cycle data) can still be picked up.
       const { data: existing, error: existingError } = await admin
         .from("garmin_health_records")
-        .select("payload")
+        .select("payload,fetched_at")
         .eq("user_id", userId)
         .eq("data_type", endpoint.type)
         .eq("record_date", date)
@@ -137,11 +137,28 @@ async function syncGarminHealthDay(
         .maybeSingle();
       if (existingError) throw existingError;
       const isNoDataMarker = JSON.stringify(existing?.payload) === JSON.stringify({ no_data: true });
-      const noDataFetchedAt = typeof existing?.fetched_at === "string" ? Date.parse(existing.fetched_at) : NaN;
-      const noDataNeedsRetry = isNoDataMarker &&
-        (!Number.isFinite(noDataFetchedAt) || Date.now() - noDataFetchedAt >= 30 * 24 * 60 * 60 * 1000);
+      const fetchedAt = typeof existing?.fetched_at === "string" ? Date.parse(existing.fetched_at) : NaN;
+      const ageMs = Number.isFinite(fetchedAt) ? Math.max(0, Date.now() - fetchedAt) : Number.POSITIVE_INFINITY;
+      // HRV and sleep values may arrive after the first morning request. Retry
+      // empty markers after six hours rather than waiting a month.
+      const lateArrivingTypes = new Set(["hrv_daily", "hrv_detail", "sleep_detail", "sleep_summaries"]);
+      const noDataRetryAfterMs = lateArrivingTypes.has(endpoint.type)
+        ? 6 * 60 * 60 * 1000
+        : 30 * 24 * 60 * 60 * 1000;
+      const noDataNeedsRetry = isNoDataMarker && ageMs >= noDataRetryAfterMs;
+      // Daily aggregates change during the day. Refresh only these after six
+      // hours; successful static records are not fetched again unnecessarily.
+      const refreshDuringDayTypes = new Set([
+        "daily_summary", "heart_rate", "stress", "steps", "hydration",
+        "body_battery", "spo2", "nutrition"
+      ]);
+      const dynamicNeedsRefresh = Boolean(existing?.payload) &&
+        !isEmptyGarminPayload(existing.payload) &&
+        !isNoDataMarker &&
+        refreshDuringDayTypes.has(endpoint.type) &&
+        ageMs >= 6 * 60 * 60 * 1000;
       if (!forceRefresh && existing?.payload && !isEmptyGarminPayload(existing.payload) &&
-          (!isNoDataMarker || !noDataNeedsRetry)) {
+          (!isNoDataMarker || !noDataNeedsRetry) && !dynamicNeedsRefresh) {
         results.push({ dataType: endpoint.type, status: "already_saved" });
         continue;
       }
@@ -1291,7 +1308,7 @@ Deno.serve(async (req) => {
       const activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false);
       // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
       // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
-      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, true);
+      const healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, false);
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 

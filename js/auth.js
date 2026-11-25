@@ -27,7 +27,7 @@ activationNotice.id = 'auth-local-sync-notice';
 activationNotice.className = 'hidden mb-4 rounded-xl border border-sky-500/30 bg-sky-950/40 px-4 py-3 text-sm text-sky-100';
 activationNotice.setAttribute('role', 'status');
 activationNotice.setAttribute('aria-live', 'polite');
-activationNotice.textContent = 'Lokale Datenansicht – der Cloud-Abgleich läuft. Die App ist bis zum Abschluss vorübergehend schreibgeschützt.';
+activationNotice.textContent = 'Lokale Daten sind verfügbar. Änderungen werden sofort lokal gespeichert; der Cloud-Abgleich läuft im Hintergrund.';
 appMain.prepend(activationNotice);
 
 function withAuthTimeout(promise, label, timeoutMs = 20000) {
@@ -58,14 +58,14 @@ function showApp(session) {
         readyUserId = null;
     }
     currentAuthUserId = nextUserId;
-    const { visible, readOnly } = getActivationUiState(
+    const { visible, readOnly, syncing } = getActivationUiState(
         currentAuthUserId,
         localReadyUserId,
         readyUserId
     );
 
-    // Lokale Daten dürfen früh erscheinen, bleiben bis zum abgeschlossenen
-    // Cloud-Abgleich aber vollständig schreibgeschützt.
+    // Sobald der kontogebundene lokale Zustand geladen ist, bleibt die App
+    // bedienbar; der Cloud-Abgleich läuft parallel im Hintergrund.
     authScreen.classList.toggle('hidden', signedIn);
     authBootScreen?.classList.toggle('hidden', !signedIn || visible);
     appNavigation.classList.toggle('hidden', !visible);
@@ -75,7 +75,7 @@ function showApp(session) {
     appMain.inert = readOnly;
     if (mobileHeader) mobileHeader.inert = readOnly;
     appMain.setAttribute('aria-busy', String(readOnly));
-    activationNotice.classList.toggle('hidden', !readOnly);
+    activationNotice.classList.toggle('hidden', !syncing);
     if (signedIn) userEmail.textContent = session.user.email || 'Angemeldet';
 }
 
@@ -193,16 +193,12 @@ if (!supabase) {
         if (error) setMessage(error.message || 'Abmeldung fehlgeschlagen.', true);
     });
 
+    // onAuthStateChange liefert bereits INITIAL_SESSION. Ein zusätzlicher
+    // getSession()-Aufruf parallel zum App-Einstieg kann bei abgelaufenem Token
+    // unnötige, konkurrierende Refresh-Versuche auslösen.
     supabase.auth.onAuthStateChange((_event, session) => showApp(session));
-    supabase.auth.getSession().then(({ data, error }) => {
-        if (error) {
-            handleAuthCheckError(error);
-            return;
-        }
-        showApp(data?.session || null);
-    }).catch(handleAuthCheckError);
 
-    // Auch Fehler der parallelen Sitzungsprüfung in main.js beenden den endlosen Startbildschirm.
+    // Auch Fehler der zentralen Sitzungsprüfung in main.js beenden den Startbildschirm.
     window.addEventListener('endurance:auth-check-error', (event) => {
         handleAuthCheckError(event.detail?.error || new Error('Die Anmeldung konnte nicht überprüft werden.'));
     });

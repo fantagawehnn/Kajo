@@ -22,9 +22,9 @@ import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUp
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
-import { fetchCloudSnapshot, saveCloudSnapshot } from './cloud-sync.js';
-import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } from './cloud-merge.js?v=1';
-import { fetchCloudActivities, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=2';
+import { fetchCloudSnapshot, fetchCloudSnapshotMetadata, saveCloudSnapshot, saveCloudSnapshotPatch } from './cloud-sync.js?v=2';
+import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds, createCloudSnapshotPatch } from './cloud-merge.js?v=2';
+import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=3';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
@@ -45,7 +45,7 @@ import { openDailyHrActivityModal, closeDailyHrActivityModal, previewDailyHrActi
 import { addRace, deleteRace, renderRaces, toggleRaceModal, openNextRaceDetail, closeRaceDetail, toggleRaceResultsForm, addRaceResult, deleteRaceResult } from './competitions.js?v=5';
 import { closeStrengthModal, deleteStrengthLog, openStrengthModal, renderStrengthView, saveStrengthWorkout } from './strength.js?v=4';
 import { initializeSettings, openSettingsModal, closeSettingsModal, addCustomSport, addCustomCategory, saveSettings, saveTelemetrySettings, selectSettingsColor, previewHeartRateZones, renderCalendarSeasonSettings, saveCalendarSeason, deleteCalendarSeason, newCalendarSeason, editCalendarSeason, setCalendarSeasonActive } from './settings.js?v=13';
-import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=6';
+import { exportDatabaseBackup, inspectDatabaseBackup, importDatabaseBackup, loadStateForUser, deactivateUserStorage, saveDataToLocalStorage, saveActivitiesToLocalStorage, getUserLocalSetting, setUserLocalSetting, getUserDataSnapshot, applyCloudDataSnapshot, loadCloudSyncBaseline, saveCloudSyncBaseline, getPendingLocalSync, clearPendingLocalSync, flushLocalPersistence, getGarminTelemetryRecordsForCloud, mergeGarminTelemetryRecords, clearLocalGarminTelemetryCache } from './storage.js?v=6';
 import { analyzeSnapshotSizes } from './storage-diagnostics.js?v=1';
 import { renderRoutesView, saveTrainingRoute, editTrainingRoute, deleteTrainingRoute, resetTrainingRouteForm, setActivityRoute, setActivityRouteAssignment, setActivityRouteRuns, saveTrainingWaterSection, renameTrainingWater, deleteTrainingWater, renameTrainingSection, deleteTrainingSection, setTrainingRouteFilter, toggleTrainingRouteForm, toggleTrainingWatersManager } from './routes.js?v=4';
 import { extractGarminTelemetryRecords, syncGarminTelemetryToCloud, uploadMissingGarminTelemetry, loadGarminTelemetryForActivityIds, loadGarminTelemetryMetadataForActivityIds } from './garmin-cloud-telemetry.js?v=6';
@@ -2639,6 +2639,7 @@ let cloudSyncVersion = 0;
 let cloudSyncUserId = null;
 let cloudSyncTimer = null;
 let cloudSyncInFlight = false;
+let localDataRevision = 0;
 let cloudSyncPending = false;
 let cloudSyncBlocked = false;
 let cloudSyncApplyingRemote = false;
@@ -2661,12 +2662,56 @@ function applyReconciledCloudSnapshot(snapshot) {
 }
 
 /**
+ * Lädt den vollständigen Cloud-Aktivitätsstand aus der letzten bestätigten
+ * Basis plus Delta. Nur beim Erstabgleich oder fehlender Basis wird vollständig
+ * gelesen. Der Cursor wird erst nach erfolgreicher Reconciliation gespeichert.
+ */
+async function fetchCloudActivityState(userId, baselineSnapshot, syncState = {}) {
+    const savedCursor = syncState.cursor || getUserLocalSetting('cloudActivityCursor');
+    if (savedCursor && baselineSnapshot && Array.isArray(baselineSnapshot.activities)) {
+        const delta = await fetchCloudActivityDelta(supabase, userId, savedCursor);
+        syncState.cursor = delta.cursor || savedCursor;
+        syncState.incremental = true;
+        return mergeCloudActivityRows(userId, baselineSnapshot.activities, delta.rows);
+    }
+
+    const fullRows = await fetchCloudActivities(supabase, userId);
+    syncState.cursor = fullRows.syncCursor || null;
+    syncState.incremental = false;
+    return fullRows;
+}
+
+function persistCloudActivityCursor(syncState) {
+    if (syncState?.cursor) setUserLocalSetting('cloudActivityCursor', syncState.cursor);
+}
+
+/**
+ * Baut aus dem letzten bestätigten lokalen Basisstand die kompakte Form auf,
+ * die user_data in der Cloud tatsächlich speichert (Aktivitäten nur als IDs).
+ */
+function createCloudSnapshotFromBaseline(userId, baseline, metadata) {
+    if (!baseline || !Array.isArray(baseline.activities)
+        || metadata?.userId !== userId || !Number.isSafeInteger(metadata.version)
+        || metadata.version < 1) return null;
+    const withIds = withCloudActivityIds(
+        baseline,
+        getCloudActivityIds(userId, baseline.activities)
+    );
+    return {
+        userId,
+        data: { ...withIds, activities: [] },
+        version: metadata.version,
+        updatedAt: metadata.updatedAt || null
+    };
+}
+
+/**
  * Führt lokale und zentrale Datenstände zusammen. Aktivitäten bleiben in der
  * separaten activities-Tabelle; der user_data-Snapshot enthält nur ihre IDs.
  * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
  * derselbe Drei-Wege-Abgleich wiederholt.
  */
-async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId) {
+async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId, activitySyncState = {}) {
     const ensureCurrent = createActivationGuard(
         isCurrent,
         'Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
@@ -2794,7 +2839,12 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             activities: []
         };
 
-        if (cloudSnapshotsEqual(cloudPayload, cloud.data)) {
+        // Neue Konten besitzen noch keinen user_data-Datensatz (Version 0).
+        // Für den Erst-Upload bleibt deshalb der bestehende Insert-/CAS-Pfad aktiv.
+        const cloudPatch = createCloudSnapshotPatch(cloudPayload, cloud.data || {});
+        if (!Object.keys(cloudPatch).length) {
+            // Aktivitätszeilen können bereits übertragen worden sein, auch wenn
+            // der JSON-Snapshot keine weiteren Änderungen benötigt.
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
             const latestLocal = withCloudActivityIds(
                 latestLocalData,
@@ -2804,24 +2854,20 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
                 ensureCurrent();
-                cloudActivities = await fetchCloudActivities(supabase, userId);
+                cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
                 ensureCurrent();
                 continue;
             }
-            ensureCurrent();
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
             ensureCurrent();
-            return {
-                ok: true,
-                version: cloud.version,
-                snapshot: mergedSnapshot,
-                activityUpload,
-                uploaded: false
-            };
+            persistCloudActivityCursor(activitySyncState);
+            return { ok: true, version: cloud.version, snapshot: mergedSnapshot, activityUpload, uploaded: false };
         }
 
-        const saved = await saveCloudSnapshot(cloudPayload, cloud.version, userId);
+        const saved = cloud.version < 1
+            ? await saveCloudSnapshot(cloudPayload, cloud.version, userId)
+            : await saveCloudSnapshotPatch(cloudPatch, cloud.version, userId);
         ensureCurrent();
         if (saved.saved) {
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
@@ -2836,7 +2882,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 ensureCurrent();
                 cloud = await fetchCloudSnapshot();
                 ensureCurrent();
-                cloudActivities = await fetchCloudActivities(supabase, userId);
+                cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
                 ensureCurrent();
                 continue;
             }
@@ -2844,6 +2890,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             applyReconciledCloudSnapshot(mergedSnapshot);
             await saveCloudSyncBaseline(mergedSnapshot);
             ensureCurrent();
+            persistCloudActivityCursor(activitySyncState);
             return {
                 ok: true,
                 version: saved.currentVersion,
@@ -2858,7 +2905,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         if (cloud.userId !== userId) {
             throw new Error('Das angemeldete Konto hat sich während des Datenabgleichs geändert.');
         }
-        cloudActivities = await fetchCloudActivities(supabase, userId);
+        cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
         ensureCurrent();
     }
 
@@ -2914,14 +2961,23 @@ async function flushCloudSync(options = {}) {
 
     const userId = activeAppUserId;
     const syncActivationSequence = activationSequence;
+    const syncDataRevision = localDataRevision;
     const isCurrentSync = () => activeAppUserId === userId && cloudSyncUserId === userId
-        && appUserReady && activationSequence === syncActivationSequence;
+        && appUserReady && activationSequence === syncActivationSequence
+        && localDataRevision === syncDataRevision;
     cloudSyncInFlight = true;
     cloudSyncPending = false;
     let saveSucceeded = false;
+    let pendingOutboxRecord = null;
     setCloudSyncStatus('Cloud-Speicherung läuft …');
 
     try {
+        // Erst sicherstellen, dass alle zuvor lokal angenommenen Änderungen
+        // dauerhaft in IndexedDB liegen, bevor der Cloud-Stand bestätigt wird.
+        await flushLocalPersistence();
+        if (!isCurrentSync()) return;
+        pendingOutboxRecord = await getPendingLocalSync(userId);
+        if (!isCurrentSync()) return;
         // Rohtelemetrie wird getrennt übertragen. Reine Hintergrund-Pulls
         // überspringen diesen Upload, damit sie keine unnötigen Garmin-Requests auslösen.
         let telemetryUpload = { uploaded: 0, failed: false };
@@ -2939,13 +2995,22 @@ async function flushCloudSync(options = {}) {
         }
 
         if (!isCurrentSync()) return;
-        const [latestCloud, latestActivities, baseline] = await Promise.all([
-            fetchCloudSnapshot(),
-            fetchCloudActivities(supabase, userId),
+        const [cloudMetadata, baseline] = await Promise.all([
+            fetchCloudSnapshotMetadata(),
             loadCloudSyncBaseline()
         ]);
         if (!isCurrentSync()) return;
-        const reconciliation = await reconcileCloudState(userId, latestCloud, latestActivities, baseline, isCurrentSync);
+        let latestCloud = cloudSyncVersion > 0
+            ? createCloudSnapshotFromBaseline(userId, baseline, cloudMetadata)
+            : null;
+        if (!latestCloud) latestCloud = await fetchCloudSnapshot();
+        if (!isCurrentSync()) return;
+        const activitySyncState = { cursor: getUserLocalSetting('cloudActivityCursor') || null };
+        const latestActivities = await fetchCloudActivityState(userId, baseline, activitySyncState);
+        if (!isCurrentSync()) return;
+        const reconciliation = await reconcileCloudState(
+            userId, latestCloud, latestActivities, baseline, isCurrentSync, activitySyncState
+        );
         if (!isCurrentSync()) return;
         if (!reconciliation.ok) {
             if (reconciliation.empty) {
@@ -2973,6 +3038,20 @@ async function flushCloudSync(options = {}) {
         cloudSyncVersion = reconciliation.version;
         cloudSyncBlocked = false;
         saveSucceeded = true;
+        if (pendingOutboxRecord && isCurrentSync() && !options.skipTelemetry && !telemetryUpload.failed) {
+            try {
+                await clearPendingLocalSync(pendingOutboxRecord, userId);
+            } catch (outboxError) {
+                // Ein nicht gelöschter Marker führt höchstens zu einem erneuten
+                // sicheren Abgleich; lokale Daten bleiben unangetastet.
+                console.warn('Bestätigter lokaler Sync-Auftrag konnte nicht entfernt werden:', outboxError);
+            }
+        } else if (pendingOutboxRecord && isCurrentSync() && options.skipTelemetry) {
+            // Ein reiner Cloud-Pull hat Garmin-Telemetrie bewusst ausgelassen.
+            // Den Auftrag danach einmal vollständig (inkl. Telemetrie) abgleichen.
+            scheduleCloudSync(userId);
+        }
+        if (!isCurrentSync()) return;
         const activityUpload = reconciliation.activityUpload || { uploaded: 0 };
         setCloudSyncStatus(telemetryUpload.failed
             ? 'App-Daten abgeglichen; Garmin-Telemetrie wartet auf erneuten Versuch.'
@@ -3000,6 +3079,7 @@ async function flushCloudSync(options = {}) {
 
 window.addEventListener('endurance:data-saved', event => {
     if (cloudSyncApplyingRemote) return;
+    localDataRevision += 1;
     scheduleCloudSync(event.detail?.userId || null);
 });
 
@@ -3021,24 +3101,35 @@ window.addEventListener('endurance:user-ready', event => {
 
 let cloudPullInFlight = false;
 
-async function pullCloudChanges() {
+async function pullCloudChanges(options = {}) {
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId ||
         cloudSyncBlocked || cloudSyncInFlight || cloudPullInFlight) return;
     cloudPullInFlight = true;
     const userId = activeAppUserId;
     const pullSequence = activationSequence;
     try {
-        // Häufige Hintergrund-Pulls (Fokus/Tabwechsel/60-Sekunden-Intervall)
-        // prüfen zunächst nur die kleine Snapshot-Version. Der vollständige,
-        // teure Abruf aller Aktivitäten ist nur nötig, wenn ein anderes Gerät
-        // tatsächlich eine neue Cloud-Version gespeichert hat.
-        const latestCloud = await fetchCloudSnapshot();
+        // Snapshot-Version und den kleinen Aktivitäts-Wasserstand prüfen.
+        // Aktivitätsänderungen erhöhen nicht zwingend user_data.version.
+        const [latestCloudMetadata, activityWatermark] = await Promise.all([
+            fetchCloudSnapshotMetadata(),
+            getCloudActivityWatermark(supabase, userId)
+        ]);
         if (activeAppUserId !== userId || cloudSyncUserId !== userId ||
             !appUserReady || activationSequence !== pullSequence) return;
-        if (latestCloud.userId !== userId) {
+        if (latestCloudMetadata.userId !== userId) {
             throw new Error('Das angemeldete Konto stimmt beim Cloud-Pull nicht überein.');
         }
-        if (Number(latestCloud.version || 0) === Number(cloudSyncVersion || 0)) return;
+        const activityCursor = getUserLocalSetting('cloudActivityCursor');
+        const watermarkTime = Date.parse(activityWatermark);
+        const cursorTime = Date.parse(activityCursor);
+        // Der Watermark-Vergleich löst nur bei einem tatsächlich neueren
+        // Zeitstempel einen Abruf aus. Der Delta-Query selbst überlappt 60 s,
+        // damit verspätet sichtbare Commits trotzdem mitgeladen werden.
+        const activityChanged = Boolean(activityWatermark && (
+            !Number.isFinite(cursorTime) || watermarkTime > cursorTime
+        ));
+        const snapshotChanged = Number(latestCloudMetadata.version || 0) !== Number(cloudSyncVersion || 0);
+        if (!snapshotChanged && !activityChanged && !options.forceActivity) return;
 
         await flushCloudSync({ skipTelemetry: true });
     } catch (error) {
@@ -3049,6 +3140,65 @@ async function pullCloudChanges() {
         cloudPullInFlight = false;
     }
 }
+
+let cloudRealtimeChannel = null;
+let cloudRealtimeUserId = null;
+
+function stopCloudRealtime() {
+    const channel = cloudRealtimeChannel;
+    cloudRealtimeChannel = null;
+    cloudRealtimeUserId = null;
+    if (channel && supabase?.removeChannel) {
+        Promise.resolve(supabase.removeChannel(channel)).catch(error => {
+            console.warn('KAJO Realtime-Kanal konnte nicht sauber beendet werden:', error);
+        });
+    }
+}
+
+function startCloudRealtime(userId) {
+    if (!supabase?.channel || !userId || !appUserReady || activeAppUserId !== userId) return;
+    if (cloudRealtimeChannel && cloudRealtimeUserId === userId) return;
+    stopCloudRealtime();
+
+    const isCurrentChannel = () => cloudRealtimeUserId === userId
+        && activeAppUserId === userId && appUserReady;
+    const channel = supabase.channel('kajo-cloud-sync:' + userId)
+        // Nur kompakte Sync-Metadaten abonnieren. user_data und activities
+        // enthalten persönliche Daten und werden niemals per Realtime gestreamt.
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'kajo_sync_state',
+            filter: 'user_id=eq.' + userId
+        }, payload => {
+            if (!isCurrentChannel()) return;
+            const change = payload?.new?.user_id ? payload.new : payload?.old;
+            if (change?.user_id !== userId) return;
+            if (change.scope === 'snapshot'
+                && Number(change.version || 0) > Number(cloudSyncVersion || 0)) {
+                void pullCloudChanges();
+            } else if (change.scope === 'activities') {
+                void pullCloudChanges({ forceActivity: true });
+            }
+        })
+        .subscribe((status, error) => {
+            if (!isCurrentChannel()) return;
+            if (status === 'SUBSCRIBED') {
+                console.info('KAJO: Realtime-Cloudbenachrichtigungen für das aktive Konto verbunden.');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                // Der bestehende 60-Sekunden-Watermark-Poll bleibt als Fallback aktiv.
+                console.warn('KAJO Realtime ist derzeit nicht verfügbar; der automatische Hintergrundabgleich bleibt über die regelmäßige Prüfung aktiv.', error || status);
+            }
+        });
+
+    cloudRealtimeChannel = channel;
+    cloudRealtimeUserId = userId;
+}
+
+window.addEventListener('endurance:user-ready', event => {
+    const userId = event.detail?.userId;
+    if (userId) startCloudRealtime(userId);
+});
 
 // Erkennt Änderungen eines zweiten Geräts auch dann, wenn auf diesem Gerät
 // gerade keine neue Eingabe erfolgt.
@@ -3568,15 +3718,13 @@ function withActivationTimeout(promise, label, timeoutMs = 30000) {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
-async function handleAuthSession(session) {
+async function handleAuthSession(session, authEvent = null) {
     let userId = session?.user?.id || null;
 
-    // Auth-Events können kurzzeitig eine leere Session liefern, obwohl Supabase
-    // bereits wieder eine gültige Session im Client hält. Eine solche verspätete
-    // oder transiente Null-Session darf den aktiven Benutzerspeicher nicht
-    // deaktivieren. Vor dem Abmelden wird deshalb der aktuelle Auth-Status
-    // außerhalb des synchronen onAuthStateChange-Callbacks erneut geprüft.
-    if (!userId && supabase) {
+    // INITIAL_SESSION und SIGNED_OUT sind bereits definitive Zustandsmeldungen
+    // des Auth-Clients. Nur bei späteren transienten Null-Events prüfen wir
+    // vorsichtshalber erneut; so entsteht beim Start kein zweiter Refresh-Request.
+    if (!userId && supabase && authEvent !== 'INITIAL_SESSION' && authEvent !== 'SIGNED_OUT') {
         try {
             const { data, error } = await supabase.auth.getSession();
             if (error) throw error;
@@ -3597,6 +3745,7 @@ async function handleAuthSession(session) {
 
     if (userId && activeAppUserId === userId && (appUserReady || activationPromise)) return;
     const sequence = ++activationSequence;
+    stopCloudRealtime();
 
     // Ein laufender Ersttransfer gehört immer genau zu einer Aktivierung.
     // Beim Konto-/Sitzungswechsel darf er weder die neue UI sperren noch deren
@@ -3641,23 +3790,32 @@ async function handleAuthSession(session) {
     deactivateUserStorage();
 
     activationPromise = (async () => {
+        let localStateReady = false;
         try {
             // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
             // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
             // nach erfolgreicher Prüfung beider Ergebnisse zusammengeführt.
             // Den lokalen Kontostand zuerst bereitstellen. Die unabhängigen
             // Cloud-/Baseline-Lesevorgänge laufen parallel weiter, blockieren aber
-            // nicht mehr die erste lokale, ausdrücklich schreibgeschützte Ansicht.
+            // nicht mehr die erste lokale Ansicht.
             const localStatePromise = withActivationTimeout(
                 loadStateForUser(userId),
                 'Das Laden deiner lokalen Kontodaten',
                 20000
             );
-            const cloudLoadPromise = Promise.all([
-                withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
-                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000),
-                withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
-            ]);
+            const cloudLoadPromise = (async () => {
+                const [cloudSnapshot, baseline] = await Promise.all([
+                    withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
+                    withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
+                ]);
+                const activitySyncState = { cursor: getUserLocalSetting('cloudActivityCursor') || null };
+                const cloudActivities = await withActivationTimeout(
+                    fetchCloudActivityState(userId, baseline, activitySyncState),
+                    'Das Laden der geänderten Cloud-Aktivitäten',
+                    45000
+                );
+                return [cloudSnapshot, cloudActivities, baseline, activitySyncState];
+            })();
             // Cloud-Fehler werden beim späteren await weitergereicht. Der Handler
             // verhindert eine unhandled rejection, falls der lokale Store länger lädt.
             void cloudLoadPromise.catch(() => {});
@@ -3676,10 +3834,11 @@ async function handleAuthSession(session) {
             } catch (localRenderError) {
                 console.error('Die lokale KAJO-Ansicht konnte nicht vollständig aufgebaut werden:', localRenderError);
             }
+            localStateReady = true;
             window.dispatchEvent(new CustomEvent('endurance:user-local-ready', { detail: { userId } }));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
-            const [cloudSnapshot, cloudActivities, baseline] = await cloudLoadPromise;
+            const [cloudSnapshot, cloudActivities, baseline, activitySyncState] = await cloudLoadPromise;
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             // Lokale Rohtelemetrie vor dem Anwenden des maßgeblichen Cloud-Snapshots
             // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
@@ -3698,12 +3857,15 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
+                const reconciliationDataRevision = localDataRevision;
                 const reconciliation = await reconcileCloudState(
                     userId,
                     cloudSnapshot,
                     cloudActivities,
                     baseline,
                     () => sequence === activationSequence && activeAppUserId === userId
+                        && localDataRevision === reconciliationDataRevision,
+                    activitySyncState
                 );
                 if (!reconciliation.ok) {
                     cloudSyncBlocked = true;
@@ -3761,6 +3923,10 @@ async function handleAuthSession(session) {
 
             appUserReady = true;
             window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+            void getPendingLocalSync(userId).then(record => {
+                if (record && sequence === activationSequence && activeAppUserId === userId
+                    && appUserReady && !cloudSyncBlocked) scheduleCloudSync(userId);
+            }).catch(error => console.warn('Lokale Sync-Warteschlange konnte nicht geprüft werden:', error));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
             // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
@@ -3837,12 +4003,21 @@ async function handleAuthSession(session) {
             });
             if (sequence === activationSequence) {
                 if (appUserReady) {
-                    // Nachgelagerte optionale Schritte (z. B. Profilabgleich) dürfen
-                    // einen bereits aktivierten Benutzer-Speicher nicht deaktivieren.
-                    // Andernfalls bleibt die App sichtbar, aber alle lokalen Saves
-                    // schlagen mit "kein aktiver Datenspeicher" fehl.
+                    // Nachgelagerte optionale Schritte dürfen einen bereits
+                    // aktivierten Benutzer-Speicher nicht deaktivieren.
                     console.warn('Nachgelagerter Kontoabgleich fehlgeschlagen; die aktive Anmeldung und der Benutzerspeicher bleiben erhalten.', error);
                     setCloudSyncStatus('Konto aktiv; ein nachgelagerter Abgleich ist fehlgeschlagen. Deine Einträge können weiterhin gespeichert werden.');
+                } else if (localStateReady && activeAppUserId === userId) {
+                    // Lokale Daten sind bereits kontogebunden geladen. Ein
+                    // fehlgeschlagener Cloud-Start darf sie nicht deaktivieren.
+                    appUserReady = true;
+                    cloudSyncUserId = userId;
+                    cloudSyncVersion = 0;
+                    cloudSyncBlocked = false;
+                    setCloudSyncStatus('Offline-Modus: Änderungen werden lokal gesichert; der Cloud-Abgleich wird automatisch erneut versucht.');
+                    window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+                    void pullCloudChanges();
+                    console.warn('KAJO bleibt mit lokal geladenen Daten aktiv; der initiale Cloud-Abgleich wird später erneut versucht.', error);
                 } else {
                     appUserReady = false;
                     deactivateUserStorage();
@@ -3863,21 +4038,12 @@ async function handleAuthSession(session) {
 }
 
 if (supabase) {
-    supabase.auth.onAuthStateChange((_event, session) => {
+    // Supabase liefert beim Abonnieren INITIAL_SESSION mit dem gespeicherten
+    // Sitzungszustand. Ein zusätzlicher getSession()-Aufruf ist unnötig und kann
+    // bei abgelaufenen Tokens parallele Refresh-Versuche erzeugen.
+    supabase.auth.onAuthStateChange((event, session) => {
         // Keine asynchronen Supabase-Aufrufe direkt im Auth-Callback starten.
-        setTimeout(() => handleAuthSession(session), 0);
-    });
-
-    supabase.auth.getSession().then(({ data, error }) => {
-        if (error) {
-            console.error('Anmeldestatus konnte nicht geprüft werden:', error);
-            window.dispatchEvent(new CustomEvent('endurance:auth-check-error', { detail: { error } }));
-            return;
-        }
-        handleAuthSession(data?.session || null);
-    }).catch((error) => {
-        console.error('Anmeldestatus konnte nicht geprüft werden:', error);
-        window.dispatchEvent(new CustomEvent('endurance:auth-check-error', { detail: { error } }));
+        setTimeout(() => handleAuthSession(session, event), 0);
     });
 } else {
     deactivateUserStorage();

@@ -184,3 +184,20 @@ export function withCloudActivityIds(snapshot, activityIds) {
 export function cloudSnapshotsEqual(left, right) {
     return equal(left, right);
 }
+
+/**
+ * Ermittelt einen flachen JSON-Patch, der den aktuellen Cloud-Snapshot in
+ * den gewünschten Zustand überführt. Nicht geänderte Top-Level-Bereiche
+ * werden bewusst ausgelassen und bleiben serverseitig unangetastet.
+ */
+export function createCloudSnapshotPatch(targetSnapshot, currentSnapshot) {
+    if (!targetSnapshot || typeof targetSnapshot !== 'object' || Array.isArray(targetSnapshot)
+        || !currentSnapshot || typeof currentSnapshot !== 'object' || Array.isArray(currentSnapshot)) {
+        throw new Error('Für einen Cloud-Patch werden zwei gültige Snapshot-Objekte benötigt.');
+    }
+    const patch = {};
+    for (const [key, value] of Object.entries(targetSnapshot)) {
+        if (!equal(value, currentSnapshot[key])) patch[key] = value;
+    }
+    return patch;
+}

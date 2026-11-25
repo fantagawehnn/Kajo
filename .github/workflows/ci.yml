@@ -32,6 +32,7 @@ jobs:
         run: |
           node --check js/storage.js
           node --check js/cloud-activities.js
+          node --check js/cloud-sync.js
           node --check js/user-storage.js
           node --check js/local-db.js
           node --check js/garmin-cloud-telemetry.js
@@ -94,6 +95,9 @@ jobs:
       - name: Run activation UI state tests
         run: node --experimental-default-type=module --test tests/activation-ui-state.test.mjs
 
+      - name: Run Supabase auth bootstrap tests
+        run: node --experimental-default-type=module --test tests/auth-session-bootstrap.test.mjs
+
       - name: Run account storage activation race tests
         run: node --experimental-default-type=module --test tests/storage-activation-race.test.mjs
 
@@ -107,6 +111,12 @@ jobs:
 
       - name: Run conflict-aware cloud merge tests
         run: node --experimental-default-type=module --test tests/cloud-merge.test.mjs
+
+      - name: Run cloud snapshot patch tests
+        run: node --experimental-default-type=module --test tests/cloud-sync-patch.test.mjs
+
+      - name: Run cloud sync migration safety tests
+        run: node --experimental-default-type=module --test tests/cloud-sync-migrations.test.mjs
 
       - name: Run season planning tests
         run: node --experimental-default-type=module --test tests/season-planning.test.mjs

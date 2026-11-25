@@ -61,6 +61,81 @@ export async function fetchCloudSnapshot() {
 }
 
 /**
+ * Liest nur Versionsmetadaten des Cloud-Snapshots. Damit kann die App prüfen,
+ * ob ihr bestätigter lokaler Basisstand noch aktuell ist, ohne das gesamte
+ * user_data-JSON bei jedem lokalen Speichervorgang erneut zu übertragen.
+ */
+export async function fetchCloudSnapshotMetadata() {
+    requireSupabase();
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw cloudSnapshotQueryError(authError, 'Cloud-Snapshot-Metadaten: angemeldeten Benutzer prüfen (auth.getUser)');
+    const userId = authData?.user?.id;
+    if (!userId) throw new Error('Für die Cloud-Synchronisierung ist eine Anmeldung erforderlich.');
+
+    const { data, error } = await supabase
+        .from('user_data')
+        .select('user_id, version, updated_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (error) throw cloudSnapshotQueryError(error, 'Cloud-Snapshot-Metadaten: Version lesen');
+    return {
+        userId,
+        version: Number(data?.version || 0),
+        updatedAt: data?.updated_at || null
+    };
+}
+
+/**
+ * Aktualisiert ausschließlich die übergebenen Snapshot-Bereiche.
+ * Die Datenbankfunktion führt den Patch atomar mit Versionsprüfung aus;
+ * nicht übergebene Bereiche bleiben unverändert.
+ */
+export async function saveCloudSnapshotPatch(patch, expectedVersion, expectedUserId) {
+    requireSupabase();
+    validateSnapshot(patch);
+    if (!Object.keys(patch).length) {
+        throw new Error('Ein leerer Cloud-Patch muss nicht übertragen werden.');
+    }
+    if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1) {
+        throw new Error('Für einen Cloud-Patch ist eine bestehende Version erforderlich.');
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw cloudSnapshotQueryError(authError, 'Cloud-Patch: angemeldeten Benutzer prüfen (auth.getUser)');
+    if (!authData?.user?.id) throw new Error('Für die Cloud-Synchronisierung ist eine Anmeldung erforderlich.');
+    if (expectedUserId && authData.user.id !== expectedUserId) {
+        throw new Error('Das angemeldete Konto hat sich geändert. Der Patch wurde zum Schutz deiner Daten abgebrochen.');
+    }
+
+    const { data, error } = await supabase.rpc('patch_user_data', {
+        p_patch: patch,
+        p_expected_version: expectedVersion
+    });
+    if (error) throw cloudSnapshotQueryError(error, 'Cloud-Patch: Datensammlung aktualisieren');
+
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result || typeof result.saved !== 'boolean') {
+        throw new Error('Die Cloud hat eine unerwartete Antwort auf den Patch-Speichervorgang zurückgegeben.');
+    }
+    if (!result.saved) {
+        return {
+            saved: false,
+            conflict: true,
+            currentVersion: Number(result.current_version || 0),
+            currentUpdatedAt: result.current_updated_at || null
+        };
+    }
+    return {
+        saved: true,
+        conflict: false,
+        currentVersion: Number(result.current_version),
+        currentUpdatedAt: result.current_updated_at || null
+    };
+}
+
+/**
  * Speichert nur dann, wenn die erwartete Version noch aktuell ist.
  * Bei einem Konflikt wird NICHT automatisch überschrieben.
  */

@@ -9,7 +9,7 @@
  * Supabase user.id verwenden. Ein Accountwechsel benötigt eine neue Instanz.
  */
 
-import { getLocalCollection, putLocalCollections, deleteLocalCollection } from './local-db.js';
+import { getLocalCollection, putLocalCollections, putLocalCollectionsWithOutbox, getLocalOutboxRecord, clearLocalOutboxRecord, deleteLocalCollection } from './local-db.js';
 
 function requireUserId(userId) {
     if (typeof userId !== 'string' || !userId.trim()) {
@@ -67,7 +67,7 @@ export function createUserStorage(userId) {
             }
         },
 
-        async saveCollections(collections) {
+        async saveCollections(collections, options = {}) {
             if (!collections || typeof collections !== 'object' || Array.isArray(collections)) {
                 throw new Error('Die zu speichernden Datensammlungen müssen als Objekt übergeben werden.');
             }
@@ -99,8 +99,11 @@ export function createUserStorage(userId) {
                 indexedCollections[storageKey] = value;
             }
 
-            await putLocalCollections(indexedCollections);
+            if (options.queueCloudSync === false) await putLocalCollections(indexedCollections);
+            else await putLocalCollectionsWithOutbox(id, indexedCollections);
         },
+        async getPendingSync() { return await getLocalOutboxRecord(id); },
+        async clearPendingSync(expectedRecord) { return await clearLocalOutboxRecord(id, expectedRecord); },
 
         async removeCollection(collection) {
             const storageKey = getUserStorageKey(id, collection);
