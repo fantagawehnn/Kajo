@@ -725,7 +725,20 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         const seenAtById = parseGarminActivitySeenMap(
             getUserLocalSetting('garminActivityCloudSeenAtById')
         );
-        const rowsNeedingPayload = getGarminActivityRowsNeedingPayload(metadata, seenAtById);
+        const locallyAvailableGarminIds = new Set();
+        for (const activity of state.rawActivities) {
+            const sourceId = activity?.sourceRefs?.garminActivityId ??
+                activity?.garminData?.activityId ??
+                (String(activity?.id ?? '').startsWith('garmin-')
+                    ? String(activity.id).slice('garmin-'.length)
+                    : null);
+            if (sourceId != null && String(sourceId)) locallyAvailableGarminIds.add(String(sourceId));
+        }
+        const rowsNeedingPayload = getGarminActivityRowsNeedingPayload(
+            metadata,
+            seenAtById,
+            locallyAvailableGarminIds
+        );
         const changedIds = rowsNeedingPayload
             .map(row => String(row.garmin_activity_id))
             .filter(Boolean);
