@@ -17,7 +17,7 @@ test('unchanged Garmin previews are excluded from database upserts', () => {
     const incoming = [{
         garmin_activity_id: '123',
         activity: { activityId: 123, activityName: 'Paddling' },
-        start_time: '2026-11-25T09:00:00.000Z',
+        start_time: '2026-11-25T09:00:00+00:00',
         activity_type: 'kayaking',
         duration_seconds: 3600,
         distance_meters: 12000,
