@@ -19,10 +19,12 @@ class KajoConnectRecordingEngine {
                 return false;
             }
 
+            // Kayaking bleibt als FIT-Sportart erhalten. Der optionale
+            // Whitewater-SubSport wird weggelassen, da er im Simulator bzw.
+            // auf einzelnen Geräte-Firmwares die Sitzungsanlage verhindern kann.
             mSession = ActivityRecording.createSession({
                 :name => "KAJO " + boatClass,
-                :sport => Activity.SPORT_KAYAKING,
-                :subSport => Activity.SUB_SPORT_WHITEWATER
+                :sport => Activity.SPORT_KAYAKING
             });
 
             if (mSession.isRecording()) {
