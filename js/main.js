@@ -2839,7 +2839,9 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             activities: []
         };
 
-        const cloudPatch = createCloudSnapshotPatch(cloudPayload, cloud.data);
+        // Neue Konten besitzen noch keinen user_data-Datensatz (Version 0).
+        // Für den Erst-Upload bleibt deshalb der bestehende Insert-/CAS-Pfad aktiv.
+        const cloudPatch = createCloudSnapshotPatch(cloudPayload, cloud.data || {});
         if (!Object.keys(cloudPatch).length) {
             // Aktivitätszeilen können bereits übertragen worden sein, auch wenn
             // der JSON-Snapshot keine weiteren Änderungen benötigt.
@@ -2863,7 +2865,9 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             return { ok: true, version: cloud.version, snapshot: mergedSnapshot, activityUpload, uploaded: false };
         }
 
-        const saved = await saveCloudSnapshotPatch(cloudPatch, cloud.version, userId);
+        const saved = cloud.version < 1
+            ? await saveCloudSnapshot(cloudPayload, cloud.version, userId)
+            : await saveCloudSnapshotPatch(cloudPatch, cloud.version, userId);
         ensureCurrent();
         if (saved.saved) {
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
