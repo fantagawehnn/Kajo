@@ -3786,6 +3786,10 @@ async function handleAuthSession(session) {
 
             appUserReady = true;
             window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+            void getPendingLocalSync(userId).then(record => {
+                if (record && sequence === activationSequence && activeAppUserId === userId
+                    && appUserReady && !cloudSyncBlocked) scheduleCloudSync(userId);
+            }).catch(error => console.warn('Lokale Sync-Warteschlange konnte nicht geprüft werden:', error));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
             // Garmin-Aktivitätsvorschauen sind für den ersten lokalen App-Aufbau
