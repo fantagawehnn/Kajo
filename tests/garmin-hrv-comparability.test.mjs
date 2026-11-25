@@ -36,3 +36,13 @@ test('comparable HRV series returns no values when no valid Garmin HRV is availa
     assert.equal(result.identity, null);
     assert.deepEqual(result.values, [null]);
 });
+
+test('comparable HRV series also excludes a different unit for the same metric', () => {
+    const checkins = {
+        '2026-02-01': { garminHrv: 48, measurementSources: { garminHrv: { source: 'garmin', metric: 'rmssd', unit: 'ms' } } },
+        '2026-02-02': { garminHrv: 0.05, measurementSources: { garminHrv: { source: 'garmin', metric: 'rmssd', unit: 's' } } }
+    };
+    const result = getComparableGarminHrvSeries(checkins, ['2026-02-01', '2026-02-02']);
+    assert.equal(result.identity, 'garmin:rmssd:s');
+    assert.deepEqual(result.values, [null, 0.05]);
+});
