@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAdaptiveWeekReview } from '../js/adaptive-week-review.js';
+import { buildAdaptiveWeekReview, areSameAdaptiveSports } from '../js/adaptive-week-review.js';
 
 const plan = {
     weekStartDate: '2026-11-16',
@@ -151,8 +151,7 @@ test('manual activity links require the same identifiable sport', () => {
     assert.equal(review.unplannedActivities.length, 1);
 });
 
-test('sport comparison accepts equivalent aliases but rejects unknown sports', async () => {
-    const { areSameAdaptiveSports } = await import('../js/adaptive-week-review.js');
+test('sport comparison accepts equivalent aliases but rejects unknown sports', () => {
     assert.equal(areSameAdaptiveSports({ discipline: 'C1', type: 'Kayaking' }, { type: 'Kayaking', discipline: 'C1' }), true);
     assert.equal(areSameAdaptiveSports({ discipline: 'K1', type: 'Kayaking' }, { type: 'Run' }), false);
     assert.equal(areSameAdaptiveSports({ type: 'Other' }, { type: 'Other' }), false);
