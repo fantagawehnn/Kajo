@@ -2983,7 +2983,7 @@ async function flushCloudSync(options = {}) {
         cloudSyncVersion = reconciliation.version;
         cloudSyncBlocked = false;
         saveSucceeded = true;
-        if (pendingOutboxRecord && isCurrentSync()) {
+        if (pendingOutboxRecord && isCurrentSync() && !options.skipTelemetry && !telemetryUpload.failed) {
             try {
                 await clearPendingLocalSync(pendingOutboxRecord, userId);
             } catch (outboxError) {
@@ -2991,6 +2991,10 @@ async function flushCloudSync(options = {}) {
                 // sicheren Abgleich; lokale Daten bleiben unangetastet.
                 console.warn('Bestätigter lokaler Sync-Auftrag konnte nicht entfernt werden:', outboxError);
             }
+        } else if (pendingOutboxRecord && isCurrentSync() && options.skipTelemetry) {
+            // Ein reiner Cloud-Pull hat Garmin-Telemetrie bewusst ausgelassen.
+            // Den Auftrag danach einmal vollständig (inkl. Telemetrie) abgleichen.
+            scheduleCloudSync(userId);
         }
         if (!isCurrentSync()) return;
         const activityUpload = reconciliation.activityUpload || { uploaded: 0 };
