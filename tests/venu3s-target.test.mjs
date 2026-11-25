@@ -44,7 +44,7 @@ test("standard workouts are synchronized and shown separately from dated session
 });
 
 test("a selected standard workout keeps its instructions through preview and recording start", () => {
-  assert.match(workoutListView, /mHomeView\.startActivityWithWorkout\(mSessions\[mSelectedIndex\\] as Lang\.Dictionary\)/);
+  assert.match(workoutListView, /mHomeView\.startActivityWithWorkout\(mSessions\[mSelectedIndex\] as Lang\.Dictionary\)/);
   assert.match(homeView, /function startActivityWithWorkout\(workout as Lang\.Dictionary\)[\s\S]*?showWorkoutDetails\(workout\)/);
   assert.match(workoutView, /function startSelectedWorkout\(\)[\s\S]*?mParent\.beginWorkout\(mWorkout\)/);
   assert.match(homeView, /function beginWorkout\(workout as Lang\.Dictionary\)[\s\S]*?openActivityView\(workout\)/);
