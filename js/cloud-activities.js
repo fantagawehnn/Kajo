@@ -149,8 +149,10 @@ export async function fetchCloudActivities(client, userId, options = {}) {
     requireClient(client);
     if (!userId) throw new Error('Für den Cloud-Abruf fehlt die Benutzer-ID.');
 
-    const pageSize = Math.max(1, Math.floor(Number(options.pageSize) || 500));
-    const concurrency = Math.min(4, Math.max(1, Math.floor(Number(options.concurrency) || 3)));
+    // Activity payloads can be large (including long interval/workout arrays).
+    // Keep each PostgREST JSON aggregation small enough to avoid statement timeouts.
+    const pageSize = Math.max(1, Math.floor(Number(options.pageSize) || 100));
+    const concurrency = Math.min(2, Math.max(1, Math.floor(Number(options.concurrency) || 2)));
     const { count, error: countError } = await client
         .from('activities')
         .select('record_id', { count: 'exact', head: true })
