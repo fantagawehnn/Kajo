@@ -49,7 +49,8 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_UP \|\| key == WatchUi\.KEY_MENU[\s\S]*?nextDisplayPage\(1\)/);
   assert.match(homeDelegate, /extends WatchUi\.InputDelegate/);
-  assert.match(homeDelegate, /key == WatchUi\.KEY_MENU \|\| key == WatchUi\.KEY_ACTION_MENU[\s\S]*?openSettings\(\)/);
+  assert.match(homeDelegate, /key == WatchUi\.KEY_MENU[\s\S]*?scrollPlan\(1\)/);
+  assert.match(homeDelegate, /key == WatchUi\.KEY_ACTION_MENU[\s\S]*?openSettings\(\)/);
   assert.match(homeDelegate, /key == WatchUi\.KEY_ESC[\s\S]*?scrollPlan\(1\)/);
   assert.match(workoutDelegate, /extends WatchUi\.InputDelegate/);
   assert.match(settingsRootDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
@@ -126,7 +127,8 @@ test("Activity screen uses shared bounded text and reserves a separate bottom co
   assert.match(activityView, /mScreenWidth = dc\.getWidth\(\)/);
   assert.match(activityView, /drawActivityDashboard\(dc, cx, hrNow, elapsed, distance, speedNow/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
-  assert.match(homeView, /HEUTE KEIN TRAINING/);
+  assert.match(homeView, /Kein Training geplant/);
+  assert.doesNotMatch(homeView, /HEUTE KEIN TRAINING/);
   assert.match(homeView, /if \(todaySessions\.size\(\) == 0\)/);
   assert.match(homeView, /mStartLeft = 0/);
 });
@@ -224,29 +226,27 @@ test("custom metric layouts relocate the wide center tile when a lower side tile
   assert.match(activityView, /if \(centerMetric != "" && hasLowerSideMetric\)/);
 });
 
-test("home screen prioritizes one large start action and separates secondary navigation", () => {
+test("home screen uses a Garmin-style list, hides empty workout icon, and cycles boat class in place", () => {
   assert.match(homeView, /function getTodaysSessions\(\)/);
   assert.match(homeView, /sessionDate\.toString\(\) == today/);
   assert.match(homeView, /sessionType\.toString\(\) != "RestDay"/);
   assert.match(homeView, /var todaySessions = getTodaysSessions\(\)/);
   assert.match(homeView, /todaySessions\.size\(\) == 1/);
   assert.match(homeView, /todaySessions\.size\(\) > 1/);
-  assert.match(homeView, /"TRAINING STARTEN"/);
-  assert.match(homeView, /"TRAININGSPLAN"/);
-  assert.match(homeView, /"FREIES TRAINING"/);
-  assert.match(homeView, /mStartTop = 94/);
-  assert.match(homeView, /mStartBottom = 198/);
-  assert.match(homeView, /mPlanTop = 212/);
-  assert.match(homeView, /mPlanBottom = 260/);
-  assert.match(homeView, /mFreeTrainingTop = 270/);
-  assert.match(homeView, /mFreeTrainingBottom = 318/);
-  assert.match(homeView, /mMenuRowStep = 58/);
-  assert.match(homeView, /x >= mStartLeft && x <= mStartRight/);
-  assert.match(homeView, /startActivity\(\)/);
-  assert.match(homeView, /mStartLeft = mainLeft/);
-  assert.match(homeView, /mSecondaryLeft = secondaryLeft/);
-  assert.doesNotMatch(homeView, /if \(y >= 76 && y <= 106/);
-  assert.doesNotMatch(homeView, /var labels = \["HEUTE", "GESPEICHERT", "FREI TRAINIEREN"\]/);
+  assert.match(homeView, /"Kein Training geplant"/);
+  assert.match(homeView, /"Trainings"/);
+  assert.match(homeView, /"Freies Training"/);
+  assert.match(homeView, /function cycleBoatClass\(\)/);
+  assert.match(homeView, /mSelectedBoat == "K1"[\s\S]*?mSelectedBoat = "C1"/);
+  assert.match(homeView, /mSelectedBoat == "C1"[\s\S]*?mSelectedBoat = "C2"/);
+  assert.match(homeView, /mSelectedBoat = "K1"/);
+  assert.match(homeView, /cycleBoatClass\(\)/);
+  assert.match(homeView, /mStartLeft = 0/);
+  assert.match(homeView, /mBoatTop/);
+  assert.match(homeView, /mBoatBottom/);
+  assert.doesNotMatch(homeView, /"TRAININGSPLAN"/);
+  assert.doesNotMatch(homeView, /"HEUTE KEIN TRAINING"/);
+  assert.doesNotMatch(homeView, /fillTriangle/);
 });
 
 test("shared text boxes reject text taller than their assigned vertical region", () => {
