@@ -42,6 +42,7 @@ function createPagedClient(rows, options = {}) {
 test('fetches all activity pages sequentially with stable keyset ordering', async () => {
     const rows = Array.from({ length: 1203 }, (_, index) => ({
         record_id: String(index).padStart(4, '0'),
+        updated_at: new Date(Date.UTC(2026, 0, 1, 0, 0, index)).toISOString(),
         payload: { id: String(index), duration: index + 1 }
     }));
     const fixture = createPagedClient(rows);
@@ -49,6 +50,7 @@ test('fetches all activity pages sequentially with stable keyset ordering', asyn
     assert.equal(loaded.length, rows.length);
     assert.equal(loaded[0].record_id, '0000');
     assert.equal(loaded.at(-1).record_id, '1202');
+    assert.equal(loaded.syncCursor, new Date(Date.UTC(2026, 0, 1, 0, 20, 2)).toISOString());
     assert.equal(fixture.getMaxActive(), 1);
     assert.ok(fixture.getRequestedPageSizes().every(size => size <= 50));
 });
