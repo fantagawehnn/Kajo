@@ -6,6 +6,7 @@ import { saveDataToLocalStorage } from './storage.js?v=6';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml } from './utils.js?v=2';
 import { renderCalendar } from './calendar.js';
 import { createPlannedStrengthExercise, normalizePlannedStrengthExercises } from './planned-strength.js';
+import { parseOptionalPlanInteger } from './planned-workout-validation.js';
 
 let plannedStrengthExercises = [];
 
@@ -127,8 +128,17 @@ export function savePlannedWorkout(){
     const targetTssRaw=document.getElementById('plan-tss').value;
     const category=isRestDay?'rest':document.getElementById('plan-category').value;
     const isAssessment=String(category).startsWith('diagnostic-');
-    const duration=isRestDay||isAssessment||durationRaw===''?null:(parseInt(durationRaw,10)||60);
-    const targetTss=isRestDay||isAssessment||targetTssRaw===''?null:(parseInt(targetTssRaw,10)||60);
+    let duration = null;
+    let targetTss = null;
+    try {
+        if (!isRestDay && !isAssessment) {
+            duration = parseOptionalPlanInteger(durationRaw, 'Die Ziel-Dauer', { min: 1, max: 1440 });
+            targetTss = parseOptionalPlanInteger(targetTssRaw, 'Die Ziel-Belastung', { min: 0 });
+        }
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
     const desc=document.getElementById('plan-desc').value;
     const exercises=type==='WeightTraining'?normalizePlannedStrengthExercises(plannedStrengthExercises):[];
     if(editingPlannedWorkoutId!==null){
