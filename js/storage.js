@@ -339,7 +339,14 @@ export function applyCloudDataSnapshot(snapshot) {
     state.disabledIntervalsActivities = Array.isArray(snapshot.disabledIntervals) ? snapshot.disabledIntervals : [];
     state.garminTelemetryStore = {};
     state.plannedActivities = snapshot.planned;
-    state.standardWorkouts = Array.isArray(snapshot.standardWorkouts) ? snapshot.standardWorkouts : [];
+    if (snapshot.standardWorkouts != null && !Array.isArray(snapshot.standardWorkouts)) {
+        throw new Error('Der Cloud-Datenstand enthält für "standardWorkouts" keine gültige Liste. Der lokale Cache wurde nicht verändert.');
+    }
+    // Ältere Cloud-Snapshots kennen Standardtrainings noch nicht. In diesem Fall
+    // lokale Vorlagen erhalten; eine explizit leere Cloud-Liste bleibt dagegen verbindlich.
+    state.standardWorkouts = Array.isArray(snapshot.standardWorkouts)
+        ? snapshot.standardWorkouts
+        : (Array.isArray(state.standardWorkouts) ? state.standardWorkouts : []);
     state.dailyCheckins = snapshot.checkins;
     state.healthLogs = snapshot.health;
     state.races = snapshot.races;
