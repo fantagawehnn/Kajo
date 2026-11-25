@@ -3020,8 +3020,26 @@ async function pullCloudChanges() {
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId ||
         cloudSyncBlocked || cloudSyncInFlight || cloudPullInFlight) return;
     cloudPullInFlight = true;
+    const userId = activeAppUserId;
+    const pullSequence = activationSequence;
     try {
+        // Häufige Hintergrund-Pulls (Fokus/Tabwechsel/60-Sekunden-Intervall)
+        // prüfen zunächst nur die kleine Snapshot-Version. Der vollständige,
+        // teure Abruf aller Aktivitäten ist nur nötig, wenn ein anderes Gerät
+        // tatsächlich eine neue Cloud-Version gespeichert hat.
+        const latestCloud = await fetchCloudSnapshot();
+        if (activeAppUserId !== userId || cloudSyncUserId !== userId ||
+            !appUserReady || activationSequence !== pullSequence) return;
+        if (latestCloud.userId !== userId) {
+            throw new Error('Das angemeldete Konto stimmt beim Cloud-Pull nicht überein.');
+        }
+        if (Number(latestCloud.version || 0) === Number(cloudSyncVersion || 0)) return;
+
         await flushCloudSync({ skipTelemetry: true });
+    } catch (error) {
+        if (activeAppUserId === userId && activationSequence === pullSequence) {
+            console.warn('Hintergrundprüfung der Cloud-Version fehlgeschlagen:', error);
+        }
     } finally {
         cloudPullInFlight = false;
     }
