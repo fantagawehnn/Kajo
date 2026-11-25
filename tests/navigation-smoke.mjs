@@ -201,6 +201,7 @@ assert.ok(html.includes('id="month-day-detail"'), 'month view has an inline day 
 assert.ok(html.includes('openCalendarTrainingCreate()') && html.includes('openCalendarRaceCreate()'), 'calendar plus menu offers training and competition creation');
 assert.ok(!html.includes('id="calendar-display-toggle"'), 'calendar cannot switch sport colors to training-category colors');
 assert.ok(calendar.includes('export function openCalendarDay(date, keepMonth = false)'), 'month day selection can retain the month view');
+assert.ok(calendar.includes('const date=state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate);'), 'period entry defaults to the currently viewed calendar date');
 assert.ok(calendar.includes('function renderCalendarMonthSummary(date, target)'), 'month day selection renders a compact summary instead of the full day detail');
 assert.ok(calendar.includes('Tageszusammenfassung') && calendar.includes('Absolviertes Training') && calendar.includes('Geplantes Training'), 'month summary separates completed and planned training');
 assert.ok(calendar.includes('data.loadValue === null') && calendar.includes('data.durationComplete ?'), 'month summary respects missing load and incomplete duration data');
