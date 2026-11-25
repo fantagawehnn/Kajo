@@ -35,7 +35,7 @@ security definer
 set search_path to ''
 as $function$
 begin
-    if p_user_id is null or p_scope not in ('snapshot', 'activities') then
+    if p_user_id is null or p_scope is null or p_scope not in ('snapshot', 'activities') then
         return;
     end if;
 
