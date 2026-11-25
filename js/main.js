@@ -3709,11 +3709,19 @@ async function handleAuthSession(session) {
                 'Das Laden deiner lokalen Kontodaten',
                 20000
             );
-            const cloudLoadPromise = Promise.all([
-                withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
-                withActivationTimeout(fetchCloudActivities(supabase, userId), 'Das Laden deiner einzelnen Cloud-Aktivitäten', 45000),
-                withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
-            ]);
+            const cloudLoadPromise = (async () => {
+                const [cloudSnapshot, baseline] = await Promise.all([
+                    withActivationTimeout(fetchCloudSnapshot(), 'Das Laden deiner Cloud-Daten', 30000),
+                    withActivationTimeout(loadCloudSyncBaseline(), 'Das Laden deiner lokalen Synchronisierungsbasis', 20000)
+                ]);
+                const activitySyncState = { cursor: getUserLocalSetting('cloudActivityCursor') || null };
+                const cloudActivities = await withActivationTimeout(
+                    fetchCloudActivityState(userId, baseline, activitySyncState),
+                    'Das Laden der geänderten Cloud-Aktivitäten',
+                    45000
+                );
+                return [cloudSnapshot, cloudActivities, baseline, activitySyncState];
+            })();
             // Cloud-Fehler werden beim späteren await weitergereicht. Der Handler
             // verhindert eine unhandled rejection, falls der lokale Store länger lädt.
             void cloudLoadPromise.catch(() => {});
@@ -3736,7 +3744,7 @@ async function handleAuthSession(session) {
             window.dispatchEvent(new CustomEvent('endurance:user-local-ready', { detail: { userId } }));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
-            const [cloudSnapshot, cloudActivities, baseline] = await cloudLoadPromise;
+            const [cloudSnapshot, cloudActivities, baseline, activitySyncState] = await cloudLoadPromise;
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
             // Lokale Rohtelemetrie vor dem Anwenden des maßgeblichen Cloud-Snapshots
             // sichern, damit sie beim einmaligen Transfer nicht verloren geht.
@@ -3762,7 +3770,8 @@ async function handleAuthSession(session) {
                     cloudActivities,
                     baseline,
                     () => sequence === activationSequence && activeAppUserId === userId
-                        && localDataRevision === reconciliationDataRevision
+                        && localDataRevision === reconciliationDataRevision,
+                    activitySyncState
                 );
                 if (!reconciliation.ok) {
                     cloudSyncBlocked = true;
