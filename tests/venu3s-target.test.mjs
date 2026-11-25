@@ -126,7 +126,7 @@ test("Activity screen uses shared bounded text and reserves a separate bottom co
   assert.match(activityView, /mScreenWidth = dc\.getWidth\(\)/);
   assert.match(activityView, /drawActivityDashboard\(dc, cx, hrNow, elapsed, distance, speedNow/);
   assert.match(activityView, /"ERNEUT SPEICHERN"/);
-  assert.match(homeView, /KEIN TRAINING FÜR HEUTE GEPLANT/);
+  assert.match(homeView, /HEUTE KEIN TRAINING/);
   assert.match(homeView, /if \(todaySessions\.size\(\) == 0\)/);
   assert.match(homeView, /mStartLeft = 0/);
 });
