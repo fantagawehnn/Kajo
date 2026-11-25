@@ -125,9 +125,11 @@ class KajoConnectWorkoutListView extends WatchUi.View {
 
             var session = mSessions[index] as Lang.Dictionary;
             var name = session["name"] == null
-                ? "GEPLANTE EINHEIT"
+                ? "TRAINING"
                 : session["name"].toString();
-            var boatClass = session["discipline"].toString();
+            var boatClassValue = session["discipline"];
+            if (boatClassValue == null) { boatClassValue = session["type"]; }
+            var boatClass = boatClassValue == null ? "KANU" : boatClassValue.toString();
             var duration = session["duration"] == null ? "" : session["duration"].toString();
             var details = boatClass;
             if (session["isStandardWorkout"] == true) { details = "STANDARD · " + details; }
