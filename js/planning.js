@@ -2,7 +2,7 @@
  * planning.js – Geplante Trainingseinheiten (Liste, Anlegen, Bearbeiten, Löschen)
  * ============================================================ */
 import { state } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage } from './storage.js?v=6';
 import { formatDateDDMMYY, toLocalDateString, escapeHtml, getSportsCatalog, getTypeColorMap } from './utils.js?v=2';
 import { renderCalendar } from './calendar.js';
 
