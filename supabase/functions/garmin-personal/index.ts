@@ -164,16 +164,9 @@ async function syncGarminHealthDay(
         continue;
       }
 
-      let payload: unknown;
-      try {
-        payload = await garminGet(token, endpoint.path);
-      } catch (firstError) {
-        const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
-        if (!/HTTP 520/.test(firstMessage)) throw firstError;
-        // Cloudflare 520 is often transient; make one delayed retry.
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        payload = await garminGet(token, endpoint.path);
-      }
+      // Exactly one Garmin request per endpoint and app-open sync attempt.
+      // Transient failures are left for the next app opening; no in-session retry.
+      const payload: unknown = await garminGet(token, endpoint.path);
       const hasData = !isEmptyGarminPayload(payload);
       const now = new Date().toISOString();
 
