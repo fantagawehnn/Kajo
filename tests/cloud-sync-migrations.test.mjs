@@ -30,6 +30,11 @@ test('Realtime publishes only compact sync state, not personal snapshot or activ
     assert.match(sql, /after insert or update or delete on public\.activities/i);
 });
 
+test('Garmin preview delta index follows the user, update timestamp and Garmin activity ID', () => {
+    const sql = migration('20261125000400_garmin_activities_updated_at_index.sql');
+    assert.match(sql, /on public\.garmin_activities\s*\(user_id, updated_at, garmin_activity_id\)/i);
+});
+
 test('activity delta index follows the user, update timestamp and stable record key', () => {
     const sql = migration('20261125000300_kajo_activity_updated_at_index.sql');
     assert.match(sql, /on public\.activities\s*\(user_id, updated_at, record_id\)/i);
