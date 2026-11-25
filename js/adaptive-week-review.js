@@ -11,6 +11,12 @@ function sportKey(value) {
     return aliases[key] || null;
 }
 
+export function areSameAdaptiveSports(session, activity) {
+    const plannedSport = sportKey(session?.discipline || session?.type);
+    const actualSport = sportKey(activity?.discipline) || sportKey(activity?.type);
+    return Boolean(plannedSport && actualSport && plannedSport === actualSport);
+}
+
 /** Conservative plan/activity comparison. Explicit links override auto matching. */
 export function buildAdaptiveWeekReview(plan, activities = [], today = new Date().toISOString().slice(0,10)) {
     if (!plan || !dateKey(plan.weekStartDate) || !dateKey(plan.weekEndDate)) throw new Error('Ungültiger Wochenplan.');
@@ -50,7 +56,7 @@ export function buildAdaptiveWeekReview(plan, activities = [], today = new Date(
         const sessionId = String(link?.sessionId ?? ''), activityId = String(link?.activityId ?? '');
         const session = sessionById.get(sessionId), found = actualById.get(activityId);
         if (!session || !found || seenActivityIds.has(activityId) || seenSessionIds.has(sessionId)) continue;
-        if (dateKey(found.activity.date) !== dateKey(session.date)) continue;
+        if (dateKey(found.activity.date) !== dateKey(session.date) || !areSameAdaptiveSports(session, found.activity)) continue;
         seenActivityIds.add(activityId); seenSessionIds.add(sessionId);
         usedActual.add(found.index); usedSessions.add(sessionId);
         manualLinks.push({ sessionId, activityId });
