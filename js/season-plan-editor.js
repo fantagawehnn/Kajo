@@ -5,7 +5,7 @@ import { requestSeasonPlanProposal, requestWeeklyPlanProposal, requestAdaptiveWe
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
 import { buildWeeklyPlanCalendarEntries, calendarTypeForSession, calendarCategoryForSession } from './weekly-plan-calendar.js?v=2';
-import { buildAdaptiveWeekReview } from './adaptive-week-review.js';
+import { buildAdaptiveWeekReview, areSameAdaptiveSports } from './adaptive-week-review.js?v=2';
 
 let draftPhases = [];
 let pendingProposal = null;
@@ -289,7 +289,7 @@ function renderManualActivityLinks(plan, review) {
         const sessionId = String(session.id);
         const currentId = linked.get(sessionId) || '';
         const currentStatus = statuses.get(sessionId) || '';
-        const options = actual.filter(activity => activity.date.slice(0, 10) === session.date).map(activity => {
+        const options = actual.filter(activity => activity.date.slice(0, 10) === session.date && areSameAdaptiveSports(session, activity)).map(activity => {
             const id = String(activity.id);
             const usedByOther = [...linked.entries()].some(([otherSession, otherActivity]) => otherActivity === id && otherSession !== sessionId);
             const label = [activity.name || activity.type || 'Aktivität', activity.date.slice(11,16), activity.type].filter(Boolean).join(' · ');
@@ -317,8 +317,8 @@ export function setManualActivityLink(sessionId, activityId) {
     const activity = (Array.isArray(state.rawActivities) ? state.rawActivities : [])
         .find(item => item?.id != null && String(item.id) === String(activityId));
     const message = byId('season-plan-message');
-    if (!session || (activityId && (!activity || activity.date?.slice(0, 10) !== session.date))) {
-        if (message) message.textContent = 'Eine Aktivität kann nur derselben geplanten Trainingseinheit am gleichen Tag zugeordnet werden.';
+    if (!session || (activityId && (!activity || activity.date?.slice(0, 10) !== session.date || !areSameAdaptiveSports(session, activity)))) {
+        if (message) message.textContent = 'Eine Aktivität muss am gleichen Tag und in derselben eindeutig erkennbaren Sportart stattfinden.';
         return false;
     }
     const links = (plan.manualActivityLinks || []).filter(link => String(link.sessionId) !== String(sessionId));
