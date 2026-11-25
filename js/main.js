@@ -830,7 +830,7 @@ async function loadGarminHealthRecordsIntoCheckins(startDate, endDate, options =
     let effectiveStartDate = startDate;
     if (options.incremental === true) {
         const lastReadDate = getUserLocalSetting('garminHealthRecordsReadThrough');
-        if (typeof lastReadDate === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(lastReadDate)
+        if (typeof lastReadDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(lastReadDate)
             && lastReadDate <= endDate) {
             const overlapStart = new Date(lastReadDate + 'T12:00:00');
             overlapStart.setDate(overlapStart.getDate() - 7);
