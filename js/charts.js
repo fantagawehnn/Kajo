@@ -785,6 +785,7 @@ export function getActivityTelemetrySeries(act) {
         let displayKey = key;
         let displayMetric = {
             ...metric,
+            key,
             time: metric.time || telem.metricSeriesTime || telem.time
         };
         const paddlingMetric = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
