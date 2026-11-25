@@ -6,24 +6,28 @@ function createPagedClient(rows, options = {}) {
     let active = 0;
     let maxActive = 0;
     const requestedPageSizes = [];
-    const pageSize = options.pageSize || 100;
+    const count = options.count ?? rows.length;
     const client = {
         from(table) {
             assert.equal(table, 'activities');
             const query = {
                 head: false,
-                offset: 0,
-                limit: rows.length,
+                after: null,
+                pageLimit: rows.length,
                 select(_columns, config = {}) { this.head = config.head === true; return this; },
                 eq() { return this; },
+                gt(_column, value) { this.after = String(value); return this; },
                 order() { return this; },
-                range(offset, end) { this.offset = offset; this.limit = end - offset + 1; requestedPageSizes.push(this.limit); return this; },
+                limit(value) { this.pageLimit = value; requestedPageSizes.push(value); return this; },
                 then(resolve, reject) {
-                    if (this.head) return Promise.resolve({ count: rows.length, data: null, error: null }).then(resolve, reject);
+                    if (this.head) return Promise.resolve({ count, data: null, error: null }).then(resolve, reject);
                     active++;
                     maxActive = Math.max(maxActive, active);
                     return new Promise(done => setTimeout(() => {
-                        const data = rows.slice(this.offset, this.offset + this.limit);
+                        const eligible = this.after === null
+                            ? rows
+                            : rows.filter(row => String(row.record_id) > this.after);
+                        const data = eligible.slice(0, this.pageLimit);
                         active--;
                         done({ count: null, data, error: null });
                     }, 5)).then(resolve, reject);
@@ -32,10 +36,10 @@ function createPagedClient(rows, options = {}) {
             return query;
         }
     };
-    return { client, getMaxActive: () => maxActive, getRequestedPageSizes: () => requestedPageSizes, pageSize };
+    return { client, getMaxActive: () => maxActive, getRequestedPageSizes: () => requestedPageSizes };
 }
 
-test('fetches all activity pages with bounded parallelism and stable ordering', async () => {
+test('fetches all activity pages sequentially with stable keyset ordering', async () => {
     const rows = Array.from({ length: 1203 }, (_, index) => ({
         record_id: String(index).padStart(4, '0'),
         payload: { id: String(index), duration: index + 1 }
@@ -45,27 +49,16 @@ test('fetches all activity pages with bounded parallelism and stable ordering', 
     assert.equal(loaded.length, rows.length);
     assert.equal(loaded[0].record_id, '0000');
     assert.equal(loaded.at(-1).record_id, '1202');
-    assert.ok(fixture.getMaxActive() > 1);
-    assert.ok(fixture.getMaxActive() <= 2);
-    assert.ok(fixture.getRequestedPageSizes().every(size => size <= 100));
+    assert.equal(fixture.getMaxActive(), 1);
+    assert.ok(fixture.getRequestedPageSizes().every(size => size <= 50));
 });
 
 test('does not return a partial result when page count and rows disagree', async () => {
-    const rows = Array.from({ length: 7 }, (_, index) => ({
+    const rows = Array.from({ length: 6 }, (_, index) => ({
         record_id: String(index),
         payload: { id: String(index) }
     }));
-    const fixture = createPagedClient(rows);
-    const originalFrom = fixture.client.from.bind(fixture.client);
-    fixture.client.from = table => {
-        const query = originalFrom(table);
-        const originalThen = query.then.bind(query);
-        query.then = (resolve, reject) => originalThen(result => {
-            if (!query.head && query.offset === 0) result.data = result.data.slice(0, 2);
-            return resolve(result);
-        }, reject);
-        return query;
-    };
+    const fixture = createPagedClient(rows, { pageSize: 5, count: 7 });
     await assert.rejects(
         fetchCloudActivities(fixture.client, 'user-1', { pageSize: 5 }),
         /nicht konsistent/
