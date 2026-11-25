@@ -2639,6 +2639,7 @@ let cloudSyncVersion = 0;
 let cloudSyncUserId = null;
 let cloudSyncTimer = null;
 let cloudSyncInFlight = false;
+let localDataRevision = 0;
 let cloudSyncPending = false;
 let cloudSyncBlocked = false;
 let cloudSyncApplyingRemote = false;
@@ -2914,8 +2915,10 @@ async function flushCloudSync(options = {}) {
 
     const userId = activeAppUserId;
     const syncActivationSequence = activationSequence;
+    const syncDataRevision = localDataRevision;
     const isCurrentSync = () => activeAppUserId === userId && cloudSyncUserId === userId
-        && appUserReady && activationSequence === syncActivationSequence;
+        && appUserReady && activationSequence === syncActivationSequence
+        && localDataRevision === syncDataRevision;
     cloudSyncInFlight = true;
     cloudSyncPending = false;
     let saveSucceeded = false;
@@ -3000,6 +3003,7 @@ async function flushCloudSync(options = {}) {
 
 window.addEventListener('endurance:data-saved', event => {
     if (cloudSyncApplyingRemote) return;
+    localDataRevision += 1;
     scheduleCloudSync(event.detail?.userId || null);
 });
 
@@ -3641,6 +3645,7 @@ async function handleAuthSession(session) {
     deactivateUserStorage();
 
     activationPromise = (async () => {
+        let localStateReady = false;
         try {
             // Lokalen Kontospeicher und Cloud-Snapshot parallel laden:
             // Beide Lesevorgänge sind unabhängig. Die Daten werden weiterhin erst
@@ -3676,6 +3681,7 @@ async function handleAuthSession(session) {
             } catch (localRenderError) {
                 console.error('Die lokale KAJO-Ansicht konnte nicht vollständig aufgebaut werden:', localRenderError);
             }
+            localStateReady = true;
             window.dispatchEvent(new CustomEvent('endurance:user-local-ready', { detail: { userId } }));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
@@ -3698,12 +3704,14 @@ async function handleAuthSession(session) {
                 ? extractGarminTelemetryRecords(cloudSnapshot.data.activities)
                 : [];
             if (cloudSnapshot.data !== null) {
+                const reconciliationDataRevision = localDataRevision;
                 const reconciliation = await reconcileCloudState(
                     userId,
                     cloudSnapshot,
                     cloudActivities,
                     baseline,
                     () => sequence === activationSequence && activeAppUserId === userId
+                        && localDataRevision === reconciliationDataRevision
                 );
                 if (!reconciliation.ok) {
                     cloudSyncBlocked = true;
@@ -3837,12 +3845,21 @@ async function handleAuthSession(session) {
             });
             if (sequence === activationSequence) {
                 if (appUserReady) {
-                    // Nachgelagerte optionale Schritte (z. B. Profilabgleich) dürfen
-                    // einen bereits aktivierten Benutzer-Speicher nicht deaktivieren.
-                    // Andernfalls bleibt die App sichtbar, aber alle lokalen Saves
-                    // schlagen mit "kein aktiver Datenspeicher" fehl.
+                    // Nachgelagerte optionale Schritte dürfen einen bereits
+                    // aktivierten Benutzer-Speicher nicht deaktivieren.
                     console.warn('Nachgelagerter Kontoabgleich fehlgeschlagen; die aktive Anmeldung und der Benutzerspeicher bleiben erhalten.', error);
                     setCloudSyncStatus('Konto aktiv; ein nachgelagerter Abgleich ist fehlgeschlagen. Deine Einträge können weiterhin gespeichert werden.');
+                } else if (localStateReady && activeAppUserId === userId) {
+                    // Lokale Daten sind bereits kontogebunden geladen. Ein
+                    // fehlgeschlagener Cloud-Start darf sie nicht deaktivieren.
+                    appUserReady = true;
+                    cloudSyncUserId = userId;
+                    cloudSyncVersion = 0;
+                    cloudSyncBlocked = false;
+                    setCloudSyncStatus('Offline-Modus: Änderungen werden lokal gesichert; der Cloud-Abgleich wird automatisch erneut versucht.');
+                    window.dispatchEvent(new CustomEvent('endurance:user-ready', { detail: { userId } }));
+                    void pullCloudChanges();
+                    console.warn('KAJO bleibt mit lokal geladenen Daten aktiv; der initiale Cloud-Abgleich wird später erneut versucht.', error);
                 } else {
                     appUserReady = false;
                     deactivateUserStorage();
