@@ -28,6 +28,16 @@ const boatClassView = readFileSync(new URL("../KajoConnect/source/KajoConnectBoa
 const unitsView = readFileSync(new URL("../KajoConnect/source/KajoConnectUnitsView.mc", import.meta.url), "utf8");
 const connectEndpoint = readFileSync(new URL("../supabase/functions/kajo-connect/index.ts", import.meta.url), "utf8");
 
+test("standard workouts are synchronized and shown separately from dated sessions", () => {
+  assert.match(connectEndpoint, /function safeStandardWorkout\(/);
+  assert.match(connectEndpoint, /standardWorkouts,/);
+  assert.match(homeView, /mStandardWorkouts/);
+  assert.match(homeView, /kajoStandardWorkouts/);
+  assert.match(workoutListView, /getStandardWorkouts\(\)/);
+  assert.match(workoutListView, /isStandardWorkout/);
+  assert.match(workoutListView, /STANDARD · /);
+});
+
 test("Venu 3S is the only Connect IQ product target", () => {
   const products = [...manifest.matchAll(/<iq:product id="([^"]+)"\s*\/>/g)].map((match) => match[1]);
   assert.deepEqual(products, ["venu3s"]);
