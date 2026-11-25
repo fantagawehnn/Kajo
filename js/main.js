@@ -3704,31 +3704,12 @@ async function syncGarminTodayOnOpen(userId) {
 
         setGarminSyncIndicator('syncing', 'Tagesabgleich läuft');
         setGarminSyncResult('Der automatische Garmin-Tagesabgleich läuft …', 'syncing');
-        let response = null;
-        let health = null;
-        for (let attempt = 0; attempt < 4; attempt++) {
-            try {
-                response = await callGarminFunction({ action: 'sync-today', date });
-                if (!isCurrentSync()) return;
-            } catch (syncError) {
-                if (!isCurrentSync()) return;
-                const rateLimited = /HTTP 429|rate.?limit/i.test(syncError?.message || '');
-                if (!rateLimited || attempt === 3) throw syncError;
-                const waitSeconds = 30 + attempt * 15;
-                console.info('KAJO: Garmin-Aktivitätsabruf wartet wegen API-Limit', waitSeconds, 'Sekunden.');
-                await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-                if (!isCurrentSync()) return;
-                continue;
-            }
-            health = response.sync?.healthSync || null;
-            const limited = health?.rateLimited || health?.status === 'rate_limited';
-            if (!limited) break;
-            if (attempt === 3) throw new Error('Garmin hat den Tagesabruf trotz mehrerer Versuche begrenzt.');
-            const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + attempt * 15;
-            console.info('KAJO: Garmin-Tagesabgleich wartet wegen API-Limit', waitSeconds, 'Sekunden.');
-            await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-            if (!isCurrentSync()) return;
-        }
+        // Pro App-Öffnung genau ein Garmin-Synchronisierungsversuch.
+        // Bei HTTP 429 oder einem Teilfehler bleibt der gespeicherte Fortschritt
+        // erhalten; der nächste Versuch erfolgt erst beim nächsten App-Öffnen.
+        const response = await callGarminFunction({ action: 'sync-today', date });
+        if (!isCurrentSync()) return;
+        const health = response.sync?.healthSync || null;
 
         if (!isCurrentSync()) return;
         const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
