@@ -3097,7 +3097,7 @@ window.addEventListener('endurance:user-ready', event => {
 
 let cloudPullInFlight = false;
 
-async function pullCloudChanges() {
+async function pullCloudChanges(options = {}) {
     if (!appUserReady || !activeAppUserId || activeAppUserId !== cloudSyncUserId ||
         cloudSyncBlocked || cloudSyncInFlight || cloudPullInFlight) return;
     cloudPullInFlight = true;
@@ -3125,7 +3125,7 @@ async function pullCloudChanges() {
             !Number.isFinite(cursorTime) || watermarkTime > cursorTime
         ));
         const snapshotChanged = Number(latestCloudMetadata.version || 0) !== Number(cloudSyncVersion || 0);
-        if (!snapshotChanged && !activityChanged) return;
+        if (!snapshotChanged && !activityChanged && !options.forceActivity) return;
 
         await flushCloudSync({ skipTelemetry: true });
     } catch (error) {
@@ -3136,6 +3136,67 @@ async function pullCloudChanges() {
         cloudPullInFlight = false;
     }
 }
+
+let cloudRealtimeChannel = null;
+let cloudRealtimeUserId = null;
+
+function stopCloudRealtime() {
+    const channel = cloudRealtimeChannel;
+    cloudRealtimeChannel = null;
+    cloudRealtimeUserId = null;
+    if (channel && supabase?.removeChannel) {
+        Promise.resolve(supabase.removeChannel(channel)).catch(error => {
+            console.warn('KAJO Realtime-Kanal konnte nicht sauber beendet werden:', error);
+        });
+    }
+}
+
+function startCloudRealtime(userId) {
+    if (!supabase?.channel || !userId || !appUserReady || activeAppUserId !== userId) return;
+    if (cloudRealtimeChannel && cloudRealtimeUserId === userId) return;
+    stopCloudRealtime();
+
+    const isCurrentChannel = () => cloudRealtimeUserId === userId
+        && activeAppUserId === userId && appUserReady;
+    const channel = supabase.channel('kajo-cloud-sync:' + userId)
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'user_data',
+            filter: 'user_id=eq.' + userId
+        }, payload => {
+            if (!isCurrentChannel()) return;
+            const remoteVersion = Number(payload?.new?.version || 0);
+            if (remoteVersion > Number(cloudSyncVersion || 0)) void pullCloudChanges();
+        })
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'activities',
+            filter: 'user_id=eq.' + userId
+        }, payload => {
+            if (!isCurrentChannel()) return;
+            const row = payload?.new?.user_id ? payload.new : payload?.old;
+            if (row?.user_id === userId) void pullCloudChanges({ forceActivity: true });
+        })
+        .subscribe((status, error) => {
+            if (!isCurrentChannel()) return;
+            if (status === 'SUBSCRIBED') {
+                console.info('KAJO: Realtime-Cloudbenachrichtigungen für das aktive Konto verbunden.');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                // Der bestehende 60-Sekunden-Watermark-Poll bleibt als Fallback aktiv.
+                console.warn('KAJO Realtime ist derzeit nicht verfügbar; der automatische Hintergrundabgleich bleibt über die regelmäßige Prüfung aktiv.', error || status);
+            }
+        });
+
+    cloudRealtimeChannel = channel;
+    cloudRealtimeUserId = userId;
+}
+
+window.addEventListener('endurance:user-ready', event => {
+    const userId = event.detail?.userId;
+    if (userId) startCloudRealtime(userId);
+});
 
 // Erkennt Änderungen eines zweiten Geräts auch dann, wenn auf diesem Gerät
 // gerade keine neue Eingabe erfolgt.
@@ -3684,6 +3745,7 @@ async function handleAuthSession(session) {
 
     if (userId && activeAppUserId === userId && (appUserReady || activationPromise)) return;
     const sequence = ++activationSequence;
+    stopCloudRealtime();
 
     // Ein laufender Ersttransfer gehört immer genau zu einer Aktivierung.
     // Beim Konto-/Sitzungswechsel darf er weder die neue UI sperren noch deren
