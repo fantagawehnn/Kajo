@@ -1616,11 +1616,11 @@
                 </div>
                 <div id="plan-duration-field">
                     <label class="block text-slate-400 mb-1">Ziel-Dauer (Min)</label>
-                    <input type="number" id="plan-duration" value="60" placeholder="Optional" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="number" id="plan-duration" min="1" max="1440" step="1" value="60" placeholder="Optional" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div id="plan-tss-field">
                     <label class="block text-slate-400 mb-1">Ziel-Belastung (Load)</label>
-                    <input type="number" id="plan-tss" value="70" placeholder="Optional" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="number" id="plan-tss" min="0" step="1" value="70" placeholder="Optional" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                 </div>
                 <div id="plan-category-field">
                     <label class="block text-slate-400 mb-1">Trainingskategorie</label>
