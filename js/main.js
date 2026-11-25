@@ -22,8 +22,8 @@ import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUp
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
 import { importGarminExportArchive } from './garmin-export-import.js?v=2';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
-import { fetchCloudSnapshot, fetchCloudSnapshotMetadata, saveCloudSnapshot } from './cloud-sync.js';
-import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds } from './cloud-merge.js?v=1';
+import { fetchCloudSnapshot, fetchCloudSnapshotMetadata, saveCloudSnapshot, saveCloudSnapshotPatch } from './cloud-sync.js';
+import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds, createCloudSnapshotPatch } from './cloud-merge.js?v=2';
 import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=3';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
@@ -2867,7 +2867,30 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             };
         }
 
-        const saved = await saveCloudSnapshot(cloudPayload, cloud.version, userId);
+        const cloudPatch = createCloudSnapshotPatch(cloudPayload, cloud.data);
+        if (!Object.keys(cloudPatch).length) {
+            // Aktivitätszeilen können bereits übertragen worden sein, auch wenn
+            // der JSON-Snapshot keine weiteren Änderungen benötigt.
+            const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+            const latestLocal = withCloudActivityIds(
+                latestLocalData,
+                getCloudActivityIds(userId, Array.isArray(latestLocalData.activities) ? latestLocalData.activities : [])
+            );
+            if (!cloudSnapshotsEqual(latestLocal, local)) {
+                baselineSnapshot = mergedSnapshot;
+                cloud = await fetchCloudSnapshot();
+                ensureCurrent();
+                cloudActivities = await fetchCloudActivityState(userId, baselineSnapshot, activitySyncState);
+                ensureCurrent();
+                continue;
+            }
+            applyReconciledCloudSnapshot(mergedSnapshot);
+            await saveCloudSyncBaseline(mergedSnapshot);
+            ensureCurrent();
+            persistCloudActivityCursor(activitySyncState);
+            return { ok: true, version: cloud.version, snapshot: mergedSnapshot, activityUpload, uploaded: false };
+        }
+        const saved = await saveCloudSnapshotPatch(cloudPatch, cloud.version, userId);
         ensureCurrent();
         if (saved.saved) {
             const latestLocalData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
