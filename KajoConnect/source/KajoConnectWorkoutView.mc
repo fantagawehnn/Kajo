@@ -67,6 +67,12 @@ class KajoConnectWorkoutView extends WatchUi.View {
         var isStandard = mWorkout["isStandardWorkout"] == true;
         var stepsValue = mWorkout["steps"];
         var stepCount = stepsValue == null ? 0 : stepsValue.size();
+        var sectionCount = stepCount;
+        if (sectionCount == 0) {
+            if (valueText("warmup", "") != "") { sectionCount += 1; }
+            if (valueText("mainSet", "") != "") { sectionCount += 1; }
+            if (valueText("cooldown", "") != "") { sectionCount += 1; }
+        }
 
         // Kopfbereich: Art der Einheit, Name und die wichtigsten Eckdaten.
         drawCentered(dc, center, unit * 0.045,
@@ -82,7 +88,7 @@ class KajoConnectWorkoutView extends WatchUi.View {
             contentWidth, Graphics.FONT_XTINY, 0x98A5AB);
 
         var durationText = duration == "" ? "DAUER –" : duration + " MIN";
-        var stepsText = stepCount.toString() + " ABSCHNITTE";
+        var stepsText = sectionCount.toString() + " ABSCHNITTE";
         drawCentered(dc, center - unit * 0.17, unit * 0.205,
             durationText, unit * 0.30, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         drawCentered(dc, center + unit * 0.17, unit * 0.205,
