@@ -1139,8 +1139,22 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function isNextStepRecovery() as Lang.Boolean {
         var nextIndex = mWorkoutStepIndex + 1;
-        if (nextIndex >= mWorkoutSteps.size()) { return false; }
-        return isRecoveryStep(mWorkoutSteps[nextIndex] as Lang.Dictionary);
+        if (nextIndex < mWorkoutSteps.size() &&
+            isRecoveryStep(mWorkoutSteps[nextIndex] as Lang.Dictionary)) {
+            return true;
+        }
+
+        // Falls der Timer den Wechsel bereits vollzogen hat, gilt ein
+        // Tastendruck direkt zu Beginn der Erholung noch als Abschluss
+        // des vorherigen Belastungsintervalls.
+        if (mWorkoutStepIndex > 0 && mWorkoutStepElapsedSeconds <= 3) {
+            var currentStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
+            var previousStep = mWorkoutSteps[mWorkoutStepIndex - 1] as Lang.Dictionary;
+            if (isRecoveryStep(currentStep) && !isRecoveryStep(previousStep)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function completeLap(showSummary as Lang.Boolean, activityInfo) as Lang.Boolean {
@@ -1872,7 +1886,7 @@ class KajoConnectActivityView extends WatchUi.View {
                         Graphics.FONT_XTINY, 0x98A5AB);
                     drawActivityText(dc, 226, 76, 82, 16, "DISTANZ",
                         Graphics.FONT_XTINY, 0x98A5AB);
-                    drawActivityText(dc, 315, 76, 70, 16, "Ø KM/H",
+                    drawActivityText(dc, 315, 76, 70, 16, "Ø BPM",
                         Graphics.FONT_XTINY, 0x98A5AB);
                     var shownLaps = mFinalLaps.size() > 5 ? 5 : mFinalLaps.size();
                     for (var lapIndex = 0; lapIndex < shownLaps; lapIndex += 1) {
@@ -1884,8 +1898,8 @@ class KajoConnectActivityView extends WatchUi.View {
                             ? "--" : formatTime(lap["elapsedTimeMs"]);
                         var lapDistance = lap["distanceMeters"] == null
                             ? "--" : numberText(lap["distanceMeters"] / 1000.0, 2);
-                        var lapSpeed = lap["averageSpeedKmh"] == null
-                            ? "--" : numberText(lap["averageSpeedKmh"], 1);
+                        var lapHeartRate = lap["averageHeartRateBpm"] == null
+                            ? "--" : lap["averageHeartRateBpm"].toString();
                         dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
                         dc.drawLine(42, rowY - 8, 348, rowY - 8);
                         drawActivityText(dc, 67, rowY, 42, 24, lapNumber,
@@ -1894,7 +1908,7 @@ class KajoConnectActivityView extends WatchUi.View {
                             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
                         drawActivityText(dc, 226, rowY, 82, 24, lapDistance,
                             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-                        drawActivityText(dc, 315, rowY, 70, 24, lapSpeed,
+                        drawActivityText(dc, 315, rowY, 70, 24, lapHeartRate,
                             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
                     }
                     if (mFinalLaps.size() > 5) {
