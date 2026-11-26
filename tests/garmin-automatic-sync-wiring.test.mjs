@@ -50,7 +50,10 @@ test('sync-today calls automatic cursors while manual range imports keep the his
 test('all sync actions acquire a per-account database lease and reject concurrent runs', () => {
   assert.match(edgeFunction, /action\.startsWith\("sync-"\)/);
   assert.match(edgeFunction, /rpc\("try_acquire_garmin_sync_lock"/);
-  assert.match(edgeFunction, /p_lease_seconds: 300/);
+  assert.match(edgeFunction, /p_lease_seconds: 900/);
+  assert.match(edgeFunction, /setInterval\(\(\) =>/);
+  assert.match(edgeFunction, /rpc\("renew_garmin_sync_lock"/);
+  assert.match(edgeFunction, /clearInterval\(syncLockHeartbeatTimer\)/);
   assert.match(edgeFunction, /acquired !== true/);
   assert.match(edgeFunction, /code: "garmin_sync_already_running"/);
   assert.match(edgeFunction, /finally \{[\s\S]*?rpc\("release_garmin_sync_lock"/);
@@ -65,6 +68,8 @@ test('Garmin sync lock uses an expiring atomic lease and token-checked release',
   assert.match(migration, /create table if not exists public\.garmin_sync_locks/);
   assert.match(migration, /on conflict \(user_id\) do update/);
   assert.match(migration, /where public\.garmin_sync_locks\.expires_at <= now\(\)/);
+  assert.match(migration, /update public\.garmin_sync_locks[\s\S]*?and lock_token = p_lock_token[\s\S]*?and expires_at > now\(\)/);
+  assert.match(migration, /grant execute on function public\.renew_garmin_sync_lock[\s\S]*?to service_role/);
   assert.match(migration, /delete from public\.garmin_sync_locks[\s\S]*?and lock_token = p_lock_token/);
   assert.match(migration, /grant execute on function public\.try_acquire_garmin_sync_lock[\s\S]*?to service_role/);
 });
