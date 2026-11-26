@@ -739,6 +739,76 @@ class KajoConnectActivityView extends WatchUi.View {
         return minutes.toString() + ":" + (seconds < 10 ? "0" : "") + seconds.toString();
     }
 
+    function liveMetricLabel(metricId as Lang.String) as Lang.String {
+        if (metricId == "cadence") { return "SCHLAGFREQUENZ"; }
+        if (metricId == "heartRate") { return "HERZFREQUENZ"; }
+        if (metricId == "heartRateZone") { return "HF-ZONE"; }
+        if (metricId == "distance") { return "DISTANZ"; }
+        if (metricId == "intervalDistance") { return "INT.-DISTANZ"; }
+        if (metricId == "pace") { return "PACE"; }
+        if (metricId == "speedNow") { return "GESCHWINDIGKEIT"; }
+        if (metricId == "speedAvg") { return "Ø GESCHWINDIGKEIT"; }
+        if (metricId == "speedMax") { return "MAX. GESCHWINDIGKEIT"; }
+        if (metricId == "heartRateAvg") { return "Ø HERZFREQUENZ"; }
+        if (metricId == "heartRateMax") { return "MAX. HERZFREQUENZ"; }
+        if (metricId == "elapsed") { return "TRAININGSZEIT"; }
+        if (metricId == "calories") { return "KALORIEN"; }
+        if (metricId == "power") { return "LEISTUNG"; }
+        if (metricId == "altitude") { return "HÖHE"; }
+        if (metricId == "ascent") { return "ANSTIEG"; }
+        if (metricId == "descent") { return "ABSTIEG"; }
+        if (metricId == "trainingEffect") { return "TRAINING EFFECT"; }
+        return "DATENFELD";
+    }
+
+    function liveMetricUnit(metricId as Lang.String) as Lang.String {
+        if (metricId == "cadence") { return "SPM"; }
+        if (metricId == "heartRate" || metricId == "heartRateAvg" || metricId == "heartRateMax") { return "BPM"; }
+        if (metricId == "distance" || metricId == "intervalDistance") { return "KM"; }
+        if (metricId == "pace") { return "MIN/KM"; }
+        if (metricId == "speedNow" || metricId == "speedAvg" || metricId == "speedMax") { return "KM/H"; }
+        if (metricId == "calories") { return "KCAL"; }
+        if (metricId == "power") { return "W"; }
+        if (metricId == "altitude" || metricId == "ascent" || metricId == "descent") { return "M"; }
+        return "";
+    }
+
+    function liveMetricValue(metricId as Lang.String, values as Lang.Dictionary) as Lang.String {
+        var value = values[metricId];
+        return value == null ? "--" : value.toString();
+    }
+
+    function drawLiveMetricField(dc as Dc, centerX as Lang.Number, top as Lang.Number,
+        width as Lang.Number, metricId as Lang.String, values as Lang.Dictionary,
+        large as Lang.Boolean) as Void {
+        var label = liveMetricLabel(metricId);
+        var value = liveMetricValue(metricId, values);
+        var unit = liveMetricUnit(metricId);
+        var labelFont = Graphics.FONT_XTINY;
+        var valueFont = large ? Graphics.FONT_NUMBER_HOT : Graphics.FONT_NUMBER_MEDIUM;
+        drawActivityText(dc, centerX, top, width, 16, label, labelFont, 0x98A5AB);
+        drawActivityText(dc, centerX, top + 17, width, large ? 40 : 32, value,
+            valueFont, Graphics.COLOR_WHITE);
+        if (unit != "") {
+            drawActivityText(dc, centerX, top + (large ? 57 : 48), width, 14, unit,
+                Graphics.FONT_XTINY, 0x98A5AB);
+        }
+    }
+
+    function getLiveMetricIds(count as Lang.Number) as Lang.Array<Lang.String> {
+        var defaults = count == 2
+            ? ["cadence", "heartRate"]
+            : ["cadence", "distance", "pace", "heartRate"];
+        var selected = [];
+        for (var i = 0; i < count; i += 1) {
+            var saved = Storage.getValue("kajoLiveMetric" + count.toString() + "_" + i.toString());
+            var metricId = saved == null ? defaults[i] : saved.toString();
+            if (liveMetricLabel(metricId) == "DATENFELD") { metricId = defaults[i]; }
+            selected.add(metricId);
+        }
+        return selected;
+    }
+
     function drawActivityDashboard(dc as Dc, cx, hrNow as Lang.String, elapsed as Lang.String,
         distance as Lang.String, speedNow as Lang.String, cadenceNow as Lang.String,
         zone as Lang.Number, activityInfo) as Void {
@@ -827,69 +897,61 @@ class KajoConnectActivityView extends WatchUi.View {
             paceValue = formatPace(activityInfo.currentSpeed * 3.6);
         }
 
-        // Messwerte: feste, gut lesbare Belegung. Die 2-Felder-Ansicht
-        // priorisiert Schlagfrequenz und Herzfrequenz.
+        // Wertepool fuer die individuell belegbaren 2- bzw. 4-Felder-Ansichten.
+        var liveValues = {
+            "cadence" => cadenceNow,
+            "heartRate" => hrNow,
+            "heartRateZone" => zone > 0 ? "ZONE " + zone.toString() : "--",
+            "distance" => distance,
+            "intervalDistance" => stepCount > 0 ? intervalDistanceText(activityInfo) : "--",
+            "pace" => paceValue,
+            "speedNow" => speedNow,
+            "speedAvg" => "--",
+            "speedMax" => speedNow,
+            "heartRateAvg" => "--",
+            "heartRateMax" => "--",
+            "elapsed" => elapsed,
+            "calories" => "--",
+            "power" => "--",
+            "altitude" => "--",
+            "ascent" => "--",
+            "descent" => "--",
+            "trainingEffect" => "--"
+        };
+
+        // Zusätzliche Messwerte aus der aktuellen Garmin-Aktivität übernehmen.
+        if (activityInfo != null) {
+            liveValues["speedAvg"] = activityInfo.averageSpeed == null ? "--" : numberText(activityInfo.averageSpeed * 3.6, 1);
+            liveValues["speedMax"] = activityInfo.maxSpeed == null ? "--" : numberText(activityInfo.maxSpeed * 3.6, 1);
+            liveValues["heartRateAvg"] = valueOrDash(activityInfo.averageHeartRate);
+            liveValues["heartRateMax"] = valueOrDash(activityInfo.maxHeartRate);
+            liveValues["calories"] = valueOrDash(activityInfo.calories);
+            liveValues["power"] = valueOrDash(activityInfo.currentPower);
+            liveValues["altitude"] = activityInfo.altitude == null ? "--" : numberText(activityInfo.altitude, 0);
+            liveValues["ascent"] = valueOrDash(activityInfo.totalAscent);
+            liveValues["descent"] = valueOrDash(activityInfo.totalDescent);
+            liveValues["trainingEffect"] = activityInfo.trainingEffect == null ? "--" : numberText(activityInfo.trainingEffect, 1);
+        }
+
         dc.setColor(0x465057, Graphics.COLOR_BLACK);
         dc.drawLine(72, 220, 318, 220);
+        var liveMetricIds = getLiveMetricIds(mTrainingFieldCount);
 
         if (mTrainingFieldCount == 2) {
             dc.drawLine(cx, 231, cx, 321);
-
-            drawActivityText(dc, cx - 66, 237, 112, 17, "SCHLÄGE",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx - 66, 255, 112, 42, cadenceNow,
-                Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx - 66, 298, 112, 16, "SPM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-
-            drawActivityText(dc, cx + 62, 237, 112, 17, "HERZFREQUENZ",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx + 62, 255, 112, 42, hrNow,
-                Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx + 62, 298, 112, 16, "BPM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx + 62, 316, 112, 15,
-                zone > 0 ? "ZONE " + zone.toString() : "ZONE --",
-                Graphics.FONT_XTINY, zone > 0 ? 0x25D3CB : 0x98A5AB);
+            drawLiveMetricField(dc, cx - 66, 237, 112, liveMetricIds[0], liveValues, true);
+            drawLiveMetricField(dc, cx + 62, 237, 112, liveMetricIds[1], liveValues, true);
         } else {
-            // Vier Felder: Schlagfrequenz, Intervall-/Gesamtdistanz,
-            // Pace und Herzfrequenz mit expliziter Zonenbezeichnung.
             dc.drawLine(cx, 224, cx, 344);
             dc.drawLine(78, 283, 312, 283);
-
-            drawActivityText(dc, cx - 67, 226, 112, 15, "SCHLÄGE",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx - 67, 242, 112, 31, cadenceNow,
-                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx - 67, 270, 112, 13, "SPM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-
-            drawActivityText(dc, cx + 65, 226, 112, 15,
-                stepCount > 0 ? "INT.-DISTANZ" : "DISTANZ",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx + 65, 242, 112, 31, distanceValue,
-                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx + 65, 270, 112, 13, "KM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-
-            drawActivityText(dc, cx - 67, 289, 112, 15, "PACE",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx - 67, 305, 112, 31, paceValue,
-                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx - 67, 334, 112, 13, "MIN/KM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-
-            drawActivityText(dc, cx + 65, 289, 112, 15, "HERZFREQUENZ",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx + 65, 305, 112, 31, hrNow,
-                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, cx + 65, 334, 112, 13,
-                zone > 0 ? "BPM · ZONE " + zone.toString() : "BPM · ZONE --",
-                Graphics.FONT_XTINY, zone > 0 ? 0x25D3CB : 0x98A5AB);
+            drawLiveMetricField(dc, cx - 67, 226, 112, liveMetricIds[0], liveValues, false);
+            drawLiveMetricField(dc, cx + 65, 226, 112, liveMetricIds[1], liveValues, false);
+            drawLiveMetricField(dc, cx - 67, 289, 112, liveMetricIds[2], liveValues, false);
+            drawLiveMetricField(dc, cx + 65, 289, 112, liveMetricIds[3], liveValues, false);
         }
 
-        // Das HF-Barometer sitzt unabhaengig von der Feldanzahl am rechten
-        // Displayrand und hebt die aktuelle Zone farblich hervor.
+        // Das HF-Barometer bleibt unabhängig von der Feldbelegung am rechten
+        // Displayrand und zeigt die aktuelle Herzfrequenzzone.
         drawHeartRateZoneBar(dc, cx, cx, mUnit * 0.455, zone);
 
         mButtonTop = 0;
