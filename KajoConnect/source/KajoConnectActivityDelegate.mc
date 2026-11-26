@@ -105,7 +105,9 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         var direction = swipeEvent.getDirection();
         if (direction == WatchUi.SWIPE_UP) {
             if (mView.isSavedForDetails()) {
-                mView.nextSavedDetailPage(1);
+                if (!mView.scrollSavedLaps(1)) {
+                    mView.nextSavedDetailPage(1);
+                }
             } else {
                 mView.nextDisplayPage(1);
             }
@@ -113,7 +115,9 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         }
         if (direction == WatchUi.SWIPE_DOWN) {
             if (mView.isSavedForDetails()) {
-                mView.nextSavedDetailPage(-1);
+                if (!mView.scrollSavedLaps(-1)) {
+                    mView.nextSavedDetailPage(-1);
+                }
             } else {
                 mView.nextDisplayPage(-1);
             }
