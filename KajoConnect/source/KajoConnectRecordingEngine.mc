@@ -8,12 +8,14 @@ class KajoConnectRecordingEngine {
 
     var mSession as ActivityRecording.Session? = null;
     var mLastError as Lang.String = "";
+    var mLapSummaries as Lang.Array<Lang.Dictionary> = [];
 
     function initialize() {
     }
 
     function start(boatClass as Lang.String) as Lang.Boolean {
         mLastError = "";
+        mLapSummaries = [];
         try {
             if (mSession != null && mSession.isRecording()) {
                 return false;
@@ -26,6 +28,8 @@ class KajoConnectRecordingEngine {
                 :name => "KAJO " + boatClass,
                 :sport => Activity.SPORT_KAYAKING
             });
+
+            mSession.setTimerEventListener(method(:onTimerEvent));
 
             if (mSession.isRecording()) {
                 return true;
@@ -41,6 +45,32 @@ class KajoConnectRecordingEngine {
             mLastError = error.toString();
             return false;
         }
+    }
+
+    function onTimerEvent(eventType as ActivityRecording.TimerEventType,
+        eventData as Lang.Dictionary?) as Void {
+        if (eventType != ActivityRecording.TIMER_EVENT_LAP || eventData == null) {
+            return;
+        }
+
+        var lap = {};
+        var elapsedTime = eventData[:elapsedTime];
+        var timerTime = eventData[:timerTime];
+        var elapsedDistance = eventData[:elapsedDistance];
+        var averageSpeed = eventData[:averageSpeed];
+        var maxSpeed = eventData[:maxSpeed];
+
+        if (elapsedTime != null) { lap["elapsedTimeMs"] = elapsedTime; }
+        if (timerTime != null) { lap["timerTimeMs"] = timerTime; }
+        if (elapsedDistance != null) { lap["distanceMeters"] = elapsedDistance; }
+        if (averageSpeed != null) { lap["averageSpeedKmh"] = averageSpeed * 3.6; }
+        if (maxSpeed != null) { lap["maxSpeedKmh"] = maxSpeed * 3.6; }
+        lap["lapNumber"] = mLapSummaries.size() + 1;
+        mLapSummaries.add(lap);
+    }
+
+    function getLapSummaries() as Lang.Array<Lang.Dictionary> {
+        return mLapSummaries;
     }
 
     function getLastError() as Lang.String {
