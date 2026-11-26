@@ -29,11 +29,19 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         }
         if (key == WatchUi.KEY_MENU || key == WatchUi.KEY_ACTION_MENU ||
             key == WatchUi.KEY_UP || key == WatchUi.KEY_PAGE) {
-            mView.nextDisplayPage(1);
+            if (mView.isSavedForDetails()) {
+                mView.nextSavedDetailPage(1);
+            } else {
+                mView.nextDisplayPage(1);
+            }
             return true;
         }
         if (key == WatchUi.KEY_DOWN) {
-            mView.nextDisplayPage(-1);
+            if (mView.isSavedForDetails()) {
+                mView.nextSavedDetailPage(-1);
+            } else {
+                mView.nextDisplayPage(-1);
+            }
             return true;
         }
         return false;
