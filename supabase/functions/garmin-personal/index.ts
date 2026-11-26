@@ -385,11 +385,24 @@ async function syncGarminHealthAutomaticBatch(
     .eq("sync_type", "health_auto")
     .maybeSingle();
   if (error) throw error;
+  let initialCursorDate: string | null = null;
+  if (!state) {
+    const { data: latestRecord, error: latestError } = await admin
+      .from("garmin_health_records")
+      .select("record_date")
+      .eq("user_id", userId)
+      .lte("record_date", today)
+      .order("record_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestError) throw latestError;
+    if (latestRecord?.record_date) initialCursorDate = addUtcDays(latestRecord.record_date, 1);
+  }
 
   const range = buildAutomaticGarminSyncRange({
     today,
-    cursorDate: state?.cursor_date ?? null,
-    status: state?.status ?? null,
+    cursorDate: state?.cursor_date ?? initialCursorDate,
+    status: state?.status ?? (initialCursorDate ? "completed" : null),
     maxDays: 2,
     initialOverlapDays: 1,
   });
@@ -410,11 +423,24 @@ async function syncGarminActivitiesAutomaticBatch(
     .eq("sync_type", "activity_auto")
     .maybeSingle();
   if (error) throw error;
+  let initialCursorDate: string | null = null;
+  if (!state) {
+    const { data: latestCoverage, error: coverageError } = await admin
+      .from("garmin_activity_sync_days")
+      .select("sync_date")
+      .eq("user_id", userId)
+      .lte("sync_date", today)
+      .order("sync_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (coverageError) throw coverageError;
+    if (latestCoverage?.sync_date) initialCursorDate = addUtcDays(latestCoverage.sync_date, 1);
+  }
 
   const range = buildAutomaticGarminSyncRange({
     today,
-    cursorDate: state?.cursor_date ?? null,
-    status: state?.status ?? null,
+    cursorDate: state?.cursor_date ?? initialCursorDate,
+    status: state?.status ?? (initialCursorDate ? "completed" : null),
     maxDays: 14,
     initialOverlapDays: 1,
   });
