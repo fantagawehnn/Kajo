@@ -33,11 +33,31 @@ test('failed FIT save stops UI timers but preserves engine session for another s
     assert.match(engine, /var saved = mSession\.save\(\);[\s\S]*?if \(saved\) \{\s*mSession = null;/);
 });
 
-test('lap marker remains bound to the lower physical key during recording', () => {
-    assert.match(delegate, /if \(key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)\)/);
+test('lap marker remains bound to a short lower-key press during recording', () => {
+    assert.match(delegate, /if \(key == WatchUi\.KEY_ESC\) \{/);
+    assert.match(delegate, /else if \(lowerHeld < mLongPressThreshold\) \{\s*mView\.handleLapButton\(\);/);
     const lap = method(activity, 'handleLapButton', 'handleTap');
-    assert.match(lap, /mEngine\.addLap\(\)/);
     assert.match(lap, /mStatus != "AUFZEICHNUNG"/);
+    assert.match(lap, /completeLap\(showSummary, info\)/);
+});
+
+test('free training creates kilometre laps and calculates the lap average heart rate', () => {
+    const sampling = method(activity, 'sampleLapMetrics', 'isNextStepRecovery');
+    assert.match(sampling, /mCurrentWorkoutState == "FREE"/);
+    assert.match(sampling, /mNextAutoLapDistanceMeters/);
+    assert.match(sampling, /mLapHeartRateSum \+= info\.currentHeartRate/);
+    const complete = method(activity, 'completeLap', 'onPosition');
+    assert.match(complete, /mEngine\.addLap\(\)/);
+    assert.match(complete, /averageHeartRateBpm/);
+    assert.match(complete, /mLapHeartRateSum \/ mLapHeartRateCount/);
+    assert.match(activity, /"Ø BPM"/);
+});
+
+test('planned training lap summary is shown at the transition into recovery', () => {
+    const recovery = method(activity, 'isNextStepRecovery', 'completeLap');
+    assert.match(recovery, /isRecoveryStep\(mWorkoutSteps\[nextIndex\]/);
+    assert.match(recovery, /mWorkoutStepElapsedSeconds <= 3/);
+    assert.match(recovery, /isRecoveryStep\(currentStep\)/);
 });
 
 test('interval countdown only advances while activity is recording', () => {
