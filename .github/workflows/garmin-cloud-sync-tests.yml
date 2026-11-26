@@ -42,6 +42,5 @@ jobs:
             tests/garmin-heart-rate-sync.test.mjs \
             tests/garmin-open-sync-policy.test.mjs \
             tests/garmin-automatic-sync-plan.test.mjs \
-            tests/garmin-automatic-sync-wiring.test.mjs \
-            tests/garmin-automatic-sync-plan.test.mjs
+            tests/garmin-automatic-sync-wiring.test.mjs
 
