@@ -44,3 +44,47 @@ jobs:
             tests/garmin-automatic-sync-plan.test.mjs \
             tests/garmin-automatic-sync-wiring.test.mjs
 
+
+  postgres-lock-integration:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kajo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kajo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kajo_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Prepare minimal Supabase database roles
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin;
+          create schema auth;
+          create table auth.users (id uuid primary key);
+          insert into auth.users (id) values
+            ('00000000-0000-0000-0000-000000000001'),
+            ('00000000-0000-0000-0000-000000000002');
+          SQL
+      - name: Apply Garmin sync lock migration
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261126000100_garmin_sync_lock.sql
+      - name: Test Garmin sync lock behavior and concurrent acquisition
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/sql/garmin_sync_lock.integration.sql
+          bash tests/sql/garmin_sync_lock_race.sh
