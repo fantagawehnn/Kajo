@@ -1055,7 +1055,9 @@ class KajoConnectActivityView extends WatchUi.View {
             mFinalLaps = [];
             mLiveLapSummaries = [];
             mLapStartTimerMs = 0;
-            mLapStartDistanceMeters = null;
+            // ActivityRecording startet die Distanz der neuen Session bei null.
+            // So zählt auch der erste Kilometer vollständig.
+            mLapStartDistanceMeters = 0;
             mLapHeartRateSum = 0;
             mLapHeartRateCount = 0;
             mNextAutoLapDistanceMeters = 1000;
