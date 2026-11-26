@@ -1719,13 +1719,18 @@ Deno.serve(async (req) => {
     return json(400, { error: error instanceof Error ? error.message : "Unbekannter Fehler." });
   } finally {
     if (syncLockAdmin && syncLockUserId && syncLockToken) {
-      const { error: releaseError } = await syncLockAdmin.rpc("release_garmin_sync_lock", {
-        p_user_id: syncLockUserId,
-        p_lock_token: syncLockToken,
-      });
-      if (releaseError) {
-        // The database lease expires automatically if release fails.
-        console.error("Garmin sync lock release failed; lease will expire:", releaseError);
+      try {
+        const { error: releaseError } = await syncLockAdmin.rpc("release_garmin_sync_lock", {
+          p_user_id: syncLockUserId,
+          p_lock_token: syncLockToken,
+        });
+        if (releaseError) {
+          // The database lease expires automatically if release fails.
+          console.error("Garmin sync lock release failed; lease will expire:", releaseError);
+        }
+      } catch (releaseError) {
+        // A transient network failure must not hide the original sync result.
+        console.error("Garmin sync lock release request failed; lease will expire:", releaseError);
       }
     }
   }
