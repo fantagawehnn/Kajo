@@ -197,6 +197,9 @@ async function syncGarminHealthDay(
       results.push({ dataType: endpoint.type, status: hasData ? "saved" : "no_data" });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unbekannter Fehler.";
+      // Lock loss is a control-flow stop, not an endpoint failure. Propagate it
+      // immediately instead of marking every remaining endpoint as failed.
+      if (/Garmin-Synchronisierungssperre/.test(message)) throw error;
       const isRateLimited = /HTTP 429/.test(message);
       const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
       results.push({
