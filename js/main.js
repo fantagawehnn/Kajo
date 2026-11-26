@@ -3709,6 +3709,7 @@ async function syncGarminTodayOnOpen(userId) {
     const inFlightKey = runKey + ':' + syncActivationSequence;
     const isCurrentSync = () => activeAppUserId === userId && appUserReady && activationSequence === syncActivationSequence;
     let cloudActivityLoadAttempted = false;
+    let syncAttempted = false;
     if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(inFlightKey)) return;
     garminDailySyncInFlight.add(inFlightKey);
 
@@ -3757,6 +3758,7 @@ async function syncGarminTodayOnOpen(userId) {
         // Pro App-Öffnung genau ein Garmin-Synchronisierungsversuch.
         // Bei HTTP 429 oder einem Teilfehler bleibt der gespeicherte Fortschritt
         // erhalten; der nächste Versuch erfolgt erst beim nächsten App-Öffnen.
+        syncAttempted = true;
         const response = await callGarminFunction({ action: 'sync-today', date });
         if (!isCurrentSync()) return;
         const health = response.sync?.healthSync || null;
@@ -3801,7 +3803,6 @@ async function syncGarminTodayOnOpen(userId) {
             // Abruf wird erst beim nächsten Öffnen der App erneut versucht.
             // Der aktuelle Öffnungsvorgang zeigt den Teilfehler transparent an.
         } else {
-            garminDailySyncCompleted.add(runKey);
             console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
             const fetched = Number(activitySync.fetched || 0);
             const stored = Number(activitySync.stored || 0);
@@ -3833,6 +3834,7 @@ async function syncGarminTodayOnOpen(userId) {
             setGarminSyncIndicator('current', 'Verbunden');
         }
     } finally {
+        if (syncAttempted) garminDailySyncCompleted.add(runKey);
         garminDailySyncInFlight.delete(inFlightKey);
     }
 }
