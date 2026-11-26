@@ -87,7 +87,7 @@ test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compil
 
 test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
-  assert.match(activityDelegate, /key == WatchUi\.KEY_ESC && mView\.handleLapButton\(\)/);
+  assert.match(activityDelegate, /else if \(lowerHeld < mLongPressThreshold\) \{\s*mView\.handleLapButton\(\);/);
   assert.match(activityDelegate, /key == WatchUi\.KEY_MENU \|\| key == WatchUi\.KEY_ACTION_MENU[\s\S]*?nextDisplayPage\(1\)/);
   assert.match(homeDelegate, /extends WatchUi\.InputDelegate/);
   assert.match(homeDelegate, /key == WatchUi\.KEY_MENU[\s\S]*?scrollPlan\(1\)/);
@@ -103,9 +103,9 @@ test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(displayConfigView, /activeCount == 0/);
 });
 
-test("Recording uses Garmin kayaking with whitewater subsport", () => {
+test("Recording uses Garmin kayaking as its FIT sport type", () => {
   assert.match(recordingEngine, /:sport\s*=>\s*Activity\.SPORT_KAYAKING/);
-  assert.match(recordingEngine, /:subSport\s*=>\s*Activity\.SUB_SPORT_WHITEWATER/);
+  assert.doesNotMatch(recordingEngine, /:subSport\s*=>\s*Activity\.SUB_SPORT_WHITEWATER/);
 });
 
 test("Monkey C source has no duplicate class-level member declarations", () => {
