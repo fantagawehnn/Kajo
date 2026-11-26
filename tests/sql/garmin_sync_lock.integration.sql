@@ -31,9 +31,23 @@ begin
     raise exception 'Lock should be acquirable after release';
   end if;
 
+  select public.renew_garmin_sync_lock(v_user, v_token_a, 900) into v_result;
+  if v_result is distinct from false then
+    raise exception 'A different token must not renew the active lock';
+  end if;
+  select public.renew_garmin_sync_lock(v_user, v_token_b, 900) into v_result;
+  if v_result is distinct from true then
+    raise exception 'The owning token should renew the active lock';
+  end if;
+
   update public.garmin_sync_locks
      set expires_at = now() - interval '1 second'
    where user_id = v_user;
+
+  select public.renew_garmin_sync_lock(v_user, v_token_b, 900) into v_result;
+  if v_result is distinct from false then
+    raise exception 'An expired lock must not be renewed';
+  end if;
 
   select public.try_acquire_garmin_sync_lock(v_user, v_token_a, 300) into v_result;
   if v_result is distinct from true then
@@ -61,6 +75,7 @@ begin
     raise exception 'Client roles must not execute lock RPCs';
   end if;
   if not has_function_privilege('service_role', 'public.try_acquire_garmin_sync_lock(uuid,uuid,integer)', 'EXECUTE')
+     or not has_function_privilege('service_role', 'public.renew_garmin_sync_lock(uuid,uuid,integer)', 'EXECUTE')
      or not has_function_privilege('service_role', 'public.release_garmin_sync_lock(uuid,uuid)', 'EXECUTE') then
     raise exception 'service_role must be able to execute both lock RPCs';
   end if;
