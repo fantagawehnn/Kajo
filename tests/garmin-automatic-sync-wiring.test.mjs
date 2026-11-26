@@ -32,6 +32,7 @@ test('activity sync failure does not prevent the independent health sync', () =>
   assert.match(todayHandler, /try \{\s*healthSync = await syncGarminHealthAutomaticBatch/);
   assert.match(todayHandler, /catch \(error\) \{[\s\S]*?healthSync = \{\s*status: "error"/);
   assert.match(todayHandler, /activitySync\.status === "error" \|\| healthSync\.status === "error"/);
+  assert.match(todayHandler, /json\(200, \{ ok: true, partial: hasError, sync:/);
 });
 
 test('sync-today calls automatic cursors while manual range imports keep the history cursor', () => {
