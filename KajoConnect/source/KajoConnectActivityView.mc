@@ -1369,19 +1369,72 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    function captureFinalPartialLap(activityInfo) as Void {
+        if (activityInfo == null) { return; }
+
+        var timerValue = activityInfo.timerTime == null
+            ? mElapsedSeconds * 1000 : activityInfo.timerTime;
+        var lapDuration = timerValue - mLapStartTimerMs;
+        var distanceValue = activityInfo.elapsedDistance == null ||
+            mLapStartDistanceMeters == null
+            ? null : activityInfo.elapsedDistance - (mLapStartDistanceMeters as Lang.Number);
+
+        // Nur einen tatsächlich absolvierten Restabschnitt übernehmen.
+        // Das verhindert eine leere/duplizierte Runde, wenn direkt nach
+        // einer manuellen Markierung gespeichert wird.
+        var hasTime = lapDuration > 1000;
+        var hasDistance = distanceValue != null && distanceValue > 1;
+        if (!hasTime && !hasDistance) { return; }
+
+        var lap = {};
+        lap["lapNumber"] = mLiveLapSummaries.size() + 1;
+        lap["elapsedTimeMs"] = lapDuration > 0 ? lapDuration : 0;
+        if (distanceValue != null && distanceValue >= 0) {
+            lap["distanceMeters"] = distanceValue;
+            if (lapDuration > 0) {
+                lap["averageSpeedKmh"] = (distanceValue / (lapDuration / 1000.0)) * 3.6;
+            }
+        }
+        if (mLapHeartRateCount > 0) {
+            lap["averageHeartRateBpm"] = Math.round(
+                mLapHeartRateSum / mLapHeartRateCount).toNumber();
+        } else {
+            lap["averageHeartRateBpm"] = null;
+        }
+
+        // Beim Speichern aus der Pause kann Garmin keine neue FIT-Runde mehr
+        // annehmen (die Session wurde zum Pausieren gestoppt). Der Restabschnitt
+        // bleibt deshalb als lokale KAJO-Historienrunde erhalten.
+        if (mEngine.isRecording()) {
+            mEngine.addLap();
+        }
+        mLiveLapSummaries.add(lap);
+        mLapStartTimerMs = timerValue;
+        if (activityInfo.elapsedDistance != null) {
+            mLapStartDistanceMeters = activityInfo.elapsedDistance;
+        }
+        mLapHeartRateSum = 0;
+        mLapHeartRateCount = 0;
+    }
+
     function finishRecording() as Void {
         // Vor dem Beenden letzte verfuegbare Werte sichern.
         captureActivitySummary();
+        captureFinalPartialLap(Activity.getActivityInfo());
         if (mEngine.finish()) {
             mFinalLaps = mEngine.getLapSummaries();
             // Die FIT-Lap-Events liefern keine Ø-HF; die lokal erfassten Werte
-            // werden anhand der Rundennummer ergänzt.
-            for (var lapIndex = 0; lapIndex < mFinalLaps.size() &&
-                lapIndex < mLiveLapSummaries.size(); lapIndex += 1) {
-                var savedLap = mFinalLaps[lapIndex] as Lang.Dictionary;
+            // werden anhand der Rundennummer ergänzt. Ein letzter Restabschnitt
+            // aus der Pause wird zusätzlich lokal in der KAJO-Historie geführt.
+            for (var lapIndex = 0; lapIndex < mLiveLapSummaries.size(); lapIndex += 1) {
                 var liveLap = mLiveLapSummaries[lapIndex] as Lang.Dictionary;
-                if (liveLap["averageHeartRateBpm"] != null) {
-                    savedLap["averageHeartRateBpm"] = liveLap["averageHeartRateBpm"];
+                if (lapIndex < mFinalLaps.size()) {
+                    var savedLap = mFinalLaps[lapIndex] as Lang.Dictionary;
+                    if (liveLap["averageHeartRateBpm"] != null) {
+                        savedLap["averageHeartRateBpm"] = liveLap["averageHeartRateBpm"];
+                    }
+                } else {
+                    mFinalLaps.add(liveLap);
                 }
             }
             saveHistoryEntry();
