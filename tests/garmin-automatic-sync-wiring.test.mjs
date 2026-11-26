@@ -41,8 +41,8 @@ test('sync-today calls automatic cursors while manual range imports keep the his
   assert.notEqual(todayStart, -1);
   assert.notEqual(rangeStart, -1);
   const todayHandler = edgeFunction.slice(todayStart, rangeStart);
-  assert.match(todayHandler, /syncGarminActivitiesAutomaticBatch\(admin, userId, date\)/);
-  assert.match(todayHandler, /syncGarminHealthAutomaticBatch\(admin, userId, date\)/);
+  assert.match(todayHandler, /syncGarminActivitiesAutomaticBatch\(admin, userId, date, assertSyncLock\)/);
+  assert.match(todayHandler, /syncGarminHealthAutomaticBatch\(admin, userId, date, assertSyncLock\)/);
   const rangeHandler = edgeFunction.slice(rangeStart);
   assert.match(rangeHandler, /syncGarminHealthHistoryBatch\(admin, userId, startDate, endDate, false, false\)/);
 });
@@ -83,7 +83,7 @@ test('a lost or unconfirmed Garmin sync lease stops work at safe checkpoints', (
   assert.match(edgeFunction, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertLock\)/);
   assert.match(edgeFunction, /await garminGet\(token, `\/activitylist-service\/activities\/search\/activities\?\$\{params\.toString\(\)\}`\);\s*assertLock\(\);/);
   assert.match(edgeFunction, /assertLock\(\);\s*const \{ error: coverageError \}/);
-  assert.match(edgeFunction, /assertLock\(\);\s*const \{ error: stateError \} = await admin\.from\("garmin_sync_state"\)\.upsert/);
+  assert.match(edgeFunction, /assertLock\(\);\s*const now = new Date\(\)\.toISOString\(\);\s*const \{ error: stateError \} = await admin\.from\("garmin_sync_state"\)\.upsert/);
   assert.match(edgeFunction, /activityRescanEndDate, 14, assertSyncLock/);
   assert.match(edgeFunction, /"health_history", false, assertSyncLock/);
 });
