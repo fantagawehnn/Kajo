@@ -1412,7 +1412,7 @@ Deno.serve(async (req) => {
       const { data: acquired, error: lockError } = await admin.rpc("try_acquire_garmin_sync_lock", {
         p_user_id: userId,
         p_lock_token: lockToken,
-        p_lease_seconds: 300,
+        p_lease_seconds: 900,
       });
       if (lockError) throw lockError;
       if (acquired !== true) {
@@ -1424,6 +1424,29 @@ Deno.serve(async (req) => {
       }
       syncLockUserId = userId;
       syncLockToken = lockToken;
+      // Renew the lease well before expiry so long-running imports cannot
+      // become available to another device while this request is still active.
+      syncLockHeartbeatTimer = setInterval(() => {
+        if (syncLockHeartbeat || !syncLockAdmin || !syncLockUserId || !syncLockToken) return;
+        syncLockHeartbeat = (async () => {
+          try {
+            const { data: renewed, error: renewError } = await syncLockAdmin!.rpc("renew_garmin_sync_lock", {
+              p_user_id: syncLockUserId,
+              p_lock_token: syncLockToken,
+              p_lease_seconds: 900,
+            });
+            if (renewError) {
+              console.error("Garmin sync lock renewal failed; current lease remains active until expiry:", renewError);
+            } else if (renewed !== true) {
+              console.error("Garmin sync lock ownership was lost; refusing to assume the lease is still held.");
+            }
+          } catch (renewError) {
+            console.error("Garmin sync lock renewal request failed; current lease remains active until expiry:", renewError);
+          }
+        })().finally(() => {
+          syncLockHeartbeat = null;
+        });
+      }, 60_000);
     }
 
     if (action === "connect") {
