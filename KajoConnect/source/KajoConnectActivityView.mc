@@ -1294,6 +1294,10 @@ class KajoConnectActivityView extends WatchUi.View {
         return mStatus == "PAUSIERT";
     }
 
+    function isSavedForDetails() as Lang.Boolean {
+        return mStatus == "GESPEICHERT";
+    }
+
     function handlePausedShortPrimary() as Void {
         if (mStatus == "PAUSIERT") {
             mDiscardConfirmationStage = 0;
