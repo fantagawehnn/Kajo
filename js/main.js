@@ -3773,7 +3773,7 @@ async function syncGarminTodayOnOpen(userId) {
                 const message = String(error?.message || '');
                 if (!/HTTP 429|rate.?limit/i.test(message) || consecutiveRateLimits >= 8) throw error;
                 consecutiveRateLimits++;
-                const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+                const retryMatch = message.match(/retryInSeconds["\s:=]+(\d+)/i);
                 const waitSeconds = Math.max(30, Number(retryMatch?.[1] || 30))
                     + Math.min(30, (consecutiveRateLimits - 1) * 5);
                 setGarminSyncResult('Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden …', 'syncing');
@@ -3798,7 +3798,7 @@ async function syncGarminTodayOnOpen(userId) {
                 throw new Error('Garmin hat auch nach mehreren automatischen Warte- und Wiederholungsversuchen keine weiteren Abrufe zugelassen.');
             }
             consecutiveRateLimits++;
-            const activityRetryMatch = activityError.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+            const activityRetryMatch = activityError.match(/retryInSeconds["\s:=]+(\d+)/i);
             const waitSeconds = Math.max(30, Number(
                 healthAttempt.retryInSeconds || activityRetryMatch?.[1] || 30
             )) + Math.min(30, (consecutiveRateLimits - 1) * 5);
