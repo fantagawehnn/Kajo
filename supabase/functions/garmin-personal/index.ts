@@ -1408,9 +1408,8 @@ Deno.serve(async (req) => {
     if (action === "sync-today") {
       const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : "";
       if (!date) return json(400, { error: "Für den Garmin-Tagesabgleich wurde kein gültiges lokales Datum übergeben." });
-      // Ein Tag Überlappung erfasst verspätet bei Garmin sichtbare Aktivitäten
-      // und Gesundheitswerte des Vortags, ohne ältere Historie erneut abzurufen.
-      const overlapStartDate = addUtcDays(date, -1);
+      // Der persistierte Fortschritt hält automatische Tagesabgleiche und
+      // mehrtägige Aufholvorgänge unabhängig von manuellen Importen.
       const activitySync = await syncGarminActivitiesAutomaticBatch(admin, userId, date);
       // Automatische Tagesabgleiche besitzen eigene Cursor und können nach
       // App-Pausen fortgesetzt werden; manuelle Importe bleiben davon getrennt.
