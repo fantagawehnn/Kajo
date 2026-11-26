@@ -21,8 +21,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Check main application syntax
-        run: node --experimental-default-type=module --check js/main.js
+      - name: Check main application and Garmin planner syntax
+        run: |
+          node --experimental-default-type=module --check js/main.js
+          node --experimental-default-type=module --check supabase/functions/garmin-personal/automatic-sync-plan.js
       - name: Run Garmin and cloud synchronization tests
         run: |
           node --experimental-default-type=module --test \
@@ -38,5 +40,6 @@ jobs:
             tests/garmin-health-normalize.test.mjs \
             tests/garmin-sync-history.test.mjs \
             tests/garmin-heart-rate-sync.test.mjs \
-            tests/garmin-open-sync-policy.test.mjs
+            tests/garmin-open-sync-policy.test.mjs \
+            tests/garmin-automatic-sync-plan.test.mjs
 
