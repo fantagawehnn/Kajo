@@ -11,10 +11,10 @@ export function buildAutomaticGarminSyncRange({
   maxDays = 14,
   initialOverlapDays = 1,
 }) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(today)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) {
     throw new Error("today must be a YYYY-MM-DD date.");
   }
-  if (cursorDate != null && !/^\\d{4}-\\d{2}-\\d{2}$/.test(cursorDate)) {
+  if (cursorDate != null && !/^\d{4}-\d{2}-\d{2}$/.test(cursorDate)) {
     throw new Error("cursorDate must be null or a YYYY-MM-DD date.");
   }
 
