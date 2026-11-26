@@ -40,6 +40,9 @@ test('Garmin API is attempted once per app opening without an in-session retry l
     );
     assert.doesNotMatch(syncFunction, /for\s*\(\s*let attempt/);
     assert.match(syncFunction, /cloudActivityLoadAttempted/);
+    assert.match(syncFunction, /let syncAttempted = false/);
+    assert.match(syncFunction, /syncAttempted = true;\s*const response = await callGarminFunction/);
+    assert.match(syncFunction, /finally\s*\{\s*if \(syncAttempted\) garminDailySyncCompleted\.add\(runKey\)/);
 });
 
 test('multi-day activity catch-up is not reported as fully synchronized', () => {
