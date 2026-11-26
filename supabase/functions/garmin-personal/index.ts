@@ -299,8 +299,9 @@ async function syncGarminHealthHistoryBatch(
       return { status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
         message: "Der ausgewählte Garmin-Zeitraum ist bereits vollständig importiert." };
     }
-    // Manual range syncs may rescan completed dates: successful health records
-    // are skipped per endpoint, while missing/no-data records can be retried.
+    // A completed automatic cursor can be rewound for a one-day overlap.
+    // Successful health records are skipped per endpoint; missing/no-data
+    // records can be retried when Garmin makes them available later.
     const { data: restarted, error: restartError } = await admin.from("garmin_sync_state")
       .update({
         cursor_date: startDate,
