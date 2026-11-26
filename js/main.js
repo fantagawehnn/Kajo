@@ -3760,9 +3760,8 @@ async function syncGarminTodayOnOpen(userId) {
 
         setGarminSyncIndicator('syncing', 'Tagesabgleich läuft');
         setGarminSyncResult('Der automatische Garmin-Tagesabgleich läuft …', 'syncing');
-        // Pro App-Öffnung genau ein Garmin-Synchronisierungsversuch.
-        // Bei HTTP 429 oder einem Teilfehler bleibt der gespeicherte Fortschritt
-        // erhalten; der nächste Versuch erfolgt erst beim nächsten App-Öffnen.
+        // Pro App-Öffnung wird ein Tagesabgleich gestartet. Bei HTTP 429 wird
+        // nach der von Garmin angeforderten Pause automatisch fortgesetzt.
         syncAttempted = true;
         let response;
         let consecutiveRateLimits = 0;
