@@ -29,3 +29,18 @@ class KajoConnectTrainingMetricDelegate extends WatchUi.Menu2InputDelegate {
         mView.persistOption(item.getId().toString(), checkbox.isChecked());
     }
 }
+
+
+class KajoConnectLiveMetricPickerDelegate extends WatchUi.Menu2InputDelegate {
+
+    var mView as KajoConnectLiveMetricPickerView;
+
+    function initialize(view as KajoConnectLiveMetricPickerView) {
+        Menu2InputDelegate.initialize();
+        mView = view;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        mView.selectMetric(item.getId().toString());
+    }
+}
