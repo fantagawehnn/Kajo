@@ -80,6 +80,7 @@ test('a lost or unconfirmed Garmin sync lease stops work at safe checkpoints', (
   assert.match(edgeFunction, /syncLockLost = true/);
   assert.match(edgeFunction, /Date\.now\(\) - syncLockLastRenewedAt >= 12 \* 60 \* 1000/);
   assert.match(edgeFunction, /if \(syncLockLost\) throw new Error/);
+  assert.match(edgeFunction, /if \(\/Garmin-Synchronisierungssperre\/\.test\(message\)\) throw error/);
   assert.match(edgeFunction, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertLock\)/);
   assert.match(edgeFunction, /await garminGet\(token, `\/activitylist-service\/activities\/search\/activities\?\$\{params\.toString\(\)\}`\);\s*assertLock\(\);/);
   assert.match(edgeFunction, /assertLock\(\);\s*const \{ error: coverageError \}/);
