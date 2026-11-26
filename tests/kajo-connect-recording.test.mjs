@@ -13,6 +13,17 @@ function method(source, name, nextName) {
     return source.slice(start, end === -1 ? source.length : end);
 }
 
+test('saved lap details can scroll through all laps in five-row pages', () => {
+    const scroll = method(activity, 'scrollSavedLaps', 'nextDisplayPage');
+    assert.match(scroll, /mSavedDetailPage != 2/);
+    assert.match(scroll, /mFinalLaps\.size\(\) <= 5/);
+    assert.match(scroll, /mSavedLapOffset \+= direction/);
+    assert.match(scroll, /mSavedLapOffset > maxOffset/);
+    assert.match(activity, /mFinalLaps\[mSavedLapOffset \+ lapIndex\]/);
+    assert.match(delegate, /if \(!mView\.scrollSavedLaps\(1\)\)/);
+    assert.match(delegate, /if \(!mView\.scrollSavedLaps\(-1\)\)/);
+});
+
 test('saving an activity preserves a meaningful final partial lap without duplicating an empty segment', () => {
     const partial = method(activity, 'captureFinalPartialLap', 'finishRecording');
     assert.match(partial, /lapDuration > 1000/);
