@@ -126,8 +126,10 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function loadTrainingFieldSettings() as Void {
         var count = Storage.getValue("kajoTrainingFieldCount");
-        if (count == 1 || count == 2 || count == 4 || count == 6) {
+        if (count == 2 || count == 4) {
             mTrainingFieldCount = count as Lang.Number;
+        } else {
+            mTrainingFieldCount = 4;
         }
         var showStatus = Storage.getValue("kajoTrainingShowStatus");
         var showHR = Storage.getValue("kajoTrainingShowHR");
