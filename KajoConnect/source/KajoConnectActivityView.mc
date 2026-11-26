@@ -1105,12 +1105,12 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mStatus == "AUFZEICHNUNG") {
             mElapsedSeconds += 1;
             sampleLapMetrics();
-            updateWorkoutStepTimer();
-            if (mLapSummaryVisible) {
-                mLapSummarySecondsRemaining -= 1;
-                if (mLapSummarySecondsRemaining <= 0) {
-                    mLapSummaryVisible = false;
-                }
+        }
+        if (mStatus == "AUFZEICHNUNG") { updateWorkoutStepTimer(); }
+        if (mStatus == "AUFZEICHNUNG" && mLapSummaryVisible) {
+            mLapSummarySecondsRemaining -= 1;
+            if (mLapSummarySecondsRemaining <= 0) {
+                mLapSummaryVisible = false;
             }
         }
         WatchUi.requestUpdate();
