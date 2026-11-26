@@ -80,3 +80,19 @@ test('Garmin cloud preview payloads are fetched only for new or changed activity
     assert.match(cloudLoader, /\.in\('garmin_activity_id', ids\)/);
     assert.match(cloudLoader, /setUserLocalSetting\('garminActivityCloudSeenAtById'/);
 });
+
+
+test('a concurrent Garmin sync lock is handled as a neutral busy state', () => {
+    const callStart = main.indexOf('async function callGarminFunction(body) {');
+    const callEnd = main.indexOf('\n}\n', callStart);
+    assert.notEqual(callStart, -1, 'Garmin function caller must exist');
+    assert.notEqual(callEnd, -1, 'Garmin function caller must close');
+    const callFunction = main.slice(callStart, callEnd + 3);
+    assert.match(callFunction, /code = payload\?\.code/);
+    assert.match(callFunction, /firstError\.code === 'garmin_sync_already_running'/);
+    assert.match(callFunction, /return \{ ok: true, busy: true \}/);
+    assert.match(syncFunction, /if \(response\.busy === true\)/);
+    assert.match(syncFunction, /setGarminSyncIndicator\('current', 'Verbunden'\)/);
+    assert.match(syncFunction, /läuft bereits eine Synchronisierung auf einem anderen Gerät/);
+    assert.match(syncFunction, /if \(response\.busy === true\)[\s\S]*?return;/);
+});
