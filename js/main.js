@@ -3790,7 +3790,8 @@ async function syncGarminTodayOnOpen(userId) {
         if (!isCurrentSync()) return;
         const activitySync = response.sync?.activitySync || {};
         const partial = health?.status === 'partial' || health?.status === 'rate_limited'
-            || health?.status === 'in_progress' || health?.rateLimited === true
+            || health?.status === 'in_progress' || health?.status === 'error' || health?.rateLimited === true
+            || activitySync.status === 'error'
             || Number(health?.failed || 0) > 0
             || Number(activitySync.progress?.remainingDays || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
