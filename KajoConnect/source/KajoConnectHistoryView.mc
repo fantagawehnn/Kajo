@@ -46,6 +46,12 @@ class KajoConnectHistoryView extends WatchUi.Menu2 {
     function showEntry(identifier as Lang.String) as Void {
         var index = mEntryIds.indexOf(identifier);
         if (index < 0 || index >= mEntries.size()) { return; }
-        WatchUi.showToast("Details in der KAJO App", null);
+        var entry = mEntries[index] as Lang.Dictionary;
+        var detailView = new KajoConnectActivityDetailView(entry);
+        WatchUi.pushView(
+            detailView,
+            new KajoConnectActivityDetailDelegate(),
+            WatchUi.SLIDE_UP
+        );
     }
 }
