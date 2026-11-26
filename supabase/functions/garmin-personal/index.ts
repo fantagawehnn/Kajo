@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveGarminActivityDate } from "./activity-date.js";
 import { buildGarminActivityRescanPlan } from "./activity-scan-plan.js";
 import { selectChangedGarminActivityRows } from "./activity-upsert-plan.js";
+import { buildAutomaticGarminSyncRange } from "./automatic-sync-plan.js";
 import { fetchWithTransientRetry } from "./fit-download-retry.js";
 
 const corsHeaders = {
@@ -244,8 +245,9 @@ async function syncGarminHealthHistoryBatch(
   rescanCompleted = false,
   forceRefresh = false,
   maxDaysPerInvocation = 1,
+  syncType = "health_history",
+  preserveCursor = false,
 ) {
-  const syncType = "health_history";
   let { data: state, error: stateError } = await admin
     .from("garmin_sync_state")
     .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
@@ -271,7 +273,7 @@ async function syncGarminHealthHistoryBatch(
       .single();
     if (createError) throw createError;
     state = created;
-  } else if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
+  } else if (!preserveCursor && (state.range_start_date !== startDate || state.range_end_date !== endDate)) {
     const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
       .update({
         cursor_date: startDate,
@@ -291,6 +293,7 @@ async function syncGarminHealthHistoryBatch(
   }
 
   let cursorDate = state.cursor_date ?? startDate;
+  if (preserveCursor && state?.cursor_date) cursorDate = startDate;
   if (state.status === "completed" && cursorDate > endDate) {
     if (!rescanCompleted) {
       return { status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
@@ -366,6 +369,83 @@ async function syncGarminHealthHistoryBatch(
     retryInSeconds,
     startDate, endDate, nextDate: cursorDate, processedDays: processed.length,
     remainingDays, batchLimit, results: processed,
+  };
+}
+
+
+async function syncGarminHealthAutomaticBatch(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  today: string,
+) {
+  const { data: state, error } = await admin
+    .from("garmin_sync_state")
+    .select("cursor_date,status")
+    .eq("user_id", userId)
+    .eq("sync_type", "health_auto")
+    .maybeSingle();
+  if (error) throw error;
+
+  const range = buildAutomaticGarminSyncRange({
+    today,
+    cursorDate: state?.cursor_date ?? null,
+    status: state?.status ?? null,
+    maxDays: 2,
+    initialOverlapDays: 1,
+  });
+  return await syncGarminHealthHistoryBatch(
+    admin, userId, range.startDate, today, true, false, 2, "health_auto", true
+  );
+}
+
+async function syncGarminActivitiesAutomaticBatch(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  today: string,
+) {
+  const { data: state, error } = await admin
+    .from("garmin_sync_state")
+    .select("cursor_date,status")
+    .eq("user_id", userId)
+    .eq("sync_type", "activity_auto")
+    .maybeSingle();
+  if (error) throw error;
+
+  const range = buildAutomaticGarminSyncRange({
+    today,
+    cursorDate: state?.cursor_date ?? null,
+    status: state?.status ?? null,
+    maxDays: 14,
+    initialOverlapDays: 1,
+  });
+  const result = await syncGarminActivitiesForUser(
+    admin, userId, range.startDate, range.endDate, true, range.endDate, 2
+  );
+  if (result.status === "skipped") return result;
+
+  const now = new Date().toISOString();
+  const { error: stateError } = await admin.from("garmin_sync_state").upsert({
+    user_id: userId,
+    sync_type: "activity_auto",
+    cursor_date: range.nextCursorDate,
+    range_start_date: range.startDate,
+    range_end_date: today,
+    status: range.isComplete ? "completed" : "running",
+    last_success_at: now,
+    last_error: null,
+    updated_at: now,
+  }, { onConflict: "user_id,sync_type" });
+  if (stateError) throw stateError;
+
+  return {
+    ...result,
+    progress: {
+      nextDate: range.nextCursorDate,
+      processedThrough: range.endDate,
+      remainingDays: range.isComplete
+        ? 0
+        : Math.floor((new Date(`${today}T00:00:00Z`).getTime() - new Date(`${range.nextCursorDate}T00:00:00Z`).getTime()) / 86400000) + 1,
+    },
   };
 }
 
@@ -760,6 +840,7 @@ async function syncGarminActivitiesForUser(
   endDate: string,
   onlyMissingDays = false,
   rescanAnchorDate = endDate,
+  scanWindowDaysInput = 14,
 ) {
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
@@ -773,7 +854,7 @@ async function syncGarminActivitiesForUser(
   const token = await garminToken(apiKey);
   const pageSize = 100;
   const maxPages = 20;
-  const scanWindowDays = 14;
+  const scanWindowDays = Math.max(1, Math.min(14, Math.floor(scanWindowDaysInput) || 14));
   let syncRanges: Array<{ startDate: string; endDate: string }> = [{ startDate, endDate }];
   let skippedDays = 0;
 
@@ -1304,12 +1385,10 @@ Deno.serve(async (req) => {
       // Ein Tag Überlappung erfasst verspätet bei Garmin sichtbare Aktivitäten
       // und Gesundheitswerte des Vortags, ohne ältere Historie erneut abzurufen.
       const overlapStartDate = addUtcDays(date, -1);
-      const activitySync = await syncGarminActivitiesForUser(admin, userId, overlapStartDate, date, false);
-      // Pro Tag werden nur fehlende, verspätete oder dynamisch aktualisierte
-      // Gesundheitswerte von Garmin geladen. Leere Antworten löschen keine Nutzdaten.
-      const healthSync = await syncGarminHealthHistoryBatch(
-        admin, userId, overlapStartDate, date, true, false, 2
-      );
+      const activitySync = await syncGarminActivitiesAutomaticBatch(admin, userId, date);
+      // Automatische Tagesabgleiche besitzen eigene Cursor und können nach
+      // App-Pausen fortgesetzt werden; manuelle Importe bleiben davon getrennt.
+      const healthSync = await syncGarminHealthAutomaticBatch(admin, userId, date);
       return json(200, { ok: true, sync: { date, activitySync, healthSync } });
     }
 
