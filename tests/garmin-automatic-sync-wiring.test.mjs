@@ -23,6 +23,17 @@ test('automatic activity sync uses its own cursor and coverage-aware batches', (
   assert.match(edgeFunction, /sync_type: "activity_auto"/);
 });
 
+test('activity sync failure does not prevent the independent health sync', () => {
+  const todayStart = edgeFunction.indexOf('if (action === "sync-today")');
+  const rangeStart = edgeFunction.indexOf('if (action === "sync-range")');
+  const todayHandler = edgeFunction.slice(todayStart, rangeStart);
+  assert.match(todayHandler, /try \{\s*activitySync = await syncGarminActivitiesAutomaticBatch/);
+  assert.match(todayHandler, /catch \(error\) \{[\s\S]*?activitySync = \{\s*status: "error"/);
+  assert.match(todayHandler, /try \{\s*healthSync = await syncGarminHealthAutomaticBatch/);
+  assert.match(todayHandler, /catch \(error\) \{[\s\S]*?healthSync = \{\s*status: "error"/);
+  assert.match(todayHandler, /activitySync\.status === "error" \|\| healthSync\.status === "error"/);
+});
+
 test('sync-today calls automatic cursors while manual range imports keep the history cursor', () => {
   const todayStart = edgeFunction.indexOf('if (action === "sync-today")');
   const rangeStart = edgeFunction.indexOf('if (action === "sync-range")');
