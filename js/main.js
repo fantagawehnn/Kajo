@@ -393,15 +393,17 @@ async function callGarminFunction(body) {
     const readInvocationError = async error => {
         const response = error?.context;
         let detail = '';
+        let code = '';
         if (response && typeof response.clone === 'function') {
             try {
                 const payload = await response.clone().json();
                 detail = payload?.error || payload?.message || '';
+                code = payload?.code || '';
             } catch (_) {
                 try { detail = (await response.clone().text()).slice(0, 500); } catch (_) {}
             }
         }
-        return { detail, status: Number(response?.status || error?.status || 0) };
+        return { detail, code, status: Number(response?.status || error?.status || 0) };
     };
 
     let result = await supabase.functions.invoke('garmin-personal', { body });
@@ -409,6 +411,9 @@ async function callGarminFunction(body) {
         const firstError = await readInvocationError(result.error);
         const isSessionError = firstError.status === 401
             || /Sitzung ungültig|Anmeldung erforderlich|Invalid JWT|invalid claim/i.test(firstError.detail);
+        if (firstError.code === 'garmin_sync_already_running') {
+            return { ok: true, busy: true };
+        }
         if (isSessionError) {
             // Ein abgelaufenes Access-Token einmal über den gespeicherten Refresh-Token erneuern.
             let refreshResult;
@@ -3761,6 +3766,11 @@ async function syncGarminTodayOnOpen(userId) {
         syncAttempted = true;
         const response = await callGarminFunction({ action: 'sync-today', date });
         if (!isCurrentSync()) return;
+        if (response.busy === true) {
+            setGarminSyncIndicator('current', 'Verbunden');
+            setGarminSyncResult('Für dieses Garmin-Konto läuft bereits eine Synchronisierung auf einem anderen Gerät. Deine gespeicherten Daten bleiben verfügbar.', 'info');
+            return;
+        }
         const health = response.sync?.healthSync || null;
 
         if (!isCurrentSync()) return;
