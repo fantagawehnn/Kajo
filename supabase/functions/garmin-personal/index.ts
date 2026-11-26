@@ -1452,7 +1452,10 @@ Deno.serve(async (req) => {
         };
       }
       const hasError = activitySync.status === "error" || healthSync.status === "error";
-      return json(200, { ok: !hasError, sync: { date, activitySync, healthSync } });
+      // Keep the function response successful so the client can display both
+      // independent results instead of treating one failed subsystem as a
+      // failed request and discarding the other subsystem's successful result.
+      return json(200, { ok: true, partial: hasError, sync: { date, activitySync, healthSync } });
     }
 
     if (action === "sync-range") {
