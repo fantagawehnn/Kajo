@@ -1429,11 +1429,30 @@ Deno.serve(async (req) => {
       if (!date) return json(400, { error: "Für den Garmin-Tagesabgleich wurde kein gültiges lokales Datum übergeben." });
       // Der persistierte Fortschritt hält automatische Tagesabgleiche und
       // mehrtägige Aufholvorgänge unabhängig von manuellen Importen.
-      const activitySync = await syncGarminActivitiesAutomaticBatch(admin, userId, date);
-      // Automatische Tagesabgleiche besitzen eigene Cursor und können nach
-      // App-Pausen fortgesetzt werden; manuelle Importe bleiben davon getrennt.
-      const healthSync = await syncGarminHealthAutomaticBatch(admin, userId, date);
-      return json(200, { ok: true, sync: { date, activitySync, healthSync } });
+      let activitySync: Record<string, unknown>;
+      let healthSync: Record<string, unknown>;
+      try {
+        activitySync = await syncGarminActivitiesAutomaticBatch(admin, userId, date);
+      } catch (error) {
+        console.error("Garmin automatic activity sync failed:", error);
+        activitySync = {
+          status: "error",
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+      // Activity- und Gesundheitsabruf sind unabhängig: Ein Garmin-Fehler in
+      // einem Bereich darf den jeweils anderen Abruf nicht verhindern.
+      try {
+        healthSync = await syncGarminHealthAutomaticBatch(admin, userId, date);
+      } catch (error) {
+        console.error("Garmin automatic health sync failed:", error);
+        healthSync = {
+          status: "error",
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+      const hasError = activitySync.status === "error" || healthSync.status === "error";
+      return json(200, { ok: !hasError, sync: { date, activitySync, healthSync } });
     }
 
     if (action === "sync-range") {
