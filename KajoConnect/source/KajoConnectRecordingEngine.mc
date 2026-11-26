@@ -86,4 +86,12 @@ class KajoConnectRecordingEngine {
         }
         return saved;
     }
+
+    function discard() as Lang.Boolean {
+        if (mSession == null) { return false; }
+        if (mSession.isRecording() && !mSession.stop()) { return false; }
+        var discarded = mSession.discard();
+        if (discarded) { mSession = null; }
+        return discarded;
+    }
 }
