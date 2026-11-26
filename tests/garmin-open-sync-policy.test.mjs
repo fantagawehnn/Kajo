@@ -33,15 +33,19 @@ assert.notEqual(cloudLoaderEnd, -1, 'Garmin cloud preview loader must close');
 const cloudLoader = main.slice(cloudLoaderStart, cloudLoaderEnd);
 
 
-test('Garmin API is attempted once per app opening without an in-session retry loop', () => {
+test('Garmin app-open sync automatically resumes after rate limits with a bounded retry loop', () => {
     assert.equal(
         (syncFunction.match(/callGarminFunction\(\{ action: 'sync-today', date \}\)/g) || []).length,
         1
     );
-    assert.doesNotMatch(syncFunction, /for\s*\(\s*let attempt/);
-    assert.match(syncFunction, /cloudActivityLoadAttempted/);
-    assert.match(syncFunction, /let syncAttempted = false/);
-    assert.match(syncFunction, /syncAttempted = true;\s*const response = await callGarminFunction/);
+    assert.match(syncFunction, /let consecutiveRateLimits = 0/);
+    assert.match(syncFunction, /while \(true\)/);
+    assert.match(syncFunction, /consecutiveRateLimits >= 8/);
+    assert.match(syncFunction, /healthAttempt\.status === 'rate_limited'/);
+    assert.match(syncFunction, /activityError/);
+    assert.match(syncFunction, /setTimeout\(resolve, waitSeconds \* 1000\)/);
+    assert.match(syncFunction, /if \(!isCurrentSync\(\)\) return/);
+    assert.match(syncFunction, /syncAttempted = true;\s*let response/);
     assert.match(syncFunction, /finally\s*\{\s*if \(syncAttempted\) garminDailySyncCompleted\.add\(runKey\)/);
 });
 
@@ -55,7 +59,7 @@ test('multi-day activity catch-up is not reported as fully synchronized', () => 
     assert.match(syncFunction, /Number\(activitySync\.progress\?\.remainingDays \|\| 0\) > 0/);
 });
 
-test('rate-limited and unfinished health syncs remain eligible for the next app opening', () => {
+test('rate-limited and unfinished health syncs are surfaced as partial states after retry exhaustion', () => {
     assert.match(syncFunction, /health\?\.status === 'rate_limited'/);
     assert.match(syncFunction, /health\?\.status === 'in_progress'/);
     assert.match(syncFunction, /health\?\.rateLimited === true/);
