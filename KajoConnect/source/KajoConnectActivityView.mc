@@ -91,6 +91,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mFinalMaxHeartRate as Lang.String = "--";
     var mFinalCalories as Lang.String = "--";
     var mFinalAscent as Lang.String = "--";
+    var mFinalLaps as Lang.Array<Lang.Dictionary> = [];
     var mSavedDetailPage as Lang.Number = 0;
     var mHistoryEntrySaved as Lang.Boolean = false;
     var mDiscardConfirmationStage as Lang.Number = 0;
@@ -1037,6 +1038,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mFinalMaxHeartRate = "--";
             mFinalCalories = "--";
             mFinalAscent = "--";
+            mFinalLaps = [];
             mSavedDetailPage = 0;
             mHistoryEntrySaved = false;
             mWorkoutStepIndex = 0;
@@ -1125,6 +1127,7 @@ class KajoConnectActivityView extends WatchUi.View {
             entry["maxHeartRateBpm"] = mFinalMaxHeartRate;
             entry["calories"] = mFinalCalories;
             entry["ascentMeters"] = mFinalAscent;
+            entry["laps"] = mFinalLaps;
 
             nextHistory.add(entry);
             for (var i = 0; i < previous.size() && i < 19; i += 1) {
@@ -1249,6 +1252,7 @@ class KajoConnectActivityView extends WatchUi.View {
         // Vor dem Beenden letzte verfuegbare Werte sichern.
         captureActivitySummary();
         if (mEngine.finish()) {
+            mFinalLaps = mEngine.getLapSummaries();
             saveHistoryEntry();
             mTimer.stop();
             Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
@@ -1273,8 +1277,8 @@ class KajoConnectActivityView extends WatchUi.View {
     function nextSavedDetailPage(direction as Lang.Number) as Void {
         if (mStatus != "GESPEICHERT") { return; }
         mSavedDetailPage += direction;
-        if (mSavedDetailPage < 0) { mSavedDetailPage = 1; }
-        if (mSavedDetailPage > 1) { mSavedDetailPage = 0; }
+        if (mSavedDetailPage < 0) { mSavedDetailPage = 2; }
+        if (mSavedDetailPage > 2) { mSavedDetailPage = 0; }
         WatchUi.requestUpdate();
     }
 
@@ -1727,13 +1731,65 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawMetric(dc, cx, 315, "HÖHENMETER",
                     mFinalAscent, "M", 220, Graphics.FONT_SMALL);
                 drawActivityText(dc, cx, 365, 280, 14,
+                    "OBEN · ZURÜCK  |  UNTEN · RUNDEN",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            } else {
+                drawPageHeader(dc, "RUNDE / INTERVALLE");
+                if (mFinalLaps.size() == 0) {
+                    drawActivityText(dc, cx, 160, 280, 28,
+                        "KEINE RUNDEN MARKIERT",
+                        Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                    drawActivityText(dc, cx, 202, 280, 30,
+                        "WÄHREND DES TRAININGS UNTEN DRÜCKEN",
+                        Graphics.FONT_XTINY, 0x98A5AB);
+                } else {
+                    drawActivityText(dc, 67, 76, 42, 16, "NR.",
+                        Graphics.FONT_XTINY, 0x98A5AB);
+                    drawActivityText(dc, 137, 76, 88, 16, "ZEIT",
+                        Graphics.FONT_XTINY, 0x98A5AB);
+                    drawActivityText(dc, 226, 76, 82, 16, "DISTANZ",
+                        Graphics.FONT_XTINY, 0x98A5AB);
+                    drawActivityText(dc, 315, 76, 70, 16, "Ø KM/H",
+                        Graphics.FONT_XTINY, 0x98A5AB);
+                    var shownLaps = mFinalLaps.size() > 5 ? 5 : mFinalLaps.size();
+                    for (var lapIndex = 0; lapIndex < shownLaps; lapIndex += 1) {
+                        var lap = mFinalLaps[lapIndex] as Lang.Dictionary;
+                        var rowY = 112 + (lapIndex * 48);
+                        var lapNumber = lap["lapNumber"] == null
+                            ? (lapIndex + 1).toString() : lap["lapNumber"].toString();
+                        var lapTime = lap["elapsedTimeMs"] == null
+                            ? "--" : formatTime(lap["elapsedTimeMs"]);
+                        var lapDistance = lap["distanceMeters"] == null
+                            ? "--" : numberText(lap["distanceMeters"] / 1000.0, 2);
+                        var lapSpeed = lap["averageSpeedKmh"] == null
+                            ? "--" : numberText(lap["averageSpeedKmh"], 1);
+                        dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+                        dc.drawLine(42, rowY - 8, 348, rowY - 8);
+                        drawActivityText(dc, 67, rowY, 42, 24, lapNumber,
+                            Graphics.FONT_SMALL, 0x25D3CB);
+                        drawActivityText(dc, 137, rowY, 88, 24, lapTime,
+                            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                        drawActivityText(dc, 226, rowY, 82, 24, lapDistance,
+                            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                        drawActivityText(dc, 315, rowY, 70, 24, lapSpeed,
+                            Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
+                    }
+                    if (mFinalLaps.size() > 5) {
+                        drawActivityText(dc, cx, 354, 280, 14,
+                            "+" + (mFinalLaps.size() - 5).toString() + " WEITERE RUNDEN",
+                            Graphics.FONT_XTINY, 0x98A5AB);
+                    }
+                }
+                drawActivityText(dc, cx, 365, 280, 14,
                     "OBEN · ZURÜCK  |  UNTEN · ÜBERSICHT",
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
             dc.setColor(mSavedDetailPage == 0 ? 0x25D3CB : 0x3B454B, Graphics.COLOR_BLACK);
-            dc.fillCircle(cx - 9, 382, 3);
+            dc.fillCircle(cx - 18, 382, 3);
             dc.setColor(mSavedDetailPage == 1 ? 0x25D3CB : 0x3B454B, Graphics.COLOR_BLACK);
-            dc.fillCircle(cx + 9, 382, 3);
+            dc.fillCircle(cx, 382, 3);
+            dc.setColor(mSavedDetailPage == 2 ? 0x25D3CB : 0x3B454B, Graphics.COLOR_BLACK);
+            dc.fillCircle(cx + 18, 382, 3);
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
