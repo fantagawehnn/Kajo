@@ -1369,6 +1369,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
+  let syncLockAdmin: ReturnType<typeof createClient> | null = null;
+  let syncLockUserId: string | null = null;
+  let syncLockToken: string | null = null;
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -1380,6 +1384,7 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    syncLockAdmin = admin;
 
     // Garmin synchronization is intentionally user-initiated by opening KAJO.
     // Reject legacy scheduled invocations so a stale Supabase Cron job cannot
@@ -1397,6 +1402,27 @@ Deno.serve(async (req) => {
     const { data: userData, error: userError } = await userClient.auth.getUser();
     if (userError || !userData.user) return json(401, { error: "Sitzung ungültig. Bitte erneut anmelden." });
     const userId = userData.user.id;
+
+    // Serialize all sync-* actions per account. This covers automatic and
+    // manual imports, which can otherwise race on activity coverage and cursors.
+    if (typeof action === "string" && action.startsWith("sync-")) {
+      const lockToken = crypto.randomUUID();
+      const { data: acquired, error: lockError } = await admin.rpc("try_acquire_garmin_sync_lock", {
+        p_user_id: userId,
+        p_lock_token: lockToken,
+        p_lease_seconds: 300,
+      });
+      if (lockError) throw lockError;
+      if (acquired !== true) {
+        return json(409, {
+          ok: false,
+          code: "garmin_sync_already_running",
+          error: "Für dieses Garmin-Konto läuft bereits eine Synchronisierung. Bitte warte, bis sie abgeschlossen ist.",
+        });
+      }
+      syncLockUserId = userId;
+      syncLockToken = lockToken;
+    }
 
     if (action === "connect") {
       const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
@@ -1691,5 +1717,16 @@ Deno.serve(async (req) => {
     return json(400, { error: "Unbekannte Aktion." });
   } catch (error) {
     return json(400, { error: error instanceof Error ? error.message : "Unbekannter Fehler." });
+  } finally {
+    if (syncLockAdmin && syncLockUserId && syncLockToken) {
+      const { error: releaseError } = await syncLockAdmin.rpc("release_garmin_sync_lock", {
+        p_user_id: syncLockUserId,
+        p_lock_token: syncLockToken,
+      });
+      if (releaseError) {
+        // The database lease expires automatically if release fails.
+        console.error("Garmin sync lock release failed; lease will expire:", releaseError);
+      }
+    }
   }
 });
