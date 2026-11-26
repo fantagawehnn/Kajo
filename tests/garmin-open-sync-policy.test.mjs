@@ -45,6 +45,12 @@ test('Garmin API is attempted once per app opening without an in-session retry l
     assert.match(syncFunction, /finally\s*\{\s*if \(syncAttempted\) garminDailySyncCompleted\.add\(runKey\)/);
 });
 
+test('partial results from independent Garmin syncs are shown instead of treated as request failures', () => {
+    assert.match(syncFunction, /response\.partial === true/);
+    assert.match(syncFunction, /activitySync\.status === 'error'/);
+    assert.match(syncFunction, /health\?\.status === 'error'/);
+});
+
 test('multi-day activity catch-up is not reported as fully synchronized', () => {
     assert.match(syncFunction, /Number\(activitySync\.progress\?\.remainingDays \|\| 0\) > 0/);
 });
