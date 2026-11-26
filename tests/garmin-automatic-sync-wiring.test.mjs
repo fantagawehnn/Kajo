@@ -10,12 +10,15 @@ const edgeFunction = readFileSync(
 
 test('automatic health sync uses a separate cursor and preserves its progress across date changes', () => {
   assert.match(edgeFunction, /\.eq\("sync_type", "health_auto"\)/);
+  assert.match(edgeFunction, /\.eq\("sync_type", "health_history"\)/);
+  assert.match(edgeFunction, /from\("garmin_health_records"\)/);
   assert.match(edgeFunction, /syncGarminHealthHistoryBatch\(\s*admin, userId, range\.startDate, today, true, false, 2, "health_auto", true/);
   assert.match(edgeFunction, /else if \(!preserveCursor && \(state\.range_start_date !== startDate \|\| state\.range_end_date !== endDate\)\)/);
 });
 
 test('automatic activity sync uses its own cursor and coverage-aware batches', () => {
   assert.match(edgeFunction, /\.eq\("sync_type", "activity_auto"\)/);
+  assert.match(edgeFunction, /from\("garmin_activity_sync_days"\)/);
   assert.match(edgeFunction, /range\.startDate, range\.endDate, true, range\.endDate, 2/);
   assert.match(edgeFunction, /sync_type: "activity_auto"/);
 });
