@@ -82,6 +82,8 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
                 } else {
                     mView.handlePausedShortSecondary();
                 }
+            } else if (mView.isSavedForDetails() && lowerHeld < mLongPressThreshold) {
+                mView.nextSavedDetailPage(1);
             } else if (lowerHeld < mLongPressThreshold) {
                 mView.handleLapButton();
             }
@@ -94,11 +96,19 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
     function onSwipe(swipeEvent as WatchUi.SwipeEvent) as Lang.Boolean {
         var direction = swipeEvent.getDirection();
         if (direction == WatchUi.SWIPE_UP) {
-            mView.nextDisplayPage(1);
+            if (mView.isSavedForDetails()) {
+                mView.nextSavedDetailPage(1);
+            } else {
+                mView.nextDisplayPage(1);
+            }
             return true;
         }
         if (direction == WatchUi.SWIPE_DOWN) {
-            mView.nextDisplayPage(-1);
+            if (mView.isSavedForDetails()) {
+                mView.nextSavedDetailPage(-1);
+            } else {
+                mView.nextDisplayPage(-1);
+            }
             return true;
         }
         return false;
