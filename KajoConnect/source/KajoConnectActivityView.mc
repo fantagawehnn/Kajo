@@ -1619,23 +1619,18 @@ class KajoConnectActivityView extends WatchUi.View {
             // Aktionen sind ausschließlich über physische Tasten erreichbar.
             dc.setColor(0x22C55E, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(82, 286, 226, 36, 10);
-            drawActivityText(dc, cx, 295, 210, 18,
-                mDiscardConfirmationStage == 0 ? "OBEN LANG · SPEICHERN" : "OBEN KURZ · FORTSETZEN",
+            drawActivityText(dc, cx, 295, 210, 18, "SPEICHERN",
                 Graphics.FONT_XTINY, 0x22C55E);
             dc.setColor(0xEF4444, Graphics.COLOR_BLACK);
             dc.drawRoundedRectangle(82, 332, 226, 36, 10);
-            var discardLabel = mDiscardConfirmationStage == 0
-                ? "UNTEN LANG · VERWERFEN"
-                : "NOCHMALS LANG · BESTÄTIGEN";
-            drawActivityText(dc, cx, 341, 210, 18, discardLabel,
+            drawActivityText(dc, cx, 341, 210, 18,
+                mDiscardConfirmationStage == 0 ? "VERWERFEN" : "VERWERFEN BESTÄTIGEN",
                 Graphics.FONT_XTINY, 0xEF4444);
-            if (mDiscardConfirmationStage > 0) {
-                drawActivityText(dc, cx, 260, 280, 16, "ERNEUT UNTEN LANG ZUM VERWERFEN",
-                    Graphics.FONT_XTINY, 0xFF9F1A);
-            } else {
-                drawActivityText(dc, cx, 260, 280, 16, "UNTEN KURZ · ZURÜCK",
-                    Graphics.FONT_XTINY, 0x98A5AB);
-            }
+            var keyHint = mDiscardConfirmationStage == 0
+                ? "OBEN KURZ · FORTSETZEN  |  LANG · SPEICHERN"
+                : "UNTEN KURZ · ZURÜCK  |  LANG · BESTÄTIGEN";
+            drawActivityText(dc, cx, 260, 300, 16, keyHint,
+                Graphics.FONT_XTINY, mDiscardConfirmationStage == 0 ? 0x98A5AB : 0xFF9F1A);
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mStatus == "GESPEICHERT") {
