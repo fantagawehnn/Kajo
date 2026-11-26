@@ -20,25 +20,13 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         return true;
     }
 
-    // onKey wird bei pausierter Aktivität konsumiert. Die Auswertung
-    // kurzer/langer Tastendrücke erfolgt zentral in onKeyReleased().
+    // Enter/Esc werden ausschließlich in onKeyReleased ausgewertet.
+    // So kann ein kurzer Tastendruck nicht zusätzlich durch onKey doppelt feuern.
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
-        if (mView.isPausedForSave()) {
-            if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START || key == WatchUi.KEY_ESC) {
-                return true;
-            }
-        }
-
-        if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
-            mView.handlePrimaryButton();
+        if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START || key == WatchUi.KEY_ESC) {
             return true;
         }
-
-        if (key == WatchUi.KEY_ESC && mView.handleLapButton()) {
-            return true;
-        }
-
         if (key == WatchUi.KEY_MENU || key == WatchUi.KEY_ACTION_MENU ||
             key == WatchUi.KEY_UP || key == WatchUi.KEY_PAGE) {
             mView.nextDisplayPage(1);
@@ -52,7 +40,6 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
     }
 
     function onKeyPressed(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
-        if (!mView.isPausedForSave()) { return false; }
         var key = keyEvent.getKey();
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
             mUpperPressStartedAt = System.getTimer();
@@ -66,31 +53,37 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
     }
 
     function onKeyReleased(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
-        if (!mView.isPausedForSave()) { return false; }
         var key = keyEvent.getKey();
         var now = System.getTimer();
 
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
-            if (mUpperPressStartedAt >= 0) {
-                var held = now - mUpperPressStartedAt;
-                mUpperPressStartedAt = -1;
-                if (held >= mLongPressThreshold) {
+            if (mUpperPressStartedAt < 0) { return true; }
+            var upperHeld = now - mUpperPressStartedAt;
+            mUpperPressStartedAt = -1;
+            if (mView.isPausedForSave()) {
+                if (upperHeld >= mLongPressThreshold) {
                     mView.handlePausedLongPrimary();
                 } else {
                     mView.handlePausedShortPrimary();
                 }
+            } else if (upperHeld < mLongPressThreshold) {
+                mView.handlePrimaryButton();
             }
             return true;
         }
+
         if (key == WatchUi.KEY_ESC) {
-            if (mLowerPressStartedAt >= 0) {
-                var held = now - mLowerPressStartedAt;
-                mLowerPressStartedAt = -1;
-                if (held >= mLongPressThreshold) {
+            if (mLowerPressStartedAt < 0) { return true; }
+            var lowerHeld = now - mLowerPressStartedAt;
+            mLowerPressStartedAt = -1;
+            if (mView.isPausedForSave()) {
+                if (lowerHeld >= mLongPressThreshold) {
                     mView.handlePausedLongSecondary();
                 } else {
                     mView.handlePausedShortSecondary();
                 }
+            } else if (lowerHeld < mLongPressThreshold) {
+                mView.handleLapButton();
             }
             return true;
         }
