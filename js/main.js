@@ -3786,9 +3786,11 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (!isCurrentSync()) return;
+        const activitySync = response.sync?.activitySync || {};
         const partial = health?.status === 'partial' || health?.status === 'rate_limited'
             || health?.status === 'in_progress' || health?.rateLimited === true
             || Number(health?.failed || 0) > 0
+            || Number(activitySync.progress?.remainingDays || 0) > 0
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
             || telemetryCloud.failed;
         if (partial) {
@@ -3801,7 +3803,6 @@ async function syncGarminTodayOnOpen(userId) {
         } else {
             garminDailySyncCompleted.add(runKey);
             console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
-            const activitySync = response.sync?.activitySync || {};
             const fetched = Number(activitySync.fetched || 0);
             const stored = Number(activitySync.stored || 0);
             setGarminSyncResult(stored > 0
