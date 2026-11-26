@@ -42,6 +42,10 @@ test('Garmin API is attempted once per app opening without an in-session retry l
     assert.match(syncFunction, /cloudActivityLoadAttempted/);
 });
 
+test('multi-day activity catch-up is not reported as fully synchronized', () => {
+    assert.match(syncFunction, /Number\(activitySync\.progress\?\.remainingDays \|\| 0\) > 0/);
+});
+
 test('rate-limited and unfinished health syncs remain eligible for the next app opening', () => {
     assert.match(syncFunction, /health\?\.status === 'rate_limited'/);
     assert.match(syncFunction, /health\?\.status === 'in_progress'/);
