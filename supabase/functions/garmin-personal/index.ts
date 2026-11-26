@@ -1372,6 +1372,8 @@ Deno.serve(async (req) => {
   let syncLockAdmin: ReturnType<typeof createClient> | null = null;
   let syncLockUserId: string | null = null;
   let syncLockToken: string | null = null;
+  let syncLockHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  let syncLockHeartbeat: Promise<void> | null = null;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -1718,6 +1720,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     return json(400, { error: error instanceof Error ? error.message : "Unbekannter Fehler." });
   } finally {
+    if (syncLockHeartbeatTimer) clearInterval(syncLockHeartbeatTimer);
+    if (syncLockHeartbeat) await syncLockHeartbeat;
     if (syncLockAdmin && syncLockUserId && syncLockToken) {
       try {
         const { error: releaseError } = await syncLockAdmin.rpc("release_garmin_sync_lock", {
