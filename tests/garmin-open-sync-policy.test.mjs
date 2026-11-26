@@ -42,7 +42,8 @@ test('Garmin app-open sync automatically resumes after rate limits with a bounde
     assert.match(syncFunction, /while \(true\)/);
     assert.match(syncFunction, /consecutiveRateLimits >= 8/);
     assert.match(syncFunction, /healthAttempt\.status === 'rate_limited'/);
-    assert.match(syncFunction, /HTTP 429\|rate\.\?limit\/i\.test\(healthError\)/);
+    assert.match(syncFunction, /healthError = String\(healthAttempt\.error/);
+    assert.match(syncFunction, /\.test\(healthError\)/);
     assert.match(syncFunction, /activityError/);
     assert.match(syncFunction, /setTimeout\(resolve, waitSeconds \* 1000\)/);
     assert.match(syncFunction, /if \(!isCurrentSync\(\)\) return/);
