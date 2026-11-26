@@ -248,12 +248,12 @@ test("live training field settings offer the supported 2 and 4 field layouts", (
   assert.match(intervalHintsView, /"kajoIntervalTone", false/);
   assert.match(activityView, /mTrainingFieldCount == 2/);
   assert.match(activityView, /var mTrainingFieldCount as Lang\.Number = 4/);
-  assert.match(activityView, /dc\.fillRoundedRectangle\(54, 75, 282, 31, 15\)/);
-  assert.match(activityView, /dc\.drawArc\(cx, 150, 105, Graphics\.ARC_CLOCKWISE, 225, 360\)/);
-  assert.match(activityView, /drawActivityText\(dc, 276, 278, 126, 34, "♥ " \+ hrNow/);
-  assert.match(activityView, /dc\.drawLine\(72, 272, 318, 272\)/);
+  assert.match(activityView, /dc\.fillRoundedRectangle\(55, 63, 280, 30, 15\)/);
+  assert.match(activityView, /dc\.drawArc\(cx, 197, 105, Graphics\.ARC_CLOCKWISE, 225, 360\)/);
+  assert.match(activityView, /drawHeartRateZoneBar\(dc, cx, cx, mUnit \* 0\.455, zone\)/);
+  assert.match(activityView, /dc\.drawLine\(72, 220, 318, 220\)/);
   assert.match(activityView, /"PACE"/);
-  assert.match(activityView, /"BPM · Z" \+ zone\.toString\(\)/);
+  assert.match(activityView, /"ZONE " \+ zone\.toString\(\)/);
   assert.match(activityView, /intervalDistanceText\(activityInfo\)/);
 });
 
