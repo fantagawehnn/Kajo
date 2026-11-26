@@ -698,28 +698,34 @@ class KajoConnectActivityView extends WatchUi.View {
             (x + width).toNumber(), (y + height).toNumber());
     }
 
-    function drawHeartRateRing(dc as Dc, centerX, centerY, radius, zone as Lang.Number) as Void {
+    function drawHeartRateZoneBar(dc as Dc, centerX as Lang.Number,
+        centerY as Lang.Number, radius as Lang.Number, zone as Lang.Number) as Void {
+        // Fuenf farbige Segmente am rechten Displayrand; die aktuelle Zone
+        // wird hell hervorgehoben, die uebrigen bleiben dezent sichtbar.
         var colors = [0x20D98A, 0x8BE34A, 0xE3E84A, 0xFFB52E, 0xF04455];
-        var startAngle = -132.0;
+        var dimColors = [0x155A43, 0x426A2B, 0x777A28, 0x80551D, 0x762A35];
+        var startAngle = -68.0;
+
         for (var segment = 0; segment < 5; segment += 1) {
-            var dimColors = [0x155A43, 0x426A2B, 0x777A28, 0x80551D, 0x762A35];
-            var segmentColor = dimColors[segment];
-            if (zone == segment + 1) { segmentColor = colors[segment]; }
+            var segmentColor = zone == segment + 1 ? colors[segment] : dimColors[segment];
             dc.setColor(segmentColor, Graphics.COLOR_BLACK);
-            var previousX = centerX + (Math.cos(startAngle * 0.0174533) * radius);
-            var previousY = centerY + (Math.sin(startAngle * 0.0174533) * radius);
-            for (var step = 1; step <= 12; step += 1) {
-                var angle = startAngle + (step * 6.0);
-                var nextX = centerX + (Math.cos(angle * 0.0174533) * radius);
-                var nextY = centerY + (Math.sin(angle * 0.0174533) * radius);
-                dc.drawLine(
-                    Math.round(previousX).toNumber(), Math.round(previousY).toNumber(),
-                    Math.round(nextX).toNumber(), Math.round(nextY).toNumber()
-                );
-                previousX = nextX;
-                previousY = nextY;
+            for (var thickness = -1; thickness <= 1; thickness += 1) {
+                var drawRadius = radius + thickness;
+                var previousX = centerX + (Math.cos(startAngle * 0.0174533) * drawRadius);
+                var previousY = centerY + (Math.sin(startAngle * 0.0174533) * drawRadius);
+                for (var step = 1; step <= 8; step += 1) {
+                    var angle = startAngle + (step * 2.75);
+                    var nextX = centerX + (Math.cos(angle * 0.0174533) * drawRadius);
+                    var nextY = centerY + (Math.sin(angle * 0.0174533) * drawRadius);
+                    dc.drawLine(
+                        Math.round(previousX).toNumber(), Math.round(previousY).toNumber(),
+                        Math.round(nextX).toNumber(), Math.round(nextY).toNumber()
+                    );
+                    previousX = nextX;
+                    previousY = nextY;
+                }
             }
-            startAngle += 74.0;
+            startAngle += 28.0;
         }
     }
 
