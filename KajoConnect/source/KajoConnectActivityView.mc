@@ -93,6 +93,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mFinalAscent as Lang.String = "--";
     var mFinalLaps as Lang.Array<Lang.Dictionary> = [];
     var mSavedDetailPage as Lang.Number = 0;
+    var mSavedLapOffset as Lang.Number = 0;
     var mHistoryEntrySaved as Lang.Boolean = false;
     var mDiscardConfirmationStage as Lang.Number = 0;
     // Rundenmetriken werden lokal aus den sekündlichen Activity.Info-Werten berechnet,
@@ -1053,6 +1054,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mFinalCalories = "--";
             mFinalAscent = "--";
             mFinalLaps = [];
+            mSavedLapOffset = 0;
             mLiveLapSummaries = [];
             mLapStartTimerMs = 0;
             // ActivityRecording startet die Distanz der neuen Session bei null.
@@ -1464,6 +1466,20 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mSavedDetailPage < 0) { mSavedDetailPage = 2; }
         if (mSavedDetailPage > 2) { mSavedDetailPage = 0; }
         WatchUi.requestUpdate();
+    }
+
+    function scrollSavedLaps(direction as Lang.Number) as Lang.Boolean {
+        if (mStatus != "GESPEICHERT" || mSavedDetailPage != 2 ||
+            mFinalLaps.size() <= 5) {
+            return false;
+        }
+
+        var maxOffset = mFinalLaps.size() - 5;
+        mSavedLapOffset += direction;
+        if (mSavedLapOffset < 0) { mSavedLapOffset = 0; }
+        if (mSavedLapOffset > maxOffset) { mSavedLapOffset = maxOffset; }
+        WatchUi.requestUpdate();
+        return true;
     }
 
     function nextDisplayPage(direction as Lang.Number) as Void {
@@ -1941,9 +1957,10 @@ class KajoConnectActivityView extends WatchUi.View {
                         Graphics.FONT_XTINY, 0x98A5AB);
                     drawActivityText(dc, 315, 76, 70, 16, "Ø BPM",
                         Graphics.FONT_XTINY, 0x98A5AB);
-                    var shownLaps = mFinalLaps.size() > 5 ? 5 : mFinalLaps.size();
+                    var remainingLaps = mFinalLaps.size() - mSavedLapOffset;
+                    var shownLaps = remainingLaps > 5 ? 5 : remainingLaps;
                     for (var lapIndex = 0; lapIndex < shownLaps; lapIndex += 1) {
-                        var lap = mFinalLaps[lapIndex] as Lang.Dictionary;
+                        var lap = mFinalLaps[mSavedLapOffset + lapIndex] as Lang.Dictionary;
                         var rowY = 112 + (lapIndex * 48);
                         var lapNumber = lap["lapNumber"] == null
                             ? (lapIndex + 1).toString() : lap["lapNumber"].toString();
@@ -1965,14 +1982,19 @@ class KajoConnectActivityView extends WatchUi.View {
                             Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
                     }
                     if (mFinalLaps.size() > 5) {
+                        var firstShown = mSavedLapOffset + 1;
+                        var lastShown = mSavedLapOffset + shownLaps;
                         drawActivityText(dc, cx, 354, 280, 14,
-                            "+" + (mFinalLaps.size() - 5).toString() + " WEITERE RUNDEN",
+                            "RUNDEN " + firstShown.toString() + "-" + lastShown.toString() +
+                            " / " + mFinalLaps.size().toString() + " · WISCHEN",
                             Graphics.FONT_XTINY, 0x98A5AB);
                     }
                 }
-                drawActivityText(dc, cx, 365, 280, 14,
-                    "OBEN · ZURÜCK  |  UNTEN · ÜBERSICHT",
-                    Graphics.FONT_XTINY, 0x98A5AB);
+                if (mFinalLaps.size() <= 5) {
+                    drawActivityText(dc, cx, 365, 280, 14,
+                        "OBEN · ZURÜCK  |  UNTEN · ÜBERSICHT",
+                        Graphics.FONT_XTINY, 0x98A5AB);
+                }
             }
             dc.setColor(mSavedDetailPage == 0 ? 0x25D3CB : 0x3B454B, Graphics.COLOR_BLACK);
             dc.fillCircle(cx - 18, 382, 3);
