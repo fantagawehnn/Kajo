@@ -39,6 +39,31 @@ begin
 end;
 $$;
 
+create or replace function public.renew_garmin_sync_lock(
+  p_user_id uuid,
+  p_lock_token uuid,
+  p_lease_seconds integer default 900
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $
+begin
+  if p_lease_seconds < 30 or p_lease_seconds > 900 then
+    raise exception 'Garmin sync lock lease must be between 30 and 900 seconds';
+  end if;
+
+  update public.garmin_sync_locks
+     set expires_at = now() + make_interval(secs => p_lease_seconds)
+   where user_id = p_user_id
+     and lock_token = p_lock_token
+     and expires_at > now();
+
+  return found;
+end;
+$;
+
 create or replace function public.release_garmin_sync_lock(
   p_user_id uuid,
   p_lock_token uuid
@@ -58,6 +83,8 @@ end;
 $$;
 
 revoke all on function public.try_acquire_garmin_sync_lock(uuid, uuid, integer) from public, anon, authenticated;
+revoke all on function public.renew_garmin_sync_lock(uuid, uuid, integer) from public, anon, authenticated;
 revoke all on function public.release_garmin_sync_lock(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.try_acquire_garmin_sync_lock(uuid, uuid, integer) to service_role;
+grant execute on function public.renew_garmin_sync_lock(uuid, uuid, integer) to service_role;
 grant execute on function public.release_garmin_sync_lock(uuid, uuid) to service_role;
