@@ -73,3 +73,17 @@ test('Garmin sync lock uses an expiring atomic lease and token-checked release',
   assert.match(migration, /delete from public\.garmin_sync_locks[\s\S]*?and lock_token = p_lock_token/);
   assert.match(migration, /grant execute on function public\.try_acquire_garmin_sync_lock[\s\S]*?to service_role/);
 });
+
+
+test('a lost or unconfirmed Garmin sync lease stops work at safe checkpoints', () => {
+  assert.match(edgeFunction, /let syncLockLost = false/);
+  assert.match(edgeFunction, /syncLockLost = true/);
+  assert.match(edgeFunction, /Date\.now\(\) - syncLockLastRenewedAt >= 12 \* 60 \* 1000/);
+  assert.match(edgeFunction, /if \(syncLockLost\) throw new Error/);
+  assert.match(edgeFunction, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertLock\)/);
+  assert.match(edgeFunction, /await garminGet\(token, `\/activitylist-service\/activities\/search\/activities\?\$\{params\.toString\(\)\}`\);\s*assertLock\(\);/);
+  assert.match(edgeFunction, /assertLock\(\);\s*const \{ error: coverageError \}/);
+  assert.match(edgeFunction, /assertLock\(\);\s*const \{ error: stateError \} = await admin\.from\("garmin_sync_state"\)\.upsert/);
+  assert.match(edgeFunction, /activityRescanEndDate, 14, assertSyncLock/);
+  assert.match(edgeFunction, /"health_history", false, assertSyncLock/);
+});
