@@ -8,7 +8,7 @@ class KajoConnectHistoryView extends WatchUi.Menu2 {
     var mEntryIds as Lang.Array<Lang.String> = [];
 
     function initialize() {
-        Menu2.initialize({:title => "TRAININGSHISTORIE", :footer => "KAJO · LOKALE AUFZEICHNUNGEN"});
+        Menu2.initialize({:title => "AKTIVITÄTEN", :footer => "KAJO · LETZTE EINHEITEN"});
         var stored = Storage.getValue("kajoActivityHistory");
         if (stored != null) { mEntries = stored as Lang.Array<Lang.Dictionary>; }
 
@@ -20,16 +20,26 @@ class KajoConnectHistoryView extends WatchUi.Menu2 {
         for (var i = 0; i < mEntries.size(); i += 1) {
             var entry = mEntries[i] as Lang.Dictionary;
             var date = entry["date"] == null ? "Datum unbekannt" : entry["date"].toString();
-            var boat = entry["boatClass"] == null ? "Bootsklasse unbekannt" : entry["boatClass"].toString();
-            var duration = entry["duration"] == null ? "Dauer unbekannt" : entry["duration"].toString();
-            var distance = entry["distance"] == null ? "" : entry["distance"].toString() + " km";
-            var hr = entry["averageHeartRate"] == null ? "" : "Ø " + entry["averageHeartRate"].toString() + " bpm";
-            var subLabel = boat + " · " + duration;
+            var boat = entry["boatClass"] == null ? "KANU" : entry["boatClass"].toString();
+            var name = entry["name"] == null ? "" : entry["name"].toString();
+            var duration = entry["duration"] == null ? "" : entry["duration"].toString();
+            var distance = entry["distance"] == null || entry["distance"].toString() == "--"
+                ? "" : entry["distance"].toString() + " km";
+            var hr = entry["averageHeartRate"] == null || entry["averageHeartRate"].toString() == "--"
+                ? "" : "Ø " + entry["averageHeartRate"].toString() + " bpm";
+
+            var title = date + " · " + boat;
+            if (name != "" && name != "FREIE AKTIVITAET" && name != "FREIES TRAINING") {
+                title += " · " + name;
+            }
+
+            var subLabel = duration == "" ? "Dauer nicht verfügbar" : duration;
             if (distance != "") { subLabel += " · " + distance; }
             if (hr != "") { subLabel += " · " + hr; }
+
             var id = "history_" + i.toString();
             mEntryIds.add(id);
-            addItem(new WatchUi.MenuItem(date, subLabel, id, {}));
+            addItem(new WatchUi.MenuItem(title, subLabel, id, {}));
         }
     }
 
