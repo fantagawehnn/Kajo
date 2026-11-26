@@ -3764,12 +3764,48 @@ async function syncGarminTodayOnOpen(userId) {
         // Bei HTTP 429 oder einem Teilfehler bleibt der gespeicherte Fortschritt
         // erhalten; der nächste Versuch erfolgt erst beim nächsten App-Öffnen.
         syncAttempted = true;
-        const response = await callGarminFunction({ action: 'sync-today', date });
-        if (!isCurrentSync()) return;
-        if (response.busy === true) {
-            setGarminSyncIndicator('current', 'Verbunden');
-            setGarminSyncResult('Für dieses Garmin-Konto läuft bereits eine Synchronisierung auf einem anderen Gerät. Deine gespeicherten Daten bleiben verfügbar.', 'info');
-            return;
+        let response;
+        let consecutiveRateLimits = 0;
+        while (true) {
+            try {
+                response = await callGarminFunction({ action: 'sync-today', date });
+            } catch (error) {
+                if (!isCurrentSync()) return;
+                const message = String(error?.message || '');
+                if (!/HTTP 429|rate.?limit/i.test(message) || consecutiveRateLimits >= 8) throw error;
+                consecutiveRateLimits++;
+                const retryMatch = message.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+                const waitSeconds = Math.max(30, Number(retryMatch?.[1] || 30))
+                    + Math.min(30, (consecutiveRateLimits - 1) * 5);
+                setGarminSyncResult('Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden …', 'syncing');
+                await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+                if (!isCurrentSync()) return;
+                continue;
+            }
+            if (!isCurrentSync()) return;
+            if (response.busy === true) {
+                setGarminSyncIndicator('current', 'Verbunden');
+                setGarminSyncResult('Für dieses Garmin-Konto läuft bereits eine Synchronisierung auf einem anderen Gerät. Deine gespeicherten Daten bleiben verfügbar.', 'info');
+                return;
+            }
+            const healthAttempt = response.sync?.healthSync || {};
+            const activityAttempt = response.sync?.activitySync || {};
+            const activityError = String(activityAttempt.error || '');
+            const rateLimited = healthAttempt.rateLimited === true
+                || healthAttempt.status === 'rate_limited'
+                || /HTTP 429|rate.?limit/i.test(activityError);
+            if (!rateLimited) break;
+            if (consecutiveRateLimits >= 8) {
+                throw new Error('Garmin hat auch nach mehreren automatischen Warte- und Wiederholungsversuchen keine weiteren Abrufe zugelassen.');
+            }
+            consecutiveRateLimits++;
+            const activityRetryMatch = activityError.match(/retryInSeconds["\\s:=]+(\\d+)/i);
+            const waitSeconds = Math.max(30, Number(
+                healthAttempt.retryInSeconds || activityRetryMatch?.[1] || 30
+            )) + Math.min(30, (consecutiveRateLimits - 1) * 5);
+            setGarminSyncResult('Garmin-Abruflimit erreicht. Automatische Fortsetzung in ' + waitSeconds + ' Sekunden …', 'syncing');
+            await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
+            if (!isCurrentSync()) return;
         }
         const health = response.sync?.healthSync || null;
 
