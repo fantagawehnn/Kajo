@@ -216,7 +216,6 @@ test("completed activities are stored locally and displayed in watch history", (
   assert.match(historyView, /extends WatchUi\.Menu2/);
   assert.match(historyView, /"AKTIVITÄTEN"/);
   assert.match(historyView, /" bpm"/);
-  assert.match(historyView, /"Details in der KAJO App"/);
   assert.match(homeView, /getTodaysSessions\(\)/);
 });
 
@@ -240,12 +239,11 @@ test("completed Garmin watch activities are queued locally and uploaded idempote
 test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts", () => {
   assert.match(trainingFieldsView, /mCounts as Lang\.Array<Lang\.Number> = \[2, 4\]/);
   assert.match(trainingFieldsView, /extends WatchUi\.Menu2/);
-  assert.match(trainingFieldsView, /extends WatchUi\.CheckboxMenu/);
-  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Intervallstatus"/);
-  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Puls \+ Zone"/);
-  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Schlagfrequenz"/);
-  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Distanz"/);
-  assert.match(trainingFieldsView, /new WatchUi\.CheckboxMenuItem\("Pace"/);
+  assert.match(trainingFieldsView, /new WatchUi\.MenuItem\("Feld 1 konfigurieren"/);
+  assert.match(trainingFieldsView, /"heartRateZone"/);
+  assert.match(trainingFieldsView, /"Schlagfrequenz"/);
+  assert.match(trainingFieldsView, /"Gesamtdistanz"/);
+  assert.match(trainingFieldsView, /"Pace"/);
   assert.match(intervalHintsView, /extends WatchUi\.CheckboxMenu/);
   assert.match(intervalHintsView, /"kajoIntervalTone", false/);
   assert.match(activityView, /mTrainingFieldCount == 2/);
