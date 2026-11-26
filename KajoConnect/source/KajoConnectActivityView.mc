@@ -87,6 +87,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mFinalDistanceMeters = null;
     var mFinalAverageHeartRateValue = null;
     var mHistoryEntrySaved as Lang.Boolean = false;
+    var mDiscardConfirmationStage as Lang.Number = 0;
 
     function loadWorkoutSteps(value) as Void {
         mWorkoutSteps = [];
@@ -1247,6 +1248,58 @@ class KajoConnectActivityView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    // Kurzer Druck oben setzt eine pausierte Einheit fort.
+    function isPausedForSave() as Lang.Boolean {
+        return mStatus == "PAUSIERT";
+    }
+
+    function handlePausedShortPrimary() as Void {
+        if (mStatus == "PAUSIERT") {
+            mDiscardConfirmationStage = 0;
+            resumeRecording();
+        }
+    }
+
+    // Langer Druck oben speichert die pausierte Aktivität.
+    function handlePausedLongPrimary() as Void {
+        if (mStatus == "PAUSIERT") {
+            mDiscardConfirmationStage = 0;
+            finishRecording();
+        }
+    }
+
+    // Kurzer Druck unten bricht eine laufende Verwerf-Abfrage ab.
+    function handlePausedShortSecondary() as Void {
+        if (mStatus == "PAUSIERT" && mDiscardConfirmationStage > 0) {
+            mDiscardConfirmationStage = 0;
+            WatchUi.showToast("Verwerfen abgebrochen", null);
+            WatchUi.requestUpdate();
+        }
+    }
+
+    // Zweistufiges Verwerfen: zweimal lange unten drücken.
+    function handlePausedLongSecondary() as Void {
+        if (mStatus != "PAUSIERT") { return; }
+        if (mDiscardConfirmationStage == 0) {
+            mDiscardConfirmationStage = 1;
+            WatchUi.showToast("Erneut unten lange drücken zum Verwerfen", null);
+            WatchUi.requestUpdate();
+            return;
+        }
+
+        if (mEngine.discard()) {
+            mTimer.stop();
+            Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
+            mDiscardConfirmationStage = 0;
+            WatchUi.showToast("Aktivität verworfen", null);
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+        } else {
+            mDiscardConfirmationStage = 0;
+            WatchUi.showToast("Verwerfen fehlgeschlagen", null);
+            WatchUi.requestUpdate();
+        }
+    }
+
     // Aktion der oberen physischen Taste.
     function handlePrimaryButton() as Void {
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
@@ -1281,6 +1334,11 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
+        // Speichern, Verwerfen und Fortsetzen sind in der Speicheransicht
+        // ausschließlich über physische Tasten möglich.
+        if (mStatus == "PAUSIERT" || mStatus == "GESPEICHERT" ||
+            mStatus == "SPEICHERN FEHLGESCHLAGEN") { return; }
+
         // Während der Aufzeichnung wechselt ein Tap auf die linke/rechte
         // Bildschirmhälfte direkt die Datenseite. Die alte globale
         // Button-Hitbox am unteren Rand hat diese Taps zuvor blockiert.
@@ -1557,10 +1615,27 @@ class KajoConnectActivityView extends WatchUi.View {
                 drawActivityText(dc, cx, 210, 280, 20, mCurrentWorkoutName,
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
-            drawActivityText(dc, cx, 316, 280, 18, "OBEN · WEITER",
-                Graphics.FONT_XTINY, 0x25D3CB);
-            drawActivityText(dc, cx, 345, 280, 18, "UNTEN · ENDE",
-                Graphics.FONT_XTINY, 0xFFB020);
+            // Speicheransicht bleibt optisch nah an der Aktivitätsansicht.
+            // Aktionen sind ausschließlich über physische Tasten erreichbar.
+            dc.setColor(0x22C55E, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(82, 286, 226, 36, 10);
+            drawActivityText(dc, cx, 295, 210, 18,
+                mDiscardConfirmationStage == 0 ? "OBEN LANG · SPEICHERN" : "OBEN KURZ · FORTSETZEN",
+                Graphics.FONT_XTINY, 0x22C55E);
+            dc.setColor(0xEF4444, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(82, 332, 226, 36, 10);
+            var discardLabel = mDiscardConfirmationStage == 0
+                ? "UNTEN LANG · VERWERFEN"
+                : "NOCHMALS LANG · BESTÄTIGEN";
+            drawActivityText(dc, cx, 341, 210, 18, discardLabel,
+                Graphics.FONT_XTINY, 0xEF4444);
+            if (mDiscardConfirmationStage > 0) {
+                drawActivityText(dc, cx, 260, 280, 16, "ERNEUT UNTEN LANG ZUM VERWERFEN",
+                    Graphics.FONT_XTINY, 0xFF9F1A);
+            } else {
+                drawActivityText(dc, cx, 260, 280, 16, "UNTEN KURZ · ZURÜCK",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            }
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mStatus == "GESPEICHERT") {
