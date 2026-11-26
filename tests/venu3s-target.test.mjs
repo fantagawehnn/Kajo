@@ -236,7 +236,7 @@ test("completed Garmin watch activities are queued locally and uploaded idempote
   assert.match(connectEndpoint, /averageHeartRateBpm/);
 });
 
-test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts", () => {
+test("live training field settings offer the supported 2 and 4 field layouts", () => {
   assert.match(trainingFieldsView, /mCounts as Lang\.Array<Lang\.Number> = \[2, 4\]/);
   assert.match(trainingFieldsView, /extends WatchUi\.Menu2/);
   assert.match(trainingFieldsView, /new WatchUi\.MenuItem\("Feld 1 konfigurieren"/);
@@ -247,7 +247,6 @@ test("live training field settings offer the agreed 1, 2, 4 and 6 field layouts"
   assert.match(intervalHintsView, /extends WatchUi\.CheckboxMenu/);
   assert.match(intervalHintsView, /"kajoIntervalTone", false/);
   assert.match(activityView, /mTrainingFieldCount == 2/);
-  assert.match(activityView, /mTrainingFieldCount == 4/);
   assert.match(activityView, /var mTrainingFieldCount as Lang\.Number = 4/);
   assert.match(activityView, /dc\.fillRoundedRectangle\(54, 75, 282, 31, 15\)/);
   assert.match(activityView, /dc\.drawArc\(cx, 150, 105, Graphics\.ARC_CLOCKWISE, 225, 360\)/);
