@@ -46,3 +46,25 @@ test('sync-today calls automatic cursors while manual range imports keep the his
   const rangeHandler = edgeFunction.slice(rangeStart);
   assert.match(rangeHandler, /syncGarminHealthHistoryBatch\(admin, userId, startDate, endDate, false, false\)/);
 });
+
+test('all sync actions acquire a per-account database lease and reject concurrent runs', () => {
+  assert.match(edgeFunction, /action\.startsWith\("sync-"\)/);
+  assert.match(edgeFunction, /rpc\("try_acquire_garmin_sync_lock"/);
+  assert.match(edgeFunction, /p_lease_seconds: 300/);
+  assert.match(edgeFunction, /acquired !== true/);
+  assert.match(edgeFunction, /code: "garmin_sync_already_running"/);
+  assert.match(edgeFunction, /finally \{[\s\S]*?rpc\("release_garmin_sync_lock"/);
+  assert.match(edgeFunction, /syncLockToken = lockToken/);
+});
+
+test('Garmin sync lock uses an expiring atomic lease and token-checked release', () => {
+  const migration = readFileSync(
+    fileURLToPath(new URL('../supabase/migrations/20261126000100_garmin_sync_lock.sql', import.meta.url)),
+    'utf8',
+  );
+  assert.match(migration, /create table if not exists public\.garmin_sync_locks/);
+  assert.match(migration, /on conflict \(user_id\) do update/);
+  assert.match(migration, /where public\.garmin_sync_locks\.expires_at <= now\(\)/);
+  assert.match(migration, /delete from public\.garmin_sync_locks[\s\S]*?and lock_token = p_lock_token/);
+  assert.match(migration, /grant execute on function public\.try_acquire_garmin_sync_lock[\s\S]*?to service_role/);
+});
