@@ -386,23 +386,41 @@ async function syncGarminHealthAutomaticBatch(
     .maybeSingle();
   if (error) throw error;
   let initialCursorDate: string | null = null;
+  let initialStatus: string | null = null;
   if (!state) {
-    const { data: latestRecord, error: latestError } = await admin
-      .from("garmin_health_records")
-      .select("record_date")
+    // Reuse the legacy shared cursor only as a one-time migration seed. From
+    // this point onward automatic sync writes exclusively to health_auto.
+    const { data: legacyState, error: legacyError } = await admin
+      .from("garmin_sync_state")
+      .select("cursor_date,status")
       .eq("user_id", userId)
-      .lte("record_date", today)
-      .order("record_date", { ascending: false })
-      .limit(1)
+      .eq("sync_type", "health_history")
       .maybeSingle();
-    if (latestError) throw latestError;
-    if (latestRecord?.record_date) initialCursorDate = addUtcDays(latestRecord.record_date, 1);
+    if (legacyError) throw legacyError;
+    if (legacyState?.cursor_date) {
+      initialCursorDate = legacyState.cursor_date;
+      initialStatus = legacyState.status;
+    } else {
+      const { data: latestRecord, error: latestError } = await admin
+        .from("garmin_health_records")
+        .select("record_date")
+        .eq("user_id", userId)
+        .lte("record_date", today)
+        .order("record_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestError) throw latestError;
+      if (latestRecord?.record_date) {
+        initialCursorDate = addUtcDays(latestRecord.record_date, 1);
+        initialStatus = "completed";
+      }
+    }
   }
 
   const range = buildAutomaticGarminSyncRange({
     today,
     cursorDate: state?.cursor_date ?? initialCursorDate,
-    status: state?.status ?? (initialCursorDate ? "completed" : null),
+    status: state?.status ?? initialStatus,
     maxDays: 2,
     initialOverlapDays: 1,
   });
