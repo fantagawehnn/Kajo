@@ -86,6 +86,12 @@ class KajoConnectActivityView extends WatchUi.View {
     var mFinalAverageHeartRate as Lang.String = "--";
     var mFinalDistanceMeters = null;
     var mFinalAverageHeartRateValue = null;
+    var mFinalAverageSpeedKmh as Lang.String = "--";
+    var mFinalMaxSpeedKmh as Lang.String = "--";
+    var mFinalMaxHeartRate as Lang.String = "--";
+    var mFinalCalories as Lang.String = "--";
+    var mFinalAscent as Lang.String = "--";
+    var mSavedDetailPage as Lang.Number = 0;
     var mHistoryEntrySaved as Lang.Boolean = false;
     var mDiscardConfirmationStage as Lang.Number = 0;
 
@@ -978,6 +984,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function captureActivitySummary() as Void {
         var info = Activity.getActivityInfo();
+        if (info == null) { return; }
         if (info.elapsedDistance != null) {
             mFinalDistanceMeters = info.elapsedDistance;
             mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
@@ -985,6 +992,21 @@ class KajoConnectActivityView extends WatchUi.View {
         if (info.averageHeartRate != null) {
             mFinalAverageHeartRateValue = info.averageHeartRate;
             mFinalAverageHeartRate = info.averageHeartRate.toString();
+        }
+        if (info.averageSpeed != null) {
+            mFinalAverageSpeedKmh = numberText(info.averageSpeed * 3.6, 1);
+        }
+        if (info.maxSpeed != null) {
+            mFinalMaxSpeedKmh = numberText(info.maxSpeed * 3.6, 1);
+        }
+        if (info.maxHeartRate != null) {
+            mFinalMaxHeartRate = info.maxHeartRate.toString();
+        }
+        if (info.calories != null) {
+            mFinalCalories = info.calories.toString();
+        }
+        if (info.totalAscent != null) {
+            mFinalAscent = info.totalAscent.toString();
         }
         if (info.timerTime != null && info.timerTime > 0) {
             mElapsedSeconds = Math.floor(info.timerTime / 1000).toNumber();
@@ -1010,6 +1032,12 @@ class KajoConnectActivityView extends WatchUi.View {
             mFinalAverageHeartRate = "--";
             mFinalDistanceMeters = null;
             mFinalAverageHeartRateValue = null;
+            mFinalAverageSpeedKmh = "--";
+            mFinalMaxSpeedKmh = "--";
+            mFinalMaxHeartRate = "--";
+            mFinalCalories = "--";
+            mFinalAscent = "--";
+            mSavedDetailPage = 0;
             mHistoryEntrySaved = false;
             mWorkoutStepIndex = 0;
             mWorkoutStepElapsedSeconds = 0;
@@ -1092,6 +1120,11 @@ class KajoConnectActivityView extends WatchUi.View {
             entry["duration"] = formatTime(mElapsedSeconds * 1000);
             entry["distance"] = mFinalDistance;
             entry["averageHeartRate"] = mFinalAverageHeartRate;
+            entry["averageSpeedKmh"] = mFinalAverageSpeedKmh;
+            entry["maxSpeedKmh"] = mFinalMaxSpeedKmh;
+            entry["maxHeartRateBpm"] = mFinalMaxHeartRate;
+            entry["calories"] = mFinalCalories;
+            entry["ascentMeters"] = mFinalAscent;
 
             nextHistory.add(entry);
             for (var i = 0; i < previous.size() && i < 19; i += 1) {
@@ -1234,6 +1267,14 @@ class KajoConnectActivityView extends WatchUi.View {
             mStatus = "SPEICHERN FEHLGESCHLAGEN";
             WatchUi.showToast("Speichern fehlgeschlagen – erneut versuchen", null);
         }
+        WatchUi.requestUpdate();
+    }
+
+    function nextSavedDetailPage(direction as Lang.Number) as Void {
+        if (mStatus != "GESPEICHERT") { return; }
+        mSavedDetailPage += direction;
+        if (mSavedDetailPage < 0) { mSavedDetailPage = 1; }
+        if (mSavedDetailPage > 1) { mSavedDetailPage = 0; }
         WatchUi.requestUpdate();
     }
 
@@ -1641,28 +1682,54 @@ class KajoConnectActivityView extends WatchUi.View {
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mStatus == "GESPEICHERT") {
-            drawPageHeader(dc, "TRAINING BEENDET");
-            drawActivityText(dc, cx, 105, 280, 56, elapsed,
-                Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
-            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
-            dc.drawLine(72, 181, 318, 181);
-            dc.drawLine(195, 190, 195, 270);
-            drawActivityText(dc, 132, 196, 112, 15, "DISTANZ",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, 132, 218, 112, 30, mFinalDistance,
-                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, 132, 247, 112, 14, "KM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, 258, 196, 112, 15, "Ø PULS",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, 258, 218, 112, 30, mFinalAverageHeartRate,
-                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
-            drawActivityText(dc, 258, 247, 112, 14, "BPM",
-                Graphics.FONT_XTINY, 0x98A5AB);
-            drawActivityText(dc, cx, 300, 280, 18, "FIT GESPEICHERT",
-                Graphics.FONT_XTINY, 0x25D3CB);
-            drawActivityText(dc, cx, 345, 280, 18, "OBEN · ZURÜCK",
-                Graphics.FONT_XTINY, 0x98A5AB);
+            if (mSavedDetailPage == 0) {
+                drawPageHeader(dc, "TRAINING GESPEICHERT");
+                drawActivityText(dc, cx, 83, 280, 20,
+                    "KAJO · " + mBoatClass + " · " + compactWorkoutText(mCurrentWorkoutName, 22),
+                    Graphics.FONT_XTINY, 0x25D3CB);
+                drawActivityText(dc, cx, 111, 280, 58, elapsed,
+                    Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+                drawActivityText(dc, cx, 169, 280, 14, "TRAININGSDAUER",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+                dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+                dc.drawLine(72, 197, 318, 197);
+                dc.drawLine(cx, 208, cx, 278);
+                drawActivityText(dc, 132, 210, 112, 15, "DISTANZ",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+                drawActivityText(dc, 132, 232, 112, 30, mFinalDistance,
+                    Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, 132, 261, 112, 14, "KM",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+                drawActivityText(dc, 258, 210, 112, 15, "Ø PULS",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+                drawActivityText(dc, 258, 232, 112, 30, mFinalAverageHeartRate,
+                    Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+                drawActivityText(dc, 258, 261, 112, 14, "BPM",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+                drawActivityText(dc, cx, 302, 280, 18, "FIT-AKTIVITÄT GESPEICHERT",
+                    Graphics.FONT_XTINY, 0x25D3CB);
+                drawActivityText(dc, cx, 344, 280, 18, "UNTEN · WEITERE DATEN",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            } else {
+                drawPageHeader(dc, "WEITERE ERGEBNISSE");
+                drawMetric(dc, 112, 105, "Ø GESCHWINDIGKEIT",
+                    mFinalAverageSpeedKmh, "KM/H", 145, Graphics.FONT_MEDIUM);
+                drawMetric(dc, 278, 105, "MAX. GESCHWINDIGKEIT",
+                    mFinalMaxSpeedKmh, "KM/H", 145, Graphics.FONT_MEDIUM);
+                drawMetric(dc, 112, 220, "MAX. HERZFREQUENZ",
+                    mFinalMaxHeartRate, "BPM", 145, Graphics.FONT_MEDIUM);
+                drawMetric(dc, 278, 220, "KALORIEN",
+                    mFinalCalories, "KCAL", 145, Graphics.FONT_MEDIUM);
+                drawMetric(dc, cx, 315, "HÖHENMETER",
+                    mFinalAscent, "M", 220, Graphics.FONT_SMALL);
+                drawActivityText(dc, cx, 365, 280, 14,
+                    "OBEN · ZURÜCK  |  UNTEN · ÜBERSICHT",
+                    Graphics.FONT_XTINY, 0x98A5AB);
+            }
+            dc.setColor(mSavedDetailPage == 0 ? 0x25D3CB : 0x3B454B, Graphics.COLOR_BLACK);
+            dc.fillCircle(cx - 9, 382, 3);
+            dc.setColor(mSavedDetailPage == 1 ? 0x25D3CB : 0x3B454B, Graphics.COLOR_BLACK);
+            dc.fillCircle(cx + 9, 382, 3);
             mButtonTop = 0;
             mButtonBottom = 0;
         } else if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
