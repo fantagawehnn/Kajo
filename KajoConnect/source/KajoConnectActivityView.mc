@@ -95,6 +95,20 @@ class KajoConnectActivityView extends WatchUi.View {
     var mSavedDetailPage as Lang.Number = 0;
     var mHistoryEntrySaved as Lang.Boolean = false;
     var mDiscardConfirmationStage as Lang.Number = 0;
+    // Rundenmetriken werden lokal aus den sekündlichen Activity.Info-Werten berechnet,
+    // da TIMER_EVENT_LAP keinen durchschnittlichen Rundenpuls bereitstellt.
+    var mLapStartTimerMs as Lang.Number = 0;
+    var mLapStartDistanceMeters = null;
+    var mLapHeartRateSum as Lang.Number = 0;
+    var mLapHeartRateCount as Lang.Number = 0;
+    var mNextAutoLapDistanceMeters as Lang.Number = 1000;
+    var mLiveLapSummaries as Lang.Array<Lang.Dictionary> = [];
+    var mLapSummaryVisible as Lang.Boolean = false;
+    var mLapSummarySecondsRemaining as Lang.Number = 0;
+    var mLapSummaryNumber as Lang.Number = 0;
+    var mLapSummaryTime as Lang.String = "--:--";
+    var mLapSummaryDistance as Lang.String = "--";
+    var mLapSummaryHeartRate as Lang.String = "--";
 
     function loadWorkoutSteps(value) as Void {
         mWorkoutSteps = [];
@@ -1039,6 +1053,14 @@ class KajoConnectActivityView extends WatchUi.View {
             mFinalCalories = "--";
             mFinalAscent = "--";
             mFinalLaps = [];
+            mLiveLapSummaries = [];
+            mLapStartTimerMs = 0;
+            mLapStartDistanceMeters = null;
+            mLapHeartRateSum = 0;
+            mLapHeartRateCount = 0;
+            mNextAutoLapDistanceMeters = 1000;
+            mLapSummaryVisible = false;
+            mLapSummarySecondsRemaining = 0;
             mSavedDetailPage = 0;
             mHistoryEntrySaved = false;
             mWorkoutStepIndex = 0;
@@ -1078,9 +1100,92 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function onTimer() as Void {
-        if (mStatus == "AUFZEICHNUNG") { mElapsedSeconds += 1; }
-        if (mStatus == "AUFZEICHNUNG") { updateWorkoutStepTimer(); }
+        if (mStatus == "AUFZEICHNUNG") {
+            mElapsedSeconds += 1;
+            sampleLapMetrics();
+            updateWorkoutStepTimer();
+            if (mLapSummaryVisible) {
+                mLapSummarySecondsRemaining -= 1;
+                if (mLapSummarySecondsRemaining <= 0) {
+                    mLapSummaryVisible = false;
+                }
+            }
+        }
         WatchUi.requestUpdate();
+    }
+
+    function sampleLapMetrics() as Void {
+        var info = Activity.getActivityInfo();
+        if (info == null) { return; }
+
+        if (mLapStartDistanceMeters == null && info.elapsedDistance != null) {
+            mLapStartDistanceMeters = info.elapsedDistance;
+        }
+        if (info.currentHeartRate != null && info.currentHeartRate > 0) {
+            mLapHeartRateSum += info.currentHeartRate;
+            mLapHeartRateCount += 1;
+        }
+
+        // Nur beim freien Training automatisch jede volle 1.000-m-Marke setzen.
+        if (mCurrentWorkoutState == "FREE" && info.elapsedDistance != null &&
+            info.elapsedDistance >= mNextAutoLapDistanceMeters) {
+            if (completeLap(true, info)) {
+                mNextAutoLapDistanceMeters += 1000;
+            }
+        }
+    }
+
+    function isNextStepRecovery() as Lang.Boolean {
+        var nextIndex = mWorkoutStepIndex + 1;
+        if (nextIndex >= mWorkoutSteps.size()) { return false; }
+        return isRecoveryStep(mWorkoutSteps[nextIndex] as Lang.Dictionary);
+    }
+
+    function completeLap(showSummary as Lang.Boolean, activityInfo) as Lang.Boolean {
+        if (activityInfo == null || !mEngine.addLap()) { return false; }
+
+        var lap = {};
+        var timerValue = activityInfo.timerTime == null
+            ? mLapStartTimerMs : activityInfo.timerTime;
+        var distanceValue = activityInfo.elapsedDistance == null ||
+            mLapStartDistanceMeters == null
+            ? null : activityInfo.elapsedDistance - (mLapStartDistanceMeters as Lang.Number);
+        var lapDuration = timerValue - mLapStartTimerMs;
+
+        lap["lapNumber"] = mLiveLapSummaries.size() + 1;
+        lap["elapsedTimeMs"] = lapDuration > 0 ? lapDuration : 0;
+        if (distanceValue != null && distanceValue >= 0) {
+            lap["distanceMeters"] = distanceValue;
+            if (lapDuration > 0) {
+                lap["averageSpeedKmh"] = (distanceValue / (lapDuration / 1000.0)) * 3.6;
+            }
+        }
+        if (mLapHeartRateCount > 0) {
+            lap["averageHeartRateBpm"] = Math.round(
+                mLapHeartRateSum.toFloat() / mLapHeartRateCount).toNumber();
+        } else {
+            lap["averageHeartRateBpm"] = null;
+        }
+        mLiveLapSummaries.add(lap);
+
+        if (showSummary) {
+            mLapSummaryNumber = lap["lapNumber"] as Lang.Number;
+            mLapSummaryTime = formatTime(lap["elapsedTimeMs"] as Lang.Number);
+            mLapSummaryDistance = distanceValue == null
+                ? "--" : numberText(distanceValue / 1000.0, 2);
+            mLapSummaryHeartRate = lap["averageHeartRateBpm"] == null
+                ? "--" : lap["averageHeartRateBpm"].toString();
+            mLapSummaryVisible = true;
+            mLapSummarySecondsRemaining = 7;
+        }
+
+        mLapStartTimerMs = timerValue;
+        if (activityInfo.elapsedDistance != null) {
+            mLapStartDistanceMeters = activityInfo.elapsedDistance;
+        }
+        mLapHeartRateSum = 0;
+        mLapHeartRateCount = 0;
+        return true;
     }
     function onPosition(positionInfo as Position.Info) as Void {
         if (positionInfo != null) {
@@ -1253,6 +1358,16 @@ class KajoConnectActivityView extends WatchUi.View {
         captureActivitySummary();
         if (mEngine.finish()) {
             mFinalLaps = mEngine.getLapSummaries();
+            // Die FIT-Lap-Events liefern keine Ø-HF; die lokal erfassten Werte
+            // werden anhand der Rundennummer ergänzt.
+            for (var lapIndex = 0; lapIndex < mFinalLaps.size() &&
+                lapIndex < mLiveLapSummaries.size(); lapIndex += 1) {
+                var savedLap = mFinalLaps[lapIndex] as Lang.Dictionary;
+                var liveLap = mLiveLapSummaries[lapIndex] as Lang.Dictionary;
+                if (liveLap["averageHeartRateBpm"] != null) {
+                    savedLap["averageHeartRateBpm"] = liveLap["averageHeartRateBpm"];
+                }
+            }
             saveHistoryEntry();
             mTimer.stop();
             Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
@@ -1374,8 +1489,14 @@ class KajoConnectActivityView extends WatchUi.View {
             return true;
         }
         if (mStatus != "AUFZEICHNUNG") { return false; }
-        if (mEngine.addLap()) {
-            WatchUi.showToast("Runde gespeichert", null);
+        var info = Activity.getActivityInfo();
+        var showSummary = mWorkoutSteps.size() > 0 && isNextStepRecovery();
+        if (completeLap(showSummary, info)) {
+            if (showSummary) {
+                WatchUi.requestUpdate();
+            } else {
+                WatchUi.showToast("Runde gespeichert", null);
+            }
         } else {
             WatchUi.showToast("Runde konnte nicht gespeichert werden", null);
         }
@@ -1955,6 +2076,32 @@ class KajoConnectActivityView extends WatchUi.View {
                 dc.setColor(dot == (mPage < 5 ? mPage : 4) ? 0x00E5CC : 0x555555, Graphics.COLOR_BLACK);
                 dc.fillCircle(firstDotX + (dot * 18), 354, 3);
             }
+        }
+
+        // Kurz eingeblendete Rundenzusammenfassung über der laufenden Ansicht.
+        if (mStatus == "AUFZEICHNUNG" && mLapSummaryVisible) {
+            dc.setColor(0x071014, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(42, 105, 306, 180, 18);
+            dc.setColor(0x25D3CB, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(42, 105, 306, 180, 18);
+            drawActivityText(dc, cx, 121, 270, 20,
+                "RUNDE " + mLapSummaryNumber.toString(),
+                Graphics.FONT_SMALL, 0x25D3CB);
+            drawActivityText(dc, cx, 151, 270, 48,
+                mLapSummaryTime, Graphics.FONT_NUMBER_HOT, Graphics.COLOR_WHITE);
+            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+            dc.drawLine(70, 207, 320, 207);
+            dc.drawLine(cx, 216, cx, 263);
+            drawActivityText(dc, 128, 216, 110, 14, "DISTANZ",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 128, 235, 110, 24,
+                mLapSummaryDistance, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawActivityText(dc, 260, 216, 110, 14, "Ø PULS",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 260, 235, 110, 24,
+                mLapSummaryHeartRate, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
+            drawActivityText(dc, cx, 264, 250, 14, "BPM · 7 SEKUNDEN",
+                Graphics.FONT_XTINY, 0x98A5AB);
         }
     }
 }
