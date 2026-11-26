@@ -44,7 +44,7 @@ test('sync-today calls automatic cursors while manual range imports keep the his
   assert.match(todayHandler, /syncGarminActivitiesAutomaticBatch\(admin, userId, date, assertSyncLock\)/);
   assert.match(todayHandler, /syncGarminHealthAutomaticBatch\(admin, userId, date, assertSyncLock\)/);
   const rangeHandler = edgeFunction.slice(rangeStart);
-  assert.match(rangeHandler, /syncGarminHealthHistoryBatch\(admin, userId, startDate, endDate, false, false\)/);
+  assert.match(rangeHandler, /syncGarminHealthHistoryBatch\(admin, userId, startDate, endDate, false, false, 1, "health_history", false, assertSyncLock\)/);
 });
 
 test('all sync actions acquire a per-account database lease and reject concurrent runs', () => {
