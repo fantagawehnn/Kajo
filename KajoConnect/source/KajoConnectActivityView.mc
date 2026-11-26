@@ -1162,7 +1162,7 @@ class KajoConnectActivityView extends WatchUi.View {
         }
         if (mLapHeartRateCount > 0) {
             lap["averageHeartRateBpm"] = Math.round(
-                mLapHeartRateSum.toFloat() / mLapHeartRateCount).toNumber();
+                mLapHeartRateSum / mLapHeartRateCount).toNumber();
         } else {
             lap["averageHeartRateBpm"] = null;
         }
