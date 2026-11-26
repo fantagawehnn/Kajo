@@ -13,6 +13,18 @@ function method(source, name, nextName) {
     return source.slice(start, end === -1 ? source.length : end);
 }
 
+test('saving an activity preserves a meaningful final partial lap without duplicating an empty segment', () => {
+    const partial = method(activity, 'captureFinalPartialLap', 'finishRecording');
+    assert.match(partial, /lapDuration > 1000/);
+    assert.match(partial, /distanceValue > 1/);
+    assert.match(partial, /mLiveLapSummaries\.add\(lap\)/);
+    assert.match(partial, /mLapHeartRateSum \/ mLapHeartRateCount/);
+    assert.match(partial, /if \(mEngine\.isRecording\(\)\) \{\s*mEngine\.addLap\(\);/);
+    const finish = method(activity, 'finishRecording', 'nextDisplayPage');
+    assert.match(finish, /captureFinalPartialLap\(Activity\.getActivityInfo\(\)\)/);
+    assert.match(finish, /else \{\s*mFinalLaps\.add\(liveLap\);/);
+});
+
 test('failed Garmin stop keeps the recording and timer active for a retry', () => {
     const finish = method(activity, 'finishRecording', 'nextDisplayPage');
     assert.match(finish, /if \(mEngine\.finish\(\)\)/);
