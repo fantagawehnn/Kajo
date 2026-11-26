@@ -38,8 +38,12 @@ class KajoConnectTrainingFieldsView extends WatchUi.Menu2 {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             return;
         }
-        if (identifier.length() == 6 && identifier.substring(0, 5) == "slot_") {
-            var slot = identifier.substring(5, 6).toNumber();
+        var slot = -1;
+        if (identifier == "slot_0") { slot = 0; }
+        else if (identifier == "slot_1") { slot = 1; }
+        else if (identifier == "slot_2") { slot = 2; }
+        else if (identifier == "slot_3") { slot = 3; }
+        if (slot >= 0) {
             var countValue = Storage.getValue("kajoTrainingFieldCount");
             var count = countValue == null ? 4 : countValue as Lang.Number;
             if (slot >= count) { return; }
