@@ -48,7 +48,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = pg_catalog, public
-as $
+as $function$
 begin
   if p_lease_seconds < 30 or p_lease_seconds > 900 then
     raise exception 'Garmin sync lock lease must be between 30 and 900 seconds';
@@ -62,7 +62,7 @@ begin
 
   return found;
 end;
-$;
+$function$;
 
 create or replace function public.release_garmin_sync_lock(
   p_user_id uuid,
