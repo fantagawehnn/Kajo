@@ -1601,18 +1601,25 @@ class KajoConnectActivityView extends WatchUi.View {
             mButtonBottom = 374;
         } else if (mStatus == "PAUSIERT") {
             drawPageHeader(dc, "PAUSIERT");
-            drawActivityText(dc, cx, 115, 280, 66, elapsed,
+            drawActivityText(dc, cx, 94, 280, 66, elapsed,
                 Graphics.FONT_NUMBER_HOT, 0xFFB020);
+            dc.setColor(0x2A3439, Graphics.COLOR_BLACK);
+            dc.drawLine(82, 169, 308, 169);
+            dc.drawLine(cx, 180, cx, 242);
+            drawActivityText(dc, 137, 181, 104, 14, "DISTANZ",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 137, 201, 104, 30, distance,
+                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+            drawActivityText(dc, 253, 181, 104, 14, "PULS",
+                Graphics.FONT_XTINY, 0x98A5AB);
+            drawActivityText(dc, 253, 201, 104, 30, hrNow,
+                Graphics.FONT_NUMBER_MEDIUM, Graphics.COLOR_WHITE);
+            drawHeartRateZoneBar(dc, cx, cx, mUnit * 0.455, currentHeartRateZone);
             if (mWorkoutSteps.size() > 0 && !mWorkoutSequenceComplete) {
                 var pausedStep = mWorkoutSteps[mWorkoutStepIndex] as Lang.Dictionary;
-                drawActivityText(dc, cx, 202, 280, 22,
-                    "INTERVALL " + (mWorkoutStepIndex + 1).toString() + "/" + mWorkoutSteps.size().toString(),
-                    Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
-                drawActivityText(dc, cx, 231, 280, 20,
-                    compactWorkoutText(pausedStep["label"].toString(), 38),
-                    Graphics.FONT_XTINY, 0x98A5AB);
-            } else {
-                drawActivityText(dc, cx, 210, 280, 20, mCurrentWorkoutName,
+                drawActivityText(dc, cx, 244, 250, 14,
+                    "INTERVALL " + (mWorkoutStepIndex + 1).toString() + "/" + mWorkoutSteps.size().toString() +
+                    " · " + compactWorkoutText(pausedStep["label"].toString(), 24),
                     Graphics.FONT_XTINY, 0x98A5AB);
             }
             // Speicheransicht bleibt optisch nah an der Aktivitätsansicht.
