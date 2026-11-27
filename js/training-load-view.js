@@ -8,7 +8,7 @@ import { calculateGarminZoneLoad, summarizeTrainingLoadSourceCoverage } from './
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { getHeartRateZoneAnalysis } from './training-load.js?v=9';
-import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin, hasZoneModelData, getZoneChartValues } from './training-load-zones.js?v=3';
+import { buildRelativeLoadZones, buildTsbZones, createZoneBackgroundPlugin, hasZoneModelData, getZoneChartValues } from './training-load-zones.js?v=4';
 import { setChartEmptyState } from './charts.js?v=14';
 
 let selectedModel='kajo', selectedSport='all', volumeMeasure='duration', zoneDisplayMode='minutes';
@@ -70,12 +70,7 @@ function valueLevel(value,timeline,key){
 }
 function tsbLevel(value){
  if(!valid(value))return{level:'unavailable',label:'Kein Wert',color:'#64748b'};
- const tsb=Number(value);
- if(tsb < -30)return{level:'high-fatigue',label:'Stark negativer Belastungssaldo · hohe modellierte Ermüdung',color:'#D96A78'};
- if(tsb < -10)return{level:'fatigue',label:'Erhöhte modellierte Ermüdung',color:'#E99A55'};
- if(tsb <= 5)return{level:'balanced',label:'Ausgeglichener Bereich',color:'#55B6A4'};
- if(tsb <= 25)return{level:'positive',label:'Positiver Saldo · frischer Modellstatus',color:'#6DA8F7'};
- return{level:'very-positive',label:'Sehr positiver Saldo · Trainingskontext prüfen',color:'#A78BFA'};
+ return{level:'model-value',label:'Modellwert · keine allgemeingültigen TSB-Grenzen',color:'#8B9BB3'};
 }
 function renderRings(timeline){
  const root=document.getElementById('training-load-rings');if(!root)return;const last=lastValidLoadDay(timeline);
@@ -96,7 +91,7 @@ function renderRings(timeline){
  const mode=last?.loadMode==='srpe'?'sRPE-Load':last?.loadMode==='garmin-zone'?'KAJO-HF-Zonenindex':'Belastungsmodell';
  setText('training-load-status-title',mode);
  const hasEstimates=timeline.some(row=>Number(row.estimatedLoadCount)>0);
- setText('training-load-status-note',last?'CTL- und ATL-Farben zeigen die relative Höhe im gewählten Zeitraum. TSB nutzt einheitliche Orientierungsbereiche: unter −30 stark negativer Saldo, −30 bis unter −10 erhöhte modellierte Ermüdung, −10 bis +5 ausgeglichen, über +5 bis +25 positiver Saldo und über +25 sehr positiver Saldo. Das sind keine universellen physiologischen Grenzwerte; TSB allein bewertet weder Regeneration noch Trainingsbereitschaft.'+(hasEstimates?' Manuell geschätzte Load-Werte fließen vorläufig ein.':''):'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
+ setText('training-load-status-note',last?'CTL, ATL und TSB sind modellbasierte Werte. TSB wird als CTL minus ATL angezeigt; seine Einheit hängt vom gewählten Load-Modell ab. KAJO verwendet deshalb keine allgemeingültigen TSB-Ampelgrenzen. Vergleiche den Verlauf nur innerhalb derselben Load-Methode und zusammen mit Trainingsinhalt und Erholung.'+(hasEstimates?' Manuell geschätzte Load-Werte fließen vorläufig ein.':''):'CTL, ATL und TSB sind mit der derzeitigen Datenabdeckung nicht berechenbar. Fehlende Tage werden nicht als Ruhetage interpretiert.');
 }
 function renderVolumeSummary(activities,range){
  const hasDuration=item=>item.duration!==null&&item.duration!==undefined&&item.duration!==''&&Number.isFinite(Number(item.duration))&&Number(item.duration)>0;
@@ -124,7 +119,7 @@ function renderLoadTrend(timeline,activities){
   {label:'TSB',data:timeline.map(row=>valid(row.tsb)?Number(row.tsb):null),borderColor:colors.tsb,backgroundColor:colors.tsb,borderWidth:2.2,tension:.22,pointRadius:0,pointHitRadius:8,spanGaps: false},
   {label:'Nulllinie',data:timeline.map(row=>valid(row.tsb)?0:null),borderColor:'rgba(148,163,184,.6)',borderWidth:1,borderDash:[5,4],pointRadius:0,pointHitRadius:0,tension:0}
  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>item.datasetIndex===0?'TSB: '+fmt(item.parsed.y):null}}},scales:{x:{grid:{display:false},ticks:{color:textColor,maxTicksLimit:9,maxRotation:0}},y:{min:tsbZoneConfig.min,max:tsbZoneConfig.max,grid:{color:'rgba(148,163,184,.10)'},ticks:{color:textColor},title:{display:true,text:'TSB · CTL minus ATL',color:textColor}}}}});
- const has=timeline.some(row=>valid(row.ctl)||valid(row.atl)||valid(row.tsb));setText('training-load-trend-note',has?'CTL und ATL werden relativ zum gewählten Zeitraum dargestellt. Die TSB-Hintergrundzonen folgen den einheitlichen KAJO-Orientierungsbereichen; sie sind keine universellen physiologischen Grenzwerte. Tage ohne bestätigte Datenabdeckung bleiben Lücken und werden nicht als trainingsfrei interpretiert.':'Für den gewählten Zeitraum liegt kein durchgängiger, berechenbarer CTL-/ATL-/TSB-Verlauf vor.');
+ const has=timeline.some(row=>valid(row.ctl)||valid(row.atl)||valid(row.tsb));setText('training-load-trend-note',has?'CTL, ATL und TSB zeigen den Verlauf des aktuell gewählten Belastungsmodells. Es werden keine festen TSB-Ampelgrenzen eingeblendet, da TSB die Einheit und Skala der zugrunde liegenden Load-Methode übernimmt. Tage ohne bestätigte Datenabdeckung bleiben Lücken und werden nicht als trainingsfrei interpretiert.':'Für den gewählten Zeitraum liegt kein durchgängiger, berechenbarer CTL-/ATL-/TSB-Verlauf vor.');
 }
 function modelKeys(){return selectedModel==='compare'?['kajo','edwards']:[selectedModel];}
 function modelName(key){return key==='kajo'?'KAJO · HF-Reserve':'Edwards · %HFmax';}
