@@ -9573,3 +9573,42 @@ body.kajo-modal-open { overflow: hidden !important; }
 @media(max-width:640px){
   #view-dashboard.kajo-home .kajo-ring::before{inset:6px!important}
 }
+
+
+/* KAJO Analyseübersicht – reduzierte Informationshierarchie */
+.kajo-analysis-overview { display:flex; flex-direction:column; gap:18px; }
+.kajo-analysis-overview #analysis-overview-content { display:flex; flex-direction:column; gap:20px; }
+.kajo-analysis-overview .kajo-analysis-circles { margin-bottom:2px; }
+.kajo-analysis-overview .kajo-analysis-overview-panel { min-width:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.kajo-analysis-overview .kajo-analysis-primary-panel { padding:14px 15px 12px; border:1px solid var(--kajo-border, rgba(148,163,184,.18)); border-radius:16px; background:var(--kajo-panel, rgba(148,163,184,.035)); }
+.kajo-analysis-overview .kajo-analysis-section-heading { margin-bottom:12px; }
+.kajo-analysis-overview .kajo-analysis-section-heading h2 { font-size:15px; letter-spacing:-.01em; }
+.kajo-analysis-overview .kajo-analysis-section-heading p { margin-top:3px; }
+.kajo-analysis-overview .kajo-analysis-training-summary { padding-top:2px; }
+.kajo-analysis-overview .kajo-insight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.kajo-analysis-overview .kajo-insight-metric { min-width:0; padding:11px 10px; border:1px solid var(--kajo-border, rgba(148,163,184,.16)); border-radius:12px; background:var(--kajo-panel, rgba(148,163,184,.035)); }
+.kajo-analysis-overview .kajo-insight-metric strong { display:block; font-size:19px; line-height:1.2; margin:4px 0; overflow-wrap:anywhere; }
+.kajo-analysis-overview .kajo-insight-metric span { font-size:10px; }
+.kajo-analysis-overview .kajo-insight-metric small { font-size:9px; line-height:1.35; }
+.kajo-analysis-overview .kajo-analysis-overview-sport-distribution { margin-top:15px; padding-top:13px; border-top:1px solid var(--kajo-border, rgba(148,163,184,.14)); }
+.kajo-analysis-overview .kajo-analysis-observations-panel { padding-top:2px; }
+.kajo-analysis-overview .kajo-analysis-advanced { border-top:1px solid var(--kajo-border, rgba(148,163,184,.2)); border-bottom:1px solid var(--kajo-border, rgba(148,163,184,.2)); }
+.kajo-analysis-overview .kajo-analysis-advanced > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:54px; cursor:pointer; list-style:none; font-size:13px; font-weight:650; }
+.kajo-analysis-overview .kajo-analysis-advanced > summary::-webkit-details-marker { display:none; }
+.kajo-analysis-overview .kajo-analysis-advanced > summary::after { content:'+'; font-size:20px; font-weight:400; color:var(--kajo-text-secondary, #94a3b8); }
+.kajo-analysis-overview .kajo-analysis-advanced[open] > summary::after { content:'−'; }
+.kajo-analysis-overview .kajo-analysis-advanced > summary small { margin-left:auto; color:var(--kajo-text-secondary, #94a3b8); font-size:10px; font-weight:400; text-align:right; }
+.kajo-analysis-overview .kajo-analysis-advanced-content { display:flex; flex-direction:column; gap:19px; padding:4px 0 16px; }
+.kajo-analysis-overview .kajo-analysis-advanced-content > section { padding-top:15px; border-top:1px solid var(--kajo-border, rgba(148,163,184,.12)); }
+.kajo-analysis-overview .kajo-analysis-advanced-content > section:first-child { border-top:0; }
+.kajo-analysis-overview .kajo-analysis-chart-note { line-height:1.45; }
+.kajo-analysis-overview .kajo-analysis-observations-panel .kajo-analysis-availability { gap:7px; }
+@media (max-width:640px) {
+ .kajo-analysis-overview { gap:15px; }
+ .kajo-analysis-overview #analysis-overview-content { gap:17px; }
+ .kajo-analysis-overview .kajo-analysis-primary-panel { padding:12px 11px 10px; }
+ .kajo-analysis-overview .kajo-insight-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+ .kajo-analysis-overview .kajo-insight-metric { padding:10px 9px; }
+ .kajo-analysis-overview .kajo-analysis-advanced > summary { align-items:flex-start; flex-wrap:wrap; padding:12px 0; }
+ .kajo-analysis-overview .kajo-analysis-advanced > summary small { flex-basis:100%; margin:0; text-align:left; }
+}
