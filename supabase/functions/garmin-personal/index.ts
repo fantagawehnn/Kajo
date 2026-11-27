@@ -1683,14 +1683,17 @@ Deno.serve(async (req) => {
       const params = new URLSearchParams({ start: "0", limit: "100", startDate, endDate });
       const payload = await garminGet(token, `/activitylist-service/activities/search/activities?${params.toString()}`);
       const rows = activityRows(payload);
-      const activities = rows.slice(0, 100).map(safeActivityPreview);
+      const deletedGarminActivityIds = await loadGarminActivityDeletionIds(admin, userId);
+      const activities = rows.slice(0, 100)
+        .map(safeActivityPreview)
+        .filter(activity => !deletedGarminActivityIds.has(String(activity.activityId ?? "")));
       return json(200, {
         ok: true,
         preview: {
           startDate,
           endDate,
           count: activities.length,
-          hasMore: activities.length === 100,
+          hasMore: rows.length === 100,
           activities,
         },
       });
