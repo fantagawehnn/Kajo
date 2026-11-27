@@ -1,5 +1,4 @@
 import Toybox.Lang;
-import Toybox.System;
 import Toybox.WatchUi;
 
 class KajoConnectDelegate extends WatchUi.InputDelegate {
@@ -13,10 +12,6 @@ class KajoConnectDelegate extends WatchUi.InputDelegate {
 
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
-
-        // TEMPORARY INPUT DIAGNOSTIC: visible on simulator and device.
-        System.println("KAJO_HOME_KEY: " + key.toString());
-        WatchUi.showToast("KAJO KEY " + key.toString(), null);
 
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
             mView.activateHomeSelection();
