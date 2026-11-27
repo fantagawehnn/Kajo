@@ -9388,3 +9388,13 @@ html[data-theme="light"] .kajo-home .kajo-ring:before,html.theme-light .kajo-hom
  .kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(4),
  .kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(5) { width:88px!important; }
 }
+
+.kajo-home .kajo-selfmonitoring-notebook { display:none!important; }
+.kajo-home .kajo-week-bar-track.is-planned { border-style:dashed!important; }
+.kajo-home .kajo-week-bar-track.is-rest { width:22px!important;height:3px!important;margin:19px 0 20px!important;border:0!important;background:var(--kajo-muted)!important; }
+html[data-theme="light"] #view-analyses .kajo-analysis-shared-period,
+html[data-theme="light"] .kajo-mobile-nav,
+html.theme-light #view-analyses .kajo-analysis-shared-period,
+html.theme-light .kajo-mobile-nav { background:rgba(247,249,252,.96)!important; }
+html[data-theme="light"] .kajo-home-note-button,
+html.theme-light .kajo-home-note-button { border-color:var(--kajo-border)!important;color:var(--metric-recovery)!important; }
