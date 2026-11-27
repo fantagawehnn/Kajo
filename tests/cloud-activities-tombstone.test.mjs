@@ -74,3 +74,27 @@ test('cloud activity upload skips rows that already have permanent deletion tomb
     assert.equal(uploadedBatches[0].table, 'activities');
     assert.deepEqual(uploadedBatches[0].rows.map(row => row.record_id), ['manual-2']);
 });
+
+
+test('cloud activity upload fails closed when the tombstone table is unavailable', async () => {
+    const client = {
+        from(table) {
+            assert.equal(table, 'activity_deletions');
+            const builder = {
+                select() { return this; },
+                eq() { return this; },
+                order() { return this; },
+                async range() {
+                    return { data: null, error: { code: 'PGRST205', message: 'activity_deletions not found' } };
+                }
+            };
+            return builder;
+        }
+    };
+    await assert.rejects(
+        syncCloudActivities(client, 'user-1', [
+            { id: 'garmin-202', date: '2026-11-20', name: 'Must not upload without deletion history' }
+        ]),
+        /Löschkennzeichnungen prüfen/
+    );
+});
