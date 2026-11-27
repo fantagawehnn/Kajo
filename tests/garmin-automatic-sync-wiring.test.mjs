@@ -111,3 +111,27 @@ test('late-arriving health retries are bounded, cursor-independent, and imported
   assert.match(mainJs, /health\?\.lateDataRetryDate/);
   assert.match(mainJs, /loadGarminHealthRecordsIntoCheckins\(lateDataRetryDate, lateDataRetryDate\)/);
 });
+
+
+test('past activity deletion tombstones are checked before Garmin re-import and cloud reconciliation', () => {
+  assert.match(edgeFunction, /loadGarminActivityDeletionIds\(admin, userId\)/);
+  assert.match(edgeFunction, /deletedGarminActivityIds\.has\(activityId\)/);
+  assert.match(edgeFunction, /storedActivities: activeStoredActivities/);
+
+  const mainJs = readFileSync(
+    fileURLToPath(new URL('../js/main.js', import.meta.url)),
+    'utf8',
+  );
+  assert.match(mainJs, /syncPendingActivityDeletionTombstones\(supabase, userId\)/);
+  assert.match(mainJs, /fetchActivityDeletionTombstones\(supabase, userId\)/);
+  assert.match(mainJs, /const tombstonedActivityIds = new Set/);
+  assert.match(mainJs, /withoutTombstonedActivities\(baselineSnapshot\)/);
+  assert.match(mainJs, /activeMetadata = metadata\.filter\(row => !deletedGarminIds\.has/);
+
+  const activitiesJs = readFileSync(
+    fileURLToPath(new URL('../js/activities.js', import.meta.url)),
+    'utf8',
+  );
+  assert.match(activitiesJs, /queueActivityDeletionTombstone\(activity, toLocalDateString\(\)\)/);
+  assert.ok(activitiesJs.indexOf('queueActivityDeletionTombstone') < activitiesJs.indexOf('state.rawActivities = state.rawActivities.filter'));
+});
