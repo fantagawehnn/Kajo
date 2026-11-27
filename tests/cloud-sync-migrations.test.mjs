@@ -47,6 +47,7 @@ test('past activity deletion tombstones are immutable, account-scoped, and block
     assert.match(sql, /primary key \(user_id, record_id\)/i);
     assert.match(sql, /enable row level security/i);
     assert.match(sql, /grant select, insert on public\.activity_deletions to authenticated/i);
+    assert.ok(sql.includes('revoke all on table public.activity_deletions from public, anon, authenticated, service_role'));
     assert.match(sql, /using \(\(select auth\.uid\(\)\) = user_id\)/i);
     assert.match(sql, /with check \(\(select auth\.uid\(\)\) = user_id\)/i);
     assert.match(sql, /before insert or update on public\.activities/i);
