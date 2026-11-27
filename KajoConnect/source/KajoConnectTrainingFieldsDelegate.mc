@@ -17,9 +17,9 @@ class KajoConnectTrainingFieldsDelegate extends WatchUi.Menu2InputDelegate {
 
 class KajoConnectTrainingMetricDelegate extends WatchUi.Menu2InputDelegate {
 
-    var mView as KajoConnectTrainingMetricMenu;
+    var mView;
 
-    function initialize(view as KajoConnectTrainingMetricMenu) {
+    function initialize(view) {
         Menu2InputDelegate.initialize();
         mView = view;
     }

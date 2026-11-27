@@ -914,7 +914,6 @@ class KajoConnectActivityView extends WatchUi.View {
                 Graphics.FONT_XTINY, 0x98A5AB);
         }
 
-        var distanceValue = stepCount > 0 ? intervalDistanceText(activityInfo) : distance;
         var paceValue = "--:--";
         if (activityInfo != null && activityInfo.currentSpeed != null) {
             paceValue = formatPace(activityInfo.currentSpeed * 3.6);
@@ -1000,7 +999,6 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function captureActivitySummary() as Void {
         var info = Activity.getActivityInfo();
-        if (info == null) { return; }
         if (info.elapsedDistance != null) {
             mFinalDistanceMeters = info.elapsedDistance;
             mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
@@ -1120,7 +1118,6 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function sampleLapMetrics() as Void {
         var info = Activity.getActivityInfo();
-        if (info == null) { return; }
 
         if (mLapStartDistanceMeters == null && info.elapsedDistance != null) {
             mLapStartDistanceMeters = info.elapsedDistance;
@@ -1424,19 +1421,20 @@ class KajoConnectActivityView extends WatchUi.View {
         captureActivitySummary();
         captureFinalPartialLap(Activity.getActivityInfo());
         if (mEngine.finish()) {
-            mFinalLaps = mEngine.getLapSummaries();
+            var finalLaps = mEngine.getLapSummaries() as Lang.Array<Lang.Dictionary>;
+            mFinalLaps = finalLaps;
             // Die FIT-Lap-Events liefern keine Ø-HF; die lokal erfassten Werte
             // werden anhand der Rundennummer ergänzt. Ein letzter Restabschnitt
             // aus der Pause wird zusätzlich lokal in der KAJO-Historie geführt.
             for (var lapIndex = 0; lapIndex < mLiveLapSummaries.size(); lapIndex += 1) {
                 var liveLap = mLiveLapSummaries[lapIndex] as Lang.Dictionary;
-                if (lapIndex < mFinalLaps.size()) {
-                    var savedLap = mFinalLaps[lapIndex] as Lang.Dictionary;
+                if (lapIndex < finalLaps.size()) {
+                    var savedLap = finalLaps[lapIndex];
                     if (liveLap["averageHeartRateBpm"] != null) {
                         savedLap["averageHeartRateBpm"] = liveLap["averageHeartRateBpm"];
                     }
                 } else {
-                    mFinalLaps.add(liveLap);
+                    finalLaps.add(liveLap);
                 }
             }
             saveHistoryEntry();
@@ -1924,7 +1922,7 @@ class KajoConnectActivityView extends WatchUi.View {
                     Graphics.FONT_XTINY, 0x25D3CB);
                 drawActivityText(dc, cx, 344, 280, 18, "UNTEN · WEITERE DATEN",
                     Graphics.FONT_XTINY, 0x98A5AB);
-            } else {
+            } else if (mSavedDetailPage == 1) {
                 drawPageHeader(dc, "WEITERE ERGEBNISSE");
                 drawMetric(dc, 112, 105, "Ø GESCHWINDIGKEIT",
                     mFinalAverageSpeedKmh, "KM/H", 145, Graphics.FONT_MEDIUM);
