@@ -9526,38 +9526,39 @@ body.kajo-modal-open { overflow: hidden !important; }
 }
 
 
-/* KAJO V2 – unified Premium Performance ring system.
-   Presentation only: keep existing --ring-color, --ring-value and calculations.
-   One geometry for all ring values; data meaning remains in the value/status text. */
+/* KAJO V2 – softened Premium Performance ring.
+   Keep the existing data values, colors and progress calculations unchanged. */
 #view-dashboard.kajo-home .kajo-ring{
   --ring-track:var(--kajo-ring-track,#263449);
+  --ring-cap-size:5px;
   position:relative!important;
   isolation:isolate;
   overflow:visible!important;
   border:0!important;
   padding:0!important;
   background:
+    radial-gradient(circle at 50% 4%,var(--ring-color) 0 3.8px,transparent 4.2px),
     conic-gradient(
       from -90deg,
-      color-mix(in srgb,var(--ring-color) 82%,white) 0%,
-      var(--ring-color) var(--ring-value,0%),
-      var(--ring-track) var(--ring-value,0%),
+      color-mix(in srgb,var(--ring-color) 76%,white) 0%,
+      var(--ring-color) max(0%,calc(var(--ring-value,0%) - 1.4%)),
+      color-mix(in srgb,var(--ring-color) 54%,var(--ring-track)) var(--ring-value,0%),
+      var(--ring-track) min(100%,calc(var(--ring-value,0%) + 1.4%)),
       var(--ring-track) 100%
     )!important;
   box-shadow:
-    0 0 0 1px color-mix(in srgb,var(--ring-color) 20%,transparent),
-    0 3px 12px rgba(0,0,0,.20),
-    0 0 10px color-mix(in srgb,var(--ring-color) 17%,transparent)!important;
-  transition:background .45s ease,box-shadow .3s ease,transform .25s ease;
+    0 0 9px color-mix(in srgb,var(--ring-color) 16%,transparent),
+    0 4px 12px rgba(0,0,0,.16)!important;
+  transition:background .5s ease,box-shadow .35s ease,transform .25s ease;
 }
 #view-dashboard.kajo-home .kajo-ring::before{
   content:"";
   position:absolute;
   inset:8px!important;
   z-index:0;
-  border:1px solid color-mix(in srgb,var(--ring-color) 13%,transparent)!important;
+  border:0!important;
   border-radius:50%;
-  background:transparent!important;
+  background:var(--kajo-panel,#101927)!important;
   box-shadow:none!important;
   pointer-events:none;
 }
@@ -9568,16 +9569,15 @@ body.kajo-modal-open { overflow: hidden !important; }
   z-index:1;
   border-radius:50%;
   pointer-events:none;
-  background:
-    radial-gradient(circle at 50% 4%,
-      #fff 0 2px,
-      color-mix(in srgb,var(--ring-color) 90%,white) 2.5px 5px,
-      color-mix(in srgb,var(--ring-color) 48%,transparent) 5.5px 8px,
-      transparent 9px);
+  background:radial-gradient(circle at 50% 4%,
+    #fff 0 1.5px,
+    color-mix(in srgb,var(--ring-color) 88%,white) 1.8px 3.8px,
+    color-mix(in srgb,var(--ring-color) 40%,transparent) 4px 6px,
+    transparent 7px);
   transform:rotate(var(--ring-angle,0deg));
-  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--ring-color) 78%,transparent));
-  opacity:.98;
-  transition:transform .45s ease,opacity .2s ease;
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--ring-color) 58%,transparent));
+  opacity:.96;
+  transition:transform .5s ease,opacity .2s ease;
 }
 #view-dashboard.kajo-home .kajo-ring.is-empty::after{opacity:0}
 #view-dashboard.kajo-home .kajo-ring>div{
@@ -9594,7 +9594,7 @@ body.kajo-modal-open { overflow: hidden !important; }
   font-weight:800;
   letter-spacing:-.045em;
   font-variant-numeric:tabular-nums;
-  text-shadow:0 0 10px color-mix(in srgb,var(--ring-color) 17%,transparent);
+  text-shadow:0 0 8px color-mix(in srgb,var(--ring-color) 12%,transparent);
 }
 #view-dashboard.kajo-home .kajo-ring span,
 #view-dashboard.kajo-home .kajo-ring small{
@@ -9607,19 +9607,11 @@ body.kajo-modal-open { overflow: hidden !important; }
   letter-spacing:.015em;
 }
 #view-dashboard.kajo-home .kajo-ring-card:hover .kajo-ring{
-  box-shadow:
-    0 0 0 1px color-mix(in srgb,var(--ring-color) 30%,transparent),
-    0 4px 14px rgba(0,0,0,.20),
-    0 0 13px color-mix(in srgb,var(--ring-color) 24%,transparent)!important;
+  box-shadow:0 0 12px color-mix(in srgb,var(--ring-color) 22%,transparent),0 4px 12px rgba(0,0,0,.16)!important;
 }
-#view-dashboard.kajo-home .kajo-ring-card:active .kajo-ring{
-  transform:scale(.975);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb,var(--ring-color) 38%,transparent),
-    0 0 16px color-mix(in srgb,var(--ring-color) 30%,transparent)!important;
-}
+#view-dashboard.kajo-home .kajo-ring-card:active .kajo-ring{transform:scale(.985)}
 #view-dashboard.kajo-home .kajo-ring-card:focus-visible{
-  outline:2px solid color-mix(in srgb,var(--ring-color) 72%,white);
+  outline:2px solid color-mix(in srgb,var(--ring-color) 62%,white);
   outline-offset:5px;
   border-radius:14px;
 }
