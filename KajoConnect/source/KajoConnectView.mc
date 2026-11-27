@@ -344,14 +344,14 @@ class KajoConnectView extends WatchUi.View {
             if (zonesValid) { activityView.setHeartRateZones(zoneValues); }
         }
 
+        // Start erst in onShow ausloesen, wenn Garmin die Aktivitaetsansicht
+        // aktiviert hat; nicht unmittelbar nach pushView().
+        activityView.startRecordingWhenShown();
         WatchUi.pushView(
             activityView,
             new KajoConnectActivityDelegate(activityView),
             WatchUi.SLIDE_UP
         );
-
-        // Der Start auf dem Home-Bildschirm soll die Aktivität direkt beginnen.
-        activityView.startRecording();
     }
 
     function startActivity() as Void {
