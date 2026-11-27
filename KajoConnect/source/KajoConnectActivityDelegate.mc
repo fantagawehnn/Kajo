@@ -34,10 +34,17 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
                 return true;
             }
             if (mView.isPausedForSave()) {
-                // Wenn Pressed/Released verfügbar sind, entscheidet onKeyReleased.
-                if (mUpperPressStartedAt < 0) {
+                var upperHeld = 0;
+                if (mUpperPressStartedAt >= 0) {
+                    upperHeld = System.getTimer() - mUpperPressStartedAt;
+                    mUpperPressStartedAt = -1;
+                }
+                if (upperHeld >= mLongPressThreshold) {
+                    mView.handlePausedLongPrimary();
+                } else {
                     mView.handlePausedShortPrimary();
                 }
+                mSuppressNextUpperKey = true;
             } else {
                 mUpperPressStartedAt = -1;
                 mView.handlePrimaryButton();
@@ -51,9 +58,17 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
                 return true;
             }
             if (mView.isPausedForSave()) {
-                if (mLowerPressStartedAt < 0) {
+                var lowerHeld = 0;
+                if (mLowerPressStartedAt >= 0) {
+                    lowerHeld = System.getTimer() - mLowerPressStartedAt;
+                    mLowerPressStartedAt = -1;
+                }
+                if (lowerHeld >= mLongPressThreshold) {
+                    mView.handlePausedLongSecondary();
+                } else {
                     mView.handlePausedShortSecondary();
                 }
+                mSuppressNextLowerKey = true;
             } else if (mView.isSavedForDetails()) {
                 mLowerPressStartedAt = -1;
                 mView.nextSavedDetailPage(1);
