@@ -8,6 +8,7 @@ import { getActivityTelemetrySeries, setChartEmptyState } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { readinessZone } from './metric-zones.js?v=5';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
+import { extractStrengthRecords, groupStrengthRecords } from './strength-database.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const fmt = (value, digits = 1) => valid(value)
@@ -212,6 +213,30 @@ function renderFitness() {
   if (panel) panel.classList.add('hidden');
   if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
 }
+function renderPerformanceEnduranceContext() {
+  const root = document.getElementById('performance-endurance-context');
+  if (!root) return;
+  const latest = [...(Array.isArray(state.dailyTimeline) ? state.dailyTimeline : [])]
+    .filter(day => day?.date && day.date <= todayKey() && day.loadMode && day.loadUnit
+      && (valid(day.ctl) || valid(day.atl) || valid(day.tsb) || valid(day.formPct)))
+    .sort((a,b) => String(b.date).localeCompare(String(a.date)))[0];
+  if (!latest) {
+    root.innerHTML = '<p class="kajo-performance-note">Für die Ausdauerbelastung liegen aktuell keine vollständigen CTL-/ATL-/Formwerte aus einem einheitlichen Load-Modell vor.</p>';
+    return;
+  }
+  const relativeMode = latest.loadMode === 'garmin-native' || latest.loadMode === 'garmin-zone';
+  const formValue = relativeMode ? latest.formPct : latest.tsb;
+  const formLabel = relativeMode ? 'Relativer Saldo' : 'TSB';
+  const formUnit = relativeMode ? '%' : latest.loadUnit;
+  const metricCard = (label,value,unit) =>
+    '<div class="kajo-performance-load-metric"><span>'+label+'</span><strong>'+value+'</strong><small>'+unit+'</small></div>';
+  root.innerHTML = '<div class="kajo-performance-load-grid">' +
+    metricCard('CTL',valid(latest.ctl)?fmt(latest.ctl):'—',latest.loadUnit) +
+    metricCard('ATL',valid(latest.atl)?fmt(latest.atl):'—',latest.loadUnit) +
+    metricCard(formLabel,valid(formValue)?fmt(formValue):'—',formUnit) +
+    '</div><p class="kajo-performance-note">Letzter verfügbarer Stand · '+dateLabel(latest.date)+' · Modell: '+performanceEscape(latest.loadMode)+'. CTL und ATL beschreiben die länger- bzw. kurzfristige Trainingsbelastung; '+formLabel+' ist modellabhängig. Diese Werte sind keine direkte Messung der Ausdauerleistungsfähigkeit und werden nicht mit VO₂max oder Paddeltelemetrie verrechnet.</p>';
+}
+
 function renderPerformanceDetail() {
   const paddleDefs = [
     ['speed','Geschwindigkeit','km/h'],
@@ -227,23 +252,24 @@ function renderPerformanceDetail() {
   });
   renderMetrics('performance-paddling-metrics',paddleCircles);
 
-  const strengthGroups = new Map();
-  (Array.isArray(state.strengthPBs) ? state.strengthPBs : []).forEach(record => {
-    if (!record?.exercise || !valid(record.weight) || !valid(record.reps) || !record.date) return;
-    if (!strengthGroups.has(String(record.exercise))) strengthGroups.set(String(record.exercise),[]);
-    strengthGroups.get(String(record.exercise)).push(record);
-  });
-  const strengthEntries = [...strengthGroups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de'));
-  renderMetrics('performance-strength-metrics', strengthEntries.length
-    ? strengthEntries.map(([exercise,records]) => {
-        const latest = [...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
-        const key = 'strength:' + encodeURIComponent(exercise);
-        return performanceCircle(key,exercise,fmt(latest.weight,1),'kg × '+latest.reps,
-          records.length+' Einträge','var(--kajo-status-info)');
+  const strengthRecords = extractStrengthRecords(state.rawActivities, state.strengthPBs);
+  const strengthGroups = groupStrengthRecords(strengthRecords);
+  renderMetrics('performance-strength-metrics', strengthGroups.length
+    ? strengthGroups.map(group => {
+        const latest = group.entries[0];
+        const key = 'strength:' + encodeURIComponent(group.exercise);
+        return performanceCircle(key,group.exercise,fmt(latest.weight,1),'kg × '+latest.reps,
+          'Letzter Satz · '+dateLabel(latest.date),'var(--kajo-status-info)');
       })
-    : ['<p class="kajo-performance-empty">Noch keine dokumentierten Kraft-Bestwerte.</p>']);
+    : ['<p class="kajo-performance-empty">Noch keine abgeschlossenen Kraftsätze mit Gewicht und Wiederholungen dokumentiert.</p>']);
   const count = document.getElementById('performance-strength-count');
-  if (count) count.textContent = strengthEntries.length ? strengthEntries.length + ' Übungen' : 'Keine Daten';
+  if (count) count.textContent = strengthGroups.length ? strengthGroups.length + ' Übungen' : 'Keine Daten';
+
+  const vo2 = latestCheckin('vo2max');
+  const vo2Circle = performanceCircle('vo2max','VO₂max',vo2 ? fmt(vo2.value,1) : '—',
+    'ml/kg/min',vo2 ? 'Garmin-Schätzwert · '+dateLabel(vo2.date) : 'Nicht erfasst','var(--kajo-status-info)');
+  renderMetrics('performance-aerobic-metrics',[vo2Circle]);
+  renderPerformanceEnduranceContext();
   selectedPerformanceMetric = null;
   document.querySelectorAll('[data-performance-metric]').forEach(button => {
     button.classList.remove('is-selected'); button.setAttribute('aria-pressed','false');
@@ -287,7 +313,7 @@ function renderPerformanceTrend(key) {
   if (!panel || !canvas) return;
   if (typeof Chart !== 'function') { panel.classList.remove('hidden'); setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true); return; }
   if (performanceChart) { performanceChart.destroy(); performanceChart = null; }
-  let labels = [], values = [], heading = '', unit = '', explanation = '', color = '#38bdf8';
+  let labels = [], values = [], heading = '', unit = '', explanation = '', color = '#38bdf8', tooltipDetails = [];
   if (key === 'vo2max') {
     const entries = Object.entries(state.dailyCheckins || {}).filter(([date,row]) =>
       date >= performanceRangeStart() && date <= todayKey() && getGarminCheckinMetric(row, 'vo2max') !== null)
@@ -299,12 +325,15 @@ function renderPerformanceTrend(key) {
     color = '#f97316';
   } else if (key.startsWith('strength:')) {
     const exercise = decodeURIComponent(key.slice(9));
-    const entries = (state.strengthPBs || []).filter(row => String(row.exercise)===exercise && valid(row.weight) && row.date)
+    const entries = extractStrengthRecords(state.rawActivities, state.strengthPBs)
+      .filter(row => String(row.exercise)===exercise && valid(row.weight) && valid(row.reps)
+        && row.date >= performanceRangeStart() && row.date <= todayKey())
       .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     labels = entries.map(row=>dateLabel(row.date));
     values = entries.map(row=>Number(row.weight));
-    heading = exercise + ' · dokumentierte Bestwerte'; unit = 'kg';
-    explanation = 'Gespeicherte Gewichtsangaben je Eintrag. Wiederholungszahlen werden nicht zu einem geschätzten Kraftscore verrechnet.';
+    tooltipDetails = entries.map(row=>String(row.reps)+' Wdh.');
+    heading = exercise + ' · dokumentiertes Trainingsgewicht'; unit = 'kg';
+    explanation = 'Gewicht je dokumentiertem Satz; Wiederholungszahlen stehen im Tooltip. Gewichte mit unterschiedlichen Wiederholungszahlen sind nicht unmittelbar vergleichbar. Es wird kein Kraftscore geschätzt.';
     color = '#a78bfa';
   } else {
     const metricMeta = {speed:['Geschwindigkeit','km/h'],hr:['Herzfrequenz','bpm'],power:['Leistung','W'],cadence:['Kadenz','/min']};
@@ -353,7 +382,7 @@ function renderPerformanceTrend(key) {
     data:{labels,datasets:[{label:heading,data:values,borderColor:color,backgroundColor:color+'22',
       borderWidth:2,pointRadius:values.length>1?2:4,pointHoverRadius:5,tension:.2,spanGaps:false,fill:false}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>Number(item.parsed.y).toLocaleString('de-DE',{maximumFractionDigits:2})+' '+unit}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:item=>Number(item.parsed.y).toLocaleString('de-DE',{maximumFractionDigits:2})+' '+unit+(tooltipDetails[item.dataIndex]?' · '+tooltipDetails[item.dataIndex]:'')}}},
       scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',maxTicksLimit:8}},
         y:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#94a3b8'}}}}
   });
@@ -376,8 +405,7 @@ export function setPerformanceRange(range) {
   performanceRange = range;
   document.querySelectorAll('[data-performance-range]').forEach(button =>
     button.classList.toggle('is-active',button.dataset.performanceRange===range));
-  if (selectedPerformanceMetric && ['vo2max','speed','hr','power','cadence'].includes(selectedPerformanceMetric))
-    renderPerformanceTrend(selectedPerformanceMetric);
+  if (selectedPerformanceMetric) renderPerformanceTrend(selectedPerformanceMetric);
 }
 if (typeof window !== 'undefined') {
   window.togglePerformanceMetric = togglePerformanceMetric;
