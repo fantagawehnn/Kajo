@@ -65,10 +65,10 @@ test('failed FIT save stops UI timers but preserves engine session for another s
 });
 
 test('activity primary and secondary buttons are handled by the reliable onKey event', () => {
-    const onKey = method(delegate, 'onKey', 'onKeyPressed');
+    const onKey = method(delegate, 'onKey', 'onSwipe');
     assert.match(onKey, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
     assert.match(onKey, /mView\.handlePrimaryButton\(\)/);
-    assert.match(onKey, /key == WatchUi\.KEY_ESC/);
+    assert.match(onKey, /key == WatchUi\.KEY_ESC \|\| key == WatchUi\.KEY_LAP/);
     assert.match(onKey, /mView\.handleBackOrLapButton\(\)/);
     assert.match(onKey, /mView\.handlePausedShortPrimary\(\)/);
     assert.match(onKey, /mView\.handlePausedLongPrimary\(\)/);
@@ -76,17 +76,24 @@ test('activity primary and secondary buttons are handled by the reliable onKey e
     assert.match(onKey, /mView\.handlePausedLongSecondary\(\)/);
 });
 
-test('key release callbacks cannot repeat an action already handled by onKey', () => {
-    const onKey = method(delegate, 'onKey', 'onKeyPressed');
-    const released = method(delegate, 'onKeyReleased', 'onSwipe');
-    assert.match(onKey, /mUpperPressStartedAt = -1/);
-    assert.match(onKey, /mLowerPressStartedAt = -1/);
-    assert.match(released, /if \(mUpperPressStartedAt < 0\) \{ return true; \}/);
-    assert.match(released, /if \(mLowerPressStartedAt < 0\) \{ return true; \}/);
+test('press and release callbacks do not consume the key before onKey runs', () => {
+    const pressed = method(delegate, 'onKeyPressed', 'onKeyReleased');
+    const released = method(delegate, 'onKeyReleased', 'onKey');
+    assert.match(pressed, /mUpperPressStartedAt = System\.getTimer\(\)/);
+    assert.match(pressed, /mLowerPressStartedAt = System\.getTimer\(\)/);
+    assert.match(pressed, /return false/);
+    assert.match(released, /return false/);
+    assert.doesNotMatch(released, /handlePaused|handlePrimaryButton|handleBackOrLapButton/);
+});
+
+test('long lower-button menu event starts discard confirmation while paused', () => {
+    const onKey = method(delegate, 'onKey', 'onSwipe');
+    assert.match(onKey, /key == WatchUi\.KEY_MENU/);
+    assert.match(onKey, /mView\.isPausedForSave\(\)\) \{\s*mView\.handlePausedLongSecondary\(\)/);
 });
 
 test('lap marker remains available through the lower-key fallback while recording', () => {
-    const onKey = method(delegate, 'onKey', 'onKeyPressed');
+    const onKey = method(delegate, 'onKey', 'onSwipe');
     assert.match(onKey, /mView\.handleBackOrLapButton\(\)/);
     const backOrLap = method(activity, 'handleBackOrLapButton', 'handleLapButton');
     assert.match(backOrLap, /handleLapButton\(\)/);
