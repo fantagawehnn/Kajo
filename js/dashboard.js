@@ -768,14 +768,33 @@ export function renderSelectedDashboardDay() {
     const formattedDate = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate);
     if (selectedDateLabel) selectedDateLabel.textContent = formattedDate;
     const savedCheckin = state.dailyCheckins?.[selectedDashboardDate] || {};
-    const hasSavedCheckin = ['sleepQuality','fatigue','soreness','stress','motivation','weight','cycle'].some(key => savedCheckin[key] !== null && savedCheckin[key] !== undefined && savedCheckin[key] !== '');
+    const requiredSelfMonitoring = ['sleepQuality','fatigue','soreness','stress','motivation'];
+    const completedSelfMonitoring = requiredSelfMonitoring.filter(key =>
+        savedCheckin[key] !== null && savedCheckin[key] !== undefined && savedCheckin[key] !== ''
+    ).length;
+    const hasCompleteSelfMonitoring = completedSelfMonitoring === requiredSelfMonitoring.length;
+    const isTodayDashboard = selectedDashboardDate === today;
     const homeNoteButton = document.getElementById('kajo-home-note-button');
     if (homeNoteButton) {
-        homeNoteButton.hidden = !hasSavedCheckin;
-        homeNoteButton.setAttribute('aria-hidden', String(!hasSavedCheckin));
+        homeNoteButton.hidden = !hasCompleteSelfMonitoring;
+        homeNoteButton.setAttribute('aria-hidden', String(!hasCompleteSelfMonitoring));
     }
+    // Der Notizbuch-Zugang bleibt immer verfügbar; die Erinnerung erscheint
+    // ausschließlich für den heutigen Tag, solange mindestens eine Pflichtangabe fehlt.
     const checkinStartButton = document.querySelector('.kajo-selfmonitoring-notebook');
-    if (checkinStartButton) checkinStartButton.hidden = hasSavedCheckin;
+    if (checkinStartButton) checkinStartButton.hidden = false;
+    const selfMonitoringReminder = document.getElementById('home-selfmonitoring-reminder');
+    const selfMonitoringReminderText = document.getElementById('home-selfmonitoring-reminder-text');
+    if (selfMonitoringReminder) {
+        const showReminder = isTodayDashboard && !hasCompleteSelfMonitoring;
+        selfMonitoringReminder.classList.toggle('hidden', !showReminder);
+        if (selfMonitoringReminderText && showReminder) {
+            const remaining = requiredSelfMonitoring.length - completedSelfMonitoring;
+            selfMonitoringReminderText.textContent = completedSelfMonitoring === 0
+                ? 'Dein täglicher Check-in ist noch offen.'
+                : 'Noch ' + remaining + ' von 5 Angaben offen.';
+        }
+    }
     const noteButton = document.getElementById('dashboard-day-note');
     if (noteButton) {
         const hasNote = Boolean(String(state.dailyCheckins?.[selectedDashboardDate]?.note || '').trim());
