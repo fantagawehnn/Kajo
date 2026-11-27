@@ -315,20 +315,31 @@ function renderHealthMarkers(dates) {
   if (!root) return;
   if (!healthMarkersVisible) { root.innerHTML = ''; root.style.display = 'none'; root.classList.add('hidden'); return; }
   const logs = state.healthLogs || {};
-  const buttons = dates.map((date,index) => {
+  const checkins = state.dailyCheckins || {};
+  const races = new Set((Array.isArray(state.races) ? state.races : []).map(race => String(race?.date || '').slice(0,10)));
+  const cells = dates.map((date,index) => {
     const item = logs[date];
-    if (!['sick','injured'].includes(item?.status)) return '';
-    const illness = item.status === 'sick';
-    const label = illness ? 'Erkrankung' : 'Verletzung';
-    const color = illness ? '#eab308' : '#ef4444';
-    return '<button type="button" data-health-date="'+date+'" aria-label="'+label+' am '+date+'" title="'+label+' · '+date+'" style="grid-column:'+(index+1)+';justify-self:center;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:'+(illness?'#0f172a':'#fff')+';background:'+color+';border:1px solid rgba(255,255,255,.45);cursor:pointer">'+(illness?'K':'V')+'</button>';
+    const markers = [];
+    if (item?.status === 'sick' || item?.status === 'injured') {
+      const illness = item.status === 'sick';
+      const label = illness ? 'Erkrankung' : 'Verletzung';
+      const color = illness ? '#FB923C' : '#EF4444';
+      markers.push('<button type="button" data-health-date="'+date+'" aria-label="'+label+' am '+date+'" title="'+label+' · '+date+'" style="width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:#05080E;background:'+color+';border:1px solid rgba(255,255,255,.45);cursor:pointer">'+(illness?'K':'V')+'</button>');
+    }
+    if (checkins[date]?.cycle?.period === true || checkins[date]?.period === true) {
+      markers.push('<span aria-label="Periodentag" title="Periode · '+date+'" style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:#05080E;background:#E879F9">P</span>');
+    }
+    if (races.has(date)) {
+      markers.push('<span aria-label="Wettkampf" title="Wettkampf · '+date+'" style="height:18px;border-left:2px dashed #EAF1FB"></span>');
+    }
+    return markers.length ? '<span style="grid-column:'+(index+1)+';display:flex;justify-content:center;align-items:center;gap:2px;min-height:20px">'+markers.join('')+'</span>' : '';
   }).filter(Boolean);
   root.classList.remove('hidden');
   root.style.display = 'grid';
   root.style.gridTemplateColumns = 'repeat('+dates.length+',minmax(0,1fr))';
   root.style.alignItems = 'center';
   root.style.minHeight = '24px';
-  root.innerHTML = buttons.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:#64748b">Keine Ereignisse dokumentiert · Gesundheitsstatus nicht beurteilbar</span>';
+  root.innerHTML = cells.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:var(--kajo-muted)">Keine Gesundheits- oder Wettkampfmarkierungen im Zeitraum</span>';
   root.querySelectorAll('[data-health-date]').forEach(button => button.addEventListener('click', () => {
     const date = button.dataset.healthDate, item = logs[date] || {};
     const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
