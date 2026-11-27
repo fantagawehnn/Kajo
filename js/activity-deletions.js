@@ -57,8 +57,7 @@ export function buildActivityDeletionTombstone(activity, today) {
     return {
         record_id: recordId,
         activity_date: activityDate,
-        garmin_activity_id: getActivityDeletionGarminId(activity),
-        deleted_at: new Date().toISOString()
+        garmin_activity_id: getActivityDeletionGarminId(activity)
     };
 }
 
