@@ -2264,6 +2264,18 @@ class KajoConnectActivityView extends WatchUi.View {
                 Graphics.FONT_XTINY, 0x98A5AB);
         }
 
+        // TEMPORAERE TIMER-DIAGNOSE: zeigt, ob KAJO-Timer-Callbacks eintreffen
+        // und ob Garmin die FIT-Session weiterhin als aktiv meldet.
+        if (mStatus == "AUFZEICHNUNG") {
+            var timerDebug = "DBG T:" + mDebugTimerTicks.toString() +
+                " S:" + mElapsedSeconds.toString() +
+                " FIT:" + (mEngine.isRecording() ? "ON" : "OFF");
+            dc.setColor(0x000000, Graphics.COLOR_BLACK);
+            dc.fillRectangle(100, 42, mScreenWidth - 200, 16);
+            drawActivityText(dc, cx, 43, mScreenWidth - 204, 14,
+                timerDebug, Graphics.FONT_XTINY, 0xFF9F1A);
+        }
+
         // Fehlerdiagnose deutlich im oberen Bildschirmbereich anzeigen.
         // Die untere Bildschirmkante ist auf der Venu 3S durch Layout/Bedienhinweise
         // belegt und war für die Diagnose nicht zuverlässig sichtbar.
