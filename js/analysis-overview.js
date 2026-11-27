@@ -596,13 +596,10 @@ function renderDataAvailability(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const activities = getActivitiesInRange(dates);
   const loadDays = dates.filter(date => { const day = timeline.get(date); return day && valid(day.load); }).length;
-  const hrvDays = dates.filter(date => {
-    const item = checkins[date] || {};
-    const value = item.garminHrv ?? (item.measurementSources?.hrv?.source === 'garmin' ? item.hrv : null);
-    return valid(value) && Number(value) > 0;
-  }).length;
+  const hrvDays = hrvSeries.values.filter(value => valid(value) && Number(value) > 0).length;
   const vo2Days = dates.filter(date => valid(getGarminCheckinMetric(checkins[date], 'vo2max'))).length;
   const healthEntries = Object.entries(state.healthLogs || {}).filter(([date, item]) => date >= dates[0] && date <= dates[dates.length - 1] && ['sick', 'injured'].includes(item?.status));
   const rows = [
