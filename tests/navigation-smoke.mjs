@@ -159,8 +159,8 @@ for (const id of ['home-readiness-ring','home-form-ring','home-fitness-ring','ho
 }
 assert.ok(homeMarkup.indexOf('home-readiness-ring') < homeMarkup.indexOf('home-form-ring') && homeMarkup.indexOf('home-form-ring') < homeMarkup.indexOf('home-fitness-ring'), 'status order is Recovery, Load, Performance');
 assert.ok(homeMarkup.includes('kajo-week-chart'), 'weekly chart uses compact vertical bars');
-assert.ok(dashboard.includes('kajo-week-segment'), 'weekly chart renders sport segments');
-assert.ok(dashboard.includes("segment.setAttribute('aria-label'"), 'sport segments are accessible interactive targets');
+assert.ok(dashboard.includes('kajo-week-bar-track') && dashboard.includes('--week-ring-color'), 'weekly chart uses sport-colored day bars');
+assert.ok(dashboard.includes("track.setAttribute('aria-label'") && dashboard.includes('track.addEventListener(\'click\', selectDay)'), 'weekly day bars are accessible interactive targets');
 assert.ok(dashboard.includes('garminActivityId || item.externalId || item.id'), 'weekly chart deduplicates stable activity IDs');
 assert.ok(dashboard.includes('export function selectDashboardDate'), 'weekly day selection uses the non-editing dashboard day view');
 assert.ok(competitions.includes('openNextRaceDetail'), 'next race opens a dedicated detail view');
