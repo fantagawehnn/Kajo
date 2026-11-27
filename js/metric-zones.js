@@ -106,24 +106,70 @@ export function classifySubjective(key, value) {
   return { status: 'critical', zone: 1, label: 'Ungünstige Selbsteinschätzung' };
 }
 
-export function classifyTrainingBalance(value, mode = 'unclassified') {
+export function inferSeasonPhaseCategory(phase = {}) {
+  const text = [phase.name, phase.type, phase.objective, ...(phase.focus || []), phase.notes]
+    .filter(Boolean).join(' ').toLocaleLowerCase('de');
+  if (/wettkampf|competition|race|rennen|taper|peaking|peak|meisterschaft|world cup|worldcup/.test(text)) return 'competition';
+  if (/regeneration|erholung|recovery|entlastung|transition|übergang|pause/.test(text)) return 'recovery';
+  if (/spezif|specific|vorbereitung|pre.?competition|wettkampfnah|intensivierung/.test(text)) return 'specific';
+  if (/grundlage|aufbau|base|build|development|entwickl|vorbereitungsblock/.test(text)) return 'build';
+  return 'unknown';
+}
+
+export function getSeasonPhaseForDate(plan, dateKey) {
+  if (!plan || !dateKey || !Array.isArray(plan.phases)) return null;
+  const matches = plan.phases.filter(phase => phase?.startDate && phase?.endDate
+    && phase.startDate <= dateKey && dateKey <= phase.endDate);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+export function getSeasonPhaseTargets(phase) {
+  if (!phase) return null;
+  const category = inferSeasonPhaseCategory(phase);
+  const defaults = {
+    build: { acwr: [0.8, 1.3], tsb: [-25, 5], label: 'Aufbauphase' },
+    specific: { acwr: [0.8, 1.3], tsb: [-15, 10], label: 'Spezifische Phase' },
+    competition: { acwr: [0.8, 1.3], tsb: [-5, 20], label: 'Wettkampfphase' },
+    recovery: { acwr: [0.6, 1.2], tsb: [0, 25], label: 'Regenerationsphase' }
+  };
+  const base = defaults[category];
+  if (!base) return null;
+  const pair = (min, max, fallback) => {
+    const a = min == null || min === '' ? fallback[0] : Number(min);
+    const b = max == null || max === '' ? fallback[1] : Number(max);
+    return Number.isFinite(a) && Number.isFinite(b) && a <= b ? [a, b] : fallback;
+  };
+  const manual = ['acwrTargetMin', 'acwrTargetMax', 'tsbTargetMin', 'tsbTargetMax'].some(key => phase[key] != null && phase[key] !== '');
+  return {
+    category, label: base.label,
+    acwr: pair(phase.acwrTargetMin, phase.acwrTargetMax, base.acwr),
+    tsb: pair(phase.tsbTargetMin, phase.tsbTargetMax, base.tsb),
+    source: manual ? 'manual' : 'phase-default'
+  };
+}
+
+export function classifyTrainingBalance(value, mode = 'unclassified', targets = null) {
   if (!valid(value)) return { status: 'info', label: 'Keine Modellwerte' };
   const n = Number(value);
   if (mode === 'relative') {
-    if (n < -25) return { status: 'critical', zone: 1, label: 'Hoher negativer relativer Modellstatus' };
-    if (n < -10) return { status: 'attention', zone: 2, label: 'Erhöhter negativer relativer Modellstatus' };
-    if (n <= 5) return { status: 'good', zone: 3, label: 'Relativer Modellstatus ausgeglichen' };
-    if (n <= 20) return { status: 'good', zone: 4, label: 'Positiver relativer Modellstatus' };
-    return { status: 'attention', zone: 2, label: 'Sehr positiver relativer Modellstatus · Kontext prüfen' };
+    if (!targets?.tsb) return { status: 'info', label: 'Keine eindeutig zugeordnete Saisonphase für die TSB-Einordnung' };
+    const [min, max] = targets.tsb;
+    if (n < min - 10) return { status: 'critical', zone: 1, label: 'Deutlich unter dem phasenspezifischen TSB-Zielbereich' };
+    if (n < min) return { status: 'attention', zone: 2, label: 'Unter dem phasenspezifischen TSB-Zielbereich' };
+    if (n <= max) return { status: 'good', zone: 4, label: 'Im phasenspezifischen TSB-Zielbereich' };
+    if (n <= max + 10) return { status: 'attention', zone: 2, label: 'Über dem phasenspezifischen TSB-Zielbereich' };
+    return { status: 'critical', zone: 1, label: 'Deutlich über dem phasenspezifischen TSB-Zielbereich' };
   }
   return { status: 'info', label: 'TSB ' + (n > 0 ? '+' : '') + n.toFixed(1) + ' · Modellwert ohne allgemeingültige Grenzzone' };
 }
 
-export function classifyAcwr(value) {
+export function classifyAcwr(value, targets = null) {
   if (!valid(value) || Number(value) < 0) return { status: 'info', label: 'Nicht berechenbar' };
   const ratio = Number(value);
-  if (ratio < 0.8) return { status: 'attention', zone: 2, label: 'Akute Last unter chronischem Niveau' };
-  if (ratio <= 1.3) return { status: 'info', zone: 3, label: 'Akute und chronische Last ähnlich – keine Sicherheitszone' };
-  if (ratio <= 1.5) return { status: 'attention', zone: 2, label: 'Erhöhter kurzfristiger Lastanstieg' };
+  if (!targets?.acwr) return { status: 'info', label: 'Keine eindeutig zugeordnete Saisonphase für die ACWR-Einordnung' };
+  const [min, max] = targets.acwr;
+  if (ratio < min) return { status: 'attention', zone: 2, label: 'Akute Last unter dem phasenspezifischen Zielbereich' };
+  if (ratio <= max) return { status: 'good', zone: 4, label: 'Im phasenspezifischen ACWR-Orientierungsbereich · keine Sicherheitsgarantie' };
+  if (ratio <= Math.max(1.5, max + 0.2)) return { status: 'attention', zone: 2, label: 'Akute Last über dem phasenspezifischen Zielbereich' };
   return { status: 'critical', zone: 1, label: 'Deutlicher kurzfristiger Lastanstieg' };
 }
