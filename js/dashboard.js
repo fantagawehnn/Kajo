@@ -1020,11 +1020,11 @@ function historyRecommendation(key, value, dateKey) {
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
-        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'garmin' : 'tsb';
+        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'garmin' : 'unclassified';
         const zone = classifyTrainingBalance(value, mode);
         return [zone.label, day?.isProvisional
             ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
-            : 'Orientierungszonen: TSB unter −30 stark negativ, −30 bis −10 erhöhte modellierte Ermüdung, −10 bis +5 ausgeglichen, +5 bis +25 frisch, über +25 sehr frisch. Bei Garmin-Form gelten getrennte Prozentbereiche. Diese Modellzonen sind keine universellen physiologischen Grenzwerte.'];
+            : 'TSB ist CTL minus ATL und übernimmt die Einheit des gewählten Load-Modells. Deshalb zeigt KAJO hier bewusst keine allgemeingültige Ampelzone. Beurteile den Verlauf nur innerhalb derselben Belastungsmethode und zusammen mit Trainingsinhalt, Erholung und Datenqualität.'];
     }
     if (key === 'readiness') {
         const zone = readinessZone(value);
@@ -1116,7 +1116,7 @@ export function historyRingColor(key, value, dateKey) {
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
-        const mode = String(day.loadMode || '').startsWith('garmin') ? 'garmin' : 'tsb';
+        const mode = String(day.loadMode || '').startsWith('garmin') ? 'garmin' : 'unclassified';
         const zone = classifyTrainingBalance(value, mode);
         return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
     }
