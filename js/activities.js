@@ -6,7 +6,8 @@
 import { state, refreshAll } from './state.js';
 import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmergeActivityGroup } from './activity-groups.js?v=1';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=6';
-import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml } from './utils.js';
+import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml, toLocalDateString } from './utils.js';
+import { queueActivityDeletionTombstone } from './activity-deletions.js?v=1';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis, getActivityLoadQualityStatus } from './training-load.js?v=6';
 import { calculateStrengthActivitySummary } from './calculations.js';
@@ -1578,6 +1579,13 @@ export function deleteSelectedActivity() {
     if (!state.selectedActivityForModal) return;
     const id = state.selectedActivityForModal.id;
     if (!confirm('Diese Aktivität wirklich löschen?')) return;
+    try {
+        queueActivityDeletionTombstone(state.selectedActivityForModal, toLocalDateString());
+    } catch (error) {
+        console.error('Aktivitätslöschung konnte nicht für die Kontosynchronisierung vorgemerkt werden:', error);
+        alert('Die Aktivität wurde nicht gelöscht, da die kontoweite Löschung nicht sicher vorgemerkt werden konnte.');
+        return;
+    }
     if (state.selectedActivityForModal?.mergedGroupId) unmergeActivityGroup(state.selectedActivityForModal, state.rawActivities);
     state.rawActivities = state.rawActivities.filter(a => a.id !== id);
     state.selectedActivityForModal = null; saveDataToLocalStorage(); closeCSVDetailsModal(); refreshAll();
