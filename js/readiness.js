@@ -181,7 +181,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
                     deviation: baseline.deviation, observations: baseline.observations
                 });
             } else {
-                baselineRequirements.push({ key: 'sleepDuration', label: 'Schlafdauer', observations: baseline.observations, required: 7 });
+                baselineRequirements.push({ key: 'sleepDuration', label: 'Schlafdauer', observations: baseline.observations, required: 12 });
             }
         }
     }
