@@ -3712,10 +3712,17 @@ async function syncGarminTodayOnOpen(userId) {
                 continue;
             }
             health = response.sync?.healthSync || null;
-            const limited = health?.rateLimited || health?.status === 'rate_limited';
-            if (!limited) break;
+            const activity = response.sync?.activitySync || null;
+            const activityLimited = activity?.rateLimited || activity?.status === 'rate_limited';
+            const healthLimited = health?.rateLimited || health?.status === 'rate_limited';
+            if (!activityLimited && !healthLimited) break;
             if (attempt === 3) throw new Error('Garmin hat den Tagesabruf trotz mehrerer Versuche begrenzt.');
-            const waitSeconds = Math.max(30, Number(health.retryInSeconds || 30)) + attempt * 15;
+            const retrySeconds = Math.max(
+                Number(activityLimited ? activity.retryInSeconds || 0 : 0),
+                Number(healthLimited ? health.retryInSeconds || 0 : 0),
+                30
+            );
+            const waitSeconds = retrySeconds + attempt * 15;
             console.info('KAJO: Garmin-Tagesabgleich wartet wegen API-Limit', waitSeconds, 'Sekunden.');
             await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
             if (!isCurrentSync()) return;
@@ -3745,15 +3752,20 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (!isCurrentSync()) return;
-        const partial = health?.status === 'partial' || Number(health?.failed || 0) > 0
+        const activitySync = response.sync?.activitySync || null;
+        const activityFailed = activitySync?.status === 'error' || activitySync?.status === 'rate_limited';
+        const healthFailed = health?.status === 'partial' || health?.status === 'error'
+            || health?.status === 'rate_limited' || Number(health?.failed || 0) > 0;
+        const partial = activityFailed || healthFailed
             || Number(jsonTelemetry.failed || 0) > 0 || jsonTelemetry.rateLimited === true
             || telemetryCloud.failed;
         if (partial) {
             console.warn('KAJO: Garmin-Tagesabgleich teilweise abgeschlossen; fehlende Zeitreihen werden beim nächsten Abgleich erneut versucht.', { health, jsonTelemetry });
             setGarminSyncIndicator('partial', 'Teilweise synchronisiert');
             setGarminSyncResult('Der Tagesabgleich wurde nur teilweise abgeschlossen. Einige Garmin-Daten konnten nicht vollständig übernommen werden; fehlende Daten werden erneut geprüft.', 'partial');
-            if (jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
-                const retryDelay = jsonTelemetry.rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
+            if (activityFailed || healthFailed || jsonTelemetry.rateLimited || Number(jsonTelemetry.failed || 0) > 0 || telemetryCloud.failed) {
+                const rateLimited = activitySync?.status === 'rate_limited' || health?.rateLimited || health?.status === 'rate_limited' || jsonTelemetry.rateLimited;
+                const retryDelay = rateLimited ? 5 * 60 * 1000 + 10000 : 6 * 60 * 60 * 1000 + 10000;
                 setTimeout(() => {
                     if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
                         void syncGarminTodayOnOpen(userId);
