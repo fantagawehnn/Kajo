@@ -12,6 +12,7 @@ import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js';
+import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr } from './metric-zones.js';
 export { calculateReadiness } from './readiness.js';
 
 function getHomeActivityDisplayMode() {
@@ -31,7 +32,7 @@ function localTodayKey() {
 }
 function clamp(v,min=0,max=100){return Math.max(min,Math.min(max,v));}
 const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-status-attention)', critical:'var(--kajo-status-critical)', info:'var(--kajo-status-info)' };
-function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STATUS_COLORS.attention:STATUS_COLORS.critical;}
+function fiveLevelColor(score){const zone=readinessZone(score);return STATUS_COLORS[zone.status]||STATUS_COLORS.info;}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
@@ -94,18 +95,34 @@ function standardDeviation(values,avg){
   return Math.sqrt(values.reduce((sum,value)=>sum+Math.pow(value-avg,2),0)/values.length);
 }
 function updateRespirationRange(dateKey) {
-  const rangeEl = document.getElementById('wear-respiration-range');
-  if (rangeEl) rangeEl.textContent = 'Persönlicher Normalbereich noch nicht methodisch festgelegt';
+  const value = state.dailyCheckins?.[dateKey]?.garminRespiration ?? null;
+  updateWearableRange('wear-respiration', 'wear-respiration-range', value, 'respiration', dateKey);
 }
-function updateWearableRange(valueId, rangeId, value, key, dateKey, direction) {
+function updateWearableRange(valueId, rangeId, value, key, dateKey) {
   const valueEl = document.getElementById(valueId);
   const rangeEl = document.getElementById(rangeId);
   if (!valueEl || !rangeEl) return;
+  const history = checkinValuesBetween(dateKey, key, 28, false);
+  let zone;
+  if (key === 'sleepScore') zone = classifyGarminSleepScore(value);
+  else if (key === 'sleepDuration') zone = classifySleepDuration(value, history);
+  else zone = classifyPersonalMetric(key, value, history);
+  const colorClass = zone.status === 'good' ? 'text-emerald-400'
+    : zone.status === 'attention' ? 'text-amber-400'
+      : zone.status === 'critical' ? 'text-rose-400' : 'text-white';
   valueEl.classList.remove('text-emerald-400', 'text-amber-400', 'text-rose-400', 'text-white');
-  valueEl.classList.add('text-white');
-  rangeEl.textContent = validNumber(value)
-    ? 'Persönlicher Normalbereich noch nicht methodisch festgelegt'
-    : 'Keine Messung vorhanden';
+  valueEl.classList.add(colorClass);
+  if (!validNumber(value)) {
+    rangeEl.textContent = 'Keine Messung vorhanden';
+  } else if (validNumber(zone.baseline)) {
+    const unit = key === 'hrv' ? ' ms' : key === 'rhr' ? ' bpm' : key === 'respiration' ? ' /min' : ' h';
+    const reference = key === 'sleepDuration'
+      ? 'Persönlicher Median: ' + Number(zone.baseline).toFixed(1) + ' h'
+      : 'Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + unit;
+    rangeEl.textContent = reference + ' · ' + zone.label;
+  } else {
+    rangeEl.textContent = zone.label + (zone.observations !== undefined ? ' · ' + zone.observations + '/7 Messungen' : '');
+  }
 }
 export function renderDashboardNextRace(){
   const name=document.getElementById('dashboard-next-race-name');
@@ -494,8 +511,16 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         }
     };
     metric('home-wear-rhr','home-wear-rhr-ring',format(garminCheckin.garminRhr,'rhr'),wearableState('rhr',garminCheckin.garminRhr));
+    const statusRhr=document.getElementById('home-status-rhr-value');
+    if(statusRhr)statusRhr.textContent=format(garminCheckin.garminRhr,'rhr');
+    const statusRhrRing=document.getElementById('home-status-rhr-ring');
+    if(statusRhrRing){statusRhrRing.style.setProperty('--ring-value','100%');statusRhrRing.style.setProperty('--ring-color','#FF7A7F');}
     const garminHrv = garminCheckin.garminHrv ?? (garminCheckin.measurementSources?.hrv?.source === 'garmin' ? garminCheckin.hrv : null);
     metric('home-wear-hrv','home-wear-hrv-ring',format(garminHrv,'hrv'),wearableState('hrv',garminHrv));
+    const statusHrv=document.getElementById('home-status-hrv-value');
+    if(statusHrv)statusHrv.textContent=format(garminHrv,'hrv');
+    const statusHrvRing=document.getElementById('home-status-hrv-ring');
+    if(statusHrvRing){statusHrvRing.style.setProperty('--ring-value','100%');statusHrvRing.style.setProperty('--ring-color','#E879F9');}
     metric('home-wear-score','home-wear-score-ring',format(garminCheckin.garminSleepScore,'sleepScore'),wearableState('sleepScore',garminCheckin.garminSleepScore));
     metric('home-wear-duration','home-wear-duration-ring',validNumber(sleepDuration) ? historyDisplay(Number(sleepDuration),'sleepDuration').replace('.',',') + ' h' : '—',wearableState('sleepDuration',sleepDuration));
     metric('home-wear-resp','home-wear-resp-ring',format(garminCheckin.garminRespiration,'respiration'),wearableState('respiration',garminCheckin.garminRespiration));
@@ -557,7 +582,8 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             : 'Noch kein vorheriger CTL-Wert zum Vergleichen vorhanden';
     }
     applyRingState('home-readiness-ring', trainingRingState('readiness', readinessNumber, checkinDate || selectedDate));
-    applyRingState('home-form-ring', { value: loadNumber, progress: loadNumber === null ? 0 : Math.max(0, Math.min(100, loadNumber)), color: STATUS_COLORS.info, empty: loadNumber === null });
+    const tsbProgress=tsbNumber===null?0:Math.max(0,Math.min(100,((tsbNumber+30)/55)*100));
+    applyRingState('home-form-ring', { value: tsbNumber, progress: tsbProgress, color: '#FB923C', empty: tsbNumber === null });
     const formValueEl = document.getElementById('home-form-value');
     if (formValueEl) formValueEl.style.color = '#f8fafc';
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
@@ -579,6 +605,9 @@ export function renderHomeTrainingWeek() {
     if (range) range.textContent = dateLabel(dates[0]) + ' – ' + dateLabel(dates[6]);
     const catalog = getSportsCatalog();
     const source = Array.isArray(state.rawActivities) ? state.rawActivities : [];
+    const plannedSource = Array.isArray(state.plannedActivities)
+        ? state.plannedActivities.filter(item => item && dates.includes(String(item.date || '').slice(0,10)))
+        : [];
     const seen = new Set();
     const activities = source.filter(item => {
         if (!item || !dates.includes(String(item.date || '').slice(0,10))) return false;
@@ -587,56 +616,50 @@ export function renderHomeTrainingWeek() {
             item.date, item.type, item.startTime || item.startTimeLocal || '', item.name || '', item.duration ?? ''
         ].join('|');
         if (seen.has(key)) return false;
-        seen.add(key); return true;
+        seen.add(key);
+        return true;
     });
-    const validDuration = item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) >= 0;
-    const durationsComplete = activities.every(validDuration);
+    const validDuration = item => item?.duration !== null && item?.duration !== undefined
+        && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) >= 0;
     const minutes = item => validDuration(item) ? Number(item.duration) : null;
-    const dayTotals = dates.map(date => activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item)).reduce((sum,item)=>sum+minutes(item),0));
-    const maxMinutes = Math.max(60, ...dayTotals);
-    const sportsUsed = [...new Set(activities.filter(validDuration).map(item => item.type || 'Other'))];
+    const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
     const colorFor = type => catalog[type]?.color || catalog.Other?.color || '#64748b';
     const labelFor = type => catalog[type]?.label || type || 'Weitere';
-    const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    const sportsUsed = [...new Set([
+        ...activities.map(item => item.type || 'Other'),
+        ...plannedSource.map(item => item.type || 'Other')
+    ])];
     root.replaceChildren();
     dates.forEach((date,index) => {
-        const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item));
-        const total = dayTotals[index];
+        const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date);
+        const dayPlanned = plannedSource.filter(item => String(item.date || '').slice(0,10) === date);
+        const completedMinutes = dayItems.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+        const plannedMinutesForDay = dayPlanned.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+        const isCompleted = dayItems.length > 0;
+        const isPlanned = !isCompleted && dayPlanned.length > 0;
+        const sport = dayItems[0]?.type || dayPlanned[0]?.type || null;
         const dayButton = document.createElement('div');
-        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '');
+        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '') + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-unknown');
         dayButton.setAttribute('role','group');
-        dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (dayItems.length ? Math.round(total) + ' Minuten Training' : 'keine Einheit mit erfasster Dauer'));
-        const selectDay = sport => window.selectDashboardDate?.(date, sport || null);
-        const totalLabel = document.createElement('button');
-        totalLabel.type = 'button';
+        dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (isCompleted ? 'Training absolviert' : isPlanned ? 'Training geplant' : 'Keine Einheit dokumentiert'));
+        const selectDay = () => window.selectDashboardDate?.(date, null);
+        const totalLabel = document.createElement('span');
         totalLabel.className = 'kajo-week-day-total';
-        totalLabel.textContent = dayItems.length ? (total / 60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h' : '—';
-        totalLabel.addEventListener('click', () => selectDay(null));
-        const track = document.createElement('div'); track.className = 'kajo-week-bar-track';
-        track.setAttribute('role','button'); track.setAttribute('tabindex','0');
+        totalLabel.textContent = isCompleted && completedMinutes > 0
+            ? (completedMinutes/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h'
+            : isPlanned && plannedMinutesForDay > 0
+                ? (plannedMinutesForDay/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h'
+                : '—';
+        const track = document.createElement('button');
+        track.type = 'button';
+        track.className = 'kajo-week-bar-track' + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-unknown');
+        track.style.setProperty('--week-ring-color', sport ? colorFor(sport) : 'var(--kajo-border)');
+        track.style.setProperty('--week-ring-progress', isCompleted ? '100%' : isPlanned ? '22%' : '0%');
         track.setAttribute('aria-label', dayNames[index] + ' öffnen');
-        track.addEventListener('click', () => selectDay(null));
-        track.addEventListener('keydown', event => { if(event.target === track && (event.key === 'Enter' || event.key === ' ')){event.preventDefault();selectDay(null);} });
-        const stack = document.createElement('span'); stack.className = 'kajo-week-bar-stack';
-        const grouped = new Map();
-        dayItems.forEach(item => grouped.set(item.type || 'Other',(grouped.get(item.type || 'Other') || 0)+minutes(item)));
-        [...grouped.entries()].forEach(([type,value]) => {
-            const segment = document.createElement('button');
-            segment.type = 'button';
-            segment.className = 'kajo-week-segment';
-            segment.style.height = (value / maxMinutes * 100) + '%';
-            segment.style.backgroundColor = colorFor(type);
-            segment.title = labelFor(type) + ': ' + (value/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h';
-            segment.setAttribute('aria-label', labelFor(type) + ' am ' + date + ': Tagesdetails öffnen');
-            segment.addEventListener('click', event => {
-                event.stopPropagation();
-                selectDay(type);
-            });
-            stack.appendChild(segment);
-        });
-        track.appendChild(stack);
-        const dayLabel = document.createElement('button'); dayLabel.type = 'button'; dayLabel.className = 'kajo-week-day-label'; dayLabel.textContent = dayNames[index];
-        dayLabel.addEventListener('click', () => selectDay(null));
+        track.addEventListener('click', selectDay);
+        const dayLabel = document.createElement('span');
+        dayLabel.className = 'kajo-week-day-label';
+        dayLabel.textContent = dayNames[index];
         dayButton.append(totalLabel,track,dayLabel);
         root.appendChild(dayButton);
     });
@@ -650,14 +673,25 @@ export function renderHomeTrainingWeek() {
         });
         legend.classList.toggle('hidden', sportsUsed.length === 0);
     }
-    const totalMinutes = activities.reduce((sum,item)=>sum+(validDuration(item)?minutes(item):0),0);
+    const totalMinutes = activities.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+    const plannedMinutes = plannedSource.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+    const progressRoot = document.getElementById('home-week-progress');
+    const progressFill = document.getElementById('home-week-progress-fill');
+    const progressLabel = document.getElementById('home-week-progress-label');
+    if (progressRoot) {
+        progressRoot.hidden = plannedMinutes <= 0;
+        progressRoot.classList.toggle('hidden', plannedMinutes <= 0);
+    }
+    if (progressFill && plannedMinutes > 0) progressFill.style.width = Math.min(100,totalMinutes/plannedMinutes*100) + '%';
+    if (progressLabel && plannedMinutes > 0) progressLabel.textContent =
+        (totalMinutes/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' von ' +
+        (plannedMinutes/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' geplanten Stunden';
     if (summary) {
-        const total = (totalMinutes/60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h';
-        summary.textContent = 'Wochenumfang: ' + total + (durationsComplete ? '' : ' · eingeschränkt: Dauer bei mindestens einer Einheit nicht erfasst');
-        if (!activities.length) summary.textContent = 'Wochenumfang: — · Keine absolvierten Einheiten mit gültiger Dauer erfasst';
+        summary.textContent = activities.length
+            ? 'Absolviert: ' + (totalMinutes/60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h'
+            : 'Noch keine absolvierten Einheiten in dieser Woche';
     }
 }
-
 let selectedDashboardDate = localTodayKey();
 let dashboardDateWasManuallyChanged = false;
 
@@ -741,10 +775,25 @@ export function renderSelectedDashboardDay() {
     catch (error) { console.error('[KAJO] Home-Tagesübersicht konnte nicht gerendert werden:', error); }
 
     const selectedDateLabel = document.getElementById("dashboard-selected-date");
-    if (selectedDateLabel) {
-        const selectedDate = new Date(selectedDashboardDate + 'T12:00:00');
-        selectedDateLabel.textContent = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate);
+    const selectedDate = new Date(selectedDashboardDate + 'T12:00:00');
+    const formattedDate = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate);
+    if (selectedDateLabel) selectedDateLabel.textContent = formattedDate;
+    const greeting = document.getElementById('kajo-home-greeting');
+    const headDate = document.getElementById('kajo-home-head-date');
+    if (greeting) {
+        const hour = new Date().getHours();
+        greeting.textContent = hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend';
     }
+    if (headDate) headDate.textContent = formattedDate;
+    const savedCheckin = state.dailyCheckins?.[selectedDashboardDate] || {};
+    const hasSavedCheckin = ['sleepQuality','fatigue','soreness','stress','motivation','weight','cycle'].some(key => savedCheckin[key] !== null && savedCheckin[key] !== undefined && savedCheckin[key] !== '');
+    const homeNoteButton = document.getElementById('kajo-home-note-button');
+    if (homeNoteButton) {
+        homeNoteButton.hidden = !hasSavedCheckin;
+        homeNoteButton.setAttribute('aria-hidden', String(!hasSavedCheckin));
+    }
+    const checkinStartButton = document.querySelector('.kajo-selfmonitoring-notebook');
+    if (checkinStartButton) checkinStartButton.hidden = hasSavedCheckin;
     const noteButton = document.getElementById('dashboard-day-note');
     if (noteButton) {
         const hasNote = Boolean(String(state.dailyCheckins?.[selectedDashboardDate]?.note || '').trim());
@@ -835,9 +884,10 @@ export function inspectDay(dayObj) {
     updateWearableRange('wear-sleep-score','wear-sleep-score-range',sleepScore,'sleepScore',dayObj.date,'higher');
     updateWearableRange('wear-sleep','wear-sleep-range',sleepDuration,'sleepDuration',dayObj.date,'higher');
     const applySleepColor=(id,color)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('text-white','text-purple-400','text-sky-400','text-rose-400','text-amber-400','text-amber-300','text-emerald-400','text-cyan-300');el.classList.add(color);};
-    applySleepColor('wear-sleep-score',sleepScore===null?'text-white':sleepScore<80?'text-rose-400':sleepScore<=90?'text-amber-300':'text-emerald-400');
-    const sleepHours=Number(sleepDuration);
-    applySleepColor('wear-sleep',!validNumber(sleepDuration)?'text-white':sleepHours<7?'text-rose-400':sleepHours<=9?'text-emerald-400':'text-cyan-300');
+    applySleepColor('wear-sleep-score',sleepScore===null?'text-white':sleepScore<60?'text-rose-400':sleepScore<80?'text-amber-300':'text-emerald-400');
+    const sleepZone=classifySleepDuration(sleepDuration,checkinValuesBetween(dayObj.date,'sleepDuration',28,false));
+    const sleepColor={good:'text-emerald-400',attention:'text-amber-300',critical:'text-rose-400',info:'text-white'}[sleepZone.status]||'text-white';
+    applySleepColor('wear-sleep',sleepColor);
 
     const dayActs = state.rawActivities.filter(a => String(a?.date || '').slice(0, 10) === dayObj.date);
     const loadDataForDay = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
@@ -959,36 +1009,45 @@ function historyRangeDates(from, to) {
     return dates;
 }
 function historyRecommendation(key, value, dateKey) {
-    if (value === null) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
+    if (value === null || value === undefined) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
-        return [day?.statusLabel || 'Modellierte Form', day?.isProvisional
-            ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert daher vorsichtig interpretieren.'
-            : 'Die Form wird aus dem Verhältnis von langfristiger und kurzfristiger Belastung abgeleitet. Zusammen mit subjektivem Befinden und Trainingsqualität einordnen.'];
+        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'garmin' : 'tsb';
+        const zone = classifyTrainingBalance(value, mode);
+        return [zone.label, day?.isProvisional
+            ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
+            : 'Orientierungszonen: TSB unter −30 stark negativ, −30 bis −10 erhöhte modellierte Ermüdung, −10 bis +5 ausgeglichen, +5 bis +25 frisch, über +25 sehr frisch. Bei Garmin-Form gelten getrennte Prozentbereiche. Diese Modellzonen sind keine universellen physiologischen Grenzwerte.'];
     }
     if (key === 'readiness') {
-        if (value >= 80) return ['Günstige Readiness', 'Die verfügbaren objektiven und subjektiven Angaben fallen insgesamt günstig aus. Plane trotzdem passend zur Tagesform.'];
-        if (value >= 60) return ['Mittlere Readiness', 'Die Signale sind nicht durchgehend günstig. Prüfe besonders Müdigkeit, Muskelkater, Schlaf und den geplanten Trainingsreiz.'];
-        return ['Niedrige Readiness', 'Mehrere verfügbare Signale sprechen für erhöhte Beanspruchung. Erholung priorisieren und Belastung kritisch mit dem eigenen Befinden abgleichen.'];
+        const zone = readinessZone(value);
+        return [zone.label, 'KAJO-Orientierungsindex: 80–100 günstig, 65–79 im Orientierungsbereich, 45–64 vorsichtig beobachten, unter 45 deutlich eingeschränkt. Der Wert ersetzt weder das eigene Befinden noch eine medizinische Beurteilung.'];
     }
-    if (key === 'rhr' || key === 'hrv' || key === 'respiration' || key === 'sleepDuration' || key === 'sleepScore') {
-        return ['Persönlicher Normalbereich noch nicht verfügbar', 'Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht verbindlich festgelegt. Der Messwert wird deshalb ohne pauschale oder vorläufige Normalbereichs-Einstufung dargestellt.'];
+    if (['rhr', 'hrv', 'respiration'].includes(key)) {
+        const zone = classifyPersonalMetric(key, value, checkinValuesBetween(dateKey, key, 28, false));
+        const baseline = validNumber(zone.baseline) ? ' Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + (key === 'hrv' ? ' ms.' : key === 'rhr' ? ' bpm.' : ' /min.') : ' Mindestens sieben Messungen aus den vorherigen 28 Tagen sind für eine persönliche Basis erforderlich.';
+        return [zone.label, 'Der Wert wird relativ zum persönlichen Median und zur individuellen Schwankung eingeordnet, nicht anhand pauschaler bpm- oder Millisekunden-Grenzen.' + baseline + ' Einzelwerte immer mit 7-Tage-Trend, Schlaf und Befinden betrachten.'];
+    }
+    if (key === 'sleepDuration') {
+        const zone = classifySleepDuration(value, checkinValuesBetween(dateKey, key, 28, false));
+        return [zone.label, validNumber(zone.baseline)
+            ? 'Persönlicher Schlafmedian: ' + Number(zone.baseline).toFixed(1) + ' Stunden. Abweichungen von 30, 60 und 90 Minuten dienen als KAJO-Orientierung, nicht als allgemeingültige Schlafnorm.'
+            : 'KAJO legt zunächst eine persönliche Schlafreferenz aus mindestens sieben Messungen innerhalb von 28 Tagen an. Der Schlafbedarf von Athleten ist individuell und kann mit der Trainingsbelastung variieren.'];
+    }
+    if (key === 'sleepScore') {
+        const zone = classifyGarminSleepScore(value);
+        return [zone.label, 'Garmin-Kategorien: 90–100 ausgezeichnet, 80–89 gut, 60–79 mittel und unter 60 niedrig. Das ist eine herstellerspezifische Score-Einteilung, keine eigenständige sportwissenschaftliche Trainingsfreigabe.'];
     }
     if (key === 'weight') return ['Gewichtsverlauf', 'Betrachte Gewicht über mehrere Messungen und im individuellen Kontext. Einzelne Tagesveränderungen sind für sich genommen keine Trainings- oder Gesundheitsbewertung.'];
-    if (key === 'sleepScore') return value < 80
-        ? ['Sleep Score unter 80', 'Prüfe Schlafqualität, Schlafdauer und mögliche Störfaktoren. Der Score ist ein Wearable-Schätzwert.']
-        : value <= 90
-            ? ['Sleep Score im mittleren Bereich', 'Beobachte den Trend und gleiche den Score mit deinem subjektiven Erholungsempfinden ab.']
-            : ['Hoher Sleep Score', 'Der Wearable-Score fällt günstig aus. Entscheidend bleibt, ob du dich tatsächlich erholt fühlst.'];
-    const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    if (value >= 4) return reverse
-        ? ['Hohe Beanspruchung', 'Der subjektive Wert ist deutlich erhöht. Prüfe, ob Umfang oder Intensität angepasst werden sollten und berücksichtige weitere Erholungssignale.']
-        : ['Günstige Selbsteinschätzung', 'Deine subjektive Einschätzung fällt positiv aus. Gleiche sie mit Trainingsbelastung und körperlichem Befinden ab.'];
-    if (value <= 2) return reverse
-        ? ['Geringe Beanspruchung', 'Deine subjektive Einschätzung fällt niedrig aus. Berücksichtige trotzdem Schlaf, Belastungsverlauf und weitere Signale.']
-        : ['Niedrige Selbsteinschätzung', 'Prüfe mögliche Einflussfaktoren und beobachte, ob sich der Wert über mehrere Tage verändert.'];
-    return ['Mittlere Selbsteinschätzung', 'Der Wert liegt im mittleren Skalenbereich. Beobachte die Entwicklung über mehrere Tage.'];
+    if (key === 'acwr') {
+        const zone = classifyAcwr(value);
+        return [zone.label, 'ACWR beschreibt das Verhältnis von akuter zu chronischer Belastung. Werte unter 0,8, 0,8–1,3, 1,3–1,5 und über 1,5 sind nur Orientierungsbereiche. Es gibt keine sichere Zone und keine eigenständige Verletzungsprognose.'];
+    }
+    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
+        const zone = classifySubjective(key, value);
+        return [zone.label, 'Skala 1–5: 1–2 günstig, 3 mittel, 4–5 ungünstig. Bei Schlafqualität und Motivation bedeutet ein höherer Wert eine bessere Einschätzung; bei Müdigkeit, Muskelkater und Stress ist es umgekehrt.'];
+    }
+    return ['Wert im Kontext betrachten', 'Einzelne Messwerte sind nur zusammen mit Verlauf, Trainingsinhalt und subjektivem Befinden aussagekräftig.'];
 }
 function historyDisplay(value, key) {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
@@ -1045,53 +1104,32 @@ function trainingRingState(key, value, dateKey) {
     };
 }
 export function historyRingColor(key, value, dateKey) {
-    if (value === null) return STATUS_COLORS.info;
-    if (key === 'readiness') return fiveLevelColor(value);
+    if (value === null || value === undefined) return STATUS_COLORS.info;
+    if (key === 'readiness') return STATUS_COLORS[readinessZone(value).status] || STATUS_COLORS.info;
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
-        if (String(day.loadMode || '').toLowerCase() === 'srpe') {
-            const score = relativeSrpEBalanceScore(value, dateKey);
-            return score === null ? STATUS_COLORS.info : fiveLevelColor(score);
-        }
-        const isGarmin = String(day.loadMode || '').startsWith('garmin');
-        const statusValue = Number(value);
-        if (!Number.isFinite(statusValue)) return STATUS_COLORS.info;
-        if (statusValue < (isGarmin ? -25 : -30)) return STATUS_COLORS.critical;
-        if (statusValue < -10) return STATUS_COLORS.critical;
-        if (statusValue <= 5) return STATUS_COLORS.attention;
-        if (statusValue <= (isGarmin ? 20 : 25)) return STATUS_COLORS.attention;
-        return STATUS_COLORS.good;
+        const mode = String(day.loadMode || '').startsWith('garmin') ? 'garmin' : 'tsb';
+        const zone = classifyTrainingBalance(value, mode);
+        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
     }
     if (key === 'fitness') return fitnessChange(dateKey, value)?.color || STATUS_COLORS.info;
+    if (key === 'acwr') return STATUS_COLORS[classifyAcwr(value).status] || STATUS_COLORS.info;
     if (key === 'weight') return STATUS_COLORS.info;
-    if (key === 'rhr' || key === 'hrv' || key === 'respiration') {
-        const prior = Object.entries(state.dailyCheckins).filter(([date]) => date < dateKey && date >= historyWindow('6m', dateKey).from)
-            .map(([, row]) => historyValue(row, key)).filter(v => v !== null);
-        if (prior.length < 14) return STATUS_COLORS.info;
-        const avg = mean(prior), sd = standardDeviation(prior, avg), delta = value - avg;
-        const threshold = Math.max(sd * 0.5, key === 'rhr' ? 1 : key === 'hrv' ? 5 : 0.5);
-        if (key === 'rhr' || key === 'hrv') {
-            // Niedrigere RHF bzw. höhere HRV gelten relativ zur persönlichen Historie
-            // als günstige Richtung – auch wenn die Abweichung groß ist.
-            const favourable = key === 'rhr' ? delta < 0 : delta > 0;
-            if (favourable) return STATUS_COLORS.good;
-            if (delta === 0) return STATUS_COLORS.good;
-            const severity = Math.abs(delta) / threshold;
-            return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
-        }
-        // Atemfrequenz bleibt zweiseitig relativ zur persönlichen Historie bewertet.
-        const adverse = delta > 0;
-        if (!adverse) return Math.abs(delta) <= threshold ? STATUS_COLORS.good : STATUS_COLORS.attention;
-        const severity = Math.abs(delta) / threshold;
-        return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
+    if (['rhr', 'hrv', 'respiration'].includes(key)) {
+        const prior = checkinValuesBetween(dateKey, key, 28, false);
+        const zone = classifyPersonalMetric(key, value, prior);
+        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
     }
-    if (key === 'sleepDuration') return value >= 7 && value <= 9 ? STATUS_COLORS.good : value >= 6 && value <= 10 ? STATUS_COLORS.attention : value >= 5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
-    if (key === 'sleepScore') return value >= 90 ? STATUS_COLORS.good : value >= 70 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
-    const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key) && (value < 1 || value > 5)) return STATUS_COLORS.info;
-    const goodness = reverse ? (5 - value) / 4 * 100 : (value - 1) / 4 * 100;
-    return fiveLevelColor(goodness);
+    if (key === 'sleepDuration') {
+        const zone = classifySleepDuration(value, checkinValuesBetween(dateKey, key, 28, false));
+        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
+    }
+    if (key === 'sleepScore') return STATUS_COLORS[classifyGarminSleepScore(value).status] || STATUS_COLORS.info;
+    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
+        return STATUS_COLORS[classifySubjective(key, value).status] || STATUS_COLORS.info;
+    }
+    return STATUS_COLORS.info;
 }
 function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null) {
     const canvas = document.getElementById(kind === 'health' ? 'health-metric-chart' : 'training-metric-chart');
