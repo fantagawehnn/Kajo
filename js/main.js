@@ -18,6 +18,7 @@ import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoRemin
 import { supabase } from './supabase-client.js';
 import { syncPendingActivityDeletionTombstones, fetchActivityDeletionTombstones } from './activity-deletions.js?v=1';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
+import { parseGarminActivitySeenMap, getGarminActivityRowsNeedingPayload, mergeGarminActivitySeenMap } from './garmin-activity-cloud-delta.js?v=1';
 import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
@@ -687,43 +688,91 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
     if (existingLoad) return existingLoad;
 
     const loadPromise = (async () => {
-        const [data, deletionRows] = await Promise.all([
-            loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
-                .select('garmin_activity_id, activity')
-                .eq('user_id', userId)
-                .order('start_time', { ascending: true })
-                .order('garmin_activity_id', { ascending: true })
-                .range(offset, offset + limit - 1)),
-            loadAccountActivityDeletionRows(userId)
-        ]);
-        const deletedGarminIds = new Set(deletionRows.map(row => String(row.garmin_activity_id || '')).filter(Boolean));
-        const removedDeletedActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
-            const rawId = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId
-                ?? activity?.garminTelemetry?.activityId
-                ?? ((activity?.source === 'garmin' || activity?.sources?.includes?.('garmin')) ? activity?.id : null);
-            const id = String(rawId ?? '').replace(/^garmin-/, '');
-            return /^\d+$/.test(id) && deletedGarminIds.has(id);
-        }).length;
-        if (removedDeletedActivities) {
-            state.rawActivities = state.rawActivities.filter(activity => {
-                const rawId = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId
-                    ?? activity?.garminTelemetry?.activityId
-                    ?? ((activity?.source === 'garmin' || activity?.sources?.includes?.('garmin')) ? activity?.id : null);
-                const id = String(rawId ?? '').replace(/^garmin-/, '');
-                return !(/^\d+$/.test(id) && deletedGarminIds.has(id));
-            });
-            saveDataToLocalStorage();
-        }
-        const activeData = data.filter(row => !deletedGarminIds.has(String(row?.garmin_activity_id ?? '')));
+        const savedCursor = getUserLocalSetting('garminActivityCloudReadThrough');
+        const seenAtById = parseGarminActivitySeenMap(
+            getUserLocalSetting('garminActivityCloudSeenAtById')
+        );
+        // Ohne lokalen Änderungsindex wird die Metadatenliste einmal vollständig
+        // gelesen. So werden auf einem neuen Gerät auch ältere, lokal fehlende
+        // Aktivitäten erkannt und geladen.
+        const validCursor = Object.keys(seenAtById).length > 0
+            && typeof savedCursor === 'string'
+            && Number.isFinite(Date.parse(savedCursor));
+        const overlapStart = validCursor
+            ? new Date(Math.max(0, Date.parse(savedCursor) - 24 * 60 * 60 * 1000)).toISOString()
+            : null;
 
-        // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
-        // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
+        // Zuerst nur IDs und Änderungszeitpunkte laden; vollständige JSON-Payloads
+        // werden anschließend ausschließlich für neue/geänderte Aktivitäten geladen.
+        const metadata = await loadGarminActivityPages((offset, limit) => {
+            let query = supabase.from('garmin_activities')
+                .select('garmin_activity_id, updated_at')
+                .eq('user_id', userId)
+                .not('updated_at', 'is', null);
+            if (overlapStart) {
+                query = query.gte('updated_at', overlapStart)
+                    .order('updated_at', { ascending: true })
+                    .order('garmin_activity_id', { ascending: true });
+            } else {
+                query = query.order('start_time', { ascending: true })
+                    .order('garmin_activity_id', { ascending: true });
+            }
+            return query.range(offset, offset + limit - 1);
+        });
+
+        const deletionRows = await loadAccountActivityDeletionRows(userId);
+        const deletedGarminIds = new Set(deletionRows
+            .map(row => row?.garmin_activity_id)
+            .filter(value => value != null)
+            .map(String));
+        const locallyAvailableGarminIds = new Set();
+        let removedDeletedActivities = 0;
+        state.rawActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
+            const sourceId = getKajoGarminActivityId(activity);
+            if (sourceId != null && deletedGarminIds.has(String(sourceId))) {
+                removedDeletedActivities++;
+                return false;
+            }
+            if (sourceId != null) locallyAvailableGarminIds.add(String(sourceId));
+            return true;
+        });
+        if (removedDeletedActivities) {
+            saveDataToLocalStorage();
+            console.info('KAJO: kontoübergreifend gelöschte Garmin-Aktivitäten lokal entfernt:', removedDeletedActivities);
+        }
+
+        // Löschkennzeichnungen haben Vorrang vor älteren Garmin-Metadaten.
+        const activeMetadata = metadata.filter(row => !deletedGarminIds.has(String(row?.garmin_activity_id ?? '')));
+        const rowsNeedingPayload = getGarminActivityRowsNeedingPayload(
+            activeMetadata,
+            seenAtById,
+            locallyAvailableGarminIds
+        );
+        const changedIds = rowsNeedingPayload
+            .map(row => String(row.garmin_activity_id))
+            .filter(Boolean);
+        const data = [];
+
+        // Begrenzte IN-Abfragen vermeiden große Filter und wiederholte JSON-Transfers.
+        for (let offset = 0; offset < changedIds.length; offset += 100) {
+            const ids = changedIds.slice(offset, offset + 100);
+            const { data: batch, error } = await supabase
+                .from('garmin_activities')
+                .select('garmin_activity_id, activity, updated_at')
+                .eq('user_id', userId)
+                .in('garmin_activity_id', ids)
+                .order('updated_at', { ascending: true })
+                .order('garmin_activity_id', { ascending: true });
+            if (error) throw error;
+            data.push(...(batch || []));
+        }
+
         if (activeAppUserId !== userId || !appUserReady || activationSequence !== requestActivationSequence) {
             return { added: 0, merged: 0, ambiguous: 0, sanitized: 0, stale: true };
         }
 
         let added = 0, merged = 0, ambiguous = 0;
-        for (const row of activeData) {
+        for (const row of data) {
             const candidate = garminCandidateFromPreview(row.activity);
             if (!candidate) continue;
             const matches = findGarminDuplicates(candidate);
@@ -737,12 +786,29 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
                 ambiguous++;
             }
         }
-        const sanitized = state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0);
+        const sanitized = data.length
+            ? state.rawActivities.reduce((count, activity) => count + (sanitizeGarminActivityTelemetry(activity) ? 1 : 0), 0)
+            : 0;
         if (added || merged || sanitized) {
-            saveDataToLocalStorage();
+            if (saveDataToLocalStorage() === false) {
+                throw new Error('Garmin-Aktivitätsvorschauen wurden geladen, konnten aber nicht lokal gespeichert werden.');
+            }
             initEngine();
         }
-        return { added, merged, ambiguous, sanitized, stale: false };
+
+        const latestUpdatedAt = metadata.map(row => row?.updated_at)
+            .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+            .sort()
+            .at(-1);
+        if (latestUpdatedAt) {
+            if (activeAppUserId !== userId || !appUserReady || activationSequence !== requestActivationSequence) {
+                return { added, merged, ambiguous, sanitized, stale: true };
+            }
+            const nextSeenAtById = mergeGarminActivitySeenMap(seenAtById, metadata, latestUpdatedAt);
+            setUserLocalSetting('garminActivityCloudSeenAtById', JSON.stringify(nextSeenAtById));
+            setUserLocalSetting('garminActivityCloudReadThrough', latestUpdatedAt);
+        }
+        return { added, merged, ambiguous, sanitized, stale: false, checked: metadata.length, downloaded: data.length };
     })();
 
     garminActivityCloudLoadsInFlight.set(requestKey, loadPromise);
