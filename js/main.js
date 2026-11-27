@@ -16,6 +16,7 @@ import { renderAthleteProfile, openAthleteProfileSection, closeAthleteProfileSec
 import { initializeKajoTheme, setKajoTheme } from './theme.js?v=1';
 import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoReminder, deleteKajoReminder, editKajoReminder, resetKajoReminderForm, toggleKajoReminder, disableKajoPush } from './push-notifications.js?v=1';
 import { supabase } from './supabase-client.js';
+import { syncPendingActivityDeletionTombstones, fetchActivityDeletionTombstones } from './activity-deletions.js?v=1';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
 import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
@@ -2975,6 +2976,14 @@ async function flushCloudSync(options = {}) {
         // Erst sicherstellen, dass alle zuvor lokal angenommenen Änderungen
         // dauerhaft in IndexedDB liegen, bevor der Cloud-Stand bestätigt wird.
         await flushLocalPersistence();
+        if (!isCurrentSync()) return;
+        // Upload deletion markers before any cloud activity reconciliation.
+        // If the migration is not deployed yet, keep the local outbox and continue safely.
+        try {
+            await syncPendingActivityDeletionTombstones(supabase, userId);
+        } catch (deletionSyncError) {
+            console.warn('Aktivitätslöschungen bleiben lokal vorgemerkt und werden später synchronisiert:', deletionSyncError);
+        }
         if (!isCurrentSync()) return;
         pendingOutboxRecord = await getPendingLocalSync(userId);
         if (!isCurrentSync()) return;
