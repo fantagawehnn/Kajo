@@ -1026,7 +1026,7 @@ function historyRecommendation(key, value, dateKey) {
         const zone = classifyTrainingBalance(value, 'relative', targets);
         return [zone.label, day?.isProvisional
             ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
-            : (targets ? 'Der relative TSB wird als (CTL − ATL) / CTL × 100 berechnet. Zielbereich für ' + targets.label + ': ' + targets.tsb[0] + ' bis ' + targets.tsb[1] + ' %. ' + (targets.source === 'manual' ? 'Manuell angepasst.' : 'Automatisch aus Phasentyp, Name und Schwerpunkt abgeleitet; heuristische KAJO-Orientierung, keine validierte Trainingsfreigabe.') : 'Für dieses Datum ist keine eindeutige Saisonphase zugeordnet. Deshalb erfolgt keine Ampelbewertung. TSB bleibt CTL minus ATL und wird nur zusammen mit Trainingsinhalt, Erholung und Datenqualität interpretiert.')];
+            : (targets ? 'Der relative TSB wird als (CTL − ATL) / CTL × 100 berechnet. Zielbereich für ' + targets.label + ': ' + targets.tsb[0] + ' bis ' + targets.tsb[1] + ' %. ' + (targets.tsbSource === 'manual' ? 'TSB-Ziel manuell angepasst.' : 'TSB-Ziel automatisch aus Phasentyp, Name und Schwerpunkt abgeleitet; heuristische KAJO-Orientierung, keine validierte Trainingsfreigabe.') : 'Für dieses Datum ist keine eindeutige Saisonphase zugeordnet. Deshalb erfolgt keine Ampelbewertung. TSB bleibt CTL minus ATL und wird nur zusammen mit Trainingsinhalt, Erholung und Datenqualität interpretiert.')];
     }
     if (key === 'readiness') {
         const zone = readinessZone(value);
@@ -1052,7 +1052,7 @@ function historyRecommendation(key, value, dateKey) {
         const targets = phaseTargetsForDate(dateKey);
         const zone = classifyAcwr(value, targets);
         return [zone.label, targets
-            ? 'ACWR-Zielbereich für ' + targets.label + ': ' + targets.acwr[0] + ' bis ' + targets.acwr[1] + '. ' + (targets.source === 'manual' ? 'Manuell angepasst. ' : 'Automatisch aus Phasentyp, Name und Schwerpunkt abgeleitet. ') + 'Orientierungswert ohne Sicherheitsgarantie und keine eigenständige Verletzungsprognose.'
+            ? 'ACWR-Zielbereich für ' + targets.label + ': ' + targets.acwr[0] + ' bis ' + targets.acwr[1] + '. ' + (targets.acwrSource === 'manual' ? 'ACWR-Ziel manuell angepasst. ' : 'ACWR-Ziel automatisch aus Phasentyp, Name und Schwerpunkt abgeleitet. ') + 'Orientierungswert ohne Sicherheitsgarantie und keine eigenständige Verletzungsprognose.'
             : 'Für dieses Datum ist keine eindeutige Saisonphase zugeordnet. Deshalb erfolgt keine Ampelbewertung. ACWR ist keine eigenständige Verletzungsprognose.'];
     }
     if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
