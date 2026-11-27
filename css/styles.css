@@ -9686,3 +9686,12 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-performance-analysis-link{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:8px 11px;border:1px solid rgba(101,213,195,.28);border-radius:9px;background:rgba(101,213,195,.07);color:#8de5d6;font-size:11px;font-weight:650}
 .kajo-performance-analysis-link:hover{background:rgba(101,213,195,.12)}
 @media(max-width:480px){.kajo-performance-load-grid{gap:6px}.kajo-performance-load-metric{padding:9px}.kajo-performance-load-metric strong{font-size:16px}}
+
+
+/* KAJO V2 · Separate paddling performance by boat class / ergometer. */
+.kajo-performance-class-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}
+.kajo-performance-class{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding:10px 11px;border:1px solid rgba(148,163,184,.16);border-radius:10px;background:rgba(5,12,21,.34);color:var(--analysis-text,#edf3fa);font-size:12px;font-weight:750;text-align:left;transition:background .16s ease,border-color .16s ease}
+.kajo-performance-class small{color:var(--analysis-muted,#91a0b5);font-size:9px;font-weight:500;white-space:nowrap}
+.kajo-performance-class.is-active{border-color:rgba(101,213,195,.55);background:rgba(101,213,195,.11);box-shadow:inset 0 0 0 1px rgba(101,213,195,.08);color:#9aeee0}
+.kajo-performance-class:focus-visible{outline:2px solid #65d5c3;outline-offset:2px}
+@media(max-width:420px){.kajo-performance-class-selector{gap:5px}.kajo-performance-class{padding:9px 7px;font-size:11px}.kajo-performance-class small{font-size:8px}}
