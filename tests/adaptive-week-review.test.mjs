@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAdaptiveWeekReview } from '../js/adaptive-week-review.js';
+import { buildAdaptiveWeekReview, areSameAdaptiveSports } from '../js/adaptive-week-review.js';
 
 const plan = {
     weekStartDate: '2026-11-16',
@@ -137,4 +137,41 @@ test('manual statuses do not override matched activities and invalid status valu
     assert.equal(review.matched[0].planned.id, 'p1');
     assert.equal(review.completedWithoutActivity.length, 0);
     assert.equal(review.missed.length, 0);
+});
+
+
+test('manual activity links require the same identifiable sport', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [{ id: 'p1', date: '2026-11-16', name: 'K1 locker', type: 'Kayaking', discipline: 'K1' }],
+        manualActivityLinks: [{ sessionId: 'p1', activityId: 'run1' }]
+    }, [{ id: 'run1', date: '2026-11-16', type: 'Run', name: 'Easy run' }], '2026-11-19');
+    assert.equal(review.matched.length, 0);
+    assert.equal(review.manualLinks.length, 0);
+    assert.equal(review.unmatchedPlanned.length, 1);
+    assert.equal(review.unplannedActivities.length, 1);
+});
+
+test('sport comparison accepts equivalent aliases but rejects unknown sports', () => {
+    assert.equal(areSameAdaptiveSports({ discipline: 'C1', type: 'Kayaking' }, { type: 'Kayaking', discipline: 'C1' }), true);
+    assert.equal(areSameAdaptiveSports({ discipline: 'K1', type: 'Kayaking' }, { type: 'Run' }), false);
+    assert.equal(areSameAdaptiveSports({ type: 'Other' }, { type: 'Other' }), false);
+});
+
+test('excludes rest days from training review, unresolved sessions and upcoming workouts', () => {
+    const review = buildAdaptiveWeekReview({
+        ...plan,
+        sessions: [
+            { id: 'rest-past', date: '2026-11-16', name: 'Ruhetag', type: 'RestDay', category: 'rest' },
+            { id: 'rest-future', date: '2026-11-22', name: 'Ruhetag', type: 'rest' },
+            { id: 'training', date: '2026-11-17', name: 'C1 Technik', type: 'C1', discipline: 'C1' }
+        ],
+        manualSessionStatuses: [{ sessionId: 'rest-past', status: 'missed' }]
+    }, [], '2026-11-19');
+    assert.equal(review.unmatchedPlanned.length, 1);
+    assert.equal(review.unmatchedPlanned[0].session.id, 'training');
+    assert.equal(review.upcoming.length, 0);
+    assert.equal(review.missed.length, 0);
+    assert.equal(review.coverage.unconfirmedPastPlanCount, 1);
+    assert.equal(review.coverage.upcomingCount, 0);
 });
