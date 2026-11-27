@@ -18,6 +18,7 @@ import { renderKajoPushSettings, enableKajoPush, sendKajoPushTest, saveKajoRemin
 import { supabase } from './supabase-client.js';
 import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
 import { parseGarminActivitySeenMap, getGarminActivityRowsNeedingPayload, mergeGarminActivitySeenMap } from './garmin-activity-cloud-delta.js?v=1';
+import { syncPendingActivityDeletionTombstones, fetchActivityDeletionTombstones } from './activity-deletions.js?v=1';
 import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
 import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
@@ -727,6 +728,12 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             return query.range(offset, offset + limit - 1);
         });
 
+        const deletionRows = await fetchActivityDeletionTombstones(supabase, userId);
+        const deletedGarminIds = new Set(deletionRows
+            .map(row => row?.garmin_activity_id)
+            .filter(value => value != null)
+            .map(String));
+
         const seenAtById = parseGarminActivitySeenMap(
             getUserLocalSetting('garminActivityCloudSeenAtById')
         );
@@ -739,8 +746,11 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
                     : null);
             if (sourceId != null && String(sourceId)) locallyAvailableGarminIds.add(String(sourceId));
         }
+        // A cloud tombstone always wins over stale Garmin metadata. Deleted
+        // activities are never downloaded again to this device.
+        const activeMetadata = metadata.filter(row => !deletedGarminIds.has(String(row?.garmin_activity_id ?? '')));
         const rowsNeedingPayload = getGarminActivityRowsNeedingPayload(
-            metadata,
+            activeMetadata,
             seenAtById,
             locallyAvailableGarminIds
         );
@@ -796,7 +806,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             initEngine();
         }
 
-        const latestUpdatedAt = metadata.map(row => row?.updated_at)
+        const latestUpdatedAt = activeMetadata.map(row => row?.updated_at)
             .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
             .sort()
             .at(-1);
@@ -3106,6 +3116,10 @@ async function flushCloudSync(options = {}) {
         // Erst sicherstellen, dass alle zuvor lokal angenommenen Änderungen
         // dauerhaft in IndexedDB liegen, bevor der Cloud-Stand bestätigt wird.
         await flushLocalPersistence();
+        if (!isCurrentSync()) return;
+        // Flush deletion tombstones before reading or merging any cloud activities.
+        // This ordering prevents a just-deleted past activity from being restored.
+        await syncPendingActivityDeletionTombstones(supabase, userId);
         if (!isCurrentSync()) return;
         pendingOutboxRecord = await getPendingLocalSync(userId);
         if (!isCurrentSync()) return;
