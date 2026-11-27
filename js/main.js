@@ -32,7 +32,7 @@ import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './dat
 import { buildGarminActivityAnalysis, getAdaptiveRestingHr } from './training-load.js?v=7';
 import { renderAnalysisInsights } from './analysis-insights.js';
 import { groupHealthEpisodes } from './period-summary.js?v=2';
-import { renderAnalysisPageUI } from './analysis-ui.js?v=19';
+import { renderAnalysisPageUI } from './analysis-ui.js?v=20';
 import { renderAnalysisOverview, setAnalysisOverviewMetric, setAnalysisOverviewActivityMeasure } from './analysis-overview.js?v=23';
 import { renderTrainingLoadView, openTrainingLoadMetric, closeTrainingLoadMetric, setTrainingLoadChartMetric, setTrainingLoadModel, setTrainingLoadDailyMeasure, setTrainingLoadSportFilter, setTrainingLoadVolumeMeasure, setTrainingLoadZoneDisplayMode, toggleTrainingLoadPeriodMenu, setTrainingLoadPeriod } from './training-load-view.js?v=19';
 import { renderSummaryKPICards, generateAutomatedNarrative, inspectDay, renderDashboardNextRace, renderReadinessDashboard, renderSelectedDashboardDay, renderHomeTrainingWeek, changeDashboardDay, goToDashboardToday, selectDashboardDate, openDailyNote, closeDailyNote, saveDailyNote, renderMetricHistory, setHistoryMetric, setHistoryRange, applyHistoryCustomRange, openHealthMetric, openTrainingMetric } from './dashboard.js?v=20';
