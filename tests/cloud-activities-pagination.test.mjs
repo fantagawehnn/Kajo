@@ -9,6 +9,14 @@ function createPagedClient(rows, options = {}) {
     const count = options.count ?? rows.length;
     const client = {
         from(table) {
+            if (table === 'activity_deletions') {
+                return {
+                    select() { return this; },
+                    eq() { return this; },
+                    order() { return this; },
+                    range() { return Promise.resolve({ data: [], error: null }); }
+                };
+            }
             assert.equal(table, 'activities');
             const query = {
                 head: false,

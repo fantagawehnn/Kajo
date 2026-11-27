@@ -68,6 +68,15 @@ test('loads cloud activities with sequential keyset pages instead of OFFSET', as
     const cursors = [];
     const client = {
         from(table) {
+            if (table === 'activity_deletions') {
+                const query = {
+                    select() { return this; },
+                    eq() { return this; },
+                    order() { return this; },
+                    range() { return Promise.resolve({ data: [], error: null }); }
+                };
+                return query;
+            }
             assert.equal(table, 'activities');
             const query = {
                 countQuery: false,
@@ -127,6 +136,16 @@ test('fetches only changed activity payloads since the persisted watermark', asy
     const requestedRanges = [];
     const client = {
         from(table) {
+            if (table === 'activity_deletions') {
+                return {
+                    select() { return this; },
+                    eq() { return this; },
+                    order() { return this; },
+                    limit() { return this; },
+                    maybeSingle() { return Promise.resolve({ data: null, error: null }); },
+                    range() { return Promise.resolve({ data: [], error: null }); }
+                };
+            }
             assert.equal(table, 'activities');
             const query = {
                 selection: '',

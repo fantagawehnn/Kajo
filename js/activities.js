@@ -6,7 +6,8 @@
 import { state, refreshAll } from './state.js';
 import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmergeActivityGroup } from './activity-groups.js?v=1';
 import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=6';
-import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml } from './utils.js';
+import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml, toLocalDateString } from './utils.js';
+import { queueActivityDeletionTombstone } from './activity-deletions.js?v=1';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
 import { getTrainingLoadData, calculateGarminZoneLoad, getAdaptiveRestingHr, calculateHeartRateReserveZones, buildGarminActivityAnalysis, getActivityLoadQualityStatus } from './training-load.js?v=6';
 import { calculateStrengthActivitySummary } from './calculations.js';
@@ -1576,11 +1577,25 @@ export function toggleActivityEdit() {
 
 export function deleteSelectedActivity() {
     if (!state.selectedActivityForModal) return;
-    const id = state.selectedActivityForModal.id;
+    const activity = state.selectedActivityForModal;
+    const id = activity.id;
     if (!confirm('Diese Aktivität wirklich löschen?')) return;
-    if (state.selectedActivityForModal?.mergedGroupId) unmergeActivityGroup(state.selectedActivityForModal, state.rawActivities);
+
+    // Past activities receive an immutable account-wide tombstone before the
+    // local row is removed. Today's activities retain the previous delete behavior.
+    try {
+        queueActivityDeletionTombstone(activity, toLocalDateString());
+    } catch (error) {
+        alert('Die Aktivität wurde nicht gelöscht, weil die dauerhafte Löschkennzeichnung nicht lokal gesichert werden konnte. Bitte prüfe deine Anmeldung und versuche es erneut.\\n\\n' + (error?.message || 'Unbekannter Fehler'));
+        return;
+    }
+
+    if (activity?.mergedGroupId) unmergeActivityGroup(activity, state.rawActivities);
     state.rawActivities = state.rawActivities.filter(a => a.id !== id);
-    state.selectedActivityForModal = null; saveDataToLocalStorage(); closeCSVDetailsModal(); refreshAll();
+    state.selectedActivityForModal = null;
+    saveDataToLocalStorage();
+    closeCSVDetailsModal();
+    refreshAll();
 }
 
 export function inferSport(name, rawType='') {
