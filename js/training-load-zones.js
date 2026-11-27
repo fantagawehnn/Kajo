@@ -23,20 +23,18 @@ export function buildRelativeLoadZones(timeline = []) {
 export function buildTsbZones(timeline = []) {
   const values = (Array.isArray(timeline) ? timeline : [])
     .map(row => row?.tsb).filter(valid).map(Number);
-  // Keep chart bands aligned with the shared KAJO TSB orientation ranges:
-  // < -30, -30 to -10, -10 to +5, +5 to +25, and > +25.
-  const min = Math.min(-30, ...values);
-  const max = Math.max(25, ...values);
+  if (!values.length) return { min: -1, max: 1, zones: [], hasUniversalBands: false };
+  // TSB inherits the unit and scale of the selected load model. KAJO therefore
+  // shows the model trajectory without universal traffic-light bands.
+  const low = Math.min(0, ...values);
+  const high = Math.max(0, ...values);
+  const span = Math.max(1, high - low);
+  const padding = span * 0.08;
   return {
-    min,
-    max: max > min ? max : min + 1,
-    zones: [
-      { min, max: -30, label: 'Stark negativer Saldo', color: 'rgba(217,106,120,.13)', textColor: 'rgba(255,165,174,.82)' },
-      { min: -30, max: -10, label: 'Erhöhte modellierte Ermüdung', color: 'rgba(229,154,85,.13)', textColor: 'rgba(255,198,150,.84)' },
-      { min: -10, max: 5, label: 'Ausgeglichen', color: 'rgba(85,182,164,.13)', textColor: 'rgba(142,224,205,.82)' },
-      { min: 5, max: 25, label: 'Positiver Saldo', color: 'rgba(109,168,247,.13)', textColor: 'rgba(166,202,255,.84)' },
-      { min: 25, max, label: 'Sehr positiver Saldo', color: 'rgba(167,139,250,.13)', textColor: 'rgba(202,181,255,.84)' }
-    ]
+    min: low - padding,
+    max: high + padding,
+    zones: [],
+    hasUniversalBands: false
   };
 }
 
