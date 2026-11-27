@@ -10,6 +10,22 @@ KAJO unterscheidet drei Arten von Einordnung:
 
 Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit und Verletzung haben unabhängig von Scores Vorrang. Fehlende oder nicht vergleichbare Daten bleiben unbekannt.
 
+## Einheitliche 5-Zonen-Farbskala für Statusanzeigen
+
+Die Farbskala vereinheitlicht die Darstellung vorhandener Bewertungen. Sie verändert keine bestehenden fachlichen Grenzwerte und erzeugt keine neuen Bewertungsgrundlagen:
+
+| Zone | Farbe | Bedeutung |
+|---|---|---|
+| 1 | Dunkelrot | Kritisch |
+| 2 | Orange | Ungünstig / erhöhte Aufmerksamkeit |
+| 3 | Gelb | Mittlerer bzw. neutraler Bewertungsbereich |
+| 4 | Hellgrün | Günstig |
+| 5 | Dunkelgrün | Sehr günstig |
+
+Die Zuordnung erfolgt nur dort, wo die vorhandene Kennzahl bereits unterscheidbare Kategorien oder Grenzbereiche enthält. Nicht jede Kennzahl muss alle fünf Zonen verwenden. Fehlende, nicht vergleichbare oder methodisch nicht belastbar bewertbare Werte bleiben neutral und werden nicht grün dargestellt.
+
+Die Skala gilt für Statuskreise und Statusringe im Dashboard sowie die entsprechenden Kennzahlen in den Analyseansichten. Die Herzfrequenz-Trainingszonen (HF-Zonen) sind ausdrücklich ausgenommen und behalten ihre eigene Trainingszonen-Farbgebung.
+
 ## Recovery und Health
 
 ### HRV
