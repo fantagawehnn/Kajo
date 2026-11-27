@@ -1,4 +1,5 @@
 import Toybox.Lang;
+import Toybox.System;
 import Toybox.WatchUi;
 
 // Use InputDelegate directly: onKey receives the physical key codes without
@@ -15,6 +16,10 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
 
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
+
+        // TEMPORARY INPUT DIAGNOSTIC: visible on simulator and device.
+        System.println("KAJO_ACTIVITY_KEY: " + key.toString());
+        WatchUi.showToast("KAJO KEY " + key.toString(), null);
 
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
             if (mView.isPausedForSave()) {
