@@ -3716,7 +3716,10 @@ async function syncGarminTodayOnOpen(userId) {
             const activityLimited = activity?.rateLimited || activity?.status === 'rate_limited';
             const healthLimited = health?.rateLimited || health?.status === 'rate_limited';
             if (!activityLimited && !healthLimited) break;
-            if (attempt === 3) throw new Error('Garmin hat den Tagesabruf trotz mehrerer Versuche begrenzt.');
+            if (attempt === 3) {
+                console.warn('KAJO: Garmin begrenzt den Tagesabruf weiterhin; ein erneuter automatischer Versuch wird eingeplant.');
+                break;
+            }
             const retrySeconds = Math.max(
                 Number(activityLimited ? activity.retryInSeconds || 0 : 0),
                 Number(healthLimited ? health.retryInSeconds || 0 : 0),
