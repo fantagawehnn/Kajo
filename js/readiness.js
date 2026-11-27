@@ -7,6 +7,7 @@
  * ============================================================ */
 
 import { state as appState } from './state.js';
+import { getComparableGarminHrvValue, getGarminHrvMeasurementIdentity } from './garmin-metric-access.js';
 
 const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, value));
 const isValid = value => value !== null && value !== undefined && value !== ''
@@ -29,24 +30,14 @@ function standardDeviation(values, average) {
 function readMetric(record, key) {
     if (!record) return null;
     if (key === 'hrv') {
-        if (record.garminHrv !== null && record.garminHrv !== undefined) return record.garminHrv;
-        return record.measurementSources?.hrv?.source === 'garmin' ? record.hrv ?? null : null;
+        return getComparableGarminHrvValue(record);
     }
     const garminKeys = { rhr: 'garminRhr', respiration: 'garminRespiration', sleepDuration: 'garminSleepDuration', sleepScore: 'garminSleepScore' };
     return record[garminKeys[key] || key] ?? null;
 }
 
-// HRV-Werte dürfen nur dann eine gemeinsame persönliche Baseline bilden,
-// wenn Quelle, Metrik-Kennung und Einheit übereinstimmen. Das dedizierte
-// garminHrv-Feld kennzeichnet Garmin; unzugeordnete Legacy-Felder bleiben unbekannt.
 function measurementIdentity(record, key) {
-    const source = record?.measurementSources?.garminHrv || record?.measurementSources?.hrv;
-    if (!source || typeof source !== 'object') return record?.garminHrv != null ? 'garmin:unspecified:ms' : 'legacy:unspecified:ms';
-    return [
-        String(source.source || 'unknown').toLowerCase(),
-        String(source.metric || 'unspecified').toLowerCase(),
-        String(source.unit || 'ms').toLowerCase()
-    ].join(':');
+    return key === 'hrv' ? getGarminHrvMeasurementIdentity(record) : null;
 }
 
 /**
