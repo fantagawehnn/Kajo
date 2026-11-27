@@ -41,7 +41,7 @@ export function classifyPersonalMetric(key, value, historyValues) {
   const values = (Array.isArray(historyValues) ? historyValues : [])
     .filter(valid).map(Number);
   if (!valid(value)) return { status: 'info', label: 'Keine Messung', baseline: null, observations: values.length };
-  if (values.length < 7) {
+  if (values.length < 12) {
     return { status: 'info', label: 'Persönliche Basis im Aufbau', baseline: null, observations: values.length };
   }
   const baseline = median(values);
@@ -77,7 +77,7 @@ export function classifyPersonalMetric(key, value, historyValues) {
 export function classifySleepDuration(value, historyValues) {
   const values = (Array.isArray(historyValues) ? historyValues : []).filter(valid).map(Number);
   if (!valid(value)) return { status: 'info', label: 'Keine Messung', baseline: null, observations: values.length };
-  if (values.length < 7) {
+  if (values.length < 12) {
     return { status: 'info', label: 'Persönliche Schlafreferenz noch nicht bestimmt', baseline: null, observations: values.length };
   }
   const baseline = median(values);
