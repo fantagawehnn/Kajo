@@ -9398,3 +9398,10 @@ html.theme-light #view-analyses .kajo-analysis-shared-period,
 html.theme-light .kajo-mobile-nav { background:rgba(247,249,252,.96)!important; }
 html[data-theme="light"] .kajo-home-note-button,
 html.theme-light .kajo-home-note-button { border-color:var(--kajo-border)!important;color:var(--metric-recovery)!important; }
+
+#app-main .uppercase,#app-main [class*="uppercase"],#app-navigation .uppercase { text-transform:none!important; letter-spacing:0!important; }
+.kajo-week-bar-track.is-unknown { width:30px!important;height:30px!important;border:1px dotted var(--kajo-muted)!important;background:transparent!important; }
+#analysis-overview-metric-switch [data-overview-metric="load"] { --series-color:var(--metric-form)!important; }
+#analysis-overview-metric-switch [data-overview-metric="recovery"] { --series-color:var(--metric-recovery)!important; }
+#analysis-overview-metric-switch [data-overview-metric="performance"] { --series-color:var(--metric-fitness)!important; }
+#analysis-overview-metric-switch [data-overview-metric="health"] { --series-color:var(--kajo-muted)!important; }
