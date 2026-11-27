@@ -76,7 +76,11 @@ const loadedDay = timeline.find(day => day.date === completedKey);
 assert.equal(loadedDay.load, null);
 assert.equal(loadedDay.dataStatus, 'incomplete-activity-load');
 assert.equal(loadedDay.ctl, null);
-assert.equal(computePerformanceTimeline([{ date: todayKey, tss: 80 }], state.settings, state.profile).length, 0);
+const unavailableSourceDay = computePerformanceTimeline([{ date: todayKey, tss: 80 }], state.settings, state.profile)
+    .find(day => day.date === todayKey);
+assert.ok(unavailableSourceDay);
+assert.equal(unavailableSourceDay.load, null);
+assert.equal(unavailableSourceDay.dataStatus, 'incomplete-activity-load');
 
 // Competition priorities cover all five levels and migrate old generic C entries safely.
 assert.equal(getRacePriorityMeta('A').title, 'International WM/EM');
