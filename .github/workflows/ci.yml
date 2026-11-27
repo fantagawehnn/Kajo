@@ -250,6 +250,9 @@ jobs:
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
 
+      - name: Run mobile navigation accessibility tests
+        run: node --experimental-default-type=module --test tests/mobile-navigation-accessibility.test.mjs
+
   deploy-cloudflare:
     needs: regression-smoke
     if: github.event_name == 'push' && github.ref == 'refs/heads/v2'
