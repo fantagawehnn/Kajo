@@ -1014,7 +1014,6 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function captureActivitySummary() as Void {
         var info = Activity.getActivityInfo();
-        if (info == null) { return; }
         if (info.elapsedDistance != null) {
             mFinalDistanceMeters = info.elapsedDistance;
             mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
@@ -1151,7 +1150,6 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function sampleLapMetrics() as Void {
         var info = Activity.getActivityInfo();
-        if (info == null) { return; }
 
         // Garmin timerTime is authoritative active time. Keep the local counter
         // as a monotonic fallback if the device updates it late.
