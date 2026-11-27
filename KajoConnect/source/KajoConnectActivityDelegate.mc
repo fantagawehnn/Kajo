@@ -8,6 +8,8 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
     var mUpperPressStartedAt as Lang.Number = -1;
     var mLowerPressStartedAt as Lang.Number = -1;
     var mLongPressThreshold as Lang.Number = 800;
+    var mSuppressNextUpperKey as Lang.Boolean = false;
+    var mSuppressNextLowerKey as Lang.Boolean = false;
 
     function initialize(view as KajoConnectActivityView) {
         InputDelegate.initialize();
@@ -27,6 +29,10 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         var key = keyEvent.getKey();
 
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
+            if (mSuppressNextUpperKey) {
+                mSuppressNextUpperKey = false;
+                return true;
+            }
             if (mView.isPausedForSave()) {
                 // Wenn Pressed/Released verfügbar sind, entscheidet onKeyReleased.
                 if (mUpperPressStartedAt < 0) {
@@ -40,6 +46,10 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         }
 
         if (key == WatchUi.KEY_ESC) {
+            if (mSuppressNextLowerKey) {
+                mSuppressNextLowerKey = false;
+                return true;
+            }
             if (mView.isPausedForSave()) {
                 if (mLowerPressStartedAt < 0) {
                     mView.handlePausedShortSecondary();
@@ -77,10 +87,12 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
     function onKeyPressed(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
+            mSuppressNextUpperKey = false;
             mUpperPressStartedAt = System.getTimer();
             return true;
         }
         if (key == WatchUi.KEY_ESC) {
+            mSuppressNextLowerKey = false;
             mLowerPressStartedAt = System.getTimer();
             return true;
         }
@@ -101,8 +113,7 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
                 } else {
                     mView.handlePausedShortPrimary();
                 }
-            } else if (upperHeld < mLongPressThreshold) {
-                mView.handlePrimaryButton();
+                mSuppressNextUpperKey = true;
             }
             return true;
         }
@@ -117,10 +128,7 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
                 } else {
                     mView.handlePausedShortSecondary();
                 }
-            } else if (mView.isSavedForDetails() && lowerHeld < mLongPressThreshold) {
-                mView.nextSavedDetailPage(1);
-            } else if (lowerHeld < mLongPressThreshold) {
-                mView.handleBackOrLapButton();
+                mSuppressNextLowerKey = true;
             }
             return true;
         }
