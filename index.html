@@ -12,14 +12,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>KAJO - Dashboard & Performance</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">\n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://esm.sh" crossorigin>
     <!-- Tailwind CSS CDN -->
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=163">
+    <link rel="stylesheet" href="css/styles.css?v=164">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -339,7 +339,7 @@
 
         
 
-        <div id="view-dashboard" class="kajo-home">\n  <header class="kajo-home-head"><div><h1 id="kajo-home-greeting">Guten Tag</h1><p id="kajo-home-head-date"></p></div><button type="button" id="kajo-home-note-button" class="kajo-home-note-button" onclick="openHomeSelfMonitoring()" aria-label="Check-in öffnen" title="Check-in"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></header>
+        <div id="view-dashboard" class="kajo-home">
   <section class="kajo-home-status" aria-labelledby="home-status-heading">
     <h2 id="home-status-heading">Dein Status</h2>
     <div class="kajo-readiness-grid">
@@ -347,16 +347,10 @@
         <div class="kajo-ring" id="home-readiness-ring"><div><strong id="home-readiness-value">—</strong><span>Recovery</span></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-load')" aria-label="Training-Load-Detailanalyse öffnen" title="ATL – akute Trainingsbelastung">
-        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Form</span><small>TSB</small></div></div>
+        <div class="kajo-ring" id="home-form-ring"><div><strong id="home-form-value">—</strong><span>Load</span><small>ATL</small></div></div>
       </button>
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
-        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small>CTL · Modellwert</small></div></div>
-      </button>
-      <button type="button" class="kajo-ring-card kajo-mini-metric" onclick="openHealthMetric('rhr')" aria-label="Ruheherzfrequenz öffnen">
-        <div class="kajo-ring" id="home-status-rhr-ring"><div><strong id="home-status-rhr-value">—</strong><span>Ruhe-HF</span></div></div>
-      </button>
-      <button type="button" class="kajo-ring-card kajo-mini-metric" onclick="openHealthMetric('hrv')" aria-label="HRV öffnen">
-        <div class="kajo-ring" id="home-status-hrv-ring"><div><strong id="home-status-hrv-value">—</strong><span>HRV</span></div></div>
+        <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Performance</span><small>CTL · Fitnessmodell</small></div></div>
       </button>
     </div>
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
@@ -376,14 +370,14 @@
   </section>
 
   <button type="button" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
-    <span class="kajo-home-section-heading"><strong>Empfehlung für heute</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
+    <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
     <strong id="home-training-recommendation">Wird berechnet …</strong>
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
   </button>
 
   <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
-    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Check-in &amp; Gesundheit</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Check-in starten" title="Check-in starten"><i data-lucide="notebook-pen" aria-hidden="true"></i><span>Check-in starten</span></button></div>
+    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Gesundheit &amp; Self-Monitoring</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Self-Monitoring öffnen" title="Self-Monitoring öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
@@ -405,7 +399,7 @@
 
   <section id="home-training-week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
     <div class="kajo-home-section-heading"><h2 id="home-training-week-title">Trainingswoche</h2><span id="home-week-range" class="kajo-home-meta"></span></div>
-    <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsstatus pro Wochentag"></div>\n    <div id="home-week-progress" class="kajo-week-progress hidden"><div class="kajo-week-progress-track"><span id="home-week-progress-fill"></span></div><span id="home-week-progress-label"></span></div>
+    <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsdauer pro Wochentag"></div>
     <div id="home-week-legend" class="kajo-week-legend"></div>
     <p id="home-week-summary" class="kajo-week-total"></p>
   </section>
@@ -1945,7 +1939,7 @@
             }
           });
 
-          navigator.serviceWorker.register("./service-worker.js?v=34", { scope: "./" })
+          navigator.serviceWorker.register("./service-worker.js?v=35", { scope: "./" })
             .then(registration => registration.update())
             .catch(error => console.error("KAJO Service Worker konnte nicht registriert werden:", error));
         });
