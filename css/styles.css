@@ -9218,7 +9218,6 @@ body.kajo-modal-open { overflow: hidden !important; }
    KAJO V2 – Designsystem 27.11.2026
    Presentation layer only: no training or health calculations.
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 :root {
   color-scheme: dark;
   --kajo-bg:#05080E;
@@ -9349,3 +9348,43 @@ html[data-theme="light"] body,body[data-theme="light"],html.theme-light body,bod
 html[data-theme="light"] #app-navigation,html[data-theme="light"] .kajo-mobile-nav,
 html.theme-light #app-navigation,html.theme-light .kajo-mobile-nav { background:rgba(247,249,252,.96)!important; }
 html[data-theme="light"] .kajo-home .kajo-ring:before,html.theme-light .kajo-home .kajo-ring:before { background:var(--kajo-bg)!important; }
+
+
+/* KAJO V2 – final layout refinements */
+.kajo-home-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.25rem 0 1.15rem; }
+.kajo-home-head h1 { margin:0; color:var(--kajo-text); font-size:1.65rem; line-height:1.1; font-weight:700; letter-spacing:-.035em; }
+.kajo-home-head p { margin:.35rem 0 0; color:var(--kajo-muted); font-size:.78rem; }
+.kajo-home-note-button { display:grid; place-items:center; width:48px; height:48px; min-width:48px; border:1px solid var(--kajo-border)!important; border-radius:50%!important; color:var(--metric-recovery)!important; background:transparent!important; }
+.kajo-home-note-button[hidden] { display:none!important; }
+.kajo-home-note-button svg { width:20px; height:20px; }
+.kajo-home-status h2 { display:none; }
+.kajo-home .kajo-readiness-grid { grid-template-columns:repeat(3,minmax(0,1fr))!important; align-items:center; }
+.kajo-home .kajo-readiness-grid .kajo-ring-card:first-child { grid-column:1/-1; }
+.kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(3) { display:none!important; }
+.kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(2),
+.kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(4),
+.kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(5) { width:88px!important; justify-self:center; }
+#home-readiness-ring { --ring-color:var(--metric-recovery)!important; }
+#home-form-ring { --ring-color:var(--metric-form)!important; }
+#home-status-rhr-ring { --ring-color:var(--metric-rhr)!important; }
+#home-status-hrv-ring { --ring-color:var(--metric-hrv)!important; }
+#home-status-rhr-ring .kajo-ring strong,#home-status-hrv-ring .kajo-ring strong { font-size:1.1rem!important; }
+.kajo-home .kajo-wearables #home-wear-rhr-ring,
+.kajo-home .kajo-wearables #home-wear-hrv-ring { display:none!important; }
+.kajo-home .kajo-health-circle-item .kajo-health-circle { border-width:2px!important; background:transparent!important; }
+.kajo-week-bar-track.is-planned { border-style:dashed!important; background:conic-gradient(color-mix(in srgb,var(--week-ring-color) 24%,transparent) 22%,transparent 0)!important; }
+.kajo-week-bar-track.is-rest { width:22px!important; height:3px!important; margin:19px 0 20px; border:0!important; border-radius:0!important; background:var(--kajo-muted)!important; }
+.kajo-week-progress { display:flex; flex-direction:column; gap:.45rem; margin:.75rem 0 .25rem; }
+.kajo-week-progress-track { height:6px; overflow:hidden; background:var(--kajo-ring-track); }
+.kajo-week-progress-track span { display:block; height:100%; background:var(--metric-recovery); transition:width .35s ease; }
+.kajo-week-progress>span { color:var(--kajo-muted); font-size:.68rem; }
+#view-analyses .kajo-analysis-overview-panel { border-radius:0!important; box-shadow:none!important; }
+#view-analyses .kajo-analysis-overview-panel h2 { text-transform:none!important; letter-spacing:0!important; }
+@media(max-width:640px) {
+ .kajo-home-head { padding-top:.25rem; }
+ .kajo-home-head h1 { font-size:1.5rem; }
+ .kajo-home .kajo-readiness-grid { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:.5rem!important; }
+ .kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(2),
+ .kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(4),
+ .kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(5) { width:88px!important; }
+}
