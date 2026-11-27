@@ -777,7 +777,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function liveMetricLabel(metricId as Lang.String) as Lang.String {
-        if (metricId == "cadence") { return "SCHLAGFREQUENZ"; }
+        if (metricId == "cadence") { return "KADENZ"; }
         if (metricId == "heartRate") { return "HERZFREQUENZ"; }
         if (metricId == "heartRateZone") { return "HF-ZONE"; }
         if (metricId == "distance") { return "DISTANZ"; }
@@ -799,7 +799,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function liveMetricUnit(metricId as Lang.String) as Lang.String {
-        if (metricId == "cadence") { return "SPM"; }
+        if (metricId == "cadence") { return "RPM"; }
         if (metricId == "heartRate" || metricId == "heartRateAvg" || metricId == "heartRateMax") { return "BPM"; }
         if (metricId == "distance" || metricId == "intervalDistance") { return "KM"; }
         if (metricId == "pace") { return "MIN/KM"; }
@@ -1013,6 +1013,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function captureActivitySummary() as Void {
         var info = Activity.getActivityInfo();
+        if (info == null) { return; }
         if (info.elapsedDistance != null) {
             mFinalDistanceMeters = info.elapsedDistance;
             mFinalDistance = numberText(info.elapsedDistance / 1000.0, 2);
@@ -1136,6 +1137,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function sampleLapMetrics() as Void {
         var info = Activity.getActivityInfo();
+        if (info == null) { return; }
 
         if (mLapStartDistanceMeters == null && info.elapsedDistance != null) {
             mLapStartDistanceMeters = info.elapsedDistance;
@@ -1834,7 +1836,7 @@ class KajoConnectActivityView extends WatchUi.View {
             altitude = numberText(activityInfo.altitude, 0);
             ascent = valueOrDash(activityInfo.totalAscent);
             descent = valueOrDash(activityInfo.totalDescent);
-            gpsText = activityInfo.currentLocation != null ? "GPS AKTIV" : "GPS SUCHT";
+            gpsText = activityInfo.currentLocation != null ? "POSITION AKTIV" : "POSITION SUCHT";
             gpsAccuracy = gpsQualityText(activityInfo.currentLocationAccuracy);
             if (activityInfo.currentLocationAccuracy == null) {
                 gpsAccuracy = gpsQualityText(mGpsQuality);
