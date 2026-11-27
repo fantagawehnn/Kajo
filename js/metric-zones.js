@@ -130,7 +130,7 @@ export function classifyAcwr(value) {
   if (!valid(value) || Number(value) < 0) return { status: 'info', label: 'Nicht berechenbar' };
   const ratio = Number(value);
   if (ratio < 0.8) return { status: 'attention', label: 'Akute Last unter chronischem Niveau' };
-  if (ratio <= 1.3) return { status: 'good', label: 'Akute und chronische Last ähnlich' };
+  if (ratio <= 1.3) return { status: 'info', label: 'Akute und chronische Last ähnlich – keine Sicherheitszone' };
   if (ratio <= 1.5) return { status: 'attention', label: 'Erhöhter kurzfristiger Lastanstieg' };
   return { status: 'critical', label: 'Deutlicher kurzfristiger Lastanstieg' };
 }
