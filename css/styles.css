@@ -9235,3 +9235,11 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-home .kajo-wearable-value[data-state="zone4"] { border-color:var(--kajo-status-zone-4)!important; color:var(--kajo-status-zone-4)!important; }
 .kajo-home .kajo-health-circle[data-state="zone5"],
 .kajo-home .kajo-wearable-value[data-state="zone5"] { border-color:var(--kajo-status-zone-5)!important; color:var(--kajo-status-zone-5)!important; }
+
+/* Readiness hero uses the shared five-zone status scale. */
+
+.kajo-analysis-hero-ring[data-status="zone1"] { --hero-ring-color:var(--kajo-status-zone-1); }
+.kajo-analysis-hero-ring[data-status="zone2"] { --hero-ring-color:var(--kajo-status-zone-2); }
+.kajo-analysis-hero-ring[data-status="zone3"] { --hero-ring-color:var(--kajo-status-zone-3); }
+.kajo-analysis-hero-ring[data-status="zone4"] { --hero-ring-color:var(--kajo-status-zone-4); }
+.kajo-analysis-hero-ring[data-status="zone5"] { --hero-ring-color:var(--kajo-status-zone-5); }
