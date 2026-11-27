@@ -30,6 +30,15 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
             return true;
         }
 
+        // Auf der Venu 3S kann die obere Aktion je nach Eingabepfad als
+        // abweichender Key-Code eintreffen. Im Bereitschaftszustand ist jede
+        // nicht-zurueckfuehrende Taste deshalb eine Startaktion.
+        if (mView.isReadyToStart() &&
+            key != WatchUi.KEY_ESC && key != WatchUi.KEY_LAP) {
+            mView.startRecording();
+            return true;
+        }
+
         if (key == WatchUi.KEY_ESC || key == WatchUi.KEY_LAP) {
             if (mView.isPausedForSave()) {
                 mView.handlePausedShortSecondary();
@@ -80,7 +89,14 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
 
     function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
         var coordinates = clickEvent.getCoordinates();
-        mView.handleTap(coordinates[0], coordinates[1]);
+        // Im Ready-Screen die gesamte Flaeche als Startflaeche behandeln.
+        // Die sichtbare Taste bleibt der visuelle Hinweis; dadurch ist die
+        // Aktion unempfindlich gegen abweichende Touch-Koordinaten/Geraeterandere.
+        if (mView.isReadyToStart()) {
+            mView.startRecording();
+        } else {
+            mView.handleTap(coordinates[0], coordinates[1]);
+        }
         return true;
     }
 
