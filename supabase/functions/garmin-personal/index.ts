@@ -944,6 +944,29 @@ async function garminToken(apiKey: string): Promise<string> {
   return token.trim();
 }
 
+async function loadGarminActivityDeletionIds(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+) {
+  const deletedIds = new Set<string>();
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await admin
+      .from("activity_deletions")
+      .select("garmin_activity_id")
+      .eq("user_id", userId)
+      .not("garmin_activity_id", "is", null)
+      .order("garmin_activity_id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      if (row?.garmin_activity_id != null) deletedIds.add(String(row.garmin_activity_id));
+    }
+    if (!data || data.length < pageSize) break;
+  }
+  return deletedIds;
+}
+
 async function syncGarminActivitiesForUser(
   admin: ReturnType<typeof createClient>,
   userId: string,
@@ -965,6 +988,9 @@ async function syncGarminActivitiesForUser(
 
   const apiKey = await decryptSecret(credential.encrypted_api_key, credential.encryption_iv);
   const token = await garminToken(apiKey);
+  // Tombstones are permanent and apply to both automatic and manual history
+  // scans. Deleted past activities must never be inserted again.
+  const deletedGarminActivityIds = await loadGarminActivityDeletionIds(admin, userId);
   const pageSize = 100;
   const maxPages = 20;
   const scanWindowDays = Math.max(1, Math.min(14, Math.floor(scanWindowDaysInput) || 14));
@@ -996,11 +1022,14 @@ async function syncGarminActivitiesForUser(
       if (!pageRows || pageRows.length < storedPageSize) break;
     }
 
+    const activeStoredActivities = storedActivities.filter(
+      row => !deletedGarminActivityIds.has(String(row?.garmin_activity_id ?? "")),
+    );
     const plan = buildGarminActivityRescanPlan({
       startDate,
       endDate,
       coveredRows: coveredRows ?? [],
-      storedActivities,
+      storedActivities: activeStoredActivities,
       rescanAnchorDate,
       scanWindowDays,
       maxRangeDays: 14,
@@ -1039,7 +1068,7 @@ async function syncGarminActivitiesForUser(
     const records = rows.map((item) => {
       const activity = safeActivityPreview(item);
       const activityId = activity.activityId == null ? "" : String(activity.activityId);
-      if (!/^\d+$/.test(activityId)) return null;
+      if (!/^\d+$/.test(activityId) || deletedGarminActivityIds.has(activityId)) return null;
       const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
       const parsedStart = rawStart ? new Date(String(rawStart)) : null;
       const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
