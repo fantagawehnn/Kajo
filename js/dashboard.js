@@ -883,9 +883,10 @@ export function inspectDay(dayObj) {
     updateWearableRange('wear-sleep-score','wear-sleep-score-range',sleepScore,'sleepScore',dayObj.date,'higher');
     updateWearableRange('wear-sleep','wear-sleep-range',sleepDuration,'sleepDuration',dayObj.date,'higher');
     const applySleepColor=(id,color)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('text-white','text-purple-400','text-sky-400','text-rose-400','text-amber-400','text-amber-300','text-emerald-400','text-cyan-300');el.classList.add(color);};
-    applySleepColor('wear-sleep-score',sleepScore===null?'text-white':sleepScore<80?'text-rose-400':sleepScore<=90?'text-amber-300':'text-emerald-400');
-    const sleepHours=Number(sleepDuration);
-    applySleepColor('wear-sleep',!validNumber(sleepDuration)?'text-white':sleepHours<7?'text-rose-400':sleepHours<=9?'text-emerald-400':'text-cyan-300');
+    applySleepColor('wear-sleep-score',sleepScore===null?'text-white':sleepScore<60?'text-rose-400':sleepScore<80?'text-amber-300':'text-emerald-400');
+    const sleepZone=classifySleepDuration(sleepDuration,checkinValuesBetween(dayObj.date,'sleepDuration',28,false));
+    const sleepColor={good:'text-emerald-400',attention:'text-amber-300',critical:'text-rose-400',info:'text-white'}[sleepZone.status]||'text-white';
+    applySleepColor('wear-sleep',sleepColor);
 
     const dayActs = state.rawActivities.filter(a => String(a?.date || '').slice(0, 10) === dayObj.date);
     const loadDataForDay = getTrainingLoadData(state.rawActivities, state.settings, state.profile);
