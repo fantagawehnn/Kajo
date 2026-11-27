@@ -57,7 +57,7 @@ assert.ok(css.includes('#analysis-subpage-recovery > #recovery-subjective-group 
 assert.ok(css.includes('#analysis-subpage-recovery > #view-health-data { order:5; }'), 'recovery history follows the summary sections');
 assert.ok(html.includes('id="health-trend-panel"'), 'Health detail trend has a stable analysis section target');
 assert.ok(main.includes("const candidateEnd = addUtcDays(cursor, 6)"), 'long Garmin history is split into seven-day server requests');
-assert.ok(garminFunction.includes('const batchLimit = 1;'), 'Garmin health history processes one day per Edge Function request to limit worker runtime');
+assert.ok(garminFunction.includes('maxDaysPerInvocation = 1') && garminFunction.includes('Math.min(2, Math.floor(maxDaysPerInvocation) || 1)'), 'manual Garmin health history defaults to one day while automatic cursor batches are capped at two days');
 assert.ok(main.includes('activityRescanEndDate: endDate'), 'Garmin activity coverage uses the original full-range rescan anchor');
 assert.ok(main.includes('completedBeforeChunk + chunkDays - remainingDays'), 'Garmin progress is accumulated across bounded date chunks');
 assert.ok(main.includes('startManualCloudSync,') && html.includes('onclick="startManualCloudSync()"'), 'manual cloud sync button is connected to the global handler');
