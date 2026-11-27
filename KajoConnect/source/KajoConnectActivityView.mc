@@ -1573,7 +1573,7 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mStatus != "PAUSIERT") { return; }
         if (mDiscardConfirmationStage == 0) {
             mDiscardConfirmationStage = 1;
-            WatchUi.showToast("Erneut unten lange drücken zum Verwerfen", null);
+            WatchUi.showToast("Erneut VERWERFEN antippen zum Bestätigen", null);
             WatchUi.requestUpdate();
             return;
         }
@@ -1651,10 +1651,21 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
-        // Speichern, Verwerfen und Fortsetzen sind in der Speicheransicht
-        // ausschließlich über physische Tasten möglich.
-        if (mStatus == "PAUSIERT" || mStatus == "GESPEICHERT" ||
-            mStatus == "SPEICHERN FEHLGESCHLAGEN") { return; }
+        // Die sichtbaren Aktionen der Pausenansicht müssen auch per Touch
+        // erreichbar sein. Verwerfen bleibt bis zur zweiten Bestätigung geschützt.
+        if (mStatus == "PAUSIERT") {
+            if (y >= 286 && y <= 322) {
+                mDiscardConfirmationStage = 0;
+                finishRecording();
+                return;
+            }
+            if (y >= 332 && y <= 368) {
+                handlePausedLongSecondary();
+                return;
+            }
+            return;
+        }
+        if (mStatus == "GESPEICHERT" || mStatus == "SPEICHERN FEHLGESCHLAGEN") { return; }
 
         // Während der Aufzeichnung wechselt ein Tap auf die linke/rechte
         // Bildschirmhälfte direkt die Datenseite. Die alte globale
@@ -1949,8 +1960,8 @@ class KajoConnectActivityView extends WatchUi.View {
                 mDiscardConfirmationStage == 0 ? "VERWERFEN" : "VERWERFEN BESTÄTIGEN",
                 Graphics.FONT_XTINY, 0xEF4444);
             var keyHint = mDiscardConfirmationStage == 0
-                ? "OBEN KURZ · FORTSETZEN  |  LANG · SPEICHERN"
-                : "UNTEN KURZ · ZURÜCK  |  LANG · BESTÄTIGEN";
+                ? "OBEN · FORTSETZEN  |  SPEICHERN ANTIPPEN"
+                : "VERWERFEN ERNEUT ANTIPPEN · ABBRECHEN UNTEN";
             drawActivityText(dc, cx, 260, 300, 16, keyHint,
                 Graphics.FONT_XTINY, mDiscardConfirmationStage == 0 ? 0x98A5AB : 0xFF9F1A);
             mButtonTop = 0;
