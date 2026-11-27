@@ -20,13 +20,40 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         return true;
     }
 
-    // Enter/Esc werden ausschließlich in onKeyReleased ausgewertet.
-    // So kann ein kurzer Tastendruck nicht zusätzlich durch onKey doppelt feuern.
+    // onKey ist das zentrale Ereignis für einen vollständigen Tastendruck.
+    // Das ist wichtig auf Touch-Uhren, auf denen Pressed/Released nicht immer
+    // zuverlässig geliefert werden. Die Zeitmessung bleibt nur für Long-Press-Aktionen.
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
-        if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START || key == WatchUi.KEY_ESC) {
+
+        if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
+            if (mView.isPausedForSave()) {
+                // Wenn Pressed/Released verfügbar sind, entscheidet onKeyReleased.
+                if (mUpperPressStartedAt < 0) {
+                    mView.handlePausedShortPrimary();
+                }
+            } else {
+                mUpperPressStartedAt = -1;
+                mView.handlePrimaryButton();
+            }
             return true;
         }
+
+        if (key == WatchUi.KEY_ESC) {
+            if (mView.isPausedForSave()) {
+                if (mLowerPressStartedAt < 0) {
+                    mView.handlePausedShortSecondary();
+                }
+            } else if (mView.isSavedForDetails()) {
+                mLowerPressStartedAt = -1;
+                mView.nextSavedDetailPage(1);
+            } else {
+                mLowerPressStartedAt = -1;
+                mView.handleBackOrLapButton();
+            }
+            return true;
+        }
+
         if (key == WatchUi.KEY_MENU || key == WatchUi.KEY_ACTION_MENU ||
             key == WatchUi.KEY_UP || key == WatchUi.KEY_PAGE) {
             if (mView.isSavedForDetails()) {
