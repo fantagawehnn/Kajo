@@ -9423,3 +9423,39 @@ body.kajo-modal-open { overflow: hidden !important; }
 .kajo-home-wearables .kajo-health-circle-item{padding:0 5px!important}
 .kajo-home-race{padding:12px 0!important}
 .kajo-home-week{padding-bottom:14px!important}
+
+
+/* Dashboard line removal – scoped to the visible dashboard separators. */
+#view-dashboard,
+#view-dashboard .kajo-home-status,
+#view-dashboard .kajo-home-section,
+#view-dashboard .kajo-home-recommendation,
+#view-dashboard .kajo-home-race,
+#view-dashboard .kajo-selfmonitoring-reminder,
+#view-dashboard .kajo-home-session-group,
+#view-dashboard .home-session-card,
+#view-dashboard .kajo-health-circle-item,
+#view-dashboard .kajo-circle-grid{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+#view-dashboard .kajo-home-status::before,
+#view-dashboard .kajo-home-status::after,
+#view-dashboard .kajo-home-section::before,
+#view-dashboard .kajo-home-section::after,
+#view-dashboard .kajo-home-recommendation::before,
+#view-dashboard .kajo-home-recommendation::after,
+#view-dashboard .kajo-home-wearables::before,
+#view-dashboard .kajo-home-wearables::after{
+  content:none!important;
+  display:none!important;
+}
+#view-dashboard .kajo-home-wearables .kajo-health-circle-item+.kajo-health-circle-item,
+#view-dashboard .kajo-home .kajo-ring-card+.kajo-ring-card{
+  border-left:0!important;
+}
+#view-dashboard .kajo-health-circle,
+#view-dashboard .kajo-ring{
+  border:initial;
+}
