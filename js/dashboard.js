@@ -12,7 +12,7 @@ import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js?v=3';
-import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr } from './metric-zones.js?v=5';
+import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr, getSeasonPhaseForDate, getSeasonPhaseTargets } from './metric-zones.js?v=6';
 export { calculateReadiness } from './readiness.js?v=3';
 
 function getHomeActivityDisplayMode() {
@@ -1009,16 +1009,23 @@ function historyRangeDates(from, to) {
     for (; cursor <= end; cursor.setDate(cursor.getDate() + 1)) dates.push(historyDateKey(cursor));
     return dates;
 }
+function phaseTargetsForDate(dateKey) {
+    return getSeasonPhaseTargets(getSeasonPhaseForDate(state.seasonPlan, dateKey));
+}
+function relativeTrainingBalance(day) {
+    if (!day || !validNumber(day.ctl) || Number(day.ctl) <= 0 || !validNumber(day.tsb)) return null;
+    return Number((Number(day.tsb) / Number(day.ctl) * 100).toFixed(1));
+}
 function historyRecommendation(key, value, dateKey) {
     if (value === null || value === undefined) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
-        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'relative' : 'unclassified';
-        const zone = classifyTrainingBalance(value, mode);
+        const targets = phaseTargetsForDate(dateKey);
+        const zone = classifyTrainingBalance(value, 'relative', targets);
         return [zone.label, day?.isProvisional
             ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
-            : (mode === 'relative' ? 'Der relative Saldo wird aus (CTL − ATL) / CTL × 100 berechnet. Er ist ein KAJO-Modellwert und kein direkt übernommener Garmin-Herstellerwert; die Prozentbereiche sind interne Orientierung und keine validierte Trainingsfreigabe.' : 'TSB ist CTL minus ATL und übernimmt die Einheit des gewählten Load-Modells. Deshalb zeigt KAJO hier bewusst keine allgemeingültige Ampelzone. Beurteile den Verlauf nur innerhalb derselben Belastungsmethode und zusammen mit Trainingsinhalt, Erholung und Datenqualität.')];
+            : (targets ? 'Der relative TSB wird als (CTL − ATL) / CTL × 100 berechnet. Zielbereich für ' + targets.label + ': ' + targets.tsb[0] + ' bis ' + targets.tsb[1] + ' %. ' + (targets.source === 'manual' ? 'Manuell angepasst.' : 'Automatisch aus Phasentyp, Name und Schwerpunkt abgeleitet; heuristische KAJO-Orientierung, keine validierte Trainingsfreigabe.') : 'Für dieses Datum ist keine eindeutige Saisonphase zugeordnet. Deshalb erfolgt keine Ampelbewertung. TSB bleibt CTL minus ATL und wird nur zusammen mit Trainingsinhalt, Erholung und Datenqualität interpretiert.')];
     }
     if (key === 'readiness') {
         const zone = readinessZone(value);
@@ -1041,8 +1048,11 @@ function historyRecommendation(key, value, dateKey) {
     }
     if (key === 'weight') return ['Gewichtsverlauf', 'Betrachte Gewicht über mehrere Messungen und im individuellen Kontext. Einzelne Tagesveränderungen sind für sich genommen keine Trainings- oder Gesundheitsbewertung.'];
     if (key === 'acwr') {
-        const zone = classifyAcwr(value);
-        return [zone.label, 'ACWR beschreibt das Verhältnis von akuter zu chronischer Belastung. Werte unter 0,8, 0,8–1,3, 1,3–1,5 und über 1,5 sind nur Orientierungsbereiche. Es gibt keine sichere Zone und keine eigenständige Verletzungsprognose.'];
+        const targets = phaseTargetsForDate(dateKey);
+        const zone = classifyAcwr(value, targets);
+        return [zone.label, targets
+            ? 'ACWR-Zielbereich für ' + targets.label + ': ' + targets.acwr[0] + ' bis ' + targets.acwr[1] + '. ' + (targets.source === 'manual' ? 'Manuell angepasst. ' : 'Automatisch aus Phasentyp, Name und Schwerpunkt abgeleitet. ') + 'Orientierungswert ohne Sicherheitsgarantie und keine eigenständige Verletzungsprognose.'
+            : 'Für dieses Datum ist keine eindeutige Saisonphase zugeordnet. Deshalb erfolgt keine Ampelbewertung. ACWR ist keine eigenständige Verletzungsprognose.'];
     }
     if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
         const zone = classifySubjective(key, value);
@@ -1107,12 +1117,11 @@ export function historyRingColor(key, value, dateKey) {
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
-        const mode = String(day.loadMode || '').startsWith('garmin') ? 'relative' : 'unclassified';
-        const zone = classifyTrainingBalance(value, mode);
+        const zone = classifyTrainingBalance(value, 'relative', phaseTargetsForDate(dateKey));
         return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info);
     }
     if (key === 'fitness') return fitnessChange(dateKey, value)?.color || STATUS_COLORS.info;
-    if (key === 'acwr') { const zone = classifyAcwr(value); return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info); }
+    if (key === 'acwr') { const zone = classifyAcwr(value, phaseTargetsForDate(dateKey)); return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info); }
     if (key === 'weight') return STATUS_COLORS.info;
     if (['rhr', 'hrv', 'respiration'].includes(key)) {
         const prior = checkinValuesBetween(dateKey, key, 28, false);
@@ -1236,8 +1245,8 @@ export function renderMetricHistory(kind) {
             if (key === 'fitness') return day.ctl;
             if (key === 'atl') return day.atl;
             if (key === 'acwr') return day.acwr;
-            if (key === 'tsb') return day.tsb;
-            return day.loadMode?.startsWith('garmin') ? day.formPct : day.tsb;
+            if (key === 'tsb') return relativeTrainingBalance(day);
+            return relativeTrainingBalance(day);
         });
     }
     const today = historyTodayKey();
@@ -1255,9 +1264,7 @@ export function renderMetricHistory(kind) {
     if (title) title.textContent = definition.label;
     if (unit) {
         const todayTimeline = state.dailyTimeline.find(item => item.date === today);
-        unit.textContent = key === 'form'
-            ? (todayTimeline?.loadMode?.startsWith('garmin') ? 'Saldo · %' : 'Saldo · Load-Punkte')
-            : definition.unit;
+        unit.textContent = ['form', 'tsb'].includes(key) ? 'TSB relativ · %' : definition.unit;
     }
     if (value) value.textContent = historyDisplay(todayValue, key);
     if (ring) {
