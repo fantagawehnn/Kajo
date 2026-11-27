@@ -141,6 +141,7 @@ test('fetches only changed activity payloads since the persisted watermark', asy
                     select() { return this; },
                     eq() { return this; },
                     order() { return this; },
+                    limit() { return this; },
                     maybeSingle() { return Promise.resolve({ data: null, error: null }); },
                     range() { return Promise.resolve({ data: [], error: null }); }
                 };
