@@ -179,6 +179,9 @@ jobs:
       - name: Run Garmin activity date parsing tests
         run: node --experimental-default-type=module --test tests/garmin-activity-date.test.mjs
 
+      - name: Run Garmin sync lock wiring tests
+        run: node --experimental-default-type=module --test tests/garmin-sync-lock-wiring.test.mjs
+
       - name: Run Garmin activity rescan planning tests
         run: node --experimental-default-type=module --test tests/garmin-activity-scan-plan.test.mjs
 
