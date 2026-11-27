@@ -1390,11 +1390,42 @@ Deno.serve(async (req) => {
       const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : "";
       if (!date) return json(400, { error: "Für den Garmin-Tagesabgleich wurde kein gültiges lokales Datum übergeben." });
       const sync = await withGarminSyncLock(admin, userId, async (assertLock) => {
-        const activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false, date, assertLock);
-        // Tageswerte werden erneut bei Garmin abgefragt, weil sie sich im Tagesverlauf
-        // verändern können. Leere Antworten überschreiben keine vorhandenen Nutzdaten.
-        const healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, false, assertLock);
-        return { date, activitySync, healthSync };
+        const captureSyncError = (error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          // A lost lease must stop the whole operation; continuing without the
+          // account lock could allow overlapping writes from another invocation.
+          if (message.includes("Synchronisierungssperre")) throw error;
+          const rateLimited = /HTTP\s*429|rate.?limit/i.test(message);
+          return {
+            status: rateLimited ? "rate_limited" : "error",
+            rateLimited,
+            retryInSeconds: rateLimited ? 60 : 0,
+            error: message,
+          };
+        };
+
+        // Activity and health imports are independent: a temporary Garmin
+        // activity-list failure must not prevent the daily health endpoints.
+        let activitySync;
+        try {
+          activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false, date, assertLock);
+        } catch (error) {
+          activitySync = captureSyncError(error);
+        }
+
+        // Daily values are queried again because they can change during the day.
+        // Empty responses never overwrite existing user data.
+        let healthSync;
+        try {
+          healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, false, assertLock);
+        } catch (error) {
+          healthSync = captureSyncError(error);
+        }
+
+        const partial = activitySync?.status === "error" || activitySync?.status === "rate_limited"
+          || healthSync?.status === "error" || healthSync?.status === "rate_limited"
+          || healthSync?.status === "partial";
+        return { date, activitySync, healthSync, partial };
       });
       if (sync === null) return json(409, { ok: false, code: "garmin_sync_already_running", error: "Für dieses Garmin-Konto läuft bereits eine Synchronisierung. Bitte warte, bis sie abgeschlossen ist." });
       return json(200, { ok: true, sync });
