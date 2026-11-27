@@ -107,6 +107,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mLapHeartRateCount as Lang.Number = 0;
     var mNextAutoLapDistanceMeters as Lang.Number = 1000;
     var mLiveLapSummaries as Lang.Array<Lang.Dictionary> = [];
+    var mFinalPartialLapCaptured as Lang.Boolean = false;
     var mLapSummaryVisible as Lang.Boolean = false;
     var mLapSummarySecondsRemaining as Lang.Number = 0;
     var mLapSummaryNumber as Lang.Number = 0;
@@ -1078,6 +1079,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mFinalLaps = [];
             mSavedLapOffset = 0;
             mLiveLapSummaries = [];
+            mFinalPartialLapCaptured = false;
             mLapStartTimerMs = 0;
             // ActivityRecording startet die Distanz der neuen Session bei null.
             // So zählt auch der erste Kilometer vollständig.
@@ -1150,6 +1152,15 @@ class KajoConnectActivityView extends WatchUi.View {
     function sampleLapMetrics() as Void {
         var info = Activity.getActivityInfo();
         if (info == null) { return; }
+
+        // Garmin timerTime is authoritative active time. Keep the local counter
+        // as a monotonic fallback if the device updates it late.
+        if (info.timerTime != null && info.timerTime > 0) {
+            var garminActiveSeconds = Math.floor(info.timerTime / 1000).toNumber();
+            if (garminActiveSeconds > mElapsedSeconds) {
+                mElapsedSeconds = garminActiveSeconds;
+            }
+        }
 
         if (mLapStartDistanceMeters == null && info.elapsedDistance != null) {
             mLapStartDistanceMeters = info.elapsedDistance;
@@ -1401,7 +1412,7 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function captureFinalPartialLap(activityInfo) as Void {
-        if (activityInfo == null) { return; }
+        if (activityInfo == null || mFinalPartialLapCaptured) { return; }
 
         var timerValue = activityInfo.timerTime == null || activityInfo.timerTime <= mLapStartTimerMs
             ? mElapsedSeconds * 1000 : activityInfo.timerTime;
@@ -1440,6 +1451,7 @@ class KajoConnectActivityView extends WatchUi.View {
             mEngine.addLap();
         }
         mLiveLapSummaries.add(lap);
+        mFinalPartialLapCaptured = true;
         mLapStartTimerMs = timerValue;
         if (activityInfo.elapsedDistance != null) {
             mLapStartDistanceMeters = activityInfo.elapsedDistance;
