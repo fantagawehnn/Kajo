@@ -32,7 +32,11 @@ export function normalizeSeasonPhase(phase = {}) {
         targetTrainingDaysPerWeek: phase.targetTrainingDaysPerWeek == null || phase.targetTrainingDaysPerWeek === '' ? null : Number(phase.targetTrainingDaysPerWeek),
         targetSessionsPerDay: phase.targetSessionsPerDay == null || phase.targetSessionsPerDay === '' ? null : Number(phase.targetSessionsPerDay),
         disciplineFocus: Array.isArray(phase.disciplineFocus) ? phase.disciplineFocus.map(item => cleanText(item, 60)).filter(Boolean).slice(0, 12) : [],
-        notes: cleanText(phase.notes, 1000)
+        notes: cleanText(phase.notes, 1000),
+        acwrTargetMin: phase.acwrTargetMin == null || phase.acwrTargetMin === '' ? null : Number(phase.acwrTargetMin),
+        acwrTargetMax: phase.acwrTargetMax == null || phase.acwrTargetMax === '' ? null : Number(phase.acwrTargetMax),
+        tsbTargetMin: phase.tsbTargetMin == null || phase.tsbTargetMin === '' ? null : Number(phase.tsbTargetMin),
+        tsbTargetMax: phase.tsbTargetMax == null || phase.tsbTargetMax === '' ? null : Number(phase.tsbTargetMax)
     };
 }
 
