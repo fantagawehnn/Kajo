@@ -21,61 +21,13 @@ const todayKey = () => {
 };
 const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
 const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-const COLORS = { load: '#FB923C', recovery: '#2DD4BF', performance: '#38BDF8', health: '#FBBF24' };
+const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
 let trendChart = null;
 let formChart = null;
 let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
 let healthMarkersVisible = true;
 let activityMeasure = 'duration';
-const kajoEventBandPlugin = {
-  id: 'kajoEventBands',
-  beforeDatasetsDraw(chart, args, options) {
-    const dates = options?.dates || [];
-    const area = chart.chartArea;
-    const x = chart.scales?.x;
-    if (!dates.length || !area || !x) return;
-    const logs = state.healthLogs || {};
-    const checkins = state.dailyCheckins || {};
-    const races = new Set((Array.isArray(state.races) ? state.races : []).map(race => String(race?.date || '').slice(0,10)));
-    const step = dates.length > 1 ? Math.abs(x.getPixelForValue(1) - x.getPixelForValue(0)) : area.width;
-    const ctx = chart.ctx;
-    ctx.save();
-    dates.forEach((date,index) => {
-      const center = x.getPixelForValue(index);
-      const left = Math.max(area.left, center - step / 2);
-      const right = Math.min(area.right, center + step / 2);
-      if (right <= left) return;
-      const health = logs[date]?.status;
-      const period = checkins[date]?.cycle?.period === true || checkins[date]?.period === true;
-      if (health === 'sick') {
-        ctx.fillStyle = 'rgba(251,146,60,.12)';
-        ctx.fillRect(left, area.top, right-left, area.bottom-area.top);
-      } else if (health === 'injured') {
-        ctx.fillStyle = 'rgba(239,68,68,.10)';
-        ctx.fillRect(left, area.top, right-left, area.bottom-area.top);
-      }
-      if (period) {
-        ctx.fillStyle = 'rgba(232,121,249,.13)';
-        ctx.fillRect(left, area.top, right-left, area.bottom-area.top);
-      }
-      if (races.has(date)) {
-        ctx.beginPath();
-        ctx.setLineDash([4,4]);
-        ctx.strokeStyle = 'rgba(234,241,251,.85)';
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(center, area.top);
-        ctx.lineTo(center, area.bottom);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-    });
-    ctx.restore();
-  }
-};
-if (typeof Chart === 'function') Chart.register(kajoEventBandPlugin);
-
-
 function sourceHero(domain) {
   const value = document.getElementById('analysis-' + domain + '-hero-value')?.textContent?.trim() || '—';
   const unit = document.getElementById('analysis-' + domain + '-hero-unit')?.textContent?.trim() || '';
@@ -135,7 +87,7 @@ function buildSeries(dates) {
   return [
     { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'readiness', label: 'Recovery · Readiness', unit: '/ 100', raw: readiness, color: '#2DD4BF' },
+    { key: 'readiness', label: 'Recovery · Readiness', unit: '/ 100', raw: readiness, color: '#34D399' },
     { key: 'performance', label: 'Fitness · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
   ];
 }
@@ -193,9 +145,9 @@ function renderFormTrendChart() {
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   const formLabel = relativeMode ? 'Relativer Saldo · aus CTL/ATL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
   const datasets = [
-    { label: 'CTL · langfristig', data: ctl, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2.2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
-    { label: 'ATL · kurzfristig', data: atl, borderColor: '#8B9BB3', backgroundColor: '#8B9BB3', borderWidth: 2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
-    { label: formLabel, data: form, borderColor: '#FB923C', backgroundColor: '#FB923C', borderWidth: 2.2, tension: .18, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: relativeMode ? 'y1' : 'y' }
+    { label: 'CTL · langfristig', data: ctl, borderColor: '#6DA8F7', backgroundColor: '#6DA8F7', borderWidth: 2.2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
+    { label: 'ATL · kurzfristig', data: atl, borderColor: '#D98AB5', backgroundColor: '#D98AB5', borderWidth: 2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
+    { label: formLabel, data: form, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2.2, tension: .18, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: relativeMode ? 'y1' : 'y' }
   ];
   const formScales = {
     x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
@@ -211,7 +163,6 @@ function renderFormTrendChart() {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        kajoEventBands: { dates },
         legend: { display: true, position: 'bottom', labels: { color: textColor, boxWidth: 12, usePointStyle: true, font: { size: 10 } } },
         tooltip: { callbacks: { title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '' } }
       },
@@ -363,31 +314,20 @@ function renderHealthMarkers(dates) {
   if (!root) return;
   if (!healthMarkersVisible) { root.innerHTML = ''; root.style.display = 'none'; root.classList.add('hidden'); return; }
   const logs = state.healthLogs || {};
-  const checkins = state.dailyCheckins || {};
-  const races = new Set((Array.isArray(state.races) ? state.races : []).map(race => String(race?.date || '').slice(0,10)));
-  const cells = dates.map((date,index) => {
+  const buttons = dates.map((date,index) => {
     const item = logs[date];
-    const markers = [];
-    if (item?.status === 'sick' || item?.status === 'injured') {
-      const illness = item.status === 'sick';
-      const label = illness ? 'Erkrankung' : 'Verletzung';
-      const color = illness ? '#FB923C' : '#EF4444';
-      markers.push('<button type="button" data-health-date="'+date+'" aria-label="'+label+' am '+date+'" title="'+label+' · '+date+'" style="width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:#05080E;background:'+color+';border:1px solid rgba(255,255,255,.45);cursor:pointer">'+(illness?'K':'V')+'</button>');
-    }
-    if (checkins[date]?.cycle?.period === true || checkins[date]?.period === true) {
-      markers.push('<span aria-label="Periodentag" title="Periode · '+date+'" style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:#05080E;background:#E879F9">P</span>');
-    }
-    if (races.has(date)) {
-      markers.push('<span aria-label="Wettkampf" title="Wettkampf · '+date+'" style="height:18px;border-left:2px dashed #EAF1FB"></span>');
-    }
-    return markers.length ? '<span style="grid-column:'+(index+1)+';display:flex;justify-content:center;align-items:center;gap:2px;min-height:20px">'+markers.join('')+'</span>' : '';
+    if (!['sick','injured'].includes(item?.status)) return '';
+    const illness = item.status === 'sick';
+    const label = illness ? 'Erkrankung' : 'Verletzung';
+    const color = illness ? '#eab308' : '#ef4444';
+    return '<button type="button" data-health-date="'+date+'" aria-label="'+label+' am '+date+'" title="'+label+' · '+date+'" style="grid-column:'+(index+1)+';justify-self:center;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:800;color:'+(illness?'#0f172a':'#fff')+';background:'+color+';border:1px solid rgba(255,255,255,.45);cursor:pointer">'+(illness?'K':'V')+'</button>';
   }).filter(Boolean);
   root.classList.remove('hidden');
   root.style.display = 'grid';
   root.style.gridTemplateColumns = 'repeat('+dates.length+',minmax(0,1fr))';
   root.style.alignItems = 'center';
   root.style.minHeight = '24px';
-  root.innerHTML = cells.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:var(--kajo-muted)">Keine Gesundheits- oder Wettkampfmarkierungen im Zeitraum</span>';
+  root.innerHTML = buttons.join('') || '<span style="grid-column:1/-1;text-align:center;font-size:10px;color:#64748b">Keine Ereignisse dokumentiert · Gesundheitsstatus nicht beurteilbar</span>';
   root.querySelectorAll('[data-health-date]').forEach(button => button.addEventListener('click', () => {
     const date = button.dataset.healthDate, item = logs[date] || {};
     const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
@@ -686,13 +626,9 @@ function renderTrendChart() {
   const dates = rangeDates(currentRange());
   const labels = dates.map(dateLabel);
   const series = buildSeries(dates);
-  const datasets = series.flatMap(item => {
+  const datasets = series.map(item => {
     const indexed = toRelativeIndex(item.raw);
-    const average = values => values.map((value,index) => {
-      const window = values.slice(Math.max(0,index-6),index+1).filter(valid).map(Number);
-      return window.length >= 4 ? Number((window.reduce((sum,n)=>sum+n,0)/window.length).toFixed(2)) : null;
-    });
-    const base = {
+    return {
       label: item.label,
       data: indexed.values,
       rawValues: item.raw,
@@ -700,34 +636,15 @@ function renderTrendChart() {
       unit: item.unit,
       borderColor: item.color,
       backgroundColor: item.color,
-      borderWidth: 2,
+      borderWidth: 2.2,
       tension: .22,
-      pointRadius: context => dates.length <= 90 && valid(context.raw) ? 2.5 : 0,
+      pointRadius: context => valid(context.raw) ? 2.5 : 0,
       pointHoverRadius: 4,
       pointHitRadius: 7,
-      spanGaps: true,
-      segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] },
+      spanGaps: false,
       fill: false,
       hidden: !selectedMetrics.has(item.key)
     };
-    const meanLine = {
-      label: item.label + ' · 7-Tage-Mittel',
-      data: average(indexed.values),
-      rawValues: average(item.raw),
-      unit: item.unit,
-      borderColor: item.color,
-      backgroundColor: item.color,
-      borderWidth: 3.8,
-      tension: .28,
-      pointRadius: 0,
-      pointHoverRadius: 3,
-      pointHitRadius: 7,
-      spanGaps: true,
-      segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] },
-      fill: false,
-      hidden: !selectedMetrics.has(item.key)
-    };
-    return [base, meanLine];
   });
   const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
   if (!hasValues) {
@@ -746,7 +663,6 @@ function renderTrendChart() {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        kajoEventBands: { dates },
         legend: { display: false },
         title: { display: !hasValues, text: 'Keine auswertbaren Messwerte im gewählten Zeitraum', color: textColor, font: { size: 11, weight: 'normal' } },
         tooltip: { callbacks: {
