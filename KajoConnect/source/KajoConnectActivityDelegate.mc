@@ -93,7 +93,7 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
             } else if (mView.isSavedForDetails() && lowerHeld < mLongPressThreshold) {
                 mView.nextSavedDetailPage(1);
             } else if (lowerHeld < mLongPressThreshold) {
-                mView.handleLapButton();
+                mView.handleBackOrLapButton();
             }
             return true;
         }
