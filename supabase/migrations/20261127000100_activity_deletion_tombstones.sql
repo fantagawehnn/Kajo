@@ -25,6 +25,8 @@ create index if not exists activity_deletions_user_deleted_at_idx
 
 alter table public.activity_deletions enable row level security;
 
+-- Override broad default table grants: tombstones are append-only.
+revoke all on table public.activity_deletions from public, anon, authenticated, service_role;
 grant select, insert on public.activity_deletions to authenticated;
 grant select, insert on public.activity_deletions to service_role;
 
