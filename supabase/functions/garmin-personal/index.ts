@@ -1295,11 +1295,15 @@ async function withGarminSyncLock<T>(
   } finally {
     clearInterval(timer);
     if (heartbeat) await heartbeat;
-    const { error: releaseError } = await admin.rpc("release_garmin_sync_lock", {
-      p_user_id: userId,
-      p_lock_token: lockToken,
-    });
-    if (releaseError) console.error("Garmin sync lock release failed; the lease will expire automatically:", releaseError);
+    try {
+      const { error: releaseError } = await admin.rpc("release_garmin_sync_lock", {
+        p_user_id: userId,
+        p_lock_token: lockToken,
+      });
+      if (releaseError) console.error("Garmin sync lock release failed; the lease will expire automatically:", releaseError);
+    } catch (releaseError) {
+      console.error("Garmin sync lock release request failed; the lease will expire automatically:", releaseError);
+    }
   }
 }
 
