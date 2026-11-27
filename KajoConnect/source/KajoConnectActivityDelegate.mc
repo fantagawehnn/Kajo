@@ -91,7 +91,7 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
         var coordinates = clickEvent.getCoordinates();
         // Im Ready-Screen die gesamte Flaeche als Startflaeche behandeln.
         // Die sichtbare Taste bleibt der visuelle Hinweis; dadurch ist die
-        // Aktion unempfindlich gegen abweichende Touch-Koordinaten/Geraeterandere.
+        // Aktion unempfindlich gegen abweichende Touch-Koordinaten/Displayabmessungen.
         if (mView.isReadyToStart()) {
             mView.startRecording();
         } else {
