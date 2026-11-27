@@ -8,6 +8,7 @@ class KajoConnectRecordingEngine {
 
     var mSession as ActivityRecording.Session? = null;
     var mLastError as Lang.String = "";
+    var mLastPauseDebug as Lang.String = "NOT_TESTED";
     var mLapSummaries as Lang.Array<Lang.Dictionary> = [];
 
     function initialize() {
@@ -82,8 +83,27 @@ class KajoConnectRecordingEngine {
     }
 
     function pause() as Lang.Boolean {
-        if (mSession == null || !mSession.isRecording()) { return false; }
-        return mSession.stop();
+        if (mSession == null) {
+            mLastPauseDebug = "NO_SESSION";
+            return false;
+        }
+        if (!mSession.isRecording()) {
+            mLastPauseDebug = "NOT_RECORDING";
+            return false;
+        }
+        try {
+            var stopped = mSession.stop();
+            mLastPauseDebug = (stopped ? "STOP_TRUE" : "STOP_FALSE") +
+                " / FIT " + (mSession.isRecording() ? "ON" : "OFF");
+            return stopped;
+        } catch (error) {
+            mLastPauseDebug = "ERROR " + error.toString();
+            return false;
+        }
+    }
+
+    function getLastPauseDebug() as Lang.String {
+        return mLastPauseDebug;
     }
 
     function resume() as Lang.Boolean {
