@@ -50,13 +50,13 @@ export function selectLateArrivingHealthRetryDate(
   rows,
   { beforeDate, now = Date.now(), retryAfterMs = 6 * 60 * 60 * 1000 } = {},
 ) {
-  if (typeof beforeDate !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(beforeDate)) {
+  if (typeof beforeDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(beforeDate)) {
     throw new Error("beforeDate must be a YYYY-MM-DD date.");
   }
   const eligibleDates = new Set();
   for (const row of Array.isArray(rows) ? rows : []) {
     if (!row || typeof row.record_date !== "string" ||
-        !/^\\d{4}-\\d{2}-\\d{2}$/.test(row.record_date) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(row.record_date) ||
         row.record_date >= beforeDate ||
         !LATE_ARRIVING_HEALTH_TYPES.includes(row.data_type) ||
         JSON.stringify(row.payload) !== JSON.stringify({ no_data: true })) continue;
