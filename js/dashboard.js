@@ -494,8 +494,16 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         }
     };
     metric('home-wear-rhr','home-wear-rhr-ring',format(garminCheckin.garminRhr,'rhr'),wearableState('rhr',garminCheckin.garminRhr));
+    const statusRhr=document.getElementById('home-status-rhr-value');
+    if(statusRhr)statusRhr.textContent=format(garminCheckin.garminRhr,'rhr');
+    const statusRhrRing=document.getElementById('home-status-rhr-ring');
+    if(statusRhrRing){statusRhrRing.style.setProperty('--ring-value','100%');statusRhrRing.style.setProperty('--ring-color','#FF7A7F');}
     const garminHrv = garminCheckin.garminHrv ?? (garminCheckin.measurementSources?.hrv?.source === 'garmin' ? garminCheckin.hrv : null);
     metric('home-wear-hrv','home-wear-hrv-ring',format(garminHrv,'hrv'),wearableState('hrv',garminHrv));
+    const statusHrv=document.getElementById('home-status-hrv-value');
+    if(statusHrv)statusHrv.textContent=format(garminHrv,'hrv');
+    const statusHrvRing=document.getElementById('home-status-hrv-ring');
+    if(statusHrvRing){statusHrvRing.style.setProperty('--ring-value','100%');statusHrvRing.style.setProperty('--ring-color','#E879F9');}
     metric('home-wear-score','home-wear-score-ring',format(garminCheckin.garminSleepScore,'sleepScore'),wearableState('sleepScore',garminCheckin.garminSleepScore));
     metric('home-wear-duration','home-wear-duration-ring',validNumber(sleepDuration) ? historyDisplay(Number(sleepDuration),'sleepDuration').replace('.',',') + ' h' : '—',wearableState('sleepDuration',sleepDuration));
     metric('home-wear-resp','home-wear-resp-ring',format(garminCheckin.garminRespiration,'respiration'),wearableState('respiration',garminCheckin.garminRespiration));
@@ -603,7 +611,7 @@ export function renderHomeTrainingWeek() {
         const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item));
         const total = dayTotals[index];
         const dayButton = document.createElement('div');
-        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '');
+        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '') + (dayItems.length ? ' is-completed' : dayPlanned.length ? ' is-planned' : ' is-rest');
         dayButton.setAttribute('role','group');
         dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (dayItems.length ? Math.round(total) + ' Minuten Training' : 'keine Einheit mit erfasster Dauer'));
         const selectDay = sport => window.selectDashboardDate?.(date, sport || null);
