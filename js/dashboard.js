@@ -533,7 +533,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
         const raw = historyValue(checkin, key);
         const valid = validNumber(raw) && Number(raw) >= 1 && Number(raw) <= 10;
         const colorHex = valid ? historyRingColor(key, Number(raw), checkinDate || selectedDate) : null;
-        const color = ({[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor'})[colorHex] || 'neutral';
+        const color = ({[ZONE_COLORS[1]]:'zone1',[ZONE_COLORS[2]]:'zone2',[ZONE_COLORS[3]]:'zone3',[ZONE_COLORS[4]]:'zone4',[ZONE_COLORS[5]]:'zone5',[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor'})[colorHex] || 'neutral';
         metric(valueId,ringId,valid ? historyDisplay(Number(raw), key) + ' / 10' : '—',color);
     });
     const wearableCount = [garminCheckin.garminRhr,garminHrv,garminCheckin.garminSleepScore,sleepDuration,garminCheckin.garminRespiration].filter(validNumber).length;
