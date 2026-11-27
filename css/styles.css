@@ -9675,3 +9675,14 @@ body.kajo-modal-open { overflow: hidden !important; }
 #analysis-subpage-health .more-subnav-button.is-active{border-color:rgba(101,213,195,.4)!important;background:rgba(101,213,195,.1)!important;color:#8de5d6!important}
 @media(max-width:760px){.kajo-analysis-circles{grid-template-columns:repeat(2,minmax(0,1fr))}.kajo-analysis-circle-item{min-height:78px;padding:10px 11px!important}.kajo-analysis-primary-panel .kajo-analysis-chart-wrap{height:250px!important}.kajo-analysis-training-summary .kajo-insight-grid,.kajo-analysis-training-summary #analysis-period-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.kajo-analysis-advanced-content{grid-template-columns:minmax(0,1fr)}.kajo-analysis-advanced-content>section,.kajo-analysis-advanced-content>section:first-child,.kajo-analysis-advanced-content>section:nth-last-child(1){grid-column:1}.kajo-analysis-observations-panel #analysis-trend-observations{grid-template-columns:minmax(0,1fr)}.kajo-analysis-page-heading{align-items:flex-start}.kajo-analysis-trend-heading{flex-direction:column}.kajo-analysis-shared-period{justify-content:flex-start}}
 @media(max-width:420px){.kajo-analysis-circle-item{grid-template-columns:42px minmax(0,1fr);column-gap:8px}.kajo-analysis-circle-item>.kajo-analysis-hero-ring{width:40px!important;height:40px!important;min-width:40px}.kajo-analysis-overview-panel,.kajo-training-load-panel,.kajo-performance-group,.kajo-recovery-group,.kajo-health-group,.kajo-health-trend{padding:14px!important}}
+
+
+/* KAJO V2 · Performance domains use their native units and sources. */
+.kajo-performance-load-context{margin-top:12px}
+.kajo-performance-load-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kajo-performance-load-metric{min-width:0;padding:11px 12px;border:1px solid rgba(148,163,184,.12);border-radius:11px;background:rgba(5,12,21,.36)}
+.kajo-performance-load-metric span,.kajo-performance-load-metric small{display:block;color:var(--analysis-muted,#91a0b5);font-size:10px}
+.kajo-performance-load-metric strong{display:block;margin:4px 0;color:var(--analysis-text,#edf3fa);font-size:18px;font-weight:750;font-variant-numeric:tabular-nums}
+.kajo-performance-analysis-link{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:8px 11px;border:1px solid rgba(101,213,195,.28);border-radius:9px;background:rgba(101,213,195,.07);color:#8de5d6;font-size:11px;font-weight:650}
+.kajo-performance-analysis-link:hover{background:rgba(101,213,195,.12)}
+@media(max-width:480px){.kajo-performance-load-grid{gap:6px}.kajo-performance-load-metric{padding:9px}.kajo-performance-load-metric strong{font-size:16px}}
