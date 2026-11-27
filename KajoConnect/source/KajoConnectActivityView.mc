@@ -83,6 +83,7 @@ class KajoConnectActivityView extends WatchUi.View {
     // Lokaler Sekundenzaehler als verlaesslicher Fallback, falls Garmin timerTime nicht liefert.
     var mElapsedSeconds as Lang.Number = 0;
     var mDebugTimerTicks as Lang.Number = 0;
+    var mShowPauseDebug as Lang.Boolean = false;
     var mFinalDistance as Lang.String = "--";
     var mFinalAverageHeartRate as Lang.String = "--";
     var mFinalDistanceMeters = null;
@@ -1087,8 +1088,11 @@ class KajoConnectActivityView extends WatchUi.View {
         if (mEngine.pause()) {
             mTimer.stop();
             mStatus = "PAUSIERT";
+            mShowPauseDebug = false;
         } else {
-            WatchUi.showToast("Pause konnte nicht aktiviert werden", null);
+            // Fehlerdiagnose dauerhaft in der Aktivitätsansicht anzeigen,
+            // da Garmin-Toastmeldungen auf der Venu 3S abgeschnitten werden.
+            mShowPauseDebug = true;
         }
         WatchUi.requestUpdate();
     }
@@ -2211,6 +2215,16 @@ class KajoConnectActivityView extends WatchUi.View {
                 mLapSummaryHeartRate, Graphics.FONT_MEDIUM, Graphics.COLOR_WHITE);
             drawActivityText(dc, cx, 264, 250, 14, "BPM · 7 SEKUNDEN",
                 Graphics.FONT_XTINY, 0x98A5AB);
+        }
+
+        // Kurze, dauerhaft lesbare Diagnose bei fehlgeschlagenem Pausieren.
+        if (mShowPauseDebug && mStatus == "AUFZEICHNUNG") {
+            var pauseDiagnostic = "PAUSE: " +
+                compactWorkoutText(mEngine.getLastPauseDebug(), 30);
+            dc.setColor(0x301515, Graphics.COLOR_BLACK);
+            dc.fillRoundedRectangle(38, 360, 314, 25, 8);
+            drawActivityText(dc, cx, 365, 296, 16, pauseDiagnostic,
+                Graphics.FONT_XTINY, 0xFF9F1A);
         }
     }
 }
