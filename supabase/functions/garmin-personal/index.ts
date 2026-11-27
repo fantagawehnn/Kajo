@@ -1568,14 +1568,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === "sync-health-history-batch") {
-      const result = await syncGarminHealthHistoryBatch(admin, userId, "2020-01-01", new Date().toISOString().slice(0, 10));
+      const result = await syncGarminHealthHistoryBatch(admin, userId, "2020-01-01", new Date().toISOString().slice(0, 10), false, false, 1, "health_history", false, assertSyncLock);
       return json(200, { ok: true, sync: result });
     }
 
     if (action === "sync-activities") {
       const endDate = new Date().toISOString().slice(0, 10);
       const startDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
-      const result = await syncGarminActivitiesForUser(admin, userId, startDate, endDate);
+      const result = await syncGarminActivitiesForUser(admin, userId, startDate, endDate, false, endDate, 14, assertSyncLock);
       return json(200, { ok: true, sync: result });
     }
 
