@@ -9393,3 +9393,33 @@ body.kajo-modal-open { overflow: hidden !important; }
     outline-offset: 2px;
   }
 }
+
+
+/* KAJO V2: dashboard ohne Trennlinien – Struktur über Abstände und Typografie. */
+.kajo-home-status,
+.kajo-home-section,
+.kajo-home-race,
+.kajo-home-recommendation,
+.kajo-selfmonitoring-reminder{
+  border:0!important;
+  box-shadow:none!important;
+}
+.kajo-home .kajo-ring-card+.kajo-ring-card,
+.kajo-home-wearables .kajo-health-circle-item+.kajo-health-circle-item{
+  border-left:0!important;
+}
+.kajo-home-status{padding-bottom:15px!important}
+.kajo-home-section{padding:16px 0!important}
+.kajo-home-recommendation{padding:10px 0!important}
+.kajo-selfmonitoring-reminder{
+  padding:10px 0!important;
+  background:transparent!important;
+}
+.kajo-home .home-session-card{
+  border:0!important;
+  padding:8px 2px!important;
+}
+.kajo-home .home-today-list{gap:5px!important}
+.kajo-home-wearables .kajo-health-circle-item{padding:0 5px!important}
+.kajo-home-race{padding:12px 0!important}
+.kajo-home-week{padding-bottom:14px!important}
