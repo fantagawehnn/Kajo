@@ -12,7 +12,7 @@ import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js';
-import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance } from './metric-zones.js';
+import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr } from './metric-zones.js';
 export { calculateReadiness } from './readiness.js';
 
 function getHomeActivityDisplayMode() {
@@ -1008,36 +1008,45 @@ function historyRangeDates(from, to) {
     return dates;
 }
 function historyRecommendation(key, value, dateKey) {
-    if (value === null) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
+    if (value === null || value === undefined) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
-        return [day?.statusLabel || 'Modellierte Form', day?.isProvisional
-            ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert daher vorsichtig interpretieren.'
-            : 'Die Form wird aus dem Verhältnis von langfristiger und kurzfristiger Belastung abgeleitet. Zusammen mit subjektivem Befinden und Trainingsqualität einordnen.'];
+        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'garmin' : 'tsb';
+        const zone = classifyTrainingBalance(value, mode);
+        return [zone.label, day?.isProvisional
+            ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
+            : 'Orientierungszonen: TSB unter −30 stark negativ, −30 bis −10 erhöhte modellierte Ermüdung, −10 bis +5 ausgeglichen, +5 bis +25 frisch, über +25 sehr frisch. Bei Garmin-Form gelten getrennte Prozentbereiche. Diese Modellzonen sind keine universellen physiologischen Grenzwerte.'];
     }
     if (key === 'readiness') {
-        if (value >= 80) return ['Günstige Readiness', 'Die verfügbaren objektiven und subjektiven Angaben fallen insgesamt günstig aus. Plane trotzdem passend zur Tagesform.'];
-        if (value >= 60) return ['Mittlere Readiness', 'Die Signale sind nicht durchgehend günstig. Prüfe besonders Müdigkeit, Muskelkater, Schlaf und den geplanten Trainingsreiz.'];
-        return ['Niedrige Readiness', 'Mehrere verfügbare Signale sprechen für erhöhte Beanspruchung. Erholung priorisieren und Belastung kritisch mit dem eigenen Befinden abgleichen.'];
+        const zone = readinessZone(value);
+        return [zone.label, 'KAJO-Orientierungsindex: 80–100 günstig, 65–79 im Orientierungsbereich, 45–64 vorsichtig beobachten, unter 45 deutlich eingeschränkt. Der Wert ersetzt weder das eigene Befinden noch eine medizinische Beurteilung.'];
     }
-    if (key === 'rhr' || key === 'hrv' || key === 'respiration' || key === 'sleepDuration' || key === 'sleepScore') {
-        return ['Persönlicher Normalbereich noch nicht verfügbar', 'Die statistische Methode für eine robuste, adaptive Baseline ist noch nicht verbindlich festgelegt. Der Messwert wird deshalb ohne pauschale oder vorläufige Normalbereichs-Einstufung dargestellt.'];
+    if (['rhr', 'hrv', 'respiration'].includes(key)) {
+        const zone = classifyPersonalMetric(key, value, checkinValuesBetween(dateKey, key, 28, false));
+        const baseline = validNumber(zone.baseline) ? ' Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + (key === 'hrv' ? ' ms.' : key === 'rhr' ? ' bpm.' : ' /min.') : ' Mindestens sieben Messungen aus den vorherigen 28 Tagen sind für eine persönliche Basis erforderlich.';
+        return [zone.label, 'Der Wert wird relativ zum persönlichen Median und zur individuellen Schwankung eingeordnet, nicht anhand pauschaler bpm- oder Millisekunden-Grenzen.' + baseline + ' Einzelwerte immer mit 7-Tage-Trend, Schlaf und Befinden betrachten.'];
+    }
+    if (key === 'sleepDuration') {
+        const zone = classifySleepDuration(value, checkinValuesBetween(dateKey, key, 28, false));
+        return [zone.label, validNumber(zone.baseline)
+            ? 'Persönlicher Schlafmedian: ' + Number(zone.baseline).toFixed(1) + ' Stunden. Abweichungen von 30, 60 und 90 Minuten dienen als KAJO-Orientierung, nicht als allgemeingültige Schlafnorm.'
+            : 'KAJO legt zunächst eine persönliche Schlafreferenz aus mindestens sieben Messungen innerhalb von 28 Tagen an. Der Schlafbedarf von Athleten ist individuell und kann mit der Trainingsbelastung variieren.'];
+    }
+    if (key === 'sleepScore') {
+        const zone = classifyGarminSleepScore(value);
+        return [zone.label, 'Garmin-Kategorien: 90–100 ausgezeichnet, 80–89 gut, 60–79 mittel und unter 60 niedrig. Das ist eine herstellerspezifische Score-Einteilung, keine eigenständige sportwissenschaftliche Trainingsfreigabe.'];
     }
     if (key === 'weight') return ['Gewichtsverlauf', 'Betrachte Gewicht über mehrere Messungen und im individuellen Kontext. Einzelne Tagesveränderungen sind für sich genommen keine Trainings- oder Gesundheitsbewertung.'];
-    if (key === 'sleepScore') return value < 80
-        ? ['Sleep Score unter 80', 'Prüfe Schlafqualität, Schlafdauer und mögliche Störfaktoren. Der Score ist ein Wearable-Schätzwert.']
-        : value <= 90
-            ? ['Sleep Score im mittleren Bereich', 'Beobachte den Trend und gleiche den Score mit deinem subjektiven Erholungsempfinden ab.']
-            : ['Hoher Sleep Score', 'Der Wearable-Score fällt günstig aus. Entscheidend bleibt, ob du dich tatsächlich erholt fühlst.'];
-    const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    if (value >= 4) return reverse
-        ? ['Hohe Beanspruchung', 'Der subjektive Wert ist deutlich erhöht. Prüfe, ob Umfang oder Intensität angepasst werden sollten und berücksichtige weitere Erholungssignale.']
-        : ['Günstige Selbsteinschätzung', 'Deine subjektive Einschätzung fällt positiv aus. Gleiche sie mit Trainingsbelastung und körperlichem Befinden ab.'];
-    if (value <= 2) return reverse
-        ? ['Geringe Beanspruchung', 'Deine subjektive Einschätzung fällt niedrig aus. Berücksichtige trotzdem Schlaf, Belastungsverlauf und weitere Signale.']
-        : ['Niedrige Selbsteinschätzung', 'Prüfe mögliche Einflussfaktoren und beobachte, ob sich der Wert über mehrere Tage verändert.'];
-    return ['Mittlere Selbsteinschätzung', 'Der Wert liegt im mittleren Skalenbereich. Beobachte die Entwicklung über mehrere Tage.'];
+    if (key === 'acwr') {
+        const zone = classifyAcwr(value);
+        return [zone.label, 'ACWR beschreibt das Verhältnis von akuter zu chronischer Belastung. Werte unter 0,8, 0,8–1,3, 1,3–1,5 und über 1,5 sind nur Orientierungsbereiche. Es gibt keine sichere Zone und keine eigenständige Verletzungsprognose.'];
+    }
+    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
+        const zone = classifySubjective(key, value);
+        return [zone.label, 'Skala 1–5: 1–2 günstig, 3 mittel, 4–5 ungünstig. Bei Schlafqualität und Motivation bedeutet ein höherer Wert eine bessere Einschätzung; bei Müdigkeit, Muskelkater und Stress ist es umgekehrt.'];
+    }
+    return ['Wert im Kontext betrachten', 'Einzelne Messwerte sind nur zusammen mit Verlauf, Trainingsinhalt und subjektivem Befinden aussagekräftig.'];
 }
 function historyDisplay(value, key) {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
@@ -1104,6 +1113,7 @@ export function historyRingColor(key, value, dateKey) {
         return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
     }
     if (key === 'fitness') return fitnessChange(dateKey, value)?.color || STATUS_COLORS.info;
+    if (key === 'acwr') return STATUS_COLORS[classifyAcwr(value).status] || STATUS_COLORS.info;
     if (key === 'weight') return STATUS_COLORS.info;
     if (['rhr', 'hrv', 'respiration'].includes(key)) {
         const prior = checkinValuesBetween(dateKey, key, 28, false);
