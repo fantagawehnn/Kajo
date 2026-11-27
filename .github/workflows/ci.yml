@@ -192,6 +192,9 @@ jobs:
 
       - name: Run automatic Garmin sync cursor tests
         run: node --experimental-default-type=module --test tests/garmin-automatic-sync-plan.test.mjs tests/garmin-automatic-sync-wiring.test.mjs
+      
+      - name: Run Garmin activity delta and upsert planning tests
+        run: node --experimental-default-type=module --test tests/garmin-activity-cloud-delta.test.mjs tests/garmin-activity-upsert-plan.test.mjs tests/garmin-activity-cloud-delta-wiring.test.mjs
 
       - name: Run Garmin FIT download retry tests
         run: node --experimental-default-type=module --test tests/garmin-fit-download-retry.test.mjs

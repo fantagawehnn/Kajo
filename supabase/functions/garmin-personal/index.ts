@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveGarminActivityDate } from "./activity-date.js";
 import { buildGarminActivityRescanPlan } from "./activity-scan-plan.js";
 import { buildAutomaticGarminSyncRange, LATE_ARRIVING_HEALTH_TYPES, selectLateArrivingHealthRetryDate } from "./automatic-sync-plan.js";
+import { selectChangedGarminActivityRows } from "./activity-upsert-plan.js";
 import { fetchWithTransientRetry } from "./fit-download-retry.js";
 
 const corsHeaders = {
@@ -1080,9 +1081,26 @@ async function syncGarminActivitiesForUser(
       };
     }).filter((row) => row !== null);
 
+    // Existing previews are compared before writing. Unchanged rows must not
+    // refresh updated_at, otherwise every app opening downloads them again.
+    const existingRows: Array<Record<string, unknown>> = [];
     for (let offset = 0; offset < records.length; offset += 100) {
       assertSyncLock();
-      const { error: upsertError } = await admin.from("garmin_activities").upsert(records.slice(offset, offset + 100), {
+      const batch = records.slice(offset, offset + 100);
+      const ids = batch.map((row) => String(row.garmin_activity_id));
+      const { data: existingBatch, error: existingBatchError } = await admin
+        .from("garmin_activities")
+        .select("garmin_activity_id,activity,start_time,activity_type,duration_seconds,distance_meters")
+        .eq("user_id", userId)
+        .in("garmin_activity_id", ids);
+      if (existingBatchError) throw existingBatchError;
+      existingRows.push(...(existingBatch ?? []));
+    }
+
+    const changedRecords = selectChangedGarminActivityRows(records, existingRows);
+    for (let offset = 0; offset < changedRecords.length; offset += 100) {
+      assertSyncLock();
+      const { error: upsertError } = await admin.from("garmin_activities").upsert(changedRecords.slice(offset, offset + 100), {
         onConflict: "user_id,garmin_activity_id",
         ignoreDuplicates: false,
       });
@@ -1109,7 +1127,7 @@ async function syncGarminActivitiesForUser(
     }
 
     fetched += rows.length;
-    stored += records.length;
+    stored += changedRecords.length;
   }
 
   const { error: statusError } = await admin.from("garmin_connections").update({

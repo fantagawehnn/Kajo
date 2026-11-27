@@ -35,7 +35,7 @@ test('long-running activity and health batches check lock ownership at safe chec
   assert.match(source, /assertSyncLock: \(\) => void = \(\) => \{\}/);
   assert.match(source, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertLock\)/);
   assert.match(source, /assertSyncLock\(\);[\s\S]{0,800}garminGet/);
-  assert.match(source, /assertSyncLock\(\);[\s\S]{0,180}upsert\(records/);
+  assert.match(source, /assertSyncLock\(\);[\s\S]{0,220}upsert\(changedRecords/);
 });
 
 test('sync-today isolates activity and health failures while preserving lock-loss safety', () => {
