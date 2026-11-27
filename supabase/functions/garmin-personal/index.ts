@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveGarminActivityDate } from "./activity-date.js";
 import { buildGarminActivityRescanPlan } from "./activity-scan-plan.js";
 import { selectChangedGarminActivityRows } from "./activity-upsert-plan.js";
-import { buildAutomaticGarminSyncRange } from "./automatic-sync-plan.js";
+import { buildAutomaticGarminSyncRange, LATE_ARRIVING_HEALTH_TYPES, selectLateArrivingHealthRetryDate } from "./automatic-sync-plan.js";
 import { fetchWithTransientRetry } from "./fit-download-retry.js";
 
 const corsHeaders = {
@@ -146,7 +146,7 @@ async function syncGarminHealthDay(
       const ageMs = Number.isFinite(fetchedAt) ? Math.max(0, Date.now() - fetchedAt) : Number.POSITIVE_INFINITY;
       // HRV and sleep values may arrive after the first morning request. Retry
       // empty markers after six hours rather than waiting a month.
-      const lateArrivingTypes = new Set(["hrv_daily", "hrv_detail", "sleep_detail", "sleep_summaries", "menstrual_cycle_summary", "menstrual_cycle_day_view"]);
+      const lateArrivingTypes = new Set(LATE_ARRIVING_HEALTH_TYPES);
       const noDataRetryAfterMs = lateArrivingTypes.has(endpoint.type)
         ? 6 * 60 * 60 * 1000
         : 30 * 24 * 60 * 60 * 1000;
@@ -438,9 +438,59 @@ async function syncGarminHealthAutomaticBatch(
     maxDays: 2,
     initialOverlapDays: 1,
   });
-  return await syncGarminHealthHistoryBatch(
-    admin, userId, range.startDate, today, true, false, 2, "health_auto", true, assertLock
+
+  // Retry one historical no-data date per invocation. This is deliberately
+  // outside the cursor batch: it must never rewind or advance health_auto.
+  const retryCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data: retryMarkers, error: retryMarkersError } = await admin
+    .from("garmin_health_records")
+    .select("record_date,data_type,payload,fetched_at")
+    .eq("user_id", userId)
+    .eq("record_key", "daily")
+    .in("data_type", LATE_ARRIVING_HEALTH_TYPES)
+    .eq("payload->>no_data", "true")
+    .lt("fetched_at", retryCutoff)
+    .lt("record_date", range.startDate)
+    .order("fetched_at", { ascending: true })
+    .limit(200);
+  if (retryMarkersError) throw retryMarkersError;
+  const lateDataRetryDate = selectLateArrivingHealthRetryDate(retryMarkers, {
+    beforeDate: range.startDate,
+  });
+
+  let lateRetryResult: Record<string, unknown> | null = null;
+  if (lateDataRetryDate) {
+    assertLock();
+    lateRetryResult = await syncGarminHealthDay(admin, userId, lateDataRetryDate, false, assertLock);
+    assertLock();
+    if (Number(lateRetryResult.failed || 0) > 0) {
+      return {
+        status: lateRetryResult.status === "rate_limited" ? "rate_limited" : "partial",
+        rateLimited: lateRetryResult.status === "rate_limited",
+        retryInSeconds: Number(lateRetryResult.retryInSeconds || 0),
+        lateDataRetryDate,
+        processedDays: 1,
+        remainingDays: Math.max(0, Math.floor(
+          (new Date(`${today}T00:00:00Z`).getTime() - new Date(`${range.startDate}T00:00:00Z`).getTime()) / 86400000
+        ) + 1),
+        results: [{ ...lateRetryResult, lateDataRetry: true }],
+      };
+    }
+  }
+
+  // Keep the combined workload at no more than two calendar dates.
+  const regularSync = await syncGarminHealthHistoryBatch(
+    admin, userId, range.startDate, today, true, false,
+    lateDataRetryDate ? 1 : 2, "health_auto", true, assertLock
   );
+  return lateDataRetryDate
+    ? {
+        ...regularSync,
+        processedDays: Number(regularSync.processedDays || 0) + 1,
+        lateDataRetryDate,
+        results: [{ ...lateRetryResult, lateDataRetry: true }, ...(regularSync.results || [])],
+      }
+    : regularSync;
 }
 
 async function syncGarminActivitiesAutomaticBatch(
