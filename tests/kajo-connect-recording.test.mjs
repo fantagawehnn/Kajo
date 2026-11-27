@@ -41,7 +41,7 @@ test('saving an activity preserves a meaningful final partial lap without duplic
     assert.match(partial, /if \(mEngine\.isRecording\(\)\) \{\s*mEngine\.addLap\(\);/);
     const finish = method(activity, 'finishRecording', 'nextDisplayPage');
     assert.match(finish, /captureFinalPartialLap\(Activity\.getActivityInfo\(\)\)/);
-    assert.match(finish, /else \{\s*mFinalLaps\.add\(liveLap\);/);
+    assert.match(finish, /else \{\s*finalLaps\.add\(liveLap\);/);
 });
 
 test('failed Garmin stop keeps the recording and timer active for a retry', () => {
