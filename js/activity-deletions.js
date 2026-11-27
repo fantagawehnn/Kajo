@@ -4,7 +4,7 @@ export const ACTIVITY_DELETION_OUTBOX_KEY = 'activityDeletionOutbox';
 
 function parseDate(value) {
     if (typeof value !== 'string' || !value.trim()) return null;
-    const match = value.match(/^\\d{4}-\\d{2}-\\d{2}/);
+    const match = value.match(/^\d{4}-\d{2}-\d{2}/);
     if (match) return match[0];
     const parsed = new Date(value);
     return Number.isFinite(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : null;
@@ -41,11 +41,11 @@ export function getActivityDeletionGarminId(activity) {
             ? String(activity.id).slice('garmin-'.length)
             : null);
     const id = String(value ?? '').replace(/^garmin-/, '');
-    return /^\\d+$/.test(id) ? id : null;
+    return /^\d+$/.test(id) ? id : null;
 }
 
 export function buildActivityDeletionTombstone(activity, today) {
-    if (typeof today !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(today)) {
+    if (typeof today !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
         throw new Error('today muss ein gültiges Datum im Format YYYY-MM-DD sein.');
     }
     const recordId = getActivityDeletionRecordId(activity);
@@ -67,7 +67,7 @@ function readOutbox() {
         if (!Array.isArray(parsed)) return [];
         return parsed.filter(row => row && typeof row.record_id === 'string'
             && typeof row.activity_date === 'string'
-            && /^\\d{4}-\\d{2}-\\d{2}$/.test(row.activity_date));
+            && /^\d{4}-\d{2}-\d{2}$/.test(row.activity_date));
     } catch {
         throw new Error('Die lokale Löschwarteschlange ist beschädigt. Bitte nicht erneut synchronisieren, bevor sie geprüft wurde.');
     }
