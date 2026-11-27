@@ -32,6 +32,7 @@ jobs:
         run: |
           node --check js/storage.js
           node --check js/cloud-activities.js
+          node --check js/activity-deletions.js
           node --check js/cloud-sync.js
           node --check js/user-storage.js
           node --check js/local-db.js
@@ -103,6 +104,9 @@ jobs:
 
       - name: Run async activation race tests
         run: node --experimental-default-type=module --test tests/async-activation-race.test.mjs
+
+      - name: Run activity deletion tombstone tests
+        run: node --experimental-default-type=module --test tests/activity-deletions.test.mjs tests/cloud-activities-tombstone.test.mjs
 
       - name: Run split cloud activity storage tests
         run: node --experimental-default-type=module --test tests/cloud-activities.test.mjs
