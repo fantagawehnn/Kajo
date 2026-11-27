@@ -621,9 +621,9 @@ export function renderHomeTrainingWeek() {
         const isPlanned = !isCompleted && dayPlanned.length > 0;
         const sport = dayItems[0]?.type || dayPlanned[0]?.type || null;
         const dayButton = document.createElement('div');
-        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '') + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-rest');
+        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '') + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-unknown');
         dayButton.setAttribute('role','group');
-        dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (isCompleted ? 'Training absolviert' : isPlanned ? 'Training geplant' : 'Ruhetag oder keine Einheit dokumentiert'));
+        dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (isCompleted ? 'Training absolviert' : isPlanned ? 'Training geplant' : 'Keine Einheit dokumentiert'));
         const selectDay = () => window.selectDashboardDate?.(date, null);
         const totalLabel = document.createElement('span');
         totalLabel.className = 'kajo-week-day-total';
@@ -634,7 +634,7 @@ export function renderHomeTrainingWeek() {
                 : '—';
         const track = document.createElement('button');
         track.type = 'button';
-        track.className = 'kajo-week-bar-track' + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-rest');
+        track.className = 'kajo-week-bar-track' + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-unknown');
         track.style.setProperty('--week-ring-color', sport ? colorFor(sport) : 'var(--kajo-border)');
         track.style.setProperty('--week-ring-progress', isCompleted ? '100%' : isPlanned ? '22%' : '0%');
         track.setAttribute('aria-label', dayNames[index] + ' öffnen');
