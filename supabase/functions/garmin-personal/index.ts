@@ -227,6 +227,7 @@ async function syncGarminHealthDay(
   const rateLimited = results.some((item) => item.status === "rate_limited");
   const retryInSeconds = Number(results.find((item) => item.status === "rate_limited")?.retryInSeconds || 0);
   if (!failed) {
+    assertLock();
     const { error } = await admin.from("garmin_connections").update({
       last_health_sync_at: new Date().toISOString(),
     }).eq("user_id", userId);
