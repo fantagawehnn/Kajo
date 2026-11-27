@@ -3726,6 +3726,22 @@ async function syncGarminTodayOnOpen(userId) {
     const syncActivationSequence = activationSequence;
     const inFlightKey = runKey + ':' + syncActivationSequence;
     const isCurrentSync = () => activeAppUserId === userId && appUserReady && activationSequence === syncActivationSequence;
+    let cloudActivityLoadAttempted = false;
+    const loadCloudActivitiesOnce = async () => {
+        if (cloudActivityLoadAttempted) return null;
+        cloudActivityLoadAttempted = true;
+        try {
+            const cloudActivities = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
+            if (!isCurrentSync()) return null;
+            if (cloudActivities.added > 0 || cloudActivities.merged > 0) {
+                void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
+            }
+            return cloudActivities;
+        } catch (cloudLoadError) {
+            console.warn('KAJO: Bereits gespeicherte Garmin-Cloud-Aktivitäten konnten nicht geladen werden:', cloudLoadError);
+            return null;
+        }
+    };
     if (garminDailySyncCompleted.has(runKey) || garminDailySyncInFlight.has(inFlightKey)) return;
     garminDailySyncInFlight.add(inFlightKey);
 
@@ -3761,6 +3777,9 @@ async function syncGarminTodayOnOpen(userId) {
         if (!isCurrentSync()) return;
         if (connection.connection?.status !== 'connected') {
             try { setUserLocalSetting('garmin_connected', 'false'); } catch (_) {}
+            // Cloud-Daten sind unabhängig von einer aktiven Garmin-Verbindung
+            // verfügbar und sollen auch auf diesem Gerät geladen werden.
+            await loadCloudActivitiesOnce();
             return;
         }
         try { setUserLocalSetting('garmin_connected', 'true'); } catch (_) {}
@@ -3784,6 +3803,8 @@ async function syncGarminTodayOnOpen(userId) {
                 continue;
             }
             if (response.busy === true) {
+                await loadCloudActivitiesOnce();
+                if (!isCurrentSync()) return;
                 setGarminSyncIndicator('current', 'Verbunden');
                 setGarminSyncResult('Auf einem anderen Gerät läuft bereits ein Garmin-Abgleich. Kajo versucht es anschließend erneut.', 'info');
                 setTimeout(() => {
@@ -3822,11 +3843,8 @@ async function syncGarminTodayOnOpen(userId) {
                 console.warn('KAJO: Nachgelieferte Garmin-Gesundheitsdaten konnten lokal noch nicht übernommen werden:', lateHealthError);
             }
         }
-        const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
+        await loadCloudActivitiesOnce();
         if (!isCurrentSync()) return;
-        if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
-            void backfillGarminAnalysisOnOpen(userId, syncActivationSequence);
-        }
 
         // Rohtelemetrie wird nicht mehr automatisch beim App-Start synchronisiert.
         // Vollständige Messreihen werden erst beim Öffnen der jeweiligen Aktivität geladen.
@@ -3901,6 +3919,10 @@ async function syncGarminTodayOnOpen(userId) {
     } catch (error) {
         console.warn('KAJO: Automatischer Garmin-Tagesabgleich fehlgeschlagen:', error);
         if (isCurrentSync()) {
+            // Bereits synchronisierte Cloud-Aktivitäten bleiben auch dann
+            // verfügbar, wenn der Live-Abruf von Garmin fehlschlägt.
+            await loadCloudActivitiesOnce();
+            if (!isCurrentSync()) return;
             setGarminSyncResult('Automatischer Tagesabgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler'), 'error');
             setGarminSyncIndicator('current', 'Verbunden');
         }
