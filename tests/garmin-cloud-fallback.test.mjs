@@ -29,5 +29,5 @@ test('cloud activity loading is guarded so one app-open sync cannot load it repe
 
 test('new cloud activities still trigger analysis backfill after activation checks', () => {
     assert.match(sync, /if \(cloudActivities\.added > 0 \|\| cloudActivities\.merged > 0\) \{\s*void backfillGarminAnalysisOnOpen\(userId, syncActivationSequence\);/);
-    assert.match(sync, /if \(!isCurrentSync\(\)\) return;\s*if \(cloudActivities\.added/);
+    assert.match(sync, /if \(!isCurrentSync\(\)\) return null;\s*if \(cloudActivities\.added/);
 });
