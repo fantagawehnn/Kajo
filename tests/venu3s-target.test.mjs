@@ -246,7 +246,7 @@ test("live training field settings offer the supported 2 and 4 field layouts", (
   assert.match(trainingFieldsView, /extends WatchUi\.Menu2/);
   assert.match(trainingFieldsView, /new WatchUi\.MenuItem\("Feld 1 konfigurieren"/);
   assert.match(trainingFieldsView, /"heartRateZone"/);
-  assert.match(trainingFieldsView, /"Schlagfrequenz"/);
+  assert.match(trainingFieldsView, /"Kadenz"/);
   assert.match(trainingFieldsView, /"Gesamtdistanz"/);
   assert.match(trainingFieldsView, /"Pace"/);
   assert.match(intervalHintsView, /extends WatchUi\.CheckboxMenu/);
