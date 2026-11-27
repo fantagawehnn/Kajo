@@ -64,37 +64,25 @@ test('failed FIT save stops UI timers but preserves engine session for another s
     assert.match(engine, /var saved = mSession\.save\(\);[\s\S]*?if \(saved\) \{\s*mSession = null;/);
 });
 
-test('activity primary and secondary buttons are handled by the reliable onKey event', () => {
-    const onKey = method(delegate, 'onKey', 'onSwipe');
-    assert.match(onKey, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
-    assert.match(onKey, /mView\.handlePrimaryButton\(\)/);
-    assert.match(onKey, /key == WatchUi\.KEY_ESC \|\| key == WatchUi\.KEY_LAP/);
-    assert.match(onKey, /mView\.handleBackOrLapButton\(\)/);
-    assert.match(onKey, /mView\.handlePausedShortPrimary\(\)/);
-    assert.match(onKey, /mView\.handlePausedLongPrimary\(\)/);
-    assert.match(onKey, /mView\.handlePausedShortSecondary\(\)/);
-    assert.match(onKey, /mView\.handlePausedLongSecondary\(\)/);
+test('activity navigation uses Garmin device-independent behavior events', () => {
+    assert.match(delegate, /extends WatchUi\.BehaviorDelegate/);
+    const select = method(delegate, 'onSelect', 'onBack');
+    assert.match(select, /return false/);
+    const back = method(delegate, 'onBack', 'onMenu');
+    assert.match(back, /mView\.handleBackOrLapButton\(\)/);
+    const menu = method(delegate, 'onMenu', 'onNextPage');
+    assert.match(menu, /mView\.handlePausedLongSecondary\(\)/);
+    const key = method(delegate, 'onKey', 'onTap');
+    assert.match(key, /WatchUi\.KEY_ENTER/);
+    assert.match(key, /WatchUi\.KEY_ESC/);
+    assert.match(key, /mView\.handlePrimaryButton\(\)/);
 });
 
-test('press and release callbacks do not consume the key before onKey runs', () => {
-    const pressed = method(delegate, 'onKeyPressed', 'onKeyReleased');
-    const released = method(delegate, 'onKeyReleased', 'onKey');
-    assert.match(pressed, /mUpperPressStartedAt = System\.getTimer\(\)/);
-    assert.match(pressed, /mLowerPressStartedAt = System\.getTimer\(\)/);
-    assert.match(pressed, /return false/);
-    assert.match(released, /return false/);
-    assert.doesNotMatch(released, /handlePaused|handlePrimaryButton|handleBackOrLapButton/);
-});
-
-test('long lower-button menu event starts discard confirmation while paused', () => {
-    const onKey = method(delegate, 'onKey', 'onSwipe');
-    assert.match(onKey, /key == WatchUi\.KEY_MENU/);
-    assert.match(onKey, /mView\.isPausedForSave\(\)\) \{\s*mView\.handlePausedLongSecondary\(\)/);
-});
-
-test('lap marker remains available through the lower-key fallback while recording', () => {
-    const onKey = method(delegate, 'onKey', 'onSwipe');
-    assert.match(onKey, /mView\.handleBackOrLapButton\(\)/);
+test('lap marker remains available through back behavior and raw-key fallback', () => {
+    const back = method(delegate, 'onBack', 'onMenu');
+    const key = method(delegate, 'onKey', 'onTap');
+    assert.match(back, /mView\.handleBackOrLapButton\(\)/);
+    assert.match(key, /mView\.handleBackOrLapButton\(\)/);
     const backOrLap = method(activity, 'handleBackOrLapButton', 'handleLapButton');
     assert.match(backOrLap, /handleLapButton\(\)/);
     const lap = method(activity, 'handleLapButton', 'handleTap');
