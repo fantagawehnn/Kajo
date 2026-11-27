@@ -9455,7 +9455,3 @@ body.kajo-modal-open { overflow: hidden !important; }
 #view-dashboard .kajo-home .kajo-ring-card+.kajo-ring-card{
   border-left:0!important;
 }
-#view-dashboard .kajo-health-circle,
-#view-dashboard .kajo-ring{
-  border:initial;
-}
