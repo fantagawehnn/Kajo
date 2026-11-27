@@ -738,13 +738,23 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             getUserLocalSetting('garminActivityCloudSeenAtById')
         );
         const locallyAvailableGarminIds = new Set();
-        for (const activity of state.rawActivities) {
+        let removedDeletedActivities = 0;
+        state.rawActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
             const sourceId = activity?.sourceRefs?.garminActivityId ??
                 activity?.garminData?.activityId ??
                 (String(activity?.id ?? '').startsWith('garmin-')
                     ? String(activity.id).slice('garmin-'.length)
                     : null);
+            if (sourceId != null && deletedGarminIds.has(String(sourceId))) {
+                removedDeletedActivities++;
+                return false;
+            }
             if (sourceId != null && String(sourceId)) locallyAvailableGarminIds.add(String(sourceId));
+            return true;
+        });
+        if (removedDeletedActivities) {
+            saveDataToLocalStorage();
+            console.info('KAJO: lokal vorhandene, kontoübergreifend gelöschte Garmin-Aktivitäten entfernt:', removedDeletedActivities);
         }
         // A cloud tombstone always wins over stale Garmin metadata. Deleted
         // activities are never downloaded again to this device.
@@ -806,7 +816,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
             initEngine();
         }
 
-        const latestUpdatedAt = activeMetadata.map(row => row?.updated_at)
+        const latestUpdatedAt = metadata.map(row => row?.updated_at)
             .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
             .sort()
             .at(-1);
@@ -2869,9 +2879,25 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             return { ok: false, empty: true, version: cloud.version, conflicts: [] };
         }
 
-        const localData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
-        // activityIds ist abgeleitetes Cloud-Metadatum und wird für jeden
-        // Snapshot-Vergleich einheitlich aus den lokalen Aktivitäten ergänzt.
+        const tombstonedActivityIds = new Set(
+            (Array.isArray(cloudActivities) ? cloudActivities : [])
+                .filter(row => row?.deleted_at && row?.record_id != null)
+                .map(row => String(row.record_id))
+        );
+        const withoutTombstonedActivities = snapshot => {
+            if (!snapshot || !Array.isArray(snapshot.activities) || !tombstonedActivityIds.size) return snapshot;
+            return {
+                ...snapshot,
+                activities: snapshot.activities.filter(activity => {
+                    const id = activity?.id ?? activity?.activityId
+                        ?? activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
+                    return id == null || !tombstonedActivityIds.has(String(id));
+                })
+            };
+        };
+        const localData = withoutTombstonedActivities(JSON.parse(JSON.stringify(getUserDataSnapshot())));
+        const mergeBaseline = withoutTombstonedActivities(baselineSnapshot);
+        // A deletion tombstone wins over stale local and baseline copies.
         const local = withCloudActivityIds(
             localData,
             getCloudActivityIds(userId, Array.isArray(localData.activities) ? localData.activities : [])
@@ -2895,7 +2921,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 return compact;
             })
         };
-        const merged = mergeCloudSnapshots(baselineSnapshot, local, expandedCloud);
+        const merged = mergeCloudSnapshots(mergeBaseline, local, expandedCloud);
         if (merged.conflicts.length) {
             const localActivitiesById = new Map(
                 (Array.isArray(local.activities) ? local.activities : []).map(activity => {
