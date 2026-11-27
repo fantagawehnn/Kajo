@@ -19,7 +19,7 @@
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=176">
+    <link rel="stylesheet" href="css/styles.css?v=177">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -426,6 +426,9 @@
 
 <div id="view-analyses" class="hidden space-y-5 kajo-analysis-view">
  <div id="analysis-subpage-overview" class="kajo-analysis-overview" aria-label="Analyseübersicht">
+  <header class="kajo-analysis-page-heading">
+   <div><p class="kajo-analysis-eyebrow">PERFORMANCE CENTER</p><h1>Analyse</h1><p>Trainingsbelastung, Regeneration und sportliche Entwicklung im Überblick</p></div>
+  </header>
   <section class="kajo-analysis-circles" aria-label="Vier Performance-Dimensionen">
    <button type="button" class="kajo-analysis-circle-item" onclick="switchTab('analysis-load')" aria-label="Load öffnen">
     <span class="kajo-analysis-hero-ring" id="overview-load-ring" data-domain="load"><span><strong id="analysis-overview-load-value">—</strong><small id="analysis-overview-load-unit">ATL</small></span></span><strong>Load</strong>
@@ -443,7 +446,7 @@
   <div id="analysis-overview-content" aria-label="Trainingsentwicklung und Zeitraumübersicht">
    <section class="kajo-analysis-overview-panel kajo-analysis-primary-panel" aria-labelledby="analysis-overview-trend-title">
     <div class="kajo-analysis-section-heading kajo-analysis-trend-heading">
-     <div><h2 id="analysis-overview-trend-title">Entwicklung</h2><p class="kajo-analysis-chart-note">Vergleich der wichtigsten Leistungs- und Belastungswerte</p></div>
+     <div><h2 id="analysis-overview-trend-title">Entwicklung</h2><p class="kajo-analysis-chart-note">Relativer Verlauf (Index 100 = jeweilige Ausgangsbasis); absolute Messwerte bleiben in den Detailansichten erhalten.</p></div>
      <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div>
     </div>
     <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery und Fitness"></canvas></div>
@@ -474,6 +477,12 @@
      </div>
      <p id="analysis-overview-activity-note" class="kajo-analysis-chart-note"></p>
     </div>
+   </section>
+   <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-intensity-distribution-title">
+    <div class="kajo-analysis-section-heading"><div><h2 id="analysis-intensity-distribution-title">Intensitätsverteilung</h2><p class="kajo-analysis-chart-note">Trainingszeit in den hinterlegten Herzfrequenzzonen</p></div></div>
+    <div class="kajo-analysis-intensity-wrap"><canvas id="analysis-overview-intensity-chart" aria-label="Trainingszeit in Herzfrequenzzonen"></canvas></div>
+    <div id="analysis-overview-intensity-summary" class="kajo-analysis-intensity-summary"></div>
+    <p id="analysis-overview-intensity-note" class="kajo-analysis-chart-note"></p>
    </section>
    <section class="kajo-analysis-overview-panel kajo-analysis-observations-panel" aria-labelledby="analysis-trend-observations-title">
     <div class="kajo-analysis-section-heading"><div><h2 id="analysis-trend-observations-title">Was fällt auf?</h2><p class="kajo-analysis-chart-note">Die wichtigsten Veränderungen im Vergleich zur Vorwoche</p></div></div>
@@ -516,12 +525,7 @@
       <div class="kajo-analysis-section-heading"><div><h2 id="analysis-trend-observations-detail-title">Weitere Trendwerte</h2><p class="kajo-analysis-chart-note">Vollständiger Vergleich der letzten sieben Tage mit den sieben Tagen davor</p></div></div>
       <div id="analysis-trend-observations-more" aria-live="polite"></div>
      </section>
-     <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-intensity-distribution-title">
-      <div class="kajo-analysis-section-heading"><div><h2 id="analysis-intensity-distribution-title">Intensitätsverteilung</h2><p class="kajo-analysis-chart-note">Trainingszeit in den hinterlegten Herzfrequenzzonen</p></div></div>
-      <div class="kajo-analysis-intensity-wrap"><canvas id="analysis-overview-intensity-chart" aria-label="Trainingszeit in Herzfrequenzzonen"></canvas></div>
-      <div id="analysis-overview-intensity-summary" class="kajo-analysis-intensity-summary"></div>
-      <p id="analysis-overview-intensity-note" class="kajo-analysis-chart-note"></p>
-     </section>
+
      <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-period-extra-title">
       <div class="kajo-analysis-section-heading"><div><h2 id="analysis-period-extra-title">Weitere Zeitraumdaten</h2></div></div>
       <div id="analysis-period-summary-extra" class="kajo-insight-grid" aria-live="polite"></div>
