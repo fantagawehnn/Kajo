@@ -111,7 +111,7 @@ Garmin-Form wird als eigener relativer Prozentwert behandelt und nicht mit TSB g
 
 ACWR ist nur ein ergänzender Verhältnisindikator und keine eigenständige Verletzungsprognose:
 - unter 0,8: akute Last liegt unter dem chronischen Niveau
-- 0,8–1,3: akute und chronische Last liegen relativ nahe beieinander
+- 0,8–1,3: akute und chronische Last liegen relativ nahe beieinander (neutraler Vergleichsbereich, keine Sicherheitszone)
 - über 1,3–1,5: erhöhter kurzfristiger Lastanstieg
 - über 1,5: deutlicher kurzfristiger Lastanstieg
 
