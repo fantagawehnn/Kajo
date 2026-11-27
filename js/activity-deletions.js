@@ -37,6 +37,9 @@ export function getActivityDeletionGarminId(activity) {
     const value = activity?.sourceRefs?.garminActivityId
         ?? activity?.garminData?.activityId
         ?? activity?.garminTelemetry?.activityId
+        ?? ((activity?.source === 'garmin' || (Array.isArray(activity?.sources) && activity.sources.includes('garmin')))
+            ? activity?.id
+            : null)
         ?? (String(activity?.id ?? '').startsWith('garmin-')
             ? String(activity.id).slice('garmin-'.length)
             : null);
