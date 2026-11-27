@@ -587,6 +587,9 @@ export function renderHomeTrainingWeek() {
     if (range) range.textContent = dateLabel(dates[0]) + ' – ' + dateLabel(dates[6]);
     const catalog = getSportsCatalog();
     const source = Array.isArray(state.rawActivities) ? state.rawActivities : [];
+    const plannedSource = Array.isArray(state.plannedActivities)
+        ? state.plannedActivities.filter(item => item && dates.includes(String(item.date || '').slice(0,10)))
+        : [];
     const seen = new Set();
     const activities = source.filter(item => {
         if (!item || !dates.includes(String(item.date || '').slice(0,10))) return false;
@@ -595,56 +598,50 @@ export function renderHomeTrainingWeek() {
             item.date, item.type, item.startTime || item.startTimeLocal || '', item.name || '', item.duration ?? ''
         ].join('|');
         if (seen.has(key)) return false;
-        seen.add(key); return true;
+        seen.add(key);
+        return true;
     });
-    const validDuration = item => item.duration !== null && item.duration !== undefined && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) >= 0;
-    const durationsComplete = activities.every(validDuration);
+    const validDuration = item => item?.duration !== null && item?.duration !== undefined
+        && item.duration !== '' && Number.isFinite(Number(item.duration)) && Number(item.duration) >= 0;
     const minutes = item => validDuration(item) ? Number(item.duration) : null;
-    const dayTotals = dates.map(date => activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item)).reduce((sum,item)=>sum+minutes(item),0));
-    const maxMinutes = Math.max(60, ...dayTotals);
-    const sportsUsed = [...new Set(activities.filter(validDuration).map(item => item.type || 'Other'))];
+    const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
     const colorFor = type => catalog[type]?.color || catalog.Other?.color || '#64748b';
     const labelFor = type => catalog[type]?.label || type || 'Weitere';
-    const dayNames = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    const sportsUsed = [...new Set([
+        ...activities.map(item => item.type || 'Other'),
+        ...plannedSource.map(item => item.type || 'Other')
+    ])];
     root.replaceChildren();
     dates.forEach((date,index) => {
-        const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date && validDuration(item));
-        const total = dayTotals[index];
+        const dayItems = activities.filter(item => String(item.date || '').slice(0,10) === date);
+        const dayPlanned = plannedSource.filter(item => String(item.date || '').slice(0,10) === date);
+        const completedMinutes = dayItems.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+        const plannedMinutesForDay = dayPlanned.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+        const isCompleted = dayItems.length > 0;
+        const isPlanned = !isCompleted && dayPlanned.length > 0;
+        const sport = dayItems[0]?.type || dayPlanned[0]?.type || null;
         const dayButton = document.createElement('div');
-        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '') + (dayItems.length ? ' is-completed' : dayPlanned.length ? ' is-planned' : ' is-rest');
+        dayButton.className = 'kajo-week-day' + (date === localTodayKey() ? ' is-today' : '') + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-rest');
         dayButton.setAttribute('role','group');
-        dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (dayItems.length ? Math.round(total) + ' Minuten Training' : 'keine Einheit mit erfasster Dauer'));
-        const selectDay = sport => window.selectDashboardDate?.(date, sport || null);
-        const totalLabel = document.createElement('button');
-        totalLabel.type = 'button';
+        dayButton.setAttribute('aria-label', dayNames[index] + ', ' + date + ', ' + (isCompleted ? 'Training absolviert' : isPlanned ? 'Training geplant' : 'Ruhetag oder keine Einheit dokumentiert'));
+        const selectDay = () => window.selectDashboardDate?.(date, null);
+        const totalLabel = document.createElement('span');
         totalLabel.className = 'kajo-week-day-total';
-        totalLabel.textContent = dayItems.length ? (total / 60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h' : '—';
-        totalLabel.addEventListener('click', () => selectDay(null));
-        const track = document.createElement('div'); track.className = 'kajo-week-bar-track';
-        track.setAttribute('role','button'); track.setAttribute('tabindex','0');
+        totalLabel.textContent = isCompleted && completedMinutes > 0
+            ? (completedMinutes/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h'
+            : isPlanned && plannedMinutesForDay > 0
+                ? (plannedMinutesForDay/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h'
+                : '—';
+        const track = document.createElement('button');
+        track.type = 'button';
+        track.className = 'kajo-week-bar-track' + (isCompleted ? ' is-completed' : isPlanned ? ' is-planned' : ' is-rest');
+        track.style.setProperty('--week-ring-color', sport ? colorFor(sport) : 'var(--kajo-border)');
+        track.style.setProperty('--week-ring-progress', isCompleted ? '100%' : isPlanned ? '22%' : '0%');
         track.setAttribute('aria-label', dayNames[index] + ' öffnen');
-        track.addEventListener('click', () => selectDay(null));
-        track.addEventListener('keydown', event => { if(event.target === track && (event.key === 'Enter' || event.key === ' ')){event.preventDefault();selectDay(null);} });
-        const stack = document.createElement('span'); stack.className = 'kajo-week-bar-stack';
-        const grouped = new Map();
-        dayItems.forEach(item => grouped.set(item.type || 'Other',(grouped.get(item.type || 'Other') || 0)+minutes(item)));
-        [...grouped.entries()].forEach(([type,value]) => {
-            const segment = document.createElement('button');
-            segment.type = 'button';
-            segment.className = 'kajo-week-segment';
-            segment.style.height = (value / maxMinutes * 100) + '%';
-            segment.style.backgroundColor = colorFor(type);
-            segment.title = labelFor(type) + ': ' + (value/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' h';
-            segment.setAttribute('aria-label', labelFor(type) + ' am ' + date + ': Tagesdetails öffnen');
-            segment.addEventListener('click', event => {
-                event.stopPropagation();
-                selectDay(type);
-            });
-            stack.appendChild(segment);
-        });
-        track.appendChild(stack);
-        const dayLabel = document.createElement('button'); dayLabel.type = 'button'; dayLabel.className = 'kajo-week-day-label'; dayLabel.textContent = dayNames[index];
-        dayLabel.addEventListener('click', () => selectDay(null));
+        track.addEventListener('click', selectDay);
+        const dayLabel = document.createElement('span');
+        dayLabel.className = 'kajo-week-day-label';
+        dayLabel.textContent = dayNames[index];
         dayButton.append(totalLabel,track,dayLabel);
         root.appendChild(dayButton);
     });
@@ -658,14 +655,25 @@ export function renderHomeTrainingWeek() {
         });
         legend.classList.toggle('hidden', sportsUsed.length === 0);
     }
-    const totalMinutes = activities.reduce((sum,item)=>sum+(validDuration(item)?minutes(item):0),0);
+    const totalMinutes = activities.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+    const plannedMinutes = plannedSource.reduce((sum,item) => sum + (minutes(item) ?? 0),0);
+    const progressRoot = document.getElementById('home-week-progress');
+    const progressFill = document.getElementById('home-week-progress-fill');
+    const progressLabel = document.getElementById('home-week-progress-label');
+    if (progressRoot) {
+        progressRoot.hidden = plannedMinutes <= 0;
+        progressRoot.classList.toggle('hidden', plannedMinutes <= 0);
+    }
+    if (progressFill && plannedMinutes > 0) progressFill.style.width = Math.min(100,totalMinutes/plannedMinutes*100) + '%';
+    if (progressLabel && plannedMinutes > 0) progressLabel.textContent =
+        (totalMinutes/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' von ' +
+        (plannedMinutes/60).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' geplanten Stunden';
     if (summary) {
-        const total = (totalMinutes/60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h';
-        summary.textContent = 'Wochenumfang: ' + total + (durationsComplete ? '' : ' · eingeschränkt: Dauer bei mindestens einer Einheit nicht erfasst');
-        if (!activities.length) summary.textContent = 'Wochenumfang: — · Keine absolvierten Einheiten mit gültiger Dauer erfasst';
+        summary.textContent = activities.length
+            ? 'Absolviert: ' + (totalMinutes/60).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' h'
+            : 'Noch keine absolvierten Einheiten in dieser Woche';
     }
 }
-
 let selectedDashboardDate = localTodayKey();
 let dashboardDateWasManuallyChanged = false;
 
