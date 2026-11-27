@@ -68,6 +68,7 @@ jobs:
           node --check js/planned-strength.js
           node --check js/activity-groups.js
           node --check js/dashboard.js
+          node --check js/metric-zones.js
           node --check js/readiness.js
           node --check js/charts.js
           node --check js/garmin-metric-access.js
@@ -167,6 +168,9 @@ jobs:
 
       - name: Run readiness and training recommendation tests
         run: node --experimental-default-type=module --test tests/readiness.test.mjs
+
+      - name: Run five-zone metric classification tests
+        run: node --experimental-default-type=module --test tests/metric-zones.test.mjs
 
       - name: Run period summary tests
         run: node --experimental-default-type=module --test tests/period-summary.test.mjs
