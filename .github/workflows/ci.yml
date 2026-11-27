@@ -85,6 +85,7 @@ jobs:
           node --check js/garmin-export-import.js
           node --check supabase/functions/garmin-personal/activity-date.js
           node --check supabase/functions/garmin-personal/activity-scan-plan.js
+          node --check supabase/functions/garmin-personal/automatic-sync-plan.js
           node --check supabase/functions/garmin-personal/fit-download-retry.js
 
       - name: Run automatic strength database tests
@@ -184,6 +185,9 @@ jobs:
 
       - name: Run Garmin activity rescan planning tests
         run: node --experimental-default-type=module --test tests/garmin-activity-scan-plan.test.mjs
+
+      - name: Run automatic Garmin sync cursor tests
+        run: node --experimental-default-type=module --test tests/garmin-automatic-sync-plan.test.mjs tests/garmin-automatic-sync-wiring.test.mjs
 
       - name: Run Garmin FIT download retry tests
         run: node --experimental-default-type=module --test tests/garmin-fit-download-retry.test.mjs

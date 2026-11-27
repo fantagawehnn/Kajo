@@ -393,20 +393,25 @@ async function callGarminFunction(body) {
     const readInvocationError = async error => {
         const response = error?.context;
         let detail = '';
+        let code = '';
         if (response && typeof response.clone === 'function') {
             try {
                 const payload = await response.clone().json();
                 detail = payload?.error || payload?.message || '';
+                code = payload?.code || '';
             } catch (_) {
                 try { detail = (await response.clone().text()).slice(0, 500); } catch (_) {}
             }
         }
-        return { detail, status: Number(response?.status || error?.status || 0) };
+        return { detail, code, status: Number(response?.status || error?.status || 0) };
     };
 
     let result = await supabase.functions.invoke('garmin-personal', { body });
     if (result.error) {
         const firstError = await readInvocationError(result.error);
+        if (body?.action === 'sync-today' && firstError.status === 409 && firstError.code === 'garmin_sync_already_running') {
+            return { ok: true, busy: true };
+        }
         const isSessionError = firstError.status === 401
             || /Sitzung ungültig|Anmeldung erforderlich|Invalid JWT|invalid claim/i.test(firstError.detail);
         if (isSessionError) {
@@ -3449,6 +3454,7 @@ async function performCloudInitialTransfer() {
 
 let garminDailySyncInFlight = new Set();
 let garminDailySyncCompleted = new Set();
+let garminDailySyncContinuationCounts = new Map();
 
 function getLocalCalendarDate(date = new Date()) {
     const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -3711,6 +3717,16 @@ async function syncGarminTodayOnOpen(userId) {
                 if (!isCurrentSync()) return;
                 continue;
             }
+            if (response.busy === true) {
+                setGarminSyncIndicator('current', 'Verbunden');
+                setGarminSyncResult('Auf einem anderen Gerät läuft bereits ein Garmin-Abgleich. Kajo versucht es anschließend erneut.', 'info');
+                setTimeout(() => {
+                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
+                        void syncGarminTodayOnOpen(userId);
+                    }
+                }, 15000);
+                return;
+            }
             health = response.sync?.healthSync || null;
             const activity = response.sync?.activitySync || null;
             const activityLimited = activity?.rateLimited || activity?.status === 'rate_limited';
@@ -3732,6 +3748,14 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (!isCurrentSync()) return;
+        const lateDataRetryDate = health?.lateDataRetryDate;
+        if (typeof lateDataRetryDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(lateDataRetryDate)) {
+            try {
+                await loadGarminHealthRecordsIntoCheckins(lateDataRetryDate, lateDataRetryDate);
+            } catch (lateHealthError) {
+                console.warn('KAJO: Nachgelieferte Garmin-Gesundheitsdaten konnten lokal noch nicht übernommen werden:', lateHealthError);
+            }
+        }
         const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
         if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
@@ -3756,7 +3780,7 @@ async function syncGarminTodayOnOpen(userId) {
 
         if (!isCurrentSync()) return;
         const activitySync = response.sync?.activitySync || null;
-        const activityFailed = activitySync?.status === 'error' || activitySync?.status === 'rate_limited';
+        const activityFailed = activitySync?.status === 'error' || activitySync?.status === 'rate_limited' || activitySync?.status === 'partial';
         const healthFailed = health?.status === 'partial' || health?.status === 'error'
             || health?.status === 'rate_limited' || Number(health?.failed || 0) > 0;
         const partial = activityFailed || healthFailed
@@ -3779,6 +3803,26 @@ async function syncGarminTodayOnOpen(userId) {
             garminDailySyncCompleted.add(runKey);
             console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
             const activitySync = response.sync?.activitySync || {};
+            const activityRemaining = Number(activitySync.progress?.remainingDays || 0);
+            const healthRemaining = Number(health?.remainingDays || 0);
+            if (activityRemaining > 0 || healthRemaining > 0
+                || activitySync.status === 'in_progress' || health?.status === 'in_progress') {
+                const continuationCount = Number(garminDailySyncContinuationCounts.get(runKey) || 0) + 1;
+                const continueSoon = continuationCount < 4;
+                garminDailySyncContinuationCounts.set(runKey, continueSoon ? continuationCount : 0);
+                const retryDelay = continueSoon ? 3000 : 15 * 60 * 1000;
+                setGarminSyncResult(continueSoon
+                    ? 'Garmin-Daten werden schrittweise nachgeladen …'
+                    : 'Der Garmin-Verlauf wird später automatisch weiter synchronisiert.', 'syncing');
+                setGarminSyncIndicator('syncing', 'Synchronisierung läuft');
+                setTimeout(() => {
+                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
+                        void syncGarminTodayOnOpen(userId);
+                    }
+                }, retryDelay);
+                return;
+            }
+            garminDailySyncContinuationCounts.delete(runKey);
             const fetched = Number(activitySync.fetched || 0);
             const stored = Number(activitySync.stored || 0);
             setGarminSyncResult(stored > 0

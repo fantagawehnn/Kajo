@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveGarminActivityDate } from "./activity-date.js";
 import { buildGarminActivityRescanPlan } from "./activity-scan-plan.js";
+import { buildAutomaticGarminSyncRange, LATE_ARRIVING_HEALTH_TYPES, selectLateArrivingHealthRetryDate } from "./automatic-sync-plan.js";
 import { fetchWithTransientRetry } from "./fit-download-retry.js";
 
 const corsHeaders = {
@@ -90,7 +91,9 @@ async function syncGarminHealthDay(
   userId: string,
   date: string,
   forceRefresh = false,
+  assertLock: () => void = () => {},
 ) {
+  assertLock();
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
     .select("encrypted_api_key, encryption_iv")
@@ -124,6 +127,8 @@ async function syncGarminHealthDay(
   const results: Array<Record<string, unknown>> = [];
   for (const endpoint of endpoints) {
     try {
+      assertLock();
+      assertLock();
       // Do not spend Garmin API calls on endpoints already imported successfully.
       // The no_data marker is deliberately retried so data that becomes available
       // later (including cycle data) can still be picked up.
@@ -166,12 +171,17 @@ async function syncGarminHealthDay(
       let payload: unknown;
       try {
         payload = await garminGet(token, endpoint.path);
+        assertLock();
+        assertLock();
       } catch (firstError) {
         const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
         if (!/HTTP 520/.test(firstMessage)) throw firstError;
         // Cloudflare 520 is often transient; make one delayed retry.
         await new Promise((resolve) => setTimeout(resolve, 2000));
+        assertLock();
         payload = await garminGet(token, endpoint.path);
+        assertLock();
+        assertLock();
       }
       const hasData = !isEmptyGarminPayload(payload);
       const now = new Date().toISOString();
@@ -217,6 +227,7 @@ async function syncGarminHealthDay(
   const rateLimited = results.some((item) => item.status === "rate_limited");
   const retryInSeconds = Number(results.find((item) => item.status === "rate_limited")?.retryInSeconds || 0);
   if (!failed) {
+    assertLock();
     const { error } = await admin.from("garmin_connections").update({
       last_health_sync_at: new Date().toISOString(),
     }).eq("user_id", userId);
@@ -248,9 +259,12 @@ async function syncGarminHealthHistoryBatch(
   endDate: string,
   rescanCompleted = false,
   forceRefresh = false,
-  assertSyncLock: () => void = () => {},
+  maxDaysPerInvocation = 1,
+  syncType = "health_history",
+  preserveCursor = false,
+  assertLock: () => void = () => {},
 ) {
-  const syncType = "health_history";
+  assertLock();
   let { data: state, error: stateError } = await admin
     .from("garmin_sync_state")
     .select("cursor_date,status,last_success_at,range_start_date,range_end_date")
@@ -276,7 +290,7 @@ async function syncGarminHealthHistoryBatch(
       .single();
     if (createError) throw createError;
     state = created;
-  } else if (state.range_start_date !== startDate || state.range_end_date !== endDate) {
+  } else if (!preserveCursor && (state.range_start_date !== startDate || state.range_end_date !== endDate)) {
     const { data: resetState, error: resetError } = await admin.from("garmin_sync_state")
       .update({
         cursor_date: startDate,
@@ -296,13 +310,15 @@ async function syncGarminHealthHistoryBatch(
   }
 
   let cursorDate = state.cursor_date ?? startDate;
+  if (preserveCursor && state?.cursor_date) cursorDate = startDate;
   if (state.status === "completed" && cursorDate > endDate) {
     if (!rescanCompleted) {
       return { status: "complete", startDate, endDate, cursorDate, processedDays: 0, remainingDays: 0,
         message: "Der ausgewählte Garmin-Zeitraum ist bereits vollständig importiert." };
     }
-    // Manual range syncs may rescan completed dates: successful health records
-    // are skipped per endpoint, while missing/no-data records can be retried.
+    // A completed automatic cursor can be rewound for a one-day overlap.
+    // Successful health records are skipped per endpoint; missing/no-data
+    // records can be retried when Garmin makes them available later.
     const { data: restarted, error: restartError } = await admin.from("garmin_sync_state")
       .update({
         cursor_date: startDate,
@@ -328,17 +344,18 @@ async function syncGarminHealthHistoryBatch(
   }).eq("user_id", userId).eq("sync_type", syncType);
   if (runningError) throw runningError;
 
-  // Process one calendar day per Edge Function invocation to reduce the
-  // amount of sequential Garmin endpoint work within the worker time limit.
-  // The browser continues from the persisted cursor in the next request.
-  const batchLimit = 1;
+  // Process a bounded number of calendar days per invocation. The automatic
+  // app-open sync may process today plus its one-day overlap; manual history
+  // imports keep the smaller one-day batch and continue from the persisted cursor.
+  const batchLimit = Math.max(1, Math.min(2, Math.floor(maxDaysPerInvocation) || 1));
   const processed: Array<Record<string, unknown>> = [];
   let failed = false;
   let rateLimited = false;
   let retryInSeconds = 0;
   for (let index = 0; index < batchLimit && cursorDate <= endDate; index++) {
-    assertSyncLock();
-    const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh);
+    assertLock();
+    const dayResult = await syncGarminHealthDay(admin, userId, cursorDate, forceRefresh, assertLock);
+    assertLock();
     processed.push(dayResult);
     if (dayResult.failed !== 0) {
       failed = true;
@@ -372,6 +389,182 @@ async function syncGarminHealthHistoryBatch(
     retryInSeconds,
     startDate, endDate, nextDate: cursorDate, processedDays: processed.length,
     remainingDays, batchLimit, results: processed,
+  };
+}
+
+
+async function syncGarminHealthAutomaticBatch(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  today: string,
+  assertLock: () => void = () => {},
+) {
+  assertLock();
+  const { data: state, error } = await admin
+    .from("garmin_sync_state")
+    .select("cursor_date,status")
+    .eq("user_id", userId)
+    .eq("sync_type", "health_auto")
+    .maybeSingle();
+  if (error) throw error;
+  let initialCursorDate: string | null = null;
+  let initialStatus: string | null = null;
+  if (!state) {
+    // Reuse the legacy shared cursor only as a one-time migration seed. From
+    // this point onward automatic sync writes exclusively to health_auto.
+    const { data: legacyState, error: legacyError } = await admin
+      .from("garmin_sync_state")
+      .select("cursor_date,status")
+      .eq("user_id", userId)
+      .eq("sync_type", "health_history")
+      .maybeSingle();
+    if (legacyError) throw legacyError;
+    if (legacyState?.cursor_date) {
+      initialCursorDate = legacyState.cursor_date;
+      initialStatus = legacyState.status;
+    } else {
+      const { data: latestRecord, error: latestError } = await admin
+        .from("garmin_health_records")
+        .select("record_date")
+        .eq("user_id", userId)
+        .lte("record_date", today)
+        .order("record_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestError) throw latestError;
+      if (latestRecord?.record_date) {
+        initialCursorDate = addUtcDays(latestRecord.record_date, 1);
+        initialStatus = "completed";
+      }
+    }
+  }
+
+  const range = buildAutomaticGarminSyncRange({
+    today,
+    cursorDate: state?.cursor_date ?? initialCursorDate,
+    status: state?.status ?? initialStatus,
+    maxDays: 2,
+    initialOverlapDays: 1,
+  });
+
+  // Retry one historical no-data date per invocation. This is deliberately
+  // outside the cursor batch: it must never rewind or advance health_auto.
+  const retryCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data: retryMarkers, error: retryMarkersError } = await admin
+    .from("garmin_health_records")
+    .select("record_date,data_type,payload,fetched_at")
+    .eq("user_id", userId)
+    .eq("record_key", "daily")
+    .in("data_type", LATE_ARRIVING_HEALTH_TYPES)
+    .eq("payload->>no_data", "true")
+    .lt("fetched_at", retryCutoff)
+    .lt("record_date", range.startDate)
+    .order("fetched_at", { ascending: true })
+    .limit(200);
+  if (retryMarkersError) throw retryMarkersError;
+  const lateDataRetryDate = selectLateArrivingHealthRetryDate(retryMarkers, {
+    beforeDate: range.startDate,
+  });
+
+  let lateRetryResult: Record<string, unknown> | null = null;
+  if (lateDataRetryDate) {
+    assertLock();
+    lateRetryResult = await syncGarminHealthDay(admin, userId, lateDataRetryDate, false, assertLock);
+    assertLock();
+    if (Number(lateRetryResult.failed || 0) > 0) {
+      return {
+        status: lateRetryResult.status === "rate_limited" ? "rate_limited" : "partial",
+        rateLimited: lateRetryResult.status === "rate_limited",
+        retryInSeconds: Number(lateRetryResult.retryInSeconds || 0),
+        lateDataRetryDate,
+        processedDays: 1,
+        remainingDays: Math.max(0, Math.floor(
+          (new Date(`${today}T00:00:00Z`).getTime() - new Date(`${range.startDate}T00:00:00Z`).getTime()) / 86400000
+        ) + 1),
+        results: [{ ...lateRetryResult, lateDataRetry: true }],
+      };
+    }
+  }
+
+  // Keep the combined workload at no more than two calendar dates.
+  const regularSync = await syncGarminHealthHistoryBatch(
+    admin, userId, range.startDate, today, true, false,
+    lateDataRetryDate ? 1 : 2, "health_auto", true, assertLock
+  );
+  return lateDataRetryDate
+    ? {
+        ...regularSync,
+        processedDays: Number(regularSync.processedDays || 0) + 1,
+        lateDataRetryDate,
+        results: [{ ...lateRetryResult, lateDataRetry: true }, ...(regularSync.results || [])],
+      }
+    : regularSync;
+}
+
+async function syncGarminActivitiesAutomaticBatch(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  today: string,
+  assertLock: () => void = () => {},
+) {
+  assertLock();
+  const { data: state, error } = await admin
+    .from("garmin_sync_state")
+    .select("cursor_date,status")
+    .eq("user_id", userId)
+    .eq("sync_type", "activity_auto")
+    .maybeSingle();
+  if (error) throw error;
+  let initialCursorDate: string | null = null;
+  if (!state) {
+    const { data: latestCoverage, error: coverageError } = await admin
+      .from("garmin_activity_sync_days")
+      .select("sync_date")
+      .eq("user_id", userId)
+      .lte("sync_date", today)
+      .order("sync_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (coverageError) throw coverageError;
+    if (latestCoverage?.sync_date) initialCursorDate = addUtcDays(latestCoverage.sync_date, 1);
+  }
+
+  const range = buildAutomaticGarminSyncRange({
+    today,
+    cursorDate: state?.cursor_date ?? initialCursorDate,
+    status: state?.status ?? (initialCursorDate ? "completed" : null),
+    maxDays: 14,
+    initialOverlapDays: 1,
+  });
+  const result = await syncGarminActivitiesForUser(
+    admin, userId, range.startDate, range.endDate, true, range.endDate, 2, assertLock
+  );
+  if (result.status === "skipped") return result;
+
+  assertLock();
+  const now = new Date().toISOString();
+  const { error: stateError } = await admin.from("garmin_sync_state").upsert({
+    user_id: userId,
+    sync_type: "activity_auto",
+    cursor_date: range.nextCursorDate,
+    range_start_date: range.startDate,
+    range_end_date: today,
+    status: range.isComplete ? "completed" : "running",
+    last_success_at: now,
+    last_error: null,
+    updated_at: now,
+  }, { onConflict: "user_id,sync_type" });
+  if (stateError) throw stateError;
+
+  return {
+    ...result,
+    progress: {
+      nextDate: range.nextCursorDate,
+      processedThrough: range.endDate,
+      remainingDays: range.isComplete
+        ? 0
+        : Math.floor((new Date(`${today}T00:00:00Z`).getTime() - new Date(`${range.nextCursorDate}T00:00:00Z`).getTime()) / 86400000) + 1,
+    },
   };
 }
 
@@ -766,8 +959,10 @@ async function syncGarminActivitiesForUser(
   endDate: string,
   onlyMissingDays = false,
   rescanAnchorDate = endDate,
+  scanWindowDaysInput = 14,
   assertSyncLock: () => void = () => {},
 ) {
+  assertSyncLock();
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
     .select("encrypted_api_key, encryption_iv")
@@ -780,7 +975,7 @@ async function syncGarminActivitiesForUser(
   const token = await garminToken(apiKey);
   const pageSize = 100;
   const maxPages = 20;
-  const scanWindowDays = 14;
+  const scanWindowDays = Math.max(1, Math.min(14, Math.floor(scanWindowDaysInput) || 14));
   let syncRanges: Array<{ startDate: string; endDate: string }> = [{ startDate, endDate }];
   let skippedDays = 0;
 
@@ -840,6 +1035,7 @@ async function syncGarminActivitiesForUser(
         endDate: range.endDate,
       });
       const payload = await garminGet(token, `/activitylist-service/activities/search/activities?${params.toString()}`);
+      assertSyncLock();
       const pageRows = activityRows(payload);
       rows.push(...pageRows);
       if (pageRows.length < pageSize) break;
@@ -1338,7 +1534,7 @@ Deno.serve(async (req) => {
       for (const connection of connections ?? []) {
         try {
           const result = await withGarminSyncLock(admin, connection.user_id, (assertLock) =>
-            syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10), false, undefined, assertLock)
+            syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10), false, undefined, 14, assertLock)
           );
           results.push(result === null ? { userId: connection.user_id, status: "skipped", reason: "sync_already_running" } : result);
         } catch (syncError) {
@@ -1392,9 +1588,7 @@ Deno.serve(async (req) => {
       const sync = await withGarminSyncLock(admin, userId, async (assertLock) => {
         const captureSyncError = (error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
-          // A lost lease must stop the whole operation; continuing without the
-          // account lock could allow overlapping writes from another invocation.
-          if (message.includes("Synchronisierungssperre")) throw error;
+          if (/Synchronisierungssperre/i.test(message)) throw error;
           const rateLimited = /HTTP\s*429|rate.?limit/i.test(message);
           return {
             status: rateLimited ? "rate_limited" : "error",
@@ -1404,27 +1598,24 @@ Deno.serve(async (req) => {
           };
         };
 
-        // Activity and health imports are independent: a temporary Garmin
-        // activity-list failure must not prevent the daily health endpoints.
+        // Automatic activities and health use separate persisted cursors.
+        // Each subsystem is allowed to fail without suppressing the other.
         let activitySync;
         try {
-          activitySync = await syncGarminActivitiesForUser(admin, userId, date, date, false, date, assertLock);
+          activitySync = await syncGarminActivitiesAutomaticBatch(admin, userId, date, assertLock);
         } catch (error) {
           activitySync = captureSyncError(error);
         }
 
-        // Daily values are queried again because they can change during the day.
-        // Empty responses never overwrite existing user data.
         let healthSync;
         try {
-          healthSync = await syncGarminHealthHistoryBatch(admin, userId, date, date, true, false, assertLock);
+          healthSync = await syncGarminHealthAutomaticBatch(admin, userId, date, assertLock);
         } catch (error) {
           healthSync = captureSyncError(error);
         }
 
-        const partial = activitySync?.status === "error" || activitySync?.status === "rate_limited"
-          || healthSync?.status === "error" || healthSync?.status === "rate_limited"
-          || healthSync?.status === "partial";
+        const partial = ["error", "rate_limited", "partial"].includes(String(activitySync?.status || ""))
+          || ["error", "rate_limited", "partial"].includes(String(healthSync?.status || ""));
         return { date, activitySync, healthSync, partial };
       });
       if (sync === null) return json(409, { ok: false, code: "garmin_sync_already_running", error: "Für dieses Garmin-Konto läuft bereits eine Synchronisierung. Bitte warte, bis sie abgeschlossen ist." });
@@ -1447,10 +1638,10 @@ Deno.serve(async (req) => {
       const sync = await withGarminSyncLock(admin, userId, async (assertLock) => {
         const activitySync = body.includeActivities === false
           ? null
-          : await syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays, activityRescanEndDate, assertLock);
+          : await syncGarminActivitiesForUser(admin, userId, startDate, endDate, onlyMissingDays, activityRescanEndDate, 14, assertLock);
         // Activity coverage and health-history cursor are independent. Do not restart
         // a completed health range just because activity sync is incremental.
-        const healthSync = await syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, false, false, assertLock);
+        const healthSync = await syncGarminHealthHistoryBatch(admin, userId, startDate, endDate, false, false, 1, "health_history", false, assertLock);
         return { startDate, endDate, activitySync, healthSync };
       });
       if (sync === null) return json(409, { ok: false, code: "garmin_sync_already_running", error: "Für dieses Garmin-Konto läuft bereits eine Synchronisierung. Bitte warte, bis sie abgeschlossen ist." });
@@ -1459,7 +1650,7 @@ Deno.serve(async (req) => {
 
     if (action === "sync-health-history-batch") {
       const result = await withGarminSyncLock(admin, userId, (assertLock) =>
-        syncGarminHealthHistoryBatch(admin, userId, "2020-01-01", new Date().toISOString().slice(0, 10), false, false, assertLock)
+        syncGarminHealthHistoryBatch(admin, userId, "2020-01-01", new Date().toISOString().slice(0, 10), false, false, 1, "health_history", false, assertLock)
       );
       if (result === null) return json(409, { ok: false, code: "garmin_sync_already_running", error: "Für dieses Garmin-Konto läuft bereits eine Synchronisierung. Bitte warte, bis sie abgeschlossen ist." });
       return json(200, { ok: true, sync: result });
@@ -1469,7 +1660,7 @@ Deno.serve(async (req) => {
       const endDate = new Date().toISOString().slice(0, 10);
       const startDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
       const result = await withGarminSyncLock(admin, userId, (assertLock) =>
-        syncGarminActivitiesForUser(admin, userId, startDate, endDate, false, endDate, assertLock)
+        syncGarminActivitiesForUser(admin, userId, startDate, endDate, false, endDate, 14, assertLock)
       );
       if (result === null) return json(409, { ok: false, code: "garmin_sync_already_running", error: "Für dieses Garmin-Konto läuft bereits eine Synchronisierung. Bitte warte, bis sie abgeschlossen ist." });
       return json(200, { ok: true, sync: result });
