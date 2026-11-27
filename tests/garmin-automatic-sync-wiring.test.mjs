@@ -58,4 +58,6 @@ test('the client automatically continues unfinished cursor batches and imports l
   assert.match(mainJs, /setTimeout\([\s\S]*?syncGarminTodayOnOpen\(userId\)/);
   assert.match(mainJs, /health\?\.lateDataRetryDate/);
   assert.match(mainJs, /loadGarminHealthRecordsIntoCheckins\(lateDataRetryDate, lateDataRetryDate\)/);
+  assert.match(mainJs, /firstError\.status === 409 && firstError\.code === 'garmin_sync_already_running'/);
+  assert.match(mainJs, /response\.busy === true/);
 });
