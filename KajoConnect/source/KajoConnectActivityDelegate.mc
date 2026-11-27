@@ -1,68 +1,16 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// BehaviorDelegate maps the same user intent across touch and button devices.
-// The raw key handler remains as a fallback for simulator/device-specific keys.
-class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
+// Use InputDelegate directly: onKey receives the physical key codes without
+// BehaviorDelegate translating or consuming them first. Touch remains handled
+// separately by onTap/onSwipe.
+class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
 
     var mView as KajoConnectActivityView;
 
     function initialize(view as KajoConnectActivityView) {
-        BehaviorDelegate.initialize();
+        InputDelegate.initialize();
         mView = view;
-    }
-
-    // Keep selection in the low-level handlers so touch taps retain their
-    // coordinate-aware behavior and paused screens remain touch-inert.
-    function onSelect() as Lang.Boolean {
-        return false;
-    }
-
-    function onBack() as Lang.Boolean {
-        if (mView.isPausedForSave()) {
-            mView.handlePausedShortSecondary();
-        } else if (mView.isSavedForDetails()) {
-            mView.nextSavedDetailPage(-1);
-        } else {
-            mView.handleBackOrLapButton();
-        }
-        return true;
-    }
-
-    // On touch-first Garmin devices, the menu behavior is commonly produced
-    // by the lower-button long press. In the paused state it starts/continues
-    // the explicit discard confirmation.
-    function onMenu() as Lang.Boolean {
-        if (mView.isPausedForSave()) {
-            mView.handlePausedLongSecondary();
-        } else if (mView.isSavedForDetails()) {
-            mView.nextSavedDetailPage(1);
-        } else {
-            mView.nextDisplayPage(1);
-        }
-        return true;
-    }
-
-    function onNextPage() as Lang.Boolean {
-        if (mView.isSavedForDetails()) {
-            if (!mView.scrollSavedLaps(1)) {
-                mView.nextSavedDetailPage(1);
-            }
-        } else {
-            mView.nextDisplayPage(1);
-        }
-        return true;
-    }
-
-    function onPreviousPage() as Lang.Boolean {
-        if (mView.isSavedForDetails()) {
-            if (!mView.scrollSavedLaps(-1)) {
-                mView.nextSavedDetailPage(-1);
-            }
-        } else {
-            mView.nextDisplayPage(-1);
-        }
-        return true;
     }
 
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
@@ -90,6 +38,7 @@ class KajoConnectActivityDelegate extends WatchUi.BehaviorDelegate {
 
         if (key == WatchUi.KEY_MENU) {
             if (mView.isPausedForSave()) {
+                // Long-press menu behavior is kept as the secondary long action.
                 mView.handlePausedLongSecondary();
             } else if (mView.isSavedForDetails()) {
                 mView.nextSavedDetailPage(1);
