@@ -3955,11 +3955,11 @@ html.theme-light #race-detail-modal h2{color:#172033!important}
   --kajo-status-attention:#F2B84B;
   --kajo-status-critical:#F16B6B;
   --kajo-status-info:#6DA8F7;
-  --kajo-status-zone-1:#D94B4B;
-  --kajo-status-zone-2:#E58B3A;
-  --kajo-status-zone-3:#E5C34B;
-  --kajo-status-zone-4:#8CCB72;
-  --kajo-status-zone-5:#2EAA70;
+  --kajo-status-zone-1:#8B5CF6;
+  --kajo-status-zone-2:#EF4444;
+  --kajo-status-zone-3:#F97316;
+  --kajo-status-zone-4:#EAB308;
+  --kajo-status-zone-5:#22C55E;
   --kajo-radius:14px;
   color-scheme:dark;
 }
@@ -3977,11 +3977,11 @@ html[data-theme="light"] {
   --kajo-status-attention:#9A6500;
   --kajo-status-critical:#C43D3D;
   --kajo-status-info:#2768B8;
-  --kajo-status-zone-1:#C93636;
-  --kajo-status-zone-2:#C96A16;
-  --kajo-status-zone-3:#B58A00;
-  --kajo-status-zone-4:#548D3A;
-  --kajo-status-zone-5:#087A4B;
+  --kajo-status-zone-1:#7C3AED;
+  --kajo-status-zone-2:#DC2626;
+  --kajo-status-zone-3:#EA580C;
+  --kajo-status-zone-4:#CA8A04;
+  --kajo-status-zone-5:#15803D;
   color-scheme:light;
 }
 html[data-theme="light"] body {
