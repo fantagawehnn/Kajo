@@ -50,7 +50,7 @@ class KajoConnectRecordingEngine {
 
     function onTimerEvent(eventType as ActivityRecording.TimerEventType,
         eventData as Lang.Dictionary) as Void {
-        if (eventType != ActivityRecording.TIMER_EVENT_LAP) {
+        if (eventType != ActivityRecording.TIMER_EVENT_LAP || eventData == null) {
             return;
         }
 
