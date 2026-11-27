@@ -19,7 +19,7 @@
     <script defer src="https://cdn.tailwindcss.com"></script>
     <script defer src="js/tailwind-config.js"></script>
     <!-- Eigene Styles (derzeit leer – das Design besteht komplett aus Tailwind-Klassen) -->
-    <link rel="stylesheet" href="css/styles.css?v=162">
+    <link rel="stylesheet" href="css/styles.css?v=163">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Chart.js CDN -->
@@ -1928,7 +1928,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=4"></script>
-    <script type="module" src="js/main.js?v=175"></script>
+    <script type="module" src="js/main.js?v=176"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
@@ -1945,7 +1945,7 @@
             }
           });
 
-          navigator.serviceWorker.register("./service-worker.js?v=22", { scope: "./" })
+          navigator.serviceWorker.register("./service-worker.js?v=23", { scope: "./" })
             .then(registration => registration.update())
             .catch(error => console.error("KAJO Service Worker konnte nicht registriert werden:", error));
         });
