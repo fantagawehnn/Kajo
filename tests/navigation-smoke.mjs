@@ -474,5 +474,5 @@ assert.ok(analysisOverview.includes("relativeMode ? row.formPct : row.tsb") && a
 
 assert.ok(html.includes('id="plan-kind"') && html.includes('value="rest">Ruhetag</option>'), 'manual training planning offers a dedicated rest-day type');
 assert.ok(html.includes('id="plan-duration-field"') && planning.includes("const isRestDay=document.getElementById('plan-kind')?.value==='rest'"), 'rest-day planning hides workout-specific fields and stores a separate day type');
-assert.ok(planning.includes('duration=isRestDay||isAssessment||durationRaw===\'\'?null') && planning.includes('targetTss=isRestDay||isAssessment||targetTssRaw===\'\'?null'), 'rest days carry no planned duration or target load');
+assert.ok(planning.includes('let duration = null;') && planning.includes('let targetTss = null;') && planning.includes('if (!isRestDay && !isAssessment)') && planning.includes('duration = parseOptionalPlanInteger') && planning.includes('targetTss = parseOptionalPlanInteger'), 'rest days carry no planned duration or target load');
 assert.ok(calendar.includes("activity.type==='RestDay'") && calendar.includes('Keine Trainingseinheit geplant'), 'calendar identifies planned rest days without presenting them as workouts');
