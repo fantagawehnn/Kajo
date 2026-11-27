@@ -57,9 +57,6 @@ export function classifyPersonalMetric(key, value, historyValues) {
   if (adverse > 2) {
     status = 'critical';
     label = key === 'hrv' ? 'HRV deutlich unter der persönlichen Basis' : 'Deutlich über der persönlichen Basis';
-  } else if (adverse > 1.5) {
-    status = 'critical';
-    label = key === 'hrv' ? 'HRV merklich unter der persönlichen Basis' : 'Merklich über der persönlichen Basis';
   } else if (adverse > 1) {
     status = 'attention';
     label = key === 'hrv' ? 'HRV unter dem üblichen Bereich' : 'Leicht über dem üblichen Bereich';
@@ -81,7 +78,7 @@ export function classifySleepDuration(value, historyValues) {
   const values = (Array.isArray(historyValues) ? historyValues : []).filter(valid).map(Number);
   if (!valid(value)) return { status: 'info', label: 'Keine Messung', baseline: null, observations: values.length };
   if (values.length < 7) {
-    return { status: 'info', label: 'Persönlicher Schlafbedarf noch nicht bestimmt', baseline: null, observations: values.length };
+    return { status: 'info', label: 'Persönliche Schlafreferenz noch nicht bestimmt', baseline: null, observations: values.length };
   }
   const baseline = median(values);
   const deficit = baseline - Number(value);
