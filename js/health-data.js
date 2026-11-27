@@ -6,7 +6,7 @@
 
 import { state } from './state.js';
 import { showChartPointReadout } from './chart-readout.js';
-import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { getGarminCheckinMetric, getGarminHrvMeasurementIdentity, getComparableGarminHrvValue } from './garmin-metric-access.js';
 
 const METRICS = [
   { key:'hrv', label:'Herzfrequenzvariabilität', short:'HRV', unit:'ms', group:'Regeneration', icon:'activity', color:'#38bdf8', decimals:0 },
@@ -49,7 +49,7 @@ function metricValue(row, key) {
   const raw = key === 'vo2max'
     ? getGarminCheckinMetric(row, 'vo2max')
     : key === 'hrv'
-      ? (row.garminHrv ?? (row.measurementSources?.hrv?.source === 'garmin' ? row.hrv : null))
+      ? getComparableGarminHrvValue(row)
       : row[garminKeys[key] || key];
   return valid(raw) ? Number(raw) : null;
 }
@@ -59,17 +59,22 @@ function median(values) {
   const middle = Math.floor(sorted.length/2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle-1]+sorted[middle])/2;
 }
-function personalBaseline(key, date) {
+export function getPersonalHealthBaseline(key, date, checkins = state.dailyCheckins) {
   const end = new Date(date + 'T12:00:00');
   if (!Number.isFinite(end.getTime())) return null;
   const start = new Date(end);
   start.setDate(start.getDate()-90);
   const from = dateKey(start);
-  const values = Object.entries(state.dailyCheckins || {})
-    .filter(([day]) => day < date && day >= from)
+  const currentIdentity = key === 'hrv' ? getGarminHrvMeasurementIdentity(checkins?.[date]) : null;
+  const values = Object.entries(checkins || {})
+    .filter(([day, row]) => day < date && day >= from
+      && (key !== 'hrv' || getGarminHrvMeasurementIdentity(row) === currentIdentity))
     .map(([,row]) => metricValue(row,key))
     .filter(valid);
   return values.length >= 5 ? median(values) : null;
+}
+function personalBaseline(key, date) {
+  return getPersonalHealthBaseline(key, date, state.dailyCheckins);
 }
 function rangeWindow() {
   const end = todayKey();

@@ -283,3 +283,31 @@ test('dashboard recommendation is short, actionable and does not repeat readines
     assert.doesNotMatch(recommendation.detail, /Readiness|HRV|Ruheherzfrequenz|Garmin-Load|ATL|CTL|TSB|Body Battery/);
     assert.ok(recommendation.detail.length < 260);
 });
+
+
+test('readiness converts supported seconds-based HRV to milliseconds before scoring', () => {
+    const secondsHistory = Object.fromEntries(Object.entries(history).map(([date, record]) => [
+        date,
+        { ...record, garminHrv: record.garminHrv / 1000,
+            measurementSources: { garminHrv: { source: 'garmin', metric: 'rmssd', unit: 's' } } }
+    ]));
+    const source = makeState({ dailyCheckins: {
+        ...secondsHistory,
+        [day]: { garminHrv: 0.075, garminSleepScore: 90,
+            measurementSources: { garminHrv: { source: 'garmin', metric: 'rmssd', unit: 's' } } }
+    }});
+    const result = calculateReadiness(day, source);
+    const hrv = result.objective.find(item => item.key === 'hrv');
+    assert.ok(hrv);
+    assert.equal(hrv.value, 75);
+    assert.equal(hrv.baseline, 60);
+});
+
+test('readiness excludes unsupported HRV units rather than treating them as milliseconds', () => {
+    const source = makeState({ dailyCheckins: {
+        [day]: { garminHrv: 75, garminSleepScore: 90,
+            measurementSources: { garminHrv: { source: 'garmin', metric: 'rmssd', unit: 'unknown-unit' } } }
+    }});
+    const result = calculateReadiness(day, source);
+    assert.equal(result.objective.some(item => item.key === 'hrv'), false);
+});

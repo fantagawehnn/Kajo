@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { getPersonalHealthBaseline } from '../js/health-data.js';
+function date(offset){const d=new Date('2026-01-13T12:00:00');d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
+test('HRV baseline compares only matching source, metric and unit',()=>{const r={};for(let i=1;i<=12;i++)r[date(-i)]={garminHrv:i<=6?50+i:100+i,measurementSources:{garminHrv:{source:'garmin',metric:i<=6?'rmssd':'sdnn',unit:'ms'}}};r[date(0)]={garminHrv:55,measurementSources:{garminHrv:{source:'garmin',metric:'rmssd',unit:'ms'}}};assert.equal(getPersonalHealthBaseline('hrv',date(0),r),53.5);});
+test('HRV baseline unavailable with fewer than five matching observations',()=>{const r={};for(let i=1;i<=6;i++)r[date(-i)]={garminHrv:100+i,measurementSources:{garminHrv:{source:'garmin',metric:'sdnn',unit:'ms'}}};r[date(0)]={garminHrv:55,measurementSources:{garminHrv:{source:'garmin',metric:'rmssd',unit:'ms'}}};assert.equal(getPersonalHealthBaseline('hrv',date(0),r),null);});
+test('non-HRV baselines keep their date-window behavior',()=>{const r={};for(let i=1;i<=5;i++)r[date(-i)]={garminRhr:48+i};r[date(0)]={garminRhr:50};assert.equal(getPersonalHealthBaseline('rhr',date(0),r),51);});
+test('HRV baseline converts supported seconds to milliseconds',()=>{const r={};for(let i=1;i<=5;i++)r[date(-i)]={garminHrv:.05+i*.001,measurementSources:{garminHrv:{source:'garmin',metric:'rmssd',unit:'s'}}};r[date(0)]={garminHrv:.06,measurementSources:{garminHrv:{source:'garmin',metric:'rmssd',unit:'s'}}};assert.ok(Math.abs(getPersonalHealthBaseline('hrv',date(0),r)-53)<1e-9);});

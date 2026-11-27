@@ -1,6 +1,6 @@
 # KAJO – Garmin-Datenbasis und KI-Coach: technischer Audit
 
-Stand: 13.11.2026  
+Stand: 27.11.2026  
 Verbindliche Codebasis: `fantagawehnn/Kajo`, Branch `v2`  
 Übernahme der Garmin-Datenqualitätsänderungen: PR [#4](https://github.com/fantagawehnn/Kajo/pull/4), Merge-Commit `228b9ef7c0b9eeaca939eca3c23593c1cb93797f`
 
@@ -68,6 +68,12 @@ Der Garmin-Import sucht HRV-Werte über Feldnamen wie `lastNightAvg`, `lastNight
 Manuelle HRV-Eingaben werden in `js/health.js` dagegen mit `source: manual`, `metric: unspecified` und `unit: ms` markiert. Die Garmin-Zuordnung ergänzt diese Provenienzmetadaten derzeit nicht entsprechend.
 
 Die Readiness-Berechnung in `js/dashboard.js` nutzt HRV-Werte aus den Check-ins für eine persönliche Vergleichsbasis. Solange die Metrikidentität nicht eindeutig ist, darf daraus keine methodisch gesicherte RMSSD-Baseline abgeleitet werden. Einzelne HRV-Werte dürfen zudem nicht allein eine Trainingsentscheidung auslösen.
+
+### Ergänzung: HRV-Vergleichbarkeit in den Frontend-Auswertungen
+
+Die Frontend-Auswertungen verwenden inzwischen eine gemeinsame HRV-Messidentität aus Quelle, Messmethode und Einheit. Gesundheitsverlauf, persönliche HRV-Baseline, Readiness und Analysekontexte vergleichen nur Werte mit derselben Identität. Unterstützte Sekundenwerte werden vor der Anzeige und Baseline-Berechnung in Millisekunden umgerechnet; nicht unterstützte Einheiten bleiben unberücksichtigt.
+
+**Einschränkung bleibt bestehen:** Der derzeit geprüfte Garmin-Importpfad kennzeichnet die konkrete HRV-Messmethode nicht eindeutig. Garmin-Werte ohne entsprechende Metadaten werden deshalb nur als `garmin:unspecified:ms` behandelt. Die Oberfläche kann in diesem Fall RMSSD und SDNN nicht nachträglich unterscheiden. Eine methodenspezifische Auswertung ist erst möglich, wenn die Datenquelle die Messmethode nachweislich liefert und der Import sie speichert. Diese Änderung ergänzt keine Importmetadaten und verändert keine gespeicherten Daten.
 
 ## 5. Aktueller Stand des KI-Coaches
 

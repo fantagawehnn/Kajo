@@ -223,6 +223,12 @@ jobs:
       - name: Run Garmin metric provenance tests
         run: node --experimental-default-type=module --test tests/garmin-metric-access.test.mjs
 
+      - name: Run comparable Garmin HRV series tests
+        run: node --experimental-default-type=module --test tests/garmin-hrv-comparability.test.mjs
+
+      - name: Run health metric baseline provenance tests
+        run: node --experimental-default-type=module --test tests/health-metric-baseline.test.mjs
+
       - name: Run performance data quality tests
         run: node --experimental-default-type=module --test tests/performance-data-quality.test.mjs
 

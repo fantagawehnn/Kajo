@@ -11,9 +11,9 @@ import { loadCheckinInputs } from './health.js';
 import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
-import { calculateReadiness, buildTrainingRecommendation } from './readiness.js?v=2';
+import { calculateReadiness, buildTrainingRecommendation } from './readiness.js?v=3';
 import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr } from './metric-zones.js?v=5';
-export { calculateReadiness } from './readiness.js';
+export { calculateReadiness } from './readiness.js?v=3';
 
 function getHomeActivityDisplayMode() {
     if (state.calendarDisplayMode !== 'sport' && state.calendarDisplayMode !== 'training') {
