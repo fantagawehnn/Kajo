@@ -774,6 +774,8 @@ export function renderSelectedDashboardDay() {
         homeNoteButton.hidden = !hasSavedCheckin;
         homeNoteButton.setAttribute('aria-hidden', String(!hasSavedCheckin));
     }
+    const checkinStartButton = document.querySelector('.kajo-selfmonitoring-notebook');
+    if (checkinStartButton) checkinStartButton.hidden = hasSavedCheckin;
     const noteButton = document.getElementById('dashboard-day-note');
     if (noteButton) {
         const hasNote = Boolean(String(state.dailyCheckins?.[selectedDashboardDate]?.note || '').trim());
