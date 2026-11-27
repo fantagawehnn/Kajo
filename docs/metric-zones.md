@@ -88,19 +88,13 @@ Der Index ist ein interner, gewichteter KAJO-Orientierungswert und kein validier
 
 ### TSB (CTL minus ATL)
 
-Für die App können folgende **Orientierungsbereiche** verwendet werden, wenn die zugrunde liegende Load-Methode über den Zeitraum gleich bleibt:
+KAJO zeigt TSB als CTL minus ATL, aber verwendet bewusst keine allgemeingültigen Ampelgrenzen. CTL, ATL und TSB übernehmen die Einheit und Skala der ausgewählten Load-Methode. Ein identischer Zahlenwert kann deshalb bei HF-Zonenindex und sRPE eine andere Bedeutung haben. TSB-Verläufe dürfen nur innerhalb derselben Load-Methode, Einheit und ausreichenden Datenabdeckung verglichen werden.
 
-- unter −30: stark negativer Saldo / hohe modellierte Ermüdung
-- −30 bis unter −10: erhöhte modellierte Ermüdung
-- −10 bis +5: ausgeglichener Bereich
-- über +5 bis +25: positiver Saldo / frischer Modellstatus
-- über +25: sehr positiver Saldo; Trainingskontext prüfen, da dies auch geringe aktuelle Belastung oder eine längere Entlastung abbilden kann
+Die zuvor erwogenen Orientierungsbereiche (unter −30, −30 bis −10, −10 bis +5, +5 bis +25 und über +25) sind keine universellen physiologischen Grenzwerte und werden in KAJO nicht als allgemeingültige Zonen verwendet.
 
-Diese Grenzen sind keine universellen physiologischen Grenzwerte. Sie dürfen nicht zwischen Garmin Training Load, Garmin-HF-Zonenindex und sRPE-Load übertragen werden.
+### Relativer Saldo (Prozent)
 
-### Garmin Form
-
-Garmin-Form wird als eigener relativer Prozentwert behandelt und nicht mit TSB gleichgesetzt. Operative Einordnung:
+KAJO kann aus CTL und ATL zusätzlich den relativen Saldo `(CTL − ATL) / CTL × 100` berechnen, sofern CTL größer als null ist. Das ist ein KAJO-abgeleiteter Modellwert und kein direkt übernommener Garmin-Herstellerwert. Er wird getrennt vom absoluten TSB dargestellt. Die Einordnung ist eine interne Orientierung und keine validierte Trainingsfreigabe:
 - unter −25 %: hohe modellierte Ermüdung
 - −25 bis unter −10 %: erhöhte modellierte Belastung
 - −10 bis +5 %: ausgeglichen
