@@ -9321,3 +9321,51 @@ body.kajo-modal-open { overflow: hidden !important; }
   .kajo-selfmonitoring-reminder-copy strong{font-size:.7rem}
   .kajo-selfmonitoring-reminder-copy small{font-size:.6rem}
 }
+
+
+/* KAJO V2 dashboard: consistent full-width treatment for all remaining sections. */
+.kajo-home{display:flex;flex-direction:column;gap:0}
+.kajo-home-status{width:100%;padding:3px 0 12px;gap:9px;border-bottom:1px solid var(--kajo-border,#263449)}
+.kajo-home-status h2{width:100%;text-align:left;font-size:.78rem;letter-spacing:.02em}
+.kajo-home .kajo-readiness-grid{gap:0}
+.kajo-home .kajo-ring-card+ .kajo-ring-card{border-left:1px solid var(--kajo-border,#263449)}
+.kajo-home .kajo-ring{width:clamp(88px,24vw,118px)}
+.kajo-home-section{padding:12px 0;border-bottom:1px solid var(--kajo-border,#263449)}
+.kajo-home-section-heading{margin-bottom:8px}
+.kajo-home-section-heading h2{font-size:.78rem;font-weight:700}
+.kajo-home-section-heading .kajo-home-meta{font-size:.59rem;letter-spacing:.04em}
+.kajo-home-daily-overview{padding-top:12px}
+.kajo-home-session-group{margin-top:7px}
+.kajo-home-subheading{margin-bottom:5px}
+.kajo-home .home-today-list{gap:0}
+.kajo-home .home-session-card{display:flex;align-items:center;width:100%;padding:9px 2px;border:0;border-bottom:1px solid color-mix(in srgb,var(--kajo-border,#263449) 72%,transparent);border-radius:0;background:transparent;box-shadow:none}
+.kajo-home .home-session-card:last-child{border-bottom:0}
+.kajo-home .home-session-card strong{font-size:.76rem}
+.kajo-home .home-session-card small{font-size:.62rem}
+.kajo-home #home-training-empty{padding:7px 0;margin:0;font-size:.68rem}
+.kajo-home-wearables .kajo-circle-grid{gap:0;margin:5px 0 0}
+.kajo-home-wearables .kajo-health-circle-item{padding:0 3px}
+.kajo-home-wearables .kajo-health-circle-item+.kajo-health-circle-item{border-left:1px solid var(--kajo-border,#263449)}
+.kajo-home .kajo-health-circle-item .kajo-health-circle{width:clamp(39px,10vw,50px);height:clamp(39px,10vw,50px);border-width:1.5px;background:transparent}
+.kajo-home .kajo-health-circle-item strong{font-size:.78rem}
+.kajo-home .kajo-health-circle-item>span{font-size:.59rem}
+.kajo-home-race{display:grid;grid-template-columns:1fr auto;grid-template-areas:"heading heading" "main days" "sport days" "date days" "location location";gap:3px 10px;padding:11px 0;margin:0;border:0;border-bottom:1px solid var(--kajo-border,#263449);border-radius:0;background:transparent}
+.kajo-home-race .kajo-home-section-heading{grid-area:heading}
+.kajo-home-race-main{grid-area:main;display:flex;align-items:center;gap:7px;min-width:0}
+.kajo-home-race-main strong{font-size:.78rem;overflow:hidden;text-overflow:ellipsis}
+.kajo-home-race-main>svg{width:15px;height:15px;color:#fbbf24;flex:0 0 auto}
+.kajo-home-race-type-label{grid-area:sport;font-size:.62rem;color:var(--kajo-muted,#94a3b8)}
+.kajo-home-race>#home-next-race-date{grid-area:date;font-size:.67rem}
+.kajo-home-race>#home-next-race-location{grid-area:location;font-size:.6rem}
+.kajo-home-race>#home-next-race-days{grid-area:days;align-self:center;justify-self:end;font-size:.68rem;font-weight:700;color:#7dd3fc}
+.kajo-home-week{padding-bottom:10px;border-bottom:0}
+.kajo-home-week .kajo-week-chart{margin-top:4px}
+.kajo-home-week .kajo-week-legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:7px}
+.kajo-home-week .kajo-week-total{margin-top:7px;font-size:.67rem;color:var(--kajo-muted,#94a3b8)}
+.kajo-home .kajo-empty{border:0;border-radius:0;background:transparent;color:var(--kajo-muted,#94a3b8)}
+@media(max-width:390px){
+ .kajo-home .kajo-ring{width:clamp(78px,22vw,94px)}
+ .kajo-home-wearables .kajo-health-circle-item>span{font-size:.54rem}
+ .kajo-home .kajo-health-circle-item .kajo-health-circle{width:36px;height:36px}
+ .kajo-home-race{grid-template-columns:minmax(0,1fr) auto}
+}
