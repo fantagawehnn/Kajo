@@ -682,12 +682,34 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
     if (existingLoad) return existingLoad;
 
     const loadPromise = (async () => {
-        const data = await loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
-            .select('garmin_activity_id, activity')
-            .eq('user_id', userId)
-            .order('start_time', { ascending: true })
-            .order('garmin_activity_id', { ascending: true })
-            .range(offset, offset + limit - 1));
+        const [data, deletionRows] = await Promise.all([
+            loadGarminActivityPages((offset, limit) => supabase.from('garmin_activities')
+                .select('garmin_activity_id, activity')
+                .eq('user_id', userId)
+                .order('start_time', { ascending: true })
+                .order('garmin_activity_id', { ascending: true })
+                .range(offset, offset + limit - 1)),
+            loadAccountActivityDeletionRows(userId)
+        ]);
+        const deletedGarminIds = new Set(deletionRows.map(row => String(row.garmin_activity_id || '')).filter(Boolean));
+        const removedDeletedActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
+            const rawId = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId
+                ?? activity?.garminTelemetry?.activityId
+                ?? ((activity?.source === 'garmin' || activity?.sources?.includes?.('garmin')) ? activity?.id : null);
+            const id = String(rawId ?? '').replace(/^garmin-/, '');
+            return /^\\d+$/.test(id) && deletedGarminIds.has(id);
+        }).length;
+        if (removedDeletedActivities) {
+            state.rawActivities = state.rawActivities.filter(activity => {
+                const rawId = activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId
+                    ?? activity?.garminTelemetry?.activityId
+                    ?? ((activity?.source === 'garmin' || activity?.sources?.includes?.('garmin')) ? activity?.id : null);
+                const id = String(rawId ?? '').replace(/^garmin-/, '');
+                return !(/^\\d+$/.test(id) && deletedGarminIds.has(id));
+            });
+            saveDataToLocalStorage();
+        }
+        const activeData = data.filter(row => !deletedGarminIds.has(String(row?.garmin_activity_id ?? '')));
 
         // Ein inzwischen abgemeldeter oder gewechselter Account darf keine
         // verspätet eintreffenden Vorschauen in den neuen lokalen Zustand schreiben.
@@ -696,7 +718,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         }
 
         let added = 0, merged = 0, ambiguous = 0;
-        for (const row of data) {
+        for (const row of activeData) {
             const candidate = garminCandidateFromPreview(row.activity);
             if (!candidate) continue;
             const matches = findGarminDuplicates(candidate);
@@ -2667,18 +2689,35 @@ function applyReconciledCloudSnapshot(snapshot) {
  * Basis plus Delta. Nur beim Erstabgleich oder fehlender Basis wird vollständig
  * gelesen. Der Cursor wird erst nach erfolgreicher Reconciliation gespeichert.
  */
+async function loadAccountActivityDeletionRows(userId) {
+    try {
+        return await fetchActivityDeletionTombstones(supabase, userId);
+    } catch (error) {
+        const code = String(error?.code || '');
+        const message = String(error?.message || '');
+        if (code === '42P01' || code === 'PGRST205' || /activity_deletions.*(not found|does not exist)/i.test(message)) {
+            return [];
+        }
+        throw error;
+    }
+}
+
 async function fetchCloudActivityState(userId, baselineSnapshot, syncState = {}) {
+    const deletionRows = await loadAccountActivityDeletionRows(userId);
     const savedCursor = syncState.cursor || getUserLocalSetting('cloudActivityCursor');
     if (savedCursor && baselineSnapshot && Array.isArray(baselineSnapshot.activities)) {
         const delta = await fetchCloudActivityDelta(supabase, userId, savedCursor);
         syncState.cursor = delta.cursor || savedCursor;
         syncState.incremental = true;
-        return mergeCloudActivityRows(userId, baselineSnapshot.activities, delta.rows);
+        const rows = mergeCloudActivityRows(userId, baselineSnapshot.activities, delta.rows);
+        Object.defineProperty(rows, 'deletionRows', { value: deletionRows, enumerable: false });
+        return rows;
     }
 
     const fullRows = await fetchCloudActivities(supabase, userId);
     syncState.cursor = fullRows.syncCursor || null;
     syncState.incremental = false;
+    Object.defineProperty(fullRows, 'deletionRows', { value: deletionRows, enumerable: false });
     return fullRows;
 }
 
@@ -2719,6 +2758,23 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
     );
     let cloud = initialCloudSnapshot;
     let cloudActivities = initialCloudActivities;
+    const deletionRows = Array.isArray(cloudActivities?.deletionRows) ? cloudActivities.deletionRows : [];
+    const deletedRecordIds = new Set(deletionRows.map(row => String(row?.record_id ?? '')).filter(Boolean));
+    const deletedGarminIds = new Set(deletionRows.map(row => String(row?.garmin_activity_id ?? '')).filter(Boolean));
+    const isDeletedActivity = activity => {
+        const rawId = activity?.id ?? activity?.activityId ?? activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId;
+        const recordId = rawId == null ? '' : String(rawId);
+        const garminId = String(activity?.sourceRefs?.garminActivityId ?? activity?.garminData?.activityId
+            ?? activity?.garminTelemetry?.activityId ?? '').replace(/^garmin-/, '');
+        return deletedRecordIds.has(recordId) || (garminId && deletedGarminIds.has(garminId))
+            || (recordId.startsWith('garmin-') && deletedGarminIds.has(recordId.slice(7)));
+    };
+    const safeBaselineSnapshot = baselineSnapshot && Array.isArray(baselineSnapshot.activities)
+        ? { ...baselineSnapshot, activities: baselineSnapshot.activities.filter(activity => !isDeletedActivity(activity)) }
+        : baselineSnapshot;
+    cloudActivities = (Array.isArray(cloudActivities) ? cloudActivities : []).filter(row =>
+        !deletedRecordIds.has(String(row?.record_id ?? '')) && !deletedGarminIds.has(String(row?.record_id ?? '').replace(/^garmin-/, ''))
+    );
 
     for (let attempt = 0; attempt < 4; attempt += 1) {
         ensureCurrent();
@@ -2730,20 +2786,27 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         }
 
         const localData = JSON.parse(JSON.stringify(getUserDataSnapshot()));
+        if (Array.isArray(localData.activities)) localData.activities = localData.activities.filter(activity => !isDeletedActivity(activity));
         // activityIds ist abgeleitetes Cloud-Metadatum und wird für jeden
         // Snapshot-Vergleich einheitlich aus den lokalen Aktivitäten ergänzt.
         const local = withCloudActivityIds(
             localData,
             getCloudActivityIds(userId, Array.isArray(localData.activities) ? localData.activities : [])
         );
-        const legacyActivities = (Array.isArray(cloud.data.activities) ? cloud.data.activities : []).map(activity => {
+        const safeCloudData = {
+            ...cloud.data,
+            activityIds: Array.isArray(cloud.data.activityIds) ? cloud.data.activityIds.filter(id =>
+                !deletedRecordIds.has(String(id)) && !deletedGarminIds.has(String(id).replace(/^garmin-/, ''))
+            ) : cloud.data.activityIds
+        };
+        const legacyActivities = (Array.isArray(safeCloudData.activities) ? safeCloudData.activities : []).filter(activity => !isDeletedActivity(activity)).map(activity => {
             if (!activity || typeof activity !== 'object') return activity;
             const compact = { ...activity };
             delete compact.garminTelemetry;
             return compact;
         });
         const expandedCloud = {
-            ...cloud.data,
+            ...safeCloudData,
             activities: mergeCloudActivities(
                 legacyActivities,
                 cloudActivities,
@@ -2755,7 +2818,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 return compact;
             })
         };
-        const merged = mergeCloudSnapshots(baselineSnapshot, local, expandedCloud);
+        const merged = mergeCloudSnapshots(safeBaselineSnapshot, local, expandedCloud);
         if (merged.conflicts.length) {
             const localActivitiesById = new Map(
                 (Array.isArray(local.activities) ? local.activities : []).map(activity => {
