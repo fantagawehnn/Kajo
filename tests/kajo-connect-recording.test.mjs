@@ -64,9 +64,32 @@ test('failed FIT save stops UI timers but preserves engine session for another s
     assert.match(engine, /var saved = mSession\.save\(\);[\s\S]*?if \(saved\) \{\s*mSession = null;/);
 });
 
-test('lap marker remains bound to a short lower-key press during recording', () => {
-    assert.match(delegate, /if \(key == WatchUi\.KEY_ESC\) \{/);
-    assert.match(delegate, /else if \(lowerHeld < mLongPressThreshold\) \{\s*mView\.handleLapButton\(\);/);
+test('activity primary and secondary buttons are handled by the reliable onKey event', () => {
+    const onKey = method(delegate, 'onKey', 'onKeyPressed');
+    assert.match(onKey, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
+    assert.match(onKey, /mView\.handlePrimaryButton\(\)/);
+    assert.match(onKey, /key == WatchUi\.KEY_ESC/);
+    assert.match(onKey, /mView\.handleBackOrLapButton\(\)/);
+    assert.match(onKey, /mView\.handlePausedShortPrimary\(\)/);
+    assert.match(onKey, /mView\.handlePausedLongPrimary\(\)/);
+    assert.match(onKey, /mView\.handlePausedShortSecondary\(\)/);
+    assert.match(onKey, /mView\.handlePausedLongSecondary\(\)/);
+});
+
+test('key release callbacks cannot repeat an action already handled by onKey', () => {
+    const onKey = method(delegate, 'onKey', 'onKeyPressed');
+    const released = method(delegate, 'onKeyReleased', 'onSwipe');
+    assert.match(onKey, /mUpperPressStartedAt = -1/);
+    assert.match(onKey, /mLowerPressStartedAt = -1/);
+    assert.match(released, /if \(mUpperPressStartedAt < 0\) \{ return true; \}/);
+    assert.match(released, /if \(mLowerPressStartedAt < 0\) \{ return true; \}/);
+});
+
+test('lap marker remains available through the lower-key fallback while recording', () => {
+    const onKey = method(delegate, 'onKey', 'onKeyPressed');
+    assert.match(onKey, /mView\.handleBackOrLapButton\(\)/);
+    const backOrLap = method(activity, 'handleBackOrLapButton', 'handleLapButton');
+    assert.match(backOrLap, /handleLapButton\(\)/);
     const lap = method(activity, 'handleLapButton', 'handleTap');
     assert.match(lap, /mStatus != "AUFZEICHNUNG"/);
     assert.match(lap, /completeLap\(showSummary, info\)/);
