@@ -21,7 +21,7 @@ const todayKey = () => {
 };
 const fmt = value => valid(value) ? Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—';
 const dateLabel = key => new Date(key + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', health: '#F2B84B' };
+const COLORS = { load: '#FB923C', recovery: '#2DD4BF', performance: '#38BDF8', health: '#FBBF24' };
 let trendChart = null;
 let formChart = null;
 let activityChart = null;
@@ -88,7 +88,7 @@ function buildSeries(dates) {
   return [
     { key: 'load', label: 'Load · Tagesload', unit: (state.dailyTimeline || []).slice(-1)[0]?.loadUnit || 'Load-Punkte', raw: load, color: COLORS.load },
     { key: 'recovery', label: 'Recovery · HRV', unit: 'ms', raw: recovery, color: COLORS.recovery },
-    { key: 'readiness', label: 'Recovery · Readiness', unit: '/ 100', raw: readiness, color: '#34D399' },
+    { key: 'readiness', label: 'Recovery · Readiness', unit: '/ 100', raw: readiness, color: '#2DD4BF' },
     { key: 'performance', label: 'Fitness · Garmin-VO₂max', unit: 'ml/kg/min', raw: performance, color: COLORS.performance }
   ];
 }
@@ -146,9 +146,9 @@ function renderFormTrendChart() {
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   const formLabel = garminMode ? 'Garmin-Form · relativ zu CTL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
   const datasets = [
-    { label: 'CTL · langfristig', data: ctl, borderColor: '#6DA8F7', backgroundColor: '#6DA8F7', borderWidth: 2.2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
-    { label: 'ATL · kurzfristig', data: atl, borderColor: '#D98AB5', backgroundColor: '#D98AB5', borderWidth: 2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
-    { label: formLabel, data: form, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2.2, tension: .18, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: garminMode ? 'y1' : 'y' }
+    { label: 'CTL · langfristig', data: ctl, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2.2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
+    { label: 'ATL · kurzfristig', data: atl, borderColor: '#8B9BB3', backgroundColor: '#8B9BB3', borderWidth: 2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
+    { label: formLabel, data: form, borderColor: '#FB923C', backgroundColor: '#FB923C', borderWidth: 2.2, tension: .18, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: garminMode ? 'y1' : 'y' }
   ];
   const formScales = {
     x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
