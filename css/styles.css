@@ -9524,3 +9524,52 @@ body.kajo-modal-open { overflow: hidden !important; }
   outline:2px solid var(--kajo-status-info,#63a9ee)!important;
   outline-offset:2px;
 }
+
+
+/* KAJO V2 – modern premium finish for the three dashboard readiness rings.
+   Preserve each ring's existing --ring-color; only refine its treatment. */
+#view-dashboard .kajo-home .kajo-ring{
+  position:relative!important;
+  isolation:isolate;
+  border:0!important;
+  padding:0;
+  background:
+    conic-gradient(
+      from -90deg,
+      color-mix(in srgb,var(--ring-color) 72%,white) 0%,
+      var(--ring-color) var(--ring-value,0%),
+      var(--kajo-ring-track,#263449) var(--ring-value,0%),
+      var(--kajo-ring-track,#263449) 100%
+    )!important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb,var(--ring-color) 24%,transparent),
+    0 5px 16px rgba(0,0,0,.18),
+    0 0 13px color-mix(in srgb,var(--ring-color) 13%,transparent)!important;
+  transition:background .35s ease,box-shadow .25s ease,transform .25s ease;
+}
+#view-dashboard .kajo-home .kajo-ring::before{
+  inset:7px!important;
+  border:1px solid color-mix(in srgb,var(--ring-color) 15%,var(--kajo-border,#263449))!important;
+  background:
+    radial-gradient(circle at 34% 25%,
+      color-mix(in srgb,var(--ring-color) 9%,var(--kajo-page,#05080e)),
+      var(--kajo-page,#05080e) 72%)!important;
+  box-shadow:inset 0 1px 5px rgba(255,255,255,.035),0 1px 4px rgba(0,0,0,.22);
+}
+#view-dashboard .kajo-home .kajo-ring>div{position:relative;z-index:1}
+#view-dashboard .kajo-home .kajo-ring strong{
+  letter-spacing:-.045em;
+  font-weight:800;
+  text-shadow:0 1px 8px color-mix(in srgb,var(--ring-color) 13%,transparent);
+}
+#view-dashboard .kajo-home .kajo-ring-card>p{
+  margin-top:2px;
+  font-weight:650;
+  letter-spacing:.015em;
+}
+#view-dashboard .kajo-home .kajo-ring-card:active .kajo-ring{
+  transform:scale(.975);
+}
+@media(max-width:640px){
+  #view-dashboard .kajo-home .kajo-ring::before{inset:6px!important}
+}
