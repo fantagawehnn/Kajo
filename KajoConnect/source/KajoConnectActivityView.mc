@@ -1042,7 +1042,10 @@ class KajoConnectActivityView extends WatchUi.View {
         // active-time display after every pause. Keep the local active-time counter
         // when Garmin does not currently provide timerTime.
         if (info.timerTime != null && info.timerTime > 0) {
-            mElapsedSeconds = Math.floor(info.timerTime / 1000).toNumber();
+            var garminActiveSeconds = Math.floor(info.timerTime / 1000).toNumber();
+            if (garminActiveSeconds > mElapsedSeconds) {
+                mElapsedSeconds = garminActiveSeconds;
+            }
         }
     }
 
