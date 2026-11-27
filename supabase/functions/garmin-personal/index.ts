@@ -842,6 +842,14 @@ async function syncGarminActivitiesForUser(
       }
     }
 
+    const { data: deletionRows, error: deletionError } = await admin
+      .from("activity_deletions")
+      .select("garmin_activity_id")
+      .eq("user_id", userId)
+      .not("garmin_activity_id", "is", null);
+    if (deletionError) throw deletionError;
+    const deletedGarminIds = new Set((deletionRows ?? []).map((row) => String(row.garmin_activity_id)));
+
     const activityCounts = new Map<string, number>();
     const records = rows.map((item) => {
       const activity = safeActivityPreview(item);
@@ -854,6 +862,7 @@ async function syncGarminActivitiesForUser(
       if (activityDate && activityDate >= range.startDate && activityDate <= range.endDate) {
         activityCounts.set(activityDate, (activityCounts.get(activityDate) ?? 0) + 1);
       }
+      if (deletedGarminIds.has(activityId)) return null;
       const duration = Number(activity.duration);
       const distance = Number(activity.distance);
       return {

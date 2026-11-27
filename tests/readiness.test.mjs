@@ -76,7 +76,7 @@ test('HRV baseline does not mix explicit Garmin provenance with legacy values', 
     assert.equal(result.objective.some(item => item.key === 'hrv'), false);
     assert.deepEqual(
         result.baselineRequirements.find(item => item.key === 'hrv'),
-        { key: 'hrv', label: 'HRV', observations: 0, required: 7 }
+        { key: 'hrv', label: 'HRV', observations: 0, required: 12 }
     );
 });
 

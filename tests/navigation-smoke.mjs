@@ -122,7 +122,7 @@ assert.ok(analysisInsights.includes('toggleRecoveryMetric') && analysisInsights.
 assert.ok(analysisUI.includes('kajo-analysis-metric-link'), 'supported analysis metrics are keyboard-accessible buttons');
 
 assert.ok(analysisUI.includes('Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt'), 'legacy HRV values remain unclassified');
-assert.ok(dashboard.includes('Persönlicher Normalbereich noch nicht methodisch festgelegt'), 'unapproved wearable ranges are not presented as personal norms');
+assert.ok(dashboard.includes('Mindestens zwölf Messungen aus den vorherigen 28 Tagen sind für eine persönliche Basis erforderlich'), 'wearable values require a sufficient individual baseline');
 assert.ok(!dashboard.includes('Im persönlichen Bereich'), 'legacy personal-range classification is suppressed');
 assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe synchronizes detail history');
 
@@ -159,8 +159,8 @@ for (const id of ['home-readiness-ring','home-form-ring','home-fitness-ring','ho
 }
 assert.ok(homeMarkup.indexOf('home-readiness-ring') < homeMarkup.indexOf('home-form-ring') && homeMarkup.indexOf('home-form-ring') < homeMarkup.indexOf('home-fitness-ring'), 'status order is Recovery, Load, Performance');
 assert.ok(homeMarkup.includes('kajo-week-chart'), 'weekly chart uses compact vertical bars');
-assert.ok(dashboard.includes('kajo-week-segment'), 'weekly chart renders sport segments');
-assert.ok(dashboard.includes("segment.setAttribute('aria-label'"), 'sport segments are accessible interactive targets');
+assert.ok(dashboard.includes('kajo-week-bar-track') && dashboard.includes('--week-ring-color'), 'weekly chart uses sport-colored day bars');
+assert.ok(dashboard.includes("track.setAttribute('aria-label'") && dashboard.includes('track.addEventListener(\'click\', selectDay)'), 'weekly day bars are accessible interactive targets');
 assert.ok(dashboard.includes('garminActivityId || item.externalId || item.id'), 'weekly chart deduplicates stable activity IDs');
 assert.ok(dashboard.includes('export function selectDashboardDate'), 'weekly day selection uses the non-editing dashboard day view');
 assert.ok(competitions.includes('openNextRaceDetail'), 'next race opens a dedicated detail view');
@@ -374,10 +374,10 @@ assert.ok(analysisOverview.includes('nextDate > todayKey()') && analysisOverview
 assert.ok(analysisOverview.includes('Garmin-HRV') && analysisOverview.includes('keine statistische Korrelation') && analysisOverview.includes('Fehlende HRV- oder Readiness-Werte bleiben offen'), 'lagged context distinguishes source data, missing values and causal limits');
 assert.ok(analysisOverview.includes('Gleicher Kalendertag') && analysisOverview.includes('keinen ursächlichen Zusammenhang') && analysisOverview.includes('Garmin-HRV'), 'health context reports same-day source values without implying causality');
 assert.ok(overviewModule.includes('Physiologie 40 %') && overviewModule.includes('Schlaf 30 %') && overviewModule.includes('subjektives Befinden 30 %'), 'overview explains the established readiness domain weights');
-assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
+assert.ok(overviewModule.includes('spanGaps: true') && overviewModule.includes('borderDash: context => context.p1DataIndex - context.p0DataIndex > 1'), 'overview marks intervals spanning missing-data gaps with a dashed segment');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
-assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick','injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
+assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick', 'injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
 assert.ok(overviewModule.includes('renderHeartRateZoneDistribution'), 'intensity distribution reuses the existing heart-rate zone analysis');
 assert.ok(charts.includes('options.canvasId || \'heartRateZonesChart\''), 'heart-rate zone chart supports a dedicated overview target');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
@@ -470,7 +470,7 @@ assert.ok(analysisOverview.includes('prior.length < metric.minimum || recent.len
 assert.ok(analysisOverview.includes('day.loadMode !== loadMode || day.loadUnit !== loadUnit'), 'trend observations do not mix load models or units');
 assert.ok(analysisOverview.includes('Fehlende Tage werden nicht aufgefüllt'), 'trend observations do not impute missing measurements');
 assert.ok(analysisOverview.includes('keine Trainingsempfehlung') && analysisOverview.includes('keine Diagnose'), 'trend observations remain descriptive and do not diagnose or recommend training');
-assert.ok(analysisOverview.includes('Garmin-Form und TSB bleiben getrennte Indikatoren'), 'Garmin form and TSB are not conflated in trend observations');
+assert.ok(analysisOverview.includes("relativeMode ? row.formPct : row.tsb") && analysisOverview.includes("'Relativer Saldo · aus CTL/ATL (%)'"), 'Garmin relative form and TSB use separate source values and labels');
 
 assert.ok(html.includes('id="plan-kind"') && html.includes('value="rest">Ruhetag</option>'), 'manual training planning offers a dedicated rest-day type');
 assert.ok(html.includes('id="plan-duration-field"') && planning.includes("const isRestDay=document.getElementById('plan-kind')?.value==='rest'"), 'rest-day planning hides workout-specific fields and stores a separate day type');

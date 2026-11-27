@@ -19,23 +19,20 @@ test('CTL/ATL bands are absent when there are no valid model values', () => {
   assert.deepEqual(buildRelativeLoadZones([{ ctl: null, atl: undefined }]), []);
 });
 
-test('TSB bands preserve the phase-aware winter orientation thresholds', () => {
+test('TSB chart follows the observed model scale without universal traffic-light bands', () => {
   const result = buildTsbZones([{ tsb: -32 }, { tsb: -10 }, { tsb: 2 }, { tsb: 14 }]);
-  assert.equal(result.min, -32);
-  assert.equal(result.max, 14);
-  assert.deepEqual(result.zones.map(zone => [zone.min, zone.max]), [
-    [-32, -20], [-20, -5], [-5, 5], [5, 14]
-  ]);
-  assert.deepEqual(result.zones.map(zone => zone.label), [
-    'Hohe Ermüdung', 'Aufbau', 'Geringe Belastung', 'Geringe akute Belastung'
-  ]);
+  assert.equal(result.min, -35.68);
+  assert.equal(result.max, 17.68);
+  assert.deepEqual(result.zones, []);
+  assert.equal(result.hasUniversalBands, false);
 });
 
-test('TSB chart keeps all orientation zones visible when values are missing or narrow', () => {
+test('TSB chart adapts its range to narrow values and leaves universal zones disabled', () => {
   const result = buildTsbZones([{ tsb: null }, { tsb: -8 }]);
-  assert.equal(result.min, -20);
-  assert.equal(result.max, 6);
-  assert.equal(result.zones.length, 4);
+  assert.equal(result.min, -8.64);
+  assert.equal(result.max, 0.64);
+  assert.equal(result.zones.length, 0);
+  assert.equal(result.hasUniversalBands, false);
 });
 
 test('background plugin safely skips charts without a chart area or y scale', () => {

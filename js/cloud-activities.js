@@ -117,10 +117,33 @@ function splitIntoBatches(rows, maxBytes = 750000) {
 export async function syncCloudActivities(client, userId, activities) {
     requireClient(client);
     const rows = prepareCloudActivityRows(userId, activities);
+    let deletionRows = [];
+    try {
+        for (let offset = 0; ; offset += 500) {
+            const { data, error } = await client.from('activity_deletions')
+                .select('record_id,garmin_activity_id')
+                .eq('user_id', userId)
+                .order('record_id', { ascending: true })
+                .range(offset, offset + 499);
+            if (error) {
+                if (error.code === '42P01' || error.code === 'PGRST205'
+                    || /activity_deletions.*(not found|does not exist)/i.test(String(error.message || ''))) break;
+                throw error;
+            }
+            deletionRows.push(...(data || []));
+            if (!data || data.length < 500) break;
+        }
+    } catch (error) {
+        throw cloudActivityQueryError(error, 'Cloud-Aktivitäten: Löschkennzeichnungen prüfen');
+    }
+    const deletedRecordIds = new Set(deletionRows.map(row => String(row.record_id)));
+    const deletedGarminIds = new Set(deletionRows.map(row => String(row.garmin_activity_id || '')).filter(Boolean));
+    const activeRows = rows.filter(row => !deletedRecordIds.has(row.record_id)
+        && !deletedGarminIds.has(String(row.record_id).replace(/^garmin-/, '')));
     const baseline = cloudActivityHashes.get(userId) || new Map();
     const changedRows = [];
     const nextHashes = new Map();
-    for (const row of rows) {
+    for (const row of activeRows) {
         const hash = await hashActivityPayload(row.payload);
         if (hash) nextHashes.set(row.record_id, hash);
         if (!hash || baseline.get(row.record_id) !== hash) changedRows.push(row);
@@ -148,7 +171,7 @@ export async function syncCloudActivities(client, userId, activities) {
         for (const [id, hash] of nextHashes) baseline.set(id, hash);
         cloudActivityHashes.set(userId, baseline);
     }
-    return { uploaded, total: rows.length, changed: changedRows.length, batches: batches.length };
+    return { uploaded, total: rows.length, active: activeRows.length, skippedDeleted: rows.length - activeRows.length, changed: changedRows.length, batches: batches.length };
 }
 
 /**
@@ -311,7 +334,12 @@ export function mergeCloudActivityRows(userId, baselineActivities, deltaRows) {
         rows.set(row.record_id, row);
     }
     for (const row of Array.isArray(deltaRows) ? deltaRows : []) {
-        if (!row?.record_id || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
+        if (!row?.record_id) continue;
+        if (row.deleted_at) {
+            rows.set(String(row.record_id), { ...row, payload: null });
+            continue;
+        }
+        if (!row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
         rows.set(String(row.record_id), row);
     }
     return Array.from(rows.values());
@@ -324,12 +352,17 @@ export function mergeCloudActivityRows(userId, baselineActivities, deltaRows) {
  */
 export function mergeCloudActivities(snapshotActivities, cloudRows, allowedRecordIds = null) {
     const merged = new Map();
+    const rows = Array.isArray(cloudRows) ? cloudRows : [];
+    const deleted = new Set(rows.filter(row => row?.deleted_at).map(row => String(row.record_id)));
     for (const activity of Array.isArray(snapshotActivities) ? snapshotActivities : []) {
-        if (activity && typeof activity === 'object') merged.set(getActivityRecordId(activity), activity);
+        if (activity && typeof activity === 'object') {
+            const id = getActivityRecordId(activity);
+            if (!deleted.has(id)) merged.set(id, activity);
+        }
     }
     const allowed = Array.isArray(allowedRecordIds) ? new Set(allowedRecordIds.map(String)) : null;
-    for (const row of Array.isArray(cloudRows) ? cloudRows : []) {
-        if (!row?.record_id || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
+    for (const row of rows) {
+        if (!row?.record_id || row.deleted_at || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
         if (allowed && !allowed.has(String(row.record_id))) continue;
         merged.set(String(row.record_id), row.payload);
     }
