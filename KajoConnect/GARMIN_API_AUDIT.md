@@ -43,7 +43,7 @@ Garmin defines `Activity.SUB_SPORT_WHITEWATER` from API level 4.1.6. KAJO curren
 
 ### Pause and resume – important limitation
 
-The documented `ActivityRecording.Session` API exposes `start()` and `stop()`; it does not expose a `pause()` or `resume()` method. KAJO's pause is therefore implemented as `stop()`, and resume as `start()` on the existing session object. This is not yet proven equivalent to Garmin's native pause/resume behavior on the Venu 3S. It must be tested by inspecting the resulting FIT timer events and Garmin Connect summary.
+`ActivityRecording.Session` has no methods literally named `pause()` or `resume()`. Garmin's documented usage is to call `stop()` to pause the timer and `start()` on the same session to resume; only `save()` or `discard()` completes the session. KAJO follows this lifecycle. The timer semantics are also confirmed by Garmin's `Activity.Info.timerTime` (active timer) and `elapsedTime` (elapsed activity time). Real-device FIT validation is still required.
 
 ## 2. Live data fields
 
@@ -74,7 +74,7 @@ Garmin exposes both `timerTime` and `elapsedTime` in milliseconds.
 
 - `timerTime` is the activity timer duration and excludes pauses.
 - `elapsedTime` includes the time since the activity began, including pauses.
-- KAJO's visible timer is currently a local one-second timer because the source records previous cases where `Activity.Info.timerTime` was delayed or unchanged on the target device.
+- KAJO keeps a local one-second counter as a monotonic fallback and now synchronizes it upward with Garmin `timerTime` during live metric sampling. The local counter is not allowed to jump backward if Garmin's value arrives late.
 - The previous fallback from `timerTime` to `elapsedTime` was removed. It could incorrectly add pause duration to active training time.
 - Lap duration now falls back to KAJO's active-time counter if Garmin's `timerTime` is missing or has not advanced beyond the previous lap baseline.
 
@@ -87,7 +87,8 @@ Remaining risk: the local timer can drift if its callbacks are delayed or the ap
 - Garmin's documented lap callback does not provide average lap heart rate. KAJO therefore calculates lap average HR from its own samples of `Activity.Info.currentHeartRate`, taken by its one-second timer. This is an approximation based on the sampling cadence, not Garmin's native lap-average-HR field.
 - Free training creates a local automatic lap at each 1,000 m threshold. The FIT lap is created through `addLap()`.
 - Planned workout steps are interpreted by KAJO's own timer and state machine. They are not currently sent to Garmin as a native Garmin workout.
-- If Garmin returns no timer value for a lap, KAJO now uses its active-time counter as a fallback.
+- If Garmin returns no timer value for a lap, KAJO uses its active-time counter as a fallback.
+- The final partial lap is guarded against duplicate insertion if FIT saving must be retried.
 
 ## 5. GPS lifecycle
 
@@ -96,6 +97,7 @@ Remaining risk: the local timer can drift if its callbacks are delayed or the ap
 - On pause, KAJO now disables position events and resets its displayed GPS-quality state.
 - On resume, KAJO enables position events again.
 - On save/discard, KAJO disables position events.
+- The paused screen's visible Save and Discard controls now respond to touch; discard requires a second confirmation tap.
 
 The position callback currently uses the accuracy value for display; the FIT track itself still needs to be checked in a real Venu 3S recording.
 
@@ -121,6 +123,9 @@ The current watch-to-server upload sends only the activity date/start time, dura
 - Corrected cadence wording/unit to Kadenz/RPM.
 - Changed GPS status wording to position status.
 - Added a guard against duplicate start inputs while a recording is already active.
+- Synchronize the visible active-time counter upward with Garmin `timerTime` during live sampling.
+- Prevent duplicate final partial-lap entries when a FIT save is retried.
+- Make the visible paused-screen Save/Discard controls actionable by touch.
 - Added null guards when reading activity summaries and sampling lap metrics.
 - Added a guard for absent lap event data.
 - Removed the `elapsedTime` fallback for active training time.
