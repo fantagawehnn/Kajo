@@ -1182,8 +1182,8 @@ class KajoConnectActivityView extends WatchUi.View {
         if (activityInfo == null || !mEngine.addLap()) { return false; }
 
         var lap = {};
-        var timerValue = activityInfo.timerTime == null
-            ? mLapStartTimerMs : activityInfo.timerTime;
+        var timerValue = activityInfo.timerTime == null || activityInfo.timerTime <= mLapStartTimerMs
+            ? mElapsedSeconds * 1000 : activityInfo.timerTime;
         var distanceValue = activityInfo.elapsedDistance == null ||
             mLapStartDistanceMeters == null
             ? null : activityInfo.elapsedDistance - (mLapStartDistanceMeters as Lang.Number);
@@ -1393,7 +1393,7 @@ class KajoConnectActivityView extends WatchUi.View {
     function captureFinalPartialLap(activityInfo) as Void {
         if (activityInfo == null) { return; }
 
-        var timerValue = activityInfo.timerTime == null
+        var timerValue = activityInfo.timerTime == null || activityInfo.timerTime <= mLapStartTimerMs
             ? mElapsedSeconds * 1000 : activityInfo.timerTime;
         var lapDuration = timerValue - mLapStartTimerMs;
         var distanceValue = activityInfo.elapsedDistance == null ||
