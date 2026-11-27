@@ -17,9 +17,7 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
     function onKey(keyEvent as WatchUi.KeyEvent) as Lang.Boolean {
         var key = keyEvent.getKey();
 
-        // TEMPORARY INPUT DIAGNOSTIC: visible on simulator and device.
         System.println("KAJO_ACTIVITY_KEY: " + key.toString());
-        WatchUi.showToast("KAJO KEY " + key.toString(), null);
 
         if (key == WatchUi.KEY_ENTER || key == WatchUi.KEY_START) {
             if (mView.isPausedForSave()) {
@@ -27,6 +25,7 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
             } else {
                 mView.handlePrimaryButton();
             }
+            WatchUi.showToast("KEY " + key.toString() + " / " + mView.getDebugState(), null);
             return true;
         }
 
