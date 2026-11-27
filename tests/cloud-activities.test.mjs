@@ -136,6 +136,15 @@ test('fetches only changed activity payloads since the persisted watermark', asy
     const requestedRanges = [];
     const client = {
         from(table) {
+            if (table === 'activity_deletions') {
+                return {
+                    select() { return this; },
+                    eq() { return this; },
+                    order() { return this; },
+                    maybeSingle() { return Promise.resolve({ data: null, error: null }); },
+                    range() { return Promise.resolve({ data: [], error: null }); }
+                };
+            }
             assert.equal(table, 'activities');
             const query = {
                 selection: '',
