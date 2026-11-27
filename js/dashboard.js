@@ -1020,7 +1020,7 @@ function relativeTrainingBalance(day) {
 function historyRecommendation(key, value, dateKey) {
     if (value === null || value === undefined) return ['Heute nicht erfasst', 'Es liegt für heute kein gespeicherter Wert vor.'];
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
-    if (key === 'form') {
+    if (['form', 'tsb'].includes(key)) {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         const targets = phaseTargetsForDate(dateKey);
         const zone = classifyTrainingBalance(value, 'relative', targets);
@@ -1102,7 +1102,7 @@ function trainingRingState(key, value, dateKey) {
     if (numeric === null) return { value: null, progress: 0, color: STATUS_COLORS.info, empty: true };
     // Trainingssaldo ist ein Statusindikator: Der Ring bleibt vollständig sichtbar,
     // die Einordnung erfolgt über die Farbe statt über eine geklemmte Prozentfüllung.
-    const progress = key === 'form'
+    const progress = ['form', 'tsb'].includes(key)
         ? 100
         : Math.max(0, Math.min(100, numeric));
     return {
