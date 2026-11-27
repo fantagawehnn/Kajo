@@ -15,7 +15,7 @@ Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit
 ### HRV
 
 - Keine allgemeingültigen absoluten Millisekunden-Zonen.
-- Referenz: Median der vorangegangenen 28 Tage, mindestens sieben gültige Messungen derselben Metrik, Einheit und Datenquelle.
+- Referenz: Median der vorangegangenen 28 Tage, mindestens zwölf gültige Messungen derselben Metrik, Einheit und Datenquelle.
 - Streuung: robuste Skala aus 1,4826 × MAD; falls erforderlich mindestens halbe Standardabweichung und ein metrikspezifischer Mindestwert.
 - Einordnung der Abweichung in dieser Skala:
   - bis 1 Skalen-Einheit unter der Basis: üblicher Bereich
@@ -27,20 +27,20 @@ Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit
 ### Ruheherzfrequenz
 
 - Keine pauschalen bpm-Grenzen für alle Athleten.
-- Referenz: persönlicher Median der vorherigen 28 Tage, mindestens sieben gültige Messungen.
+- Referenz: persönlicher Median der vorherigen 28 Tage, mindestens zwölf gültige Messungen.
 - Bis 1 robuste Streuung über der Basis: üblicher Bereich; 1–1,5: beobachten; über 1,5: deutliche Abweichung.
 - Ein erhöhter Ruhepuls ist ein unspezifisches Signal und kann u. a. durch Trainingsbelastung, Schlaf, Hitze, Stress oder Krankheit beeinflusst werden. Er ist allein keine Diagnose.
 
 ### Atemfrequenz
 
-- Individueller Median der vorherigen 28 Tage, mindestens sieben gültige Messungen.
+- Individueller Median der vorherigen 28 Tage, mindestens zwölf gültige Messungen.
 - Eine Erhöhung um mehr als eine robuste Streuung wird beobachtet; mehr als 1,5 Streuungen gilt als deutliche Abweichung.
 - Die Atemfrequenz ist ein Kontextsignal und darf nicht isoliert zur Trainingsentscheidung führen.
 
 ### Schlafdauer
 
 - Kein starres Optimum für alle Sportler. Die Schlafempfehlungen für Athleten sollen den individuellen Bedarf und Trainingsumfang berücksichtigen.
-- KAJO verwendet deshalb den Median der vorherigen 28 Tage (mindestens sieben Messungen) als persönliche Referenz:
+- KAJO verwendet deshalb den Median der vorherigen 28 Tage (mindestens zwölf Messungen) als persönliche Referenz:
   - höchstens 30 Minuten darunter: nahe am persönlichen Niveau
   - 30–60 Minuten darunter: beobachten
   - 60–90 Minuten darunter: deutliche Verkürzung
