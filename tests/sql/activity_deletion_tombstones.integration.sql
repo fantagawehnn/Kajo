@@ -37,6 +37,37 @@ insert into public.garmin_activities (user_id, garmin_activity_id, activity) val
 insert into public.activity_deletions (user_id, record_id, garmin_activity_id, activity_date)
 values ('00000000-0000-0000-0000-000000000001', 'garmin-123', '123', '2026-11-20');
 
+-- Exercise the optional Realtime notification path too. The first marker
+-- above was inserted without this function/table and therefore had to succeed
+-- without Realtime support.
+create table public.kajo_sync_state (
+    user_id uuid not null,
+    scope text not null,
+    version bigint not null default 0,
+    updated_at timestamptz not null default now(),
+    primary key (user_id, scope)
+);
+
+create or replace function public.touch_kajo_sync_state(
+    p_user_id uuid,
+    p_scope text,
+    p_version bigint
+)
+returns void
+language plpgsql
+as $
+begin
+    insert into public.kajo_sync_state (user_id, scope, version, updated_at)
+    values (p_user_id, p_scope, p_version, now())
+    on conflict (user_id, scope) do update
+       set version = public.kajo_sync_state.version + 1,
+           updated_at = excluded.updated_at;
+end;
+$;
+
+insert into public.activity_deletions (user_id, record_id, garmin_activity_id, activity_date)
+values ('00000000-0000-0000-0000-000000000001', 'garmin-456', '456', '2026-11-21');
+
 -- The same user's old rows cannot be updated or inserted again.
 update public.activities
    set payload = '{"name":"resurrected"}'
@@ -81,6 +112,12 @@ begin
     if has_table_privilege('authenticated', 'public.activity_deletions', 'UPDATE')
        or has_table_privilege('authenticated', 'public.activity_deletions', 'DELETE') then
         raise exception 'Authenticated users can mutate immutable activity tombstones';
+    end if;
+
+    if (select count(*) from public.kajo_sync_state
+        where user_id = '00000000-0000-0000-0000-000000000001'
+          and scope = 'activities' and version = 0) <> 1 then
+        raise exception 'Activity tombstone did not emit the optional Realtime sync watermark';
     end if;
 end;
 $$;
