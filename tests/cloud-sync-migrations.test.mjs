@@ -43,15 +43,15 @@ test('activity delta index follows the user, update timestamp and stable record 
 
 test('past activity deletion tombstones are immutable, account-scoped, and block resurrection', () => {
     const sql = migration('20261127000100_activity_deletion_tombstones.sql');
-    assert.match(sql, /create table if not exists public\\.activity_deletions/i);
-    assert.match(sql, /primary key \\(user_id, record_id\\)/i);
+    assert.match(sql, /create table if not exists public\.activity_deletions/i);
+    assert.match(sql, /primary key \(user_id, record_id\)/i);
     assert.match(sql, /enable row level security/i);
-    assert.match(sql, /grant select, insert on public\\.activity_deletions to authenticated/i);
-    assert.match(sql, /using \\(\\(select auth\\.uid\\(\\)\\) = user_id\\)/i);
-    assert.match(sql, /with check \\(\\(select auth\\.uid\\(\\)\\) = user_id\\)/i);
-    assert.match(sql, /before insert or update on public\\.activities/i);
-    assert.match(sql, /before insert or update on public\\.garmin_activities/i);
+    assert.match(sql, /grant select, insert on public\.activity_deletions to authenticated/i);
+    assert.match(sql, /using \(\(select auth\.uid\(\)\) = user_id\)/i);
+    assert.match(sql, /with check \(\(select auth\.uid\(\)\) = user_id\)/i);
+    assert.match(sql, /before insert or update on public\.activities/i);
+    assert.match(sql, /before insert or update on public\.garmin_activities/i);
     assert.match(sql, /return null/i);
-    assert.match(sql, /after insert on public\\.activity_deletions/i);
+    assert.match(sql, /after insert on public\.activity_deletions/i);
     assert.doesNotMatch(sql, /grant (?:update|delete).*activity_deletions/i);
 });
