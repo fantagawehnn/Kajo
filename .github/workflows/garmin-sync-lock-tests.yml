@@ -1,0 +1,58 @@
+name: KAJO Garmin Sync Lock Tests
+
+on:
+  pull_request:
+    branches:
+      - v2
+    paths:
+      - 'supabase/migrations/*garmin_sync_lock.sql'
+      - 'tests/sql/garmin_sync_lock.integration.sql'
+      - '.github/workflows/garmin-sync-lock-tests.yml'
+  push:
+    branches:
+      - integration/garmin-sync-lock-v2
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-integration:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kajo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kajo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kajo_test
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Prepare minimal Supabase roles and auth schema
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin;
+          create schema auth;
+          create table auth.users (id uuid primary key);
+          insert into auth.users (id) values
+            ('00000000-0000-0000-0000-000000000001'),
+            ('00000000-0000-0000-0000-000000000002');
+          SQL
+      - name: Apply Garmin sync lock migration
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261126000100_garmin_sync_lock.sql
+      - name: Test Garmin sync lock ownership, expiry and permissions
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/sql/garmin_sync_lock.integration.sql
