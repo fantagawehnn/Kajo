@@ -106,21 +106,17 @@ export function classifySubjective(key, value) {
   return { status: 'critical', label: 'Ungünstige Selbsteinschätzung' };
 }
 
-export function classifyTrainingBalance(value, mode = 'tsb') {
+export function classifyTrainingBalance(value, mode = 'unclassified') {
   if (!valid(value)) return { status: 'info', label: 'Keine Modellwerte' };
   const n = Number(value);
   if (mode === 'garmin') {
-    if (n < -25) return { status: 'critical', label: 'Hohe modellierte Ermüdung' };
-    if (n < -10) return { status: 'attention', label: 'Erhöhte modellierte Belastung' };
-    if (n <= 5) return { status: 'good', label: 'Ausgeglichen' };
-    if (n <= 20) return { status: 'good', label: 'Frischer Modellstatus' };
-    return { status: 'attention', label: 'Sehr frisch – Trainingskontext prüfen' };
+    if (n < -25) return { status: 'critical', label: 'Hoher negativer relativer Modellstatus' };
+    if (n < -10) return { status: 'attention', label: 'Erhöhter negativer relativer Modellstatus' };
+    if (n <= 5) return { status: 'good', label: 'Relativer Modellstatus ausgeglichen' };
+    if (n <= 20) return { status: 'good', label: 'Positiver relativer Modellstatus' };
+    return { status: 'attention', label: 'Sehr positiver relativer Modellstatus · Kontext prüfen' };
   }
-  if (n < -30) return { status: 'critical', label: 'Stark negativer Belastungssaldo' };
-  if (n < -10) return { status: 'attention', label: 'Erhöhte modellierte Ermüdung' };
-  if (n <= 5) return { status: 'good', label: 'Ausgeglichen' };
-  if (n <= 25) return { status: 'good', label: 'Frischer Modellstatus' };
-  return { status: 'attention', label: 'Sehr frisch – Trainingskontext prüfen' };
+  return { status: 'info', label: 'TSB ' + (n > 0 ? '+' : '') + n.toFixed(1) + ' · Modellwert ohne allgemeingültige Grenzzone' };
 }
 
 export function classifyAcwr(value) {
