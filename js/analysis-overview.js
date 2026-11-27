@@ -175,13 +175,13 @@ function renderFormTrendChart() {
     return;
   }
   const mode = latest.loadMode || 'load-model';
-  const garminMode = mode === 'garmin-native' || mode === 'garmin-zone';
+  const relativeMode = mode === 'garmin-native' || mode === 'garmin-zone';
   const compatible = row => row && (row.loadMode || 'load-model') === mode;
   const ctl = rows.map(row => compatible(row) && valid(row.ctl) ? Number(row.ctl) : null);
   const atl = rows.map(row => compatible(row) && valid(row.atl) ? Number(row.atl) : null);
   const form = rows.map(row => {
     if (!compatible(row)) return null;
-    const value = garminMode ? row.formPct : row.tsb;
+    const value = relativeMode ? row.formPct : row.tsb;
     return valid(value) ? Number(value) : null;
   });
   const hasAny = ctl.some(valid) || atl.some(valid) || form.some(valid);
@@ -191,17 +191,17 @@ function renderFormTrendChart() {
   }
   setChartEmptyState(canvas, '', false);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
-  const formLabel = garminMode ? 'Relativer Saldo · aus CTL/ATL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
+  const formLabel = relativeMode ? 'Relativer Saldo · aus CTL/ATL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
   const datasets = [
     { label: 'CTL · langfristig', data: ctl, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2.2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
     { label: 'ATL · kurzfristig', data: atl, borderColor: '#8B9BB3', backgroundColor: '#8B9BB3', borderWidth: 2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
-    { label: formLabel, data: form, borderColor: '#FB923C', backgroundColor: '#FB923C', borderWidth: 2.2, tension: .18, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: garminMode ? 'y1' : 'y' }
+    { label: formLabel, data: form, borderColor: '#FB923C', backgroundColor: '#FB923C', borderWidth: 2.2, tension: .18, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: relativeMode ? 'y1' : 'y' }
   ];
   const formScales = {
     x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
     y: { position: 'left', grid: { color: 'rgba(148,163,184,.10)' }, ticks: { color: textColor }, title: { display: true, text: 'CTL / ATL · ' + (latest.loadUnit || 'Load-Punkte'), color: textColor, font: { size: 9 } } }
   };
-  if (garminMode) {
+  if (relativeMode) {
     formScales.y1 = { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: textColor }, title: { display: true, text: 'Form · %', color: textColor, font: { size: 9 } } };
   }
   formChart = new Chart(canvas.getContext('2d'), {
@@ -220,7 +220,7 @@ function renderFormTrendChart() {
   });
   setText('analysis-overview-form-note',
     'Dargestellt wird ausschließlich der zuletzt verwendete Belastungsmodus (' + mode + '). CTL und ATL zeigen die langfristige bzw. kurzfristige Belastungsentwicklung. ' +
-    (garminMode
+    (relativeMode
       ? 'Der relative Saldo wird aus CTL und ATL berechnet und deshalb auf einer eigenen Prozentachse dargestellt; er ist kein direkt übernommener Garmin-Herstellerwert.'
       : 'TSB entspricht CTL minus ATL und nutzt dieselbe Load-Einheit. ') +
     'Modelllücken bleiben sichtbar; Werte verschiedener Load-Quellen werden nicht in einer Linie vermischt.');
@@ -234,10 +234,10 @@ function renderFitnessRecoveryContext(dates) {
     const day = timeline.get(date);
     const checkin = checkins[date] || {};
     const mode = day?.loadMode || '';
-    const garminMode = mode === 'garmin-native' || mode === 'garmin-zone';
+    const relativeMode = mode === 'garmin-native' || mode === 'garmin-zone';
     const ctl = valid(day?.ctl) ? Number(day.ctl) : null;
     const atl = valid(day?.atl) ? Number(day.atl) : null;
-    const formValue = garminMode
+    const formValue = relativeMode
       ? (valid(day?.formPct) ? Number(day.formPct) : null)
       : (valid(day?.tsb) ? Number(day.tsb) : null);
     const hrvRaw = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
@@ -248,7 +248,7 @@ function renderFitnessRecoveryContext(dates) {
     const healthStatus = state.healthLogs?.[date]?.status;
     const health = healthStatus === 'sick' ? 'Erkrankung dokumentiert' : healthStatus === 'injured' ? 'Verletzung dokumentiert' : null;
     const hasAny = ctl !== null || atl !== null || formValue !== null || hrv !== null || readiness !== null || valid(vo2max) || health;
-    return hasAny ? { date, mode, unit: day?.loadUnit || 'Load-Punkte', ctl, atl, formValue, garminMode, hrv, readiness, vo2max: valid(vo2max) ? Number(vo2max) : null, health } : null;
+    return hasAny ? { date, mode, unit: day?.loadUnit || 'Load-Punkte', ctl, atl, formValue, relativeMode, hrv, readiness, vo2max: valid(vo2max) ? Number(vo2max) : null, health } : null;
   }).filter(Boolean);
   if (!rows.length) {
     root.innerHTML = '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum liegen keine passenden Fitness-, Recovery- oder Gesundheitswerte für eine gemeinsame zeitliche Einordnung vor.</p>';
@@ -262,8 +262,8 @@ function renderFitnessRecoveryContext(dates) {
     const ctl = sameMode ? row.ctl : null;
     const atl = sameMode ? row.atl : null;
     const form = sameMode ? row.formValue : null;
-    const formLabel = row.garminMode ? 'Garmin-Form' : 'TSB';
-    const formUnit = row.garminMode ? ' %' : ' ' + row.unit;
+    const formLabel = row.relativeMode ? 'Relativer Saldo' : 'TSB';
+    const formUnit = row.relativeMode ? ' %' : ' ' + row.unit;
     return '<div class="kajo-analysis-availability-row"><div><strong>' +
       escapeHtml(new Date(row.date + 'T12:00:00').toLocaleDateString('de-DE')) +
       '</strong><small>CTL: ' + (valid(ctl) ? fmt(ctl) + ' ' + escapeHtml(row.unit) : '—') + ' · ATL: ' + (valid(atl) ? fmt(atl) + ' ' + escapeHtml(row.unit) : '—') +
@@ -277,7 +277,7 @@ function renderFitnessRecoveryContext(dates) {
   }).join('');
   root.innerHTML = '<div class="kajo-analysis-availability">' + cards + '</div>' +
     (rows.length > visible.length ? '<p class="kajo-analysis-chart-note">' + (rows.length - visible.length) + ' weitere Tage mit Messwerten liegen im gewählten Zeitraum vor.</p>' : '') +
-    '<p class="kajo-analysis-chart-note">Zeitliche Gegenüberstellung der gespeicherten Tageswerte, keine Kausalitäts- oder Wirkungsanalyse. CTL, ATL und TSB werden nur innerhalb desselben Load-Modells interpretiert; Garmin-Form ist ein eigener Prozentindikator und nicht mit TSB gleichzusetzen. Bei fehlender oder abweichender Load-Modell-Angabe werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt. HRV und Readiness sind nicht unabhängig, da HRV in die Readiness eingehen kann. Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch. Fehlende Werte bleiben offen; fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden.</p>';
+    '<p class="kajo-analysis-chart-note">Zeitliche Gegenüberstellung der gespeicherten Tageswerte, keine Kausalitäts- oder Wirkungsanalyse. CTL, ATL und TSB werden nur innerhalb desselben Load-Modells interpretiert; Relativer Saldo ist ein eigener Prozentindikator und nicht mit TSB gleichzusetzen. Bei fehlender oder abweichender Load-Modell-Angabe werden CTL/ATL/Form in dieser Tageszeile nicht angezeigt. HRV und Readiness sind nicht unabhängig, da HRV in die Readiness eingehen kann. Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch. Fehlende Werte bleiben offen; fehlende Health-Einträge bedeuten nicht, dass keine Beschwerden bestanden.</p>';
 }
 
 
@@ -298,11 +298,11 @@ function renderTrendObservations(dates) {
   );
   const loadMode = latestLoadDay?.loadMode || '';
   const loadUnit = latestLoadDay?.loadUnit || '';
-  const isGarminForm = loadMode === 'garmin-native' || loadMode === 'garmin-zone';
+  const isRelativeBalance = loadMode === 'garmin-native' || loadMode === 'garmin-zone';
   const metrics = [
     { key: 'ctl', label: 'CTL', unit: loadUnit, source: 'Load-Modell', minimum: 3, load: true },
     { key: 'atl', label: 'ATL', unit: loadUnit, source: 'Load-Modell', minimum: 3, load: true },
-    { key: 'form', label: isGarminForm ? 'Garmin-Form' : 'TSB', unit: isGarminForm ? '%' : loadUnit, source: loadMode || 'Load-Modell', minimum: 3, load: true },
+    { key: 'form', label: isRelativeBalance ? 'Relativer Saldo' : 'TSB', unit: isRelativeBalance ? '%' : loadUnit, source: loadMode || 'Load-Modell', minimum: 3, load: true },
     { key: 'hrv', label: 'Garmin-HRV', unit: 'ms', source: 'Garmin', minimum: 3 },
     { key: 'readiness', label: 'Readiness', unit: '/ 100', source: 'KAJO-Berechnung', minimum: 3 },
     { key: 'vo2max', label: 'Garmin-VO₂max', unit: 'ml/kg/min', source: 'Garmin-Schätzwert', minimum: 2 }
@@ -313,7 +313,7 @@ function renderTrendObservations(dates) {
     if (metric.load) {
       if (!day || day.loadMode !== loadMode || day.loadUnit !== loadUnit) return null;
       if (metric.key === 'form') {
-        const value = isGarminForm ? day.formPct : day.tsb;
+        const value = isRelativeBalance ? day.formPct : day.tsb;
         return valid(value) ? Number(value) : null;
       }
       return valid(day[metric.key]) ? Number(day[metric.key]) : null;
@@ -354,7 +354,7 @@ function renderTrendObservations(dates) {
     : '<p class="kajo-analysis-chart-note">Keine Erkrankungs- oder Verletzungstage dokumentiert. Daraus lässt sich kein unauffälliger Gesundheitsstatus ableiten.</p>';
   root.innerHTML = rows.length
     ? '<div class="kajo-analysis-availability">' + rows.join('') + '</div>' + eventNote +
-      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Garmin-Form und TSB bleiben getrennte Indikatoren.</p>'
+      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Relativer Saldo und TSB bleiben getrennte Indikatoren.</p>'
     : '<p class="kajo-analysis-chart-note">Für zwei aufeinanderfolgende Sieben-Tage-Zeiträume liegen nicht genügend vergleichbare Messwerte vor. Es wird kein Trend abgeleitet.</p>' + eventNote;
 }
 
