@@ -19,8 +19,13 @@ export function getGarminActivityRowsNeedingPayload(metadataRows, seenAtById, lo
     return metadataRows.filter(row => {
         const id = String(row?.garmin_activity_id ?? '');
         const updatedAt = row?.updated_at;
-        return id && typeof updatedAt === 'string' &&
-            (seenAtById[id] !== updatedAt || !locallyAvailableIds.has(id));
+        if (!id) return false;
+        // Legacy cloud rows may predate updated_at. They cannot participate in
+        // timestamp deltas, but must still be downloaded on a device missing them.
+        if (typeof updatedAt !== 'string' || !Number.isFinite(Date.parse(updatedAt))) {
+            return !locallyAvailableIds.has(id);
+        }
+        return seenAtById[id] !== updatedAt || !locallyAvailableIds.has(id);
     });
 }
 
