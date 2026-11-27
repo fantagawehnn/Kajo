@@ -56,7 +56,7 @@ function measurementIdentity(record, key) {
  */
 function individualTrendScore(value, historyValues, direction, minimumScale) {
     const values = historyValues.filter(isValid).map(Number);
-    if (values.length < 7 || !isValid(value)) {
+    if (values.length < 12 || !isValid(value)) {
         return { score: null, baseline: null, deviation: null, observations: values.length, status: 'baseline-unavailable' };
     }
 
@@ -123,7 +123,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
             floor
         );
         if (baseline.score === null) {
-            baselineRequirements.push({ key, label, observations: baseline.observations, required: 7 });
+            baselineRequirements.push({ key, label, observations: baseline.observations, required: 12 });
             return;
         }
         physiological.push({
@@ -153,7 +153,7 @@ export function calculateReadiness(dateKey, sourceState = appState) {
                 deviation: result.deviation, observations: result.observations
             });
         } else {
-            baselineRequirements.push({ key: 'respiration', label: 'Atemfrequenz', observations: result.observations, required: 7 });
+            baselineRequirements.push({ key: 'respiration', label: 'Atemfrequenz', observations: result.observations, required: 12 });
         }
     }
 
