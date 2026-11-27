@@ -697,7 +697,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
                 ?? activity?.garminTelemetry?.activityId
                 ?? ((activity?.source === 'garmin' || activity?.sources?.includes?.('garmin')) ? activity?.id : null);
             const id = String(rawId ?? '').replace(/^garmin-/, '');
-            return /^\\d+$/.test(id) && deletedGarminIds.has(id);
+            return /^\d+$/.test(id) && deletedGarminIds.has(id);
         }).length;
         if (removedDeletedActivities) {
             state.rawActivities = state.rawActivities.filter(activity => {
@@ -705,7 +705,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
                     ?? activity?.garminTelemetry?.activityId
                     ?? ((activity?.source === 'garmin' || activity?.sources?.includes?.('garmin')) ? activity?.id : null);
                 const id = String(rawId ?? '').replace(/^garmin-/, '');
-                return !(/^\\d+$/.test(id) && deletedGarminIds.has(id));
+                return !(/^\d+$/.test(id) && deletedGarminIds.has(id));
             });
             saveDataToLocalStorage();
         }
