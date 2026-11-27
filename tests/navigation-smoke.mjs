@@ -374,7 +374,7 @@ assert.ok(analysisOverview.includes('nextDate > todayKey()') && analysisOverview
 assert.ok(analysisOverview.includes('Garmin-HRV') && analysisOverview.includes('keine statistische Korrelation') && analysisOverview.includes('Fehlende HRV- oder Readiness-Werte bleiben offen'), 'lagged context distinguishes source data, missing values and causal limits');
 assert.ok(analysisOverview.includes('Gleicher Kalendertag') && analysisOverview.includes('keinen ursächlichen Zusammenhang') && analysisOverview.includes('Garmin-HRV'), 'health context reports same-day source values without implying causality');
 assert.ok(overviewModule.includes('Physiologie 40 %') && overviewModule.includes('Schlaf 30 %') && overviewModule.includes('subjektives Befinden 30 %'), 'overview explains the established readiness domain weights');
-assert.ok(overviewModule.includes('spanGaps: false'), 'overview time series preserve missing-data gaps');
+assert.ok(overviewModule.includes('spanGaps: true') && overviewModule.includes('borderDash: context => context.p1DataIndex - context.p0DataIndex > 1'), 'overview marks intervals spanning missing-data gaps with a dashed segment');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
 assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick','injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
