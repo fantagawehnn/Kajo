@@ -139,6 +139,9 @@ jobs:
       - name: Run planned strength exercise tests
         run: node --experimental-default-type=module --test tests/planned-strength.test.mjs
 
+      - name: Run planned workout validation tests
+        run: node --experimental-default-type=module --test tests/planned-workout-validation.test.mjs
+
       - name: Run adaptive weekly review tests
         run: node --experimental-default-type=module --test tests/adaptive-week-review.test.mjs
 
