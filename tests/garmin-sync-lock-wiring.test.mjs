@@ -33,7 +33,7 @@ test('background sync also acquires a per-account lock', () => {
 
 test('long-running activity and health batches check lock ownership at safe checkpoints', () => {
   assert.match(source, /assertSyncLock: \(\) => void = \(\) => \{\}/);
-  assert.match(source, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertSyncLock\)/);
+  assert.match(source, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertLock\)/);
   assert.match(source, /assertSyncLock\(\);[\s\S]{0,800}garminGet/);
   assert.match(source, /assertSyncLock\(\);[\s\S]{0,180}upsert\(records/);
 });
