@@ -3814,7 +3814,7 @@ async function syncGarminTodayOnOpen(userId) {
         // Historical late-arriving values must also be reconciled into this
         // device's local check-ins; the normal incremental window is only one day.
         const lateDataRetryDate = health?.lateDataRetryDate;
-        if (typeof lateDataRetryDate === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(lateDataRetryDate)) {
+        if (typeof lateDataRetryDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(lateDataRetryDate)) {
             await loadGarminHealthRecordsIntoCheckins(lateDataRetryDate, lateDataRetryDate);
             if (!isCurrentSync()) return;
         }
