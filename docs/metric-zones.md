@@ -5,7 +5,7 @@
 KAJO unterscheidet drei Arten von Einordnung:
 
 1. **Individuelle Referenzbereiche:** HRV, Ruheherzfrequenz, Atemfrequenz und Schlafdauer werden gegen die eigene jüngere Historie bewertet.
-2. **Modellbasierte Orientierungszonen:** Readiness, TSB und Garmin-Form sind Hilfen zur Einordnung, aber keine direkten physiologischen Messungen.
+2. **Modellbasierte Orientierungszonen:** Readiness, TSB und relativer Saldo sind Hilfen zur Einordnung, aber keine direkten physiologischen Messungen.
 3. **Leistungs- und Trainingszonen:** Herzfrequenzzonen sollen möglichst aus individuellen Schwellenwerten abgeleitet werden. Wenn diese fehlen, darf nur ein klar gekennzeichnetes Näherungsmodell verwendet werden.
 
 Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit und Verletzung haben unabhängig von Scores Vorrang. Fehlende oder nicht vergleichbare Daten bleiben unbekannt.
