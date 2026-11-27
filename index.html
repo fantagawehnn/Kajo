@@ -352,6 +352,12 @@
       <button type="button" class="kajo-ring-card metric-history-clickable" onclick="switchTab('analysis-performance')" aria-label="Performance-Detailanalyse öffnen" title="CTL – chronische Trainingsbelastung, kein direkter Leistungstest">
         <div class="kajo-ring" id="home-fitness-ring"><div><strong id="home-fitness-value">—</strong><span>Fitness</span><small>CTL · Modellwert</small></div></div>
       </button>
+      <button type="button" class="kajo-ring-card kajo-mini-metric" onclick="openHealthMetric('rhr')" aria-label="Ruheherzfrequenz öffnen">
+        <div class="kajo-ring" id="home-status-rhr-ring"><div><strong id="home-status-rhr-value">—</strong><span>Ruhe-HF</span></div></div>
+      </button>
+      <button type="button" class="kajo-ring-card kajo-mini-metric" onclick="openHealthMetric('hrv')" aria-label="HRV öffnen">
+        <div class="kajo-ring" id="home-status-hrv-ring"><div><strong id="home-status-hrv-value">—</strong><span>HRV</span></div></div>
+      </button>
     </div>
     <p id="dashboard-selected-date" class="kajo-home-date"></p>
   </section>
@@ -399,7 +405,7 @@
 
   <section id="home-training-week" class="kajo-home-section kajo-home-week" aria-labelledby="home-training-week-title">
     <div class="kajo-home-section-heading"><h2 id="home-training-week-title">Trainingswoche</h2><span id="home-week-range" class="kajo-home-meta"></span></div>
-    <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsdauer pro Wochentag"></div>
+    <div id="home-week-days" class="kajo-week-chart" aria-label="Trainingsstatus pro Wochentag"></div>\n    <div id="home-week-progress" class="kajo-week-progress hidden"><div class="kajo-week-progress-track"><span id="home-week-progress-fill"></span></div><span id="home-week-progress-label"></span></div>
     <div id="home-week-legend" class="kajo-week-legend"></div>
     <p id="home-week-summary" class="kajo-week-total"></p>
   </section>
