@@ -122,7 +122,7 @@ assert.ok(analysisInsights.includes('toggleRecoveryMetric') && analysisInsights.
 assert.ok(analysisUI.includes('kajo-analysis-metric-link'), 'supported analysis metrics are keyboard-accessible buttons');
 
 assert.ok(analysisUI.includes('Ältere Messwerte ohne Quellenmetadaten bleiben jedoch unbekannt'), 'legacy HRV values remain unclassified');
-assert.ok(dashboard.includes('Persönlicher Normalbereich noch nicht methodisch festgelegt'), 'unapproved wearable ranges are not presented as personal norms');
+assert.ok(dashboard.includes('Mindestens zwölf Messungen aus den vorherigen 28 Tagen sind für eine persönliche Basis erforderlich'), 'wearable values require a sufficient individual baseline');
 assert.ok(!dashboard.includes('Im persönlichen Bereich'), 'legacy personal-range classification is suppressed');
 assert.ok(charts.includes("state.metricHistoryRange = tf"), 'shared timeframe synchronizes detail history');
 
