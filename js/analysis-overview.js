@@ -28,6 +28,53 @@ let activityChart = null;
 let selectedMetrics = new Set(['load', 'recovery', 'performance']);
 let healthMarkersVisible = true;
 let activityMeasure = 'duration';
+const kajoEventBandPlugin = {
+  id: 'kajoEventBands',
+  beforeDatasetsDraw(chart, args, options) {
+    const dates = options?.dates || [];
+    const area = chart.chartArea;
+    const x = chart.scales?.x;
+    if (!dates.length || !area || !x) return;
+    const logs = state.healthLogs || {};
+    const checkins = state.dailyCheckins || {};
+    const races = new Set((Array.isArray(state.races) ? state.races : []).map(race => String(race?.date || '').slice(0,10)));
+    const step = dates.length > 1 ? Math.abs(x.getPixelForValue(1) - x.getPixelForValue(0)) : area.width;
+    const ctx = chart.ctx;
+    ctx.save();
+    dates.forEach((date,index) => {
+      const center = x.getPixelForValue(index);
+      const left = Math.max(area.left, center - step / 2);
+      const right = Math.min(area.right, center + step / 2);
+      if (right <= left) return;
+      const health = logs[date]?.status;
+      const period = checkins[date]?.cycle?.period === true || checkins[date]?.period === true;
+      if (health === 'sick') {
+        ctx.fillStyle = 'rgba(251,146,60,.12)';
+        ctx.fillRect(left, area.top, right-left, area.bottom-area.top);
+      } else if (health === 'injured') {
+        ctx.fillStyle = 'rgba(239,68,68,.10)';
+        ctx.fillRect(left, area.top, right-left, area.bottom-area.top);
+      }
+      if (period) {
+        ctx.fillStyle = 'rgba(232,121,249,.13)';
+        ctx.fillRect(left, area.top, right-left, area.bottom-area.top);
+      }
+      if (races.has(date)) {
+        ctx.beginPath();
+        ctx.setLineDash([4,4]);
+        ctx.strokeStyle = 'rgba(234,241,251,.85)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(center, area.top);
+        ctx.lineTo(center, area.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+    ctx.restore();
+  }
+};
+if (typeof Chart === 'function') Chart.register(kajoEventBandPlugin);
+
 
 function sourceHero(domain) {
   const value = document.getElementById('analysis-' + domain + '-hero-value')?.textContent?.trim() || '—';
