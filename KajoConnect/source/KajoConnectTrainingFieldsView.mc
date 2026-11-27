@@ -65,7 +65,7 @@ class KajoConnectLiveMetricPickerView extends WatchUi.Menu2 {
     ];
 
     var mMetricLabels as Lang.Array<Lang.String> = [
-        "Schlagfrequenz", "Herzfrequenz", "HF-Zone", "Gesamtdistanz", "Intervall-Distanz",
+        "Kadenz", "Herzfrequenz", "HF-Zone", "Gesamtdistanz", "Intervall-Distanz",
         "Pace", "Geschwindigkeit aktuell", "Geschwindigkeit Ø", "Geschwindigkeit max.",
         "Herzfrequenz Ø", "Herzfrequenz max.", "Trainingszeit", "Kalorien", "Leistung",
         "Höhe", "Anstieg", "Abstieg", "Training Effect"
