@@ -590,7 +590,8 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             : 'Noch kein vorheriger CTL-Wert zum Vergleichen vorhanden';
     }
     applyRingState('home-readiness-ring', trainingRingState('readiness', readinessNumber, checkinDate || selectedDate));
-    const tsbProgress=tsbNumber===null?0:Math.max(0,Math.min(100,((tsbNumber+30)/55)*100));\n    applyRingState('home-form-ring', { value: tsbNumber, progress: tsbProgress, color: '#FB923C', empty: tsbNumber === null });
+    const tsbProgress=tsbNumber===null?0:Math.max(0,Math.min(100,((tsbNumber+30)/55)*100));
+    applyRingState('home-form-ring', { value: tsbNumber, progress: tsbProgress, color: '#FB923C', empty: tsbNumber === null });
     const formValueEl = document.getElementById('home-form-value');
     if (formValueEl) formValueEl.style.color = '#f8fafc';
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
