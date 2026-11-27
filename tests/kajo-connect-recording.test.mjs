@@ -64,24 +64,20 @@ test('failed FIT save stops UI timers but preserves engine session for another s
     assert.match(engine, /var saved = mSession\.save\(\);[\s\S]*?if \(saved\) \{\s*mSession = null;/);
 });
 
-test('activity navigation uses Garmin device-independent behavior events', () => {
-    assert.match(delegate, /extends WatchUi\.BehaviorDelegate/);
-    const select = method(delegate, 'onSelect', 'onBack');
-    assert.match(select, /return false/);
-    const back = method(delegate, 'onBack', 'onMenu');
-    assert.match(back, /mView\.handleBackOrLapButton\(\)/);
-    const menu = method(delegate, 'onMenu', 'onNextPage');
-    assert.match(menu, /mView\.handlePausedLongSecondary\(\)/);
+test('activity navigation receives physical keys directly through InputDelegate', () => {
+    assert.match(delegate, /extends WatchUi\.InputDelegate/);
+    assert.match(delegate, /InputDelegate\.initialize\(\)/);
     const key = method(delegate, 'onKey', 'onTap');
     assert.match(key, /WatchUi\.KEY_ENTER/);
     assert.match(key, /WatchUi\.KEY_ESC/);
+    assert.match(key, /WatchUi\.KEY_MENU/);
     assert.match(key, /mView\.handlePrimaryButton\(\)/);
+    assert.match(delegate, /function onTap\(clickEvent/);
+    assert.match(delegate, /function onSwipe\(swipeEvent/);
 });
 
-test('lap marker remains available through back behavior and raw-key fallback', () => {
-    const back = method(delegate, 'onBack', 'onMenu');
+test('lap marker remains available through the raw back key handler', () => {
     const key = method(delegate, 'onKey', 'onTap');
-    assert.match(back, /mView\.handleBackOrLapButton\(\)/);
     assert.match(key, /mView\.handleBackOrLapButton\(\)/);
     const backOrLap = method(activity, 'handleBackOrLapButton', 'handleLapButton');
     assert.match(backOrLap, /handleLapButton\(\)/);
