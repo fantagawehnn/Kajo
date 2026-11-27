@@ -25,7 +25,7 @@ const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', h
 let trendChart = null;
 let formChart = null;
 let activityChart = null;
-let selectedMetrics = new Set(['load', 'recovery', 'performance']);
+let selectedMetrics = new Set(['load', 'recovery']);
 let healthMarkersVisible = true;
 let activityMeasure = 'duration';
 function sourceHero(domain) {
@@ -302,10 +302,20 @@ function renderTrendObservations(dates) {
     ? '<p class="kajo-analysis-chart-note">Im gewählten Zeitraum dokumentierte Gesundheitsereignisse: ' + events.length +
       ' Tage (' + events.map(dateLabel).join(', ') + '). Das ist eine Dokumentationszählung, keine vollständige Erfassung des Gesundheitsstatus.</p>'
     : '<p class="kajo-analysis-chart-note">Keine Erkrankungs- oder Verletzungstage dokumentiert. Daraus lässt sich kein unauffälliger Gesundheitsstatus ableiten.</p>';
+  const detailRoot = document.getElementById('analysis-trend-observations-more');
+  const overviewRows = rows.slice(0, 2);
+  const remainingRows = rows.slice(2);
   root.innerHTML = rows.length
-    ? '<div class="kajo-analysis-availability">' + rows.join('') + '</div>' + eventNote +
-      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. HRV-Werte werden nur bei übereinstimmender Quelle, Messmethode und Einheit verglichen; bei einem Methodenwechsel bleiben abweichende Werte in diesem Vergleich offen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Relativer Saldo und TSB bleiben getrennte Indikatoren.</p>'
-    : '<p class="kajo-analysis-chart-note">Für zwei aufeinanderfolgende Sieben-Tage-Zeiträume liegen nicht genügend vergleichbare Messwerte vor. Es wird kein Trend abgeleitet.</p>' + eventNote;
+    ? '<div class="kajo-analysis-availability">' + overviewRows.join('') + '</div>' +
+      '<p class="kajo-analysis-chart-note">Verglichen werden die letzten sieben Tage mit den sieben Tagen davor. Die Richtung beschreibt eine Messwertveränderung, nicht automatisch eine Verbesserung oder Verschlechterung.</p>'
+    : '<p class="kajo-analysis-chart-note">Für zwei aufeinanderfolgende Sieben-Tage-Zeiträume liegen nicht genügend vergleichbare Messwerte vor. Es wird kein Trend abgeleitet.</p>';
+  if (detailRoot) {
+    detailRoot.innerHTML = (remainingRows.length
+      ? '<div class="kajo-analysis-availability">' + remainingRows.join('') + '</div>'
+      : '<p class="kajo-analysis-chart-note">Keine weiteren Kennzahlen erfüllen aktuell die Anforderungen an vergleichbare Messwerte.</p>') +
+      eventNote +
+      '<p class="kajo-analysis-chart-note">Mittelwerte der letzten sieben Kalendertage werden mit den unmittelbar davorliegenden sieben Tagen verglichen. Ein Trend erscheint nur bei mindestens drei gültigen Tagen je Fenster (Garmin-VO₂max: mindestens zwei). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. HRV-Werte werden nur bei übereinstimmender Quelle, Messmethode und Einheit verglichen. Die Richtung ist keine Diagnose und keine Trainingsempfehlung.</p>';
+  }
 }
 
 function renderHealthMarkers(dates) {
@@ -845,18 +855,29 @@ function renderPeriodSummary() {
   const durationDetail = summary.durationCount
     ? 'Dauer für ' + summary.durationCount + ' / ' + summary.activityCount + ' Einheiten erfasst'
     : 'Keine auswertbaren Dauern';
+  const canoeShare = summary.activityCount > 0 ? Math.round(summary.canoeCount / summary.activityCount * 100) : null;
   const cards = [
+    ['Trainingszeit', duration, durationDetail],
     ['Einheiten', summary.activityCount, 'Dokumentierte Aktivitäten'],
     ['Trainingstage', summary.trainingDays, 'Tage mit mindestens einer Aktivität'],
-    ['Erfasste Trainingszeit', duration, durationDetail],
-    ['Wettkämpfe', summary.raceCount, summary.resultCount + ' Starts mit Ergebnis'],
-    ['Podien / Siege', summary.podiumCount + ' / ' + summary.winCount, 'Nur dokumentierte Platzierungen'],
-    ['Krankheit / Verletzung', summary.sickDays + ' / ' + summary.injuredDays, 'Dokumentierte Tage']
+    ['Kanu-Anteil', canoeShare === null ? '—' : canoeShare + ' %', summary.canoeCount + ' Kanu-Einheiten']
   ];
   root.innerHTML = cards.map(([label, value, detail]) =>
     '<div class="kajo-insight-metric"><span>' + escapeHtml(label) + '</span><strong>' +
     escapeHtml(String(value)) + '</strong><small>' + escapeHtml(detail) + '</small></div>'
   ).join('');
+  const extraRoot = document.getElementById('analysis-period-summary-extra');
+  if (extraRoot) {
+    const extraCards = [
+      ['Wettkämpfe', summary.raceCount, summary.resultCount + ' Starts mit Ergebnis'],
+      ['Podien / Siege', summary.podiumCount + ' / ' + summary.winCount, 'Nur dokumentierte Platzierungen'],
+      ['Krankheit / Verletzung', summary.sickDays + ' / ' + summary.injuredDays, 'Dokumentierte Tage']
+    ];
+    extraRoot.innerHTML = extraCards.map(([label, value, detail]) =>
+      '<div class="kajo-insight-metric"><span>' + escapeHtml(label) + '</span><strong>' +
+      escapeHtml(String(value)) + '</strong><small>' + escapeHtml(detail) + '</small></div>'
+    ).join('');
+  }
   if (note) {
     const incompleteDuration = summary.durationCount < summary.activityCount;
     note.textContent = 'Zeitraum ' + dateLabel(range.from) + ' – ' + dateLabel(range.to) +
@@ -902,7 +923,20 @@ function renderIntensityDistribution() {
     chartKey: 'analysisOverviewZoneChartInstance'
   });
 }
+function bindAdvancedAnalysisCharts() {
+  const advanced = document.querySelector('[data-analysis-advanced]');
+  if (!advanced || advanced.dataset.chartResizeBound === 'true') return;
+  advanced.dataset.chartResizeBound = 'true';
+  advanced.addEventListener('toggle', () => {
+    if (!advanced.open) return;
+    requestAnimationFrame(() => {
+      renderFormTrendChart();
+      renderIntensityDistribution();
+    });
+  });
+}
 export function renderAnalysisOverview() {
+  bindAdvancedAnalysisCharts();
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
   renderDataAvailability(rangeDates(currentRange()));
   renderReadinessBreakdown(rangeDates(currentRange()));
