@@ -38,12 +38,18 @@ function getHrvMetadata(checkin) {
     return checkin?.measurementSources?.garminHrv
         || (checkin?.measurementSources?.hrv?.source === 'garmin' ? checkin.measurementSources.hrv : null);
 }
+function getCanonicalHrvUnit(checkin) {
+    const unit = String(getHrvMetadata(checkin)?.unit || 'ms').trim().toLowerCase();
+    if (['ms', 'millisecond', 'milliseconds'].includes(unit)) return 'ms';
+    if (['s', 'sec', 'second', 'seconds'].includes(unit)) return 's';
+    return null;
+}
 export function getComparableGarminHrvValue(checkin) {
     const value = getGarminCheckinMetric(checkin, 'hrv');
     if (!validNumber(value) || Number(value) <= 0) return null;
-    const unit = String(getHrvMetadata(checkin)?.unit || 'ms').trim().toLowerCase();
-    if (['ms','millisecond','milliseconds'].includes(unit)) return Number(value);
-    if (['s','sec','second','seconds'].includes(unit)) return Number(value) * 1000;
+    const unit = getCanonicalHrvUnit(checkin);
+    if (unit === 'ms') return Number(value);
+    if (unit === 's') return Number(value) * 1000;
     return null;
 }
 export function getGarminHrvMeasurementIdentity(checkin) {
@@ -54,7 +60,7 @@ export function getGarminHrvMeasurementIdentity(checkin) {
     return [
         String(metadata?.source || (dedicated ? 'garmin' : 'legacy')).toLowerCase(),
         String(metadata?.metric || 'unspecified').trim().toLowerCase(),
-        String(metadata?.unit || 'ms').trim().toLowerCase()
+        getCanonicalHrvUnit(checkin)
     ].join(':');
 }
 export function getComparableGarminHrvSeries(checkins, dates) {
