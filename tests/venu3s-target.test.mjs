@@ -268,6 +268,14 @@ test("custom metric layouts relocate the wide center tile when a lower side tile
   assert.match(activityView, /if \(centerMetric != "" && hasLowerSideMetric\)/);
 });
 
+test("upper start key launches free training when no session is planned", () => {
+  const startSelection = homeView.slice(
+    homeView.indexOf("function activateHomeSelection"),
+    homeView.indexOf("function openSettings")
+  );
+  assert.match(startSelection, /if \(getTodaysSessions\(\)\.size\(\) > 0\) \{\s*startActivity\(\);\s*\} else \{[\s\S]*?openActivityView\(null\);/);
+});
+
 test("home screen uses a Garmin-style list, hides empty workout icon, and cycles boat class in place", () => {
   assert.match(homeView, /function getTodaysSessions\(\)/);
   assert.match(homeView, /sessionDate\.toString\(\) == today/);
