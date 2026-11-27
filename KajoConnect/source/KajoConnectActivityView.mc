@@ -1610,6 +1610,10 @@ class KajoConnectActivityView extends WatchUi.View {
         return true;
     }
 
+    function isReadyToStart() as Lang.Boolean {
+        return mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN";
+    }
+
     function handleTap(x as Lang.Number, y as Lang.Number) as Void {
         // Speichern, Verwerfen und Fortsetzen sind in der Speicheransicht
         // ausschließlich über physische Tasten möglich.
