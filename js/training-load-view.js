@@ -60,13 +60,14 @@ function selectedTimeline(){const range=getRange(),map=new Map(getPerformanceTim
 function lastValidLoadDay(timeline){for(let i=timeline.length-1;i>=0;i--){const row=timeline[i];if(valid(row.ctl)||valid(row.atl)||valid(row.tsb))return row;}return null;}
 function valueLevel(value,timeline,key){
  const values=timeline.map(row=>row?.[key]).filter(valid).map(Number);
- if(!valid(value)||!values.length)return{level:'unavailable',label:'Kein Wert',color:'#64748b'};
+ const neutralColor='var(--kajo-status-info)';
+ if(!valid(value)||!values.length)return{level:'unavailable',label:'Kein Wert',color:neutralColor};
  const min=Math.min(...values),max=Math.max(...values);
- if(max===min)return{level:'medium',label:'Im bisherigen Bereich',color:'#55B6A4'};
+ if(max===min)return{level:'medium',label:'Im bisherigen Bereich',color:neutralColor};
  const position=(Number(value)-min)/(max-min);
- if(position<1/3)return{level:'low',label:'Niedriger Wert im gewählten Zeitraum',color:'#6DA8F7'};
- if(position<2/3)return{level:'medium',label:'Mittlerer Wert im gewählten Zeitraum',color:'#55B6A4'};
- return{level:'high',label:'Hoher Wert im gewählten Zeitraum',color:'#A78BFA'};
+ if(position<1/3)return{level:'low',label:'Niedriger Wert im gewählten Zeitraum',color:neutralColor};
+ if(position<2/3)return{level:'medium',label:'Mittlerer Wert im gewählten Zeitraum',color:neutralColor};
+ return{level:'high',label:'Hoher Wert im gewählten Zeitraum',color:neutralColor};
 }
 function tsbLevel(value){
  if(!valid(value))return{level:'unavailable',label:'Kein Wert',color:'#64748b'};
