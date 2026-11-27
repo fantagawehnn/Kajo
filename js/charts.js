@@ -13,7 +13,7 @@ import { inspectDay, calculateReadiness, renderMetricHistory } from './dashboard
 import { getTrainingLoadData, getAdaptiveRestingHr, calculateHeartRateReserveZones } from './training-load.js?v=5';
 import { getGarminTelemetry, getActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
 import { showChartPointReadout, showChartSummaryReadout } from './chart-readout.js';
-import { getValidatedElapsedTimeAxis } from './performance-data-quality.js';
+import { getValidatedElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
 /* Chart.js: Touchbewegungen innerhalb eines Diagramms wie Hover behandeln.
    touchmove aktualisiert onHover kontinuierlich beim Verschieben des Fingers. */
@@ -781,26 +781,45 @@ export function getActivityTelemetrySeries(act) {
         const label = typeof metric.label === 'string' && metric.label.trim()
             ? metric.label : key.replace(/^direct/, '').replace(/^sum/, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
         if (!isTelemetrySeriesAllowed(act, key, label)) continue;
-        const numericCount = metric.values.filter(value => value !== null && value !== undefined
+        const semantic = semanticFor(key, label);
+        let displayKey = key;
+        let displayMetric = {
+            ...metric,
+            key,
+            time: metric.time || telem.metricSeriesTime || telem.time
+        };
+        const paddlingMetric = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
+            ? ({ speed: 'speed', power: 'power', cadence: 'cadence' }[semantic] || null)
+            : null;
+        if (paddlingMetric) {
+            const resolved = resolvePaddlingPerformanceSeries(act, [displayMetric], paddlingMetric);
+            if (resolved) {
+                displayKey = resolved.key;
+                displayMetric = resolved;
+            }
+        }
+        const displayValues = Array.isArray(displayMetric.values) ? displayMetric.values : [];
+        const numericCount = displayValues.filter(value => value !== null && value !== undefined
             && value !== '' && Number.isFinite(Number(value))).length;
         if (numericCount < 2) continue;
-        if (/speed|geschwindigkeit/i.test(key + ' ' + label)
-            && !isMeaningfulRideSpeed(act, metric.values, metric.unit)) continue;
-        const semantic = semanticFor(key, label);
+        if (/speed|geschwindigkeit/i.test(displayKey + ' ' + label)
+            && !isMeaningfulRideSpeed(act, displayValues, displayMetric.unit)) continue;
         // Eine Kennzahl wird nur einmal angeboten: bevorzugt die bereits
         // normalisierte Standardreihe, ansonsten die verfügbare Garmin-Rohreihe.
         if (seenSemantics.has(semantic)) continue;
         seenSemantics.add(semantic);
-        const displayLabel = ['Kayaking', 'C1', 'C2', 'PaddleErgo'].includes(act?.type)
-            && (semantic === 'speed' || semantic === 'power')
-            ? label + ' (Gerätemesswert)' : label;
+        const isPaddlingDeviceMetric = Boolean(displayMetric.sourceDetail);
+        const displayLabel = isPaddlingDeviceMetric ? label + ' (Gerätemesswert)' : label;
         result.push({
-            key,
+            key: displayKey,
             label: displayLabel,
-            unit: typeof metric.unit === 'string' ? metric.unit : '',
-            time: getValidatedElapsedTimeAxis(telem, metric.values.length),
-            color: getActivityTelemetryColor(key, displayLabel),
-            values: metric.values.map(value => value === null || value === undefined || value === ''
+            unit: typeof displayMetric.unit === 'string' ? displayMetric.unit : '',
+            time: getValidatedElapsedTimeAxis({
+                ...telem,
+                metricSeriesTime: displayMetric.time || telem.metricSeriesTime
+            }, displayValues.length),
+            color: getActivityTelemetryColor(displayKey, displayLabel),
+            values: displayValues.map(value => value === null || value === undefined || value === ''
                 || !Number.isFinite(Number(value)) ? null : Number(value))
         });
     }
