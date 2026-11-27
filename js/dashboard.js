@@ -1115,7 +1115,7 @@ function trainingRingState(key, value, dateKey) {
 export function historyRingColor(key, value, dateKey) {
     if (value === null || value === undefined) return STATUS_COLORS.info;
     if (key === 'readiness') { const zone = readinessZone(value); return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info); }
-    if (key === 'form') {
+    if (['form', 'tsb'].includes(key)) {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
         const zone = classifyTrainingBalance(value, 'relative', phaseTargetsForDate(dateKey));
