@@ -740,11 +740,7 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         const locallyAvailableGarminIds = new Set();
         let removedDeletedActivities = 0;
         state.rawActivities = (Array.isArray(state.rawActivities) ? state.rawActivities : []).filter(activity => {
-            const sourceId = activity?.sourceRefs?.garminActivityId ??
-                activity?.garminData?.activityId ??
-                (String(activity?.id ?? '').startsWith('garmin-')
-                    ? String(activity.id).slice('garmin-'.length)
-                    : null);
+            const sourceId = getKajoGarminActivityId(activity);
             if (sourceId != null && deletedGarminIds.has(String(sourceId))) {
                 removedDeletedActivities++;
                 return false;
