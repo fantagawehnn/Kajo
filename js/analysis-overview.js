@@ -810,7 +810,6 @@ function renderActivityChart() {
         y: { stacked: true, display: false, grid: { display: false } }
       },
       plugins: {
-        kajoEventBands: { dates },
         legend: { display: false },
         title: { display: !values.length, text: activityMeasure === 'duration' && activities.length ? 'Keine vollständigen Dauern verfügbar' : 'Noch keine Trainingsaktivitäten erfasst', color: textColor, font: { size: 11, weight: 'normal' } },
         tooltip: { callbacks: { label: context => {
