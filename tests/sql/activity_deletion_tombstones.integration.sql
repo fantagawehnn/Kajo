@@ -22,3 +22,67 @@ create table public.garmin_activities (
 );
 
 \echo 'Applying activity deletion tombstone migration'
+\i supabase/migrations/20261127000100_activity_deletion_tombstones.sql
+
+-- Seed rows before the tombstones: existing copies are retained as historical
+-- storage, but updates and new upserts must not resurrect them.
+insert into public.activities (user_id, record_id, payload) values
+    ('00000000-0000-0000-0000-000000000001', 'garmin-123', '{"name":"old local copy"}'),
+    ('00000000-0000-0000-0000-000000000002', 'garmin-123', '{"name":"other account"}');
+
+insert into public.garmin_activities (user_id, garmin_activity_id, activity) values
+    ('00000000-0000-0000-0000-000000000001', '123', '{"activityName":"old Garmin copy"}'),
+    ('00000000-0000-0000-0000-000000000002', '123', '{"activityName":"other account"}');
+
+insert into public.activity_deletions (user_id, record_id, garmin_activity_id, activity_date)
+values ('00000000-0000-0000-0000-000000000001', 'garmin-123', '123', '2026-11-20');
+
+-- The same user's old rows cannot be updated or inserted again.
+update public.activities
+   set payload = '{"name":"resurrected"}'
+ where user_id = '00000000-0000-0000-0000-000000000001'
+   and record_id = 'garmin-123';
+
+insert into public.activities (user_id, record_id, payload)
+values ('00000000-0000-0000-0000-000000000001', 'garmin-123', '{"name":"resurrected insert"}');
+
+update public.garmin_activities
+   set activity = '{"activityName":"resurrected"}'
+ where user_id = '00000000-0000-0000-0000-000000000001'
+   and garmin_activity_id = '123';
+
+insert into public.garmin_activities (user_id, garmin_activity_id, activity)
+values ('00000000-0000-0000-0000-000000000001', '123', '{"activityName":"resurrected insert"}');
+
+do $$
+begin
+    if (select payload->>'name' from public.activities
+        where user_id = '00000000-0000-0000-0000-000000000001' and record_id = 'garmin-123')
+       <> 'old local copy' then
+        raise exception 'Deleted KAJO activity was modified or resurrected';
+    end if;
+
+    if (select activity->>'activityName' from public.garmin_activities
+        where user_id = '00000000-0000-0000-0000-000000000001' and garmin_activity_id = '123')
+       <> 'old Garmin copy' then
+        raise exception 'Deleted Garmin activity was modified or resurrected';
+    end if;
+
+    if (select count(*) from public.activities
+        where user_id = '00000000-0000-0000-0000-000000000002' and record_id = 'garmin-123') <> 1 then
+        raise exception 'Tombstone incorrectly affected another user activity';
+    end if;
+
+    if (select count(*) from public.garmin_activities
+        where user_id = '00000000-0000-0000-0000-000000000002' and garmin_activity_id = '123') <> 1 then
+        raise exception 'Garmin tombstone incorrectly affected another user activity';
+    end if;
+
+    if has_table_privilege('authenticated', 'public.activity_deletions', 'UPDATE')
+       or has_table_privilege('authenticated', 'public.activity_deletions', 'DELETE') then
+        raise exception 'Authenticated users can mutate immutable activity tombstones';
+    end if;
+end;
+$$;
+
+\echo 'Activity deletion tombstone integration test passed'
