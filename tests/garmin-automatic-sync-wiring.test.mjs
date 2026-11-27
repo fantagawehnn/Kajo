@@ -12,7 +12,7 @@ test('automatic health sync uses a separate cursor and preserves its progress ac
   assert.match(edgeFunction, /\.eq\("sync_type", "health_auto"\)/);
   assert.match(edgeFunction, /\.eq\("sync_type", "health_history"\)/);
   assert.match(edgeFunction, /from\("garmin_health_records"\)/);
-  assert.match(edgeFunction, /syncGarminHealthHistoryBatch\(\s*admin, userId, range\.startDate, today, true, false, 2, "health_auto", true/);
+  assert.match(edgeFunction, /syncGarminHealthHistoryBatch\(\s*admin, userId, range\.startDate, today, true, false,[\s\S]*?lateDataRetryDate \? 1 : 2, "health_auto", true/);
   assert.match(edgeFunction, /else if \(!preserveCursor && \(state\.range_start_date !== startDate \|\| state\.range_end_date !== endDate\)\)/);
 });
 
