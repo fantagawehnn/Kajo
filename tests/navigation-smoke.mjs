@@ -377,7 +377,7 @@ assert.ok(overviewModule.includes('Physiologie 40 %') && overviewModule.includes
 assert.ok(overviewModule.includes('spanGaps: true') && overviewModule.includes('borderDash: context => context.p1DataIndex - context.p0DataIndex > 1'), 'overview marks intervals spanning missing-data gaps with a dashed segment');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
-assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick','injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
+assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick', 'injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
 assert.ok(overviewModule.includes('renderHeartRateZoneDistribution'), 'intensity distribution reuses the existing heart-rate zone analysis');
 assert.ok(charts.includes('options.canvasId || \'heartRateZonesChart\''), 'heart-rate zone chart supports a dedicated overview target');
 assert.ok(main.includes("sub === 'overview'") && main.includes('renderAnalysisOverview()'), 'overview is routed and rendered from main navigation');
