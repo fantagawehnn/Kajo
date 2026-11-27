@@ -854,7 +854,7 @@ async function syncGarminActivitiesForUser(
     const records = rows.map((item) => {
       const activity = safeActivityPreview(item);
       const activityId = activity.activityId == null ? "" : String(activity.activityId);
-      if (!/^\d+$/.test(activityId) || deletedGarminIds.has(activityId)) return null;
+      if (!/^\d+$/.test(activityId)) return null;
       const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
       const parsedStart = rawStart ? new Date(String(rawStart)) : null;
       const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
@@ -862,6 +862,7 @@ async function syncGarminActivitiesForUser(
       if (activityDate && activityDate >= range.startDate && activityDate <= range.endDate) {
         activityCounts.set(activityDate, (activityCounts.get(activityDate) ?? 0) + 1);
       }
+      if (deletedGarminIds.has(activityId)) return null;
       const duration = Number(activity.duration);
       const distance = Number(activity.distance);
       return {
