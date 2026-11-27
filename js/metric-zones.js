@@ -109,7 +109,7 @@ export function classifySubjective(key, value) {
 export function classifyTrainingBalance(value, mode = 'unclassified') {
   if (!valid(value)) return { status: 'info', label: 'Keine Modellwerte' };
   const n = Number(value);
-  if (mode === 'garmin') {
+  if (mode === 'relative') {
     if (n < -25) return { status: 'critical', label: 'Hoher negativer relativer Modellstatus' };
     if (n < -10) return { status: 'attention', label: 'Erhöhter negativer relativer Modellstatus' };
     if (n <= 5) return { status: 'good', label: 'Relativer Modellstatus ausgeglichen' };
