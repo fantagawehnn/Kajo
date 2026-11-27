@@ -3732,6 +3732,14 @@ async function syncGarminTodayOnOpen(userId) {
         }
 
         if (!isCurrentSync()) return;
+        const lateDataRetryDate = health?.lateDataRetryDate;
+        if (typeof lateDataRetryDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(lateDataRetryDate)) {
+            try {
+                await loadGarminHealthRecordsIntoCheckins(lateDataRetryDate, lateDataRetryDate);
+            } catch (lateHealthError) {
+                console.warn('KAJO: Nachgelieferte Garmin-Gesundheitsdaten konnten lokal noch nicht übernommen werden:', lateHealthError);
+            }
+        }
         const activityCloudSync = await loadGarminActivitiesFromCloud(userId, syncActivationSequence);
         if (!isCurrentSync()) return;
         if (activityCloudSync.added > 0 || activityCloudSync.merged > 0) {
@@ -3756,7 +3764,7 @@ async function syncGarminTodayOnOpen(userId) {
 
         if (!isCurrentSync()) return;
         const activitySync = response.sync?.activitySync || null;
-        const activityFailed = activitySync?.status === 'error' || activitySync?.status === 'rate_limited';
+        const activityFailed = activitySync?.status === 'error' || activitySync?.status === 'rate_limited' || activitySync?.status === 'partial';
         const healthFailed = health?.status === 'partial' || health?.status === 'error'
             || health?.status === 'rate_limited' || Number(health?.failed || 0) > 0;
         const partial = activityFailed || healthFailed
@@ -3779,6 +3787,19 @@ async function syncGarminTodayOnOpen(userId) {
             garminDailySyncCompleted.add(runKey);
             console.info('KAJO: Garmin-Tagesabgleich abgeschlossen für', date, response.sync?.activitySync, health, jsonTelemetry, telemetryCloud);
             const activitySync = response.sync?.activitySync || {};
+            const activityRemaining = Number(activitySync.progress?.remainingDays || 0);
+            const healthRemaining = Number(health?.remainingDays || 0);
+            if (activityRemaining > 0 || healthRemaining > 0
+                || activitySync.status === 'in_progress' || health?.status === 'in_progress') {
+                setGarminSyncResult('Garmin-Daten werden schrittweise nachgeladen …', 'syncing');
+                setGarminSyncIndicator('syncing', 'Synchronisierung läuft');
+                setTimeout(() => {
+                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
+                        void syncGarminTodayOnOpen(userId);
+                    }
+                }, 3000);
+                return;
+            }
             const fetched = Number(activitySync.fetched || 0);
             const stored = Number(activitySync.stored || 0);
             setGarminSyncResult(stored > 0
