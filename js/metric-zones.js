@@ -26,10 +26,10 @@ function sd(values, average) {
 export function readinessZone(score) {
   if (!valid(score)) return { status: 'info', label: 'Keine ausreichende Datenbasis' };
   const value = Number(score);
-  if (value >= 80) return { status: 'good', label: 'Günstige Tagesform' };
-  if (value >= 65) return { status: 'good', label: 'Im Orientierungsbereich' };
-  if (value >= 45) return { status: 'attention', label: 'Vorsichtig beobachten' };
-  return { status: 'critical', label: 'Deutlich eingeschränkter Orientierungswert' };
+  if (value >= 80) return { status: 'good', zone: 5, label: 'Günstige Tagesform' };
+  if (value >= 65) return { status: 'good', zone: 4, label: 'Im Orientierungsbereich' };
+  if (value >= 45) return { status: 'attention', zone: 2, label: 'Vorsichtig beobachten' };
+  return { status: 'critical', zone: 1, label: 'Deutlich eingeschränkter Orientierungswert' };
 }
 
 /**
@@ -66,7 +66,7 @@ export function classifyPersonalMetric(key, value, historyValues) {
     status = 'attention';
   }
   return {
-    status, label, baseline: Number(baseline.toFixed(1)),
+    status, zone: status === 'critical' ? 1 : status === 'attention' ? 2 : 4, label, baseline: Number(baseline.toFixed(1)),
     lower: Number((baseline - scale).toFixed(1)),
     upper: Number((baseline + scale).toFixed(1)),
     deviation: Number(z.toFixed(2)), scale: Number(scale.toFixed(2)),
@@ -82,39 +82,39 @@ export function classifySleepDuration(value, historyValues) {
   }
   const baseline = median(values);
   const deficit = baseline - Number(value);
-  if (deficit <= 0.5) return { status: 'good', label: 'Nahe am persönlichen Schlafniveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
-  if (deficit <= 1) return { status: 'attention', label: 'Etwa 30–60 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
-  if (deficit <= 1.5) return { status: 'attention', label: 'Etwa 60–90 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
-  return { status: 'critical', label: 'Mehr als 90 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
+  if (deficit <= 0.5) return { status: 'good', zone: 4, label: 'Nahe am persönlichen Schlafniveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
+  if (deficit <= 1) return { status: 'attention', zone: 2, label: 'Etwa 30–60 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
+  if (deficit <= 1.5) return { status: 'attention', zone: 2, label: 'Etwa 60–90 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
+  return { status: 'critical', zone: 1, label: 'Mehr als 90 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
 }
 
 export function classifyGarminSleepScore(value) {
   if (!valid(value)) return { status: 'info', label: 'Keine Messung' };
   const score = Number(value);
-  if (score >= 90) return { status: 'good', label: 'Ausgezeichnet · Garmin' };
-  if (score >= 80) return { status: 'good', label: 'Gut · Garmin' };
-  if (score >= 60) return { status: 'attention', label: 'Mittel · Garmin' };
-  return { status: 'critical', label: 'Niedrig · Garmin' };
+  if (score >= 90) return { status: 'good', zone: 5, label: 'Ausgezeichnet · Garmin' };
+  if (score >= 80) return { status: 'good', zone: 4, label: 'Gut · Garmin' };
+  if (score >= 60) return { status: 'attention', zone: 3, label: 'Mittel · Garmin' };
+  return { status: 'critical', zone: 1, label: 'Niedrig · Garmin' };
 }
 
 export function classifySubjective(key, value) {
   if (!valid(value) || Number(value) < 1 || Number(value) > 5) return { status: 'info', label: 'Keine Angabe' };
   const score = Number(value);
   const adverse = ['fatigue', 'soreness', 'stress'].includes(key) ? score : 6 - score;
-  if (adverse <= 2) return { status: 'good', label: 'Günstige Selbsteinschätzung' };
-  if (adverse <= 3) return { status: 'attention', label: 'Mittlere Selbsteinschätzung' };
-  return { status: 'critical', label: 'Ungünstige Selbsteinschätzung' };
+  if (adverse <= 2) return { status: 'good', zone: 4, label: 'Günstige Selbsteinschätzung' };
+  if (adverse <= 3) return { status: 'attention', zone: 3, label: 'Mittlere Selbsteinschätzung' };
+  return { status: 'critical', zone: 1, label: 'Ungünstige Selbsteinschätzung' };
 }
 
 export function classifyTrainingBalance(value, mode = 'unclassified') {
   if (!valid(value)) return { status: 'info', label: 'Keine Modellwerte' };
   const n = Number(value);
   if (mode === 'relative') {
-    if (n < -25) return { status: 'critical', label: 'Hoher negativer relativer Modellstatus' };
-    if (n < -10) return { status: 'attention', label: 'Erhöhter negativer relativer Modellstatus' };
-    if (n <= 5) return { status: 'good', label: 'Relativer Modellstatus ausgeglichen' };
-    if (n <= 20) return { status: 'good', label: 'Positiver relativer Modellstatus' };
-    return { status: 'attention', label: 'Sehr positiver relativer Modellstatus · Kontext prüfen' };
+    if (n < -25) return { status: 'critical', zone: 1, label: 'Hoher negativer relativer Modellstatus' };
+    if (n < -10) return { status: 'attention', zone: 2, label: 'Erhöhter negativer relativer Modellstatus' };
+    if (n <= 5) return { status: 'good', zone: 3, label: 'Relativer Modellstatus ausgeglichen' };
+    if (n <= 20) return { status: 'good', zone: 4, label: 'Positiver relativer Modellstatus' };
+    return { status: 'attention', zone: 2, label: 'Sehr positiver relativer Modellstatus · Kontext prüfen' };
   }
   return { status: 'info', label: 'TSB ' + (n > 0 ? '+' : '') + n.toFixed(1) + ' · Modellwert ohne allgemeingültige Grenzzone' };
 }
@@ -122,8 +122,8 @@ export function classifyTrainingBalance(value, mode = 'unclassified') {
 export function classifyAcwr(value) {
   if (!valid(value) || Number(value) < 0) return { status: 'info', label: 'Nicht berechenbar' };
   const ratio = Number(value);
-  if (ratio < 0.8) return { status: 'attention', label: 'Akute Last unter chronischem Niveau' };
-  if (ratio <= 1.3) return { status: 'info', label: 'Akute und chronische Last ähnlich – keine Sicherheitszone' };
-  if (ratio <= 1.5) return { status: 'attention', label: 'Erhöhter kurzfristiger Lastanstieg' };
-  return { status: 'critical', label: 'Deutlicher kurzfristiger Lastanstieg' };
+  if (ratio < 0.8) return { status: 'attention', zone: 2, label: 'Akute Last unter chronischem Niveau' };
+  if (ratio <= 1.3) return { status: 'info', zone: 3, label: 'Akute und chronische Last ähnlich – keine Sicherheitszone' };
+  if (ratio <= 1.5) return { status: 'attention', zone: 2, label: 'Erhöhter kurzfristiger Lastanstieg' };
+  return { status: 'critical', zone: 1, label: 'Deutlicher kurzfristiger Lastanstieg' };
 }
