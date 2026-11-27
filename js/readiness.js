@@ -340,8 +340,15 @@ export function buildTrainingRecommendation(dateKey, planned = [], sourceState =
     );
     // A marked adverse deviation in one physiological marker must not be
     // averaged away by a good sleep score or subjective response.
-    const criticalPhysiologySignal = physiologicalMarkers.some(item => item.score <= 40);
-    const cautionPhysiologySignal = physiologicalMarkers.some(item => item.score <= 50);
+    const adverseDeviation = item => {
+        const deviation = Number(item.deviation);
+        if (!Number.isFinite(deviation)) return 0;
+        return item.key === 'hrv' ? -deviation : deviation;
+    };
+    // The same individual reference bands are used for display and decision context:
+    // >1 robust scale = caution; >2 = marked deviation. This is not a diagnosis.
+    const criticalPhysiologySignal = physiologicalMarkers.some(item => adverseDeviation(item) > 2);
+    const cautionPhysiologySignal = physiologicalMarkers.some(item => adverseDeviation(item) > 1);
     const lowDomain = Object.values(readiness.domains)
         .some(value => Number.isFinite(value) && value < 35);
     const highLoadLabel = (() => {
