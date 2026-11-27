@@ -646,7 +646,7 @@ function setupSharedPeriod() {
   const target = document.getElementById('analysis-shared-period');
   const buttons = document.getElementById('analysis-period-buttons');
   if (target && buttons && buttons.parentElement !== target) target.appendChild(buttons);
-  const labels = { '7d': '7 T', '28d': '28 T', '3m': '3 M', '6m': '6 M', '1y': '1 J' };
+  const labels = { '7d': 'Letzte 7 Tage', '28d': 'Letzte 28 Tage', '3m': 'Letzte 90 Tage', '6m': 'Letzte 180 Tage', '1y': 'Letztes Jahr' };
   setText('analysis-period-label', labels[state.activeTimeframe] || 'Individueller Zeitraum');
 }
 export function renderAnalysisPageUI(subpage = 'load') {
