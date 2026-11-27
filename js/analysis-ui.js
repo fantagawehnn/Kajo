@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries, setChartEmptyState } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
-import { readinessZone } from './metric-zones.js?v=3';
+import { readinessZone } from './metric-zones.js?v=5';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
@@ -108,7 +108,7 @@ function renderRecovery() {
   const score = readinessEntry ? readinessEntry.result.score : null;
   setHero('recovery', score === null ? '—' : String(score), score === null ? '' : '/ 100',
     'Readiness', readinessEntry ? 'Letzter verfügbarer Wert · ' + dateLabel(readinessEntry.date) : 'Im gewählten Zeitraum liegen nicht genügend Daten für Readiness vor.',
-    score === null ? 'neutral' : readinessZone(score).status);
+    score === null ? 'neutral' : 'zone' + readinessZone(score).zone);
 
   const objectiveEntries = [
     ['HRV', 'hrv', 'Garmin · ms', 1],
