@@ -110,6 +110,9 @@ jobs:
       - name: Run activity deletion tombstone tests
         run: node --experimental-default-type=module --test tests/activity-deletions.test.mjs tests/cloud-activities-tombstone.test.mjs
 
+      - name: Run cloud deletion fail-closed wiring tests
+        run: node --experimental-default-type=module --test tests/cloud-sync-deletion-safety.test.mjs
+
       - name: Run split cloud activity storage tests
         run: node --experimental-default-type=module --test tests/cloud-activities.test.mjs
       - name: Run parallel cloud activity loading tests

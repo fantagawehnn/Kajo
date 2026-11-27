@@ -30,6 +30,30 @@ function equal(left, right) {
     return JSON.stringify(stable(left)) === JSON.stringify(stable(right));
 }
 
+/**
+ * Garmin-Analyse-Cache-Zeitstempel sind geräteabhängige Steuerungsmetadaten.
+ * Wenn beide Geräte denselben Cache-Inhalt geprüft haben, darf ein abweichender
+ * Prüfzeitpunkt den fachlichen Datenabgleich nicht blockieren. Es gilt jeweils
+ * der spätere gültige Zeitpunkt.
+ */
+function mergeGarminAnalysisTimestamp(local, cloud, path) {
+    if (!/\.garminAnalysis\.(?:checkedAt|retryAfter)$/.test(path)) return null;
+    const toTimestamp = value => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string' && value.trim()) {
+            const numeric = Number(value);
+            if (Number.isFinite(numeric)) return numeric;
+            const parsed = Date.parse(value);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+        return null;
+    };
+    const localTime = toTimestamp(local);
+    const cloudTime = toTimestamp(cloud);
+    if (localTime === null || cloudTime === null) return null;
+    return localTime >= cloudTime ? clone(local) : clone(cloud);
+}
+
 function itemKey(item) {
     if (item === null || typeof item !== 'object') return 'value:' + JSON.stringify(item);
     if (item.id != null) return 'id:' + String(item.id);
@@ -117,6 +141,9 @@ function mergeNode(base, local, cloud, hasBase, path, conflicts) {
         if (cloud === null && local !== null) return clone(local);
         if (equal(local, cloud)) return clone(local);
     }
+
+    const mergedCacheTimestamp = mergeGarminAnalysisTimestamp(local, cloud, path);
+    if (mergedCacheTimestamp !== null) return mergedCacheTimestamp;
 
     if (local === MISSING || cloud === MISSING) {
         conflicts.push(path + ' (Löschung gegen Änderung)');

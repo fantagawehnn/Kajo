@@ -2763,16 +2763,10 @@ function applyReconciledCloudSnapshot(snapshot) {
  * gelesen. Der Cursor wird erst nach erfolgreicher Reconciliation gespeichert.
  */
 async function loadAccountActivityDeletionRows(userId) {
-    try {
-        return await fetchActivityDeletionTombstones(supabase, userId);
-    } catch (error) {
-        const code = String(error?.code || '');
-        const message = String(error?.message || '');
-        if (code === '42P01' || code === 'PGRST205' || /activity_deletions.*(not found|does not exist)/i.test(message)) {
-            return [];
-        }
-        throw error;
-    }
+    // Deletion history is a safety boundary, not optional metadata. If it cannot
+    // be read, abort reconciliation rather than treating missing tombstones as
+    // proof that every activity is active.
+    return await fetchActivityDeletionTombstones(supabase, userId);
 }
 
 async function fetchCloudActivityState(userId, baselineSnapshot, syncState = {}) {
@@ -3113,13 +3107,10 @@ async function flushCloudSync(options = {}) {
         // dauerhaft in IndexedDB liegen, bevor der Cloud-Stand bestätigt wird.
         await flushLocalPersistence();
         if (!isCurrentSync()) return;
-        // Upload deletion markers before any cloud activity reconciliation.
-        // If the migration is not deployed yet, keep the local outbox and continue safely.
-        try {
-            await syncPendingActivityDeletionTombstones(supabase, userId);
-        } catch (deletionSyncError) {
-            console.warn('Aktivitätslöschungen bleiben lokal vorgemerkt und werden später synchronisiert:', deletionSyncError);
-        }
+        // Deletion markers are mandatory before any cloud activity reconciliation.
+        // If upload or read-back fails, stop here: continuing could resurrect a
+        // locally deleted activity from a stale cloud/device snapshot.
+        await syncPendingActivityDeletionTombstones(supabase, userId);
         if (!isCurrentSync()) return;
         pendingOutboxRecord = await getPendingLocalSync(userId);
         if (!isCurrentSync()) return;
@@ -3475,6 +3466,10 @@ async function performCloudInitialTransfer() {
             setCloudTransferMessage('Der Cloud-Datensatz ist inzwischen vorhanden. Zur Sicherheit wurde kein Upload ausgeführt.');
             return;
         }
+        // Pending deletions must reach the immutable cloud tombstone table before
+        // any activity upload. A failed confirmation aborts the initial transfer.
+        await syncPendingActivityDeletionTombstones(supabase, userId);
+        if (!isCurrentTransfer()) return;
         // Aktivitäten zuerst separat und vollständig sichern. Der alte
         // user_data-Snapshot bleibt unangetastet, falls ein Paket fehlschlägt.
         const initialSnapshot = JSON.parse(JSON.stringify(getUserDataSnapshot()));
