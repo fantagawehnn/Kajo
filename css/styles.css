@@ -9389,7 +9389,7 @@ html[data-theme="light"] .kajo-home .kajo-ring:before,html.theme-light .kajo-hom
  .kajo-home .kajo-readiness-grid .kajo-ring-card:nth-child(5) { width:88px!important; }
 }
 
-.kajo-home .kajo-selfmonitoring-notebook { display:none!important; }
+
 .kajo-home .kajo-week-bar-track.is-planned { border-style:dashed!important; }
 .kajo-home .kajo-week-bar-track.is-rest { width:22px!important;height:3px!important;margin:19px 0 20px!important;border:0!important;background:var(--kajo-muted)!important; }
 html[data-theme="light"] #view-analyses .kajo-analysis-shared-period,
@@ -9405,3 +9405,16 @@ html.theme-light .kajo-home-note-button { border-color:var(--kajo-border)!import
 #analysis-overview-metric-switch [data-overview-metric="recovery"] { --series-color:var(--metric-recovery)!important; }
 #analysis-overview-metric-switch [data-overview-metric="performance"] { --series-color:var(--metric-fitness)!important; }
 #analysis-overview-metric-switch [data-overview-metric="health"] { --series-color:var(--kajo-muted)!important; }
+
+#dashboard-selected-date { display:none!important; }
+.kajo-home .kajo-selfmonitoring-notebook {
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  min-height:44px!important; padding:.55rem .9rem!important;
+  border:1px solid rgba(45,212,191,.45)!important; border-radius:999px!important;
+  color:var(--metric-recovery)!important; background:rgba(45,212,191,.08)!important;
+  font-size:.75rem!important; font-weight:650!important;
+}
+.kajo-home .kajo-selfmonitoring-notebook[hidden] { display:none!important; }
+.kajo-home .kajo-selfmonitoring-notebook svg { width:17px;height:17px; }
+html[data-theme="light"] .kajo-home .kajo-selfmonitoring-notebook,
+html.theme-light .kajo-home .kajo-selfmonitoring-notebook { background:rgba(45,212,191,.10)!important; }
