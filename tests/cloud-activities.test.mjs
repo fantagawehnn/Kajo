@@ -68,6 +68,15 @@ test('loads cloud activities with sequential keyset pages instead of OFFSET', as
     const cursors = [];
     const client = {
         from(table) {
+            if (table === 'activity_deletions') {
+                const query = {
+                    select() { return this; },
+                    eq() { return this; },
+                    order() { return this; },
+                    range() { return Promise.resolve({ data: [], error: null }); }
+                };
+                return query;
+            }
             assert.equal(table, 'activities');
             const query = {
                 countQuery: false,
