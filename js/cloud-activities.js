@@ -92,6 +92,33 @@ export function prepareCloudActivityRows(userId, activities) {
     });
 }
 
+async function fetchActivityDeletionRows(client, userId) {
+    const rows = [];
+    const pageSize = 500;
+    for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await client
+            .from('activity_deletions')
+            .select('record_id,garmin_activity_id,activity_date,deleted_at')
+            .eq('user_id', userId)
+            .order('record_id', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+        if (error) throw cloudActivityQueryError(error, 'Cloud-Aktivitäten: Löschkennzeichnungen lesen');
+        rows.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+    }
+    return rows;
+}
+
+function toCloudDeletionRows(deletions) {
+    return deletions.map(row => ({
+        record_id: String(row.record_id),
+        payload: null,
+        deleted_at: row.deleted_at,
+        activity_date: row.activity_date,
+        garmin_activity_id: row.garmin_activity_id || null
+    }));
+}
+
 function splitIntoBatches(rows, maxBytes = 750000) {
     const batches = [];
     let batch = [];
@@ -116,7 +143,10 @@ function splitIntoBatches(rows, maxBytes = 750000) {
  */
 export async function syncCloudActivities(client, userId, activities) {
     requireClient(client);
-    const rows = prepareCloudActivityRows(userId, activities);
+    const allRows = prepareCloudActivityRows(userId, activities);
+    const deletions = await fetchActivityDeletionRows(client, userId);
+    const deletedIds = new Set(deletions.map(row => String(row.record_id)));
+    const rows = allRows.filter(row => !deletedIds.has(row.record_id));
     const baseline = cloudActivityHashes.get(userId) || new Map();
     const changedRows = [];
     const nextHashes = new Map();
@@ -148,7 +178,7 @@ export async function syncCloudActivities(client, userId, activities) {
         for (const [id, hash] of nextHashes) baseline.set(id, hash);
         cloudActivityHashes.set(userId, baseline);
     }
-    return { uploaded, total: rows.length, changed: changedRows.length, batches: batches.length };
+    return { uploaded, total: allRows.length, active: rows.length, skippedDeleted: allRows.length - rows.length, changed: changedRows.length, batches: batches.length };
 }
 
 /**
@@ -222,16 +252,22 @@ export async function fetchCloudActivities(client, userId, options = {}) {
         }
     }
 
+    const deletions = await fetchActivityDeletionRows(client, userId);
+    const deletionRows = toCloudDeletionRows(deletions);
     const hashes = new Map();
     const computedHashes = await Promise.all(records.map(row => hashActivityPayload(row.payload)));
     records.forEach((row, index) => {
         if (computedHashes[index]) hashes.set(String(row.record_id), computedHashes[index]);
     });
     if (hashes.size || records.length === 0) cloudActivityHashes.set(userId, hashes);
-    const updatedAtValues = records.map(row => row?.updated_at).filter(value => typeof value === 'string');
+    const updatedAtValues = [
+        ...records.map(row => row?.updated_at),
+        ...deletions.map(row => row?.deleted_at)
+    ].filter(value => typeof value === 'string');
     const syncCursor = updatedAtValues.sort().at(-1) || null;
-    Object.defineProperty(records, 'syncCursor', { value: syncCursor, enumerable: false });
-    return records;
+    const result = [...records, ...deletionRows];
+    Object.defineProperty(result, 'syncCursor', { value: syncCursor, enumerable: false });
+    return result;
 }
 
 /**
@@ -242,15 +278,25 @@ export async function fetchCloudActivities(client, userId, options = {}) {
 export async function getCloudActivityWatermark(client, userId) {
     requireClient(client);
     if (!userId) throw new Error('Für den Cloud-Aktivitätsstand fehlt die Benutzer-ID.');
-    const { data, error } = await client
-        .from('activities')
-        .select('updated_at')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-    if (error) throw cloudActivityQueryError(error, 'Cloud-Aktivitäten: Änderungszeitpunkt prüfen');
-    return data?.updated_at || null;
+    const [activityResult, deletionResult] = await Promise.all([
+        client.from('activities')
+            .select('updated_at')
+            .eq('user_id', userId)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        client.from('activity_deletions')
+            .select('deleted_at')
+            .eq('user_id', userId)
+            .order('deleted_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+    ]);
+    if (activityResult.error) throw cloudActivityQueryError(activityResult.error, 'Cloud-Aktivitäten: Änderungszeitpunkt prüfen');
+    if (deletionResult.error) throw cloudActivityQueryError(deletionResult.error, 'Cloud-Aktivitäten: Löschzeitpunkt prüfen');
+    const values = [activityResult.data?.updated_at, deletionResult.data?.deleted_at]
+        .filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)));
+    return values.sort((left, right) => Date.parse(right) - Date.parse(left))[0] || null;
 }
 
 /**
@@ -293,10 +339,13 @@ export async function fetchCloudActivityDelta(client, userId, since, options = {
         offset += pageSize;
     }
 
+    const deletions = await fetchActivityDeletionRows(client, userId);
+    rows.push(...toCloudDeletionRows(deletions));
+
     return {
         rows,
-        // Ein später sichtbarer, aber früher gestarteter Commit darf den
-        // bestätigten Cursor nicht rückwärts bewegen.
+        // Löschkennzeichnungen werden bei jedem Delta mitgeladen, auch wenn
+        // sie älter als der Aktivitäts-Wasserstand sind.
         cursor: watermarkMs > sinceMs ? watermark : since
     };
 }
@@ -311,7 +360,18 @@ export function mergeCloudActivityRows(userId, baselineActivities, deltaRows) {
         rows.set(row.record_id, row);
     }
     for (const row of Array.isArray(deltaRows) ? deltaRows : []) {
-        if (!row?.record_id || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
+        if (!row?.record_id) continue;
+        if (row.deleted_at) {
+            rows.set(String(row.record_id), {
+                record_id: String(row.record_id),
+                payload: null,
+                deleted_at: row.deleted_at,
+                activity_date: row.activity_date || null,
+                garmin_activity_id: row.garmin_activity_id || null
+            });
+            continue;
+        }
+        if (!row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
         rows.set(String(row.record_id), row);
     }
     return Array.from(rows.values());
@@ -324,12 +384,16 @@ export function mergeCloudActivityRows(userId, baselineActivities, deltaRows) {
  */
 export function mergeCloudActivities(snapshotActivities, cloudRows, allowedRecordIds = null) {
     const merged = new Map();
+    const rows = Array.isArray(cloudRows) ? cloudRows : [];
+    const deletedIds = new Set(rows.filter(row => row?.deleted_at).map(row => String(row.record_id)));
     for (const activity of Array.isArray(snapshotActivities) ? snapshotActivities : []) {
-        if (activity && typeof activity === 'object') merged.set(getActivityRecordId(activity), activity);
+        if (!activity || typeof activity !== 'object') continue;
+        const id = getActivityRecordId(activity);
+        if (!deletedIds.has(id)) merged.set(id, activity);
     }
     const allowed = Array.isArray(allowedRecordIds) ? new Set(allowedRecordIds.map(String)) : null;
-    for (const row of Array.isArray(cloudRows) ? cloudRows : []) {
-        if (!row?.record_id || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
+    for (const row of rows) {
+        if (!row?.record_id || row.deleted_at || !row?.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) continue;
         if (allowed && !allowed.has(String(row.record_id))) continue;
         merged.set(String(row.record_id), row.payload);
     }
