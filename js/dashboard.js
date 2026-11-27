@@ -1060,7 +1060,7 @@ function fitnessChange(dateKey, value) {
     if (!previous) return null;
     const delta = Number(value) - Number(previous.ctl);
     if (!Number.isFinite(delta)) return null;
-    const zone = delta <= -1 ? 1 : delta < -0.2 ? 2 : delta <= 0.2 ? 3 : delta < 1 ? 4 : 5;
+    const zone = delta <= -1 ? 1 : delta < -0.2 ? 2 : delta <= 0.2 ? 3 : 4;
     const color = colorForZone(zone);
     const direction = delta > 0.2 ? '↑' : delta < -0.2 ? '↓' : '→';
     const formatted = (delta > 0 ? '+' : '') + delta.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -1088,7 +1088,7 @@ export function historyRingColor(key, value, dateKey) {
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
-        const mode = String(day.loadMode || '').startsWith('garmin') ? 'garmin' : 'unclassified';
+        const mode = String(day.loadMode || '').startsWith('garmin') ? 'relative' : 'unclassified';
         const zone = classifyTrainingBalance(value, mode);
         return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info);
     }
