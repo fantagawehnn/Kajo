@@ -315,12 +315,13 @@ export function renderSummaryKPICards(timeline) {
     document.getElementById('kpi-ctl').textContent = last.ctl;
     document.getElementById('kpi-atl').textContent = last.atl;
     const isSrpe = last.loadMode === 'srpe';
-    const isGarmin = last.loadMode?.startsWith('garmin');
-    const formDisplay = isGarmin ? (last.formPct == null ? null : Number(last.formPct)) : Number(last.tsb);
+    const formDisplay = relativeTrainingBalance(last);
     document.getElementById('kpi-tsb').textContent = formDisplay === null ? '—' : formDisplay > 0 ? `+${formDisplay}` : formDisplay;
     const tsbLabel = document.getElementById('kpi-tsb')?.previousElementSibling;
-    if (tsbLabel) tsbLabel.textContent = isSrpe ? 'sRPE-Bilanz (AU · Tagesende)' : isGarmin ? (last.loadMode === 'garmin-native' ? 'Relativer Saldo · Garmin Load (Tagesende)' : 'Relativer Saldo · EA-HF-Zonenindex (Tagesende)') : 'Belastungssaldo · TSS (Tagesende)';
-    document.getElementById('kpi-tsb-status').textContent = isSrpe ? 'Modellwert' : last.statusLabel;
+    if (tsbLabel) tsbLabel.textContent = 'Relativer Trainingssaldo · % (Tagesende)';
+    const phaseTargets = phaseTargetsForDate(last.date);
+    const tsbZone = classifyTrainingBalance(formDisplay, 'relative', phaseTargets);
+    document.getElementById('kpi-tsb-status').textContent = tsbZone.label;
     document.getElementById('kpi-acwr').textContent = last.acwr === null ? '—' : last.acwr;
     // CTL/ATL and form are load-model estimates, not a sufficient basis
     // for prescribing a specific session or training phase.
@@ -337,9 +338,9 @@ export function renderSummaryKPICards(timeline) {
                     : ['Ausgeglichener Modellstatus', 'Belastungsmodell · keine direkte Leistungsmessung'];
     document.getElementById('kpi-rec-short').textContent = rec[0];
     document.getElementById('kpi-rec-sub').textContent = rec[1];
-    if (!isSrpe && (!isGarmin || last.formPct !== null)) {
-        updateZoneGaugeMarker(isGarmin ? last.formPct : last.tsb, isGarmin ? 'garmin' : 'tss');
-    } else if (isGarmin) {
+    if (formDisplay !== null) {
+        updateZoneGaugeMarker(formDisplay, 'garmin');
+    } else {
         const gaugeText = document.getElementById('zone-gauge-text');
         const marker = document.getElementById('zone-gauge-marker');
         if (gaugeText) gaugeText.textContent = 'Keine relative Basis (CTL = 0)';
@@ -357,7 +358,7 @@ export function generateAutomatedNarrative(timeline) {
         return;
     }
     const sourceText = last.loadMode === 'srpe' ? 'Session-RPE (Dauer × Gesamtanstrengung)' : last.loadMode === 'garmin-zone' ? 'Garmin-FIT-HF-Zeitreihen; Endurance AI Zonen-Load' : last.loadMode === 'garmin-native' ? 'Garmin-eigene Trainingsload-Werte' : last.loadMode === 'garmin-mixed' ? 'Garmin-FIT-Zonen-Load und native Garmin-Load-Werte (je Aktivität nur eine Quelle)' : 'externe TSS-Daten';
-    const formText = last.loadMode === 'srpe' ? `sRPE-Bilanz: ${last.tsb} AU` : last.loadMode?.startsWith('garmin') ? `Relativer Saldo: ${last.formPct}%` : `Belastungssaldo: ${last.tsb}`;
+    const formText = relativeTrainingBalance(last) === null ? 'Relativer Saldo nicht berechenbar' : `Relativer Saldo: ${relativeTrainingBalance(last)}%`;
     document.getElementById('automated-narrative-text').innerHTML = `
         <p>Belastungsquelle: <strong>${sourceText}</strong>. CTL: <strong>${last.ctl}</strong>, ATL: <strong>${last.atl}</strong> (${formText}, ACWR: <strong>${last.acwr}</strong>).</p>
         <p class="text-slate-400">ACWR: ${last.acwr === null ? 'noch nicht auswertbar' : last.acwr}. Der Wert dient nur als ergänzende Belastungsorientierung und ist keine Verletzungsprognose.</p>
