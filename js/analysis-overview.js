@@ -238,6 +238,8 @@ function renderTrendObservations(dates) {
   if (!root) return;
   if (dates.length < 14) {
     root.innerHTML = '<p class="kajo-analysis-chart-note">Für einen Vergleich zweier vollständiger Sieben-Tage-Zeiträume werden mindestens 14 Kalendertage benötigt.</p>';
+    const detailRoot = document.getElementById('analysis-trend-observations-more');
+    if (detailRoot) detailRoot.innerHTML = '';
     return;
   }
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
