@@ -958,8 +958,10 @@ async function syncGarminActivitiesForUser(
   endDate: string,
   onlyMissingDays = false,
   rescanAnchorDate = endDate,
+  scanWindowDaysInput = 14,
   assertSyncLock: () => void = () => {},
 ) {
+  assertSyncLock();
   const { data: credential, error: credentialError } = await admin
     .from("garmin_personal_credentials")
     .select("encrypted_api_key, encryption_iv")
@@ -1032,6 +1034,7 @@ async function syncGarminActivitiesForUser(
         endDate: range.endDate,
       });
       const payload = await garminGet(token, `/activitylist-service/activities/search/activities?${params.toString()}`);
+      assertSyncLock();
       const pageRows = activityRows(payload);
       rows.push(...pageRows);
       if (pageRows.length < pageSize) break;
