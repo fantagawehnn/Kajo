@@ -25,7 +25,8 @@ class KajoConnectActivityDelegate extends WatchUi.InputDelegate {
             } else {
                 mView.handlePrimaryButton();
             }
-            WatchUi.showToast("KEY " + key.toString() + " / " + mView.getDebugState(), null);
+            // Lange Diagnosedaten werden direkt in der Aktivitätsansicht angezeigt;
+            // Garmin kürzt Toastmeldungen auf der Venu 3S sichtbar ab.
             return true;
         }
 
