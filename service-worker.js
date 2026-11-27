@@ -1,7 +1,7 @@
 /* KAJO: caches only the static app shell.
    Supabase requests, authentication, personal records and API responses are never cached. */
 const CACHE_PREFIX = "kajo-shell-";
-const CACHE_NAME = CACHE_PREFIX + "v2-32";
+const CACHE_NAME = CACHE_PREFIX + "v2-33";
 const APP_SHELL = [
   "./",
   "./index.html",
