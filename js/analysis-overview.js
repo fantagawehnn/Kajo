@@ -685,9 +685,13 @@ function renderTrendChart() {
   const dates = rangeDates(currentRange());
   const labels = dates.map(dateLabel);
   const series = buildSeries(dates);
-  const datasets = series.map(item => {
+  const datasets = series.flatMap(item => {
     const indexed = toRelativeIndex(item.raw);
-    return {
+    const average = values => values.map((value,index) => {
+      const window = values.slice(Math.max(0,index-6),index+1).filter(valid).map(Number);
+      return window.length >= 4 ? Number((window.reduce((sum,n)=>sum+n,0)/window.length).toFixed(2)) : null;
+    });
+    const base = {
       label: item.label,
       data: indexed.values,
       rawValues: item.raw,
@@ -695,15 +699,34 @@ function renderTrendChart() {
       unit: item.unit,
       borderColor: item.color,
       backgroundColor: item.color,
-      borderWidth: 2.2,
+      borderWidth: 2,
       tension: .22,
-      pointRadius: context => valid(context.raw) ? 2.5 : 0,
+      pointRadius: context => dates.length <= 90 && valid(context.raw) ? 2.5 : 0,
       pointHoverRadius: 4,
       pointHitRadius: 7,
-      spanGaps: false,
+      spanGaps: true,
+      segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] },
       fill: false,
       hidden: !selectedMetrics.has(item.key)
     };
+    const meanLine = {
+      label: item.label + ' · 7-Tage-Mittel',
+      data: average(indexed.values),
+      rawValues: average(item.raw),
+      unit: item.unit,
+      borderColor: item.color,
+      backgroundColor: item.color,
+      borderWidth: 3.8,
+      tension: .28,
+      pointRadius: 0,
+      pointHoverRadius: 3,
+      pointHitRadius: 7,
+      spanGaps: true,
+      segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] },
+      fill: false,
+      hidden: !selectedMetrics.has(item.key)
+    };
+    return [base, meanLine];
   });
   const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
   if (!hasValues) {
