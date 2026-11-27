@@ -55,7 +55,7 @@ create or replace function public.touch_kajo_sync_state(
 )
 returns void
 language plpgsql
-as $
+as $fn$
 begin
     insert into public.kajo_sync_state (user_id, scope, version, updated_at)
     values (p_user_id, p_scope, p_version, now())
@@ -63,7 +63,7 @@ begin
        set version = public.kajo_sync_state.version + 1,
            updated_at = excluded.updated_at;
 end;
-$;
+$fn$;
 
 insert into public.activity_deletions (user_id, record_id, garmin_activity_id, activity_date)
 values ('00000000-0000-0000-0000-000000000001', 'garmin-456', '456', '2026-11-21');
