@@ -225,6 +225,8 @@ export function addRace() {
     state.races.push({ id: Date.now().toString(), name, date, location, prio, sport, target, label, ...(routeId ? { routeId } : {}) });
     saveDataToLocalStorage();
     refreshAll();
+    const raceDateInput = document.getElementById('race-date');
+    if (raceDateInput) raceDateInput.value = '';
     toggleRaceModal();
 }
 
