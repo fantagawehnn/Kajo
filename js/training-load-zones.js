@@ -23,16 +23,19 @@ export function buildRelativeLoadZones(timeline = []) {
 export function buildTsbZones(timeline = []) {
   const values = (Array.isArray(timeline) ? timeline : [])
     .map(row => row?.tsb).filter(valid).map(Number);
-  const min = Math.min(-20, ...values);
-  const max = Math.max(6, ...values);
+  // Keep chart bands aligned with the shared KAJO TSB orientation ranges:
+  // < -30, -30 to -10, -10 to +5, +5 to +25, and > +25.
+  const min = Math.min(-30, ...values);
+  const max = Math.max(25, ...values);
   return {
     min,
     max: max > min ? max : min + 1,
     zones: [
-      { min, max: -20, label: 'Hohe Ermüdung', color: 'rgba(217,106,120,.13)', textColor: 'rgba(255,165,174,.82)' },
-      { min: -20, max: -5, label: 'Aufbau', color: 'rgba(85,182,164,.13)', textColor: 'rgba(142,224,205,.82)' },
-      { min: -5, max: 5, label: 'Geringe Belastung', color: 'rgba(229,196,91,.13)', textColor: 'rgba(255,226,142,.84)' },
-      { min: 5, max, label: 'Geringe akute Belastung', color: 'rgba(109,168,247,.13)', textColor: 'rgba(166,202,255,.84)' }
+      { min, max: -30, label: 'Stark negativer Saldo', color: 'rgba(217,106,120,.13)', textColor: 'rgba(255,165,174,.82)' },
+      { min: -30, max: -10, label: 'Erhöhte modellierte Ermüdung', color: 'rgba(229,154,85,.13)', textColor: 'rgba(255,198,150,.84)' },
+      { min: -10, max: 5, label: 'Ausgeglichen', color: 'rgba(85,182,164,.13)', textColor: 'rgba(142,224,205,.82)' },
+      { min: 5, max: 25, label: 'Positiver Saldo', color: 'rgba(109,168,247,.13)', textColor: 'rgba(166,202,255,.84)' },
+      { min: 25, max, label: 'Sehr positiver Saldo', color: 'rgba(167,139,250,.13)', textColor: 'rgba(202,181,255,.84)' }
     ]
   };
 }
