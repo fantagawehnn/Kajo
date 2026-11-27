@@ -3955,6 +3955,11 @@ html.theme-light #race-detail-modal h2{color:#172033!important}
   --kajo-status-attention:#F2B84B;
   --kajo-status-critical:#F16B6B;
   --kajo-status-info:#6DA8F7;
+  --kajo-status-zone-1:#D94B4B;
+  --kajo-status-zone-2:#E58B3A;
+  --kajo-status-zone-3:#E5C34B;
+  --kajo-status-zone-4:#8CCB72;
+  --kajo-status-zone-5:#2EAA70;
   --kajo-radius:14px;
   color-scheme:dark;
 }
@@ -3972,6 +3977,11 @@ html[data-theme="light"] {
   --kajo-status-attention:#9A6500;
   --kajo-status-critical:#C43D3D;
   --kajo-status-info:#2768B8;
+  --kajo-status-zone-1:#C93636;
+  --kajo-status-zone-2:#C96A16;
+  --kajo-status-zone-3:#B58A00;
+  --kajo-status-zone-4:#548D3A;
+  --kajo-status-zone-5:#087A4B;
   color-scheme:light;
 }
 html[data-theme="light"] body {
@@ -9212,3 +9222,16 @@ body.kajo-modal-open { overflow: hidden !important; }
   #view-analyses .kajo-analysis-bar-wrap.has-chart-empty-state,
   #view-analyses .kajo-analysis-intensity-wrap.has-chart-empty-state { min-height:76px!important; height:76px!important; }
 }
+
+
+/* KAJO unified five-zone status scale. HF training zones are intentionally untouched. */
+.kajo-home .kajo-health-circle[data-state="zone1"],
+.kajo-home .kajo-wearable-value[data-state="zone1"] { border-color:var(--kajo-status-zone-1)!important; color:var(--kajo-status-zone-1)!important; }
+.kajo-home .kajo-health-circle[data-state="zone2"],
+.kajo-home .kajo-wearable-value[data-state="zone2"] { border-color:var(--kajo-status-zone-2)!important; color:var(--kajo-status-zone-2)!important; }
+.kajo-home .kajo-health-circle[data-state="zone3"],
+.kajo-home .kajo-wearable-value[data-state="zone3"] { border-color:var(--kajo-status-zone-3)!important; color:var(--kajo-status-zone-3)!important; }
+.kajo-home .kajo-health-circle[data-state="zone4"],
+.kajo-home .kajo-wearable-value[data-state="zone4"] { border-color:var(--kajo-status-zone-4)!important; color:var(--kajo-status-zone-4)!important; }
+.kajo-home .kajo-health-circle[data-state="zone5"],
+.kajo-home .kajo-wearable-value[data-state="zone5"] { border-color:var(--kajo-status-zone-5)!important; color:var(--kajo-status-zone-5)!important; }
