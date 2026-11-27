@@ -145,9 +145,9 @@ function renderFormTrendChart() {
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   const formLabel = relativeMode ? 'Relativer Saldo · aus CTL/ATL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
   const datasets = [
-    { label: 'CTL · langfristig', data: ctl, borderColor: '#6DA8F7', backgroundColor: '#6DA8F7', borderWidth: 2.2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
-    { label: 'ATL · kurzfristig', data: atl, borderColor: '#D98AB5', backgroundColor: '#D98AB5', borderWidth: 2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: 'y' },
-    { label: formLabel, data: form, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2.2, tension: .18, pointRadius: 0, pointHitRadius: 8, spanGaps: false, yAxisID: relativeMode ? 'y1' : 'y' }
+    { label: 'CTL · langfristig', data: ctl, borderColor: '#6DA8F7', backgroundColor: '#6DA8F7', borderWidth: 2.2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 }, yAxisID: 'y' },
+    { label: 'ATL · kurzfristig', data: atl, borderColor: '#D98AB5', backgroundColor: '#D98AB5', borderWidth: 2, tension: .22, pointRadius: 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 }, yAxisID: 'y' },
+    { label: formLabel, data: form, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2.2, tension: .18, pointRadius: 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 }, yAxisID: relativeMode ? 'y1' : 'y' }
   ];
   const formScales = {
     x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
