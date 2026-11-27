@@ -226,6 +226,9 @@ jobs:
       - name: Run performance data quality tests
         run: node --experimental-default-type=module --test tests/performance-data-quality.test.mjs
 
+      - name: Run paddling telemetry display integration tests
+        run: node --experimental-default-type=module --test tests/paddling-telemetry-display.test.mjs
+
       - name: Run daily Garmin HR recovery tests
         run: node --experimental-default-type=module --test tests/daily-heart-rate.test.mjs
 
