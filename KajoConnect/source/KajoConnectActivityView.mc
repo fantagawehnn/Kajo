@@ -2217,14 +2217,20 @@ class KajoConnectActivityView extends WatchUi.View {
                 Graphics.FONT_XTINY, 0x98A5AB);
         }
 
-        // Kurze, dauerhaft lesbare Diagnose bei fehlgeschlagenem Pausieren.
+        // Fehlerdiagnose deutlich im oberen Bildschirmbereich anzeigen.
+        // Die untere Bildschirmkante ist auf der Venu 3S durch Layout/Bedienhinweise
+        // belegt und war für die Diagnose nicht zuverlässig sichtbar.
         if (mShowPauseDebug && mStatus == "AUFZEICHNUNG") {
-            var pauseDiagnostic = "PAUSE: " +
-                compactWorkoutText(mEngine.getLastPauseDebug(), 30);
+            var pauseDiagnostic = "PAUSE FEHLER";
+            var pauseDetail = compactWorkoutText(mEngine.getLastPauseDebug(), 24);
             dc.setColor(0x301515, Graphics.COLOR_BLACK);
-            dc.fillRoundedRectangle(38, 360, 314, 25, 8);
-            drawActivityText(dc, cx, 365, 296, 16, pauseDiagnostic,
-                Graphics.FONT_XTINY, 0xFF9F1A);
+            dc.fillRoundedRectangle(24, 54, mScreenWidth - 48, 48, 10);
+            dc.setColor(0xFF9F1A, Graphics.COLOR_BLACK);
+            dc.drawRoundedRectangle(24, 54, mScreenWidth - 48, 48, 10);
+            drawActivityText(dc, cx, 58, mScreenWidth - 64, 15,
+                pauseDiagnostic, Graphics.FONT_XTINY, 0xFF9F1A);
+            drawActivityText(dc, cx, 75, mScreenWidth - 64, 20,
+                pauseDetail, Graphics.FONT_SMALL, Graphics.COLOR_WHITE);
         }
     }
 }
