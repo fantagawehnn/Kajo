@@ -211,6 +211,7 @@ function renderFormTrendChart() {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
+        kajoEventBands: { dates },
         legend: { display: true, position: 'bottom', labels: { color: textColor, boxWidth: 12, usePointStyle: true, font: { size: 10 } } },
         tooltip: { callbacks: { title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '' } }
       },
@@ -745,6 +746,7 @@ function renderTrendChart() {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
+        kajoEventBands: { dates },
         legend: { display: false },
         title: { display: !hasValues, text: 'Keine auswertbaren Messwerte im gewählten Zeitraum', color: textColor, font: { size: 11, weight: 'normal' } },
         tooltip: { callbacks: {
@@ -892,6 +894,7 @@ function renderActivityChart() {
         y: { stacked: true, display: false, grid: { display: false } }
       },
       plugins: {
+        kajoEventBands: { dates },
         legend: { display: false },
         title: { display: !values.length, text: activityMeasure === 'duration' && activities.length ? 'Keine vollständigen Dauern verfügbar' : 'Noch keine Trainingsaktivitäten erfasst', color: textColor, font: { size: 11, weight: 'normal' } },
         tooltip: { callbacks: { label: context => {
