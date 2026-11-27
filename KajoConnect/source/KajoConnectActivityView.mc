@@ -1101,6 +1101,8 @@ class KajoConnectActivityView extends WatchUi.View {
         captureActivitySummary();
         if (mEngine.pause()) {
             mTimer.stop();
+            Position.enableLocationEvents(Position.LOCATION_DISABLE, null);
+            mGpsQuality = Position.QUALITY_NOT_AVAILABLE;
             mStatus = "PAUSIERT";
             mShowPauseDebug = false;
         } else {
@@ -1113,6 +1115,7 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function resumeRecording() as Void {
         if (mEngine.resume()) {
+            Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mStatus = "AUFZEICHNUNG";
             mTimer.start(method(:onTimer), 1000, true);
         } else {
