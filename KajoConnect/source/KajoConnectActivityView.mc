@@ -1050,6 +1050,10 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function startRecording() as Void {
+        // Ignore duplicate start inputs while a session is already active.
+        // This can happen when the view auto-starts in onShow and a touch/key
+        // event arrives immediately afterward.
+        if (mStatus == "AUFZEICHNUNG" || mStatus == "PAUSIERT") { return; }
         syncPendingActivityUploads();
         var started = mEngine.start(mBoatClass);
         if (started) {
