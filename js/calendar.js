@@ -448,7 +448,7 @@ export function closeCalendarFormatMenu(){document.getElementById('calendar-form
 function calendarSeason(){const settings=state.settings||{},seasons=Array.isArray(settings.calendarSeasons)?settings.calendarSeasons:[],selected=seasons.find(item=>item.id===settings.activeCalendarSeasonId)||seasons.at(-1)||settings.calendarSeason;return selected&&/^\d{4}-\d{2}-\d{2}$/.test(selected.start||'')&&/^\d{4}-\d{2}-\d{2}$/.test(selected.end||'')&&selected.start<=selected.end?selected:null;}
 export function openCalendarHealthCreate(){window.openHealthLogForDate?.(state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate));}
 export function openCalendarPeriodCreate(){
- const date=state.selectedCalendarDay||toLocalDateString();
+ const date=state.selectedCalendarDay||toLocalDateString(state.currentCalendarDate);
  const start=document.getElementById('period-range-start'),end=document.getElementById('period-range-end');
  if(start)start.value=date;
  if(end)end.value=date;
