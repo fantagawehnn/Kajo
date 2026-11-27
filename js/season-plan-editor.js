@@ -532,6 +532,7 @@ function renderPhaseList() {
             <div class="flex items-start justify-between gap-3"><div><h4 class="text-sm font-semibold text-white">${escape(phase.name || 'Unbenannte Phase')}</h4><p class="text-[10px] text-slate-400">${escape(phase.type || 'Typ offen')} · ${escape(phase.startDate || 'Start offen')} – ${escape(phase.endDate || 'Ende offen')}</p></div><button type="button" onclick="removeSeasonPlanPhase(${index})" class="text-xs text-rose-300 hover:text-rose-200">Entfernen</button></div>
             <p class="text-xs text-slate-300">${escape(phase.objective || 'Noch kein Schwerpunkt definiert.')}</p>
             <p class="text-[10px] text-slate-500">${phase.targetHoursPerWeek == null ? 'Umfang offen' : escape(phase.targetHoursPerWeek + ' h/Woche')} · ${phase.targetTrainingDaysPerWeek == null ? 'Trainingstage offen' : escape(phase.targetTrainingDaysPerWeek + ' Tage/Woche')} · Fokus: ${escape((phase.focus || []).join(', ') || 'nicht festgelegt')}</p>
+            <p class="text-[10px] text-slate-500">Zielwerte optional · ACWR: ${phase.acwrTargetMin == null && phase.acwrTargetMax == null ? 'automatisch' : escape((phase.acwrTargetMin ?? '—') + '–' + (phase.acwrTargetMax ?? '—'))} · TSB relativ: ${phase.tsbTargetMin == null && phase.tsbTargetMax == null ? 'automatisch' : escape((phase.tsbTargetMin ?? '—') + '% bis ' + (phase.tsbTargetMax ?? '—') + '%')}</p>
         </article>`).join('');
 }
 
@@ -556,9 +557,13 @@ export function addSeasonPlanPhase() {
         targetTrainingDaysPerWeek: optionalNumber('season-phase-days'),
         targetSessionsPerDay: null,
         disciplineFocus: [],
-        notes: ''
+        notes: '',
+        acwrTargetMin: optionalNumber('season-phase-acwr-min'),
+        acwrTargetMax: optionalNumber('season-phase-acwr-max'),
+        tsbTargetMin: optionalNumber('season-phase-tsb-min'),
+        tsbTargetMax: optionalNumber('season-phase-tsb-max')
     });
-    ['season-phase-name','season-phase-type','season-phase-start','season-phase-end','season-phase-hours','season-phase-days','season-phase-objective','season-phase-focus'].forEach(id => setValue(id, ''));
+    ['season-phase-name','season-phase-type','season-phase-start','season-phase-end','season-phase-hours','season-phase-days','season-phase-objective','season-phase-focus','season-phase-acwr-min','season-phase-acwr-max','season-phase-tsb-min','season-phase-tsb-max'].forEach(id => setValue(id, ''));
     renderPhaseList();
     const message = byId('season-plan-message');
     if (message) message.textContent = 'Phase hinzugefügt. Speichere den Saisonplan, um die Änderung dauerhaft zu übernehmen.';
