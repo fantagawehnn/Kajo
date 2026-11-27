@@ -2843,6 +2843,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         !deletedRecordIds.has(String(row?.record_id ?? '')) && !deletedGarminIds.has(String(row?.record_id ?? '').replace(/^garmin-/, ''))
     );
 
+    const retryDiagnostics = [];
     for (let attempt = 0; attempt < 4; attempt += 1) {
         ensureCurrent();
         if (!cloud || cloud.userId !== userId) {
@@ -2982,6 +2983,11 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 getCloudActivityIds(userId, Array.isArray(latestLocalData.activities) ? latestLocalData.activities : [])
             );
             if (!cloudSnapshotsEqual(latestLocal, local)) {
+                retryDiagnostics.push({
+                    attempt: attempt + 1,
+                    reason: 'local_snapshot_changed_after_noop_merge',
+                    cloudVersion: cloud.version
+                });
                 baselineSnapshot = mergedSnapshot;
                 cloud = await fetchCloudSnapshot();
                 ensureCurrent();
@@ -3007,6 +3013,11 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 getCloudActivityIds(userId, Array.isArray(latestLocalData.activities) ? latestLocalData.activities : [])
             );
             if (!cloudSnapshotsEqual(latestLocal, local)) {
+                retryDiagnostics.push({
+                    attempt: attempt + 1,
+                    reason: 'local_snapshot_changed_after_successful_save',
+                    savedVersion: saved.currentVersion
+                });
                 baselineSnapshot = mergedSnapshot;
                 try { await saveCloudSyncBaseline(mergedSnapshot); }
                 catch (error) { console.warn('Synchronisierungsbasis konnte nicht aktualisiert werden:', error); }
@@ -3031,6 +3042,12 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
             };
         }
 
+        retryDiagnostics.push({
+            attempt: attempt + 1,
+            reason: 'version_compare_and_swap_rejected',
+            expectedVersion: cloud.version,
+            currentVersion: saved.currentVersion
+        });
         cloud = await fetchCloudSnapshot();
         ensureCurrent();
         if (cloud.userId !== userId) {
@@ -3040,7 +3057,13 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
         ensureCurrent();
     }
 
-    return { ok: false, retryLimit: true, version: cloud?.version || 0, conflicts: [] };
+    return {
+        ok: false,
+        retryLimit: true,
+        version: cloud?.version || 0,
+        conflicts: [],
+        attempts: retryDiagnostics
+    };
 }
 
 function setCloudSyncStatus(message) {
@@ -3136,7 +3159,10 @@ async function flushCloudSync(options = {}) {
             loadCloudSyncBaseline()
         ]);
         if (!isCurrentSync()) return;
-        let latestCloud = cloudSyncVersion > 0
+        // A baseline is valid only for the exact cloud version it was
+        // confirmed against. Pairing an older baseline with newer metadata
+        // creates a false "current" snapshot and can cause repeated CAS retries.
+        let latestCloud = cloudSyncVersion > 0 && cloudSyncVersion === cloudMetadata.version
             ? createCloudSnapshotFromBaseline(userId, baseline, cloudMetadata)
             : null;
         if (!latestCloud) latestCloud = await fetchCloudSnapshot();
