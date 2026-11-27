@@ -12,13 +12,15 @@ as $$ select null::uuid $$;
 create table public.activities (
     user_id uuid not null,
     record_id text not null,
-    payload jsonb not null default '{}'::jsonb
+    payload jsonb not null default '{}'::jsonb,
+    constraint activities_user_record_key unique (user_id, record_id)
 );
 
 create table public.garmin_activities (
     user_id uuid not null,
     garmin_activity_id text not null,
-    activity jsonb not null default '{}'::jsonb
+    activity jsonb not null default '{}'::jsonb,
+    constraint garmin_activities_user_activity_key unique (user_id, garmin_activity_id)
 );
 
 \echo 'Applying activity deletion tombstone migration'
@@ -75,12 +77,22 @@ update public.activities
    and record_id = 'garmin-123';
 
 insert into public.activities (user_id, record_id, payload)
+values ('00000000-0000-0000-0000-000000000001', 'garmin-123', '{"name":"upsert resurrected"}')
+on conflict (user_id, record_id)
+do update set payload = excluded.payload;
+
+insert into public.activities (user_id, record_id, payload)
 values ('00000000-0000-0000-0000-000000000001', 'garmin-123', '{"name":"resurrected insert"}');
 
 update public.garmin_activities
    set activity = '{"activityName":"resurrected"}'
  where user_id = '00000000-0000-0000-0000-000000000001'
    and garmin_activity_id = '123';
+
+insert into public.garmin_activities (user_id, garmin_activity_id, activity)
+values ('00000000-0000-0000-0000-000000000001', '123', '{"activityName":"upsert resurrected"}')
+on conflict (user_id, garmin_activity_id)
+do update set activity = excluded.activity;
 
 insert into public.garmin_activities (user_id, garmin_activity_id, activity)
 values ('00000000-0000-0000-0000-000000000001', '123', '{"activityName":"resurrected insert"}');
