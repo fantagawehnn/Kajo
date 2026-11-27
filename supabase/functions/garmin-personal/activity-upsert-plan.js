@@ -20,12 +20,44 @@ function sameTimestamp(left, right) {
   return String(left) === String(right);
 }
 
-export function selectChangedGarminActivityRows(incomingRows, existingRows) {
+function preserveKnownValue(incoming, existing) {
+  return incoming == null && existing != null ? existing : incoming;
+}
+
+export function mergeGarminActivityRows(incomingRows, existingRows) {
   const existingById = new Map(
     existingRows.map((row) => [String(row.garmin_activity_id), row]),
   );
 
-  return incomingRows.filter((row) => {
+  return incomingRows.map((row) => {
+    const existing = existingById.get(String(row.garmin_activity_id));
+    if (!existing) return row;
+
+    const incomingActivity = row.activity && typeof row.activity === "object" ? row.activity : {};
+    const existingActivity = existing.activity && typeof existing.activity === "object" ? existing.activity : {};
+    const mergedActivity = { ...existingActivity };
+    for (const [key, value] of Object.entries(incomingActivity)) {
+      mergedActivity[key] = preserveKnownValue(value, existingActivity[key]);
+    }
+
+    return {
+      ...row,
+      activity: mergedActivity,
+      start_time: preserveKnownValue(row.start_time, existing.start_time),
+      activity_type: preserveKnownValue(row.activity_type, existing.activity_type),
+      duration_seconds: preserveKnownValue(row.duration_seconds, existing.duration_seconds),
+      distance_meters: preserveKnownValue(row.distance_meters, existing.distance_meters),
+    };
+  });
+}
+
+export function selectChangedGarminActivityRows(incomingRows, existingRows) {
+  const existingById = new Map(
+    existingRows.map((row) => [String(row.garmin_activity_id), row]),
+  );
+  const mergedRows = mergeGarminActivityRows(incomingRows, existingRows);
+
+  return mergedRows.filter((row) => {
     const existing = existingById.get(String(row.garmin_activity_id));
     if (!existing) return true;
 
