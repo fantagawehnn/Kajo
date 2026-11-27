@@ -157,6 +157,7 @@ function renderRecovery() {
 }
 let performanceChart = null;
 let selectedPerformanceMetric = null;
+let selectedPaddlingClass = 'Kayaking';
 let performanceRange = '28d';
 const performanceRangeDays = { '7d': 7, '28d': 28, '3m': 90, '6m': 180, '1y': 365 };
 const performanceDateKey = date => {
@@ -173,8 +174,15 @@ const performanceActivities = () => (Array.isArray(state.rawActivities) ? state.
     const date = String(activity?.date || activity?.startTime || '').slice(0,10);
     return date && date >= performanceRangeStart() && date <= todayKey();
   }).sort((a,b) => String(a.date || a.startTime).localeCompare(String(b.date || b.startTime)));
+const paddlingClassDefinitions = [
+  { key:'Kayaking', label:'K1' },
+  { key:'C1', label:'C1' },
+  { key:'C2', label:'C2' },
+  { key:'PaddleErgo', label:'Ergometer' }
+];
+const performanceActivitiesForClass = (sportKey) => performanceActivities().filter(activity => activity.type === sportKey);
 const performanceActivityMetric = (key, label, unit) => {
-  const matches = performanceActivities().map(activity => {
+  const matches = performanceActivitiesForClass(selectedPaddlingClass).map(activity => {
     const series = resolvePaddlingPerformanceSeries(activity, getActivityTelemetrySeries(activity), key);
     if (!series || !isValidElapsedTimeAxis(series.time, series.values.length)) return null;
     const values = series.values.filter(valid).map(Number);
@@ -237,7 +245,18 @@ function renderPerformanceEnduranceContext() {
     '</div><p class="kajo-performance-note">Letzter verfügbarer Stand · '+dateLabel(latest.date)+' · Modell: '+performanceEscape(latest.loadMode)+'. CTL und ATL beschreiben die länger- bzw. kurzfristige Trainingsbelastung; '+formLabel+' ist modellabhängig. Diese Werte sind keine direkte Messung der Ausdauerleistungsfähigkeit und werden nicht mit VO₂max oder Paddeltelemetrie verrechnet.</p>';
 }
 
+function renderPaddlingClassSelector() {
+  const nav = document.getElementById('performance-paddling-classes');
+  if (!nav) return;
+  nav.innerHTML = paddlingClassDefinitions.map(item => {
+    const count = performanceActivitiesForClass(item.key).length;
+    const active = selectedPaddlingClass === item.key;
+    return '<button type="button" class="kajo-performance-class'+(active?' is-active':'')+'" data-performance-class="'+item.key+'" aria-pressed="'+active+'" onclick="setPerformanceClass(\''+item.key+'\')">'+item.label+'<small>'+count+' Einheiten</small></button>';
+  }).join('');
+}
+
 function renderPerformanceDetail() {
+  renderPaddlingClassSelector();
   const paddleDefs = [
     ['speed','Geschwindigkeit','km/h'],
     ['hr','Herzfrequenz','bpm'],
@@ -338,7 +357,7 @@ function renderPerformanceTrend(key) {
     color = '#a78bfa';
   } else {
     const metricMeta = {speed:['Geschwindigkeit','km/h'],hr:['Herzfrequenz','bpm'],power:['Leistung','W'],cadence:['Kadenz','/min']};
-    const activity = performanceActivities().slice().reverse().map(item => ({
+    const activity = performanceActivitiesForClass(selectedPaddlingClass).slice().reverse().map(item => ({
       activity:item, series:resolvePaddlingPerformanceSeries(item, getActivityTelemetrySeries(item), key)
     })).find(item=>item.series);
     if (activity) {
@@ -355,7 +374,7 @@ function renderPerformanceTrend(key) {
           : minutes+':'+String(remainder).padStart(2,'0');
       };
       labels = values.map((_,i)=>hasElapsedTime ? formatElapsed(time[i]) : 'Messpunkt '+(i+1));
-      heading = metricMeta[key][0] + ' · einzelne Trainingseinheit'; unit = metricMeta[key][1];
+      heading = metricMeta[key][0] + ' · '+(paddlingClassDefinitions.find(item=>item.key===selectedPaddlingClass)?.label || selectedPaddlingClass)+' · einzelne Trainingseinheit'; unit = metricMeta[key][1];
       const date = String(activity.activity.date || activity.activity.startTime || '').slice(0,10);
       const sport = activity.activity.sport || activity.activity.type || 'Training';
       unit = activity.series.unit || metricMeta[key][1];
@@ -367,7 +386,7 @@ function renderPerformanceTrend(key) {
       color = '#38bdf8';
     } else {
       heading = metricMeta[key]?.[0] || 'Leistungswert';
-      explanation = 'Für den gewählten Zeitraum liegt keine passende Messreihe vor.';
+      explanation = 'Für '+(paddlingClassDefinitions.find(item=>item.key===selectedPaddlingClass)?.label || selectedPaddlingClass)+' liegt im gewählten Zeitraum keine passende Messreihe vor.';
     }
   }
   if (title) title.textContent = heading;
@@ -401,6 +420,25 @@ export function togglePerformanceMetric(key) {
   if (panel) panel.classList.toggle('hidden',!selectedPerformanceMetric);
   if (selectedPerformanceMetric) renderPerformanceTrend(selectedPerformanceMetric);
 }
+export function setPerformanceClass(sportKey) {
+  if (!paddlingClassDefinitions.some(item => item.key === sportKey)) return;
+  selectedPaddlingClass = sportKey;
+  renderPaddlingClassSelector();
+  const paddleDefs = [
+    ['speed','Geschwindigkeit','km/h'],
+    ['hr','Herzfrequenz','bpm'],
+    ['power','Leistung','W'],
+    ['cadence','Kadenz','/min']
+  ];
+  renderMetrics('performance-paddling-metrics',paddleDefs.map(([key,label,unit]) => {
+    const entry = performanceActivityMetric(key,label,unit);
+    const displayUnit = entry ? [entry.unit,entry.sourceDetail,'Messpunktmittel · letzte Einheit'].filter(Boolean).join(' · ') : unit;
+    return performanceCircle(key,label,entry?fmt(entry.value,key==='hr'||key==='cadence'?0:1):'—',
+      displayUnit,entry?'Letzte '+(paddlingClassDefinitions.find(item=>item.key===sportKey)?.label || sportKey)+'-Einheit':'Keine Messreihe','var(--kajo-status-info)');
+  }));
+  if (selectedPerformanceMetric && ['speed','hr','power','cadence'].includes(selectedPerformanceMetric))
+    renderPerformanceTrend(selectedPerformanceMetric);
+}
 export function setPerformanceRange(range) {
   if (!Object.prototype.hasOwnProperty.call(performanceRangeDays,range)) return;
   performanceRange = range;
@@ -411,6 +449,7 @@ export function setPerformanceRange(range) {
 if (typeof window !== 'undefined') {
   window.togglePerformanceMetric = togglePerformanceMetric;
   window.setPerformanceRange = setPerformanceRange;
+  window.setPerformanceClass = setPerformanceClass;
 }
 let healthChart = null;
 let selectedHealthMetric = null;
