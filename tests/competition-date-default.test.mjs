@@ -13,3 +13,11 @@ test('new competition form defaults to the current local date, not a stale hard-
 test('reopening the competition form preserves a date already selected by the user', () => {
     assert.match(competitions, /if \(raceDateInput && !raceDateInput\.value\)/);
 });
+
+
+test('saving a competition resets the date so the next new form uses today', () => {
+    const start = competitions.indexOf('export function addRace()');
+    const end = competitions.indexOf('\n}', start);
+    const addRace = competitions.slice(start, end);
+    assert.match(addRace, /if \(raceDateInput\) raceDateInput\.value = '';/);
+});
