@@ -1568,7 +1568,7 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
-    // Zweistufiges Verwerfen: zweimal lange unten drücken.
+    // Zweistufiges Verwerfen: Aktion auslösen und anschließend bestätigen.
     function handlePausedLongSecondary() as Void {
         if (mStatus != "PAUSIERT") { return; }
         if (mDiscardConfirmationStage == 0) {
