@@ -1020,11 +1020,11 @@ function historyRecommendation(key, value, dateKey) {
     if (key === 'fitness') return ['Modellierte Fitness', 'CTL beschreibt die längerfristige Trainingsbelastung und ist kein direkt gemessener Fitnesswert. Beobachte den Trend zusammen mit Erholung und Leistungsentwicklung.'];
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
-        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'garmin' : 'unclassified';
+        const mode = String(day?.loadMode || '').startsWith('garmin') ? 'relative' : 'unclassified';
         const zone = classifyTrainingBalance(value, mode);
         return [zone.label, day?.isProvisional
             ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
-            : (mode === 'garmin' ? 'Der relative Saldo wird aus (CTL − ATL) / CTL × 100 berechnet. Er ist ein KAJO-Modellwert und kein direkt übernommener Garmin-Herstellerwert; die Prozentbereiche sind interne Orientierung und keine validierte Trainingsfreigabe.' : 'TSB ist CTL minus ATL und übernimmt die Einheit des gewählten Load-Modells. Deshalb zeigt KAJO hier bewusst keine allgemeingültige Ampelzone. Beurteile den Verlauf nur innerhalb derselben Belastungsmethode und zusammen mit Trainingsinhalt, Erholung und Datenqualität.')];
+            : (mode === 'relative' ? 'Der relative Saldo wird aus (CTL − ATL) / CTL × 100 berechnet. Er ist ein KAJO-Modellwert und kein direkt übernommener Garmin-Herstellerwert; die Prozentbereiche sind interne Orientierung und keine validierte Trainingsfreigabe.' : 'TSB ist CTL minus ATL und übernimmt die Einheit des gewählten Load-Modells. Deshalb zeigt KAJO hier bewusst keine allgemeingültige Ampelzone. Beurteile den Verlauf nur innerhalb derselben Belastungsmethode und zusammen mit Trainingsinhalt, Erholung und Datenqualität.')];
     }
     if (key === 'readiness') {
         const zone = readinessZone(value);
