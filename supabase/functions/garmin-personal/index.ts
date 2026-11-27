@@ -842,11 +842,19 @@ async function syncGarminActivitiesForUser(
       }
     }
 
+    const { data: deletionRows, error: deletionError } = await admin
+      .from("activity_deletions")
+      .select("garmin_activity_id")
+      .eq("user_id", userId)
+      .not("garmin_activity_id", "is", null);
+    if (deletionError) throw deletionError;
+    const deletedGarminIds = new Set((deletionRows ?? []).map((row) => String(row.garmin_activity_id)));
+
     const activityCounts = new Map<string, number>();
     const records = rows.map((item) => {
       const activity = safeActivityPreview(item);
       const activityId = activity.activityId == null ? "" : String(activity.activityId);
-      if (!/^\d+$/.test(activityId)) return null;
+      if (!/^\d+$/.test(activityId) || deletedGarminIds.has(activityId)) return null;
       const rawStart = activity.startTimeGMT ?? activity.startTimeLocal;
       const parsedStart = rawStart ? new Date(String(rawStart)) : null;
       const startTime = parsedStart && Number.isFinite(parsedStart.getTime()) ? parsedStart.toISOString() : null;
