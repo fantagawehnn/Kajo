@@ -83,7 +83,7 @@ export function classifySleepDuration(value, historyValues) {
   const baseline = median(values);
   const deficit = baseline - Number(value);
   if (deficit <= 0.5) return { status: 'good', zone: 4, label: 'Nahe am persönlichen Schlafniveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
-  if (deficit <= 1) return { status: 'attention', zone: 2, label: 'Etwa 30–60 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
+  if (deficit <= 1) return { status: 'attention', zone: 3, label: 'Etwa 30–60 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
   if (deficit <= 1.5) return { status: 'attention', zone: 2, label: 'Etwa 60–90 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
   return { status: 'critical', zone: 1, label: 'Mehr als 90 Minuten unter dem persönlichen Niveau', baseline: Number(baseline.toFixed(1)), deficit: Number(deficit.toFixed(1)), observations: values.length };
 }
