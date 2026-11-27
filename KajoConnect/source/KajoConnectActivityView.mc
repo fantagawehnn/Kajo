@@ -1553,7 +1553,9 @@ class KajoConnectActivityView extends WatchUi.View {
 
     // Aktion der oberen physischen Taste.
     function getDebugState() as Lang.String {
-        return mStatus + " / FIT " + (mEngine.isRecording() ? "ON" : "OFF") + " / TICKS " + mDebugTimerTicks.toString();
+        return mStatus + " / FIT " + (mEngine.isRecording() ? "ON" : "OFF") +
+            " / TICKS " + mDebugTimerTicks.toString() +
+            " / PAUSE " + mEngine.getLastPauseDebug();
     }
 
     function handlePrimaryButton() as Void {
