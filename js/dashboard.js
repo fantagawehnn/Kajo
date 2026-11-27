@@ -1024,7 +1024,7 @@ function historyRecommendation(key, value, dateKey) {
         const zone = classifyTrainingBalance(value, mode);
         return [zone.label, day?.isProvisional
             ? 'Der Belastungsverlauf befindet sich noch in der Anlaufphase. Den Modellwert vorsichtig interpretieren.'
-            : 'TSB ist CTL minus ATL und übernimmt die Einheit des gewählten Load-Modells. Deshalb zeigt KAJO hier bewusst keine allgemeingültige Ampelzone. Beurteile den Verlauf nur innerhalb derselben Belastungsmethode und zusammen mit Trainingsinhalt, Erholung und Datenqualität.'];
+            : (mode === 'garmin' ? 'Der relative Saldo wird aus (CTL − ATL) / CTL × 100 berechnet. Er ist ein KAJO-Modellwert und kein direkt übernommener Garmin-Herstellerwert; die Prozentbereiche sind interne Orientierung und keine validierte Trainingsfreigabe.' : 'TSB ist CTL minus ATL und übernimmt die Einheit des gewählten Load-Modells. Deshalb zeigt KAJO hier bewusst keine allgemeingültige Ampelzone. Beurteile den Verlauf nur innerhalb derselben Belastungsmethode und zusammen mit Trainingsinhalt, Erholung und Datenqualität.'));
     }
     if (key === 'readiness') {
         const zone = readinessZone(value);
