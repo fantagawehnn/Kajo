@@ -3449,6 +3449,7 @@ async function performCloudInitialTransfer() {
 
 let garminDailySyncInFlight = new Set();
 let garminDailySyncCompleted = new Set();
+let garminDailySyncContinuationCounts = new Map();
 
 function getLocalCalendarDate(date = new Date()) {
     const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -3791,15 +3792,22 @@ async function syncGarminTodayOnOpen(userId) {
             const healthRemaining = Number(health?.remainingDays || 0);
             if (activityRemaining > 0 || healthRemaining > 0
                 || activitySync.status === 'in_progress' || health?.status === 'in_progress') {
-                setGarminSyncResult('Garmin-Daten werden schrittweise nachgeladen …', 'syncing');
+                const continuationCount = Number(garminDailySyncContinuationCounts.get(runKey) || 0) + 1;
+                const continueSoon = continuationCount < 4;
+                garminDailySyncContinuationCounts.set(runKey, continueSoon ? continuationCount : 0);
+                const retryDelay = continueSoon ? 3000 : 15 * 60 * 1000;
+                setGarminSyncResult(continueSoon
+                    ? 'Garmin-Daten werden schrittweise nachgeladen …'
+                    : 'Der Garmin-Verlauf wird später automatisch weiter synchronisiert.', 'syncing');
                 setGarminSyncIndicator('syncing', 'Synchronisierung läuft');
                 setTimeout(() => {
                     if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
                         void syncGarminTodayOnOpen(userId);
                     }
-                }, 3000);
+                }, retryDelay);
                 return;
             }
+            garminDailySyncContinuationCounts.delete(runKey);
             const fetched = Number(activitySync.fetched || 0);
             const stored = Number(activitySync.stored || 0);
             setGarminSyncResult(stored > 0
