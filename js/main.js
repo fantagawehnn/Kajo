@@ -707,10 +707,12 @@ async function loadGarminActivitiesFromCloud(expectedUserId = activeAppUserId, e
         const metadata = await loadGarminActivityPages((offset, limit) => {
             let query = supabase.from('garmin_activities')
                 .select('garmin_activity_id, updated_at')
-                .eq('user_id', userId)
-                .not('updated_at', 'is', null);
+                .eq('user_id', userId);
             if (overlapStart) {
-                query = query.gte('updated_at', overlapStart)
+                // Incremental reads require a usable timestamp; the initial
+                // full scan below also includes legacy rows with updated_at = null.
+                query = query.not('updated_at', 'is', null)
+                    .gte('updated_at', overlapStart)
                     .order('updated_at', { ascending: true })
                     .order('garmin_activity_id', { ascending: true });
             } else {

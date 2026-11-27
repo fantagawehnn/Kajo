@@ -58,3 +58,17 @@ test('a cloud activity is downloaded again if its local activity is missing', ()
     const seen = { '1': '2026-11-25T10:00:00.000Z' };
     assert.equal(getGarminActivityRowsNeedingPayload(metadata, seen, new Set()).length, 1);
 });
+
+test('legacy cloud activities without updated_at are downloaded when missing locally', () => {
+    const metadata = [
+        { garmin_activity_id: 'legacy-1', updated_at: null },
+        { garmin_activity_id: 'legacy-2' },
+        { garmin_activity_id: 'current-1', updated_at: '2026-11-25T10:00:00.000Z' }
+    ];
+    const seen = { 'current-1': '2026-11-25T10:00:00.000Z' };
+    const local = new Set(['legacy-2', 'current-1']);
+    assert.deepEqual(
+        getGarminActivityRowsNeedingPayload(metadata, seen, local).map(row => row.garmin_activity_id),
+        ['legacy-1']
+    );
+});
