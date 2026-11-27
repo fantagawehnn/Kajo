@@ -187,6 +187,9 @@ jobs:
       - name: Run Garmin sync lock wiring tests
         run: node --experimental-default-type=module --test tests/garmin-sync-lock-wiring.test.mjs
 
+      - name: Run Garmin cloud fallback tests
+        run: node --experimental-default-type=module --test tests/garmin-cloud-fallback.test.mjs
+
       - name: Run Garmin activity rescan planning tests
         run: node --experimental-default-type=module --test tests/garmin-activity-scan-plan.test.mjs
 
