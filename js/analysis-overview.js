@@ -8,7 +8,7 @@ import { renderHeartRateZoneDistribution, setChartEmptyState } from './charts.js
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
 import { getGarminCheckinMetric, getComparableGarminHrvSeries } from './garmin-metric-access.js';
-import { calculateReadiness } from './readiness.js';
+import { calculateReadiness } from './readiness.js?v=3';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const setText = (id, value) => {
