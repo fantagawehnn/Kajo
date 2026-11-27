@@ -1075,7 +1075,6 @@ class KajoConnectActivityView extends WatchUi.View {
             setStepDistanceBaseline();
             Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mTimer.start(method(:onTimer), 1000, true);
-            WatchUi.showToast("START OK / " + getDebugState(), null);
         } else {
             mStartError = mEngine.getLastError();
             mStatus = "START FEHLGESCHLAGEN";
@@ -1109,7 +1108,6 @@ class KajoConnectActivityView extends WatchUi.View {
 
     function onTimer() as Void {
         mDebugTimerTicks += 1;
-        if (mDebugTimerTicks == 1) { WatchUi.showToast("KAJO TIMER TICK", null); }
         if (mStatus == "AUFZEICHNUNG") {
             mElapsedSeconds += 1;
             sampleLapMetrics();
@@ -1814,11 +1812,9 @@ class KajoConnectActivityView extends WatchUi.View {
             hrAvg = valueOrDash(activityInfo.averageHeartRate);
             hrMax = valueOrDash(activityInfo.maxHeartRate);
             if (activityInfo.elapsedDistance != null) { distance = numberText(activityInfo.elapsedDistance / 1000.0, 2); }
-            if (activityInfo.timerTime != null && activityInfo.timerTime > 0) {
-                elapsed = formatTime(activityInfo.timerTime);
-            } else if (activityInfo.elapsedTime != null && activityInfo.elapsedTime > 0) {
-                elapsed = formatTime(activityInfo.elapsedTime);
-            }
+            // Die sichtbare Trainingszeit kommt aus dem KAJO-Sekundentimer.
+            // ActivityInfo.timerTime kann auf einzelnen Geräten verzögert oder
+            // unverändert geliefert werden und darf die laufende Anzeige nicht überschreiben.
             calories = valueOrDash(activityInfo.calories);
             cadenceNow = valueOrDash(activityInfo.currentCadence);
             powerNow = valueOrDash(activityInfo.currentPower);
