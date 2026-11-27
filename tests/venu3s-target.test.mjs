@@ -87,8 +87,13 @@ test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compil
 
 test("Venu 3S enter, menu and esc inputs are mapped to KAJO navigation", () => {
   assert.match(activityDelegate, /key == WatchUi\.KEY_ENTER \|\| key == WatchUi\.KEY_START/);
-  assert.match(activityDelegate, /else if \(lowerHeld < mLongPressThreshold\) \{\s*mView\.handleLapButton\(\);/);
-  assert.match(activityDelegate, /key == WatchUi\.KEY_MENU \|\| key == WatchUi\.KEY_ACTION_MENU[\s\S]*?nextDisplayPage\(1\)/);
+  assert.match(activityDelegate, /key == WatchUi\.KEY_ESC \|\| key == WatchUi\.KEY_LAP/);
+  assert.match(activityDelegate, /mView\.handleBackOrLapButton\(\)/);
+  assert.match(activityDelegate, /key == WatchUi\.KEY_MENU/);
+  assert.match(activityDelegate, /mView\.isPausedForSave\(\)\) \{\s*mView\.handlePausedLongSecondary\(\)/);
+  assert.match(activityDelegate, /function onKeyPressed[\s\S]*?return false/);
+  assert.match(activityDelegate, /function onKeyReleased[\s\S]*?return false/);
+  assert.match(activityDelegate, /key == WatchUi\.KEY_ACTION_MENU \|\| key == WatchUi\.KEY_UP[\s\S]*?nextDisplayPage\(1\)/);
   assert.match(homeDelegate, /extends WatchUi\.InputDelegate/);
   assert.match(homeDelegate, /key == WatchUi\.KEY_MENU[\s\S]*?scrollPlan\(1\)/);
   assert.match(homeDelegate, /key == WatchUi\.KEY_ACTION_MENU[\s\S]*?openSettings\(\)/);
