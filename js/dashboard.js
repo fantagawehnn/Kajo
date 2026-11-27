@@ -760,7 +760,7 @@ export function renderSelectedDashboardDay() {
     }
     if (headDate) headDate.textContent = formattedDate;
     const savedCheckin = state.dailyCheckins?.[selectedDashboardDate] || {};
-    const hasSavedCheckin = Object.keys(savedCheckin).some(key => key !== 'note' && key !== 'noteUpdatedAt' && savedCheckin[key] !== null && savedCheckin[key] !== '');
+    const hasSavedCheckin = ['sleepQuality','fatigue','soreness','stress','motivation','weight','cycle'].some(key => savedCheckin[key] !== null && savedCheckin[key] !== undefined && savedCheckin[key] !== '');
     const homeNoteButton = document.getElementById('kajo-home-note-button');
     if (homeNoteButton) {
         homeNoteButton.hidden = !hasSavedCheckin;
