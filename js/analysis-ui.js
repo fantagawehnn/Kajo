@@ -252,7 +252,8 @@ function renderPerformanceDetail() {
   });
   renderMetrics('performance-paddling-metrics',paddleCircles);
 
-  const strengthRecords = extractStrengthRecords(state.rawActivities, state.strengthPBs);
+  const strengthRecords = extractStrengthRecords(state.rawActivities, state.strengthPBs)
+    .filter(row => row.date && valid(row.weight) && valid(row.reps));
   const strengthGroups = groupStrengthRecords(strengthRecords);
   renderMetrics('performance-strength-metrics', strengthGroups.length
     ? strengthGroups.map(group => {
