@@ -109,9 +109,9 @@ export function classifySubjective(key, value) {
 export function inferSeasonPhaseCategory(phase = {}) {
   const text = [phase.name, phase.type, phase.objective, ...(phase.focus || []), phase.notes]
     .filter(Boolean).join(' ').toLocaleLowerCase('de');
-  if (/wettkampf|competition|race|rennen|taper|peaking|peak|meisterschaft|world cup|worldcup/.test(text)) return 'competition';
+  if (/wettkampfvorbereitung|pre.?competition|wettkampfnah|spezif|specific|intensivierung/.test(text)) return 'specific';
   if (/regeneration|erholung|recovery|entlastung|transition|übergang|pause/.test(text)) return 'recovery';
-  if (/spezif|specific|vorbereitung|pre.?competition|wettkampfnah|intensivierung/.test(text)) return 'specific';
+  if (/wettkampf|competition|race|rennen|taper|peaking|peak|meisterschaft|world cup|worldcup/.test(text)) return 'competition';
   if (/grundlage|aufbau|base|build|development|entwickl|vorbereitungsblock/.test(text)) return 'build';
   return 'unknown';
 }
@@ -144,7 +144,9 @@ export function getSeasonPhaseTargets(phase) {
     category, label: base.label,
     acwr: pair(phase.acwrTargetMin, phase.acwrTargetMax, base.acwr),
     tsb: pair(phase.tsbTargetMin, phase.tsbTargetMax, base.tsb),
-    source: manual ? 'manual' : 'phase-default'
+    source: manual ? 'manual' : 'phase-default',
+    acwrSource: phase.acwrTargetMin != null || phase.acwrTargetMax != null ? 'manual' : 'phase-default',
+    tsbSource: phase.tsbTargetMin != null || phase.tsbTargetMax != null ? 'manual' : 'phase-default'
   };
 }
 
