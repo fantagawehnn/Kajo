@@ -393,20 +393,25 @@ async function callGarminFunction(body) {
     const readInvocationError = async error => {
         const response = error?.context;
         let detail = '';
+        let code = '';
         if (response && typeof response.clone === 'function') {
             try {
                 const payload = await response.clone().json();
                 detail = payload?.error || payload?.message || '';
+                code = payload?.code || '';
             } catch (_) {
                 try { detail = (await response.clone().text()).slice(0, 500); } catch (_) {}
             }
         }
-        return { detail, status: Number(response?.status || error?.status || 0) };
+        return { detail, code, status: Number(response?.status || error?.status || 0) };
     };
 
     let result = await supabase.functions.invoke('garmin-personal', { body });
     if (result.error) {
         const firstError = await readInvocationError(result.error);
+        if (body?.action === 'sync-today' && firstError.status === 409 && firstError.code === 'garmin_sync_already_running') {
+            return { ok: true, busy: true };
+        }
         const isSessionError = firstError.status === 401
             || /Sitzung ungültig|Anmeldung erforderlich|Invalid JWT|invalid claim/i.test(firstError.detail);
         if (isSessionError) {
@@ -3711,6 +3716,16 @@ async function syncGarminTodayOnOpen(userId) {
                 await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
                 if (!isCurrentSync()) return;
                 continue;
+            }
+            if (response.busy === true) {
+                setGarminSyncIndicator('current', 'Verbunden');
+                setGarminSyncResult('Auf einem anderen Gerät läuft bereits ein Garmin-Abgleich. Kajo versucht es anschließend erneut.', 'info');
+                setTimeout(() => {
+                    if (isCurrentSync() && !garminDailySyncCompleted.has(runKey)) {
+                        void syncGarminTodayOnOpen(userId);
+                    }
+                }, 15000);
+                return;
             }
             health = response.sync?.healthSync || null;
             const activity = response.sync?.activitySync || null;
