@@ -15,7 +15,7 @@ Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit
 ### HRV
 
 - Keine allgemeingültigen absoluten Millisekunden-Zonen.
-- Referenz: Median der vorangegangenen 28 Tage, mindestens zwölf gültige Messungen derselben Metrik, Einheit und Datenquelle.
+- Referenz: Median der vorangegangenen 28 Tage, mindestens zwölf gültige Messungen derselben Metrik, Einheit und Datenquelle. Zwölf Werte entsprechen im Mittel drei Messungen pro Woche; das ist eine konservative KAJO-Mindestanforderung, kein universell validierter Grenzwert.
 - Streuung: robuste Skala aus 1,4826 × MAD; falls erforderlich mindestens halbe Standardabweichung und ein metrikspezifischer Mindestwert.
 - Einordnung der Abweichung in dieser Skala:
   - bis 1 Skalen-Einheit unter der Basis: üblicher Bereich
@@ -40,7 +40,7 @@ Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit
 ### Schlafdauer
 
 - Kein starres Optimum für alle Sportler. Die Schlafempfehlungen für Athleten sollen den individuellen Bedarf und Trainingsumfang berücksichtigen.
-- KAJO verwendet deshalb den Median der vorherigen 28 Tage (mindestens zwölf Messungen) als persönliche Referenz:
+- KAJO verwendet deshalb den Median der vorherigen 28 Tage (mindestens zwölf Messungen) als persönliche Referenz. Diese Referenz beschreibt zunächst das beobachtete Schlafniveau und nicht zwingend den tatsächlichen Schlafbedarf:
   - höchstens 30 Minuten darunter: nahe am persönlichen Niveau
   - 30–60 Minuten darunter: beobachten
   - 60–90 Minuten darunter: deutliche Verkürzung
