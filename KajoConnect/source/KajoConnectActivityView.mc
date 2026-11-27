@@ -1037,10 +1037,12 @@ class KajoConnectActivityView extends WatchUi.View {
         if (info.totalAscent != null) {
             mFinalAscent = info.totalAscent.toString();
         }
+        // timerTime excludes pauses and is the Garmin value for active training time.
+        // elapsedTime includes pauses; using it as a fallback would inflate KAJO's
+        // active-time display after every pause. Keep the local active-time counter
+        // when Garmin does not currently provide timerTime.
         if (info.timerTime != null && info.timerTime > 0) {
             mElapsedSeconds = Math.floor(info.timerTime / 1000).toNumber();
-        } else if (info.elapsedTime != null && info.elapsedTime > 0) {
-            mElapsedSeconds = Math.floor(info.elapsedTime / 1000).toNumber();
         }
     }
 
