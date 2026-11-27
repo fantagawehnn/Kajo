@@ -557,7 +557,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
             : 'Noch kein vorheriger CTL-Wert zum Vergleichen vorhanden';
     }
     applyRingState('home-readiness-ring', trainingRingState('readiness', readinessNumber, checkinDate || selectedDate));
-    applyRingState('home-form-ring', { value: loadNumber, progress: loadNumber === null ? 0 : Math.max(0, Math.min(100, loadNumber)), color: STATUS_COLORS.info, empty: loadNumber === null });
+    const tsbProgress=tsbNumber===null?0:Math.max(0,Math.min(100,((tsbNumber+30)/55)*100));\n    applyRingState('home-form-ring', { value: tsbNumber, progress: tsbProgress, color: '#FB923C', empty: tsbNumber === null });
     const formValueEl = document.getElementById('home-form-value');
     if (formValueEl) formValueEl.style.color = '#f8fafc';
     try { globalThis.lucide?.createIcons?.(); } catch (_) {}
@@ -741,9 +741,22 @@ export function renderSelectedDashboardDay() {
     catch (error) { console.error('[KAJO] Home-Tagesübersicht konnte nicht gerendert werden:', error); }
 
     const selectedDateLabel = document.getElementById("dashboard-selected-date");
-    if (selectedDateLabel) {
-        const selectedDate = new Date(selectedDashboardDate + 'T12:00:00');
-        selectedDateLabel.textContent = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate);
+    const selectedDate = new Date(selectedDashboardDate + 'T12:00:00');
+    const formattedDate = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate);
+    if (selectedDateLabel) selectedDateLabel.textContent = formattedDate;
+    const greeting = document.getElementById('kajo-home-greeting');
+    const headDate = document.getElementById('kajo-home-head-date');
+    if (greeting) {
+        const hour = new Date().getHours();
+        greeting.textContent = hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend';
+    }
+    if (headDate) headDate.textContent = formattedDate;
+    const savedCheckin = state.dailyCheckins?.[selectedDashboardDate] || {};
+    const hasSavedCheckin = Object.keys(savedCheckin).some(key => key !== 'note' && key !== 'noteUpdatedAt' && savedCheckin[key] !== null && savedCheckin[key] !== '');
+    const homeNoteButton = document.getElementById('kajo-home-note-button');
+    if (homeNoteButton) {
+        homeNoteButton.hidden = !hasSavedCheckin;
+        homeNoteButton.setAttribute('aria-hidden', String(!hasSavedCheckin));
     }
     const noteButton = document.getElementById('dashboard-day-note');
     if (noteButton) {
