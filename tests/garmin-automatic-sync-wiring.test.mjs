@@ -75,6 +75,11 @@ test('Garmin sync lock uses an expiring atomic lease and token-checked release',
 });
 
 
+test('legacy Garmin sync actions enforce the same lock checkpoints as automatic and range imports', () => {
+  assert.match(edgeFunction, /syncGarminHealthHistoryBatch\(admin, userId, "2020-01-01", new Date\(\)\.toISOString\(\)\.slice\(0, 10\), false, false, 1, "health_history", false, assertSyncLock\)/);
+  assert.match(edgeFunction, /syncGarminActivitiesForUser\(admin, userId, startDate, endDate, false, endDate, 14, assertSyncLock\)/);
+});
+
 test('a lost or unconfirmed Garmin sync lease stops work at safe checkpoints', () => {
   assert.match(edgeFunction, /let syncLockLost = false/);
   assert.match(edgeFunction, /syncLockLost = true/);
