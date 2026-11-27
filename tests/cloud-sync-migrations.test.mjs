@@ -54,4 +54,5 @@ test('past activity deletion tombstones are immutable, account-scoped, and block
     assert.match(sql, /return null/i);
     assert.match(sql, /after insert on public\.activity_deletions/i);
     assert.doesNotMatch(sql, /grant (?:update|delete).*activity_deletions/i);
+    assert.doesNotMatch(sql, /touch_kajo_sync_state/i);
 });
