@@ -1,0 +1,76 @@
+name: KAJO Activity Deletion Tombstone Tests
+
+on:
+  push:
+    branches:
+      - feature/activity-deletion-tombstones-v2
+  pull_request:
+    branches:
+      - v2
+
+permissions:
+  contents: read
+
+jobs:
+  node-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Check activity sync JavaScript syntax
+        run: |
+          node --experimental-default-type=module --check js/main.js
+          node --experimental-default-type=module --check js/activities.js
+          node --experimental-default-type=module --check js/cloud-activities.js
+          node --experimental-default-type=module --check js/activity-deletions.js
+      - name: Run activity deletion regression tests
+        run: |
+          node --experimental-default-type=module --test \
+            tests/activity-deletions.test.mjs \
+            tests/cloud-activities-tombstone.test.mjs \
+            tests/cloud-activities.test.mjs \
+            tests/cloud-activities-pagination.test.mjs
+
+  postgres-integration:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kajo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kajo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kajo_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Prepare minimal Supabase database roles
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin;
+          create schema auth;
+          create table auth.users (id uuid primary key);
+          insert into auth.users (id) values
+            ('00000000-0000-0000-0000-000000000001'),
+            ('00000000-0000-0000-0000-000000000002');
+          SQL
+      - name: Test immutable activity deletion tombstones
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/sql/activity_deletion_tombstones.integration.sql
