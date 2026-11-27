@@ -33,7 +33,7 @@ test('background sync also acquires a per-account lock', () => {
 
 test('long-running activity and health batches check lock ownership at safe checkpoints', () => {
   assert.match(source, /assertSyncLock: \(\) => void = \(\) => \{\}/);
-  assert.match(source, /assertSyncLock\(\);[\s\S]{0,180}syncGarminHealthDay/);
+  assert.match(source, /syncGarminHealthDay\(admin, userId, cursorDate, forceRefresh, assertSyncLock\)/);
   assert.match(source, /assertSyncLock\(\);[\s\S]{0,800}garminGet/);
   assert.match(source, /assertSyncLock\(\);[\s\S]{0,180}upsert\(records/);
 });
@@ -42,10 +42,10 @@ test('sync-today isolates activity and health failures while preserving lock-los
   const start = source.indexOf('if (action === "sync-today")');
   const end = source.indexOf('if (action === "sync-range")', start);
   const handler = source.slice(start, end);
-  assert.match(handler, /try\s*\{[\s\S]*?syncGarminActivitiesForUser/);
+  assert.match(handler, /try\s*\{[\s\S]*?syncGarminActivitiesAutomaticBatch/);
   assert.match(handler, /catch \(error\)\s*\{\s*activitySync = captureSyncError\(error\)/);
-  assert.match(handler, /try\s*\{[\s\S]*?syncGarminHealthHistoryBatch/);
+  assert.match(handler, /try\s*\{[\s\S]*?syncGarminHealthAutomaticBatch/);
   assert.match(handler, /catch \(error\)\s*\{\s*healthSync = captureSyncError\(error\)/);
-  assert.match(handler, /message\.includes\("Synchronisierungssperre"\)/);
+  assert.match(handler, /Synchronisierungssperre/i);
   assert.match(handler, /status: rateLimited \? "rate_limited" : "error"/);
 });
