@@ -151,6 +151,17 @@ test('successfully synchronized day without activities is a confirmed rest day',
     assert.equal(day.dataStatus, 'confirmed-rest');
 });
 
+test('timeline retains activity dates when every recorded activity has unavailable load', () => {
+    const records = [{ id: 'g-no-load-anchor', source: 'garmin', date: completedDay, duration: 60 }];
+    const timeline = computePerformanceTimeline(records, {}, {});
+    const day = timeline.find(item => item.date === completedDay);
+    assert.ok(day, 'recorded activity date must remain visible');
+    assert.equal(day.load, null);
+    assert.equal(day.dataStatus, 'incomplete-activity-load');
+    assert.equal(day.ctl, null);
+    assert.equal(day.atl, null);
+});
+
 test('Garmin activity without a calculable load remains unknown', () => {
     const records = [{ id: 'g-1', source: 'garmin', date: completedDay, duration: 60 }];
     const day = entryOn(completedDay, records, { garminActivityCoverageRanges: [covered(completedDay)] });
