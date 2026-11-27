@@ -265,7 +265,7 @@ function renderPerformanceDetail() {
   ];
   const paddleCircles = paddleDefs.map(([key,label,unit]) => {
     const entry = performanceActivityMetric(key,label,unit);
-    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel · letzte Einheit'].filter(Boolean).join(' · ') : unit;
+    const displayUnit = entry ? [entry.unit, entry.sourceDetail, 'Messpunktmittel · letzte Messreihe'].filter(Boolean).join(' · ') : unit;
     return performanceCircle(key,label,entry ? fmt(entry.value, key==='hr'||key==='cadence'?0:1) : '—',
       displayUnit,entry ? 'Letzte Einheit' : 'Keine Messreihe', 'var(--kajo-status-info)');
   });
@@ -432,9 +432,9 @@ export function setPerformanceClass(sportKey) {
   ];
   renderMetrics('performance-paddling-metrics',paddleDefs.map(([key,label,unit]) => {
     const entry = performanceActivityMetric(key,label,unit);
-    const displayUnit = entry ? [entry.unit,entry.sourceDetail,'Messpunktmittel · letzte Einheit'].filter(Boolean).join(' · ') : unit;
+    const displayUnit = entry ? [entry.unit,entry.sourceDetail,'Messpunktmittel · letzte Messreihe'].filter(Boolean).join(' · ') : unit;
     return performanceCircle(key,label,entry?fmt(entry.value,key==='hr'||key==='cadence'?0:1):'—',
-      displayUnit,entry?'Letzte '+(paddlingClassDefinitions.find(item=>item.key===sportKey)?.label || sportKey)+'-Einheit':'Keine Messreihe','var(--kajo-status-info)');
+      displayUnit,entry?'Letzte Einheit mit Messdaten':'Keine Messreihe','var(--kajo-status-info)');
   }));
   if (selectedPerformanceMetric && ['speed','hr','power','cadence'].includes(selectedPerformanceMetric))
     renderPerformanceTrend(selectedPerformanceMetric);
