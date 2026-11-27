@@ -89,5 +89,31 @@ create trigger prevent_deleted_garmin_activity_resurrection
 before insert or update on public.garmin_activities
 for each row execute function public.prevent_deleted_activity_resurrection();
 
+-- If the lightweight Realtime sync watermark migration is present, publish
+-- the deletion immediately to other signed-in devices. Older databases without
+-- that optional table/function still accept and enforce tombstones safely.
+create or replace function public.on_kajo_activity_deletion_sync_change()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+    if pg_catalog.to_regprocedure('public.touch_kajo_sync_state(uuid,text,bigint)') is not null then
+        execute 'select public.touch_kajo_sync_state($1, $2, $3)'
+            using new.user_id, 'activities', 0;
+    end if;
+    return new;
+end;
+$function$;
+
+revoke all on function public.on_kajo_activity_deletion_sync_change() from public;
+revoke all on function public.on_kajo_activity_deletion_sync_change() from anon, authenticated;
+
+drop trigger if exists kajo_activity_deletions_sync_state on public.activity_deletions;
+create trigger kajo_activity_deletions_sync_state
+after insert on public.activity_deletions
+for each row execute function public.on_kajo_activity_deletion_sync_change();
+
 comment on table public.activity_deletions is
     'Immutable per-user tombstones. Past activities marked here are hidden from KAJO cloud sync and excluded from future Garmin imports.';
