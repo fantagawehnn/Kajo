@@ -129,7 +129,7 @@ function updateWearableRange(valueId, rangeId, value, key, dateKey) {
       : 'Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + unit;
     rangeEl.textContent = reference + ' · ' + zone.label;
   } else {
-    rangeEl.textContent = zone.label + (zone.observations !== undefined ? ' · ' + zone.observations + '/7 Messungen' : '');
+    rangeEl.textContent = zone.label + (zone.observations !== undefined ? ' · ' + zone.observations + '/12 Messungen' : '');
   }
 }
 export function renderDashboardNextRace(){
@@ -1032,7 +1032,7 @@ function historyRecommendation(key, value, dateKey) {
     }
     if (['rhr', 'hrv', 'respiration'].includes(key)) {
         const zone = classifyPersonalMetric(key, value, checkinValuesBetween(dateKey, key, 28, false));
-        const baseline = validNumber(zone.baseline) ? ' Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + (key === 'hrv' ? ' ms.' : key === 'rhr' ? ' bpm.' : ' /min.') : ' Mindestens sieben Messungen aus den vorherigen 28 Tagen sind für eine persönliche Basis erforderlich.';
+        const baseline = validNumber(zone.baseline) ? ' Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + (key === 'hrv' ? ' ms.' : key === 'rhr' ? ' bpm.' : ' /min.') : ' Mindestens zwölf Messungen aus den vorherigen 28 Tagen sind für eine persönliche Basis erforderlich.';
         return [zone.label, 'Der Wert wird relativ zum persönlichen Median und zur individuellen Schwankung eingeordnet, nicht anhand pauschaler bpm- oder Millisekunden-Grenzen.' + baseline + ' Einzelwerte immer mit 7-Tage-Trend, Schlaf und Befinden betrachten.'];
     }
     if (key === 'sleepDuration') {
