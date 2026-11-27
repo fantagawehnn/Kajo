@@ -235,6 +235,9 @@ jobs:
       - name: Run calendar display data tests
         run: node --experimental-default-type=module --test tests/calendar-display-data.test.mjs
 
+      - name: Run competition date default tests
+        run: node --experimental-default-type=module --test tests/competition-date-default.test.mjs
+
       - name: Run navigation smoke tests
         run: node tests/navigation-smoke.mjs
 
