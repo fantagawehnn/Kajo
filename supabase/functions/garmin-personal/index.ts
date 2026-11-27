@@ -1395,7 +1395,7 @@ Deno.serve(async (req) => {
           // A lost lease must stop the whole operation; continuing without the
           // account lock could allow overlapping writes from another invocation.
           if (message.includes("Synchronisierungssperre")) throw error;
-          const rateLimited = /HTTP\\s*429|rate.?limit/i.test(message);
+          const rateLimited = /HTTP\s*429|rate.?limit/i.test(message);
           return {
             status: rateLimited ? "rate_limited" : "error",
             rateLimited,
