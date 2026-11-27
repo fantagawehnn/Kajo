@@ -93,3 +93,5 @@ jobs:
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/sql/garmin_sync_lock.integration.sql
           bash tests/sql/garmin_sync_lock_race.sh
+      - name: Test immutable activity deletion tombstones in PostgreSQL
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/sql/activity_deletion_tombstones.integration.sql
