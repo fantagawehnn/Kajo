@@ -265,6 +265,9 @@ class KajoConnectView extends WatchUi.View {
         if (mHomeSelection == 0) {
             if (getTodaysSessions().size() > 0) {
                 startActivity();
+            } else {
+                // Ohne geplante Einheit ist die primäre Startaktion freies Training.
+                openActivityView(null);
             }
         } else if (mHomeSelection == 1) {
             var listView = new KajoConnectWorkoutListView(self, null, "TRAININGS", "EINHEITEN");
