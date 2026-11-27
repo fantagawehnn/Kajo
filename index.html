@@ -1928,7 +1928,7 @@
 
     <!-- Einstiegspunkt der Anwendung: lädt alle weiteren Module aus js/ -->
     <script type="module" src="js/auth.js?v=4"></script>
-    <script type="module" src="js/main.js?v=182"></script>
+    <script type="module" src="js/main.js?v=183"></script>
 
     <!-- Installierbare PWA: nur statische App-Dateien werden gecacht. -->
     <script>
@@ -1945,7 +1945,7 @@
             }
           });
 
-          navigator.serviceWorker.register("./service-worker.js?v=29", { scope: "./" })
+          navigator.serviceWorker.register("./service-worker.js?v=30", { scope: "./" })
             .then(registration => registration.update())
             .catch(error => console.error("KAJO Service Worker konnte nicht registriert werden:", error));
         });
