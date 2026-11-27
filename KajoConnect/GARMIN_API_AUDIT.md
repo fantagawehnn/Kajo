@@ -120,6 +120,7 @@ The current watch-to-server upload sends only the activity date/start time, dura
 - Reduced manifest permissions to Communications, Fit and Positioning.
 - Corrected cadence wording/unit to Kadenz/RPM.
 - Changed GPS status wording to position status.
+- Added a guard against duplicate start inputs while a recording is already active.
 - Added null guards when reading activity summaries and sampling lap metrics.
 - Added a guard for absent lap event data.
 - Removed the `elapsedTime` fallback for active training time.
