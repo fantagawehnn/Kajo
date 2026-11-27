@@ -191,7 +191,7 @@ function renderFormTrendChart() {
   }
   setChartEmptyState(canvas, '', false);
   const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
-  const formLabel = garminMode ? 'Garmin-Form · relativ zu CTL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
+  const formLabel = garminMode ? 'Relativer Saldo · aus CTL/ATL (%)' : 'TSB · CTL minus ATL (' + (latest.loadUnit || 'Load-Punkte') + ')';
   const datasets = [
     { label: 'CTL · langfristig', data: ctl, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2.2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
     { label: 'ATL · kurzfristig', data: atl, borderColor: '#8B9BB3', backgroundColor: '#8B9BB3', borderWidth: 2, tension: .22, pointRadius: dates.length <= 90 ? 2 : 0, pointHitRadius: 8, spanGaps: true, segment: { borderDash: context => context.p1DataIndex - context.p0DataIndex > 1 ? [5, 5] : [] }, yAxisID: 'y' },
@@ -221,7 +221,7 @@ function renderFormTrendChart() {
   setText('analysis-overview-form-note',
     'Dargestellt wird ausschließlich der zuletzt verwendete Belastungsmodus (' + mode + '). CTL und ATL zeigen die langfristige bzw. kurzfristige Belastungsentwicklung. ' +
     (garminMode
-      ? 'Der Garmin-Formwert ist relativ zu CTL und wird deshalb auf einer eigenen Prozentachse dargestellt; er ist nicht mit TSB gleichzusetzen.'
+      ? 'Der relative Saldo wird aus CTL und ATL berechnet und deshalb auf einer eigenen Prozentachse dargestellt; er ist kein direkt übernommener Garmin-Herstellerwert.'
       : 'TSB entspricht CTL minus ATL und nutzt dieselbe Load-Einheit. ') +
     'Modelllücken bleiben sichtbar; Werte verschiedener Load-Quellen werden nicht in einer Linie vermischt.');
 }
