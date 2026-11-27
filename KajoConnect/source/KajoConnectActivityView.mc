@@ -82,6 +82,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mGpsQuality as Lang.Number = Position.QUALITY_NOT_AVAILABLE;
     // Lokaler Sekundenzaehler als verlaesslicher Fallback, falls Garmin timerTime nicht liefert.
     var mElapsedSeconds as Lang.Number = 0;
+    var mDebugTimerTicks as Lang.Number = 0;
     var mFinalDistance as Lang.String = "--";
     var mFinalAverageHeartRate as Lang.String = "--";
     var mFinalDistanceMeters = null;
@@ -1073,6 +1074,7 @@ class KajoConnectActivityView extends WatchUi.View {
             setStepDistanceBaseline();
             Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
             mTimer.start(method(:onTimer), 1000, true);
+            WatchUi.showToast("START OK / " + getDebugState(), null);
         } else {
             mStartError = mEngine.getLastError();
             mStatus = "START FEHLGESCHLAGEN";
@@ -1102,6 +1104,8 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function onTimer() as Void {
+        mDebugTimerTicks += 1;
+        if (mDebugTimerTicks == 1) { WatchUi.showToast("KAJO TIMER TICK", null); }
         if (mStatus == "AUFZEICHNUNG") {
             mElapsedSeconds += 1;
             sampleLapMetrics();
@@ -1548,6 +1552,10 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     // Aktion der oberen physischen Taste.
+    function getDebugState() as Lang.String {
+        return mStatus + " / FIT " + (mEngine.isRecording() ? "ON" : "OFF") + " / TICKS " + mDebugTimerTicks.toString();
+    }
+
     function handlePrimaryButton() as Void {
         if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
             startRecording();
