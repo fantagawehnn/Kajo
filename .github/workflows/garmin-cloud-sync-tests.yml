@@ -24,11 +24,16 @@ jobs:
       - name: Check main application and Garmin planner syntax
         run: |
           node --experimental-default-type=module --check js/main.js
+          node --experimental-default-type=module --check js/activities.js
+          node --experimental-default-type=module --check js/cloud-activities.js
+          node --experimental-default-type=module --check js/activity-deletions.js
           node --experimental-default-type=module --check supabase/functions/garmin-personal/automatic-sync-plan.js
       - name: Run Garmin and cloud synchronization tests
         run: |
           node --experimental-default-type=module --test \
             tests/cloud-sync-migrations.test.mjs \
+            tests/activity-deletions.test.mjs \
+            tests/cloud-activities-tombstone.test.mjs \
             tests/cloud-sync-patch.test.mjs \
             tests/cloud-activities-pagination.test.mjs \
             tests/cloud-activities.test.mjs \
