@@ -51,7 +51,7 @@ function measurementIdentity(record, key) {
 
 /**
  * Scores a current physiological value against the athlete's own recent
- * distribution. Seven prior observations are the minimum; 28 days are used
+ * distribution. Twelve prior observations are the minimum; 28 days are used
  * when available. A robust MAD scale reduces the influence of outliers.
  */
 function individualTrendScore(value, historyValues, direction, minimumScale) {
