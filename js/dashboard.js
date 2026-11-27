@@ -12,7 +12,7 @@ import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js?v=2';
-import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr } from './metric-zones.js?v=4';
+import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance, classifyAcwr } from './metric-zones.js?v=5';
 export { calculateReadiness } from './readiness.js';
 
 function getHomeActivityDisplayMode() {
@@ -32,7 +32,9 @@ function localTodayKey() {
 }
 function clamp(v,min=0,max=100){return Math.max(min,Math.min(max,v));}
 const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-status-attention)', critical:'var(--kajo-status-critical)', info:'var(--kajo-status-info)' };
-function fiveLevelColor(score){const zone=readinessZone(score);return STATUS_COLORS[zone.status]||STATUS_COLORS.info;}
+const ZONE_COLORS = { 1:'var(--kajo-status-zone-1)', 2:'var(--kajo-status-zone-2)', 3:'var(--kajo-status-zone-3)', 4:'var(--kajo-status-zone-4)', 5:'var(--kajo-status-zone-5)' };
+function colorForZone(zone, fallback=STATUS_COLORS.info){ return ZONE_COLORS[zone] || fallback; }
+function fiveLevelColor(score){const zone=readinessZone(score);return colorForZone(zone.zone, STATUS_COLORS[zone.status]||STATUS_COLORS.info);}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
@@ -115,11 +117,7 @@ function updateWearableRange(valueId, rangeId, value, key, dateKey) {
   if (key === 'sleepScore') zone = classifyGarminSleepScore(value);
   else if (key === 'sleepDuration') zone = classifySleepDuration(value, history);
   else zone = classifyPersonalMetric(key, value, history);
-  const colorClass = zone.status === 'good' ? 'text-emerald-400'
-    : zone.status === 'attention' ? 'text-amber-400'
-      : zone.status === 'critical' ? 'text-rose-400' : 'text-white';
-  valueEl.classList.remove('text-emerald-400', 'text-amber-400', 'text-rose-400', 'text-white');
-  valueEl.classList.add(colorClass);
+  valueEl.style.color = colorForZone(zone.zone, zone.status === 'good' ? 'var(--kajo-status-good)' : zone.status === 'attention' ? 'var(--kajo-status-attention)' : zone.status === 'critical' ? 'var(--kajo-status-critical)' : 'inherit');
   if (!validNumber(value)) {
     rangeEl.textContent = 'Keine Messung vorhanden';
   } else if (validNumber(zone.baseline)) {
@@ -506,7 +504,7 @@ export function renderHomeDashboard(dateKey=localTodayKey()) {
     state.homeCheckinDate = checkinDate || selectedDate;
     const wearableState = (key, value) => {
         const color = historyRingColor(key, validNumber(value) ? Number(value) : null, garminCheckinDate || selectedDate);
-        const states = {[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor',[STATUS_COLORS.info]:'reference'};
+        const states = {[ZONE_COLORS[1]]:'zone1',[ZONE_COLORS[2]]:'zone2',[ZONE_COLORS[3]]:'zone3',[ZONE_COLORS[4]]:'zone4',[ZONE_COLORS[5]]:'zone5',[STATUS_COLORS.good]:'good',[STATUS_COLORS.attention]:'mild',[STATUS_COLORS.critical]:'poor',[STATUS_COLORS.info]:'reference'};
         return states[color] || 'neutral';
     };
     const metric = (valueId, ringId, value, stateName = 'neutral') => {
@@ -1062,11 +1060,8 @@ function fitnessChange(dateKey, value) {
     if (!previous) return null;
     const delta = Number(value) - Number(previous.ctl);
     if (!Number.isFinite(delta)) return null;
-    const color = delta >= 1 ? STATUS_COLORS.good
-        : delta > 0.2 ? STATUS_COLORS.good
-        : delta <= -1 ? STATUS_COLORS.critical
-        : delta < -0.2 ? STATUS_COLORS.attention
-        : STATUS_COLORS.info;
+    const zone = delta <= -1 ? 1 : delta < -0.2 ? 2 : delta <= 0.2 ? 3 : delta < 1 ? 4 : 5;
+    const color = colorForZone(zone);
     const direction = delta > 0.2 ? '↑' : delta < -0.2 ? '↓' : '→';
     const formatted = (delta > 0 ? '+' : '') + delta.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const previousDate = new Date(previous.date + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
@@ -1089,29 +1084,30 @@ function trainingRingState(key, value, dateKey) {
 }
 export function historyRingColor(key, value, dateKey) {
     if (value === null || value === undefined) return STATUS_COLORS.info;
-    if (key === 'readiness') return STATUS_COLORS[readinessZone(value).status] || STATUS_COLORS.info;
+    if (key === 'readiness') { const zone = readinessZone(value); return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info); }
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
         const mode = String(day.loadMode || '').startsWith('garmin') ? 'garmin' : 'unclassified';
         const zone = classifyTrainingBalance(value, mode);
-        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
+        return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info);
     }
     if (key === 'fitness') return fitnessChange(dateKey, value)?.color || STATUS_COLORS.info;
-    if (key === 'acwr') return STATUS_COLORS[classifyAcwr(value).status] || STATUS_COLORS.info;
+    if (key === 'acwr') { const zone = classifyAcwr(value); return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info); }
     if (key === 'weight') return STATUS_COLORS.info;
     if (['rhr', 'hrv', 'respiration'].includes(key)) {
         const prior = checkinValuesBetween(dateKey, key, 28, false);
         const zone = classifyPersonalMetric(key, value, prior);
-        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
+        return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info);
     }
     if (key === 'sleepDuration') {
         const zone = classifySleepDuration(value, checkinValuesBetween(dateKey, key, 28, false));
-        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
+        return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info);
     }
-    if (key === 'sleepScore') return STATUS_COLORS[classifyGarminSleepScore(value).status] || STATUS_COLORS.info;
+    if (key === 'sleepScore') { const zone = classifyGarminSleepScore(value); return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info); }
     if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
-        return STATUS_COLORS[classifySubjective(key, value).status] || STATUS_COLORS.info;
+        const zone = classifySubjective(key, value);
+        return colorForZone(zone.zone, STATUS_COLORS[zone.status] || STATUS_COLORS.info);
     }
     return STATUS_COLORS.info;
 }
