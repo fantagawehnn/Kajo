@@ -7,7 +7,7 @@ import { getSportsCatalog, escapeHtml } from './utils.js';
 import { renderHeartRateZoneDistribution, setChartEmptyState } from './charts.js';
 import { calculatePeriodSummary } from './period-summary.js';
 import { getVisibleActivities } from './activity-groups.js';
-import { getGarminCheckinMetric } from './garmin-metric-access.js';
+import { getGarminCheckinMetric, getComparableGarminHrvSeries } from './garmin-metric-access.js';
 import { calculateReadiness } from './readiness.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
@@ -73,11 +73,12 @@ function cssColor(token, fallback) {
 function buildSeries(dates) {
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const load = dates.map(date => {
     const day = timeline.get(date);
     return day && valid(day.load) ? Number(day.load) : null;
   });
-  const recovery = dates.map(date => valid(checkins[date]?.garminHrv ?? (checkins[date]?.measurementSources?.hrv?.source === 'garmin' ? checkins[date]?.hrv : null)) ? Number(checkins[date]?.garminHrv ?? checkins[date]?.hrv) : null);
+  const recovery = hrvSeries.values;
   const readiness = dates.map(date => {
     if (date > todayKey() || !checkins[date]) return null;
     const result = calculateReadiness(date, state);
@@ -181,6 +182,7 @@ function renderFitnessRecoveryContext(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const rows = dates.map(date => {
     const day = timeline.get(date);
     const checkin = checkins[date] || {};
@@ -191,8 +193,7 @@ function renderFitnessRecoveryContext(dates) {
     const formValue = relativeMode
       ? (valid(day?.formPct) ? Number(day.formPct) : null)
       : (valid(day?.tsb) ? Number(day.tsb) : null);
-    const hrvRaw = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
-    const hrv = valid(hrvRaw) && Number(hrvRaw) > 0 ? Number(hrvRaw) : null;
+    const hrv = hrvSeries.byDate.get(date) ?? null;
     const readinessResult = date <= todayKey() && checkins[date] ? calculateReadiness(date, state) : null;
     const readiness = readinessResult?.enoughData && valid(readinessResult.score) ? Number(readinessResult.score) : null;
     const vo2max = getGarminCheckinMetric(checkin, 'vo2max');
@@ -244,6 +245,7 @@ function renderTrendObservations(dates) {
   const healthLogs = state.healthLogs || {};
   const recentDates = dates.slice(-7);
   const priorDates = dates.slice(-14, -7);
+  const hrvSeries = getComparableGarminHrvSeries(checkins, [...priorDates, ...recentDates]);
   const latestLoadDay = [...recentDates].reverse().map(date => timeline.get(date)).find(day =>
     day && day.loadMode && day.loadUnit && (valid(day.ctl) || valid(day.atl) || valid(day.tsb) || valid(day.formPct))
   );
@@ -269,10 +271,7 @@ function renderTrendObservations(dates) {
       }
       return valid(day[metric.key]) ? Number(day[metric.key]) : null;
     }
-    if (metric.key === 'hrv') {
-      const value = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
-      return valid(value) && Number(value) > 0 ? Number(value) : null;
-    }
+    if (metric.key === 'hrv') return hrvSeries.byDate.get(date) ?? null;
     if (metric.key === 'readiness') {
       if (date > todayKey() || !checkins[date]) return null;
       const result = calculateReadiness(date, state);
@@ -305,7 +304,7 @@ function renderTrendObservations(dates) {
     : '<p class="kajo-analysis-chart-note">Keine Erkrankungs- oder Verletzungstage dokumentiert. Daraus lässt sich kein unauffälliger Gesundheitsstatus ableiten.</p>';
   root.innerHTML = rows.length
     ? '<div class="kajo-analysis-availability">' + rows.join('') + '</div>' + eventNote +
-      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Relativer Saldo und TSB bleiben getrennte Indikatoren.</p>'
+      '<p class="kajo-analysis-chart-note">Verglichen werden die Mittelwerte der letzten 7 Kalendertage mit den unmittelbar davorliegenden 7 Tagen. Ein Trend erscheint nur bei mindestens 3 gültigen Tagen je Fenster (Garmin-VO₂max: mindestens 2). Fehlende Tage werden nicht aufgefüllt. Load-Werte werden nur bei identischem Modell und identischer Einheit verglichen. HRV-Werte werden nur bei übereinstimmender Quelle, Messmethode und Einheit verglichen; bei einem Methodenwechsel bleiben abweichende Werte in diesem Vergleich offen. Die Richtung beschreibt ausschließlich die Messwertveränderung und ist keine Bewertung als gut/schlecht, keine Diagnose und keine Trainingsempfehlung. Relativer Saldo und TSB bleiben getrennte Indikatoren.</p>'
     : '<p class="kajo-analysis-chart-note">Für zwei aufeinanderfolgende Sieben-Tage-Zeiträume liegen nicht genügend vergleichbare Messwerte vor. Es wird kein Trend abgeleitet.</p>' + eventNote;
 }
 
@@ -388,6 +387,7 @@ function renderHealthEventContext(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const events = Object.entries(state.healthLogs || {})
     .filter(([date, item]) => date >= dates[0] && date <= dates[dates.length - 1] && ['sick', 'injured'].includes(item?.status))
     .sort(([a], [b]) => b.localeCompare(a));
@@ -398,7 +398,7 @@ function renderHealthEventContext(dates) {
   const cards = events.slice(0, 8).map(([date, item]) => {
     const day = timeline.get(date);
     const checkin = checkins[date] || {};
-    const hrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const hrv = hrvSeries.byDate.get(date) ?? null;
     const readiness = date <= todayKey() && checkin ? calculateReadiness(date, state) : null;
     const label = item.status === 'sick' ? 'Erkrankung' : 'Verletzung';
     const load = day && valid(day.load)
@@ -444,6 +444,7 @@ function renderLoadRecoveryAssociation(dates) {
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
   const healthLogs = state.healthLogs || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const pairs = [];
   const cumulativePairs = [];
 
@@ -457,12 +458,10 @@ function renderLoadRecoveryAssociation(dates) {
     const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
     if (!dateSet.has(nextDate) || nextDate > todayKey()) continue;
 
-    const item = checkins[nextDate] || {};
-    const rawHrv = item.garminHrv ?? (item.measurementSources?.hrv?.source === 'garmin' ? item.hrv : null);
     const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
     const eventOnLoadDay = ['sick', 'injured'].includes(healthLogs[date]?.status);
     const eventOnRecoveryDay = ['sick', 'injured'].includes(healthLogs[nextDate]?.status);
-    const hrvValue = valid(rawHrv) && Number(rawHrv) > 0 ? Number(rawHrv) : null;
+    const hrvValue = hrvSeries.byDate.get(nextDate) ?? null;
     const readinessValue = readiness?.enoughData && valid(readiness.score) ? Number(readiness.score) : null;
 
     pairs.push({
@@ -539,7 +538,7 @@ function renderLoadRecoveryAssociation(dates) {
     '</div>' +
     '<p class="kajo-analysis-chart-note">Die Aufteilung ist eine Sensitivitätsbetrachtung und keine statistische Kontrolle von Krankheit oder Verletzung. Ein fehlender Eintrag bedeutet nicht, dass die Person gesund war. Einträge an Belastungstag D oder Recovery-Tag D+1 kennzeichnen das jeweilige Wertepaar.</p>' +
     '<p class="kajo-analysis-chart-note">Nur vollständige Folgetag-Paare desselben Load-Modells (' + escapeHtml(pairs[0].mode) + ', ' + escapeHtml(pairs[0].unit) +
-    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>' +
+    ') werden berücksichtigt. Spearman beschreibt einen monotonen Zusammenhang, nicht dessen Ursache. HRV-Werte werden nur bei übereinstimmender Quelle, Messmethode und Einheit berücksichtigt. Frühere Belastungstage, Schlaf, Reisen und weitere Einflussfaktoren werden hier nicht statistisch kontrolliert. Es werden weder Signifikanz noch Trainingseffekt behauptet. Readiness enthält physiologische Messwerte einschließlich HRV; beide Ergebnisse sind daher nicht unabhängig voneinander.</p>' +
     '<h3 class="kajo-analysis-subheading">Ergänzende Mehrtagesperspektive</h3>' + cumulativeSection;
 }
 
@@ -548,6 +547,7 @@ function renderNextDayContext(dates) {
   if (!root) return;
   const timeline = new Map((state.dailyTimeline || []).map(day => [day.date, day]));
   const checkins = state.dailyCheckins || {};
+  const hrvSeries = getComparableGarminHrvSeries(checkins, dates);
   const dateSet = new Set(dates);
   const pairs = [];
   for (const date of dates) {
@@ -557,8 +557,7 @@ function renderNextDayContext(dates) {
     next.setDate(next.getDate() + 1);
     const nextDate = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
     if (!dateSet.has(nextDate) || nextDate > todayKey()) continue;
-    const checkin = checkins[nextDate] || {};
-    const hrv = checkin.garminHrv ?? (checkin.measurementSources?.hrv?.source === 'garmin' ? checkin.hrv : null);
+    const hrv = hrvSeries.byDate.get(nextDate) ?? null;
     const readiness = checkins[nextDate] ? calculateReadiness(nextDate, state) : null;
     const hasHrv = valid(hrv) && Number(hrv) > 0;
     const hasReadiness = readiness?.enoughData && valid(readiness.score);
@@ -589,7 +588,7 @@ function renderNextDayContext(dates) {
     '<p class="kajo-analysis-chart-note">Datenabdeckung im Zeitraum: ' + pairs.length + ' Load-Folgetag-Paare · davon ' +
     hrvPairs.length + ' mit Garmin-HRV und ' + readinessPairs.length + ' mit ausreichend belegter Readiness. Angezeigt werden die letzten ' +
     Math.min(10, pairs.length) + ' Paare. Es werden nur aufeinanderfolgende Kalendertage innerhalb des gewählten Zeitraums verglichen.</p>' +
-    '<p class="kajo-analysis-chart-note">Dies ist eine zeitliche Gegenüberstellung (Load an Tag D, Recovery an Tag D+1), keine statistische Korrelation und kein Nachweis eines Trainingseffekts. Load-Modelle und Einheiten können sich unterscheiden und werden deshalb pro Tag ausgewiesen. Fehlende HRV- oder Readiness-Werte bleiben offen.</p>';
+    '<p class="kajo-analysis-chart-note">Dies ist eine zeitliche Gegenüberstellung (Load an Tag D, Recovery an Tag D+1), keine statistische Korrelation und kein Nachweis eines Trainingseffekts. Load-Modelle und Einheiten können sich unterscheiden und werden deshalb pro Tag ausgewiesen. HRV wird nur aus einer im Zeitraum einheitlichen Quelle, Messmethode und Einheit dargestellt. Fehlende HRV- oder Readiness-Werte bleiben offen.</p>';
 }
 function renderDataAvailability(dates) {
   const root = document.getElementById('analysis-data-availability');
@@ -688,7 +687,7 @@ function renderTrendChart() {
   renderHealthMarkers(dates);
   const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
   setText('analysis-overview-trend-note',
-    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Im Tooltip bleibt zusätzlich der Originalwert sichtbar. Readiness ist ein zusammengesetzter Orientierungswert aus verfügbaren Recovery-Domänen und enthält unter anderem physiologische Daten wie HRV; HRV und Readiness sind deshalb keine unabhängigen Messgrößen. Fehlende Readiness-Tage bedeuten, dass die Mindestdatenanforderungen nicht erfüllt waren. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
+    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die HRV-Reihe berücksichtigt nur Werte mit übereinstimmender Quelle, Messmethode und Einheit. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Im Tooltip bleibt zusätzlich der Originalwert sichtbar. Readiness ist ein zusammengesetzter Orientierungswert aus verfügbaren Recovery-Domänen und enthält unter anderem physiologische Daten wie HRV; HRV und Readiness sind deshalb keine unabhängigen Messgrößen. Fehlende Readiness-Tage bedeuten, dass die Mindestdatenanforderungen nicht erfüllt waren. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
