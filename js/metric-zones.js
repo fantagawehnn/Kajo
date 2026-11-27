@@ -34,7 +34,7 @@ export function readinessZone(score) {
 
 /**
  * Individual reference bands from the preceding 28 days.
- * At least seven observations are required. The scale uses 1.4826*MAD,
+ * At least twelve observations are required. The scale uses 1.4826*MAD,
  * with a half-SD and metric-specific floor as robust fallbacks.
  */
 export function classifyPersonalMetric(key, value, historyValues) {
