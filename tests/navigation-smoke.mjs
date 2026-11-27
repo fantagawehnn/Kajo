@@ -470,7 +470,7 @@ assert.ok(analysisOverview.includes('prior.length < metric.minimum || recent.len
 assert.ok(analysisOverview.includes('day.loadMode !== loadMode || day.loadUnit !== loadUnit'), 'trend observations do not mix load models or units');
 assert.ok(analysisOverview.includes('Fehlende Tage werden nicht aufgefüllt'), 'trend observations do not impute missing measurements');
 assert.ok(analysisOverview.includes('keine Trainingsempfehlung') && analysisOverview.includes('keine Diagnose'), 'trend observations remain descriptive and do not diagnose or recommend training');
-assert.ok(analysisOverview.includes('Garmin-Form und TSB bleiben getrennte Indikatoren'), 'Garmin form and TSB are not conflated in trend observations');
+assert.ok(analysisOverview.includes("relativeMode ? row.formPct : row.tsb") && analysisOverview.includes("'Relativer Saldo · aus CTL/ATL (%)'"), 'Garmin relative form and TSB use separate source values and labels');
 
 assert.ok(html.includes('id="plan-kind"') && html.includes('value="rest">Ruhetag</option>'), 'manual training planning offers a dedicated rest-day type');
 assert.ok(html.includes('id="plan-duration-field"') && planning.includes("const isRestDay=document.getElementById('plan-kind')?.value==='rest'"), 'rest-day planning hides workout-specific fields and stores a separate day type');
