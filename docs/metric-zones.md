@@ -19,8 +19,8 @@ Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit
 - Streuung: robuste Skala aus 1,4826 × MAD; falls erforderlich mindestens halbe Standardabweichung und ein metrikspezifischer Mindestwert.
 - Einordnung der Abweichung in dieser Skala:
   - bis 1 Skalen-Einheit unter der Basis: üblicher Bereich
-  - 1 bis 1,5: beobachten
-  - über 1,5: deutliche Abweichung
+  - 1 bis 2: beobachten
+  - über 2: deutliche Abweichung
 - Ein ungewöhnlich hoher HRV-Wert wird nicht automatisch als bessere Erholung gewertet. Stabilität innerhalb des persönlichen Normalbereichs ist aussagekräftiger als ein möglichst hoher Einzelwert.
 - Tageswerte sollen gemeinsam mit dem 7-Tage-Trend, Ruhepuls, Schlaf und subjektivem Befinden betrachtet werden.
 
@@ -28,13 +28,13 @@ Eine Zone ist keine Diagnose und keine automatische Trainingsfreigabe. Krankheit
 
 - Keine pauschalen bpm-Grenzen für alle Athleten.
 - Referenz: persönlicher Median der vorherigen 28 Tage, mindestens zwölf gültige Messungen.
-- Bis 1 robuste Streuung über der Basis: üblicher Bereich; 1–1,5: beobachten; über 1,5: deutliche Abweichung.
+- Bis 1 robuste Streuung über der Basis: üblicher Bereich; 1–2: beobachten; über 2: deutliche Abweichung.
 - Ein erhöhter Ruhepuls ist ein unspezifisches Signal und kann u. a. durch Trainingsbelastung, Schlaf, Hitze, Stress oder Krankheit beeinflusst werden. Er ist allein keine Diagnose.
 
 ### Atemfrequenz
 
 - Individueller Median der vorherigen 28 Tage, mindestens zwölf gültige Messungen.
-- Eine Erhöhung um mehr als eine robuste Streuung wird beobachtet; mehr als 1,5 Streuungen gilt als deutliche Abweichung.
+- Eine Erhöhung um mehr als eine robuste Streuung wird beobachtet; mehr als 2 Streuungen gilt als deutliche Abweichung.
 - Die Atemfrequenz ist ein Kontextsignal und darf nicht isoliert zur Trainingsentscheidung führen.
 
 ### Schlafdauer
