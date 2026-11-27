@@ -17,7 +17,7 @@ test('creates an account tombstone only for an activity dated before today', () 
     assert.equal(tombstone.record_id, 'garmin-12345');
     assert.equal(tombstone.activity_date, '2026-11-25');
     assert.equal(tombstone.garmin_activity_id, '12345');
-    assert.ok(Number.isFinite(Date.parse(tombstone.deleted_at)));
+    assert.equal('deleted_at' in tombstone, false);
 });
 
 test('does not create a tombstone for today, a future day, or an unknown date', () => {
