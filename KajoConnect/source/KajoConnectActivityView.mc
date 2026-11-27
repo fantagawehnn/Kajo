@@ -1562,6 +1562,16 @@ class KajoConnectActivityView extends WatchUi.View {
         }
     }
 
+    // Kurzer Druck unten: im Bereitschaftszustand Aktivitätsansicht verlassen,
+    // während der Aufzeichnung weiterhin eine Runde markieren.
+    function handleBackOrLapButton() as Void {
+        if (mStatus == "BEREIT" || mStatus == "START FEHLGESCHLAGEN") {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            return;
+        }
+        handleLapButton();
+    }
+
     function handleLapButton() as Lang.Boolean {
         if (mStatus == "SPEICHERN FEHLGESCHLAGEN") {
             WatchUi.showToast("Bitte zuerst erneut speichern", null);
