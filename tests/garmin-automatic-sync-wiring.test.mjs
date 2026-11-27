@@ -93,3 +93,21 @@ test('a lost or unconfirmed Garmin sync lease stops work at safe checkpoints', (
   assert.match(edgeFunction, /activityRescanEndDate, 14, assertSyncLock/);
   assert.match(edgeFunction, /"health_history", false, assertSyncLock/);
 });
+
+
+test('late-arriving health retries are bounded, cursor-independent, and imported locally', () => {
+  assert.match(edgeFunction, /LATE_ARRIVING_HEALTH_TYPES/);
+  assert.match(edgeFunction, /\.eq\("payload->>no_data", "true"\)/);
+  assert.match(edgeFunction, /\.lt\("record_date", range\.startDate\)/);
+  assert.match(edgeFunction, /selectLateArrivingHealthRetryDate\(retryMarkers/);
+  assert.match(edgeFunction, /syncGarminHealthDay\(admin, userId, lateDataRetryDate, false, assertLock\)/);
+  assert.match(edgeFunction, /lateDataRetryDate \? 1 : 2, "health_auto", true/);
+  assert.match(edgeFunction, /lateDataRetryDate,[\s\S]*?processedDays: Number\(regularSync\.processedDays \|\| 0\) \+ 1/);
+
+  const mainJs = readFileSync(
+    fileURLToPath(new URL('../js/main.js', import.meta.url)),
+    'utf8',
+  );
+  assert.match(mainJs, /health\?\.lateDataRetryDate/);
+  assert.match(mainJs, /loadGarminHealthRecordsIntoCheckins\(lateDataRetryDate, lateDataRetryDate\)/);
+});
