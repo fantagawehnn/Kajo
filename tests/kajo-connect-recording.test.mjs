@@ -13,6 +13,14 @@ function method(source, name, nextName) {
     return source.slice(start, end === -1 ? source.length : end);
 }
 
+test('short lower key exits the ready view and marks a lap while recording', () => {
+    const backOrLap = method(activity, 'handleBackOrLapButton', 'handleLapButton');
+    assert.match(backOrLap, /mStatus == "BEREIT" \|\| mStatus == "START FEHLGESCHLAGEN"/);
+    assert.match(backOrLap, /WatchUi\.popView\(WatchUi\.SLIDE_DOWN\)/);
+    assert.match(backOrLap, /handleLapButton\(\)/);
+    assert.match(delegate, /mView\.handleBackOrLapButton\(\)/);
+});
+
 test('saved lap details can scroll through all laps in five-row pages', () => {
     const scroll = method(activity, 'scrollSavedLaps', 'nextDisplayPage');
     assert.match(scroll, /mSavedDetailPage != 2/);
