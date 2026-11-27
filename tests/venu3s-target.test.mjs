@@ -85,18 +85,19 @@ test("PowerShell build helper uses Garmin's Windows Monkey C launcher and compil
   assert.match(buildScript, /outputInfo\.Length -le 0/);
 });
 
-test("Venu 3S navigation uses Garmin behavior events with raw-key fallback", () => {
-  assert.match(activityDelegate, /extends WatchUi\.BehaviorDelegate/);
-  assert.match(activityDelegate, /function onBack\(\)[\s\S]*?handleBackOrLapButton\(\)/);
-  assert.match(activityDelegate, /function onMenu\(\)[\s\S]*?handlePausedLongSecondary\(\)/);
-  assert.match(activityDelegate, /function onNextPage\(\)[\s\S]*?nextDisplayPage\(1\)/);
-  assert.match(activityDelegate, /function onPreviousPage\(\)[\s\S]*?nextDisplayPage\(-1\)/);
+test("Venu 3S navigation routes raw physical keys and keeps touch handling separate", () => {
+  assert.match(activityDelegate, /extends WatchUi\.InputDelegate/);
+  assert.match(activityDelegate, /InputDelegate\.initialize\(\)/);
   assert.match(activityDelegate, /function onKey\(keyEvent[\s\S]*?WatchUi\.KEY_ENTER/);
-  assert.match(homeDelegate, /extends WatchUi\.BehaviorDelegate/);
-  assert.match(homeDelegate, /function onSelect\(\)[\s\S]*?return false/);
-  assert.match(homeDelegate, /function onMenu\(\)[\s\S]*?openSettings\(\)/);
-  assert.match(homeDelegate, /function onNextPage\(\)[\s\S]*?scrollPlan\(1\)/);
-  assert.match(homeDelegate, /function onPreviousPage\(\)[\s\S]*?scrollPlan\(-1\)/);
+  assert.match(activityDelegate, /WatchUi\.KEY_ESC/);
+  assert.match(activityDelegate, /WatchUi\.KEY_MENU/);
+  assert.match(activityDelegate, /function onTap\(clickEvent/);
+  assert.match(activityDelegate, /function onSwipe\(swipeEvent/);
+  assert.match(homeDelegate, /extends WatchUi\.InputDelegate/);
+  assert.match(homeDelegate, /InputDelegate\.initialize\(\)/);
+  assert.match(homeDelegate, /function onKey\(keyEvent[\s\S]*?WatchUi\.KEY_ENTER/);
+  assert.match(homeDelegate, /function onTap\(clickEvent/);
+  assert.match(homeDelegate, /function onSwipe\(swipeEvent/);
   assert.match(workoutDelegate, /extends WatchUi\.InputDelegate/);
   assert.match(settingsRootDelegate, /function onSelect\(item as WatchUi\.MenuItem\)[\s\S]*?openSettingsItem\(item\.getId\(\)\.toString\(\)\)/);
   assert.match(menuDelegate, /extends WatchUi\.Menu2InputDelegate/);
