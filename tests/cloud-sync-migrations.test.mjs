@@ -53,7 +53,7 @@ test('past activity deletion tombstones are immutable, account-scoped, and block
     assert.match(sql, /before insert or update on public\.garmin_activities/i);
     assert.match(sql, /return null/i);
     assert.match(sql, /after insert on public\\.activity_deletions/i);
-    assert.match(sql, /to_regprocedure\\('public\\.touch_kajo_sync_state/i);
+    assert.ok(sql.includes("to_regprocedure('public.touch_kajo_sync_state"));
     assert.match(sql, /after insert on public\.activity_deletions/i);
     assert.doesNotMatch(sql, /grant (?:update|delete).*activity_deletions/i);
     assert.doesNotMatch(sql, /touch_kajo_sync_state/i);
