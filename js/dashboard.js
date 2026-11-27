@@ -83,12 +83,20 @@ export function updateZoneGaugeMarker(currentTSB, mode = 'tss') {
 function checkinValuesBetween(dateKey,key,days,includeCurrent=false){
   const endMs=new Date(dateKey+'T12:00:00').getTime();
   const startMs=endMs-days*86400000;
-  return Object.entries(state.dailyCheckins)
-    .filter(([date])=>{
+  const currentRecord=state.dailyCheckins?.[dateKey]||{};
+  const hrvIdentity=record=>{
+    const source=record?.measurementSources?.garminHrv||record?.measurementSources?.hrv;
+    if(!source||typeof source!=='object')return record?.garminHrv!=null?'garmin:unspecified:ms':'legacy:unspecified:ms';
+    return [String(source.source||'unknown').toLowerCase(),String(source.metric||'unspecified').toLowerCase(),String(source.unit||'ms').toLowerCase()].join(':');
+  };
+  return Object.entries(state.dailyCheckins||{})
+    .filter(([date,record])=>{
       const ms=new Date(date+'T12:00:00').getTime();
-      return Number.isFinite(ms)&&ms>=startMs&&(includeCurrent?date<=dateKey:date<dateKey);
+      const inRange=Number.isFinite(ms)&&ms>=startMs&&(includeCurrent?date<=dateKey:date<dateKey);
+      return inRange&&(key!=='hrv'||hrvIdentity(record)===hrvIdentity(currentRecord));
     })
-    .map(([,record])=>key==='hrv'?(record.garminHrv??(record.measurementSources?.hrv?.source==='garmin'?record.hrv:null)):key==='rhr'?record.garminRhr:key==='sleepDuration'?record.garminSleepDuration:key==='sleepScore'?record.garminSleepScore:key==='respiration'?record.garminRespiration:record[key]).filter(validNumber).map(Number);
+    .map(([,record])=>key==='hrv'?(record.garminHrv??(record.measurementSources?.hrv?.source==='garmin'?record.hrv:null)):key==='rhr'?record.garminRhr:key==='sleepDuration'?record.garminSleepDuration:key==='sleepScore'?record.garminSleepScore:key==='respiration'?record.garminRespiration:record[key])
+    .filter(validNumber).map(Number);
 }
 function mean(values){return values.reduce((sum,value)=>sum+value,0)/values.length;}
 function standardDeviation(values,avg){
