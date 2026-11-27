@@ -12,6 +12,7 @@ import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js';
+import { readinessZone, classifyPersonalMetric, classifySleepDuration, classifyGarminSleepScore, classifySubjective, classifyTrainingBalance } from './metric-zones.js';
 export { calculateReadiness } from './readiness.js';
 
 function getHomeActivityDisplayMode() {
@@ -31,7 +32,7 @@ function localTodayKey() {
 }
 function clamp(v,min=0,max=100){return Math.max(min,Math.min(max,v));}
 const STATUS_COLORS = { good:'var(--kajo-status-good)', attention:'var(--kajo-status-attention)', critical:'var(--kajo-status-critical)', info:'var(--kajo-status-info)' };
-function fiveLevelColor(score){return score>=80?STATUS_COLORS.good:score>=40?STATUS_COLORS.attention:STATUS_COLORS.critical;}
+function fiveLevelColor(score){const zone=readinessZone(score);return STATUS_COLORS[zone.status]||STATUS_COLORS.info;}
 function median(values){const a=values.slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function validNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
 export function renderReadinessDashboard(dateKey=localTodayKey(), updateDetails=true){
@@ -94,18 +95,34 @@ function standardDeviation(values,avg){
   return Math.sqrt(values.reduce((sum,value)=>sum+Math.pow(value-avg,2),0)/values.length);
 }
 function updateRespirationRange(dateKey) {
-  const rangeEl = document.getElementById('wear-respiration-range');
-  if (rangeEl) rangeEl.textContent = 'Persönlicher Normalbereich noch nicht methodisch festgelegt';
+  const value = state.dailyCheckins?.[dateKey]?.garminRespiration ?? null;
+  updateWearableRange('wear-respiration', 'wear-respiration-range', value, 'respiration', dateKey);
 }
-function updateWearableRange(valueId, rangeId, value, key, dateKey, direction) {
+function updateWearableRange(valueId, rangeId, value, key, dateKey) {
   const valueEl = document.getElementById(valueId);
   const rangeEl = document.getElementById(rangeId);
   if (!valueEl || !rangeEl) return;
+  const history = checkinValuesBetween(dateKey, key, 28, false);
+  let zone;
+  if (key === 'sleepScore') zone = classifyGarminSleepScore(value);
+  else if (key === 'sleepDuration') zone = classifySleepDuration(value, history);
+  else zone = classifyPersonalMetric(key, value, history);
+  const colorClass = zone.status === 'good' ? 'text-emerald-400'
+    : zone.status === 'attention' ? 'text-amber-400'
+      : zone.status === 'critical' ? 'text-rose-400' : 'text-white';
   valueEl.classList.remove('text-emerald-400', 'text-amber-400', 'text-rose-400', 'text-white');
-  valueEl.classList.add('text-white');
-  rangeEl.textContent = validNumber(value)
-    ? 'Persönlicher Normalbereich noch nicht methodisch festgelegt'
-    : 'Keine Messung vorhanden';
+  valueEl.classList.add(colorClass);
+  if (!validNumber(value)) {
+    rangeEl.textContent = 'Keine Messung vorhanden';
+  } else if (validNumber(zone.baseline)) {
+    const unit = key === 'hrv' ? ' ms' : key === 'rhr' ? ' bpm' : key === 'respiration' ? ' /min' : ' h';
+    const reference = key === 'sleepDuration'
+      ? 'Persönlicher Median: ' + Number(zone.baseline).toFixed(1) + ' h'
+      : 'Persönliche Basis: ' + Number(zone.baseline).toFixed(1) + unit;
+    rangeEl.textContent = reference + ' · ' + zone.label;
+  } else {
+    rangeEl.textContent = zone.label + (zone.observations !== undefined ? ' · ' + zone.observations + '/7 Messungen' : '');
+  }
 }
 export function renderDashboardNextRace(){
   const name=document.getElementById('dashboard-next-race-name');
@@ -1076,53 +1093,31 @@ function trainingRingState(key, value, dateKey) {
     };
 }
 export function historyRingColor(key, value, dateKey) {
-    if (value === null) return STATUS_COLORS.info;
-    if (key === 'readiness') return fiveLevelColor(value);
+    if (value === null || value === undefined) return STATUS_COLORS.info;
+    if (key === 'readiness') return STATUS_COLORS[readinessZone(value).status] || STATUS_COLORS.info;
     if (key === 'form') {
         const day = state.dailyTimeline.find(item => item.date === dateKey);
         if (!day) return STATUS_COLORS.info;
-        if (String(day.loadMode || '').toLowerCase() === 'srpe') {
-            const score = relativeSrpEBalanceScore(value, dateKey);
-            return score === null ? STATUS_COLORS.info : fiveLevelColor(score);
-        }
-        const isGarmin = String(day.loadMode || '').startsWith('garmin');
-        const statusValue = Number(value);
-        if (!Number.isFinite(statusValue)) return STATUS_COLORS.info;
-        if (statusValue < (isGarmin ? -25 : -30)) return STATUS_COLORS.critical;
-        if (statusValue < -10) return STATUS_COLORS.critical;
-        if (statusValue <= 5) return STATUS_COLORS.attention;
-        if (statusValue <= (isGarmin ? 20 : 25)) return STATUS_COLORS.attention;
-        return STATUS_COLORS.good;
+        const mode = String(day.loadMode || '').startsWith('garmin') ? 'garmin' : 'tsb';
+        const zone = classifyTrainingBalance(value, mode);
+        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
     }
     if (key === 'fitness') return fitnessChange(dateKey, value)?.color || STATUS_COLORS.info;
     if (key === 'weight') return STATUS_COLORS.info;
-    if (key === 'rhr' || key === 'hrv' || key === 'respiration') {
-        const prior = Object.entries(state.dailyCheckins).filter(([date]) => date < dateKey && date >= historyWindow('6m', dateKey).from)
-            .map(([, row]) => historyValue(row, key)).filter(v => v !== null);
-        if (prior.length < 14) return STATUS_COLORS.info;
-        const avg = mean(prior), sd = standardDeviation(prior, avg), delta = value - avg;
-        const threshold = Math.max(sd * 0.5, key === 'rhr' ? 1 : key === 'hrv' ? 5 : 0.5);
-        if (key === 'rhr' || key === 'hrv') {
-            // Niedrigere RHF bzw. höhere HRV gelten relativ zur persönlichen Historie
-            // als günstige Richtung – auch wenn die Abweichung groß ist.
-            const favourable = key === 'rhr' ? delta < 0 : delta > 0;
-            if (favourable) return STATUS_COLORS.good;
-            if (delta === 0) return STATUS_COLORS.good;
-            const severity = Math.abs(delta) / threshold;
-            return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
-        }
-        // Atemfrequenz bleibt zweiseitig relativ zur persönlichen Historie bewertet.
-        const adverse = delta > 0;
-        if (!adverse) return Math.abs(delta) <= threshold ? STATUS_COLORS.good : STATUS_COLORS.attention;
-        const severity = Math.abs(delta) / threshold;
-        return severity < 1.5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
+    if (['rhr', 'hrv', 'respiration'].includes(key)) {
+        const prior = checkinValuesBetween(dateKey, key, 28, false);
+        const zone = classifyPersonalMetric(key, value, prior);
+        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
     }
-    if (key === 'sleepDuration') return value >= 7 && value <= 9 ? STATUS_COLORS.good : value >= 6 && value <= 10 ? STATUS_COLORS.attention : value >= 5 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
-    if (key === 'sleepScore') return value >= 90 ? STATUS_COLORS.good : value >= 70 ? STATUS_COLORS.attention : STATUS_COLORS.critical;
-    const reverse = ['soreness', 'fatigue', 'stress'].includes(key);
-    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key) && (value < 1 || value > 5)) return STATUS_COLORS.info;
-    const goodness = reverse ? (5 - value) / 4 * 100 : (value - 1) / 4 * 100;
-    return fiveLevelColor(goodness);
+    if (key === 'sleepDuration') {
+        const zone = classifySleepDuration(value, checkinValuesBetween(dateKey, key, 28, false));
+        return STATUS_COLORS[zone.status] || STATUS_COLORS.info;
+    }
+    if (key === 'sleepScore') return STATUS_COLORS[classifyGarminSleepScore(value).status] || STATUS_COLORS.info;
+    if (['sleepQuality', 'soreness', 'fatigue', 'motivation', 'stress'].includes(key)) {
+        return STATUS_COLORS[classifySubjective(key, value).status] || STATUS_COLORS.info;
+    }
+    return STATUS_COLORS.info;
 }
 function renderHistoryChart(kind, labels, values, definition, key, baselineValues = null) {
     const canvas = document.getElementById(kind === 'health' ? 'health-metric-chart' : 'training-metric-chart');
