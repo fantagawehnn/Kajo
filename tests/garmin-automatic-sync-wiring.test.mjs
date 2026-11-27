@@ -117,6 +117,11 @@ test('past activity deletion tombstones are checked before Garmin re-import and 
   assert.match(edgeFunction, /loadGarminActivityDeletionIds\(admin, userId\)/);
   assert.match(edgeFunction, /deletedGarminActivityIds\.has\(activityId\)/);
   assert.match(edgeFunction, /storedActivities: activeStoredActivities/);
+  const previewStart = edgeFunction.indexOf('if (action === "preview-activities")');
+  const previewEnd = edgeFunction.indexOf('if (action === "diagnose-activity-json")', previewStart);
+  const previewAction = edgeFunction.slice(previewStart, previewEnd);
+  assert.match(previewAction, /loadGarminActivityDeletionIds\(admin, userId\)/);
+  assert.match(previewAction, /filter\(activity => !deletedGarminActivityIds\.has/);
 
   const mainJs = readFileSync(
     fileURLToPath(new URL('../js/main.js', import.meta.url)),
