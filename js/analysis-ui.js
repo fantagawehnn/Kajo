@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { calculateReadiness, historyRingColor } from './dashboard.js';
 import { getActivityTelemetrySeries, setChartEmptyState } from './charts.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
-import { readinessZone } from './metric-zones.js?v=2';
+import { readinessZone } from './metric-zones.js?v=3';
 import { isPaddlingPerformanceActivity, isValidElapsedTimeAxis, resolvePaddlingPerformanceSeries } from './performance-data-quality.js';
 
 const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
