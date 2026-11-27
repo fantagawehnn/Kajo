@@ -26,6 +26,7 @@ class KajoConnectActivityView extends WatchUi.View {
     var mEngine;
     var mTimer;
     var mStatus = "BEREIT";
+    var mStartOnShow as Lang.Boolean = false;
     var mStartError as Lang.String = "";
     var mButtonTop = 0;
     var mButtonBottom = 0;
@@ -321,7 +322,18 @@ class KajoConnectActivityView extends WatchUi.View {
     }
 
     function onShow() as Void {
+        // Erst starten, wenn Garmin die Aktivitaetsansicht tatsaechlich
+        // eingeblendet hat. Ein startRecording() direkt nach pushView()
+        // kann auf dem Geraet vor dem View-Wechsel ausgefuehrt werden.
+        if (mStartOnShow) {
+            mStartOnShow = false;
+            startRecording();
+        }
         syncPendingActivityUploads();
+    }
+
+    function startRecordingWhenShown() as Void {
+        mStartOnShow = true;
     }
 
     function initialize(boatClass as Lang.String) {
