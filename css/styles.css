@@ -9612,3 +9612,66 @@ body.kajo-modal-open { overflow: hidden !important; }
  .kajo-analysis-overview .kajo-analysis-advanced > summary { align-items:flex-start; flex-wrap:wrap; padding:12px 0; }
  .kajo-analysis-overview .kajo-analysis-advanced > summary small { flex-basis:100%; margin:0; text-align:left; }
 }
+
+/* KAJO V2 · Performance analysis redesign
+   Presentation only: existing calculations, data IDs and chart instances remain unchanged. */
+.kajo-analysis-view{--analysis-panel:rgba(15,23,35,.76);--analysis-panel-strong:rgba(19,29,43,.9);--analysis-border:rgba(148,163,184,.14);--analysis-muted:#91a0b5;--analysis-text:#edf3fa;--analysis-accent:#65d5c3;color:var(--analysis-text);display:flex;flex-direction:column;gap:22px!important}
+.kajo-analysis-view .kajo-analysis-eyebrow{color:#7f9bb2;letter-spacing:.14em;font-size:9px;font-weight:750}
+.kajo-analysis-overview{display:flex;flex-direction:column;gap:18px}
+.kajo-analysis-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:4px 2px 2px}
+.kajo-analysis-page-heading h1{margin:3px 0 0;color:var(--analysis-text);font-size:clamp(25px,3vw,34px);line-height:1.08;font-weight:760;letter-spacing:-.045em}
+.kajo-analysis-page-heading p:last-child{margin:7px 0 0;color:var(--analysis-muted);font-size:12px}
+.kajo-analysis-circles{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px!important}
+.kajo-analysis-circle-item{min-width:0;min-height:88px;display:grid!important;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;justify-items:start;column-gap:12px;row-gap:2px;padding:13px 15px!important;border:1px solid var(--analysis-border)!important;border-radius:15px!important;background:linear-gradient(145deg,rgba(20,32,47,.92),rgba(11,18,29,.86))!important;text-align:left;transition:border-color .18s ease,transform .18s ease}
+.kajo-analysis-circle-item:hover{border-color:rgba(148,190,210,.34)!important;transform:translateY(-1px)}
+.kajo-analysis-circle-item>.kajo-analysis-hero-ring{grid-column:1;grid-row:1/span 2;width:48px!important;height:48px!important;min-width:48px;margin:0!important;border-width:3px!important;box-shadow:none!important}
+.kajo-analysis-circle-item>strong{align-self:end;color:#a9bacb;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.kajo-analysis-circle-item>small{color:var(--analysis-muted);font-size:10px;line-height:1.25}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring strong{font-size:13px!important;letter-spacing:-.03em}
+.kajo-analysis-circle-item .kajo-analysis-hero-ring small{font-size:7px!important}
+#analysis-overview-content{display:flex;flex-direction:column;gap:16px}
+.kajo-analysis-overview-panel,.kajo-training-load-panel,.kajo-performance-group,.kajo-recovery-group,.kajo-health-group,.kajo-health-trend,.kajo-performance-trend{border:1px solid var(--analysis-border)!important;border-radius:17px!important;background:linear-gradient(150deg,var(--analysis-panel-strong),var(--analysis-panel))!important;box-shadow:0 12px 32px rgba(0,0,0,.13)}
+.kajo-analysis-overview-panel{padding:19px!important}
+.kajo-analysis-section-heading,.kajo-training-load-heading,.kajo-performance-group-heading,.kajo-recovery-group-heading,.kajo-health-group-heading{gap:12px}
+.kajo-analysis-section-heading h2,.kajo-analysis-overview-panel h2,.kajo-training-load-panel h3,.kajo-performance-group h2,.kajo-recovery-group h2,.kajo-health-group h2,.kajo-health-trend h2{color:var(--analysis-text);font-size:15px;font-weight:720;letter-spacing:-.018em}
+.kajo-analysis-chart-note,.kajo-training-load-muted,.kajo-training-load-method,.kajo-performance-note,.kajo-health-note{color:var(--analysis-muted)!important;font-size:11px!important;line-height:1.55}
+.kajo-analysis-primary-panel{position:relative;overflow:hidden;background:radial-gradient(ellipse at 92% 0%,rgba(68,145,163,.09),transparent 42%),linear-gradient(150deg,rgba(19,31,45,.96),rgba(10,17,27,.94))!important}
+.kajo-analysis-primary-panel .kajo-analysis-chart-wrap{height:310px!important;min-height:250px;margin-top:12px}
+.kajo-analysis-trend-heading{align-items:flex-start!important}
+.kajo-analysis-shared-period{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+.kajo-analysis-shared-period button,.kajo-analysis-switch button,.kajo-load-switch button,.kajo-load-text-control,.kajo-performance-range button,.kajo-health-range button{border:1px solid rgba(148,163,184,.17)!important;border-radius:8px!important;background:rgba(148,163,184,.055)!important;color:#aebdcd!important;font-size:10px!important;font-weight:650;padding:6px 9px!important}
+.kajo-analysis-shared-period button.active,.kajo-analysis-switch button.active,.kajo-load-switch button.active,.kajo-performance-range button.is-active,.kajo-health-range button.is-active{border-color:rgba(101,213,195,.42)!important;background:rgba(101,213,195,.12)!important;color:#8de5d6!important}
+.kajo-analysis-training-summary .kajo-insight-grid,.kajo-analysis-training-summary #analysis-period-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.kajo-analysis-training-summary .kajo-insight-metric{min-width:0;padding:12px 13px!important;border:1px solid rgba(148,163,184,.11);border-radius:12px;background:rgba(5,12,21,.42)}
+.kajo-analysis-training-summary .kajo-insight-metric span{color:var(--analysis-muted);font-size:10px}
+.kajo-analysis-training-summary .kajo-insight-metric strong{display:block;margin:5px 0 3px;color:#f0f5fa;font-size:21px;font-weight:750;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.kajo-analysis-training-summary .kajo-insight-metric small{color:#718399;font-size:9px}
+.kajo-analysis-distribution-block{margin-top:18px;padding-top:16px;border-top:1px solid var(--analysis-border)}
+.kajo-analysis-distribution-heading strong{color:#dce7f1;font-size:12px}
+.kajo-analysis-sport-distribution{gap:20px}
+.kajo-analysis-bar-wrap{min-height:190px}
+.kajo-analysis-distribution-row{padding:5px 0;border-bottom:1px solid rgba(148,163,184,.08)}
+.kajo-analysis-observations-panel #analysis-trend-observations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.kajo-analysis-advanced{border:1px solid var(--analysis-border)!important;border-radius:15px!important;background:rgba(12,20,31,.68)!important;overflow:hidden}
+.kajo-analysis-advanced>summary{padding:15px 17px!important;color:#d9e5ef!important;font-size:12px;font-weight:700}
+.kajo-analysis-advanced>summary small{color:var(--analysis-muted)!important;font-size:10px;font-weight:400}
+.kajo-analysis-advanced-content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 13px 14px}
+.kajo-analysis-advanced-content>section{min-width:0;padding:15px!important;margin:0!important}
+.kajo-analysis-advanced-content>section:first-child,.kajo-analysis-advanced-content>section:nth-last-child(1){grid-column:1/-1}
+.kajo-analysis-availability,#analysis-readiness-breakdown,#analysis-health-event-context,#analysis-next-day-context,#analysis-load-recovery-association,#analysis-fitness-recovery-context,#analysis-trend-observations-more{color:#c4d1de;font-size:11px}
+.kajo-training-load-view,#analysis-subpage-performance,#analysis-subpage-recovery,#analysis-subpage-health{gap:15px!important}
+.kajo-training-load-heading h2,.kajo-performance-detail-header h2{color:var(--analysis-text);font-size:24px;font-weight:760;letter-spacing:-.04em}
+.kajo-training-load-panel{padding:18px!important}
+.kajo-load-metric,.kajo-load-volume-summary>div{border:1px solid rgba(148,163,184,.1);border-radius:13px;background:rgba(5,12,21,.35);padding:12px}
+.kajo-load-chart-block{border-top:1px solid rgba(148,163,184,.09);padding-top:13px}
+.kajo-performance-group,.kajo-recovery-group,.kajo-health-group,.kajo-health-trend,.kajo-performance-trend{padding:18px!important}
+.kajo-analysis-metric,.kajo-performance-metric,.kajo-health-metric{border-color:rgba(148,163,184,.12)!important;background:rgba(5,12,21,.4)!important;border-radius:12px!important}
+.kajo-fitness-performance-circle{min-height:58px;border:1px solid rgba(101,213,195,.25)!important;border-radius:12px!important;background:rgba(101,213,195,.055)!important}
+.kajo-fitness-performance-ring{display:none!important}
+.kajo-fitness-performance-label{color:#8de5d6!important;font-size:12px}
+.kajo-fitness-performance-circle small{color:var(--analysis-muted)!important}
+#analysis-subpage-health nav,#analysis-subpage-health .kajo-health-range{gap:6px}
+#analysis-subpage-health .more-subnav-button{border-radius:8px!important;border-color:rgba(148,163,184,.15)!important;background:rgba(148,163,184,.05)!important}
+#analysis-subpage-health .more-subnav-button.is-active{border-color:rgba(101,213,195,.4)!important;background:rgba(101,213,195,.1)!important;color:#8de5d6!important}
+@media(max-width:760px){.kajo-analysis-circles{grid-template-columns:repeat(2,minmax(0,1fr))}.kajo-analysis-circle-item{min-height:78px;padding:10px 11px!important}.kajo-analysis-primary-panel .kajo-analysis-chart-wrap{height:250px!important}.kajo-analysis-training-summary .kajo-insight-grid,.kajo-analysis-training-summary #analysis-period-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.kajo-analysis-advanced-content{grid-template-columns:minmax(0,1fr)}.kajo-analysis-advanced-content>section,.kajo-analysis-advanced-content>section:first-child,.kajo-analysis-advanced-content>section:nth-last-child(1){grid-column:1}.kajo-analysis-observations-panel #analysis-trend-observations{grid-template-columns:minmax(0,1fr)}.kajo-analysis-page-heading{align-items:flex-start}.kajo-analysis-trend-heading{flex-direction:column}.kajo-analysis-shared-period{justify-content:flex-start}}
+@media(max-width:420px){.kajo-analysis-circle-item{grid-template-columns:42px minmax(0,1fr);column-gap:8px}.kajo-analysis-circle-item>.kajo-analysis-hero-ring{width:40px!important;height:40px!important;min-width:40px}.kajo-analysis-overview-panel,.kajo-training-load-panel,.kajo-performance-group,.kajo-recovery-group,.kajo-health-group,.kajo-health-trend{padding:14px!important}}
