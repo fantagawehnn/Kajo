@@ -922,6 +922,15 @@
                             <label class="text-slate-400">Stunden pro Woche (optional)<input id="season-phase-hours" type="number" min="0" max="100" step="0.5" placeholder="Nicht vorgegeben" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
                             <label class="text-slate-400">Trainingstage pro Woche (optional)<input id="season-phase-days" type="number" min="0" max="7" step="1" placeholder="Nicht vorgegeben" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
                             <label class="text-slate-400 sm:col-span-2">Schwerpunkt / Ziel<input id="season-phase-objective" type="text" maxlength="1000" placeholder="Was soll in dieser Phase entwickelt werden?" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
+                            <div class="sm:col-span-2 rounded-lg border border-slate-700 p-2 space-y-2">
+                                <p class="text-[11px] font-semibold text-slate-300">Belastungs-Zielwerte (optional · leer = automatische Phasenempfehlung)</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <label class="text-[10px] text-slate-400">ACWR min<input id="season-phase-acwr-min" type="number" min="0" max="5" step="0.05" placeholder="Auto" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
+                                    <label class="text-[10px] text-slate-400">ACWR max<input id="season-phase-acwr-max" type="number" min="0" max="5" step="0.05" placeholder="Auto" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
+                                    <label class="text-[10px] text-slate-400">TSB min (%)<input id="season-phase-tsb-min" type="number" min="-100" max="100" step="1" placeholder="Auto" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
+                                    <label class="text-[10px] text-slate-400">TSB max (%)<input id="season-phase-tsb-max" type="number" min="-100" max="100" step="1" placeholder="Auto" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
+                                </div>
+                            </div>
                             <label class="text-slate-400 sm:col-span-2">Disziplinen / Fokus (Komma-getrennt)<input id="season-phase-focus" type="text" maxlength="500" placeholder="z. B. K1, C1, Kraft, Technik" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></label>
                         </div>
                         <button type="button" onclick="addSeasonPlanPhase()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold">Phase hinzufügen</button>
