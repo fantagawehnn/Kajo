@@ -126,9 +126,9 @@ export async function syncCloudActivities(client, userId, activities) {
                 .order('record_id', { ascending: true })
                 .range(offset, offset + 499);
             if (error) {
-                if (error.code === '42P01' || error.code === 'PGRST205'
-                    || /activity_deletions.*(not found|does not exist)/i.test(String(error.message || ''))) break;
-                throw error;
+                // A missing/unavailable tombstone table is not an empty deletion
+                // history. Fail closed so stale activities cannot be uploaded.
+                throw cloudActivityQueryError(error, 'Cloud-Aktivitäten: Löschkennzeichnungen prüfen');
             }
             deletionRows.push(...(data || []));
             if (!data || data.length < 500) break;
