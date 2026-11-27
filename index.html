@@ -376,14 +376,14 @@
   </section>
 
   <button type="button" class="kajo-home-recommendation metric-history-clickable" onclick="switchTab('ai')" aria-label="Ausführliche Trainingsanalyse und Empfehlung öffnen">
-    <span class="kajo-home-section-heading"><strong>Trainingsempfehlung</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
+    <span class="kajo-home-section-heading"><strong>Empfehlung für heute</strong><i data-lucide="sparkles" aria-hidden="true"></i></span>
     <strong id="home-training-recommendation">Wird berechnet …</strong>
     <span id="home-training-recommendation-detail">Die Einordnung wird aus den verfügbaren Trainings- und Erholungsdaten abgeleitet.</span>
     <small id="home-training-recommendation-context"></small>
   </button>
 
   <section class="kajo-home-section kajo-home-wearables" aria-labelledby="kajo-health-title">
-    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Check-in &amp; Gesundheit</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Self-Monitoring öffnen" title="Self-Monitoring öffnen"><i data-lucide="notebook-pen" aria-hidden="true"></i></button></div>
+    <div class="kajo-home-section-heading"><h2 id="kajo-health-title">Check-in &amp; Gesundheit</h2><button type="button" class="kajo-selfmonitoring-notebook" onclick="openHomeSelfMonitoring()" aria-label="Check-in starten" title="Check-in starten"><i data-lucide="notebook-pen" aria-hidden="true"></i><span>Check-in starten</span></button></div>
     <div class="kajo-circle-grid">
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-rhr-ring" aria-label="Ruhepuls-Detailansicht öffnen" onclick="openHealthMetric('rhr')"><strong id="home-wear-rhr" class="kajo-wearable-value">—</strong></button><span>RHF</span></article>
       <article class="kajo-health-circle-item"><button type="button" class="kajo-health-circle metric-history-clickable" id="home-wear-hrv-ring" aria-label="HRV-Detailansicht öffnen" onclick="openHealthMetric('hrv')"><strong id="home-wear-hrv" class="kajo-wearable-value">—</strong></button><span>HRV</span></article>
