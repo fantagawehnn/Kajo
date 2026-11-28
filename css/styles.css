@@ -9923,3 +9923,92 @@ body.kajo-modal-open { overflow: hidden !important; }
   #view-dashboard .kajo-home-race-main strong{font-size:.86rem}
   #view-dashboard #home-next-race-days{font-size:.67rem;padding:5px 7px}
 }
+
+
+/* KAJO Analyse – Fokus auf eine Kennzahl und ein ruhiges Verlaufsdiagramm. */
+.kajo-analysis-overview .kajo-analysis-primary-panel{
+  padding:16px 17px 13px!important;
+  border:1px solid var(--analysis-border,rgba(148,163,184,.14))!important;
+  border-radius:16px!important;
+  background:linear-gradient(155deg,rgba(18,29,43,.94),rgba(10,17,27,.96))!important;
+  box-shadow:none!important;
+}
+.kajo-analysis-overview .kajo-analysis-trend-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.kajo-analysis-overview .kajo-analysis-trend-heading>div:first-child{min-width:0}
+.kajo-analysis-overview .kajo-analysis-trend-heading h2{
+  margin:0;
+  color:var(--analysis-text,#edf3fa);
+  font-size:17px;
+  font-weight:730;
+  letter-spacing:-.025em;
+}
+.kajo-analysis-overview .kajo-analysis-trend-heading .kajo-analysis-chart-note{
+  max-width:440px;
+  margin-top:4px;
+  font-size:10px!important;
+}
+.kajo-analysis-overview .kajo-analysis-primary-panel .kajo-analysis-chart-wrap{
+  height:245px!important;
+  min-height:210px;
+  margin-top:9px;
+}
+.kajo-analysis-overview #analysis-overview-metric-switch{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  margin-top:9px;
+}
+.kajo-analysis-overview #analysis-overview-metric-switch button{
+  min-height:32px;
+  padding:6px 11px!important;
+  border-radius:999px!important;
+  font-size:10px!important;
+}
+.kajo-analysis-overview #analysis-overview-trend-note{
+  max-width:760px;
+  margin-top:8px;
+  font-size:10px!important;
+  line-height:1.45;
+}
+.kajo-analysis-overview #analysis-overview-health-markers{
+  overflow:hidden;
+  max-width:100%;
+  margin-top:3px;
+  opacity:.9;
+}
+.kajo-analysis-overview .kajo-analysis-training-summary{
+  padding:2px 0 0!important;
+}
+.kajo-analysis-overview .kajo-analysis-training-summary .kajo-analysis-section-heading{
+  margin-bottom:9px;
+}
+.kajo-analysis-overview .kajo-analysis-training-summary .kajo-insight-metric{
+  padding:10px 11px!important;
+  border-radius:11px!important;
+  background:rgba(12,20,31,.54)!important;
+  box-shadow:none!important;
+}
+.kajo-analysis-overview .kajo-analysis-training-summary .kajo-insight-metric strong{
+  font-size:19px;
+}
+.kajo-analysis-overview .kajo-analysis-training-summary .kajo-analysis-distribution-block{
+  margin-top:13px;
+  padding-top:12px;
+}
+.kajo-analysis-overview .kajo-analysis-advanced{
+  margin-top:1px;
+}
+@media(max-width:640px){
+  .kajo-analysis-overview .kajo-analysis-primary-panel{padding:13px 12px 11px!important}
+  .kajo-analysis-overview .kajo-analysis-trend-heading{flex-direction:column;gap:8px}
+  .kajo-analysis-overview .kajo-analysis-shared-period{justify-content:flex-start}
+  .kajo-analysis-overview .kajo-analysis-primary-panel .kajo-analysis-chart-wrap{height:215px!important;min-height:190px}
+  .kajo-analysis-overview #analysis-overview-metric-switch{gap:5px}
+  .kajo-analysis-overview #analysis-overview-metric-switch button{padding:6px 9px!important}
+}
