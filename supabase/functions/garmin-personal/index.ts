@@ -1561,9 +1561,8 @@ Deno.serve(async (req) => {
         .from("garmin_connections").select("user_id").eq("status", "connected");
       if (connectionError) throw connectionError;
 
-      // The scheduled job runs at 07:00 UTC: 08:00 in German winter time
-      // and 09:00 in German summer time. Use the athlete's local calendar date,
-      // not the database/worker UTC date, for Garmin's daily health records.
+      // 07:00 UTC is 08:00 CET / 09:00 CEST. Use the athlete's local
+      // calendar date rather than the database/worker UTC date.
       const today = dateInTimeZone(new Date(), "Europe/Berlin");
       const yesterday = addUtcDays(today, -1);
       const results = [];
@@ -1583,8 +1582,8 @@ Deno.serve(async (req) => {
               };
             };
 
-            // Refresh yesterday and today so sleep/HRV values that were not
-            // complete during an earlier app sync are fetched again in the morning.
+            // Refresh yesterday and today so overnight values are complete
+            // even if an earlier app sync fetched them too soon.
             let healthSync;
             try {
               healthSync = await syncGarminHealthHistoryBatch(
@@ -1595,8 +1594,8 @@ Deno.serve(async (req) => {
               healthSync = captureSyncError(error);
             }
 
-            // Prioritize overnight health data. If Garmin rate-limits the
-            // account, defer activity requests rather than worsening the limit.
+            // Prioritize overnight health data. Defer activity requests if
+            // Garmin rate-limits the account during the health refresh.
             let activitySync;
             if (healthSync?.status === "rate_limited" || healthSync?.rateLimited === true) {
               activitySync = { status: "deferred", reason: "garmin_rate_limited_during_health_sync" };
