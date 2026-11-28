@@ -1,0 +1,206 @@
+/* KAJO layout stability layer
+   Loaded after the legacy stylesheet so responsive fixes have one authoritative source.
+   Keep this file focused on sizing, scrolling and viewport containment. */
+
+:root {
+  color-scheme: dark;
+  scroll-padding-top: 5rem;
+}
+
+html {
+  min-height: 100%;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: clip;
+}
+
+#app-main {
+  box-sizing: border-box;
+  width: min(100%, 1120px);
+  min-width: 0;
+  min-height: 0;
+  margin-inline: auto;
+}
+
+#app-main > *,
+#app-main section,
+#app-main article,
+#app-main .grid > *,
+#app-main .flex > * {
+  min-width: 0;
+}
+
+#app-main img,
+#app-main video,
+#app-main canvas,
+#app-main svg {
+  max-width: 100%;
+}
+
+#app-main canvas {
+  display: block;
+}
+
+#app-main .overflow-x-auto,
+#app-main [data-scroll-container="horizontal"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#app-main table {
+  max-width: 100%;
+}
+
+#app-main .fixed.inset-0 {
+  box-sizing: border-box;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+}
+
+#app-main .fixed.inset-0 > div,
+#app-main .fixed.inset-0 > section {
+  box-sizing: border-box;
+  max-width: min(100%, 48rem);
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.kajo-chart-wrap,
+.kajo-analysis-chart-wrap,
+.kajo-load-chart-block,
+#view-analyses .h-64,
+#view-analyses .h-56,
+#view-races .h-64 {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: calc(4.5rem + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+
+  body {
+    padding-top: 0;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+
+  /* The current five-tab navigation is .kajo-mobile-nav.
+     Neutralize obsolete four-column rules targeting the former navigation IDs. */
+  #app-navigation > div > div {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  #app-navigation .kajo-desktop-brand,
+  #app-navigation .kajo-primary-nav,
+  #app-navigation > div > div > .kajo-version-tag,
+  #app-navigation .kajo-desktop-header-actions {
+    display: none !important;
+  }
+
+  .kajo-mobile-nav {
+    position: fixed !important;
+    inset: auto 0 0 !important;
+    z-index: 90 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .kajo-mobile-nav-item {
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .kajo-mobile-header {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding-top: max(.45rem, env(safe-area-inset-top)) !important;
+  }
+
+  #app-main {
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    padding-top: calc(4.5rem + env(safe-area-inset-top)) !important;
+    padding-right: max(.75rem, env(safe-area-inset-right));
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)) !important;
+    padding-left: max(.75rem, env(safe-area-inset-left));
+  }
+
+  #app-main > nav[aria-label$="Unterbereiche"] {
+    max-width: 100%;
+  }
+
+  #app-main .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #app-main .grid > * {
+    min-width: 0;
+  }
+
+  #app-main .fixed.inset-0 {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  #app-main .fixed.inset-0 > div,
+  #app-main .fixed.inset-0 > section {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin-block: auto;
+  }
+
+  #view-dashboard .kajo-dashboard-header,
+  #view-calendar,
+  #view-analyses,
+  #view-races,
+  #view-strength,
+  #view-more,
+  #view-ai {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #app-main .text-nowrap,
+  #app-main [class~="whitespace-nowrap"] {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .kajo-mobile-nav {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app-main *,
+  #app-main *::before,
+  #app-main *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
