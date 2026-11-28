@@ -1,5 +1,5 @@
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage } from './storage.js?v=8';
 import { escapeHtml } from './utils.js';
 
 const riverSuggestions = ['Sieg','Moldau – Prag','Inn – Rosenheim','Rhein – Bonn','Agger'];
