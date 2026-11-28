@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=5';
+import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=8';
 import { escapeHtml } from './utils.js';
 const recommendations=[
 ['Creatin-Monohydrat','3–5 g/Tag','Täglich, Uhrzeit zweitrangig','Gut belegt für Kraft, Schnellkraft und wiederholte hochintensive Belastungen','Keine Ladephase nötig; konstant einnehmen. IOC/ISSN.'],
