@@ -25,7 +25,7 @@ import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGar
 import { importGarminExportArchive } from './garmin-export-import.js?v=3';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, fetchCloudSnapshotMetadata, saveCloudSnapshot, saveCloudSnapshotPatch } from './cloud-sync.js?v=2';
-import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds, createCloudSnapshotPatch } from './cloud-merge.js?v=2';
+import { mergeCloudSnapshots, cloudSnapshotsEqual, withCloudActivityIds, createCloudSnapshotPatch } from './cloud-merge.js?v=3';
 import { fetchCloudActivities, fetchCloudActivityDelta, getCloudActivityWatermark, mergeCloudActivityRows, getCloudActivityIds, getActivityConflictLabel, mergeCloudActivities, syncCloudActivities } from './cloud-activities.js?v=4';
 import { computePerformanceTimeline } from './calculations.js?v=1';
 import { sanitizeGarminActivityTelemetry, getGarminHeartRateSeries } from './data-source.js';
@@ -2743,6 +2743,7 @@ let cloudSyncInFlight = false;
 let localDataRevision = 0;
 let cloudSyncPending = false;
 let cloudSyncBlocked = false;
+let pendingCloudConflictReview = null;
 let cloudSyncApplyingRemote = false;
 let cloudSyncWaiters = [];
 // Änderungen, die während der Kontoaktivierung gespeichert werden, werden
@@ -2823,7 +2824,7 @@ function createCloudSnapshotFromBaseline(userId, baseline, metadata) {
  * Bei Versionskonflikten wird der aktuelle Cloud-Stand erneut geladen und
  * derselbe Drei-Wege-Abgleich wiederholt.
  */
-async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId, activitySyncState = {}) {
+async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudActivities, baselineSnapshot = null, isCurrent = () => activeAppUserId === userId, activitySyncState = {}, conflictResolutions = {}) {
     const ensureCurrent = createActivationGuard(
         isCurrent,
         'Der Kontoabgleich wurde wegen eines Konto- oder Sitzungswechsels abgebrochen.'
@@ -2891,7 +2892,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 return compact;
             })
         };
-        const merged = mergeCloudSnapshots(safeBaselineSnapshot, local, expandedCloud);
+        const merged = mergeCloudSnapshots(safeBaselineSnapshot, local, expandedCloud, conflictResolutions);
         if (merged.conflicts.length) {
             const localActivitiesById = new Map(
                 (Array.isArray(local.activities) ? local.activities : []).map(activity => {
@@ -2912,7 +2913,7 @@ async function reconcileCloudState(userId, initialCloudSnapshot, initialCloudAct
                 const activity = localActivitiesById.get(activityId) || cloudActivitiesById.get(activityId);
                 return getActivityConflictLabel(activity) + ' – ' + conflict;
             });
-            return { ok: false, conflict: true, version: cloud.version, conflicts: readableConflicts };
+            return { ok: false, conflict: true, version: cloud.version, conflicts: readableConflicts, conflictPaths: merged.conflicts, review: { local, cloud: expandedCloud, base: safeBaselineSnapshot } };
         }
 
         const mergedSnapshot = merged.snapshot;
@@ -3196,7 +3197,9 @@ async function flushCloudSync(options = {}) {
                 console.warn('Cloud-Abgleich nach ausgeschöpften Wiederholungsversuchen pausiert:', reconciliation);
             } else {
                 setCloudSyncStatus('Synchronisierung pausiert – gleichzeitige Änderungen müssen geprüft werden.');
-                setCloudTransferMessage('KAJO hat abweichende Änderungen erkannt und keine davon automatisch überschrieben.' + details);
+                setCloudTransferMessage('Bitte prüfe die Gegenüberstellung und entscheide für jeden Konflikt, welche Version erhalten bleiben soll.');
+                const reviewOpened = showCloudConflictReview(reconciliation, { userId, cloud: latestCloud, activities: latestActivities, baseline, isCurrent: isCurrentSync, activitySyncState });
+                if (!reviewOpened) setCloudTransferMessage('Konflikte erkannt, aber die Detailansicht konnte nicht geöffnet werden. Bitte lade KAJO neu.');
                 console.warn('Cloud-Abgleich benötigt eine Konfliktentscheidung:', reconciliation);
             }
             return;
@@ -3428,6 +3431,123 @@ async function startManualCloudSync() {
             button.disabled = false;
             button.textContent = 'Jetzt synchronisieren';
         }
+    }
+}
+
+function cloudConflictTopLevelValue(snapshot, conflictPath) {
+    const key = String(conflictPath || '').split(/[.[]/, 1)[0];
+    return snapshot && Object.prototype.hasOwnProperty.call(snapshot, key) ? snapshot[key] : undefined;
+}
+function formatCloudConflictValue(value) {
+    if (value === undefined) return '— nicht vorhanden —';
+    let text;
+    try { text = JSON.stringify(value, null, 2); } catch { text = String(value); }
+    return text.length > 900 ? text.slice(0, 900) + '\\n… (gekürzt)' : text;
+}
+function showCloudConflictReview(reconciliation, context) {
+    if (!reconciliation?.conflictPaths?.length || !reconciliation.review) return false;
+    pendingCloudConflictReview = { ...context, reconciliation };
+    const host = document.getElementById('cloud-conflict-review-list');
+    const count = document.getElementById('cloud-conflict-review-count');
+    const confirmButton = document.getElementById('cloud-conflict-apply-button');
+    if (!host || !count || !confirmButton) return false;
+    host.replaceChildren();
+    count.textContent = reconciliation.conflictPaths.length + ' Konflikt(e) gefunden. Wähle für jeden Konflikt, welcher Wert erhalten bleiben soll.';
+    reconciliation.conflictPaths.forEach((rawPath, index) => {
+        const path = rawPath.replace(/ \\(.*\\)$/, '');
+        const section = document.createElement('section');
+        section.className = 'rounded-xl border border-slate-700 bg-slate-800/70 p-3 space-y-3';
+        const heading = document.createElement('h3');
+        heading.className = 'text-sm font-semibold text-white break-all';
+        heading.textContent = path || 'Unbekannter Datenbereich';
+        section.appendChild(heading);
+        const values = document.createElement('div');
+        values.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2';
+        for (const side of ['local', 'cloud']) {
+            const panel = document.createElement('div');
+            panel.className = 'min-w-0 rounded-lg bg-slate-950/70 border border-slate-700 p-2';
+            const label = document.createElement('div');
+            label.className = 'text-xs font-semibold mb-1 ' + (side === 'local' ? 'text-amber-300' : 'text-cyan-300');
+            label.textContent = side === 'local' ? 'Dieses Gerät' : 'Cloud';
+            const pre = document.createElement('pre');
+            pre.className = 'text-[11px] leading-4 text-slate-300 whitespace-pre-wrap break-words max-h-40 overflow-auto';
+            pre.textContent = formatCloudConflictValue(cloudConflictTopLevelValue(reconciliation.review[side], path));
+            panel.append(label, pre);
+            values.appendChild(panel);
+        }
+        section.appendChild(values);
+        const choices = document.createElement('div');
+        choices.className = 'flex flex-wrap gap-4 text-xs text-slate-200';
+        for (const side of ['local', 'cloud']) {
+            const label = document.createElement('label');
+            label.className = 'inline-flex items-center gap-2 cursor-pointer';
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'cloud-conflict-' + index;
+            radio.value = side;
+            radio.addEventListener('change', updateCloudConflictApplyState);
+            label.append(radio, document.createTextNode(side === 'local' ? 'Version dieses Geräts behalten' : 'Cloud-Version behalten'));
+            choices.appendChild(label);
+        }
+        section.appendChild(choices);
+        host.appendChild(section);
+    });
+    confirmButton.disabled = true;
+    const modal = document.getElementById('cloud-conflict-review-modal');
+    modal?.classList.remove('hidden');
+    modal?.classList.add('flex');
+    return true;
+}
+function updateCloudConflictApplyState() {
+    const host = document.getElementById('cloud-conflict-review-list');
+    const button = document.getElementById('cloud-conflict-apply-button');
+    if (!host || !button) return;
+    const names = new Set([...host.querySelectorAll('input[type="radio"]')].map(input => input.name));
+    button.disabled = [...names].some(name => !host.querySelector('input[name="' + name + '"]:checked'));
+}
+function closeCloudConflictReview() {
+    const modal = document.getElementById('cloud-conflict-review-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+}
+async function applyCloudConflictChoices() {
+    const pending = pendingCloudConflictReview;
+    const host = document.getElementById('cloud-conflict-review-list');
+    const button = document.getElementById('cloud-conflict-apply-button');
+    if (!pending || !host || !button || button.disabled) return;
+    const resolutions = {};
+    pending.reconciliation.conflictPaths.forEach((rawPath, index) => {
+        const path = rawPath.replace(/ \\(.*\\)$/, '');
+        const selected = host.querySelector('input[name="cloud-conflict-' + index + '"]:checked');
+        if (selected) resolutions[path] = selected.value;
+    });
+    button.disabled = true;
+    button.textContent = 'Entscheidungen werden übernommen …';
+    try {
+        const { userId, cloud, activities, baseline, isCurrent, activitySyncState } = pending;
+        if (!isCurrent()) throw new Error('Das angemeldete Konto oder der lokale Datenstand hat sich geändert. Bitte lade KAJO neu und prüfe die Konflikte erneut.');
+        const result = await reconcileCloudState(userId, cloud, activities, baseline, isCurrent, activitySyncState, resolutions);
+        if (!isCurrent()) return;
+        if (!result.ok) {
+            if (result.conflict && showCloudConflictReview(result, pending)) {
+                setCloudSyncStatus('Es bestehen noch offene Konflikte. Bitte prüfe die aktualisierte Gegenüberstellung.');
+                return;
+            }
+            throw new Error('Die Konflikte konnten nicht vollständig aufgelöst werden. Es wurde nichts automatisch überschrieben.');
+        }
+        cloudSyncVersion = result.version;
+        cloudSyncBlocked = false;
+        pendingCloudConflictReview = null;
+        closeCloudConflictReview();
+        setCloudSyncStatus('Konflikte geklärt. Die ausgewählten Versionen wurden synchronisiert.');
+        setCloudTransferMessage('Die ausgewählten lokalen und zentralen Werte wurden zusammengeführt. Die Cloud-Synchronisierung ist wieder aktiv.');
+        scheduleCloudSync(userId);
+    } catch (error) {
+        setCloudSyncStatus('Konfliktentscheidung nicht abgeschlossen: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Auswahl übernehmen';
+        updateCloudConflictApplyState();
     }
 }
 
@@ -4155,7 +4275,9 @@ async function handleAuthSession(session, authEvent = null) {
                         console.warn('Cloud-Abgleich bei Kontoaktivierung nach ausgeschöpften Wiederholungsversuchen pausiert:', reconciliation);
                     } else {
                         setCloudSyncStatus('Synchronisierung pausiert – lokale und zentrale Änderungen müssen geprüft werden.');
-                        setCloudTransferMessage('KAJO hat unterschiedliche Datenstände erkannt. Der lokale Datenbestand wurde nicht durch die Cloud ersetzt.' + details);
+                        setCloudTransferMessage('Bitte prüfe die Gegenüberstellung und entscheide für jeden Konflikt, welche Version erhalten bleiben soll.');
+                        const reviewOpened = showCloudConflictReview(reconciliation, { userId, cloud: cloudSnapshot, activities: cloudActivities, baseline, isCurrent: () => sequence === activationSequence && activeAppUserId === userId && localDataRevision === reconciliationDataRevision, activitySyncState });
+                        if (!reviewOpened) setCloudTransferMessage('Konflikte erkannt, aber die Detailansicht konnte nicht geöffnet werden. Bitte lade KAJO neu.');
                         console.warn('Cloud-Abgleich bei Kontoaktivierung benötigt eine Konfliktentscheidung:', reconciliation);
                     }
                 } else {
@@ -4334,6 +4456,8 @@ if (supabase) {
 // bewusst an `window` gehängt. Neue onclick-Funktionen hier eintragen!
 // ------------------------------------------------------------
 Object.assign(window, {
+    closeCloudConflictReview,
+    applyCloudConflictChoices,
     openDailyHrActivityModal,
     closeDailyHrActivityModal,
     previewDailyHrActivity,
