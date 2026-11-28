@@ -125,7 +125,7 @@ test('manual completed-without-import and missed statuses are distinct and remov
     assert.equal(review.upcoming[0].id, 'p4');
 });
 
-test('manual statuses do not override matched activities and invalid status values are ignored', () => {
+test('explicit manual status overrides same-day automatic matching; invalid statuses are ignored', () => {
     const review = buildAdaptiveWeekReview({
         ...plan,
         manualSessionStatuses: [
@@ -133,10 +133,12 @@ test('manual statuses do not override matched activities and invalid status valu
             { sessionId: 'p2', status: 'unknown' }
         ]
     }, [{ id: 'a1', date: '2026-11-16', type: 'Kayaking' }], '2026-11-19');
-    assert.equal(review.matched.length, 1);
-    assert.equal(review.matched[0].planned.id, 'p1');
+    assert.equal(review.matched.length, 0);
     assert.equal(review.completedWithoutActivity.length, 0);
-    assert.equal(review.missed.length, 0);
+    assert.equal(review.missed.length, 1);
+    assert.equal(review.missed[0].session.id, 'p1');
+    assert.deepEqual(review.unplannedActivities.map(item => item.activity.id), ['a1']);
+    assert.equal(review.unmatchedPlanned.length, 2);
 });
 
 
