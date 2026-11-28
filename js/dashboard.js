@@ -8,7 +8,7 @@ import { formatDateDDMMYY, escapeHtml, formatKm, getSportsCatalog, getTypeColorM
 import { getActivityDisplayColor } from './home-activity-colors.js?v=1';
 import { getTrainingLoadData } from './training-load.js';
 import { loadCheckinInputs } from './health.js';
-import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=5';
+import { saveDataToLocalStorage, getUserLocalSetting } from './storage.js?v=8';
 import { showChartPointReadout } from './chart-readout.js';
 import { getGarminCheckinMetric } from './garmin-metric-access.js';
 import { calculateReadiness, buildTrainingRecommendation } from './readiness.js?v=3';
