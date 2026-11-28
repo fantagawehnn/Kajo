@@ -253,6 +253,18 @@ function addUtcDays(date: string, days: number): string {
   return value.toISOString().slice(0, 10);
 }
 
+function dateInTimeZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 async function syncGarminHealthHistoryBatch(
   admin: ReturnType<typeof createClient>,
   userId: string,
@@ -1548,20 +1560,74 @@ Deno.serve(async (req) => {
       const { data: connections, error: connectionError } = await admin
         .from("garmin_connections").select("user_id").eq("status", "connected");
       if (connectionError) throw connectionError;
+
+      // The scheduled job runs at 07:00 UTC: 08:00 in German winter time
+      // and 09:00 in German summer time. Use the athlete's local calendar date,
+      // not the database/worker UTC date, for Garmin's daily health records.
+      const today = dateInTimeZone(new Date(), "Europe/Berlin");
+      const yesterday = addUtcDays(today, -1);
       const results = [];
+
       for (const connection of connections ?? []) {
         try {
-          const result = await withGarminSyncLock(admin, connection.user_id, (assertLock) =>
-            syncGarminActivitiesForUser(admin, connection.user_id, new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10), false, undefined, 14, assertLock)
-          );
-          results.push(result === null ? { userId: connection.user_id, status: "skipped", reason: "sync_already_running" } : result);
+          const result = await withGarminSyncLock(admin, connection.user_id, async (assertLock) => {
+            const captureSyncError = (error: unknown) => {
+              const message = error instanceof Error ? error.message : String(error);
+              if (/Synchronisierungssperre/i.test(message)) throw error;
+              const rateLimited = /HTTP\s*429|rate.?limit/i.test(message);
+              return {
+                status: rateLimited ? "rate_limited" : "error",
+                rateLimited,
+                retryInSeconds: rateLimited ? 60 : 0,
+                error: message.slice(0, 300),
+              };
+            };
+
+            // Refresh yesterday and today so sleep/HRV values that were not
+            // complete during an earlier app sync are fetched again in the morning.
+            let healthSync;
+            try {
+              healthSync = await syncGarminHealthHistoryBatch(
+                admin, connection.user_id, yesterday, today, true, true,
+                2, "health_morning", false, assertLock
+              );
+            } catch (error) {
+              healthSync = captureSyncError(error);
+            }
+
+            // Prioritize overnight health data. If Garmin rate-limits the
+            // account, defer activity requests rather than worsening the limit.
+            let activitySync;
+            if (healthSync?.status === "rate_limited" || healthSync?.rateLimited === true) {
+              activitySync = { status: "deferred", reason: "garmin_rate_limited_during_health_sync" };
+            } else {
+              try {
+                activitySync = await syncGarminActivitiesAutomaticBatch(
+                  admin, connection.user_id, today, assertLock
+                );
+              } catch (error) {
+                activitySync = captureSyncError(error);
+              }
+            }
+
+            const partial = ["error", "rate_limited", "partial"].includes(String(healthSync?.status || ""))
+              || ["error", "rate_limited", "partial"].includes(String(activitySync?.status || ""));
+            return { date: today, healthSync, activitySync, partial };
+          });
+
+          results.push(result === null
+            ? { userId: connection.user_id, status: "skipped", reason: "sync_already_running" }
+            : { userId: connection.user_id, ...result });
         } catch (syncError) {
           const message = syncError instanceof Error ? syncError.message.slice(0, 300) : "Unbekannter Fehler.";
-          await admin.from("garmin_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", connection.user_id);
+          await admin.from("garmin_connections").update({
+            last_error: message,
+            updated_at: new Date().toISOString(),
+          }).eq("user_id", connection.user_id);
           results.push({ userId: connection.user_id, status: "error", error: message });
         }
       }
-      return json(200, { ok: true, processed: results.length, results });
+      return json(200, { ok: true, processed: results.length, date: today, results });
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
