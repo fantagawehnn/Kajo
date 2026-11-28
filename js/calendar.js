@@ -125,7 +125,7 @@ export function openDayEditor(dateStr){
 }
 export function toggleDaySickFields(){document.getElementById('day-sick-fields')?.classList.toggle('hidden',!document.getElementById('day-sick')?.checked);}
 export function toggleDayCycleFields(){document.getElementById('day-cycle-fields')?.classList.toggle('hidden',!document.getElementById('day-period')?.checked);}
-export function closeDayEditor(){const modal=document.getElementById('day-detail-modal');if(modal?.dataset.saving==='true')return;modal?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
+export function closeDayEditor(){const modal=document.getElementById('day-detail-modal');modal?.classList.add('hidden');document.body.classList.remove('kajo-modal-open');}
 export function openHomeSelfMonitoring(){openDayEditor(toLocalDateString());}
 export async function saveDayEditor(){
  const date=document.getElementById('day-edit-date').value;if(!date)return;
