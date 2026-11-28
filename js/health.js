@@ -5,7 +5,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage, flushLocalPersistence } from './storage.js?v=6';
+import { saveDataToLocalStorage, flushLocalPersistence } from './storage.js?v=8';
 import { toLocalDateString, parseLocalDate } from './utils.js';
 
 export function loadCheckinInputs() {
