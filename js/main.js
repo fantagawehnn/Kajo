@@ -3232,7 +3232,8 @@ async function flushCloudSync(options = {}) {
         }
     } catch (error) {
         if (isCurrentSync()) {
-            setCloudSyncStatus('Cloud-Speicherung fehlgeschlagen – lokale Daten bleiben erhalten.');
+            const detail = error?.message ? ' Ursache: ' + String(error.message).slice(0, 240) : '';
+            setCloudSyncStatus('Cloud-Speicherung fehlgeschlagen – lokale Daten bleiben erhalten.' + detail);
             console.error('Automatische Cloud-Synchronisierung fehlgeschlagen:', error);
         }
     } finally {
