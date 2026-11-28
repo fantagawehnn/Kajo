@@ -33,3 +33,37 @@ test('content and overlays are constrained to the available viewport', () => {
 test('layout overrides do not replace feature-specific grid column definitions', () => {
   assert.doesNotMatch(css, /#app-main\s+\.grid\s*\{[^}]*grid-template-columns/s);
 });
+
+const designCss = readFileSync(new URL('../css/design-system.css', import.meta.url), 'utf8');
+
+test('More and Settings share the design system while keeping separate roles', () => {
+  const layout = html.indexOf('css/layout-stability.css');
+  const design = html.indexOf('css/design-system.css');
+  assert.notEqual(design, -1, 'shared design stylesheet must be loaded');
+  assert.ok(design > layout, 'shared design styles must load after layout overrides');
+
+  const moreStart = html.indexOf('<section id="view-more"');
+  const moreEnd = html.indexOf('<section id="view-garmin-health"', moreStart);
+  assert.ok(moreStart >= 0 && moreEnd > moreStart, 'More view must exist');
+  const more = html.slice(moreStart, moreEnd);
+
+  for (const tone of ['blue', 'mint', 'coral', 'violet']) {
+    assert.match(more, new RegExp('class="kajo-more-group" data-tone="' + tone + '"'));
+  }
+  assert.equal((more.match(/class="kajo-more-group"/g) || []).length, 4,
+    'More must contain four clearly grouped functional areas');
+  assert.doesNotMatch(more, /Einstellungen|openSettingsModal/,
+    'configuration settings must not be duplicated as a More destination');
+
+  assert.match(html, /id="settings-modal"/, 'Settings remain available in their own configuration modal');
+  assert.match(designCss, /#view-more \.kajo-more-group-heading/);
+  assert.match(designCss, /#settings-modal \.kajo-settings-category/);
+  assert.match(designCss, /--kajo-ui-radius/);
+});
+
+test('More groups remain responsive and use distinct accent colors', () => {
+  assert.match(designCss, /data-tone="coral"/);
+  assert.match(designCss, /data-tone="violet"/);
+  assert.match(designCss, /@media \(max-width: 640px\)/);
+  assert.match(designCss, /grid-template-columns: minmax\(0, 1fr\)/);
+});
