@@ -21,6 +21,28 @@ const FILE_BATCH_SIZE = 25;
 const PERFORMANCE_BATCH_SIZE = 100;
 let activeImportId = null;
 
+
+let jsZipLoadPromise = null;
+async function ensureJSZipLoaded() {
+    if (globalThis.JSZip?.loadAsync) return globalThis.JSZip;
+    if (!jsZipLoadPromise) {
+        jsZipLoadPromise = import('https://esm.sh/jszip@3.10.1')
+            .then(module => {
+                const library = module.default || module.JSZip || module;
+                if (typeof library?.loadAsync !== 'function') {
+                    throw new Error('Die ZIP-Bibliothek ist nicht verfügbar.');
+                }
+                globalThis.JSZip = library;
+                return library;
+            })
+            .catch(error => {
+                jsZipLoadPromise = null;
+                throw error;
+            });
+    }
+    return jsZipLoadPromise;
+}
+
 let tusLoadPromise = null;
 function ensureTusLoaded() {
     if (globalThis.tus?.Upload) return Promise.resolve(globalThis.tus);
@@ -431,7 +453,7 @@ export async function importGarminExportArchive(importId) {
     };
 
     try {
-        if (typeof JSZip === 'undefined') throw new Error('ZIP-Parser ist nicht verfügbar. Bitte KAJO neu laden.');
+        await ensureJSZipLoaded();
         const { data: auth, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
         userId = auth?.user?.id;
