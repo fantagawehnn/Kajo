@@ -4080,17 +4080,19 @@ async function handleAuthSession(session, authEvent = null) {
             window.dispatchEvent(new CustomEvent('endurance:user-local-ready', { detail: { userId } }));
             await new Promise(resolve => requestAnimationFrame(() => resolve()));
 
-            const [cloudSnapshot, cloudActivities, baseline, activitySyncState] = await cloudLoadPromise;
-            if (sequence !== activationSequence || activeAppUserId !== userId) return;
-            // Die großen lokalen Garmin-Zeitreihen erst nach dem ersten Rendern
-            // einlesen. Vor dem Cloud-Abgleich werden sie dennoch vollständig
-            // gesichert, damit beim einmaligen Transfer keine Rohdaten verloren gehen.
+            // Erst nach dem ersten sichtbaren Rendern die übrigen lokalen
+            // Sammlungen nachladen. Der Cloud-Abruf läuft währenddessen weiter.
             await withActivationTimeout(
                 loadDeferredStateForUser(userId),
                 'Das Nachladen weiterer lokaler Trainingsdaten',
                 30000
             );
             if (sequence !== activationSequence || activeAppUserId !== userId) return;
+
+            const [cloudSnapshot, cloudActivities, baseline, activitySyncState] = await cloudLoadPromise;
+            if (sequence !== activationSequence || activeAppUserId !== userId) return;
+            // Alle lokalen Garmin-Rohdaten sind nun im Arbeitsspeicher und können
+            // vor dem Cloud-Abgleich verlustfrei für die Migration gesichert werden.
             const localTelemetryForMigration = getGarminTelemetryRecordsForCloud();
 
             // Lokaler und zentraler Datenstand werden anhand der letzten gemeinsamen
