@@ -1,0 +1,57 @@
+/* KAJO shared design language for More and Settings.
+   Shared foundations, deliberately different information hierarchy. */
+:root {
+  --kajo-ui-radius: 15px;
+  --kajo-ui-radius-small: 11px;
+  --kajo-ui-border: var(--kajo-border, #29394d);
+  --kajo-ui-surface: var(--kajo-surface, #0f1724);
+  --kajo-ui-text: var(--kajo-text, #f8fafc);
+  --kajo-ui-muted: var(--kajo-muted, #9aa8ba);
+  --kajo-ui-blue: #75bfff;
+  --kajo-ui-mint: #75e0c0;
+  --kajo-ui-coral: #ff9298;
+  --kajo-ui-violet: #d0a5ff;
+  --kajo-ui-amber: #f4ca78;
+}
+#view-more.kajo-more-view { display:flex; flex-direction:column; gap:1.1rem; width:100%; max-width:980px; margin-inline:auto; }
+#view-more .kajo-more-header { display:flex; align-items:flex-end; justify-content:space-between; padding:.2rem 0 .35rem; }
+#view-more .kajo-more-eyebrow { margin:0 0 .35rem; color:var(--kajo-ui-muted); font-size:.64rem; font-weight:800; letter-spacing:.12em; }
+#view-more .kajo-more-header h1 { margin:0; color:var(--kajo-ui-text); font-size:1.55rem; line-height:1.15; font-weight:800; letter-spacing:-.035em; }
+#view-more .kajo-more-header p:last-child { margin:.35rem 0 0; color:var(--kajo-ui-muted); font-size:.76rem; line-height:1.45; }
+#view-more .kajo-more-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:14px; }
+#view-more .kajo-more-group { --more-accent:var(--kajo-ui-blue); --more-tint:rgba(117,191,255,.10); display:grid; align-content:start; gap:10px; min-width:0; padding:13px; border:1px solid color-mix(in srgb,var(--more-accent) 28%,var(--kajo-ui-border)); border-radius:var(--kajo-ui-radius); background:linear-gradient(145deg,var(--more-tint),var(--kajo-ui-surface) 78%); }
+#view-more .kajo-more-group[data-tone="blue"] { --more-accent:var(--kajo-ui-blue); --more-tint:rgba(76,157,235,.11); }
+#view-more .kajo-more-group[data-tone="mint"] { --more-accent:var(--kajo-ui-mint); --more-tint:rgba(52,190,151,.10); }
+#view-more .kajo-more-group[data-tone="coral"] { --more-accent:var(--kajo-ui-coral); --more-tint:rgba(244,100,110,.10); }
+#view-more .kajo-more-group[data-tone="violet"] { --more-accent:var(--kajo-ui-violet); --more-tint:rgba(164,111,224,.11); }
+#view-more .kajo-more-group-heading { display:flex; align-items:center; gap:8px; margin:0; color:var(--more-accent); font-size:.66rem; line-height:1.3; font-weight:800; letter-spacing:.075em; text-transform:uppercase; }
+#view-more .kajo-more-group-heading::before { content:""; width:7px; height:7px; flex:0 0 auto; border-radius:50%; background:var(--more-accent); box-shadow:0 0 0 4px var(--more-tint); }
+#view-more .kajo-area-list { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:8px !important; min-width:0; }
+#view-more .kajo-area-card { display:grid !important; grid-template-columns:2.55rem minmax(0,1fr) auto !important; align-items:center !important; gap:11px !important; width:100% !important; min-width:0; min-height:76px !important; padding:11px 12px !important; border:1px solid color-mix(in srgb,var(--more-accent) 23%,var(--kajo-ui-border)) !important; border-radius:var(--kajo-ui-radius-small) !important; background:color-mix(in srgb,var(--more-accent) 5%,var(--kajo-ui-surface)) !important; color:var(--kajo-ui-text) !important; text-align:left !important; box-shadow:none !important; transform:none !important; transition:background .16s ease,border-color .16s ease,transform .16s ease; }
+#view-more .kajo-area-card:hover,#view-more .kajo-area-card:focus-visible { border-color:var(--more-accent) !important; background:color-mix(in srgb,var(--more-accent) 11%,var(--kajo-ui-surface)) !important; outline:none; transform:translateY(-1px) !important; }
+#view-more .kajo-area-icon { display:grid !important; place-items:center !important; width:2.55rem !important; height:2.55rem !important; flex:0 0 auto !important; border:1px solid color-mix(in srgb,var(--more-accent) 25%,transparent) !important; border-radius:11px !important; color:var(--more-accent) !important; background:color-mix(in srgb,var(--more-accent) 12%,transparent) !important; }
+#view-more .kajo-area-icon svg { width:1.2rem !important; height:1.2rem !important; }
+#view-more .kajo-area-copy { display:grid !important; gap:4px !important; min-width:0; }
+#view-more .kajo-area-copy strong { display:block; min-width:0; color:var(--kajo-ui-text); font-size:.79rem; line-height:1.35; font-weight:750; }
+#view-more .kajo-area-copy small { color:var(--kajo-ui-muted); font-size:.66rem; line-height:1.4; }
+#view-more .kajo-area-chevron { width:1rem !important; height:1rem !important; color:var(--more-accent) !important; opacity:.9; }
+
+/* Shared foundations: settings remain a configuration-first experience. */
+#settings-modal .kajo-settings-shell { border:1px solid var(--kajo-ui-border); border-radius:20px; background:var(--kajo-ui-surface); color:var(--kajo-ui-text); }
+#settings-modal .kajo-settings-header { gap:12px; padding-bottom:14px; border-color:var(--kajo-ui-border); }
+#settings-modal .kajo-settings-mark,#settings-modal .kajo-settings-category-icon,#settings-modal .kajo-settings-section-icon { border-radius:var(--kajo-ui-radius-small); }
+#settings-modal .kajo-settings-category { min-height:82px; padding:12px 13px; border-radius:var(--kajo-ui-radius); }
+#settings-modal .kajo-settings-category-copy strong { font-size:.8rem; line-height:1.35; font-weight:750; }
+#settings-modal .kajo-settings-category-copy small { font-size:.66rem; line-height:1.4; }
+#settings-modal .kajo-settings-card { border-radius:var(--kajo-ui-radius); }
+
+html[data-theme="light"] #view-more .kajo-more-group { background:linear-gradient(145deg,var(--more-tint),#fff 82%); border-color:color-mix(in srgb,var(--more-accent) 30%,#dce3ea); }
+html[data-theme="light"] #view-more .kajo-area-card { background:color-mix(in srgb,var(--more-accent) 5%,#fff) !important; border-color:color-mix(in srgb,var(--more-accent) 22%,#dce3ea) !important; }
+html[data-theme="light"] #view-more .kajo-area-copy strong { color:#17212b; }
+html[data-theme="light"] #view-more .kajo-area-copy small { color:#718091; }
+@media (max-width:640px) {
+  #view-more .kajo-more-groups { grid-template-columns:minmax(0,1fr); gap:11px; }
+  #view-more .kajo-more-group { padding:11px; gap:9px; }
+  #view-more .kajo-area-card { min-height:70px !important; padding:10px !important; }
+}
+@media (prefers-reduced-motion:reduce) { #view-more .kajo-area-card { transition:none; } }
