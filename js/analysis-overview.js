@@ -965,4 +965,17 @@ export function renderAnalysisOverview() {
   renderTrendChart();
   renderActivityChart();
   renderPeriodSummary();
+  const advanced = document.querySelector('[data-analysis-advanced]');
+  if (advanced?.open) {
+    const dates = rangeDates(currentRange());
+    renderDataAvailability(dates);
+    renderReadinessBreakdown(dates);
+    renderFitnessRecoveryContext(dates);
+    renderTrendObservations(dates);
+    renderHealthEventContext(dates);
+    renderNextDayContext(dates);
+    renderLoadRecoveryAssociation(dates);
+    renderFormTrendChart();
+    renderIntensityDistribution();
+  }
 }
