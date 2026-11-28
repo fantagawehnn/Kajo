@@ -3499,6 +3499,9 @@ function showCloudConflictReview(reconciliation, context) {
     const count = document.getElementById('cloud-conflict-review-count');
     const confirmButton = document.getElementById('cloud-conflict-apply-button');
     if (!host || !count || !confirmButton) return false;
+    // Den Modul-Handler direkt binden, statt beim Bestätigen von einem
+    // Inline-onclick und der globalen window-Bridge abhängig zu sein.
+    confirmButton.onclick = () => { void applyCloudConflictChoices(); };
     host.replaceChildren();
     count.textContent = reconciliation.conflictPaths.length + ' Konflikt(e) gefunden. Wähle für jeden Konflikt, welcher Wert erhalten bleiben soll.';
     reconciliation.conflictPaths.forEach((rawPath, index) => {
