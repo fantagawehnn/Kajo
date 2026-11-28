@@ -121,7 +121,7 @@ function setStatus(message, percent = null, kind = 'info') {
     if (fill && percent !== null) fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
 }
 
-async async function buildArchiveManifest(file) {
+async function buildArchiveManifest(file) {
     await ensureJSZipLoaded();
     if (typeof JSZip === 'undefined') throw new Error('ZIP-Parser ist nicht verfügbar.');
     const zip = await JSZip.loadAsync(file, { checkCRC32: false });
