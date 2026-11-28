@@ -21,7 +21,7 @@ import { loadGarminActivityPages } from './garmin-activity-pagination.js?v=1';
 import { parseGarminActivitySeenMap, getGarminActivityRowsNeedingPayload, mergeGarminActivitySeenMap } from './garmin-activity-cloud-delta.js?v=1';
 import { loadGarminSyncHistoryData } from './garmin-sync-history.js?v=1';
 import { normalizeGarminWeight, countGarminMetricUpdates, classifyGarminMetricUpdate } from './garmin-health-normalize.js';
-import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=5';
+import { uploadGarminExportArchive, renderGarminExportArchiveHistory, analyzeGarminExportArchive } from './garmin-export-archive.js?v=6';
 import { importGarminExportArchive } from './garmin-export-import.js?v=3';
 import { mergeProfileSnapshots } from './profile-merge.js?v=1';
 import { fetchCloudSnapshot, fetchCloudSnapshotMetadata, saveCloudSnapshot, saveCloudSnapshotPatch } from './cloud-sync.js?v=2';
