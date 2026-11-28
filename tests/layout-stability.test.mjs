@@ -63,5 +63,5 @@ test('More groups remain responsive and use distinct accent colors', () => {
   assert.match(designCss, /data-tone="coral"/);
   assert.match(designCss, /data-tone="violet"/);
   assert.match(designCss, /@media\s*\(\s*max-width:\s*640px\s*\)/);
-  assert.match(designCss, /grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(designCss, /grid-template-columns:\s*minmax\(\s*0,\s*1fr\s*\)/);
 });
