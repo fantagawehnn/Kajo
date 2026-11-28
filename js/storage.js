@@ -15,6 +15,7 @@ let activeUserId = null;
 let activeStorageGeneration = 0;
 let indexedDbWriteQueue = Promise.resolve();
 let indexedDbWriteError = null;
+let pendingCheckinScaleSave = false;
 
 function enqueueIndexedDbSave(storage, collections, label, options = {}) {
     indexedDbWriteQueue = indexedDbWriteQueue
@@ -224,6 +225,7 @@ function defaultUserState() {
 
 export function deactivateUserStorage() {
     activeStorageGeneration++;
+    pendingCheckinScaleSave = false;
     activeUserStorage = null;
     activeUserId = null;
     defaultUserState();
@@ -232,6 +234,7 @@ export function deactivateUserStorage() {
 export async function loadStateForUser(userId) {
     if (!userId) throw new Error('Keine gültige Benutzer-ID für das Laden der Daten.');
     const loadGeneration = ++activeStorageGeneration;
+    pendingCheckinScaleSave = false;
     const userStorage = createUserStorage(userId);
     activeUserStorage = userStorage;
     activeUserId = userId;
@@ -268,7 +271,7 @@ export async function loadStateForUser(userId) {
         if (checkin.sleepQuality == null && Number(checkin.sleep) === 5 && checkin.sleepDuration == null) checkin.sleepLegacyAmbiguous = true;
     });
     const checkinScaleMigrated = migrateDailyCheckinScale();
-    if (checkinScaleMigrated) saveDataToLocalStorage();
+    if (checkinScaleMigrated) pendingCheckinScaleSave = true;
 
     return activeUserId;
 }
@@ -313,6 +316,14 @@ export async function loadDeferredStateForUser(expectedUserId = activeUserId) {
     state.strengthLogs = Array.isArray(loaded.strengthLogs) ? loaded.strengthLogs : [];
     state.strengthPBs = Array.isArray(loaded.strengthPBs) ? loaded.strengthPBs : [];
     state.supplements = Array.isArray(loaded.supplements) ? loaded.supplements : [];
+
+    // Eine Check-in-Skalenmigration erst speichern, nachdem auch die
+    // aufgeschobenen Sammlungen geladen wurden. Sonst könnten deren zunächst
+    // leere Startwerte bestehende lokale Daten überschreiben.
+    if (pendingCheckinScaleSave) {
+        pendingCheckinScaleSave = false;
+        saveDataToLocalStorage();
+    }
     return true;
 }
 
