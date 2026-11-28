@@ -770,7 +770,7 @@ export async function handleMultipleFileSelect(evt) {
                     const parsedStart = new Date(rawDate);
                     const startTime = Number.isFinite(parsedStart.getTime()) && String(rawDate).length > 10 ? parsedStart.toISOString() : null;
                     const durSec = Number(row.moving_time??row.elapsed_time??row.duration_seconds);
-                    const duration = Number.isFinite(durSec)&&durSec>0?Math.round(durSec>1000?durSec/60:durSec):null;
+                    const duration = normalizeCsvDurationMinutes(durSec);
                     const loadRaw = row.icu_training_load??row.training_load??row.tss??row.hr_load;
                     const load = loadRaw==null||loadRaw===''?null:Number(loadRaw);
                     const name = String(row.name||row.activity_name||file.name.replace(/\.csv$/i,''));
