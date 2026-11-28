@@ -2455,6 +2455,7 @@ function runInitStep(label, callback) {
 }
 
 function initEngine() {
+    const startedAt = performance.now();
     runInitStep('Check-in-Formular', () => loadCheckinInputs());
 
     const timeline = runInitStep('Trainingsbelastung berechnen', () =>
@@ -2462,22 +2463,27 @@ function initEngine() {
     );
     state.dailyTimeline = Array.isArray(timeline) ? timeline : [];
 
-    // Jeder Bereich wird unabhängig aufgebaut. Ein Fehler in einem Diagramm
-    // oder einer Analyse darf Home, Kalender oder Navigation nicht blockieren.
+    // Beim Start werden nur Inhalte aufgebaut, die auf dem zuerst sichtbaren
+    // Dashboard benötigt werden. Die übrigen Ansichten werden beim Öffnen über
+    // switchTab() gerendert. So blockieren versteckte Diagramme und Listen
+    // weder den ersten Start noch alltägliche Datenaktualisierungen.
     runInitStep('Belastungs-KPIs', () => renderSummaryKPICards(state.dailyTimeline));
     runInitStep('Readiness', () => renderReadinessDashboard());
     runInitStep('Nächster Wettkampf', () => renderDashboardNextRace());
     runInitStep('Trainingswoche', () => renderHomeTrainingWeek());
-    runInitStep('Belastungsdiagramm', () => renderMainLoadChart(state.dailyTimeline, state.activeTimeframe));
-    runInitStep('Analysebereiche', () => renderAnalysisInsights());
-    runInitStep('Sportverteilung', () => refreshSportAnalytics());
+    runInitStep('Dashboard-Belastungsdiagramm', () => renderMainLoadChart(state.dailyTimeline, state.activeTimeframe));
     runInitStep('Herzfrequenzzonen', () => renderHeartRateZoneDistribution(state.rawActivities));
     runInitStep('Trainingsnarrativ', () => generateAutomatedNarrative(state.dailyTimeline));
-    runInitStep('Kalender', () => renderCalendar());
-    runInitStep('Wettkämpfe', () => renderRaces());
-    runInitStep('Trainingsplanung', () => renderPlannedWorkouts());
-    runInitStep('Krafttraining', () => renderStrengthView());
     runInitStep('Home-Tagesübersicht', () => renderSelectedDashboardDay());
+
+    // Aktualisiert zusätzlich genau den Bereich, der gerade geöffnet ist.
+    // switchTab() rendert Analysen, Kalender, Wettkämpfe usw. bereits gezielt.
+    const activeTab = window.kajoCurrentTab || 'today';
+    runInitStep('Aktuell geöffneter Bereich', () => switchTab(activeTab));
+
+    if (window.KAJO_PERFORMANCE_DEBUG === true) {
+        console.info('[KAJO Performance] Dashboard- und aktiver Bereich gerendert:', Math.round(performance.now() - startedAt) + ' ms');
+    }
 }
 
 // Alle Module lösen nach Datenänderungen refreshAll() aus → initEngine()
