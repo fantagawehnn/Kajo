@@ -111,6 +111,7 @@ assert.equal(store.get('endurance_checkins'), legacyCheckins);
 
 // Subsequent import checks run inside an isolated authenticated-user storage scope.
 await storage.loadStateForUser('smoke-test-user');
+await storage.loadDeferredStateForUser('smoke-test-user');
 
 // Season planning is stored independently per user and survives a reload.
 state.seasonPlan = {
@@ -125,6 +126,7 @@ assert.deepEqual(
     state.seasonPlan
 );
 await storage.loadStateForUser('smoke-test-user');
+await storage.loadDeferredStateForUser('smoke-test-user');
 assert.equal(state.seasonPlan.id, 'smoke-season');
 
 // Saving a sickness/injury entry must finish locally without waiting for a cloud request.
