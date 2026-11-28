@@ -287,9 +287,9 @@ assert.ok(importer.includes("source:'fit',sources:['fit']"), 'manually imported 
 assert.ok(activities.includes("zoneTime.restingHrSource === 'profile-fallback'"), 'profile resting-HR fallback is explicitly identified in activity zone details');
 
 assert.ok(activities.includes('function renderActivityRouteMap(activity)'), 'GPS map is only rendered from stored coordinate pairs');
-assert.ok(activities.includes('if (points.length < 2 || !globalThis.L)'), 'GPS map is hidden without valid points or map library');
+assert.ok(activities.includes('if (points.length < 2)') && activities.includes('if (!globalThis.L)'), 'GPS map waits for valid points and lazily loads its map library');
 assert.ok(importer.includes("extractRecordSeries('position_lat', 'latitude')"), 'FIT import extracts GPS coordinates only when present');
-assert.ok(html.includes('leaflet@1.9.4'), 'activity route map uses a supported mapping library');
+assert.ok(activities.includes('leaflet@1.9.4'), 'activity route map loads a supported mapping library on demand');
 
 assert.ok(html.includes('id="activity-water-type"'), 'canoe activity detail allows documented flatwater/wildwater context');
 assert.ok(activities.includes('if (!currentWaterType || !candidateWaterType || currentWaterType !== candidateWaterType) return false'), 'canoe comparisons require a known matching water type');
