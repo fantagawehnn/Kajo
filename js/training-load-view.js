@@ -3,7 +3,7 @@
  * No separate load formulas are introduced in this presentation layer.
  */
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage } from './storage.js?v=8';
 import { calculateGarminZoneLoad, summarizeTrainingLoadSourceCoverage } from './training-load.js?v=9';
 import { getGarminHeartRateSeries, isGarminActivity } from './data-source.js';
 import { computePerformanceTimeline } from './calculations.js?v=1';
