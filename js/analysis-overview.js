@@ -715,7 +715,7 @@ function renderTrendChart() {
     ? ' HRV fließt auch in die Readiness ein; beide Werte sind daher nicht unabhängig voneinander.'
     : '';
   setText('analysis-overview-trend-note',
-    (descriptions[item.key] || item.label) + dependencyNote + ' Fehlende Messwerte bleiben als Lücken sichtbar. Health-Markierungen zeigen ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V).');
+    (descriptions[item.key] || item.label) + dependencyNote + ' Fehlende Messwerte bleiben als Lücken sichtbar. Health zeigt ausschließlich dokumentierte Erkrankungen und Verletzungen (K/V), keinen kontinuierlichen Gesundheits-Score.');
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
