@@ -163,8 +163,8 @@ export async function sendKajoPushTest() {
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification("KAJO · Alles bereit", {
       body: "Deine persönlichen Erinnerungen erscheinen hier im KAJO-Design.",
-      icon: "./icons/icon-192.svg",
-      badge: "./icons/icon-192.svg",
+      icon: "./icons/kajo-icon.svg",
+      badge: "./icons/kajo-icon.svg",
       tag: "kajo-test-notification",
       data: { url: "./" },
       vibrate: [100, 45, 100]
