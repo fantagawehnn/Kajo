@@ -3564,46 +3564,76 @@ function closeCloudConflictReview() {
     modal?.classList.add('hidden');
     modal?.classList.remove('flex');
 }
-async function applyCloudConflictChoices() {
+function applyCloudConflictChoices() {
+    // Die Auswahl wird synchron aus dem geöffneten Dialog gelesen. Danach
+    // schließt sich das Fenster sofort; der eigentliche Cloud-Abgleich läuft
+    // unabhängig davon im Hintergrund weiter.
+    if (cloudConflictApplyInFlight) return;
     const pending = pendingCloudConflictReview;
     const host = document.getElementById('cloud-conflict-review-list');
     const button = document.getElementById('cloud-conflict-apply-button');
-    if (!pending || !host || !button || button.disabled) return;
+    if (!pending || !host || !button) {
+        setCloudSyncStatus('Die Konfliktübersicht ist nicht mehr aktuell. Bitte öffne sie erneut.');
+        return;
+    }
     const resolutions = {};
+    let missingChoice = false;
     pending.reconciliation.conflictPaths.forEach((rawPath, index) => {
-        const path = rawPath.replace(/ \(.*\)$/, '');
+        const path = rawPath.split(' (')[0];
         const selected = host.querySelector('input[name="cloud-conflict-' + index + '"]:checked');
         if (selected) resolutions[path] = selected.value;
+        else missingChoice = true;
     });
-    button.disabled = true;
-    button.textContent = 'Entscheidungen werden übernommen …';
-    try {
-        const { userId, cloud, activities, baseline, isCurrent, activitySyncState } = pending;
-        if (!isCurrent()) throw new Error('Das angemeldete Konto oder der lokale Datenstand hat sich geändert. Bitte lade KAJO neu und prüfe die Konflikte erneut.');
-        const result = await reconcileCloudState(userId, cloud, activities, baseline, isCurrent, activitySyncState, resolutions);
-        if (!isCurrent()) return;
-        if (!result.ok) {
-            if (result.conflict && showCloudConflictReview(result, pending)) {
-                setCloudSyncStatus('Es bestehen noch offene Konflikte. Bitte prüfe die aktualisierte Gegenüberstellung.');
-                return;
-            }
-            throw new Error('Die Konflikte konnten nicht vollständig aufgelöst werden. Es wurde nichts automatisch überschrieben.');
-        }
-        cloudSyncVersion = result.version;
-        cloudSyncBlocked = false;
-        pendingCloudConflictReview = null;
-        document.getElementById('cloud-conflict-open-button')?.classList.add('hidden');
-        closeCloudConflictReview();
-        setCloudSyncStatus('Konflikte geklärt. Die ausgewählten Versionen wurden synchronisiert.');
-        setCloudTransferMessage('Die ausgewählten lokalen und zentralen Werte wurden zusammengeführt. Die Cloud-Synchronisierung ist wieder aktiv.');
-        scheduleCloudSync(userId);
-    } catch (error) {
-        setCloudSyncStatus('Konfliktentscheidung nicht abgeschlossen: ' + error.message);
-    } finally {
-        button.disabled = false;
-        button.textContent = 'Auswahl übernehmen';
-        updateCloudConflictApplyState();
+    if (missingChoice) {
+        setCloudSyncStatus('Bitte wähle für jeden Konflikt eine Version aus.');
+        return;
     }
+
+    cloudConflictApplyInFlight = true;
+    button.disabled = true;
+    button.textContent = 'Abgleich läuft …';
+    closeCloudConflictReview();
+    setCloudSyncStatus('Deine Auswahl wurde übernommen. Der Cloud-Abgleich läuft im Hintergrund.');
+
+    const runReconciliation = async () => {
+        try {
+            const { userId, cloud, activities, baseline, isCurrent, activitySyncState } = pending;
+            if (!isCurrent()) throw new Error('Das angemeldete Konto oder der lokale Datenstand hat sich geändert. Bitte lade KAJO neu und prüfe die Konflikte erneut.');
+            const result = await reconcileCloudState(userId, cloud, activities, baseline, isCurrent, activitySyncState, resolutions);
+            if (!isCurrent()) return;
+            if (!result.ok) {
+                if (result.conflict && result.conflictPaths?.length) {
+                    pendingCloudConflictReview = { ...pending, reconciliation: {
+                        ...result,
+                        review: result.review
+                    }};
+                    document.getElementById('cloud-conflict-open-button')?.classList.remove('hidden');
+                    setCloudSyncStatus('Es sind weitere Konflikte aufgetreten. Öffne „Konflikte ansehen“, um sie zu prüfen.');
+                    return;
+                }
+                throw new Error('Die Konflikte konnten nicht vollständig aufgelöst werden. Es wurde nichts automatisch überschrieben.');
+            }
+            cloudSyncVersion = result.version;
+            cloudSyncBlocked = false;
+            pendingCloudConflictReview = null;
+            document.getElementById('cloud-conflict-open-button')?.classList.add('hidden');
+            setCloudSyncStatus('Konflikte geklärt. Die ausgewählten Versionen wurden synchronisiert.');
+            setCloudTransferMessage('Die ausgewählten lokalen und zentralen Werte wurden zusammengeführt. Die Cloud-Synchronisierung ist wieder aktiv.');
+            scheduleCloudSync(userId);
+        } catch (error) {
+            console.error('KAJO: Hintergrund-Abgleich der Cloud-Konflikte fehlgeschlagen:', error);
+            document.getElementById('cloud-conflict-open-button')?.classList.toggle('hidden', !pendingCloudConflictReview);
+            setCloudSyncStatus('Hintergrund-Abgleich fehlgeschlagen: ' + (error?.message || 'Unbekannter Fehler') + ' Deine Auswahl ist weiterhin verfügbar.');
+        } finally {
+            cloudConflictApplyInFlight = false;
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Auswahl übernehmen';
+            }
+            updateCloudConflictApplyState();
+        }
+    };
+    window.setTimeout(() => { void runReconciliation(); }, 0);
 }
 
 function setCloudTransferMessage(message, showButton = false) {
