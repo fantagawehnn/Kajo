@@ -254,10 +254,10 @@ jobs:
         run: node tests/navigation-smoke.mjs
 
       - name: Run mobile navigation accessibility tests
+        run: node --experimental-default-type=module --test tests/mobile-navigation-accessibility.test.mjs
 
       - name: Run responsive layout stability tests
         run: node --experimental-default-type=module --test tests/layout-stability.test.mjs
-        run: node --experimental-default-type=module --test tests/mobile-navigation-accessibility.test.mjs
 
   deploy-cloudflare:
     needs: regression-smoke
