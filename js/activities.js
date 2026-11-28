@@ -15,6 +15,40 @@ import { getActivityTelemetry, getGarminHeartRateSeries, isGarminActivity, summa
 import { getGarminTelemetryActivityId } from './garmin-cloud-telemetry.js?v=5';
 import { populateActivityRouteSelect } from './routes.js';
 
+let leafletLoadPromise = null;
+function ensureLeafletLoaded() {
+    if (globalThis.L) return Promise.resolve(globalThis.L);
+    if (!leafletLoadPromise) {
+        leafletLoadPromise = new Promise((resolve, reject) => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            link.dataset.kajoLeaflet = 'true';
+
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.async = true;
+
+            let cssReady = false;
+            let scriptReady = false;
+            const finish = () => {
+                if (!cssReady || !scriptReady) return;
+                if (globalThis.L) resolve(globalThis.L);
+                else reject(new Error('Leaflet wurde geladen, ist aber nicht verfügbar.'));
+            };
+            link.onload = () => { cssReady = true; finish(); };
+            link.onerror = () => reject(new Error('Die Kartenstile konnten nicht geladen werden.'));
+            script.onload = () => { scriptReady = true; finish(); };
+            script.onerror = () => reject(new Error('Die Kartenbibliothek konnte nicht geladen werden.'));
+            document.head.append(link, script);
+        }).catch(error => {
+            leafletLoadPromise = null;
+            throw error;
+        });
+    }
+    return leafletLoadPromise;
+}
+
 // Read-only-Diagnose der Zeitreihen in der aktuell geöffneten Aktivität.
 // Es werden weder Garmin-Endpunkte aufgerufen noch Daten gespeichert/verändert.
 function diagnoseSelectedActivityTelemetry() {
@@ -1163,9 +1197,19 @@ function renderActivityRouteMap(activity) {
         lon: normalizeCoordinate(longitudes[index], 180),
         index
     })).filter(point => point.lat !== null && point.lon !== null);
-    if (points.length < 2 || !globalThis.L) {
+    if (points.length < 2) {
         panel.classList.add('hidden');
         panel.innerHTML = '';
+        return;
+    }
+    if (!globalThis.L) {
+        panel.classList.remove('hidden');
+        panel.innerHTML = '<div class="activity-detail-section-heading"><h3>GPS-Strecke</h3></div><p class="activity-detail-data-status">Kartenansicht wird geladen …</p>';
+        void ensureLeafletLoaded()
+            .then(() => renderActivityRouteMap(activity))
+            .catch(error => {
+                panel.innerHTML = '<div class="activity-detail-section-heading"><h3>GPS-Strecke</h3></div><p class="activity-detail-data-status">' + escapeHtml(error.message || 'Kartenansicht nicht verfügbar.') + '</p>';
+            });
         return;
     }
     if (state.activityRouteMap) {
