@@ -149,32 +149,21 @@ export async function saveDayEditor(){
   state.healthLogs[date]=health;
  }else if(previousHealth.status==='sick'){delete state.healthLogs[date];}
 
- const saveButton=document.querySelector('#day-detail-modal button[onclick="saveDayEditor()"]');
- const saveStatus=document.getElementById('day-save-status');
- const originalLabel=saveButton?.textContent||'Check-in speichern';
- const modal=document.getElementById('day-detail-modal');
- if(modal)modal.dataset.saving='true';
- if(saveButton){saveButton.disabled=true;saveButton.textContent='Speichert …';}
- if(saveStatus)saveStatus.textContent='Check-in wird lokal und in der Cloud gesichert …';
+ // Der lokale Speicher ist der verbindliche erste Schritt. saveDataToLocalStorage
+ // schreibt den Snapshot synchron in den lokalen Cache und reiht die dauerhafte
+ // IndexedDB-Sicherung ein. Das data-saved-Ereignis stößt den Cloud-Abgleich
+ // unabhängig davon im Hintergrund an.
  const localSaved=saveDataToLocalStorage();
  if(!localSaved){
-  if(modal)modal.dataset.saving='false';
-  if(saveStatus)saveStatus.textContent='Nicht gespeichert: Dein angemeldeter Datenspeicher ist nicht aktiv. Bitte melde dich erneut an.';
-  if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
+  const saveStatus=document.getElementById('day-save-status');
+  if(saveStatus)saveStatus.textContent='Nicht gespeichert: Dein lokaler Benutzerspeicher ist nicht aktiv. Bitte melde dich erneut an.';
   return;
  }
- const cloudSaved=await new Promise(resolve=>{
-  window.dispatchEvent(new CustomEvent('endurance:data-save-immediate',{detail:{resolve}}));
- });
- if(!cloudSaved){
-  if(modal)modal.dataset.saving='false';
-  if(saveStatus)saveStatus.textContent='Lokal gesichert, aber Cloud-Speicherung fehlgeschlagen. Bitte versuche es erneut und aktualisiere die App noch nicht.';
-  if(saveButton){saveButton.disabled=false;saveButton.textContent=originalLabel;}
-  return;
- }
- if(saveStatus)saveStatus.textContent='Check-in erfolgreich in der Cloud gespeichert.';
- if(modal)modal.dataset.saving='false';
- closeDayEditor();refreshAll();
+
+ // Nicht auf die Cloud warten: Auch offline oder bei Cloud-Fehlern bleibt
+ // der Check-in lokal erhalten und das Eingabefenster schließt sofort.
+ closeDayEditor();
+ refreshAll();
 }
 
 let selectedActivitySports = new Set();
