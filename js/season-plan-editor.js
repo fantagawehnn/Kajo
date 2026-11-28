@@ -581,6 +581,7 @@ export function removeSeasonPlanPhase(index) {
 
 export function saveSeasonPlanEditor(approve = false) {
     const current = normalizeSeasonPlan(state.seasonPlan) || {};
+    const now = new Date().toISOString();
     const plan = {
         ...current,
         schemaVersion: 1,
@@ -588,15 +589,18 @@ export function saveSeasonPlanEditor(approve = false) {
         name: value('season-plan-name').trim(),
         planningMode: value('season-plan-mode') || 'hybrid',
         planningHorizon: 'season',
-        status: approve ? 'active' : 'draft',
+        status: 'draft',
         startDate: value('season-plan-start') || null,
         endDate: value('season-plan-end') || null,
         primaryGoal: value('season-plan-goal').trim(),
         phases: draftPhases,
-        athleteApprovedAt: approve ? new Date().toISOString() : null,
-        createdAt: current.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        athleteApprovedAt: null,
+        createdAt: current.createdAt || now,
+        updatedAt: now
     };
+    const approvalState = getSeasonPlanSaveState(current, plan, approve, now);
+    plan.status = approvalState.status;
+    plan.athleteApprovedAt = approvalState.athleteApprovedAt;
     const validation = validateSeasonPlan(plan);
     const message = byId('season-plan-message');
     if (approve && !validation.valid) {
