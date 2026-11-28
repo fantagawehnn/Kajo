@@ -31,7 +31,7 @@ globalThis.alert = () => {};
 globalThis.setTimeout = () => 0;
 
 const { state, setRefreshHandler } = await import('../js/state.js');
-const storage = await import('../js/storage.js?v=6');
+const storage = await import('../js/storage.js?v=8');
 const { escapeHtml, toLocalDateString, formatKm, getSportsCatalog } = await import('../js/utils.js');
 const { computePerformanceTimeline } = await import('../js/calculations.js');
 const { getRacePriorityMeta, migrateLegacyRacePriorities } = await import('../js/competitions.js');
