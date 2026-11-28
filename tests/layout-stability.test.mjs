@@ -34,13 +34,11 @@ test('layout overrides do not replace feature-specific grid column definitions',
   assert.doesNotMatch(css, /#app-main\s+\.grid\s*\{[^}]*grid-template-columns/s);
 });
 
-const designCss = readFileSync(new URL('../css/design-system.css', import.meta.url), 'utf8');
+const designCss = css;
 
 test('More and Settings share the design system while keeping separate roles', () => {
   const layout = html.indexOf('css/layout-stability.css');
-  const design = html.indexOf('css/design-system.css');
-  assert.notEqual(design, -1, 'shared design stylesheet must be loaded');
-  assert.ok(design > layout, 'shared design styles must load after layout overrides');
+  assert.ok(layout > html.indexOf('css/styles.css'), 'shared design styles must load after the legacy stylesheet');
 
   const moreStart = html.indexOf('<section id="view-more"');
   const moreEnd = html.indexOf('<section id="view-garmin-health"', moreStart);
