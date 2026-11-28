@@ -83,6 +83,8 @@ jobs:
           node --check js/import.js
           node --check js/garmin-export-archive.js
           node --check js/garmin-export-import-core.js
+          node --check js/garmin-fit-parser.js
+          node --check js/garmin-uds-parser.js
           node --check js/garmin-export-import.js
           node --check supabase/functions/garmin-personal/activity-date.js
           node --check supabase/functions/garmin-personal/activity-scan-plan.js
@@ -186,6 +188,9 @@ jobs:
 
       - name: Run Garmin full export import tests
         run: node --experimental-default-type=module --test tests/garmin-export-import.test.mjs
+
+      - name: Run Garmin FIT and UDS parser tests
+        run: node --experimental-default-type=module --test tests/garmin-fit-uds-parser.test.mjs
 
       - name: Run Garmin activity date parsing tests
         run: node --experimental-default-type=module --test tests/garmin-activity-date.test.mjs
