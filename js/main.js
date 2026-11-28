@@ -2471,7 +2471,6 @@ function initEngine() {
     runInitStep('Readiness', () => renderReadinessDashboard());
     runInitStep('Nächster Wettkampf', () => renderDashboardNextRace());
     runInitStep('Trainingswoche', () => renderHomeTrainingWeek());
-    runInitStep('Dashboard-Belastungsdiagramm', () => renderMainLoadChart(state.dailyTimeline, state.activeTimeframe));
     runInitStep('Herzfrequenzzonen', () => renderHeartRateZoneDistribution(state.rawActivities));
     runInitStep('Trainingsnarrativ', () => generateAutomatedNarrative(state.dailyTimeline));
     runInitStep('Home-Tagesübersicht', () => renderSelectedDashboardDay());
