@@ -209,7 +209,49 @@ export function validateSeasonPlan(input) {
             errors.push('Trainingsphasen dürfen sich zeitlich nicht überschneiden: ' + ordered[index - 1].name + ' / ' + ordered[index].name + '.');
         }
     }
+    if (plan.status === 'active' && ordered.length === phases.length && phases.length > 0) {
+        if (ordered[0].startDate !== plan.startDate) {
+            errors.push('Ein freigegebener Saisonplan muss ab dem Saisonstart durch eine Trainingsphase abgedeckt sein.');
+        }
+        for (let index = 1; index < ordered.length; index++) {
+            if (ordered[index].startDate !== nextCalendarDate(ordered[index - 1].endDate)) {
+                errors.push('Ein freigegebener Saisonplan darf keine zeitlichen Lücken zwischen Trainingsphasen enthalten.');
+                break;
+            }
+        }
+        if (ordered[ordered.length - 1].endDate !== plan.endDate) {
+            errors.push('Ein freigegebener Saisonplan muss bis zum Saisonende durch eine Trainingsphase abgedeckt sein.');
+        }
+    } else if (plan.status === 'active' && phases.length === 0) {
+        errors.push('Ein freigegebener Saisonplan benötigt mindestens eine Trainingsphase.');
+    }
     return { valid: errors.length === 0, errors, plan };
+}
+
+
+/** Determine whether a non-approval save may retain an existing athlete approval. */
+export function getSeasonPlanSaveState(currentInput, candidateInput, approve = false, approvedAt = new Date().toISOString()) {
+    if (approve) return { status: 'active', athleteApprovedAt: approvedAt };
+    const current = normalizeSeasonPlan(currentInput);
+    const candidate = normalizeSeasonPlan(candidateInput);
+    const unchanged = Boolean(current && candidate
+        && current.name === candidate.name
+        && current.planningMode === candidate.planningMode
+        && current.startDate === candidate.startDate
+        && current.endDate === candidate.endDate
+        && current.primaryGoal === candidate.primaryGoal
+        && JSON.stringify(current.phases) === JSON.stringify(candidate.phases));
+    if (current?.status === 'active' && current.athleteApprovedAt && unchanged) {
+        return { status: 'active', athleteApprovedAt: current.athleteApprovedAt };
+    }
+    return { status: 'draft', athleteApprovedAt: null };
+}
+
+function nextCalendarDate(value) {
+    const date = new Date(value + 'T00:00:00Z');
+    if (!Number.isFinite(date.getTime())) return null;
+    date.setUTCDate(date.getUTCDate() + 1);
+    return date.toISOString().slice(0, 10);
 }
 
 /** Compact, source-explicit season context for the AI Coach. */

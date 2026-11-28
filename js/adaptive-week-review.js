@@ -44,13 +44,8 @@ export function buildAdaptiveWeekReview(plan, activities = [], today = new Date(
         const status = entry?.status;
         const session = sessionById.get(sessionId);
         if (!session || !['completed_unrecorded', 'missed'].includes(status) || dateKey(session.date) > today || seenSessionIds.has(sessionId)) continue;
-        const date = dateKey(session.date);
-        const sport = sportKey(session.discipline || session.type);
-        if (sport) {
-            const sameSportPlans = sessions.filter(item => dateKey(item.date) === date && sportKey(item.discipline || item.type) === sport);
-            const sameSportActivities = actual.filter(item => dateKey(item.date) === date && (sportKey(item.discipline) || sportKey(item.type)) === sport);
-            if (sameSportPlans.length === 1 && sameSportActivities.length === 1) continue;
-        }
+        // An explicit athlete-entered status is authoritative, even if an activity
+        // of the same sport exists that day; that activity may be an extra session.
         seenSessionIds.add(sessionId);
         usedSessions.add(sessionId);
         const record = { session, status };

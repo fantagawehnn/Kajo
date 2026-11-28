@@ -42,3 +42,16 @@ test('does not import a linked or identical existing calendar entry twice', () =
     assert.equal(additions.length, 0);
     assert.equal(skipped.length, 4);
 });
+
+test('does not create duplicate entries repeated within the same weekly draft', () => {
+    const duplicatePlan = {
+        ...plan,
+        sessions: [
+            ...plan.sessions.slice(0, 1),
+            { ...plan.sessions[0], id: 's1-copy' }
+        ]
+    };
+    const { additions, skipped } = buildWeeklyPlanCalendarEntries(duplicatePlan, []);
+    assert.equal(additions.length, 1);
+    assert.equal(skipped.length, 1);
+});

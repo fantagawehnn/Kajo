@@ -5,6 +5,7 @@ import { state } from './state.js';
 import { supabase } from './supabase-client.js';
 import { buildAthleteContext } from './coach-context.js';
 import { buildCoachRequestContext } from './coach-data-context.js';
+import { isValidWeekStartDate } from './coach-validation.js';
 
 const conversation = [];
 let requestPending = false;
@@ -65,13 +66,13 @@ export async function requestSeasonPlanProposal() {
 
 export async function requestWeeklyPlanProposal(weekStartDate) {
     if (!supabase) throw new Error('Die sichere Verbindung zum KI-Coach ist nicht verfügbar.');
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(weekStartDate || ''))) throw new Error('Bitte wähle einen gültigen Wochenstart (Montag).');
+    if (!isValidWeekStartDate(weekStartDate)) throw new Error('Bitte wähle einen gültigen Wochenstart (Montag).');
     const seasonPlan = state.seasonPlan;
     if (!seasonPlan || seasonPlan.status !== 'active' || !seasonPlan.athleteApprovedAt) {
         throw new Error('Bitte gib zuerst deinen Saisonplan frei.');
     }
     const start = new Date(weekStartDate + 'T12:00:00Z');
-    if (!Number.isFinite(start.getTime()) || start.getUTCDay() !== 1) throw new Error('Der ausgewählte Wochenstart muss ein Montag sein.');
+    if (!Number.isFinite(start.getTime())) throw new Error('Der ausgewählte Wochenstart muss ein gültiges Datum sein.');
     const end = new Date(start.getTime() + 6 * 86400000).toISOString().slice(0, 10);
     const phase = (seasonPlan.phases || []).find(item => item.startDate <= weekStartDate && item.endDate >= end);
     if (!phase) throw new Error('Die gesamte Woche muss innerhalb einer freigegebenen Saisonphase liegen.');

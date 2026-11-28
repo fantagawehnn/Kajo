@@ -5,7 +5,8 @@ import {
     validateSeasonPlan,
     buildSeasonPlanningContext,
     normalizeWeeklyPlan,
-    validateWeeklyPlan
+    validateWeeklyPlan,
+    getSeasonPlanSaveState
 } from '../js/season-planning.js';
 import { buildCoachRequestContext } from '../js/coach-data-context.js';
 
@@ -102,6 +103,8 @@ test('Coach receives season plan and competition context; no plan is explicitly 
 const approvedSeason = {
     ...validPlan,
     status: 'active',
+    startDate: '2027-01-04',
+    endDate: '2027-03-28',
     athleteApprovedAt: '2026-11-19T10:00:00.000Z',
     phases: [{
         id: 'base', name: 'Grundlagen', type: 'preparation',
@@ -169,4 +172,48 @@ test('rejects weekly plans with invalid week boundaries, phase placement or sess
 test('weekly plan normalization remains backward compatible with older season records', () => {
     const plan = normalizeSeasonPlan(validPlan);
     assert.deepEqual(plan.weeklyPlans, []);
+});
+
+test('requires complete continuous phase coverage before a season plan can be approved', () => {
+    const complete = {
+        ...validPlan,
+        status: 'active',
+        athleteApprovedAt: '2026-11-19T10:00:00.000Z',
+        phases: [
+            { id: 'p1', name: 'Vorbereitung', startDate: '2027-01-01', endDate: '2027-03-31' },
+            { id: 'p2', name: 'Wettkampf', startDate: '2027-04-01', endDate: '2027-10-31' }
+        ]
+    };
+    assert.equal(validateSeasonPlan(complete).valid, true);
+    const gap = structuredClone(complete);
+    gap.phases[1].startDate = '2027-04-03';
+    const gapResult = validateSeasonPlan(gap);
+    assert.equal(gapResult.valid, false);
+    assert.ok(gapResult.errors.some(error => error.includes('keine zeitlichen Lücken')));
+    const partial = structuredClone(complete);
+    partial.phases[0].startDate = '2027-01-02';
+    const partialResult = validateSeasonPlan(partial);
+    assert.equal(partialResult.valid, false);
+    assert.ok(partialResult.errors.some(error => error.includes('ab dem Saisonstart')));
+});
+
+test('preserves approval when saving an unchanged season plan and resets it after edits', () => {
+    const approved = {
+        ...validPlan,
+        status: 'active',
+        athleteApprovedAt: '2026-11-19T10:00:00.000Z'
+    };
+    assert.deepEqual(getSeasonPlanSaveState(approved, approved, false), {
+        status: 'active',
+        athleteApprovedAt: approved.athleteApprovedAt
+    });
+    const edited = { ...approved, primaryGoal: 'Geändertes Saisonziel' };
+    assert.deepEqual(getSeasonPlanSaveState(approved, edited, false), {
+        status: 'draft',
+        athleteApprovedAt: null
+    });
+    assert.deepEqual(getSeasonPlanSaveState(approved, edited, true, '2026-11-28T10:00:00.000Z'), {
+        status: 'active',
+        athleteApprovedAt: '2026-11-28T10:00:00.000Z'
+    });
 });

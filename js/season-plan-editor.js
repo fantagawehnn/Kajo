@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { saveDataToLocalStorage } from './storage.js?v=8';
-import { validateSeasonPlan, normalizeSeasonPlan } from './season-planning.js';
+import { validateSeasonPlan, normalizeSeasonPlan, getSeasonPlanSaveState } from './season-planning.js';
 import { requestSeasonPlanProposal, requestWeeklyPlanProposal, requestAdaptiveWeekAdjustment } from './coach.js?v=3';
 import { renderCalendar } from './calendar.js';
 import { renderPlannedWorkouts } from './planning.js';
@@ -581,6 +581,7 @@ export function removeSeasonPlanPhase(index) {
 
 export function saveSeasonPlanEditor(approve = false) {
     const current = normalizeSeasonPlan(state.seasonPlan) || {};
+    const now = new Date().toISOString();
     const plan = {
         ...current,
         schemaVersion: 1,
@@ -588,15 +589,18 @@ export function saveSeasonPlanEditor(approve = false) {
         name: value('season-plan-name').trim(),
         planningMode: value('season-plan-mode') || 'hybrid',
         planningHorizon: 'season',
-        status: approve ? 'active' : 'draft',
+        status: 'draft',
         startDate: value('season-plan-start') || null,
         endDate: value('season-plan-end') || null,
         primaryGoal: value('season-plan-goal').trim(),
         phases: draftPhases,
-        athleteApprovedAt: approve ? new Date().toISOString() : null,
-        createdAt: current.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        athleteApprovedAt: null,
+        createdAt: current.createdAt || now,
+        updatedAt: now
     };
+    const approvalState = getSeasonPlanSaveState(current, plan, approve, now);
+    plan.status = approvalState.status;
+    plan.athleteApprovedAt = approvalState.athleteApprovedAt;
     const validation = validateSeasonPlan(plan);
     const message = byId('season-plan-message');
     if (approve && !validation.valid) {
@@ -621,7 +625,11 @@ export function saveSeasonPlanEditor(approve = false) {
         return false;
     }
     const status = byId('season-plan-status');
-    if (status) status.textContent = approve ? 'Freigegeben' : 'Entwurf gespeichert';
-    if (message) message.textContent = approve ? 'Saisonplan gespeichert und von dir freigegeben.' : 'Saisonplan als Entwurf gespeichert.';
+    if (status) status.textContent = plan.status === 'active' ? 'Freigegeben' : 'Entwurf';
+    if (message) message.textContent = approve
+        ? 'Saisonplan gespeichert und von dir freigegeben.'
+        : plan.status === 'active'
+            ? 'Saisonplan gespeichert. Die bestehende Freigabe bleibt erhalten, da keine Planungsdaten geändert wurden.'
+            : 'Saisonplan als Entwurf gespeichert.';
     return true;
 }

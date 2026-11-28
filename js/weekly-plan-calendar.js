@@ -27,13 +27,17 @@ export function calendarCategoryForSession(session = {}) {
 export function buildWeeklyPlanCalendarEntries(plan, existingEntries = []) {
     const additions = [];
     const skipped = [];
+    const seenDraftEntries = new Set();
     if (!plan?.id || !Array.isArray(plan.sessions)) return { additions, skipped: ['Ungültiger Wochenplan'] };
     for (const session of plan.sessions) {
         const type = calendarTypeForSession(session);
         const linked = existingEntries.some(item => item.sourceWeeklyPlanId === plan.id && item.sourceWeeklySessionId === session.id);
+        const normalizedName = String(session.name || '').trim().toLocaleLowerCase('de');
+        const signature = session.date + '|' + normalizedName + '|' + type;
         const duplicate = existingEntries.some(item => item.date === session.date
-            && String(item.name || '').trim().toLocaleLowerCase('de') === String(session.name || '').trim().toLocaleLowerCase('de')
-            && item.type === type);
+            && String(item.name || '').trim().toLocaleLowerCase('de') === normalizedName
+            && item.type === type)
+            || (normalizedName && seenDraftEntries.has(signature));
         if (linked || duplicate) {
             skipped.push(session.name || 'Unbenannte Einheit');
             continue;
@@ -52,6 +56,7 @@ export function buildWeeklyPlanCalendarEntries(plan, existingEntries = []) {
             session.waterType ? 'Gewässer: ' + session.waterType : '',
             session.notes || ''
         ].filter(Boolean).join('\n');
+        if (normalizedName) seenDraftEntries.add(signature);
         additions.push({
             id: 'season-' + plan.id + '-' + session.id,
             date: session.date,
