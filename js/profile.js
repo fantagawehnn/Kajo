@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { supabase } from './supabase-client.js';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage } from './storage.js?v=8';
 
 const sections = [
   {
