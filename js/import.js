@@ -7,7 +7,7 @@
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=6';
+import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=8';
 import { inferSport, inferCategory } from './activities.js';
 import { toLocalDateString } from './utils.js';
 
