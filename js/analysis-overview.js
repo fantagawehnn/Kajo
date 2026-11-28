@@ -711,8 +711,11 @@ function renderTrendChart() {
     readiness: 'KAJO-Readiness aus den tatsächlich verfügbaren Recovery-Daten. Sie ist ein Orientierungswert, keine Diagnose.',
     performance: 'Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch.'
   };
+  const dependencyNote = ['recovery', 'readiness'].includes(item.key)
+    ? ' HRV fließt auch in die Readiness ein; beide Werte sind daher nicht unabhängig voneinander.'
+    : '';
   setText('analysis-overview-trend-note',
-    (descriptions[item.key] || item.label) + ' Fehlende Messwerte bleiben als Lücken sichtbar. Health-Markierungen zeigen ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V).');
+    (descriptions[item.key] || item.label) + dependencyNote + ' Fehlende Messwerte bleiben als Lücken sichtbar. Health-Markierungen zeigen ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V).');
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
