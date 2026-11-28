@@ -2744,6 +2744,7 @@ let localDataRevision = 0;
 let cloudSyncPending = false;
 let cloudSyncBlocked = false;
 let pendingCloudConflictReview = null;
+let cloudConflictApplyInFlight = false;
 let cloudSyncApplyingRemote = false;
 let cloudSyncWaiters = [];
 // Änderungen, die während der Kontoaktivierung gespeichert werden, werden
