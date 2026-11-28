@@ -21,6 +21,28 @@ const FILE_BATCH_SIZE = 25;
 const PERFORMANCE_BATCH_SIZE = 100;
 let activeImportId = null;
 
+let tusLoadPromise = null;
+function ensureTusLoaded() {
+    if (globalThis.tus?.Upload) return Promise.resolve(globalThis.tus);
+    if (!tusLoadPromise) {
+        tusLoadPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js';
+            script.async = true;
+            script.onload = () => globalThis.tus?.Upload
+                ? resolve(globalThis.tus)
+                : reject(new Error('Der resumierbare Upload-Dienst ist nicht verfügbar.'));
+            script.onerror = () => reject(new Error('Der resumierbare Upload-Dienst konnte nicht geladen werden.'));
+            document.head.appendChild(script);
+        }).catch(error => {
+            tusLoadPromise = null;
+            throw error;
+        });
+    }
+    return tusLoadPromise;
+}
+
+
 function setImportStatus(message, percent = null, kind = 'info') {
     const status = document.getElementById('garmin-archive-status');
     const progress = document.getElementById('garmin-archive-progress');
@@ -49,6 +71,7 @@ async function uploadJsonObject(objectPath, blob) {
         if (error) throw error;
         return;
     }
+    await ensureTusLoaded();
     if (typeof tus === 'undefined' || typeof tus.Upload !== 'function') {
         throw new Error('Der resumierbare Upload-Dienst ist für eine große JSON-Datei nicht verfügbar.');
     }
