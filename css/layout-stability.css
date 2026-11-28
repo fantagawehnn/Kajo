@@ -151,10 +151,6 @@ body {
     max-width: 100%;
   }
 
-  #app-main .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   #app-main .grid > * {
     min-width: 0;
   }
