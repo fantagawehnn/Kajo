@@ -51,7 +51,7 @@ test('sync-today isolates activity and health failures while preserving lock-los
 });
 
 test('scheduled background sync refreshes overnight health data and activities in Berlin local time', () => {
-  assert.match(source, /function dateInTimeZone\(date, timeZone\)/);
+  assert.match(source, /function dateInTimeZone\\(date: Date, timeZone: string\\)/);
   assert.match(source, /dateInTimeZone\(new Date\(\), "Europe\/Berlin"\)/);
   const start = source.indexOf('if (action === "background-sync")');
   const end = source.indexOf('\n    const authHeader', start);
