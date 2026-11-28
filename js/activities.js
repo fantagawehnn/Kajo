@@ -1203,13 +1203,16 @@ function renderActivityRouteMap(activity) {
         return;
     }
     if (!globalThis.L) {
-        panel.classList.remove('hidden');
-        panel.innerHTML = '<div class="activity-detail-section-heading"><h3>GPS-Strecke</h3></div><p class="activity-detail-data-status">Kartenansicht wird geladen …</p>';
+        // Die Kartenbibliothek wird erst bei Bedarf geladen. Bis sie bereit ist,
+        // bleibt der Kartenbereich verborgen; die übrigen Aktivitätsdetails
+        // werden dadurch nicht verzögert.
+        panel.classList.add('hidden');
+        panel.innerHTML = '';
         void ensureLeafletLoaded()
-            .then(() => renderActivityRouteMap(activity))
-            .catch(error => {
-                panel.innerHTML = '<div class="activity-detail-section-heading"><h3>GPS-Strecke</h3></div><p class="activity-detail-data-status">' + escapeHtml(error.message || 'Kartenansicht nicht verfügbar.') + '</p>';
-            });
+            .then(() => {
+                if (state.selectedActivityForModal === activity) renderActivityRouteMap(activity);
+            })
+            .catch(error => console.warn('GPS-Kartenansicht konnte nicht geladen werden:', error));
         return;
     }
     if (state.activityRouteMap) {
