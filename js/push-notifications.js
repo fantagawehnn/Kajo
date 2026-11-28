@@ -60,6 +60,8 @@ function repeatForDays(days) {
 
 function renderSchedules() {
   const list = $("kajo-reminders-list");
+  const count = $("kajo-reminders-count");
+  if (count) count.textContent = String(loadedSchedules.length);
   if (!list) return;
   if (!loadedSchedules.length) {
     list.innerHTML = '<div class="rounded-xl border border-dashed border-slate-700 p-4 text-xs text-slate-500">Noch keine eigenen Erinnerungen angelegt.</div>';
@@ -161,8 +163,8 @@ export async function sendKajoPushTest() {
   try {
     if (!("Notification" in window) || Notification.permission !== "granted") throw new Error("Aktiviere zuerst die Benachrichtigungsfreigabe.");
     const registration = await navigator.serviceWorker.ready;
-    await registration.showNotification("KAJO · Alles bereit", {
-      body: "Deine persönlichen Erinnerungen erscheinen hier im KAJO-Design.",
+    await registration.showNotification("Zeit für deinen Check-in", {
+      body: "Wie fühlst du dich heute? Nimm dir zwei Minuten für deinen Tages-Check-in.",
       icon: "./icons/kajo-icon.svg",
       badge: "./icons/kajo-icon.svg",
       tag: "kajo-test-notification",
