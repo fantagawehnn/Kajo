@@ -21,6 +21,16 @@ function base64ToUint8Array(base64) {
   return output;
 }
 
+
+function sameApplicationServerKey(subscription, configuredKey) {
+  const existingKey = subscription?.options?.applicationServerKey;
+  if (!existingKey) return null;
+  const existing = new Uint8Array(existingKey);
+  const configured = base64ToUint8Array(configuredKey);
+  if (existing.length !== configured.length) return false;
+  return existing.every((byte, index) => byte === configured[index]);
+}
+
 async function currentUser() {
   if (!supabase) throw new Error("Die Cloud-Verbindung ist nicht eingerichtet.");
   const { data, error } = await supabase.auth.getUser();
@@ -102,10 +112,27 @@ export async function enableKajoPush() {
     if (permission !== "granted") throw new Error(permission === "denied" ? "Bitte erlaube Benachrichtigungen in den Geräteeinstellungen." : "Die Benachrichtigungsfreigabe wurde nicht erteilt.");
     const user = await currentUser();
     const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: base64ToUint8Array(KAJO_VAPID_PUBLIC_KEY)
-    });
+    let subscription = await registration.pushManager.getSubscription();
+    const oldEndpoint = subscription?.endpoint || null;
+
+    if (subscription) {
+      const keyMatches = sameApplicationServerKey(subscription, KAJO_VAPID_PUBLIC_KEY);
+      if (keyMatches === null) {
+        throw new Error("Der vorhandene Push-Schlüssel kann nicht geprüft werden. Melde dieses Gerät bitte einmal über „Push deaktivieren“ ab und aktiviere Push anschließend erneut.");
+      }
+      if (!keyMatches) {
+        const removed = await subscription.unsubscribe();
+        if (!removed) throw new Error("Das alte Push-Abonnement konnte nicht erneuert werden. Bitte versuche es erneut.");
+        subscription = null;
+      }
+    }
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: base64ToUint8Array(KAJO_VAPID_PUBLIC_KEY)
+      });
+    }
     const json = subscription.toJSON();
     const record = {
       user_id: user.id,
@@ -116,6 +143,13 @@ export async function enableKajoPush() {
     };
     const { error } = await supabase.from("kajo_push_subscriptions").upsert(record, { onConflict: "endpoint" });
     if (error) throw error;
+    // Remove only this user's previous endpoint, and only after the new subscription
+    // is safely stored. Reminder schedules are deliberately left untouched.
+    if (oldEndpoint && oldEndpoint !== json.endpoint) {
+      const { error: cleanupError } = await supabase.from("kajo_push_subscriptions")
+        .delete().eq("endpoint", oldEndpoint).eq("user_id", user.id);
+      if (cleanupError) console.warn("Altes KAJO-Push-Abonnement konnte nicht bereinigt werden.");
+    }
     setStatus("Dieses Gerät ist jetzt für KAJO-Push registriert.", "is-ready");
     await renderKajoPushSettings();
   } catch (error) {
