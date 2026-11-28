@@ -25,7 +25,7 @@ const COLORS = { load: '#D32F2F', recovery: '#1E88E5', performance: '#39C98A', h
 let trendChart = null;
 let formChart = null;
 let activityChart = null;
-let selectedMetrics = new Set(['load', 'recovery']);
+let selectedMetrics = new Set(['load']);
 let healthMarkersVisible = true;
 let activityMeasure = 'duration';
 function sourceHero(domain) {
@@ -629,88 +629,102 @@ function renderDataAvailability(dates) {
 function renderTrendChart() {
   const canvas = document.getElementById('analysis-overview-trend-chart');
   if (!canvas) return;
-  if (typeof Chart !== 'function') { setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true); return; }
-  if (trendChart) trendChart.destroy();
+  if (typeof Chart !== 'function') {
+    setChartEmptyState(canvas, 'Die Diagrammbibliothek konnte nicht geladen werden. Bitte lade KAJO erneut.', true);
+    return;
+  }
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
+
   const dates = rangeDates(currentRange());
-  const labels = dates.map(dateLabel);
   const series = buildSeries(dates);
-  const datasets = series.map(item => {
-    const indexed = toRelativeIndex(item.raw);
-    return {
-      label: item.label,
-      data: indexed.values,
-      rawValues: item.raw,
-      baseline: indexed.baseline,
-      unit: item.unit,
-      borderColor: item.color,
-      backgroundColor: item.color,
-      borderWidth: 2.2,
-      tension: .22,
-      pointRadius: context => valid(context.raw) ? 2.5 : 0,
-      pointHoverRadius: 4,
-      pointHitRadius: 7,
-      spanGaps: false,
-      fill: false,
-      hidden: !selectedMetrics.has(item.key)
-    };
-  });
-  const hasValues = datasets.some(dataset => dataset.data.some(valid) && !dataset.hidden);
+  const selectedKey = [...selectedMetrics][0] || 'load';
+  const item = series.find(entry => entry.key === selectedKey) || series[0];
+  const values = item.raw.map(value => valid(value) ? Number(value) : null);
+  const hasValues = values.some(valid);
+  const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
+
   if (!hasValues) {
-    setChartEmptyState(canvas, 'Für die ausgewählten Kennzahlen liegen im gewählten Zeitraum keine Messwerte vor.', true);
+    setChartEmptyState(canvas, 'Für ' + item.label + ' liegen im gewählten Zeitraum keine auswertbaren Messwerte vor.', true);
     renderHealthMarkers(dates);
-    setText('analysis-overview-trend-note', 'Das Diagramm bleibt bewusst ohne künstliche Nullwerte. Wähle einen längeren Zeitraum oder eine andere Kennzahl, sofern dafür Daten vorliegen.');
+    setText('analysis-overview-trend-note', 'Wähle einen längeren Zeitraum oder eine andere Kennzahl. Fehlende Werte werden nicht ergänzt.');
     updateMetricSwitch();
     return;
   }
+
   setChartEmptyState(canvas, '', false);
-  const textColor = cssColor('--kajo-text-secondary', '#94a3b8');
   trendChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: { labels, datasets },
+    data: {
+      labels: dates.map(dateLabel),
+      datasets: [{
+        label: item.label,
+        data: values,
+        borderColor: item.color,
+        backgroundColor: 'rgba(101,213,195,.10)',
+        borderWidth: 2.5,
+        tension: .3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHitRadius: 9,
+        pointBackgroundColor: item.color,
+        fill: true,
+        spanGaps: false
+      }]
+    },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        title: { display: !hasValues, text: 'Keine auswertbaren Messwerte im gewählten Zeitraum', color: textColor, font: { size: 11, weight: 'normal' } },
-        tooltip: { callbacks: {
-          title: items => items.length ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE') : '',
-          label: context => {
-            const dataset = context.dataset;
-            const raw = dataset.rawValues?.[context.dataIndex];
-            const index = context.parsed.y;
-            if (!valid(raw) || !valid(index)) return dataset.label + ': keine Messung';
-            const change = Number(index) - 100;
-            const sign = change > 0 ? '+' : '';
-            return dataset.label + ': ' + fmt(raw) + (dataset.unit ? ' ' + dataset.unit : '') +
-              ' · ' + sign + fmt(change) + ' % zum ersten Messwert';
+        tooltip: {
+          displayColors: false,
+          callbacks: {
+            title: items => items.length
+              ? new Date(dates[items[0].dataIndex] + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+              : '',
+            label: context => item.label + ': ' + fmt(context.parsed.y) + (item.unit ? ' ' + item.unit : '')
           }
-        } }
+        }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 9, maxRotation: 0 } },
-        y: { grid: { color: 'rgba(148,163,184,.12)' }, ticks: { color: textColor, maxTicksLimit: 5 }, title: { display: true, text: 'Index · erster Messwert = 100', color: textColor, font: { size: 9 } } }
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: textColor, maxTicksLimit: 7, maxRotation: 0, autoSkip: true }
+        },
+        y: {
+          beginAtZero: false,
+          grid: { color: 'rgba(148,163,184,.09)', drawTicks: false },
+          border: { display: false },
+          ticks: { color: textColor, maxTicksLimit: 5, padding: 9 },
+          title: { display: Boolean(item.unit), text: item.unit, color: textColor, font: { size: 10, weight: 'normal' } }
+        }
       }
     }
   });
+
   renderHealthMarkers(dates);
-  const healthNote = 'Health zeigt ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V), keinen Score. Fehlende Einträge werden nicht als gesund interpretiert.';
+  const descriptions = {
+    load: 'Tägliche Trainingsbelastung gemäß dem im Zeitraum verwendeten Load-Modell.',
+    recovery: 'Garmin-HRV. Berücksichtigt werden nur vergleichbare Messwerte derselben Quelle und Messmethode.',
+    readiness: 'KAJO-Readiness aus den tatsächlich verfügbaren Recovery-Daten. Sie ist ein Orientierungswert, keine Diagnose.',
+    performance: 'Garmin-VO₂max ist ein Schätzwert und nicht automatisch paddelspezifisch.'
+  };
   setText('analysis-overview-trend-note',
-    'Jede Reihe wird im gewählten Zeitraum auf ihren ersten gültigen Messwert = 100 normiert. Die HRV-Reihe berücksichtigt nur Werte mit übereinstimmender Quelle, Messmethode und Einheit. Die Linien zeigen relative Veränderungen innerhalb der jeweiligen Kennzahl; ihre Höhe ist nicht dimensionsübergreifend vergleichbar. Im Tooltip bleibt zusätzlich der Originalwert sichtbar. Readiness ist ein zusammengesetzter Orientierungswert aus verfügbaren Recovery-Domänen und enthält unter anderem physiologische Daten wie HRV; HRV und Readiness sind deshalb keine unabhängigen Messgrößen. Fehlende Readiness-Tage bedeuten, dass die Mindestdatenanforderungen nicht erfüllt waren. Garmin-VO₂max ist eine Schätzung; das Garmin-Aktivitätsprofil bestätigt nicht die tatsächlich ausgeübte Sportart und ist daher nicht automatisch paddelspezifisch. ' + healthNote);
+    (descriptions[item.key] || item.label) + ' Fehlende Messwerte bleiben als Lücken sichtbar. Health-Markierungen zeigen ausschließlich dokumentierte Erkrankungen (K) und Verletzungen (V).');
   updateMetricSwitch();
 }
 export function setAnalysisOverviewMetric(metric) {
-  if (!['load', 'recovery', 'performance', 'health'].includes(metric)) return;
+  if (!['load', 'recovery', 'readiness', 'performance', 'health'].includes(metric)) return;
   if (metric === 'health') {
     healthMarkersVisible = !healthMarkersVisible;
     renderHealthMarkers(rangeDates(currentRange()));
     updateMetricSwitch();
     return;
   }
-  if (selectedMetrics.has(metric)) {
-    if (selectedMetrics.size === 1) return;
-    selectedMetrics.delete(metric);
-  } else selectedMetrics.add(metric);
+  selectedMetrics.clear();
+  selectedMetrics.add(metric);
   renderTrendChart();
 }
 function getActivitiesInRange(dates) {
@@ -932,6 +946,14 @@ function bindAdvancedAnalysisCharts() {
   advanced.addEventListener('toggle', () => {
     if (!advanced.open) return;
     requestAnimationFrame(() => {
+      const dates = rangeDates(currentRange());
+      renderDataAvailability(dates);
+      renderReadinessBreakdown(dates);
+      renderFitnessRecoveryContext(dates);
+      renderTrendObservations(dates);
+      renderHealthEventContext(dates);
+      renderNextDayContext(dates);
+      renderLoadRecoveryAssociation(dates);
       renderFormTrendChart();
       renderIntensityDistribution();
     });
@@ -940,16 +962,7 @@ function bindAdvancedAnalysisCharts() {
 export function renderAnalysisOverview() {
   bindAdvancedAnalysisCharts();
   for (const domain of ['load', 'recovery', 'performance', 'health']) renderCircle(domain);
-  renderDataAvailability(rangeDates(currentRange()));
-  renderReadinessBreakdown(rangeDates(currentRange()));
-  renderFitnessRecoveryContext(rangeDates(currentRange()));
-  renderTrendObservations(rangeDates(currentRange()));
-  renderHealthEventContext(rangeDates(currentRange()));
-  renderNextDayContext(rangeDates(currentRange()));
-  renderLoadRecoveryAssociation(rangeDates(currentRange()));
   renderTrendChart();
-  renderFormTrendChart();
   renderActivityChart();
-  renderIntensityDistribution();
   renderPeriodSummary();
 }
