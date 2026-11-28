@@ -40,10 +40,16 @@ function renderLoadSourceNote(timeline) {
     note.textContent = (descriptions[mode] || 'Belastungsquelle derzeit nicht eindeutig zuordenbar. Belastungswerte verschiedener Berechnungsmethoden sind nicht direkt vergleichbar.') + coverageText;
 }
 
+let lastMainLoadChartRender = null;
+
 export function renderMainLoadChart(timeline, timeframe) {
     const canvas = document.getElementById('intervalsLoadChart');
     if (!canvas) return;
     renderLoadSourceNote(timeline);
+    // Navigation between analysis subpages must not rebuild an unchanged chart.
+    if (state.mainChartInstance && state.mainChartInstance.canvas === canvas
+        && lastMainLoadChartRender?.timeline === timeline
+        && lastMainLoadChartRender?.timeframe === timeframe) return;
     if (!timeline || !timeline.length) {
         if (state.mainChartInstance) state.mainChartInstance.destroy();
         const hasGarmin = state.rawActivities.some(a => a.source === 'garmin' || a.garminData || a.garminFitImported || (Array.isArray(a.sources) && a.sources.includes('garmin')));
@@ -96,6 +102,7 @@ onHover:(event,els,chart)=>{const active=chart.getElementsAtEventForMode(event,'
             }
         }
     });
+    lastMainLoadChartRender = { timeline, timeframe };
 }
 
 /**
