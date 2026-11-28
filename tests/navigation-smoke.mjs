@@ -358,14 +358,14 @@ assert.ok(html.includes('id="analysis-subpage-overview"'), 'analysis has a dedic
 assert.ok(html.includes('class="kajo-analysis-circles"'), 'overview begins with the four agreed metric circles');
 assert.ok(['load','recovery','performance','health'].every(id => html.includes('id="overview-' + id + '-ring"')), 'overview renders load, recovery, fitness and health circles');
 assert.ok(['Load','Recovery','Fitness','Health'].every(label => html.includes('>' + label + '</strong>')), 'overview uses the four agreed performance dimensions');
-assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has a combined four-dimension trend chart');
-assert.ok(html.includes('data-overview-metric="health"'), 'Health remains selectable but is explicitly marked as unavailable');
+assert.ok(html.includes('id="analysis-overview-trend-chart"'), 'overview has a focused single-metric trend chart');
+assert.ok(html.includes('data-overview-metric="health"'), 'Health event markers can be toggled independently of the selected metric');
 assert.ok(html.includes('id="analysis-overview-activity-chart"') && html.includes('data-overview-activity-measure="sessions"'), 'sport distribution supports duration and session count');
 assert.ok(html.includes('id="analysis-overview-intensity-chart"'), 'overview includes heart-rate intensity distribution');
 assert.ok(!html.includes('<h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Analyse</h1>'), 'overview has no redundant Analyse page heading');
 assert.ok(!html.includes('id="analysis-overview-detail-content"'), 'overview keeps detailed analysis in the four dedicated subpages');
-assert.ok(overviewModule.includes('setAnalysisOverviewMetric') && overviewModule.includes('selectedMetrics = new Set'), 'overview exposes multi-series toggles with all currently supported series selected initially');
-assert.ok(overviewModule.includes('function toRelativeIndex') && overviewModule.includes('baseline: Number(baseline)'), 'overview normalizes supported series to a relative index');
+assert.ok(overviewModule.includes('setAnalysisOverviewMetric') && overviewModule.includes("selectedMetrics = new Set(['load'])") && overviewModule.includes('selectedMetrics.clear()'), 'overview selects one metric at a time and starts with Load');
+assert.ok(overviewModule.includes('data: values') && overviewModule.includes('title: { display: Boolean(item.unit)'), 'overview plots original values with the selected metric unit on its own axis');
 assert.ok(overviewModule.includes("import { calculateReadiness } from './readiness.js?v=3';") && overviewModule.includes("key: 'readiness', label: 'Recovery · Readiness'") && overviewModule.includes('result?.enoughData'), 'overview plots only valid daily readiness scores alongside HRV');
 assert.ok(overviewModule.includes('HRV und Readiness sind deshalb keine unabhängigen Messgrößen'), 'overview explains the shared inputs behind HRV and readiness');
 assert.ok(html.includes('id="analysis-readiness-breakdown"') && overviewModule.includes('function renderReadinessBreakdown') && overviewModule.includes('result.objective') && overviewModule.includes('result.subjective'), 'overview exposes the actual objective and subjective readiness inputs');
@@ -375,7 +375,7 @@ assert.ok(analysisOverview.includes('nextDate > todayKey()') && analysisOverview
 assert.ok(analysisOverview.includes('Garmin-HRV') && analysisOverview.includes('keine statistische Korrelation') && analysisOverview.includes('Fehlende HRV- oder Readiness-Werte bleiben offen'), 'lagged context distinguishes source data, missing values and causal limits');
 assert.ok(analysisOverview.includes('Gleicher Kalendertag') && analysisOverview.includes('keinen ursächlichen Zusammenhang') && analysisOverview.includes('Garmin-HRV'), 'health context reports same-day source values without implying causality');
 assert.ok(overviewModule.includes('Physiologie 40 %') && overviewModule.includes('Schlaf 30 %') && overviewModule.includes('subjektives Befinden 30 %'), 'overview explains the established readiness domain weights');
-assert.ok(overviewModule.includes('spanGaps: true') && overviewModule.includes('borderDash: context => context.p1DataIndex - context.p0DataIndex > 1'), 'overview marks intervals spanning missing-data gaps with a dashed segment');
+assert.ok(overviewModule.includes('spanGaps: false'), 'overview keeps missing measurements visible as gaps rather than connecting across them');
 assert.ok(overviewModule.includes('getSportsCatalog'), 'activity chart reuses configured sport colors');
 assert.ok(overviewModule.includes("document.getElementById('analysis-' + domain + '-hero-value')"), 'overview reads the existing domain hero values');
 assert.ok(overviewModule.includes('Health zeigt ausschließlich dokumentierte Erkrankungen') && overviewModule.includes('renderHealthMarkers') && overviewModule.includes("['sick', 'injured']"), 'Health shows only documented illness and injury events without fabricating a continuous availability score');
