@@ -3494,6 +3494,7 @@ function formatCloudConflictValue(value) {
 function showCloudConflictReview(reconciliation, context) {
     if (!reconciliation?.conflictPaths?.length || !reconciliation.review) return false;
     pendingCloudConflictReview = { ...context, reconciliation };
+    document.getElementById('cloud-conflict-open-button')?.classList.remove('hidden');
     const host = document.getElementById('cloud-conflict-review-list');
     const count = document.getElementById('cloud-conflict-review-count');
     const confirmButton = document.getElementById('cloud-conflict-apply-button');
@@ -3552,6 +3553,9 @@ function updateCloudConflictApplyState() {
     const names = new Set([...host.querySelectorAll('input[type="radio"]')].map(input => input.name));
     button.disabled = [...names].some(name => !host.querySelector('input[name="' + name + '"]:checked'));
 }
+function reopenCloudConflictReview() {
+    if (pendingCloudConflictReview) showCloudConflictReview(pendingCloudConflictReview.reconciliation, pendingCloudConflictReview);
+}
 function closeCloudConflictReview() {
     const modal = document.getElementById('cloud-conflict-review-modal');
     modal?.classList.add('hidden');
@@ -3585,6 +3589,7 @@ async function applyCloudConflictChoices() {
         cloudSyncVersion = result.version;
         cloudSyncBlocked = false;
         pendingCloudConflictReview = null;
+        document.getElementById('cloud-conflict-open-button')?.classList.add('hidden');
         closeCloudConflictReview();
         setCloudSyncStatus('Konflikte geklärt. Die ausgewählten Versionen wurden synchronisiert.');
         setCloudTransferMessage('Die ausgewählten lokalen und zentralen Werte wurden zusammengeführt. Die Cloud-Synchronisierung ist wieder aktiv.');
@@ -4504,6 +4509,7 @@ if (supabase) {
 // ------------------------------------------------------------
 Object.assign(window, {
     closeCloudConflictReview,
+    reopenCloudConflictReview,
     applyCloudConflictChoices,
     openDailyHrActivityModal,
     closeDailyHrActivityModal,
