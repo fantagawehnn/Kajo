@@ -45,11 +45,14 @@ function transactionFinished(transaction) {
 /** Öffnet die lokale Datenbank einmalig pro App-Sitzung. */
 export function openLocalDatabase() {
     if (!('indexedDB' in window)) {
-        return Promise.reject(new Error('Dieser Browser unterstützt IndexedDB nicht.'));
+        const error = new Error('Dieser Browser unterstützt IndexedDB nicht.');
+        error.name = 'IndexedDBUnavailableError';
+        return Promise.reject(error);
     }
 
     if (!databasePromise) {
-        databasePromise = new Promise((resolve, reject) => {
+        let blocked = false;
+        const openingPromise = new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
             request.onupgradeneeded = () => {
@@ -67,22 +70,32 @@ export function openLocalDatabase() {
 
             request.onsuccess = () => {
                 const db = request.result;
+                // Ein zuvor blockierter Open-Request kann nach dem Schließen
+                // eines anderen Tabs verspätet erfolgreich werden. Er gehört
+                // dann nicht mehr zur aktiven Öffnungs-Promise und wird geschlossen.
+                if (blocked) {
+                    db.close();
+                    return;
+                }
                 db.onversionchange = () => {
                     db.close();
-                    databasePromise = null;
+                    if (databasePromise === openingPromise) databasePromise = null;
                 };
                 resolve(db);
             };
 
             request.onerror = () => {
-                databasePromise = null;
+                if (databasePromise === openingPromise) databasePromise = null;
                 reject(request.error || new Error('Lokale Datenbank konnte nicht geöffnet werden.'));
             };
 
             request.onblocked = () => {
+                blocked = true;
+                if (databasePromise === openingPromise) databasePromise = null;
                 reject(new Error('Die lokale Datenbank ist noch in einem anderen Tab geöffnet. Bitte schließe weitere Endurance-AI-Tabs und versuche es erneut.'));
             };
         });
+        databasePromise = openingPromise;
     }
 
     return databasePromise;

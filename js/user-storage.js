@@ -60,10 +60,24 @@ export function createUserStorage(userId) {
                 try { return JSON.parse(raw); }
                 catch { throw new Error('Die benutzerspezifischen lokalen Daten ' + collection + ' sind beschädigt und konnten nicht gelesen werden.'); }
             }
-            try { return await getLocalCollection(storageKey); }
-            catch (error) {
-                console.warn('IndexedDB nicht verfügbar; kein lokaler Fallback-Eintrag vorhanden:', error);
-                return undefined;
+            try {
+                return await getLocalCollection(storageKey);
+            } catch (error) {
+                // Wenn der Browser IndexedDB überhaupt nicht unterstützt, kann
+                // dort auch keine frühere Sammlung liegen. localStorage bleibt
+                // dann der vollständige verfügbare Speicherweg.
+                if (error?.name === 'IndexedDBUnavailableError') return undefined;
+                // Ein fehlgeschlagener IndexedDB-Lesezugriff bedeutet nicht,
+                // dass die Sammlung leer ist: Sie kann ausschließlich dort liegen,
+                // etwa nachdem localStorage sein Speicherlimit erreicht hat.
+                // Deshalb muss die Kontoaktivierung sicher abbrechen.
+                const wrapped = new Error(
+                    'Die lokalen Daten "' + collection + '" konnten weder aus localStorage noch aus IndexedDB gelesen werden. ' +
+                    'Die Daten werden nicht als leer behandelt; bitte prüfe den Browser-Speicher und versuche es erneut.'
+                );
+                wrapped.name = 'UserStorageReadError';
+                wrapped.cause = error;
+                throw wrapped;
             }
         },
 

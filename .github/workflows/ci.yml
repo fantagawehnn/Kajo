@@ -101,6 +101,12 @@ jobs:
       - name: Run Supabase auth bootstrap tests
         run: node --experimental-default-type=module --test tests/auth-session-bootstrap.test.mjs
 
+      - name: Run user storage read failure tests
+        run: node --experimental-default-type=module --test tests/user-storage-read-failure.test.mjs
+
+      - name: Run IndexedDB open retry tests
+        run: node --experimental-default-type=module --test tests/local-db-open-retry.test.mjs
+
       - name: Run account storage activation race tests
         run: node --experimental-default-type=module --test tests/storage-activation-race.test.mjs
 
