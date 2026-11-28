@@ -625,7 +625,11 @@ export function saveSeasonPlanEditor(approve = false) {
         return false;
     }
     const status = byId('season-plan-status');
-    if (status) status.textContent = approve ? 'Freigegeben' : 'Entwurf gespeichert';
-    if (message) message.textContent = approve ? 'Saisonplan gespeichert und von dir freigegeben.' : 'Saisonplan als Entwurf gespeichert.';
+    if (status) status.textContent = plan.status === 'active' ? 'Freigegeben' : 'Entwurf';
+    if (message) message.textContent = approve
+        ? 'Saisonplan gespeichert und von dir freigegeben.'
+        : plan.status === 'active'
+            ? 'Saisonplan gespeichert. Die bestehende Freigabe bleibt erhalten, da keine Planungsdaten geändert wurden.'
+            : 'Saisonplan als Entwurf gespeichert.';
     return true;
 }
