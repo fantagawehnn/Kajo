@@ -63,6 +63,19 @@ test('blockiert widersprüchliche Änderungen am selben Feld', () => {
     assert.ok(result.conflicts.some(path => path.includes('displayName')));
 });
 
+test('wendet eine explizite lokale oder zentrale Konfliktentscheidung auf das betroffene Feld an', () => {
+    const base = { profile: { displayName: 'Alt' } };
+    const local = { profile: { displayName: 'Telefon' } };
+    const cloud = { profile: { displayName: 'Computer' } };
+    const path = 'profile.displayName';
+    const localChoice = mergeCloudSnapshots(base, local, cloud, { [path]: 'local' });
+    const cloudChoice = mergeCloudSnapshots(base, local, cloud, { [path]: 'cloud' });
+    assert.deepEqual(plain(localChoice.conflicts), []);
+    assert.deepEqual(plain(cloudChoice.conflicts), []);
+    assert.equal(localChoice.snapshot.profile.displayName, 'Telefon');
+    assert.equal(cloudChoice.snapshot.profile.displayName, 'Computer');
+});
+
 test('blockiert Löschen auf einem Gerät gegen Bearbeiten auf dem anderen', () => {
     const result = merge(
         { planned: [{ id: 'p1', title: 'Alt' }] },
