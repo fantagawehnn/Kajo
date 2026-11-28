@@ -3568,7 +3568,7 @@ async function applyCloudConflictChoices() {
     if (!pending || !host || !button || button.disabled) return;
     const resolutions = {};
     pending.reconciliation.conflictPaths.forEach((rawPath, index) => {
-        const path = rawPath.replace(/ \\(.*\\)$/, '');
+        const path = rawPath.replace(/ \(.*\)$/, '');
         const selected = host.querySelector('input[name="cloud-conflict-' + index + '"]:checked');
         if (selected) resolutions[path] = selected.value;
     });
