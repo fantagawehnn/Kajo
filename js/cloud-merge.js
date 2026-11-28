@@ -70,7 +70,7 @@ function itemKey(item) {
     return 'json:' + JSON.stringify(stable(item));
 }
 
-function mergeArray(base, local, cloud, hasBase, path, conflicts) {
+function mergeArray(base, local, cloud, hasBase, path, conflicts, resolutions = {}) {
     const baseArray = Array.isArray(base) ? base : [];
     const localArray = Array.isArray(local) ? local : [];
     const cloudArray = Array.isArray(cloud) ? cloud : [];
@@ -120,13 +120,14 @@ function mergeArray(base, local, cloud, hasBase, path, conflicts) {
         const b = baseMap.has(key) ? baseMap.get(key) : MISSING;
         const l = localMap.has(key) ? localMap.get(key) : MISSING;
         const c = cloudMap.has(key) ? cloudMap.get(key) : MISSING;
-        const value = mergeNode(b, l, c, hasBase && b !== MISSING, path + '[' + key + ']', conflicts);
+        const value = mergeNode(b, l, c, hasBase && b !== MISSING, path + '[' + key + ']', conflicts, resolutions);
         if (value !== MISSING && value !== undefined) merged.push(value);
     }
     return merged;
 }
 
-function mergeNode(base, local, cloud, hasBase, path, conflicts) {
+function mergeNode(base, local, cloud, hasBase, path, conflicts, resolutions = {}) {
+    if (Object.prototype.hasOwnProperty.call(resolutions, path)) return resolutions[path] === 'cloud' ? clone(cloud) : clone(local);
     if (hasBase) {
         if (equal(local, base)) return clone(cloud);
         if (equal(cloud, base)) return clone(local);
@@ -151,7 +152,7 @@ function mergeNode(base, local, cloud, hasBase, path, conflicts) {
     }
 
     if (Array.isArray(local) && Array.isArray(cloud)) {
-        return mergeArray(hasBase ? base : [], local, cloud, hasBase, path, conflicts);
+        return mergeArray(hasBase ? base : [], local, cloud, hasBase, path, conflicts, resolutions);
     }
 
     if (isObject(local) && isObject(cloud)) {
@@ -162,7 +163,7 @@ function mergeNode(base, local, cloud, hasBase, path, conflicts) {
             const b = Object.prototype.hasOwnProperty.call(baseObject, key) ? baseObject[key] : MISSING;
             const l = Object.prototype.hasOwnProperty.call(local, key) ? local[key] : MISSING;
             const c = Object.prototype.hasOwnProperty.call(cloud, key) ? cloud[key] : MISSING;
-            const value = mergeNode(b, l, c, hasBase && b !== MISSING, path ? path + '.' + key : key, conflicts);
+            const value = mergeNode(b, l, c, hasBase && b !== MISSING, path ? path + '.' + key : key, conflicts, resolutions);
             if (value !== MISSING && value !== undefined) result[key] = value;
         }
         return result;
@@ -172,7 +173,7 @@ function mergeNode(base, local, cloud, hasBase, path, conflicts) {
     return clone(local);
 }
 
-export function mergeCloudSnapshots(baseSnapshot, localSnapshot, cloudSnapshot) {
+export function mergeCloudSnapshots(baseSnapshot, localSnapshot, cloudSnapshot, resolutions = {}) {
     if (!localSnapshot || typeof localSnapshot !== 'object' || Array.isArray(localSnapshot)) {
         throw new Error('Der lokale KAJO-Datenstand ist ungültig.');
     }
@@ -187,7 +188,8 @@ export function mergeCloudSnapshots(baseSnapshot, localSnapshot, cloudSnapshot) 
         cloudSnapshot,
         hasBase,
         '',
-        conflicts
+        conflicts,
+        resolutions
     );
     return {
         snapshot,
