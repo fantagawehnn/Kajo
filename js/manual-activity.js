@@ -1,5 +1,5 @@
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=6';
+import { saveDataToLocalStorage } from './storage.js?v=8';
 import { getEnabledSportsCatalog, toLocalDateString, escapeHtml } from './utils.js';
 
 let pendingExercises = [];
