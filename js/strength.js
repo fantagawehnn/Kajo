@@ -4,7 +4,7 @@
 
 import { state } from './state.js';
 import { openCSVDetailsModal } from './activities.js?v=24';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage } from './storage.js?v=8';
 import { formatDateDDMMYY, escapeHtml, toLocalDateString } from './utils.js';
 import { extractStrengthRecords, groupStrengthRecords } from './strength-database.js?v=1';
 
