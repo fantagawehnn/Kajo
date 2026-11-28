@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { state, refreshAll } from './state.js';
-import { saveDataToLocalStorage } from './storage.js?v=5';
+import { saveDataToLocalStorage } from './storage.js?v=8';
 import { inferSport, inferCategory } from './activities.js';
 import { extractGarminVo2MaxRecords } from './garmin-performance-archive.js';
 import { SUPABASE_ANON_KEY } from './supabase-config.js';
