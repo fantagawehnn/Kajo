@@ -1,4 +1,4 @@
-import { getUserLocalSetting, setUserLocalSetting } from './storage.js?v=6';
+import { getUserLocalSetting, setUserLocalSetting } from './storage.js?v=8';
 
 export const ACTIVITY_DELETION_OUTBOX_KEY = 'activityDeletionOutbox';
 
