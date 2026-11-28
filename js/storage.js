@@ -236,7 +236,7 @@ export async function loadStateForUser(userId) {
     activeUserStorage = userStorage;
     activeUserId = userId;
 
-    const entries = Object.entries(COLLECTION_KEYS).filter(([collection]) => collection !== 'garminTelemetry');
+    const entries = Object.entries(COLLECTION_KEYS).filter(([collection]) => !['garminTelemetry', 'disabledIntervals', 'strength', 'strengthPBs', 'supplements'].includes(collection));
     const values = await Promise.all(entries.map(async ([collection, stateKey]) => [
         stateKey,
         await userStorage.getCollection(collection)
@@ -279,22 +279,40 @@ export async function loadStateForUser(userId) {
  * Der Aufruf ist konto- und generationengebunden, damit ein langsamer
  * IndexedDB-Lesevorgang bei einem Accountwechsel keine fremden Daten einträgt.
  */
-export async function loadGarminTelemetryForUser(expectedUserId = activeUserId) {
+export async function loadDeferredStateForUser(expectedUserId = activeUserId) {
     const storageForUser = activeUserStorage;
     const userIdForStorage = activeUserId;
     const generation = activeStorageGeneration;
     if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) return false;
 
-    const telemetry = await storageForUser.getCollection('garminTelemetry');
+    // Diese Sammlungen werden nicht für das erste Dashboard benötigt.
+    // Sie werden nach dem ersten lokalen Rendern, aber noch vor dem
+    // Cloud-Abgleich geladen, damit Konfliktprüfung und Migration vollständig bleiben.
+    const entries = [
+        ['garminTelemetry', 'garminTelemetryStore'],
+        ['disabledIntervals', 'disabledIntervalsActivities'],
+        ['strength', 'strengthLogs'],
+        ['strengthPBs', 'strengthPBs'],
+        ['supplements', 'supplements']
+    ];
+    const values = await Promise.all(entries.map(async ([collection, stateKey]) => [
+        stateKey, await storageForUser.getCollection(collection)
+    ]));
     if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser
         || activeStorageGeneration !== generation) return false;
 
-    state.garminTelemetryStore = telemetry && typeof telemetry === 'object' && !Array.isArray(telemetry)
-        ? telemetry : {};
+    const loaded = Object.fromEntries(values);
+    state.garminTelemetryStore = loaded.garminTelemetryStore && typeof loaded.garminTelemetryStore === 'object'
+        && !Array.isArray(loaded.garminTelemetryStore) ? loaded.garminTelemetryStore : {};
     state.rawActivities = restoreGarminTelemetry(
         Array.isArray(state.rawActivities) ? state.rawActivities : [],
         state.garminTelemetryStore
     );
+    state.disabledIntervalsActivities = Array.isArray(loaded.disabledIntervalsActivities)
+        ? loaded.disabledIntervalsActivities : [];
+    state.strengthLogs = Array.isArray(loaded.strengthLogs) ? loaded.strengthLogs : [];
+    state.strengthPBs = Array.isArray(loaded.strengthPBs) ? loaded.strengthPBs : [];
+    state.supplements = Array.isArray(loaded.supplements) ? loaded.supplements : [];
     return true;
 }
 
