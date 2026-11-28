@@ -10025,3 +10025,47 @@ body.kajo-modal-open { overflow: hidden !important; }
     filter: none !important;
   }
 }
+
+/* KAJO Push – Premium performance notification experience */
+#settings-modal .kajo-notifications-page .kajo-settings-group-heading{margin-bottom:14px}
+#settings-modal .kajo-notifications-shell{display:grid;gap:16px;padding:clamp(16px,3vw,24px);background:radial-gradient(ellipse at 92% 0%,rgba(181,43,53,.12),transparent 36%),var(--kajo-surface,#101925)}
+#settings-modal .kajo-notifications-topline{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+#settings-modal .kajo-notifications-topline h3{margin:3px 0 5px;color:var(--kajo-text,#f4f7fa);font-size:17px;font-weight:850;letter-spacing:-.025em}
+#settings-modal .kajo-notifications-topline p:not(.kajo-settings-eyebrow){max-width:520px;color:var(--kajo-muted,#91a0b4);font-size:11px;line-height:1.55}
+#settings-modal .kajo-notifications-mark{width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto;border:1px solid rgba(181,43,53,.3);border-radius:14px;background:linear-gradient(145deg,rgba(181,43,53,.2),rgba(181,43,53,.06));color:#ff858d}
+#settings-modal .kajo-notifications-mark svg{width:19px;height:19px}
+#settings-modal .kajo-notification-preview{position:relative;max-width:560px;padding:14px 15px 12px;border:1px solid rgba(255,255,255,.1);border-radius:15px;background:linear-gradient(135deg,#202a36,#151e29);box-shadow:0 12px 30px rgba(0,0,0,.18);color:#f5f7fa}
+#settings-modal .kajo-notification-preview-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+#settings-modal .kajo-notification-preview-head img{width:27px;height:27px;border-radius:8px}
+#settings-modal .kajo-notification-preview-head span{display:grid;gap:1px}
+#settings-modal .kajo-notification-preview-head strong{font-size:10px;letter-spacing:.08em}
+#settings-modal .kajo-notification-preview-head small{color:#9eabb9;font-size:8px;letter-spacing:.09em}
+#settings-modal .kajo-notification-preview-head>svg{width:17px;height:17px;margin-left:auto;color:#9eabb9}
+#settings-modal .kajo-notification-preview-title{display:block;font-size:12px;font-weight:800;letter-spacing:-.01em}
+#settings-modal .kajo-notification-preview>p{margin-top:4px;color:#d0d7df;font-size:11px;line-height:1.45}
+#settings-modal .kajo-notification-preview-foot{display:block;margin-top:12px;color:#8492a1;font-size:7px;font-weight:750;letter-spacing:.1em}
+#settings-modal .kajo-push-status{min-height:42px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.035);border-color:rgba(148,163,184,.16);font-size:11px}
+#settings-modal .kajo-push-status-dot{width:8px;height:8px;box-shadow:none}
+#settings-modal .kajo-push-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+#settings-modal .kajo-push-actions button{min-height:38px;border-radius:10px;font-size:10px}
+#settings-modal .kajo-push-actions .kajo-settings-primary{padding-inline:15px}
+#settings-modal .kajo-push-actions .kajo-settings-secondary{background:rgba(148,163,184,.09);border-color:rgba(148,163,184,.2)}
+#settings-modal .kajo-settings-tertiary{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 10px;color:#8f9cac;background:transparent;border:1px solid transparent}
+#settings-modal .kajo-settings-tertiary:hover{color:#fca5a5;background:rgba(248,113,113,.07)}
+#settings-modal .kajo-settings-tertiary svg{width:14px;height:14px}
+#settings-modal .kajo-push-hint{border-radius:10px;padding:10px 12px;background:rgba(96,165,250,.055);border-color:rgba(96,165,250,.13)}
+#settings-modal .kajo-reminders-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#settings-modal .kajo-reminders-heading h4{margin-top:3px;color:var(--kajo-text,#f4f7fa);font-size:14px;font-weight:800}
+#settings-modal .kajo-reminders-heading p:not(.kajo-settings-eyebrow){margin-top:3px;color:var(--kajo-muted,#91a0b4);font-size:10px;line-height:1.45}
+#settings-modal .kajo-reminders-count{display:grid;place-items:center;min-width:28px;height:28px;padding:0 8px;border:1px solid rgba(181,43,53,.25);border-radius:9px;background:rgba(181,43,53,.1);color:#ff9da3;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums}
+#settings-modal .kajo-reminder-form{padding:16px;border-radius:13px;background:rgba(5,12,20,.34);border-color:rgba(148,163,184,.15)}
+#settings-modal .kajo-reminder-item{padding:13px;border-radius:12px;background:rgba(255,255,255,.025);border-color:rgba(148,163,184,.14)}
+#settings-modal .kajo-reminder-item-icon{background:rgba(181,43,53,.13);color:#ff8c94}
+#settings-modal .kajo-reminder-actions button{background:rgba(148,163,184,.07);border-color:rgba(148,163,184,.17)}
+html[data-theme="light"] #settings-modal .kajo-notifications-shell{background:radial-gradient(ellipse at 92% 0%,rgba(181,43,53,.07),transparent 36%),#fff}
+html[data-theme="light"] #settings-modal .kajo-notifications-topline h3,html[data-theme="light"] #settings-modal .kajo-reminders-heading h4{color:#17212b}
+html[data-theme="light"] #settings-modal .kajo-notifications-topline p:not(.kajo-settings-eyebrow),html[data-theme="light"] #settings-modal .kajo-reminders-heading p:not(.kajo-settings-eyebrow){color:#687788}
+html[data-theme="light"] #settings-modal .kajo-push-status{background:#f3f6f9;border-color:#e0e6ec}
+html[data-theme="light"] #settings-modal .kajo-reminder-form{background:#f7f9fb;border-color:#e0e6ec}
+html[data-theme="light"] #settings-modal .kajo-reminder-item{background:#f9fafb;border-color:#e3e8ee}
+@media(max-width:600px){#settings-modal .kajo-notifications-shell{gap:13px}#settings-modal .kajo-notifications-topline h3{font-size:15px}#settings-modal .kajo-push-actions{display:grid;grid-template-columns:1fr 1fr}#settings-modal .kajo-push-actions .kajo-settings-primary{grid-column:1/-1}#settings-modal .kajo-push-actions .kajo-settings-tertiary{grid-column:1/-1;min-height:30px}}
