@@ -49,3 +49,16 @@ test('sync-today isolates activity and health failures while preserving lock-los
   assert.match(handler, /Synchronisierungssperre/i);
   assert.match(handler, /status: rateLimited \? "rate_limited" : "error"/);
 });
+
+test('scheduled background sync refreshes overnight health data and activities in Berlin local time', () => {
+  assert.match(source, /function dateInTimeZone\(date: Date, timeZone: string\)/);
+  assert.match(source, /dateInTimeZone\(new Date\(\), "Europe\/Berlin"\)/);
+  const start = source.indexOf('if (action === "background-sync")');
+  const end = source.indexOf('\n    const authHeader', start);
+  const handler = source.slice(start, end);
+  assert.match(handler, /const yesterday = addUtcDays\(today, -1\)/);
+  assert.match(handler, /syncGarminHealthHistoryBatch\([\s\S]*?yesterday, today, true, true,[\s\S]*?"health_morning"/);
+  assert.match(handler, /syncGarminActivitiesAutomaticBatch/);
+  assert.ok(handler.indexOf("syncGarminHealthHistoryBatch") < handler.indexOf("syncGarminActivitiesAutomaticBatch"));
+  assert.match(handler, /garmin_rate_limited_during_health_sync/);
+});
