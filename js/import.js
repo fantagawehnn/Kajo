@@ -2,14 +2,36 @@
  * import.js – Datenimport
  *   - Intervals.icu Live-Sync (Aktivitäten + Wellness)
  *   - CSV-/FIT-Mehrfachimport inkl. Duplikat-Erkennung
- * `Papa` (PapaParse) und `FitParser` kommen als globale Objekte
- * von den CDN-Scripts in index.html.
+ * PapaParse und FitParser werden erst beim tatsächlichen Dateiimport geladen.
  * ============================================================ */
 
 import { state, refreshAll } from './state.js';
 import { saveDataToLocalStorage, getUserLocalSetting, setUserLocalSetting } from './storage.js?v=8';
 import { inferSport, inferCategory } from './activities.js';
 import { toLocalDateString } from './utils.js';
+
+const importLibraryPromises = new Map();
+function ensureImportLibrary(globalName, src) {
+    if (globalThis[globalName]) return Promise.resolve(globalThis[globalName]);
+    if (!importLibraryPromises.has(globalName)) {
+        const promise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = () => globalThis[globalName]
+                ? resolve(globalThis[globalName])
+                : reject(new Error(globalName + ' wurde geladen, ist aber nicht verfügbar.'));
+            script.onerror = () => reject(new Error('Die Import-Bibliothek ' + globalName + ' konnte nicht geladen werden.'));
+            document.head.appendChild(script);
+        }).catch(error => {
+            importLibraryPromises.delete(globalName);
+            throw error;
+        });
+        importLibraryPromises.set(globalName, promise);
+    }
+    return importLibraryPromises.get(globalName);
+}
+
 
 
 function crossSourceActivityMatch(a, b) {
@@ -723,6 +745,17 @@ export async function handleMultipleFileSelect(evt) {
     if (!files.length) return;
     const statusEl = document.getElementById('upload-status');
     statusEl.textContent = `${files.length} Datei(en) werden eingelesen …`;
+    const needsCsv = files.some(file => file.name.split('.').pop().toLowerCase() === 'csv');
+    const needsFit = files.some(file => file.name.split('.').pop().toLowerCase() === 'fit');
+    try {
+        await Promise.all([
+            ...(needsCsv ? [ensureImportLibrary('Papa', 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js')] : []),
+            ...(needsFit ? [ensureImportLibrary('FitParser', 'https://cdn.jsdelivr.net/npm/fit-file-parser@1.19.0/dist/fit-file-parser.min.js')] : [])
+        ]);
+    } catch (error) {
+        statusEl.textContent = 'Import konnte nicht gestartet werden: ' + (error.message || 'Bibliothek nicht verfügbar.');
+        return;
+    }
     let added = 0, duplicates = 0, failed = [], importedDates = [];
 
     for (const file of files) {
