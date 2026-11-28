@@ -5,6 +5,28 @@ import { SUPABASE_ANON_KEY } from './supabase-config.js';
 const BUCKET = 'garmin-exports';
 const PROJECT_ID = 'zgvargkfzgekokuisarv';
 const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
+
+let tusLoadPromise = null;
+function ensureTusLoaded() {
+    if (globalThis.tus?.Upload) return Promise.resolve(globalThis.tus);
+    if (!tusLoadPromise) {
+        tusLoadPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js';
+            script.async = true;
+            script.onload = () => globalThis.tus?.Upload
+                ? resolve(globalThis.tus)
+                : reject(new Error('Der resumierbare Upload-Dienst ist nicht verfügbar.'));
+            script.onerror = () => reject(new Error('Der resumierbare Upload-Dienst konnte nicht geladen werden.'));
+            document.head.appendChild(script);
+        }).catch(error => {
+            tusLoadPromise = null;
+            throw error;
+        });
+    }
+    return tusLoadPromise;
+}
+
 // Supabase Free projects have a global per-object limit of 50 MB.
 // Keep each stored part below that ceiling; the complete archive may be larger.
 const ARCHIVE_PART_BYTES = 40 * 1024 * 1024;
@@ -148,14 +170,11 @@ export async function uploadGarminExportArchive(event) {
         setStatus('Die ZIP-Datei überschreitet das aktuell unterstützte Limit von 512 MB.', null, 'error');
         return;
     }
-    if (typeof tus === 'undefined' || typeof tus.Upload !== 'function') {
-        setStatus('Der sichere Upload-Dienst konnte nicht geladen werden. Bitte lade KAJO neu.', null, 'error');
-        return;
-    }
-
     let importId = null;
     let storagePath = null;
     try {
+        setStatus('Upload-Dienst wird vorbereitet …');
+        await ensureTusLoaded();
         setStatus('Konto und Uploadberechtigung werden geprüft …');
         const { data: auth, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
