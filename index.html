@@ -179,6 +179,7 @@
                 <p id="cloud-transfer-message" class="text-xs text-slate-400">Prüfe den vorhandenen Cloud-Datensatz …</p>
                 <div class="flex flex-col gap-3 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
                     <button id="cloud-sync-manual-button" type="button" onclick="startManualCloudSync()" class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold">Jetzt synchronisieren</button>
+                    <button id="cloud-conflict-open-button" type="button" onclick="reopenCloudConflictReview()" class="hidden w-full sm:w-auto px-4 py-2.5 rounded-lg border border-amber-500/50 text-amber-200 hover:bg-amber-500/10 text-xs font-semibold">Konflikte ansehen</button>
                     <button id="cloud-sync-initial-button" type="button" onclick="openCloudInitialTransferConfirmation()" class="hidden px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Erstupload vorbereiten</button>
                 </div>
             </section>
