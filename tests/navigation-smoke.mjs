@@ -112,7 +112,7 @@ assert.ok(analysisUI.includes('Kein Eintrag') && analysisUI.includes('keinen urs
 assert.ok(analysisUI.includes("min:1,max:5") && analysisUI.includes("Schmerzen / Beschwerden (1–5)"), 'cycle relationship chart uses the documented five-point scale');
 assert.ok(analysisUI.includes("type='line';max=5;") && analysisUI.includes('fünfstufigen Skala (1–5)') && analysisUI.includes("key==='cycle'?' / 5'"), 'cycle trend chart uses the documented five-point scale consistently');
 assert.ok(css.includes('--recovery-metric-color') && css.includes('border-color:var(--recovery-metric-color'), 'recovery circles display their individual status color');
-assert.ok(analysisUI.includes('Garmin-Import noch nicht angebunden'), 'Body Battery import limitation is disclosed');
+assert.ok(analysisUI.includes('Body Battery, Garmin-Stress und SpO₂ werden in den Gesundheitsdaten als eigene Tagesverläufe angezeigt') && analysisUI.includes('nicht in die Recovery-Übersicht oder die Readiness-Berechnung ein'), 'Garmin health trends are distinguished from metrics used in the recovery and readiness calculations');
 assert.ok(html.includes('id="load-analysis-sources"'), 'load source methods have a separate comparison row');
 assert.ok(analysisUI.includes('Kein eigenständiges Datenfeld nachgewiesen'), 'Edwards TRIMP is not fabricated when no distinct field is present');
 assert.ok(!html.includes('id="training-history-title"'), 'Performance no longer embeds the training-load history panel');
