@@ -3437,10 +3437,25 @@ async function startManualCloudSync() {
 function cloudConflictValueAtPath(snapshot, conflictPath) {
     if (!snapshot) return undefined;
     const tokens = [];
-    String(conflictPath || '').replace(/([^.[\\]]+)|\\[([^\\]]+)\\]/g, (_, property, bracket) => {
-        tokens.push(property !== undefined ? { type: 'property', value: property } : { type: 'array', value: bracket });
-        return '';
-    });
+    let buffer = '';
+    let inArrayKey = false;
+    for (const character of String(conflictPath || '')) {
+        if (character === '[') {
+            if (buffer) tokens.push({ type: 'property', value: buffer });
+            buffer = '';
+            inArrayKey = true;
+        } else if (character === ']' && inArrayKey) {
+            tokens.push({ type: 'array', value: buffer });
+            buffer = '';
+            inArrayKey = false;
+        } else if (character === '.' && !inArrayKey) {
+            if (buffer) tokens.push({ type: 'property', value: buffer });
+            buffer = '';
+        } else {
+            buffer += character;
+        }
+    }
+    if (buffer) tokens.push({ type: inArrayKey ? 'array' : 'property', value: buffer });
     let value = snapshot;
     for (const token of tokens) {
         if (token.type === 'property') {
@@ -3448,8 +3463,9 @@ function cloudConflictValueAtPath(snapshot, conflictPath) {
             continue;
         }
         if (!Array.isArray(value)) return undefined;
-        const key = token.value.replace(/#duplicate:\\d+$/, '');
-        const duplicateMatch = token.value.match(/#duplicate:(\\d+)$/);
+        const duplicateAt = token.value.lastIndexOf('#duplicate:');
+        const duplicateIndex = duplicateAt >= 0 ? Number(token.value.slice(duplicateAt + 11)) : 1;
+        const key = duplicateAt >= 0 ? token.value.slice(0, duplicateAt) : token.value;
         const matches = value.filter(item => {
             if (key.startsWith('id:')) return String(item?.id) === key.slice(3);
             if (key.startsWith('garmin:')) return String(item?.garmin_activity_id) === key.slice(7);
@@ -3465,7 +3481,7 @@ function cloudConflictValueAtPath(snapshot, conflictPath) {
             }
             return 'json:' + JSON.stringify(item) === key;
         });
-        value = matches[duplicateMatch ? Number(duplicateMatch[1]) - 1 : 0];
+        value = matches[duplicateIndex - 1];
     }
     return value;
 }
