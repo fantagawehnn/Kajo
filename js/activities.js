@@ -5,7 +5,7 @@
 
 import { state, refreshAll } from './state.js';
 import { getActivityGroupMembers, getVisibleActivities, mergeActivityPair, unmergeActivityGroup } from './activity-groups.js?v=1';
-import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=6';
+import { saveDataToLocalStorage, saveActivitiesToLocalStorage } from './storage.js?v=8';
 import { formatDateDDMMYY, formatKm, getSportsCatalog, escapeHtml, toLocalDateString } from './utils.js';
 import { queueActivityDeletionTombstone } from './activity-deletions.js?v=1';
 import { renderActivityTelemetryChart, getActivityTelemetrySeries, focusActivityTelemetryPoint } from './charts.js';
