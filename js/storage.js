@@ -236,7 +236,7 @@ export async function loadStateForUser(userId) {
     activeUserStorage = userStorage;
     activeUserId = userId;
 
-    const entries = Object.entries(COLLECTION_KEYS);
+    const entries = Object.entries(COLLECTION_KEYS).filter(([collection]) => collection !== 'garminTelemetry');
     const values = await Promise.all(entries.map(async ([collection, stateKey]) => [
         stateKey,
         await userStorage.getCollection(collection)
@@ -244,12 +244,10 @@ export async function loadStateForUser(userId) {
     if (activeUserId !== userId || activeStorageGeneration !== loadGeneration) return null;
     const loaded = Object.fromEntries(values);
 
-    state.garminTelemetryStore = loaded.garminTelemetryStore && typeof loaded.garminTelemetryStore === 'object'
-        ? loaded.garminTelemetryStore : {};
-    state.rawActivities = restoreGarminTelemetry(
-        Array.isArray(loaded.rawActivities) ? loaded.rawActivities : [],
-        state.garminTelemetryStore
-    );
+    // Große Garmin-Rohzeitreihen werden separat nach dem ersten lokalen
+    // Rendern geladen. Die Aktivitätsliste bleibt dadurch beim Start kompakt.
+    state.garminTelemetryStore = {};
+    state.rawActivities = Array.isArray(loaded.rawActivities) ? loaded.rawActivities : [];
     state.disabledIntervalsActivities = Array.isArray(loaded.disabledIntervalsActivities) ? loaded.disabledIntervalsActivities : [];
     state.plannedActivities = Array.isArray(loaded.plannedActivities) ? loaded.plannedActivities : [];
     state.dailyCheckins = loaded.dailyCheckins && typeof loaded.dailyCheckins === 'object' ? loaded.dailyCheckins : {};
@@ -273,6 +271,31 @@ export async function loadStateForUser(userId) {
     if (checkinScaleMigrated) saveDataToLocalStorage();
 
     return activeUserId;
+}
+
+
+/**
+ * Lädt den separaten Garmin-Telemetrie-Cache bei Bedarf nach.
+ * Der Aufruf ist konto- und generationengebunden, damit ein langsamer
+ * IndexedDB-Lesevorgang bei einem Accountwechsel keine fremden Daten einträgt.
+ */
+export async function loadGarminTelemetryForUser(expectedUserId = activeUserId) {
+    const storageForUser = activeUserStorage;
+    const userIdForStorage = activeUserId;
+    const generation = activeStorageGeneration;
+    if (!storageForUser || !userIdForStorage || userIdForStorage !== expectedUserId) return false;
+
+    const telemetry = await storageForUser.getCollection('garminTelemetry');
+    if (activeUserId !== userIdForStorage || activeUserStorage !== storageForUser
+        || activeStorageGeneration !== generation) return false;
+
+    state.garminTelemetryStore = telemetry && typeof telemetry === 'object' && !Array.isArray(telemetry)
+        ? telemetry : {};
+    state.rawActivities = restoreGarminTelemetry(
+        Array.isArray(state.rawActivities) ? state.rawActivities : [],
+        state.garminTelemetryStore
+    );
+    return true;
 }
 
 /** Wartet auf lokale Schreibvorgänge und liest den offenen Sync-Auftrag. */
