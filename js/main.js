@@ -3434,9 +3434,40 @@ async function startManualCloudSync() {
     }
 }
 
-function cloudConflictTopLevelValue(snapshot, conflictPath) {
-    const key = String(conflictPath || '').split(/[.[]/, 1)[0];
-    return snapshot && Object.prototype.hasOwnProperty.call(snapshot, key) ? snapshot[key] : undefined;
+function cloudConflictValueAtPath(snapshot, conflictPath) {
+    if (!snapshot) return undefined;
+    const tokens = [];
+    String(conflictPath || '').replace(/([^.[\\]]+)|\\[([^\\]]+)\\]/g, (_, property, bracket) => {
+        tokens.push(property !== undefined ? { type: 'property', value: property } : { type: 'array', value: bracket });
+        return '';
+    });
+    let value = snapshot;
+    for (const token of tokens) {
+        if (token.type === 'property') {
+            value = value && typeof value === 'object' ? value[token.value] : undefined;
+            continue;
+        }
+        if (!Array.isArray(value)) return undefined;
+        const key = token.value.replace(/#duplicate:\\d+$/, '');
+        const duplicateMatch = token.value.match(/#duplicate:(\\d+)$/);
+        const matches = value.filter(item => {
+            if (key.startsWith('id:')) return String(item?.id) === key.slice(3);
+            if (key.startsWith('garmin:')) return String(item?.garmin_activity_id) === key.slice(7);
+            if (key.startsWith('week:')) return String(item?.weekStartDate) === key.slice(5);
+            if (key.startsWith('period:')) return item?.startDate + ':' + item?.endDate === key.slice(7);
+            if (key.startsWith('date:')) {
+                const parts = key.slice(5).split('|');
+                return [item?.date, item?.startTime || '', item?.type || '', item?.discipline || '', item?.exercise || '', item?.format || ''].join('|') === parts.join('|');
+            }
+            if (key.startsWith('result:')) {
+                const parts = key.slice(7).split('|');
+                return [item?.discipline, item?.format, item?.partner || ''].join('|') === parts.join('|');
+            }
+            return 'json:' + JSON.stringify(item) === key;
+        });
+        value = matches[duplicateMatch ? Number(duplicateMatch[1]) - 1 : 0];
+    }
+    return value;
 }
 function formatCloudConflictValue(value) {
     if (value === undefined) return '— nicht vorhanden —';
@@ -3454,7 +3485,7 @@ function showCloudConflictReview(reconciliation, context) {
     host.replaceChildren();
     count.textContent = reconciliation.conflictPaths.length + ' Konflikt(e) gefunden. Wähle für jeden Konflikt, welcher Wert erhalten bleiben soll.';
     reconciliation.conflictPaths.forEach((rawPath, index) => {
-        const path = rawPath.replace(/ \\(.*\\)$/, '');
+        const path = rawPath.split(' (')[0];
         const section = document.createElement('section');
         section.className = 'rounded-xl border border-slate-700 bg-slate-800/70 p-3 space-y-3';
         const heading = document.createElement('h3');
@@ -3471,7 +3502,7 @@ function showCloudConflictReview(reconciliation, context) {
             label.textContent = side === 'local' ? 'Dieses Gerät' : 'Cloud';
             const pre = document.createElement('pre');
             pre.className = 'text-[11px] leading-4 text-slate-300 whitespace-pre-wrap break-words max-h-40 overflow-auto';
-            pre.textContent = formatCloudConflictValue(cloudConflictTopLevelValue(reconciliation.review[side], path));
+            pre.textContent = formatCloudConflictValue(cloudConflictValueAtPath(reconciliation.review[side], path));
             panel.append(label, pre);
             values.appendChild(panel);
         }
