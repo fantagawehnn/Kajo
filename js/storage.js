@@ -16,6 +16,7 @@ let activeStorageGeneration = 0;
 let indexedDbWriteQueue = Promise.resolve();
 let indexedDbWriteError = null;
 let pendingCheckinScaleSave = false;
+let deferredStateLoaded = false;
 
 function enqueueIndexedDbSave(storage, collections, label, options = {}) {
     indexedDbWriteQueue = indexedDbWriteQueue
@@ -226,6 +227,7 @@ function defaultUserState() {
 export function deactivateUserStorage() {
     activeStorageGeneration++;
     pendingCheckinScaleSave = false;
+    deferredStateLoaded = false;
     activeUserStorage = null;
     activeUserId = null;
     defaultUserState();
@@ -235,6 +237,7 @@ export async function loadStateForUser(userId) {
     if (!userId) throw new Error('Keine gültige Benutzer-ID für das Laden der Daten.');
     const loadGeneration = ++activeStorageGeneration;
     pendingCheckinScaleSave = false;
+    deferredStateLoaded = false;
     const userStorage = createUserStorage(userId);
     activeUserStorage = userStorage;
     activeUserId = userId;
@@ -316,6 +319,7 @@ export async function loadDeferredStateForUser(expectedUserId = activeUserId) {
     state.strengthLogs = Array.isArray(loaded.strengthLogs) ? loaded.strengthLogs : [];
     state.strengthPBs = Array.isArray(loaded.strengthPBs) ? loaded.strengthPBs : [];
     state.supplements = Array.isArray(loaded.supplements) ? loaded.supplements : [];
+    deferredStateLoaded = true;
 
     // Eine Check-in-Skalenmigration erst speichern, nachdem auch die
     // aufgeschobenen Sammlungen geladen wurden. Sonst könnten deren zunächst
@@ -493,6 +497,14 @@ export function saveDataToLocalStorage(options = {}) {
 
     // Alle Garmin-Rohzeitreihen werden aus der dauerhaften lokalen Ablage ausgeschlossen.
     const snapshot = getUserDataSnapshot();
+    // Vor dem Abschluss des aufgeschobenen Ladens dürfen leere Platzhalter
+    // niemals echte, noch nicht eingelesene Sammlungen überschreiben.
+    if (!deferredStateLoaded) {
+        delete snapshot.disabledIntervals;
+        delete snapshot.strength;
+        delete snapshot.strengthPBs;
+        delete snapshot.supplements;
+    }
     // Einstellungen und andere Stammdaten speichern, ohne den separat geladenen
     // Garmin-Telemetrie-Cache zu leeren. Die Rohdaten werden nicht in den
     // kompakten lokalen Aktivitätssnapshot geschrieben.
