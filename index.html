@@ -439,16 +439,17 @@
   <div id="analysis-overview-content" aria-label="Trainingsentwicklung und Zeitraumübersicht">
    <section class="kajo-analysis-overview-panel kajo-analysis-primary-panel" aria-labelledby="analysis-overview-trend-title">
     <div class="kajo-analysis-section-heading kajo-analysis-trend-heading">
-     <div><h2 id="analysis-overview-trend-title">Entwicklung</h2><p class="kajo-analysis-chart-note">Relativer Verlauf (Index 100 = jeweilige Ausgangsbasis); absolute Messwerte bleiben in den Detailansichten erhalten.</p></div>
+     <div><h2 id="analysis-overview-trend-title">Entwicklung</h2><p class="kajo-analysis-chart-note">Wähle eine Kennzahl. Das Diagramm zeigt ihre tatsächlichen Messwerte.</p></div>
      <div id="analysis-shared-period" class="kajo-analysis-shared-period" aria-label="Zeitraum für das Verlaufsdiagramm"></div>
     </div>
-    <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Relativer zeitlicher Verlauf von Load, Recovery und Fitness"></canvas></div>
+    <div class="kajo-analysis-chart-wrap"><canvas id="analysis-overview-trend-chart" aria-label="Zeitlicher Verlauf der ausgewählten Kennzahl"></canvas></div>
     <div id="analysis-overview-health-markers" aria-label="Dokumentierte Erkrankungen und Verletzungen"></div>
     <div id="analysis-overview-health-event" class="hidden" aria-live="polite" style="margin:8px 0;padding:9px 11px;border:1px solid rgba(148,163,184,.25);border-radius:9px;font-size:11px;color:#cbd5e1"></div>
-    <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Datenreihen und Health-Markierungen ein- oder ausblenden">
+    <nav id="analysis-overview-metric-switch" class="kajo-analysis-switch" aria-label="Kennzahl für den zeitlichen Verlauf auswählen">
      <button type="button" data-overview-metric="load" onclick="setAnalysisOverviewMetric('load')" aria-pressed="true">Load</button>
-     <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="true">Recovery</button>
-     <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="false">Fitness</button>
+     <button type="button" data-overview-metric="recovery" onclick="setAnalysisOverviewMetric('recovery')" aria-pressed="false">HRV</button>
+     <button type="button" data-overview-metric="readiness" onclick="setAnalysisOverviewMetric('readiness')" aria-pressed="false">Readiness</button>
+     <button type="button" data-overview-metric="performance" onclick="setAnalysisOverviewMetric('performance')" aria-pressed="false">VO₂max</button>
      <button type="button" data-overview-metric="health" onclick="setAnalysisOverviewMetric('health')" aria-pressed="true">Health</button>
     </nav>
     <p id="analysis-overview-trend-note" class="kajo-analysis-chart-note"></p>
@@ -471,19 +472,22 @@
      <p id="analysis-overview-activity-note" class="kajo-analysis-chart-note"></p>
     </div>
    </section>
-   <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-intensity-distribution-title">
+   
+   
+   <details class="kajo-analysis-advanced" data-analysis-advanced>
+    <summary><span>Vertiefte Auswertungen</span><small>Zusammenhänge, Datenqualität und weitere Kennzahlen</small></summary>
+    <div class="kajo-analysis-advanced-content">
+<section class="kajo-analysis-overview-panel" aria-labelledby="analysis-intensity-distribution-title">
     <div class="kajo-analysis-section-heading"><div><h2 id="analysis-intensity-distribution-title">Intensitätsverteilung</h2><p class="kajo-analysis-chart-note">Trainingszeit in den hinterlegten Herzfrequenzzonen</p></div></div>
     <div class="kajo-analysis-intensity-wrap"><canvas id="analysis-overview-intensity-chart" aria-label="Trainingszeit in Herzfrequenzzonen"></canvas></div>
     <div id="analysis-overview-intensity-summary" class="kajo-analysis-intensity-summary"></div>
     <p id="analysis-overview-intensity-note" class="kajo-analysis-chart-note"></p>
    </section>
-   <section class="kajo-analysis-overview-panel kajo-analysis-observations-panel" aria-labelledby="analysis-trend-observations-title">
+<section class="kajo-analysis-overview-panel kajo-analysis-observations-panel" aria-labelledby="analysis-trend-observations-title">
     <div class="kajo-analysis-section-heading"><div><h2 id="analysis-trend-observations-title">Was fällt auf?</h2><p class="kajo-analysis-chart-note">Die wichtigsten Veränderungen im Vergleich zur Vorwoche</p></div></div>
     <div id="analysis-trend-observations" aria-live="polite"><p class="kajo-analysis-chart-note">Messwertveränderungen werden ausgewertet …</p></div>
    </section>
-   <details class="kajo-analysis-advanced" data-analysis-advanced>
-    <summary><span>Vertiefte Auswertungen</span><small>Zusammenhänge, Datenqualität und weitere Kennzahlen</small></summary>
-    <div class="kajo-analysis-advanced-content">
+
      <section class="kajo-analysis-overview-panel" aria-labelledby="analysis-data-availability-title">
       <div class="kajo-analysis-section-heading"><div><h2 id="analysis-data-availability-title">Datenbasis &amp; Aussagekraft</h2><p class="kajo-analysis-chart-note">Welche Informationen stehen für die Analyse tatsächlich zur Verfügung?</p></div></div>
       <div id="analysis-data-availability" class="kajo-analysis-availability" aria-live="polite"><p class="kajo-analysis-chart-note">Datenbasis wird ausgewertet …</p></div>
