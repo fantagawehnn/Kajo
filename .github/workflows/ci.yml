@@ -52,6 +52,8 @@ jobs:
           node --check js/training-load.js
           node --check js/data-source.js
           node --check js/coach.js
+          node --check js/coach-validation.js
+          node --check js/import-normalizers.js
           node --check js/coach-context.js
           node --check js/coach-data-context.js
           node --check js/coach-analysis.js
@@ -126,6 +128,12 @@ jobs:
 
       - name: Run cloud sync migration safety tests
         run: node --experimental-default-type=module --test tests/cloud-sync-migrations.test.mjs
+
+      - name: Run import normalization tests
+        run: node --experimental-default-type=module --test tests/import-normalizers.test.mjs
+
+      - name: Run Coach date validation tests
+        run: node --experimental-default-type=module --test tests/coach-validation.test.mjs
 
       - name: Run season planning tests
         run: node --experimental-default-type=module --test tests/season-planning.test.mjs
