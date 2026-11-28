@@ -1557,6 +1557,19 @@ Deno.serve(async (req) => {
       if (!expectedSecret || suppliedSecret.length < 32 || suppliedSecret !== expectedSecret) {
         return json(401, { error: "Nicht autorisierter Hintergrundabruf." });
       }
+
+      // Two UTC cron triggers (06:00 and 07:00) cover both German DST offsets.
+      // Only the trigger that lands exactly at 08:00 Europe/Berlin may sync.
+      const berlinTime = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Berlin",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }).format(new Date());
+      if (berlinTime !== "08:00") {
+        return json(200, { ok: true, skipped: true, reason: "not_08_00_berlin", berlinTime });
+      }
+
       const { data: connections, error: connectionError } = await admin
         .from("garmin_connections").select("user_id").eq("status", "connected");
       if (connectionError) throw connectionError;
