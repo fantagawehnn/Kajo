@@ -6,6 +6,28 @@ const BUCKET = 'garmin-exports';
 const PROJECT_ID = 'zgvargkfzgekokuisarv';
 const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
+
+let jsZipLoadPromise = null;
+async function ensureJSZipLoaded() {
+    if (globalThis.JSZip?.loadAsync) return globalThis.JSZip;
+    if (!jsZipLoadPromise) {
+        jsZipLoadPromise = import('https://esm.sh/jszip@3.10.1')
+            .then(module => {
+                const library = module.default || module.JSZip || module;
+                if (typeof library?.loadAsync !== 'function') {
+                    throw new Error('Die ZIP-Bibliothek ist nicht verfügbar.');
+                }
+                globalThis.JSZip = library;
+                return library;
+            })
+            .catch(error => {
+                jsZipLoadPromise = null;
+                throw error;
+            });
+    }
+    return jsZipLoadPromise;
+}
+
 let tusLoadPromise = null;
 function ensureTusLoaded() {
     if (globalThis.tus?.Upload) return Promise.resolve(globalThis.tus);
@@ -99,7 +121,8 @@ function setStatus(message, percent = null, kind = 'info') {
     if (fill && percent !== null) fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
 }
 
-async function buildArchiveManifest(file) {
+async async function buildArchiveManifest(file) {
+    await ensureJSZipLoaded();
     if (typeof JSZip === 'undefined') throw new Error('ZIP-Parser ist nicht verfügbar.');
     const zip = await JSZip.loadAsync(file, { checkCRC32: false });
     const entries = Object.values(zip.files).filter(entry => !entry.dir);
@@ -520,7 +543,7 @@ export async function analyzeGarminExportArchive(importId) {
         if (fill) fill.style.width = '0%';
     };
     try {
-        if (typeof JSZip === 'undefined') throw new Error('ZIP-Parser ist nicht verfügbar. Bitte KAJO neu laden.');
+        await ensureJSZipLoaded();
         const { data: auth, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
         const userId = auth?.user?.id;
