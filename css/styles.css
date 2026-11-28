@@ -10012,3 +10012,16 @@ body.kajo-modal-open { overflow: hidden !important; }
   .kajo-analysis-overview #analysis-overview-metric-switch{gap:5px}
   .kajo-analysis-overview #analysis-overview-metric-switch button{padding:6px 9px!important}
 }
+
+
+/* KAJO V2 · definitive removal of the mobile header separator. */
+@media screen and (max-width: 640px) {
+  html body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header,
+  html body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header::before,
+  html body:has(#app-navigation:not(.hidden)) > .kajo-mobile-header::after {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+}
