@@ -40,8 +40,12 @@ self.addEventListener("push", event => {
     badge: payload.badge || "./icons/kajo-icon.svg",
     tag: payload.tag || "kajo-reminder",
     renotify: Boolean(payload.renotify),
+    timestamp: Number(payload.timestamp) || Date.now(),
+    lang: "de-DE",
+    dir: "auto",
     data: { url: payload.url || "./" },
-    vibrate: [100, 45, 100]
+    actions: [{ action: "open", title: "KAJO öffnen" }],
+    vibrate: [90, 40, 90]
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
